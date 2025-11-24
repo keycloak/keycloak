@@ -149,7 +149,7 @@ public class Profile {
 
         WORKFLOWS("Workflows", Type.EXPERIMENTAL),
 
-        LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.PREVIEW),
+        LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.DEFAULT),
 
         DB_TIDB("TiDB database type", Type.EXPERIMENTAL),
 
@@ -260,7 +260,7 @@ public class Profile {
 
         public enum Type {
             // in priority order
-            DEFAULT("Default"),
+            DEFAULT("Default"), // Fully supported feature
             DISABLED_BY_DEFAULT("Disabled by default"),
             DEPRECATED("Deprecated"),
             PREVIEW("Preview"),

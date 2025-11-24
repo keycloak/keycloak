@@ -158,8 +158,6 @@ In order to see the `org.keycloak.events:trace`, the `trace` level must be set f
 [[mdc]]
 == Adding context for log messages
 
-<@features.techpreview feature="log-mdc"/>
-
 You can enable additional context information for each log line like the current realm and client that is executing the request.
 
 Use the option `log-mdc-enabled` to enable it.
