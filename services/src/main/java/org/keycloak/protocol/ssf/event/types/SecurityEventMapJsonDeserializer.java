@@ -1,15 +1,16 @@
 package org.keycloak.protocol.ssf.event.types;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.keycloak.protocol.ssf.event.StandardSecurityEvents;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.keycloak.protocol.ssf.event.StandardSecurityEvents;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Custom deserializer for Security Events.

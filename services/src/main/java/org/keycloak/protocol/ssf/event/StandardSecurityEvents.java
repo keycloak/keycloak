@@ -1,6 +1,11 @@
 package org.keycloak.protocol.ssf.event;
 
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.protocol.ssf.event.types.GenericSsfEvent;
 import org.keycloak.protocol.ssf.event.types.SsfEvent;
 import org.keycloak.protocol.ssf.event.types.StreamUpdatedEvent;
@@ -40,11 +45,6 @@ import org.keycloak.protocol.ssf.event.types.scim.ProvisioningPatchEventNotice;
 import org.keycloak.protocol.ssf.event.types.scim.ProvisioningPutEventFull;
 import org.keycloak.protocol.ssf.event.types.scim.ProvisioningPutEventNotice;
 import org.keycloak.protocol.ssf.event.types.scim.ScimEvent;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Registry of Standard SSF Events.
