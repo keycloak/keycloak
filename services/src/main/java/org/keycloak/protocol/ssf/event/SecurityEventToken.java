@@ -1,13 +1,14 @@
 package org.keycloak.protocol.ssf.event;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.keycloak.protocol.ssf.event.subjects.SubjectId;
 import org.keycloak.protocol.ssf.event.subjects.SubjectIdJsonDeserializer;
 import org.keycloak.representations.JsonWebToken;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * Represents a RFC8417 Security Event Token (SET).
