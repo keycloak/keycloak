@@ -11,7 +11,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.admin.v2.ClientRepresentation;
+import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.ClientService;
@@ -40,12 +40,12 @@ public class DefaultClientsApi implements ClientsApi {
     }
 
     @Override
-    public Stream<ClientRepresentation> getClients() {
+    public Stream<BaseClientRepresentation> getClients() {
         return clientService.getClients(realm, null, null, null);
     }
 
     @Override
-    public Response createClient(@Valid ClientRepresentation client) {
+    public Response createClient(@Valid BaseClientRepresentation client) {
         try {
             DefaultClientApi.validateUnknownFields(client);
             validator.validate(client, CreateClientDefault.class);
