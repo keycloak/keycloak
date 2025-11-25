@@ -23,6 +23,10 @@ public class HttpAccessLogPropertyMappers implements PropertyMapperGrouping {
                 fromOption(HttpAccessLogOptions.HTTP_ACCESS_LOG_EXCLUDE)
                         .isEnabled(HttpAccessLogPropertyMappers::isHttpAccessLogEnabled, ACCESS_LOG_ENABLED_MSG)
                         .to("quarkus.http.access-log.exclude-pattern")
+                        .build(),
+                fromOption(HttpAccessLogOptions.HTTP_ACCESS_LOG_MASKED_COOKIES)
+                        .isEnabled(HttpAccessLogPropertyMappers::isHttpAccessLogEnabled, ACCESS_LOG_ENABLED_MSG)
+                        .to("quarkus.http.access-log.masked-cookies") // not existing in current Quarkus version yet. Used in the CustomAllRequestHeadersAttribute
                         .build()
         );
     }
