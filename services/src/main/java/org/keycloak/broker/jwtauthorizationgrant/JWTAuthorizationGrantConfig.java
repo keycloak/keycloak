@@ -8,23 +8,27 @@ import static org.keycloak.protocol.oidc.OIDCLoginProtocol.ISSUER;
 
 public interface JWTAuthorizationGrantConfig {
 
-    public static final String JWT_AUTHORIZATION_GRANT_ENABLED = "jwtAuthorizationGrantEnabled";
+    String JWT_AUTHORIZATION_GRANT_ENABLED = "jwtAuthorizationGrantEnabled";
 
-    public static final String JWT_AUTHORIZATION_GRANT_ASSERTION_REUSE_ALLOWED = "jwtAuthorizationGrantAssertionReuseAllowed";
+    String JWT_AUTHORIZATION_GRANT_ASSERTION_REUSE_ALLOWED = "jwtAuthorizationGrantAssertionReuseAllowed";
 
-    public static final String JWT_AUTHORIZATION_GRANT_MAX_ALLOWED_ASSERTION_EXPIRATION = "jwtAuthorizationGrantMaxAllowedAssertionExpiration";
+    String JWT_AUTHORIZATION_GRANT_MAX_ALLOWED_ASSERTION_EXPIRATION = "jwtAuthorizationGrantMaxAllowedAssertionExpiration";
 
-    public static final String JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG = "jwtAuthorizationGrantAssertionSignatureAlg";
+    String JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG = "jwtAuthorizationGrantAssertionSignatureAlg";
 
-    public static final String JWT_AUTHORIZATION_GRANT_ALLOWED_CLOCK_SKEW = "jwtAuthorizationGrantAllowedClockSkew";
+    String JWT_AUTHORIZATION_GRANT_ALLOWED_CLOCK_SKEW = "jwtAuthorizationGrantAllowedClockSkew";
 
     Map<String, String> getConfig();
 
-    default boolean getJWTAuthorizationGrantEnabled() {
+    default boolean isJWTAuthorizationGrantEnabled() {
         return Boolean.parseBoolean(getConfig().getOrDefault(JWT_AUTHORIZATION_GRANT_ENABLED, "false"));
     }
 
-    default boolean getJWTAuthorizationGrantAssertionReuseAllowed() {
+    default void setJWTAuthorizationGrantEnabled(boolean jwtAuthorizationGrantEnableds) {
+        getConfig().put(JWT_AUTHORIZATION_GRANT_ENABLED, String.valueOf(jwtAuthorizationGrantEnableds));
+    }
+
+    default boolean isJWTAuthorizationGrantAssertionReuseAllowed() {
         return Boolean.parseBoolean(getConfig().getOrDefault(JWT_AUTHORIZATION_GRANT_ASSERTION_REUSE_ALLOWED, "false"));
     }
 

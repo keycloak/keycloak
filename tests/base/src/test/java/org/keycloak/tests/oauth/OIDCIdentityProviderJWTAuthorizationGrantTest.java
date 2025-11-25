@@ -43,9 +43,13 @@ public class OIDCIdentityProviderJWTAuthorizationGrantTest extends AbstractJWTAu
             rep.getConfig().put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "false");
         });
 
+        // Test with JWT signed by invalid key. It tests that signature validation is triggered even if "validate signature" switch on OIDC provider is false
+        testInvalidSignature();
+
+        // Test with correct signature
         String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER));
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertFailure("Signature validation not enabled for issuer", response, events.poll());
+        assertSuccess("test-app", response);
     }
 
     public static class JWTAuthorizationGrantRealmConfig extends AbstractJWTAuthorizationGrantTest.JWTAuthorizationGrantRealmConfig {
