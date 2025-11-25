@@ -58,6 +58,8 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
             JWTAuthorizationGrantValidator authorizationGrantContext = JWTAuthorizationGrantValidator.createValidator(
                     context.getSession(), client, assertion, formParams.getFirst(OAuth2Constants.SCOPE));
+            event.detail(Details.IDENTITY_PROVIDER_ISSUER, authorizationGrantContext.getIssuer());
+            event.detail(Details.IDENTITY_PROVIDER_USER_ID, authorizationGrantContext.getSubject());
 
             //client must be confidential
             authorizationGrantContext.validateClient();
@@ -73,6 +75,7 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             if (identityProviderModel == null) {
                 throw new RuntimeException("No Identity Provider for provided issuer");
             }
+            event.detail(Details.IDENTITY_PROVIDER, identityProviderModel.getAlias());
 
             if(!OIDCAdvancedConfigWrapper.fromClientModel(context.getClient()).getJWTAuthorizationGrantAllowedIdentityProviders().contains(identityProviderModel.getAlias())) {
                 throw new RuntimeException("Identity Provider is not allowed for the client");
