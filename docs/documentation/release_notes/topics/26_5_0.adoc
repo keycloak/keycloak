@@ -42,9 +42,9 @@ For more details, see the https://www.keycloak.org/server/features[Enabling and 
 
 == MDC Logging feature (supported)
 
-The log_mdc feature has been promoted from Preview to Supported(Default) Status.
+The `log-mdc:v1` feature has been promoted from a preview feature to a supported feature.
 
-MDC enables Keycloak to enrich log entries with contextual information such as realm, client, user ID, IP address, or custom values significantly improving debugging and observability.
+MDC enables Keycloak to enrich log entries with contextual information such as realm, client, user ID and IP address, significantly improving debugging and observability.
 
-For more details , see the https://www.keycloak.org/server/logging#_adding_context_for_log_messages[MDC Logging] guide.
+For more details, see the https://www.keycloak.org/server/logging#_adding_context_for_log_messages[Adding context for log messages] guide.
 
