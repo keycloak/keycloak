@@ -394,7 +394,7 @@ public class DocumentUtil {
      *
      * @return
      */
-    private static DocumentBuilderFactory getDocumentBuilderFactory() {
+    private synchronized static DocumentBuilderFactory getDocumentBuilderFactory() {
         boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
                 .equalsIgnoreCase("true");
         ClassLoader prevTCCL = SecurityActions.getTCCL();
