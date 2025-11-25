@@ -30,7 +30,7 @@ const InvitationStatusBadge = ({
   );
 };
 
-const DateCell = ({ date }: { date?: string }) => {
+const DateCell = ({ date }: { date?: number }) => {
   const formatDate = useFormatDate();
 
   if (!date) {
@@ -38,7 +38,7 @@ const DateCell = ({ date }: { date?: string }) => {
   }
 
   try {
-    return <span>{formatDate(new Date(date))}</span>;
+    return <span>{formatDate(new Date(date * 1000))}</span>;
   } catch {
     return <span>{date}</span>;
   }

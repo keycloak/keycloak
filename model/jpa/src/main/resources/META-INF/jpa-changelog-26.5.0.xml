@@ -148,10 +148,10 @@
             </column>
             <column name="FIRST_NAME" type="VARCHAR(255)"/>
             <column name="LAST_NAME" type="VARCHAR(255)"/>
-            <column name="CREATED_AT" type="TIMESTAMP">
+            <column name="CREATED_AT" type="INT">
                 <constraints nullable="false"/>
             </column>
-            <column name="EXPIRES_AT" type="TIMESTAMP"/>
+            <column name="EXPIRES_AT" type="INT"/>
             <column name="INVITE_LINK" type="VARCHAR(2048)"/>
         </createTable>
 

@@ -14,14 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.organization;
+package org.keycloak.models;
 
-import java.time.LocalDateTime;
+import org.keycloak.common.util.Time;
 
 /**
  * Model representing an organization invitation.
  */
 public interface OrganizationInvitationModel {
+
+    enum Filter {
+        STATUS,
+        FIRST_NAME,
+        LAST_NAME,
+        EMAIL,
+        SEARCH
+    }
 
     /**
      * Status of an organization invitation.
@@ -91,21 +99,21 @@ public interface OrganizationInvitationModel {
      *
      * @return the creation timestamp
      */
-    LocalDateTime getCreatedAt();
+    int getCreatedAt();
 
     /**
      * Returns the timestamp when this invitation expires.
      *
      * @return the expiration timestamp, or null if no expiration
      */
-    LocalDateTime getExpiresAt();
+    int getExpiresAt();
 
     /**
      * Sets the timestamp when this invitation expires.
      *
      * @param expiresAt the expiration timestamp
      */
-    void setExpiresAt(LocalDateTime expiresAt);
+    void setExpiresAt(int expiresAt);
 
     /**
      * Returns the invitation link.
@@ -134,7 +142,6 @@ public interface OrganizationInvitationModel {
      * @return true if expired, false otherwise
      */
     default boolean isExpired() {
-        LocalDateTime expiresAt = getExpiresAt();
-        return expiresAt != null && LocalDateTime.now().isAfter(expiresAt);
+        return Time.currentTime() > getExpiresAt();
     }
 }

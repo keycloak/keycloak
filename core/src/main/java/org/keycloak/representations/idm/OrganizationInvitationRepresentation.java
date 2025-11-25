@@ -1,34 +1,23 @@
-/*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.keycloak.representations.idm;
 
 /**
  * Representation of an organization invitation.
  */
 public class OrganizationInvitationRepresentation {
+
+    public enum Status {
+        PENDING,
+        EXPIRED
+    }
+
     private String id;
     private String organizationId;
     private String email;
     private String firstName;
     private String lastName;
-    private Long sentDate;
-    private Long expiresAt;
-    private OrganizationInvitationStatus status;
+    private int sentDate;
+    private int expiresAt;
+    private Status status;
     private String inviteLink;
 
     public OrganizationInvitationRepresentation() {
@@ -74,27 +63,27 @@ public class OrganizationInvitationRepresentation {
         this.lastName = lastName;
     }
 
-    public Long getSentDate() {
+    public int getSentDate() {
         return sentDate;
     }
 
-    public void setSentDate(Long sentDate) {
+    public void setSentDate(int sentDate) {
         this.sentDate = sentDate;
     }
 
-    public Long getExpiresAt() {
+    public int getExpiresAt() {
         return expiresAt;
     }
 
-    public void setExpiresAt(Long expiresAt) {
+    public void setExpiresAt(int expiresAt) {
         this.expiresAt = expiresAt;
     }
 
-    public OrganizationInvitationStatus getStatus() {
+    public Status getStatus() {
         return status;
     }
 
-    public void setStatus(OrganizationInvitationStatus status) {
+    public void setStatus(Status status) {
         this.status = status;
     }
 

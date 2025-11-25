@@ -28,6 +28,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 
 public interface OrganizationInvitationsResource {
@@ -49,7 +50,7 @@ public interface OrganizationInvitationsResource {
      * @return a list containing organization invitations.
      */
     default List<OrganizationInvitationRepresentation> list(Integer first, Integer max) {
-        return list(first, max, null, null, null, null, null);
+        return list(null, null, null, null, null, first, max);
     }
 
     /**
@@ -61,8 +62,8 @@ public interface OrganizationInvitationsResource {
      * @param email filter by exact email match. If null, no email filtering is applied.
      * @return a list containing organization invitations matching the criteria.
      */
-    default List<OrganizationInvitationRepresentation> list(Integer first, Integer max, String status, String email) {
-        return list(first, max, status, email, null, null, null);
+    default List<OrganizationInvitationRepresentation> list(String status, String email, Integer first, Integer max) {
+        return list(status, email, null, null, null, first, max);
     }
 
     /**
@@ -80,14 +81,13 @@ public interface OrganizationInvitationsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<OrganizationInvitationRepresentation> list(
-            @QueryParam("first") Integer first,
-            @QueryParam("max") Integer max,
             @QueryParam("status") String status,
             @QueryParam("email") String email,
             @QueryParam("search") String search,
             @QueryParam("firstName") String firstName,
-            @QueryParam("lastName") String lastName
-    );
+            @QueryParam("lastName") String lastName,
+            @QueryParam("first") Integer first,
+            @QueryParam("max") Integer max);
 
     /**
      * Get invitation by ID.

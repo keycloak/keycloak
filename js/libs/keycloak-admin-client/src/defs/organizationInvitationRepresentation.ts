@@ -9,8 +9,8 @@ export default interface OrganizationInvitationRepresentation {
   organizationId?: string;
   firstName?: string;
   lastName?: string;
-  sentDate?: string;
-  expiresAt?: string;
+  sentDate?: number;
+  expiresAt?: number;
   status?: OrganizationInvitationStatus;
   inviteLink?: string;
 }

@@ -16,6 +16,7 @@
  */
 package org.keycloak.organization.admin.resource;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -32,41 +33,43 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
-
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
-import org.keycloak.common.util.Time;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationInvitationModel;
+import org.keycloak.models.OrganizationInvitationModel.Filter;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.organization.OrganizationInvitationModel;
-import org.keycloak.organization.OrganizationInvitationProvider;
+import org.keycloak.organization.InvitationManager;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
-import org.keycloak.representations.idm.OrganizationInvitationStatus;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
-import org.keycloak.storage.adapter.InMemoryUserAdapter;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.storage.adapter.InMemoryUserAdapter;
 import org.keycloak.utils.StringUtil;
+
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+
+import static org.keycloak.representations.idm.OrganizationInvitationRepresentation.Status.EXPIRED;
+import static org.keycloak.representations.idm.OrganizationInvitationRepresentation.Status.PENDING;
+
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -78,14 +81,12 @@ public class OrganizationInvitationResource {
     private final RealmModel realm;
     private final OrganizationModel organization;
     private final AdminEventBuilder adminEvent;
-    private final int tokenExpiration;
 
     public OrganizationInvitationResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
         this.session = session;
         this.realm = session.getContext().getRealm();
         this.organization = organization;
         this.adminEvent = adminEvent.resource(ResourceType.ORGANIZATION_MEMBERSHIP);
-        this.tokenExpiration = getTokenExpiration();
     }
 
     public Response inviteUser(String email, String firstName, String lastName) {
@@ -98,13 +99,15 @@ public class OrganizationInvitationResource {
             throw ErrorResponse.error("Invalid email format", Status.BAD_REQUEST);
         }
 
-        OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
-        OrganizationInvitationModel existingInvitation = invitationProvider.getByEmailAndOrganization(email, organization);
+        OrganizationProvider invitationProvider = session.getProvider(OrganizationProvider.class);
+        InvitationManager invitationManager = invitationProvider.getInvitationManager();
+        OrganizationInvitationModel existingInvitation = invitationManager.getByEmail(organization, email);
+
         if (existingInvitation != null) {
             if (!existingInvitation.isExpired()) {
                 throw ErrorResponse.error("User already has a pending invitation", Status.CONFLICT);
             } else {
-                invitationProvider.deleteInvitation(organization, existingInvitation.getId());
+                invitationManager.remove(existingInvitation.getId());
             }
         }
 
@@ -145,10 +148,10 @@ public class OrganizationInvitationResource {
     }
 
     private Response sendInvitation(UserModel user) {
-        OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
-
+        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+        InvitationManager invitationManager = provider.getInvitationManager();
         // Create persistent invitation record
-        OrganizationInvitationModel invitation = invitationProvider.createInvitation(
+        OrganizationInvitationModel invitation = invitationManager.create(
             organization,
             user.getEmail(),
             user.getFirstName(),
@@ -156,8 +159,8 @@ public class OrganizationInvitationResource {
         );
 
         String link = user.getId() == null ?
-            createRegistrationLink(user, invitation.getId()) :
-            createInvitationLink(user, invitation.getId());
+            createRegistrationLink(user, invitation) :
+            createInvitationLink(user, invitation);
         invitation.setInviteLink(link);
 
         try {
@@ -167,8 +170,6 @@ public class OrganizationInvitationResource {
                     .sendOrgInviteEmail(organization, link, TimeUnit.SECONDS.toMinutes(getActionTokenLifespan()));
         } catch (EmailException e) {
             ServicesLogger.LOGGER.failedToSendEmail(e);
-            // Clean up the invitation record if email fails
-            invitationProvider.deleteInvitation(organization, invitation.getId());
             throw ErrorResponse.error("Failed to send invite email", Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -177,33 +178,29 @@ public class OrganizationInvitationResource {
         return Response.noContent().build();
     }
 
-    private int getTokenExpiration() {
-        return Time.currentTime() + getActionTokenLifespan();
-    }
-
     private int getActionTokenLifespan() {
         return realm.getActionTokenGeneratedByAdminLifespan();
     }
 
-    private String createInvitationLink(UserModel user, String invitationId) {
+    private String createInvitationLink(UserModel user, OrganizationInvitationModel invitation) {
         return LoginActionsService.actionTokenProcessor(session.getContext().getUri())
-                .queryParam("key", createToken(user, invitationId))
+                .queryParam("key", createToken(user, invitation))
                 .build(realm.getName()).toString();
     }
 
-    private String createRegistrationLink(UserModel user, String invitationId) {
+    private String createRegistrationLink(UserModel user, OrganizationInvitationModel invitation) {
         return OIDCLoginProtocolService.registrationsUrl(session.getContext().getUri().getBaseUriBuilder())
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OIDCResponseType.CODE)
                 .queryParam(Constants.CLIENT_ID, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
-                .queryParam(Constants.TOKEN, createToken(user, invitationId))
+                .queryParam(Constants.TOKEN, createToken(user, invitation))
                 .buildFromMap(Map.of("realm", realm.getName(), "protocol", OIDCLoginProtocol.LOGIN_PROTOCOL)).toString();
     }
 
-    private String createToken(UserModel user, String invitationId) {
-        InviteOrgActionToken token = new InviteOrgActionToken(user.getId(), tokenExpiration, user.getEmail(), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+    private String createToken(UserModel user, OrganizationInvitationModel invitation) {
+        InviteOrgActionToken token = new InviteOrgActionToken(user.getId(), invitation.getExpiresAt(), user.getEmail(), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
 
         token.setOrgId(organization.getId());
-        token.id(invitationId);
+        token.id(invitation.getId());
 
         if (organization.getRedirectUrl() == null || organization.getRedirectUrl().isBlank()) {
             token.setRedirectUri(Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString());
@@ -229,58 +226,31 @@ public class OrganizationInvitationResource {
             @QueryParam("firstName") String firstName,
             @QueryParam("lastName") String lastName) {
 
-        OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
+        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+        Map<Filter, String> filters = new HashMap<>();
 
-        Stream<OrganizationInvitationModel> invitations = invitationProvider.getAllInvitations(organization);
-
-        if (status != null && !status.isBlank()) {
-            try {
-                OrganizationInvitationModel.InvitationStatus statusFilter = OrganizationInvitationModel.InvitationStatus.valueOf(status.toUpperCase());
-                invitations = invitations.filter(inv -> {
-                    boolean isExpired = inv.isExpired();
-                    OrganizationInvitationModel.InvitationStatus dynamicStatus = isExpired ?
-                        OrganizationInvitationModel.InvitationStatus.EXPIRED :
-                        OrganizationInvitationModel.InvitationStatus.PENDING;
-                    return statusFilter.equals(dynamicStatus);
-                });
-            } catch (IllegalArgumentException e) {
-                // Invalid status value, return empty stream
-                return Stream.empty();
-            }
+        if (status != null) {
+            filters.put(Filter.STATUS, status);
         }
 
-        if (email != null && !email.isBlank()) {
-            String emailLower = email.toLowerCase().trim();
-            invitations = invitations.filter(inv -> emailLower.equals(inv.getEmail().toLowerCase()));
+        if (email != null) {
+            filters.put(Filter.EMAIL, email);
         }
 
-        if (firstName != null && !firstName.isBlank()) {
-            invitations = invitations.filter(inv -> firstName.equals(inv.getFirstName()));
+        if (search != null) {
+            filters.put(Filter.SEARCH, search);
         }
 
-        if (lastName != null && !lastName.isBlank()) {
-            invitations = invitations.filter(inv -> lastName.equals(inv.getLastName()));
+        if (firstName != null) {
+            filters.put(Filter.FIRST_NAME, firstName);
         }
 
-        if (search != null && !search.isBlank()) {
-            String searchLower = search.toLowerCase().trim();
-            invitations = invitations.filter(inv -> {
-                String invEmail = inv.getEmail() != null ? inv.getEmail().toLowerCase() : "";
-                String invFirstName = inv.getFirstName() != null ? inv.getFirstName().toLowerCase() : "";
-                String invLastName = inv.getLastName() != null ? inv.getLastName().toLowerCase() : "";
-
-                return invEmail.contains(searchLower) ||
-                       invFirstName.contains(searchLower) ||
-                       invLastName.contains(searchLower);
-            });
+        if (lastName != null) {
+            filters.put(Filter.LAST_NAME, lastName);
         }
 
-        if (first != null || max != null) {
-            invitations = invitations.skip(first != null ? first : 0);
-            if (max != null) {
-                invitations = invitations.limit(max);
-            }
-        }
+        InvitationManager invitationManager = provider.getInvitationManager();
+        Stream<OrganizationInvitationModel> invitations = invitationManager.getAllStream(organization, filters, first, max);
 
         return invitations.map(this::toRepresentation);
     }
@@ -294,8 +264,9 @@ public class OrganizationInvitationResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public OrganizationInvitationRepresentation getInvitation(@PathParam("id") String id) {
-        OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
-        OrganizationInvitationModel invitation = invitationProvider.getById(id, organization);
+        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+        InvitationManager invitationManager = provider.getInvitationManager();
+        OrganizationInvitationModel invitation = invitationManager.getById(id);
 
         if (invitation == null) {
             throw ErrorResponse.error("Invitation not found", Status.NOT_FOUND);
@@ -312,14 +283,14 @@ public class OrganizationInvitationResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response deleteInvitation(@PathParam("id") String id) {
-        OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
+        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+        InvitationManager invitationManager = provider.getInvitationManager();
 
-        boolean deleted = invitationProvider.deleteInvitation(organization, id);
-        if (!deleted) {
+        if (!invitationManager.remove(id)) {
             throw ErrorResponse.error("Invitation not found", Status.NOT_FOUND);
         }
 
-        adminEvent.operation(OperationType.DELETE).resourcePath("invitations", id).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
 
         return Response.noContent().build();
     }
@@ -332,15 +303,16 @@ public class OrganizationInvitationResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response resendInvitation(@PathParam("id") String id) {
-        OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
-        OrganizationInvitationModel invitation = invitationProvider.getById(id, organization);
+        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+        InvitationManager invitationManager = provider.getInvitationManager();
+        OrganizationInvitationModel invitation = invitationManager.getById(id);
 
         if (invitation == null) {
             throw ErrorResponse.error("Invitation not found", Status.NOT_FOUND);
         }
 
-        invitationProvider.deleteInvitation(organization, id);
-        
+        invitationManager.remove(id);
+
         return inviteUser(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName());
     }
 
@@ -354,15 +326,13 @@ public class OrganizationInvitationResource {
         rep.setFirstName(model.getFirstName());
         rep.setLastName(model.getLastName());
         rep.setOrganizationId(model.getOrganizationId());
-        rep.setSentDate(model.getCreatedAt() != null ?
-            model.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() : null);
-        rep.setExpiresAt(model.getExpiresAt() != null ?
-            model.getExpiresAt().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() : null);
+        rep.setSentDate(model.getCreatedAt());
+        rep.setExpiresAt(model.getExpiresAt());
         rep.setInviteLink(model.getInviteLink());
 
-        OrganizationInvitationStatus dynamicStatus = model.isExpired() ?
-            OrganizationInvitationStatus.EXPIRED :
-            OrganizationInvitationStatus.PENDING;
+        OrganizationInvitationRepresentation.Status dynamicStatus = model.isExpired() ?
+                EXPIRED :
+                PENDING;
         rep.setStatus(dynamicStatus);
 
         return rep;

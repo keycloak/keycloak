@@ -14,22 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.organization.jpa;
-
-import java.time.LocalDateTime;
+package org.keycloak.models.jpa.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
-import org.keycloak.organization.OrganizationInvitationModel;
+import org.keycloak.common.util.Time;
+import org.keycloak.models.OrganizationInvitationModel;
 
 /**
  * JPA entity for organization invitations.
  */
 @Entity
 @Table(name = "ORG_INVITATION")
+@NamedQueries({
+        @NamedQuery(name="getByOrganization", query="SELECT i FROM OrganizationInvitationEntity i WHERE i.organizationId = :orgId ORDER BY i.createdAt DESC")
+})
 public class OrganizationInvitationEntity implements OrganizationInvitationModel {
 
     @Id
@@ -49,10 +53,10 @@ public class OrganizationInvitationEntity implements OrganizationInvitationModel
     private String lastName;
 
     @Column(name = "CREATED_AT", nullable = false)
-    private LocalDateTime createdAt;
+    private int createdAt;
 
     @Column(name = "EXPIRES_AT")
-    private LocalDateTime expiresAt;
+    private int expiresAt;
 
     @Column(name = "INVITE_LINK", length = 2048)
     private String inviteLink;
@@ -60,14 +64,14 @@ public class OrganizationInvitationEntity implements OrganizationInvitationModel
     public OrganizationInvitationEntity() {
     }
 
-    public OrganizationInvitationEntity(String id, String organizationId, String email, 
-                                       String firstName, String lastName) {
+    public OrganizationInvitationEntity(String id, String organizationId, String email,
+                                        String firstName, String lastName) {
         this.id = id;
         this.organizationId = organizationId;
         this.email = email;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = Time.currentTime();
     }
 
     @Override
@@ -119,21 +123,21 @@ public class OrganizationInvitationEntity implements OrganizationInvitationModel
     }
 
     @Override
-    public LocalDateTime getCreatedAt() {
+    public int getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(int createdAt) {
         this.createdAt = createdAt;
     }
 
     @Override
-    public LocalDateTime getExpiresAt() {
+    public int getExpiresAt() {
         return expiresAt;
     }
 
     @Override
-    public void setExpiresAt(LocalDateTime expiresAt) {
+    public void setExpiresAt(int expiresAt) {
         this.expiresAt = expiresAt;
     }
 

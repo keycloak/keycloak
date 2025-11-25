@@ -17,6 +17,25 @@
 
 package org.keycloak.testsuite.organization.admin;
 
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.util.MailServer;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.keycloak.representations.idm.OrganizationInvitationRepresentation.Status.PENDING;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -27,22 +46,6 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.fail;
-
-import java.util.List;
-import java.util.Map;
-
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.Response;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.keycloak.admin.client.resource.OrganizationResource;
-import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
-import org.keycloak.representations.idm.OrganizationInvitationStatus;
-import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.util.MailServer;
 
 /**
  * Integration tests for Organization Invitation Management functionality
@@ -94,7 +97,7 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         assertThat(invitation1.getEmail(), equalTo("user1@test-org.com"));
         assertThat(invitation1.getFirstName(), equalTo("John"));
         assertThat(invitation1.getLastName(), equalTo("Doe"));
-        assertThat(invitation1.getStatus(), equalTo(OrganizationInvitationStatus.PENDING));
+        assertThat(invitation1.getStatus(), equalTo(PENDING));
         assertThat(invitation1.getOrganizationId(), equalTo(organizationId));
         assertThat(invitation1.getSentDate(), notNullValue());
         assertThat(invitation1.getExpiresAt(), notNullValue());
@@ -117,7 +120,7 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         assertThat(invitation, notNullValue());
         assertThat(invitation.getId(), equalTo(invitationId));
         assertThat(invitation.getEmail(), equalTo("user@test-org.com"));
-        assertThat(invitation.getStatus(), equalTo(OrganizationInvitationStatus.PENDING));
+        assertThat(invitation.getStatus(), equalTo(PENDING));
     }
 
     @Test
@@ -225,17 +228,33 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         sendInvitation("pending@test-org.com", "Pending", "User");
         
         // Filter by status - pending
-        List<OrganizationInvitationRepresentation> pendingInvitations = 
-            organization.invitations().list(null, null, "PENDING", null);
-        
-        assertThat(pendingInvitations, hasSize(1));
-        assertThat(pendingInvitations.get(0).getStatus(), equalTo(OrganizationInvitationStatus.PENDING));
-        assertThat(pendingInvitations.get(0).getEmail(), equalTo("pending@test-org.com"));
+        List<OrganizationInvitationRepresentation> invitations =
+            organization.invitations().list("PENDING", null, null, null);
+        assertThat(invitations, hasSize(1));
+        assertThat(invitations.get(0).getStatus(), equalTo(PENDING));
+        assertThat(invitations.get(0).getEmail(), equalTo("pending@test-org.com"));
 
         // Filter by status - expired
-        List<OrganizationInvitationRepresentation> expiredInvitations = 
-            organization.invitations().list(null, null, "EXPIRED", null);
-        assertThat(expiredInvitations, empty());
+        invitations =
+            organization.invitations().list("EXPIRED", null, null, null);
+        assertThat(invitations, empty());
+
+        try {
+            setTimeOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
+            invitations =
+                    organization.invitations().list("EXPIRED", null, null, null);
+            assertThat(invitations, hasSize(1));
+        } finally {
+            setTimeOffset(0);
+        }
+
+        invitations =
+                organization.invitations().list(null, null, "test", null, null, null, null);
+        assertThat(invitations, hasSize(1));
+
+        invitations =
+                organization.invitations().list(null, null, "none", null, null, null, null);
+        assertThat(invitations, hasSize(0));
     }
 
     @Test
@@ -247,14 +266,14 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         
         // Search by email
         List<OrganizationInvitationRepresentation> johnInvitations = 
-            organization.invitations().list(null, null, null, null, "john.doe", null, null);
+            organization.invitations().list(null, "john.doe", null, null, null, null, null);
         
         assertThat(johnInvitations, hasSize(1));
         assertThat(johnInvitations.get(0).getEmail(), equalTo("john.doe@test-org.com"));
         
         // Search by partial email
         List<OrganizationInvitationRepresentation> adminInvitations = 
-            organization.invitations().list(null, null, null, null, "admin", null, null);
+            organization.invitations().list(null, "admin", null, null, null, null, null);
         
         assertThat(adminInvitations, hasSize(1));
         assertThat(adminInvitations.get(0).getEmail(), equalTo("admin@test-org.com"));

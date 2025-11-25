@@ -63,6 +63,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.openqa.selenium.By;
 
+import static org.keycloak.representations.idm.OrganizationInvitationRepresentation.Status.EXPIRED;
+import static org.keycloak.representations.idm.OrganizationInvitationRepresentation.Status.PENDING;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -108,6 +111,10 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
 
         organization.members().inviteExistingUser(user.getId()).close();
+        List<OrganizationInvitationRepresentation> list = organization.invitations().list();
+        assertThat(list, Matchers.hasSize(1));
+        OrganizationInvitationRepresentation invitation = list.get(0);
+        assertThat(PENDING, equalTo(invitation.getStatus()));
 
         acceptInvitation(organization, user);
     }
@@ -397,6 +404,11 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
         try {
             setTimeOffset((int) TimeUnit.DAYS.toSeconds(1));
+
+            List<OrganizationInvitationRepresentation> list = organization.invitations().list();
+            assertThat(list, Matchers.hasSize(1));
+            OrganizationInvitationRepresentation invitation = list.get(0);
+            assertThat(EXPIRED, equalTo(invitation.getStatus()));
 
             String link = getInvitationLinkFromEmail();
             driver.navigate().to(link);
