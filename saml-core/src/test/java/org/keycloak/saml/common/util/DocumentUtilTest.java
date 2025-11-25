@@ -10,9 +10,6 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 public class DocumentUtilTest {
   /**
    * Verifies that {@link DocumentUtil#getDocumentBuilder()} can be called from many threads
@@ -52,7 +49,7 @@ public class DocumentUtilTest {
    * </p>
    */
   @Test
-  public void testNoRaceConditionWhenCreatingDocumentBuilder() {
+  public void testNoRaceConditionWhenCreatingDocumentBuilder() throws Throwable {
     // given
     AtomicReference<Throwable> failure = new AtomicReference<>();
     int numThreads = 100;
@@ -63,7 +60,9 @@ public class DocumentUtilTest {
     joinThreads(numThreads, threads);
 
     // then
-    assertThat(failure.get(), nullValue());
+    if (failure.get() != null) {
+        throw failure.get();
+    }
   }
 
   private static void joinThreads(int numThreads, List<Thread> threads) {
