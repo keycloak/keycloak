@@ -28,6 +28,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.FlowUtil;
@@ -181,10 +182,9 @@ final class BrokerRunOnServerUtil {
     }
 
     static RunOnServer removeBrokerExpiredSessions() {
-        return (RunOnServer) session -> {
+        return session -> {
             RealmModel realm = session.getContext().getRealm();
-            session.sessions().removeExpired(realm);
-            session.authenticationSessions().removeExpired(realm);
+            session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
         };
     }
 

@@ -539,20 +539,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         }
     }
 
-    public void removeAllExpired() {
-        // Rely on expiration of cache entries provided by infinispan. Just expire entries from persister is needed
-        // TODO: Avoid iteration over all realms here (Details in the KEYCLOAK-16802)
-        UserSessionPersisterProvider provider = session.getProvider(UserSessionPersisterProvider.class);
-        session.realms().getRealmsStream().forEach(provider::removeExpired);
-
-    }
-
-    @Override
-    public void removeExpired(RealmModel realm) {
-        // Rely on expiration of cache entries provided by infinispan. Nothing needed here besides calling persister
-        session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
-    }
-
     @Override
     public void removeUserSessions(RealmModel realm) {
         // Don't send message to all DCs, just to all cluster nodes in current DC. The remoteCache will notify client listeners for removed userSessions.
