@@ -44,6 +44,14 @@ if /I "%~1" == "--jvm-args" (
     set "JVM_ARGS=%~2"
     shift & shift & goto PARAM_LOOP
 )
+if /I "%~1" == "--jvm-ms" (
+    set "JVM_MS=%~2"
+    shift & shift & goto PARAM_LOOP
+)
+if /I "%~1" == "--jvm-mx" (
+    set "JVM_MX=%~2"
+    shift & shift & goto PARAM_LOOP
+)
 if /I "%~1" == "--service-user" (
     set "SERVICE_USER=%~2"
     shift & shift & goto PARAM_LOOP
@@ -136,7 +144,17 @@ set SRV_CMD=%SRV_CMD% --DisplayName="%SERVICE_DISPLAY_NAME%"
 set SRV_CMD=%SRV_CMD% --Description="%SERVICE_DESCRIPTION%"
 set SRV_CMD=%SRV_CMD% --Startup=%STARTUP_MODE%
 set SRV_CMD=%SRV_CMD% --Jvm="%JVM%"
-set SRV_CMD=%SRV_CMD% --JvmOptions="%JVM_ARGS%"
+REM Add JVM options one by one using ++JvmOptions for proper parsing
+for %%O in ("%JVM_ARGS:;=","%") do (
+    set SRV_CMD=!SRV_CMD! ++JvmOptions=%%~O
+)
+REM Add dedicated memory settings if specified
+if defined JVM_MS (
+    set SRV_CMD=!SRV_CMD! --JvmMs=%JVM_MS%
+)
+if defined JVM_MX (
+    set SRV_CMD=!SRV_CMD! --JvmMx=%JVM_MX%
+)
 set SRV_CMD=%SRV_CMD% --StartPath="%KEYCLOAK_HOME%"
 set SRV_CMD=%SRV_CMD% --StartMode=jvm
 set SRV_CMD=%SRV_CMD% --StartClass=io.quarkus.bootstrap.runner.QuarkusEntryPoint
