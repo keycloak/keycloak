@@ -6,9 +6,11 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.events.Details;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -83,7 +85,7 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
 
         jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 5L));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertSuccess("test-app", "basic-user", response);
+        assertSuccess("test-app", response);
 
         //test with iat
         jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 20L, (long) Time.currentTime()));
@@ -93,7 +95,7 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
 
         jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 20L, (long) Time.currentTime()));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertSuccess("test-app", "basic-user", response);
+        assertSuccess("test-app", response);
     }
 
     @Test
@@ -109,12 +111,12 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         // Issuer as audience works
         jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertSuccess("test-app", "basic-user", response);
+        assertSuccess("test-app", response);
 
         // Token endpoint as audience works
         jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getToken(), IDP_ISSUER));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertSuccess("test-app", "basic-user", response);
+        assertSuccess("test-app", response);
 
         // Introspection endpoint as audience does not work
         jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIntrospection(), IDP_ISSUER));
@@ -144,7 +146,8 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
 
         jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), "fake-issuer", Time.currentTime() + 300L));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertFailure("No Identity Provider for provided issuer", response, events.poll());
+        EventAssertion event = assertFailure("No Identity Provider for provided issuer", response, events.poll());
+        event.details(Details.IDENTITY_PROVIDER_ISSUER, "fake-issuer");
     }
 
     @Test
@@ -155,14 +158,17 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
 
         jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("fake-user", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 300L));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertFailure("User not found", response, events.poll());
+        EventAssertion event =  assertFailure("User not found", response, events.poll());
+        event.details(Details.IDENTITY_PROVIDER, IDP_ALIAS);
+        event.details(Details.IDENTITY_PROVIDER_ISSUER, IDP_ISSUER);
+        event.details(Details.IDENTITY_PROVIDER_USER_ID, "fake-user");
     }
 
     @Test
     public void testReplayToken() {
         String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertSuccess("test-app", "basic-user", response);
+        assertSuccess("test-app", response);
 
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Token reuse detected", response, events.poll());
@@ -173,10 +179,10 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
 
         jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertSuccess("test-app", "basic-user", response);
+        assertSuccess("test-app", response);
 
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertSuccess("test-app", "basic-user", response);
+        assertSuccess("test-app", response);
     }
 
     @Test
@@ -186,7 +192,7 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         });
         String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertSuccess("test-app", "basic-user", response);
+        assertSuccess("test-app", response);
 
         realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG, Algorithm.ES512);
@@ -213,7 +219,7 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         try {
             String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
             AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-            AccessToken token = assertSuccess("test-app", "basic-user", response);
+            AccessToken token = assertSuccess("test-app", response);
             MatcherAssert.assertThat(List.of(token.getScope().split(" ")), Matchers.containsInAnyOrder(new String[]{"email", "profile", "address", "phone"}));
 
             jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
@@ -229,6 +235,6 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
     public void testSuccessGrant() {
         String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertSuccess("test-app", "basic-user", response);
+        assertSuccess("test-app", response);
     }
 }

@@ -21,6 +21,7 @@ package org.keycloak.tests.oauth;
 import java.util.UUID;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
@@ -74,7 +75,7 @@ public class BaseAbstractJWTAuthorizationGrantTest {
     protected ManagedRealm realm;
 
     @InjectUser(config = AbstractJWTAuthorizationGrantTest.FederatedUserConfiguration.class)
-    ManagedUser user;
+    protected ManagedUser user;
 
     @InjectOAuthClient
     OAuthClient oAuthClient;
@@ -161,47 +162,58 @@ public class BaseAbstractJWTAuthorizationGrantTest {
         }
     }
 
-    protected AccessToken assertSuccess(String expectedClientId, String username, AccessTokenResponse response) {
+    protected AccessToken assertSuccess(String expectedClientId, AccessTokenResponse response) {
         Assertions.assertTrue(response.isSuccess());
         Assertions.assertNull(response.getRefreshToken());
         AccessToken accessToken = oAuthClient.parseToken(response.getAccessToken(), AccessToken.class);
         Assertions.assertNull(accessToken.getSessionId());
         MatcherAssert.assertThat(accessToken.getId(), Matchers.startsWith("trrtag:"));
         Assertions.assertEquals(expectedClientId, accessToken.getIssuedFor());
-        Assertions.assertEquals(username, accessToken.getPreferredUsername());
+        Assertions.assertEquals(user.getUsername(), accessToken.getPreferredUsername());
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
                 .clientId(expectedClientId)
-                .details("grant_type", OAuth2Constants.JWT_AUTHORIZATION_GRANT)
-                .details("username", username);
+                .sessionId(null)
+                .userId(user.getId())
+                .details(Details.GRANT_TYPE, OAuth2Constants.JWT_AUTHORIZATION_GRANT)
+                .details(Details.IDENTITY_PROVIDER, IDP_ALIAS)
+                .details(Details.IDENTITY_PROVIDER_ISSUER, IDP_ISSUER)
+                .details(Details.IDENTITY_PROVIDER_USER_ID, "basic-user-id")
+                .details(Details.USERNAME, user.getUsername());
         return accessToken;
     }
 
-    protected void assertFailure(String expectedErrorDescription, AccessTokenResponse response, EventRepresentation event) {
-        assertFailure("invalid_grant", expectedErrorDescription, response, event);
+    protected EventAssertion assertFailure(String expectedErrorDescription, AccessTokenResponse response, EventRepresentation event) {
+        return assertFailure(OAuthErrorException.INVALID_GRANT, expectedErrorDescription, response, event);
     }
 
-    protected void assertFailure(String expectedError, String expectedErrorDescription, AccessTokenResponse response, EventRepresentation event) {
+    protected EventAssertion assertFailure(String expectedError, String expectedErrorDescription, AccessTokenResponse response, EventRepresentation event) {
         Assertions.assertFalse(response.isSuccess());
         Assertions.assertEquals(expectedError, response.getError());
         Assertions.assertEquals(expectedErrorDescription, response.getErrorDescription());
-        EventAssertion.assertError(event)
+        return EventAssertion.assertError(event)
                 .type(EventType.LOGIN_ERROR)
-                .error("invalid_request")
-                .details("grant_type", OAuth2Constants.JWT_AUTHORIZATION_GRANT)
-                .details("reason", expectedErrorDescription);
+                .sessionId(null)
+                .error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.GRANT_TYPE, OAuth2Constants.JWT_AUTHORIZATION_GRANT)
+                .details(Details.REASON, expectedErrorDescription);
     }
 
-    protected void assertFailurePolicy(String expectedError, String expectedErrorDescription, AccessTokenResponse response, EventRepresentation event) {
+    protected EventAssertion assertFailurePolicy(String expectedError, String expectedErrorDescription, AccessTokenResponse response, EventRepresentation event) {
         Assertions.assertFalse(response.isSuccess());
         Assertions.assertEquals(expectedError, response.getError());
         Assertions.assertEquals(expectedErrorDescription, response.getErrorDescription());
-        EventAssertion.assertError(event)
+        return EventAssertion.assertError(event)
                 .type(EventType.LOGIN_ERROR)
+                .sessionId(null)
+                .userId(user.getId())
                 .error(expectedError)
-                .details("grant_type", OAuth2Constants.JWT_AUTHORIZATION_GRANT)
-                .details("reason", Details.CLIENT_POLICY_ERROR)
+                .details(Details.GRANT_TYPE, OAuth2Constants.JWT_AUTHORIZATION_GRANT)
+                .details(Details.IDENTITY_PROVIDER_ISSUER, IDP_ISSUER)
+                .details(Details.IDENTITY_PROVIDER_USER_ID, "basic-user-id")
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
                 .details(Details.CLIENT_POLICY_ERROR, expectedError)
-                .details(Details.CLIENT_POLICY_ERROR_DETAIL, expectedErrorDescription);
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, expectedErrorDescription)
+                .details(Details.USERNAME, user.getUsername());
     }
 }

@@ -42,6 +42,16 @@ public class EventAssertion {
         return this;
     }
 
+    public EventAssertion sessionId(String sessionId) {
+        Assertions.assertEquals(sessionId, event.getSessionId());
+        return this;
+    }
+
+    public EventAssertion userId(String userId) {
+        Assertions.assertEquals(userId, event.getUserId());
+        return this;
+    }
+
     public EventAssertion details(String key, String value) {
         if (value != null) {
             MatcherAssert.assertThat(event.getDetails(), Matchers.hasEntry(key, value));

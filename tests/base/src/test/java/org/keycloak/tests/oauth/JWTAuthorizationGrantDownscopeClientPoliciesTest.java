@@ -33,19 +33,19 @@ public class JWTAuthorizationGrantDownscopeClientPoliciesTest extends BaseAbstra
         // test with all the scopes
         String jwt = identityProvider.encodeToken(createDefaultAuthorizationGrantToken("email profile address"));
         AccessTokenResponse response = oAuthClient.openid(false).scope("address").jwtAuthorizationGrantRequest(jwt).send();
-        AccessToken token = assertSuccess("test-app", "basic-user", response);
+        AccessToken token = assertSuccess("test-app", response);
         MatcherAssert.assertThat(List.of(token.getScope().split(" ")), Matchers.containsInAnyOrder("email", "profile", "address"));
 
         // test with less scopes => downscope
         jwt = identityProvider.encodeToken(createDefaultAuthorizationGrantToken("email profile address"));
         response = oAuthClient.openid(false).scope(null).jwtAuthorizationGrantRequest(jwt).send();
-        token = assertSuccess("test-app", "basic-user", response);
+        token = assertSuccess("test-app", response);
         MatcherAssert.assertThat(List.of(token.getScope().split(" ")), Matchers.containsInAnyOrder("email", "profile"));
 
         // test default scopes are restricted if not present in initial token
         jwt = identityProvider.encodeToken(createDefaultAuthorizationGrantToken("profile address"));
         response = oAuthClient.openid(false).scope("address").jwtAuthorizationGrantRequest(jwt).send();
-        token = assertSuccess("test-app", "basic-user", response);
+        token = assertSuccess("test-app", response);
         MatcherAssert.assertThat(List.of(token.getScope().split(" ")), Matchers.containsInAnyOrder("profile", "address"));
 
         // test requesting a valid optional scope for the client but not present initially

@@ -2,9 +2,11 @@ package org.keycloak.tests.oauth;
 
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
+import org.keycloak.events.Details;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
@@ -29,7 +31,10 @@ public class OIDCIdentityProviderJWTAuthorizationGrantTest extends AbstractJWTAu
 
         String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER));
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertFailure("JWT Authorization Granted is not enabled for the identity provider", response, events.poll());
+        EventAssertion event = assertFailure("JWT Authorization Granted is not enabled for the identity provider", response, events.poll());
+        event.details(Details.IDENTITY_PROVIDER, IDP_ALIAS);
+        event.details(Details.IDENTITY_PROVIDER_ISSUER, IDP_ISSUER);
+        event.details(Details.IDENTITY_PROVIDER_USER_ID, "basic-user-id");
     }
 
     @Test
