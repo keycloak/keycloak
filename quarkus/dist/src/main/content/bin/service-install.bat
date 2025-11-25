@@ -116,7 +116,7 @@ if not exist "%LOG_PATH%" (
 REM Set default JVM options
 set "DEFAULT_JVM_OPTS=-Djava.awt.headless=true"
 set "DEFAULT_JVM_OPTS=%DEFAULT_JVM_OPTS%;-Dkc.home.dir=%KEYCLOAK_HOME%"
-
+set "DEFAULT_JVM_OPTS=%DEFAULT_JVM_OPTS%;-Dkc.config.built=true"
 
 if defined JVM_ARGS (
     set JVM_ARGS=%DEFAULT_JVM_OPTS%;%JVM_ARGS%

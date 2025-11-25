@@ -36,6 +36,18 @@ This guide explains how to install and run Keycloak as a Windows service using A
 1. A working Keycloak installation
 2. Apache Commons Daemon Procrun executable (`prunsrv.exe`) which can be downloaded from [Apache Commons Daemon](https://downloads.apache.org/commons/daemon/binaries/windows/)
 
+### Important: Pre-build Requirement
+
+**For production deployments**, you should run the Keycloak build command before installing the service:
+
+```bash
+bin\kc.bat build
+```
+
+This pre-builds and optimizes Keycloak with your desired configuration. The Windows service is configured to skip the automatic rebuild check (via `-Dkc.config.built=true`) since services cannot handle the restart logic that the normal `kc.bat` script uses for on-the-fly rebuilds.
+
+For development/testing purposes, you can use `start-dev` mode which doesn't require a pre-build.
+
 ### Setup Instructions
 
 1. Download the appropriate Procrun executable for your architecture:
