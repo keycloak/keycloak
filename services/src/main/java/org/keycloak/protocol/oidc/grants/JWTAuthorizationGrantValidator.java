@@ -51,7 +51,8 @@ public class JWTAuthorizationGrantValidator extends AbstractBaseJWTValidator imp
         try {
             JWSInput jws = new JWSInput(assertion);
             JsonWebToken jwt = jws.readJsonContent(JsonWebToken.class);
-            ClientAssertionState clientAssertionState = new ClientAssertionState(client, OAuth2Constants.JWT_AUTHORIZATION_GRANT, assertion, jws, jwt);
+            ClientAssertionState clientAssertionState = new ClientAssertionState(OAuth2Constants.JWT_AUTHORIZATION_GRANT, assertion, jws, jwt);
+            clientAssertionState.setClient(client);
             return new JWTAuthorizationGrantValidator(session, scope, clientAssertionState);
         } catch (JWSInputException e) {
             throw new RuntimeException("The provided assertion is not a valid JWT");
