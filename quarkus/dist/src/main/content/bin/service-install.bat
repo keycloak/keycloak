@@ -141,7 +141,10 @@ set SRV_CMD=%SRV_CMD% --StartPath="%KEYCLOAK_HOME%"
 set SRV_CMD=%SRV_CMD% --StartMode=jvm
 set SRV_CMD=%SRV_CMD% --StartClass=io.quarkus.bootstrap.runner.QuarkusEntryPoint
 set SRV_CMD=%SRV_CMD% --StartMethod=main
-set SRV_CMD=%SRV_CMD% --StartParams="%KC_OPTS%"
+REM Split KC_OPTS into separate --StartParams entries for prunsrv to prevent issues with whitespace
+for %%A in (%KC_OPTS%) do (
+    set SRV_CMD=!SRV_CMD! --StartParams=%%~A
+)
 set SRV_CMD=%SRV_CMD% --StopMode=jvm
 set SRV_CMD=%SRV_CMD% --StopClass=io.quarkus.bootstrap.runner.QuarkusEntryPoint
 set SRV_CMD=%SRV_CMD% --StopMethod=main
