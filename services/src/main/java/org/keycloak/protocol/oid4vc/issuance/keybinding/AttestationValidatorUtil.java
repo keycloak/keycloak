@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.KeyUse;
@@ -90,8 +89,8 @@ public class AttestationValidatorUtil {
             String attestationJwt,
             KeycloakSession keycloakSession,
             VCIssuanceContext vcIssuanceContext,
-            AttestationKeyResolver keyResolver) throws IOException, JWSInputException,
-            VerificationException{
+            AttestationKeyResolver keyResolver)
+        throws JWSInputException, VerificationException {
 
         if (attestationJwt == null || attestationJwt.split("\\.").length != 3) {
             throw new VCIssuerException("Invalid JWT format");
@@ -165,19 +164,27 @@ public class AttestationValidatorUtil {
         // Get resistance level requirements from configuration
         KeyAttestationsRequired attestationRequirements = getAttestationRequirements(vcIssuanceContext);
 
-        // Validate key_storage if present in attestation and required by config
-        if (attestationBody.getKeyStorage() != null) {
-            validateResistanceLevel(
-                    attestationBody.getKeyStorage(),
-                    attestationRequirements != null ? attestationRequirements.getKeyStorage() : null,
-                    "key_storage");
-        }
-        // Validate user_authentication if present in attestation and required by config
-        if (attestationBody.getUserAuthentication() != null) {
-            validateResistanceLevel(
-                    attestationBody.getUserAuthentication(),
-                    attestationRequirements != null ? attestationRequirements.getUserAuthentication() : null,
-                    "user_authentication");
+        // if the KeyAttestationRequired object is null it is not necessary to validate it because the issuer does
+        // not require it:
+        // From the spec:
+        // ----
+        // If the Credential Issuer does not require a key attestation, this parameter MUST NOT be present in the
+        // metadata.
+        // ---
+        // Meaning if the object is null we do not need to validate the resistance level
+        if (attestationRequirements != null) {
+            // Validate key_storage if present in attestation and required by config
+            if (attestationBody.getKeyStorage() != null) {
+                validateResistanceLevel(attestationBody.getKeyStorage(),
+                                        attestationRequirements.getKeyStorage(),
+                                        "key_storage");
+            }
+            // Validate user_authentication if present in attestation and required by config
+            if (attestationBody.getUserAuthentication() != null) {
+                validateResistanceLevel(attestationBody.getUserAuthentication(),
+                                        attestationRequirements.getUserAuthentication(),
+                                        "user_authentication");
+            }
         }
 
         KeycloakContext keycloakContext = keycloakSession.getContext();
@@ -230,38 +237,25 @@ public class AttestationValidatorUtil {
         return proofTypeData != null ? proofTypeData.getKeyAttestationsRequired() : null;
     }
 
-    private static void validateResistanceLevel(
-            List<String> actualLevels,
-            List<ISO18045ResistanceLevel> requiredLevels,
-            String levelType) throws VCIssuerException {
+    private static void validateResistanceLevel(List<String> providedLevels,
+                                                List<String> acceptedLevels,
+                                                String levelType)
+        throws VCIssuerException {
 
-        if (requiredLevels == null || requiredLevels.isEmpty()) {
-            for (String level : actualLevels) {
-                try {
-                    ISO18045ResistanceLevel.fromValue(level);
-                } catch (Exception e) {
-                    throw new VCIssuerException("Invalid " + levelType + " level: " + level);
-                }
+        if (acceptedLevels == null || acceptedLevels.isEmpty()) {
+            // If both key_storage and user_authentication parameters are absent, the key_attestations_required
+            // parameter may be empty, indicating a key attestation is needed without additional constraints.
+            if (providedLevels == null || providedLevels.isEmpty()) {
+                throw new VCIssuerException(levelType + " is required but was missing in the request");
             }
             return;
         }
-
-        // Convert required levels to string values for comparison
-        Set<String> requiredLevelValues = requiredLevels.stream()
-                .map(ISO18045ResistanceLevel::getValue)
-                .collect(Collectors.toSet());
-
-        // Check each actual level against requirements
-        for (String level : actualLevels) {
-            try {
-                ISO18045ResistanceLevel levelEnum = ISO18045ResistanceLevel.fromValue(level);
-                if (!requiredLevelValues.contains(levelEnum.getValue())) {
-                    throw new VCIssuerException(
-                            levelType + " level '" + level + "' is not accepted by credential issuer. " +
-                                    "Allowed values: " + requiredLevelValues);
-                }
-            } catch (IllegalArgumentException e) {
-                throw new VCIssuerException("Invalid " + levelType + " level: " + level);
+        // Check each provided level against the accepted levels
+        for (String providedLevel : providedLevels) {
+            if (!acceptedLevels.contains(providedLevel)) {
+                throw new VCIssuerException(
+                    levelType + " level '" + providedLevel + "' is not accepted by credential issuer. " +
+                        "Allowed values: " + acceptedLevels);
             }
         }
     }
@@ -308,14 +302,14 @@ public class AttestationValidatorUtil {
             // Check if this is a self-signed certificate (for test environments)
             X509Certificate firstCert = certChain.get(0);
             boolean isSelfSigned = firstCert.getSubjectX500Principal().equals(firstCert.getIssuerX500Principal());
-            
+
             // Only validate the certificate chain if it's not a self-signed certificate in a test environment
             if (!isSelfSigned) {
                 // Validate certificate chain
                 CertPathValidator validator = CertPathValidator.getInstance("PKIX");
                 PKIXParameters params = new PKIXParameters(getTrustAnchors());
                 params.setRevocationEnabled(false);
-                
+
                 validator.validate(certPath, params);
             }
 
