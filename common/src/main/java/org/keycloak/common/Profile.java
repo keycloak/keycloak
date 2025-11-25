@@ -149,7 +149,7 @@ public class Profile {
 
         WORKFLOWS("Workflows", Type.EXPERIMENTAL),
 
-        LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.PREVIEW),
+        LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.DEFAULT),
 
         DB_TIDB("TiDB database type", Type.EXPERIMENTAL),
 
@@ -260,11 +260,36 @@ public class Profile {
 
         public enum Type {
             // in priority order
+
+            /**
+             * Fully supported and enabled by default.
+             */
             DEFAULT("Default"),
+
+            /**
+             * Fully supported and disabled by default.
+             */
             DISABLED_BY_DEFAULT("Disabled by default"),
+
+            /**
+             * Fully supported and will be removed in a future major release.
+             */
             DEPRECATED("Deprecated"),
+
+            /**
+             * Not supported for production yet and not enabled by default.
+             * Usually with documentation and feature complete. Soon to be graduated to supported.
+             */
             PREVIEW("Preview"),
-            PREVIEW_DISABLED_BY_DEFAULT("Preview disabled by default"), // Preview features, which are not automatically enabled even with enabled preview profile (Needs to be enabled explicitly)
+
+            /**
+             * Preview features, which are not automatically enabled even with enabled preview profile (Needs to be enabled explicitly).
+             * This is no longer used and not explained in the current docs.
+             *
+             * @deprecated forRemoval, since 26.5
+             */
+            PREVIEW_DISABLED_BY_DEFAULT("Preview disabled by default"),
+
             EXPERIMENTAL("Experimental");
 
             private final String label;
