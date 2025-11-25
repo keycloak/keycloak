@@ -1,0 +1,72 @@
+// Module included in the following assemblies:
+//
+// server_admin/topics/users.adoc
+
+[id="proc-enabling-turnstile_{context}"]
+= Enabling Cloudflare Turnstile
+
+[role="_abstract"]
+To safeguard registration against bots, {project_name} has integration with https://www.cloudflare.com/application-services/products/turnstile/[Cloudflare Turnstile]. Turnstile can be used to protect registration forms, login forms, and password reset flows.
+
+== Common setup
+
+Before configuring Turnstile for any authentication flow, complete the following steps:
+
+. In your Cloudflare account, navigate to *Turnstile* and click *Add Site*.
+. Create a Turnstile site key and note the site key and secret key.
++
+NOTE: For testing, use Cloudflare's test keys. Site Key: `1x00000000000000000000AA`, Secret Key: `1x0000000000000000000000000000000AA`.
++
+. In the {project_name} Admin Console, update the Content Security Policy:
+.. Click *Realm Settings* in the menu.
+.. Click the *Security Defenses* tab.
+.. Update the *Content-Security-Policy* header. Example: `frame-src 'self' https://challenges.cloudflare.com;`
+
+[[procedure_turnstile_registration]]
+== Registration
+
+To protect the registration form with Turnstile:
+
+. Click *Authentication* in the menu, then click the *Flows* tab.
+. Select *Registration* from the list.
+. Set the *Turnstile* requirement to *Required*.
+. Click the *gear icon* ⚙️ on the *Turnstile* row and configure:
+.. Enter the *Turnstile Site Key* and *Turnstile Secret*.
+.. (Optional) Set the *Action Name* to `register`.
+.. (Optional) Select a *Theme*: `auto`, `light`, or `dark`.
+.. (Optional) Select a *Size*: `normal`, `flexible`, or `compact`.
+.. Click *Save*.
+
+[[procedure_turnstile_login]]
+== Login
+
+To protect the login form with Turnstile:
+
+. Click *Authentication* in the menu, then click the *Flows* tab.
+. Duplicate the *Browser* flow and bind it to the *Browser flow*.
+. Edit the flow:
+.. Delete the *Username Password Form* step.
+.. Add *Username Password Form with Turnstile*.
+.. Set the requirement to *Required*.
+. Configure Turnstile (click the *gear icon* ⚙️):
+.. Enter the *Turnstile Site Key* and *Turnstile Secret*.
+.. Set the *Action Name* to `login`.
+.. (Optional) Configure *Theme* and *Size*.
+.. Click *Save*.
+
+[[procedure_turnstile_reset]]
+== Password reset
+
+To protect the password reset flow with Turnstile:
+
+. Click *Authentication* in the menu, then click the *Flows* tab.
+. Duplicate the *Reset Credentials* flow and bind it to the *Reset credentials flow*.
+. Edit the flow:
+.. Delete the *Choose User* step.
+.. Add *Choose User with Turnstile*.
+.. Set the requirement to *Required*.
+. Configure Turnstile (click the *gear icon* ⚙️):
+.. Enter the *Turnstile Site Key* and *Turnstile Secret*.
+.. Set the *Action Name* to `reset`.
+.. (Optional) Configure *Theme* and *Size*.
+.. Click *Save*.

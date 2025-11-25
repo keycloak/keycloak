@@ -148,6 +148,10 @@ public interface ServicesLogger extends BasicLogger {
     void recaptchaFailed(@Cause Exception e);
 
     @LogMessage(level = ERROR)
+    @Message(id=112, value="Turnstile failed")
+    void turnstileFailed(@Cause Exception e);
+
+    @LogMessage(level = ERROR)
     @Message(id=29, value="Failed to send email")
     void failedToSendEmail(@Cause Exception e);
 
