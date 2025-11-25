@@ -74,6 +74,7 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import org.hamcrest.CoreMatchers;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -130,6 +131,15 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         // enable user profile unmanaged attributes
         UserProfileResource upResource = adminClient.realm("test").users().userProfile();
         UserProfileUtil.enableUnmanagedAttributes(upResource);
+    }
+
+    @After
+    public void cleanTestUserAttributes() {
+        UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+        UserRepresentation user = userResource.toRepresentation();
+        // rollback user-changes
+        user.setAttributes(new HashMap<>());
+        userResource.update(user);
     }
 
 

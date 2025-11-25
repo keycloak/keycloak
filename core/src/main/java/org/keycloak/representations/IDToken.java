@@ -17,13 +17,14 @@
 
 package org.keycloak.representations;
 
+import java.util.Map;
+import java.util.Optional;
+
 import org.keycloak.TokenCategory;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.util.JsonSerialization;
-
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -335,8 +336,15 @@ public class IDToken extends JsonWebToken {
         return address;
     }
 
+    public void setAddressClaimsMap(Map<String, Object> address) {
+        this.address = address;
+    }
+
     public AddressClaimSet getAddress() {
-        return JsonSerialization.mapper.convertValue(address, AddressClaimSet.class);
+        return Optional.ofNullable(address).map(a -> {
+                           return JsonSerialization.mapper.convertValue(a, AddressClaimSet.class);
+                       })
+                       .orElse(null);
     }
 
     public void setAddress(Map<String, Object> address) {
