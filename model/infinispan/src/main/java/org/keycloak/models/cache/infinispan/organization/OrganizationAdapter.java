@@ -26,6 +26,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.OrganizationRoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.infinispan.LazyModel;
 import org.keycloak.organization.OrganizationProvider;
@@ -178,6 +179,90 @@ public class OrganizationAdapter implements OrganizationModel {
     public boolean isMember(UserModel user) {
         if (isUpdated()) delegate.get().isMember(this, user);
         return organizationCache.isMember(this, user);
+    }
+
+    @Override
+    public Stream<UserModel> getRoleMembersStream(OrganizationRoleModel role) {
+        if (isUpdated()) return updated.getRoleMembersStream(role);
+        return getOrganizationModel().getRoleMembersStream(role);
+    }
+
+    @Override
+    public Stream<UserModel> getRoleMembersStream(OrganizationRoleModel role, Integer firstResult, Integer maxResults) {
+        if (isUpdated()) return updated.getRoleMembersStream(role, firstResult, maxResults);
+        return getOrganizationModel().getRoleMembersStream(role, firstResult, maxResults);
+    }
+
+    @Override
+    public OrganizationRoleModel addRole(String name) {
+        getDelegateForUpdate();
+        return updated.addRole(name);
+    }
+
+    @Override
+    public OrganizationRoleModel addRole(String id, String name) {
+        getDelegateForUpdate();
+        return updated.addRole(id, name);
+    }
+
+    @Override
+    public OrganizationRoleModel getRole(String name) {
+        if (isUpdated()) return updated.getRole(name);
+        return getOrganizationModel().getRole(name);
+    }
+
+    @Override
+    public OrganizationRoleModel getRoleById(String id) {
+        if (isUpdated()) return updated.getRoleById(id);
+        return getOrganizationModel().getRoleById(id);
+    }
+
+    @Override
+    public boolean removeRole(OrganizationRoleModel role) {
+        getDelegateForUpdate();
+        return updated.removeRole(role);
+    }
+
+    @Override
+    public Stream<OrganizationRoleModel> getRolesStream() {
+        if (isUpdated()) return updated.getRolesStream();
+        return getOrganizationModel().getRolesStream();
+    }
+
+    @Override
+    public Stream<OrganizationRoleModel> getRolesStream(Integer firstResult, Integer maxResults) {
+        if (isUpdated()) return updated.getRolesStream(firstResult, maxResults);
+        return getOrganizationModel().getRolesStream(firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<OrganizationRoleModel> searchForRolesStream(String search, Integer first, Integer max) {
+        if (isUpdated()) return updated.searchForRolesStream(search, first, max);
+        return getOrganizationModel().searchForRolesStream(search, first, max);
+    }
+
+    @Override
+    public void grantRole(UserModel user, OrganizationRoleModel role) {
+        getDelegateForUpdate();
+        updated.grantRole(user, role);
+    }
+
+    @Override
+    public void revokeRole(UserModel user, OrganizationRoleModel role) {
+        getDelegateForUpdate();
+        updated.revokeRole(user, role);
+    }
+
+    @Override
+    public Stream<OrganizationRoleModel> getUserRolesStream(UserModel user) {
+        if (isUpdated()) return updated.getUserRolesStream(user);
+        return getOrganizationModel().getUserRolesStream(user);
+    }
+
+    @Override
+    public boolean hasRole(UserModel user, OrganizationRoleModel role) {
+        if (isUpdated()) return updated.hasRole(user, role);
+        return getOrganizationModel().hasRole(user, role);
     }
 
     @Override

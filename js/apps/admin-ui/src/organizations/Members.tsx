@@ -9,7 +9,7 @@ import {
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
@@ -17,6 +17,7 @@ import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { MemberModal } from "../groups/MembersModal";
 import { toUser } from "../user/routes/User";
+import { toOrganizationMemberRoleMapping } from "./routes/OrganizationMemberRoleMapping";
 import { useParams } from "../utils/useParams";
 import useToggle from "../utils/useToggle";
 import { InviteMemberModal } from "./InviteMemberModal";
@@ -42,7 +43,9 @@ export const Members = () => {
   const { t } = useTranslation();
   const { adminClient } = useAdminClient();
   const { id: orgId } = useParams<EditOrganizationParams>();
+  const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
+  const navigate = useNavigate();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
   const [open, toggle] = useToggle();
@@ -244,6 +247,17 @@ export const Members = () => {
           </>
         }
         actions={[
+          {
+            title: t("roleMapping"),
+            onRowClick: (member) => {
+              const url = toOrganizationMemberRoleMapping({
+                realm,
+                orgId,
+                userId: member.id!,
+              });
+              navigate(url.pathname!);
+            },
+          },
           {
             title: t("remove"),
             onRowClick: async (member) => {

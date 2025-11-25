@@ -38,6 +38,7 @@ org.keycloak.authorization.policy.provider.aggregated.AggregatePolicyProviderFac
 org.keycloak.authorization.policy.provider.js.JSPolicyProviderFactory
 org.keycloak.authorization.policy.provider.permission.ResourcePolicyProviderFactory
 org.keycloak.authorization.policy.provider.role.RolePolicyProviderFactory
+org.keycloak.authorization.policy.provider.organizationrole.OrganizationRolePolicyProviderFactory
 org.keycloak.authorization.policy.provider.permission.ScopePolicyProviderFactory
 org.keycloak.authorization.policy.provider.time.TimePolicyProviderFactory
 org.keycloak.authorization.policy.provider.user.UserPolicyProviderFactory
