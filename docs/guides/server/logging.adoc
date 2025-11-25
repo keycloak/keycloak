@@ -163,7 +163,7 @@ You can enable additional context information for each log line like the current
 Use the option `log-mdc-enabled` to enable it.
 
 .Example configuration
-<@kc.start parameters="--features=log-mdc --log-mdc-enabled=true"/>
+<@kc.start parameters="--log-mdc-enabled=true"/>
 
 .Example output
 ----
