@@ -141,6 +141,10 @@ See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to 
 
 When enabling authorization on a new client (creating a Resource Server), Keycloak no longer automatically creates a "Default Resource", a "Default Policy," and a "Default Permission."
 
+=== HTTP Access log does not contain specific sensitive information
+
+Specific sensitive information is omitted from the HTTP Access log, such as the value of the `Authorization` HTTP header. Moreover, values of specific sensitive {project_name} cookies, such as `KEYCLOAK_SESSION`, `KEYCLOAK_IDENTITY`, or `AUTH_SESSION_ID`, are also omitted.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

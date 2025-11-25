@@ -30,6 +30,13 @@ You can specify these headers via the `tracing-header-<header>` wildcard option,
 
 For more details, see the  link:{tracingguide_link}[{tracingguide_name}] guide.
 
+= Sensitive Keycloak information is not displayed in the HTTP Access log
+
+If you are using the HTTP Access logging capability, sensitive information is omitted.
+It means that tokens in the 'Authorization' HTTP header and specific sensitive Keycloak cookies are not shown.
+
+For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring logging].
+
 = Enable/disable features via a single option
 
 You can now enable or disable individual features using the `feature-<name>` option (like `feature-spiffe=enabled`).
