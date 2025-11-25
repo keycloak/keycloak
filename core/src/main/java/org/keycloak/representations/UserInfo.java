@@ -97,7 +97,7 @@ public class UserInfo {
     protected Boolean phoneNumberVerified;
 
     @JsonProperty("address")
-    protected AddressClaimSet address;
+    protected Map<String, Object> address;
 
     @JsonProperty("updated_at")
     protected Long updatedAt;
@@ -277,11 +277,11 @@ public class UserInfo {
         this.phoneNumberVerified = phoneNumberVerified;
     }
 
-    public AddressClaimSet getAddress() {
+    public Map<String, Object> getAddress() {
         return address;
     }
 
-    public void setAddress(AddressClaimSet address) {
+    public void setAddress(Map<String, Object> address) {
         this.address = address;
     }
 

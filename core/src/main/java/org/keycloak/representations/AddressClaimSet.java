@@ -17,7 +17,12 @@
 
 package org.keycloak.representations;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -48,6 +53,8 @@ public class AddressClaimSet {
 
     @JsonProperty(COUNTRY)
     protected String country;
+
+    protected Map<String, Object> otherClaims = new HashMap<>();
 
     public String getFormattedAddress() {
         return this.formattedAddress;
@@ -97,4 +104,13 @@ public class AddressClaimSet {
         this.country = country;
     }
 
+    @JsonAnyGetter
+    public Map<String, Object> getOtherClaims() {
+        return otherClaims;
+    }
+
+    @JsonAnySetter
+    public void setOtherClaims(String name, Object value) {
+        otherClaims.put(name, value);
+    }
 }
