@@ -2,8 +2,8 @@ package org.keycloak.models.workflow;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.workflow.conditions.ExpressionWorkflowConditionProvider;
 import org.keycloak.models.workflow.conditions.expression.BooleanConditionParser;
+import org.keycloak.models.workflow.conditions.expression.ConditionEvaluator;
 import org.keycloak.models.workflow.conditions.expression.EvaluatorUtils;
 import org.keycloak.models.workflow.conditions.expression.EventEvaluator;
 import org.keycloak.utils.StringUtil;
@@ -30,11 +30,10 @@ final class EventBasedWorkflow {
      * Evaluates the specified context to determine whether the workflow should be activated or not. Activation will happen
      * if the context's event matches the configured activation events and the resource conditions evaluate to true.
      *
-     * @param executionContext
-     * @return
-     * @throws WorkflowInvalidStateException
+     * @param executionContext a reference to the workflow execution context.
+     * @return {@code true} if the workflow should be activated, {@code false} otherwise.
      */
-    boolean activate(WorkflowExecutionContext executionContext) throws WorkflowInvalidStateException {
+    boolean activate(WorkflowExecutionContext executionContext) {
         WorkflowEvent event = executionContext.getEvent();
         if (event == null) {
             return false;
@@ -42,12 +41,12 @@ final class EventBasedWorkflow {
         return supports(event.getResourceType()) && activateOnEvent(event) && validateResourceConditions(executionContext);
     }
 
-    boolean deactivate(WorkflowExecutionContext executionContext) throws WorkflowInvalidStateException {
+    boolean deactivate(WorkflowExecutionContext executionContext) {
         // TODO: rework this once we support concurrency/restart-if-running and concurrency/cancel-if-running to use expressions just like activation conditions
         return false;
     }
 
-    boolean restart(WorkflowExecutionContext executionContext) throws WorkflowInvalidStateException {
+    boolean restart(WorkflowExecutionContext executionContext) {
         WorkflowEvent event = executionContext.getEvent();
         if (event == null) {
             return false;
@@ -57,14 +56,17 @@ final class EventBasedWorkflow {
 
     public boolean validateResourceConditions(WorkflowExecutionContext context) {
         String conditions = getModel().getConfig().getFirst(CONFIG_CONDITIONS);
-        if (StringUtil.isBlank(conditions)) {
+        if (StringUtil.isNotBlank(conditions)) {
+            BooleanConditionParser.EvaluatorContext evaluatorContext = EvaluatorUtils.createEvaluatorContext(model, conditions);
+            ConditionEvaluator evaluator = new ConditionEvaluator(session, context);
+            return evaluator.visit(evaluatorContext);
+        } else {
             return true;
         }
-        return new ExpressionWorkflowConditionProvider(getSession(), conditions).evaluate(context);
     }
 
     /**
-     * Determins whether the workflow should be activated based on the given event or not.
+     * Determines whether the workflow should be activated based on the given event or not.
      *
      * @param event a reference to the workflow event.
      * @return {@code true} if the workflow should be activated, {@code false} otherwise.
@@ -77,7 +79,7 @@ final class EventBasedWorkflow {
 
         String eventConditions = model.getConfig().getFirst(CONFIG_ON_EVENT);
         if (StringUtil.isNotBlank(eventConditions)) {
-            BooleanConditionParser.EvaluatorContext context = EvaluatorUtils.createEvaluatorContext(eventConditions);
+            BooleanConditionParser.EvaluatorContext context = EvaluatorUtils.createEvaluatorContext(model, eventConditions);
             EventEvaluator eventEvaluator = new EventEvaluator(getSession(), event);
             return eventEvaluator.visit(context);
         } else {
