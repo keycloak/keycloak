@@ -298,7 +298,7 @@ public class FAPICIBATest extends AbstractFAPITest {
         // user Token Request
         AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequestWithClientSignedJWT(
                 signedJwt2, response.getAuthReqId(), MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
-        assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
+        assertThat(tokenRes.getStatusCode(), is(equalTo(403)));
         assertThat(tokenRes.getError(), is(equalTo(OAuthErrorException.ACCESS_DENIED)));
         assertThat(tokenRes.getErrorDescription(), is(equalTo("not authorized")));
     }
