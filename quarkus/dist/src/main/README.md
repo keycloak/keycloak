@@ -73,7 +73,9 @@ Use the provided script to install Keycloak as a Windows service:
 - `--startup <mode>`: Service startup mode: auto, manual (default: auto)
 - `--jvm <path>`: Path to jvm.dll to use (default: auto-detected from JAVA_HOME)
 - `--keycloak-args "<args>"`: Arguments to pass to Keycloak (e.g., "start-dev --http-port=8080")
-- `--jvm-args "<args>"`: Arguments to pass to the JVM (e.g., "-Xms512m -Xmx1024m")
+- `--jvm-args "<args>"`: Additional JVM options separated by semicolons (e.g., "-Djava.net.preferIPv4Stack=true")
+- `--jvm-ms <size>`: Initial Java heap size in MB (e.g., 256)
+- `--jvm-mx <size>`: Maximum Java heap size in MB (e.g., 1024)
 - `--service-user "<username>"`: The user account the service should run as
 - `--service-password "<password>"`: The password for the service user account
 - `--classpath-jar "<path>"`: Path to quarkus-run.jar if auto-detection fails
@@ -101,7 +103,7 @@ You have these options:
 #### Example
 
 ```bash
-./service-install.bat --name keycloak --keycloak-args "start --http-port=8080" --jvm-args "-Xms512m -Xmx1024m"
+./service-install.bat --name keycloak --keycloak-args "start --http-port=8080" --jvm-ms 512 --jvm-mx 1024
 ```
 
 For development mode with absolute path to quarkus-run.jar:
