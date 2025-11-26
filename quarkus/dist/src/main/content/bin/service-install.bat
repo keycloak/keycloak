@@ -145,8 +145,9 @@ set SRV_CMD=%SRV_CMD% --Description="%SERVICE_DESCRIPTION%"
 set SRV_CMD=%SRV_CMD% --Startup=%STARTUP_MODE%
 set SRV_CMD=%SRV_CMD% --Jvm="%JVM%"
 REM Add JVM options one by one using ++JvmOptions for proper parsing
+REM Values must be quoted to preserve = signs in -Dkey=value arguments
 for %%O in ("%JVM_ARGS:;=","%") do (
-    set SRV_CMD=!SRV_CMD! ++JvmOptions=%%~O
+    set SRV_CMD=!SRV_CMD! "++JvmOptions=%%~O"
 )
 REM Add dedicated memory settings if specified
 if defined JVM_MS (
