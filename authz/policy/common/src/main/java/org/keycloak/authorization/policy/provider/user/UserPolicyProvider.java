@@ -64,7 +64,7 @@ public class UserPolicyProvider implements PolicyProvider, PartialEvaluationPoli
     }
 
     @Override
-    public Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, UserModel subject) {
+    public Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, ResourceType groupResourceType, UserModel subject) {
         AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
         RealmModel realm = session.getContext().getRealm();
         ClientModel adminPermissionsClient = realm.getAdminPermissionsClient();
@@ -72,7 +72,7 @@ public class UserPolicyProvider implements PolicyProvider, PartialEvaluationPoli
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(adminPermissionsClient);
         PolicyStore policyStore = storeFactory.getPolicyStore();
 
-        return policyStore.findDependentPolicies(resourceServer, resourceType.getType(), UserPolicyProviderFactory.ID, "users", subject.getId());
+        return policyStore.findDependentPolicies(resourceServer, resourceType.getType(), groupResourceType == null ? null : groupResourceType.getType(), UserPolicyProviderFactory.ID, "users", subject.getId());
     }
 
     @Override

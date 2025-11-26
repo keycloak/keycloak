@@ -330,12 +330,12 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, String configValue) {
-        return findDependentPolicies(resourceServer, resourceType, associatedPolicyType, configKey, List.of(configValue));
+    public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String groupResourceType, String associatedPolicyType, String configKey, String configValue) {
+        return findDependentPolicies(resourceServer, resourceType, groupResourceType, associatedPolicyType, configKey, List.of(configValue));
     }
 
     @Override
-    public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, List<String> configValues) {
+    public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String groupResourceType, String associatedPolicyType, String configKey, List<String> configValues) {
         String dbProductName = entityManager.unwrap(Session.class).doReturningWork(connection -> connection.getMetaData().getDatabaseProductName());
 
         if (dbProductName.equals("Oracle")) {
@@ -349,6 +349,12 @@ public class JPAPolicyStore implements PolicyStore {
                 query.setParameter("associatedPolicyType", associatedPolicyType);
                 query.setParameter("configKey", configKey);
                 query.setParameter("configValue", "%" + value + "%");
+
+                if (AdminPermissionsSchema.GROUPS.getType().equals(groupResourceType)) {
+                    query.setParameter("scopeName", AdminPermissionsSchema.VIEW_MEMBERS);
+                } else {
+                    query.setParameter("scopeName", AdminPermissionsSchema.VIEW);
+                }
 
                 PolicyStore policyStore = provider.getStoreFactory().getPolicyStore();
 
@@ -372,7 +378,13 @@ public class JPAPolicyStore implements PolicyStore {
         List<Predicate> predicates = new LinkedList<>();
 
         predicates.add(cb.equal(from.get("resourceServer").get("id"), resourceServer.getId()));
-        predicates.add(scope.get("name").in(AdminPermissionsSchema.VIEW, AdminPermissionsSchema.VIEW_MEMBERS));
+
+        if (AdminPermissionsSchema.GROUPS.getType().equals(groupResourceType)) {
+            predicates.add(cb.equal(scope.get("name"), AdminPermissionsSchema.VIEW_MEMBERS));
+        } else {
+            predicates.add(cb.equal(scope.get("name"), AdminPermissionsSchema.VIEW));
+        }
+
         predicates.add(cb.equal(associatedPolicy.get("type"), associatedPolicyType));
         predicates.add(cb.equal(config.key(), "defaultResourceType"));
         predicates.add(cb.equal(config.value(), resourceType));

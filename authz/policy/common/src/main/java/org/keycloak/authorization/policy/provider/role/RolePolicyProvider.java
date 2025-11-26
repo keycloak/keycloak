@@ -134,7 +134,7 @@ public class RolePolicyProvider implements PolicyProvider, PartialEvaluationPoli
     }
 
     @Override
-    public Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, UserModel subject) {
+    public Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, ResourceType groupResourceType, UserModel subject) {
         AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
         RealmModel realm = session.getContext().getRealm();
         ClientModel adminPermissionsClient = realm.getAdminPermissionsClient();
@@ -144,7 +144,7 @@ public class RolePolicyProvider implements PolicyProvider, PartialEvaluationPoli
         List<String> roleIds = getDeepUserRoleMappings(subject).stream().map(RoleModel::getId).toList();
         Stream<Policy> policies = Stream.of();
 
-        return Stream.concat(policies, policyStore.findDependentPolicies(resourceServer, resourceType.getType(), RolePolicyProviderFactory.ID, "roles", roleIds));
+        return Stream.concat(policies, policyStore.findDependentPolicies(resourceServer, resourceType.getType(), groupResourceType == null ? null : groupResourceType.getType(), RolePolicyProviderFactory.ID, "roles", roleIds));
     }
 
     @Override
