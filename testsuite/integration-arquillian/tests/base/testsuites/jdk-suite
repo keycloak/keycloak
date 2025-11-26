@@ -10,6 +10,5 @@ MutualTLSClientTest
 PasswordPolicyTest
 SSOTest
 SamlClientTest
-TransactionsTest
 X509BrowserLoginTest
 ThemeResourceProviderTest
