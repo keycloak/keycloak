@@ -45,8 +45,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.20.3</quarkus.version>
-        <quarkus.build.version>3.20.3</quarkus.build.version>
+        <quarkus.version>3.20.4</quarkus.version>
+        <quarkus.build.version>3.20.4</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -161,11 +161,11 @@
         <postgresql-jdbc.version>42.7.7</postgresql-jdbc.version>
         <mariadb.version>11.4</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
-        <mariadb-jdbc.version>3.5.5</mariadb-jdbc.version>
+        <mariadb-jdbc.version>3.5.6</mariadb-jdbc.version>
         <mssql.version>2022</mssql.version>
         <mssql.container>mcr.microsoft.com/mssql/server:${mssql.version}-latest</mssql.container>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
-        <mssql-jdbc.version>12.8.1.jre11</mssql-jdbc.version>
+        <mssql-jdbc.version>12.8.2.jre11</mssql-jdbc.version>
         <oracledb.version>23.5</oracledb.version>
         <oracledb.container>mirror.gcr.io/gvenzl/oracle-free:${oracledb.version}-slim-faststart</oracledb.container>
         <!-- this is the oracle driver version also used in the Quarkus BOM -->
