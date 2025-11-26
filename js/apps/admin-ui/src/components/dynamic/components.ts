@@ -3,6 +3,7 @@ import { FunctionComponent } from "react";
 
 import { BooleanComponent } from "./BooleanComponent";
 import { ClientSelectComponent } from "./ClientSelectComponent";
+import { IdentityProviderMultiSelectComponent } from "./IdentityProviderMultiSelectComponent";
 import { FileComponent } from "./FileComponent";
 import { GroupComponent } from "./GroupComponent";
 import { ListComponent } from "./ListComponent";
@@ -45,6 +46,7 @@ type ComponentType =
   | "Group"
   | "MultivaluedList"
   | "ClientList"
+  | "IdentityProviderMultiList"
   | "UserProfileAttributeList"
   | "MultivaluedString"
   | "File"
@@ -65,6 +67,7 @@ export const COMPONENTS: {
   Map: MapComponent,
   Group: GroupComponent,
   ClientList: ClientSelectComponent,
+  IdentityProviderMultiList: IdentityProviderMultiSelectComponent,
   UserProfileAttributeList: UserProfileAttributeListComponent,
   MultivaluedList: MultiValuedListComponent,
   MultivaluedString: MultiValuedStringComponent,
