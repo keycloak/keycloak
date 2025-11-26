@@ -16,4 +16,4 @@ Typically, {project_name} bases identity providers on the following protocols:
 
 * `SAML v2.0`            
 * `OpenID Connect v1.0`            
-* `OAuth v2.0`            
+
