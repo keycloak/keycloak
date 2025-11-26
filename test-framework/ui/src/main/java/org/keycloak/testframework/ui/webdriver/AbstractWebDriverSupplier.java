@@ -14,15 +14,15 @@ import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.remote.CapabilityType;
 
-public abstract class AbstractWebDriverSupplier implements Supplier<WebDriver, InjectWebDriver> {
+public abstract class AbstractWebDriverSupplier implements Supplier<ManagedWebDriver, InjectWebDriver> {
 
     @Override
-    public WebDriver getValue(InstanceContext<WebDriver, InjectWebDriver> instanceContext) {
-        return getWebDriver();
+    public ManagedWebDriver getValue(InstanceContext<ManagedWebDriver, InjectWebDriver> instanceContext) {
+        return new ManagedWebDriver(getWebDriver());
     }
 
     @Override
-    public boolean compatible(InstanceContext<WebDriver, InjectWebDriver> a, RequestedInstance<WebDriver, InjectWebDriver> b) {
+    public boolean compatible(InstanceContext<ManagedWebDriver, InjectWebDriver> a, RequestedInstance<ManagedWebDriver, InjectWebDriver> b) {
         return true;
     }
 
@@ -32,8 +32,8 @@ public abstract class AbstractWebDriverSupplier implements Supplier<WebDriver, I
     }
 
     @Override
-    public void close(InstanceContext<WebDriver, InjectWebDriver> instanceContext) {
-        instanceContext.getValue().quit();
+    public void close(InstanceContext<ManagedWebDriver, InjectWebDriver> instanceContext) {
+        instanceContext.getValue().driver().quit();
     }
 
     public abstract WebDriver getWebDriver();

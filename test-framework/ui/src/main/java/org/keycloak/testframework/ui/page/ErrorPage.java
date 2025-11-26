@@ -16,7 +16,8 @@
  */
 package org.keycloak.testframework.ui.page;
 
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -31,7 +32,7 @@ public class ErrorPage extends AbstractPage {
     @FindBy(id = "backToApplication")
     private WebElement backToApplicationLink;
 
-    public ErrorPage(WebDriver driver) {
+    public ErrorPage(ManagedWebDriver driver) {
         super(driver);
     }
 

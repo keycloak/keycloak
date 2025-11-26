@@ -4,7 +4,6 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.NetworkInterface;
 import java.net.URL;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -14,25 +13,27 @@ import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.AdminPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.WelcomePage;
+import org.keycloak.testframework.ui.webdriver.BrowserType;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -52,16 +53,22 @@ public class WelcomePageTest {
     RunOnServerClient runOnServer;
 
     @InjectWebDriver
-    WebDriver driver;
+    ManagedWebDriver driver;
 
     @InjectAdminClient
     Keycloak adminClient;
+
+    @InjectPage
+    AdminPage adminPage;
 
     @InjectPage
     WelcomePage welcomePage;
 
     @InjectPage
     LoginPage loginPage;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
 
     @Test
     @Order(1)
@@ -73,27 +80,27 @@ public class WelcomePageTest {
         var clients = adminClient.realms().realm("master").clients();
         clients.findByClientId(Config.getAdminClientId()).stream().findFirst().ifPresent(client -> clients.delete(client.getId()));
 
-        welcomePage.navigateTo();
+        driver.open(keycloakUrls.getBaseUrl());
 
         Assertions.assertEquals("Create an administrative user", welcomePage.getWelcomeMessage());
         Assertions.assertTrue(welcomePage.getWelcomeDescription().startsWith("To get started with Keycloak, you first create an administrative user"));
-        Assertions.assertTrue(driver.getPageSource().contains("form"));
+        Assertions.assertTrue(driver.page().getPageSource().contains("form"));
     }
 
     @Test
     @Order(2)
     public void remoteAccessNoAdmin() throws Exception {
-        driver.get(getPublicServerUrl().toString());
+        driver.open(getPublicServerUrl());
 
         Assertions.assertEquals("Local access required", welcomePage.getWelcomeMessage());
         Assertions.assertTrue(welcomePage.getWelcomeDescription().startsWith("You will need local access to create the administrative user."));
-        Assertions.assertFalse(driver.getPageSource().contains("form"));
+        Assertions.assertFalse(driver.page().getPageSource().contains("form"));
     }
 
     @Test
     @Order(3)
     public void createAdminUser() {
-        welcomePage.navigateTo();
+        driver.open(keycloakUrls.getBaseUrl());
         welcomePage.fillRegistration(Config.getAdminUsername(), Config.getAdminPassword());
         welcomePage.submit();
 
@@ -112,33 +119,32 @@ public class WelcomePageTest {
     @Test
     @Order(4)
     public void localAccessWithAdmin() {
-        welcomePage.navigateTo();
-
-        assertOnAdminConsole(driver);
+        driver.open(keycloakUrls.getBaseUrl());
+        adminPage.assertCurrent();
     }
 
     @Test
     @Order(5)
     public void remoteAccessWithAdmin() throws Exception {
-        driver.get(getPublicServerUrl().toString());
-
-        assertOnAdminConsole(driver);
+        driver.open(getPublicServerUrl().toString());
+        adminPage.assertCurrent();
     }
 
     @Test
     @Order(6)
     public void accessCreatedAdminAccount() throws MalformedURLException {
-        welcomePage.navigateTo();
+        driver.open(keycloakUrls.getBaseUrl());
 
         // HtmlUnit does not support Admin Console as it uses JavaScript modules, so faking the redirect to login pages
-        if (driver.getClass().equals(HtmlUnitDriver.class)) {
-            driver.navigate().to(getFakeLoginRedirect());
+        if (driver.getBrowserType().equals(BrowserType.HTML_UNIT)) {
+            driver.open(getFakeLoginRedirect());
         }
 
+        loginPage.assertCurrent();
         loginPage.fillLogin(Config.getAdminUsername(), Config.getAdminPassword());
         loginPage.submit();
 
-        Assertions.assertEquals("Keycloak Administration Console", driver.getTitle());
+        adminPage.assertCurrent();
     }
 
     /**
@@ -167,10 +173,6 @@ public class WelcomePageTest {
             throw new RuntimeException("Could not determine floating IP address.");
         }
         return new URL("http", floatingIp, 8080, "");
-    }
-
-    static void assertOnAdminConsole(WebDriver driver) {
-        new WebDriverWait(driver, Duration.ofSeconds(10)).until(d -> driver.getTitle().equals("Keycloak Administration Console") || driver.getTitle().equals("Sign in to Keycloak"));
     }
 
     private URL getFakeLoginRedirect() throws MalformedURLException {

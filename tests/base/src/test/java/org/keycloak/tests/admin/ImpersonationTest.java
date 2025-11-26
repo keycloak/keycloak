@@ -77,6 +77,7 @@ import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -92,7 +93,6 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Cookie;
-import org.openqa.selenium.WebDriver;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -132,7 +132,7 @@ public class ImpersonationTest {
     KeycloakUrls keycloakUrls;
 
     @InjectWebDriver
-    WebDriver driver;
+    ManagedWebDriver driver;
 
     @InjectPage
     LoginPage loginPage;
@@ -222,7 +222,7 @@ public class ImpersonationTest {
 
         // Impersonate and get SSO cookie. Setup that cookie for webDriver
         for (Cookie cookie : testSuccessfulImpersonation("realm-admin", managedRealm.getName())) {
-            driver.manage().addCookie(cookie);
+            driver.cookies().add(cookie);
         }
 
         // Open the URL again - should be directly redirected to the app due the SSO login

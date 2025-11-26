@@ -1,20 +1,17 @@
 package org.keycloak.testframework.ui.page;
 
-import java.lang.reflect.Constructor;
-
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.ui.annotations.InjectPage;
-
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 public class PageSupplier  implements Supplier<AbstractPage, InjectPage> {
 
     @Override
     public AbstractPage getValue(InstanceContext<AbstractPage, InjectPage> instanceContext) {
-        WebDriver webDriver = instanceContext.getDependency(WebDriver.class);
-        return createPage(webDriver, instanceContext.getRequestedValueType());
+        ManagedWebDriver webDriver = instanceContext.getDependency(ManagedWebDriver.class);
+        return webDriver.page().createPage(instanceContext.getRequestedValueType());
     }
 
     @Override
@@ -22,12 +19,4 @@ public class PageSupplier  implements Supplier<AbstractPage, InjectPage> {
         return true;
     }
 
-    private <S extends AbstractPage> S createPage(WebDriver webDriver, Class<S> valueType) {
-        try {
-            Constructor<S> constructor = valueType.getDeclaredConstructor(WebDriver.class);
-            return constructor.newInstance(webDriver);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

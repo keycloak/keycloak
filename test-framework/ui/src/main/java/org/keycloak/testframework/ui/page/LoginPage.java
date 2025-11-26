@@ -1,7 +1,8 @@
 package org.keycloak.testframework.ui.page;
 
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -19,7 +20,7 @@ public class LoginPage extends AbstractPage {
     @FindBy(id = "rememberMe")
     private WebElement rememberMe;
 
-    public LoginPage(WebDriver driver) {
+    public LoginPage(ManagedWebDriver driver) {
         super(driver);
     }
 

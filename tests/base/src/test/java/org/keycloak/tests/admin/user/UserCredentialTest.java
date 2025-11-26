@@ -78,7 +78,7 @@ public class UserCredentialTest extends AbstractUserTest {
         loginPage.fillLogin("user1", "paSSw0rd");
         loginPage.submit();
 
-        assertTrue(driver.getPageSource().contains("Happy days"));
+        assertTrue(driver.page().getPageSource().contains("Happy days"));
 
         AccountHelper.logout(managedRealm.admin(), "user1");
     }
@@ -113,7 +113,7 @@ public class UserCredentialTest extends AbstractUserTest {
         loginPage.assertCurrent();
         loginPage.fillLogin(userName, userPass);
         loginPage.submit();
-        assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
         AccountHelper.logout(managedRealm.admin(), userName);
 
         Optional<CredentialRepresentation> passwordCredential =
