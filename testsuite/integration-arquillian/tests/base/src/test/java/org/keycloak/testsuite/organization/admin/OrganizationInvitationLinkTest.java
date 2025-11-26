@@ -484,12 +484,8 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
             // Now try to use the invitation link (should fail)
             driver.navigate().to(invitationLink);
-            
-            // Should show an error page or registration form that fails
-            registerPage.register("testfirst", "testlast", email, "username", "password", "password");
-            
-            // Should show error message about invalid/revoked invitation
-            assertThat(registerPage.getAlertError(), containsString("invitation"));
+            assertThat(infoPage.isCurrent(), is(true));
+            assertThat(infoPage.getInfo(), containsString("The link you clicked is no longer valid. It may have expired or already been used."));
             
             // User should not be created or added to organization
             List<MemberRepresentation> members = organization.members().search(email, Boolean.TRUE, null, null);
@@ -568,6 +564,29 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
             // last invitation should work
             acceptInvitation(organization, user);
+        }
+    }
+
+    @Test
+    public void testInvalidTokenRegistrationAfterResend() throws IOException, MessagingException {
+        String email = "inviteduser@email";
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        organization.members().inviteUser(email, null, null).close();
+
+        String link = getInvitationLinkFromEmail();
+        driver.navigate().to(link);
+        assertThat(driver.getPageSource(), containsString("Create an account to join the neworg organization"));
+
+        List<OrganizationInvitationRepresentation> invitations = organization.invitations().list();
+        assertThat(invitations, Matchers.hasSize(1));
+        OrganizationInvitationRepresentation invitation = invitations.get(0);
+        try (Response response = organization.invitations().resend(invitation.getId())) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            // Try to use the first invitation link (should fail)
+            driver.navigate().to(link);
+            assertThat(infoPage.getInfo(), containsString("The link you clicked is no longer valid. It may have expired or already been used."));
         }
     }
 }
