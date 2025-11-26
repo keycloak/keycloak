@@ -8,6 +8,7 @@ import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepres
 import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.services.clientpolicy.condition.GrantTypeCondition;
+import org.keycloak.services.clientpolicy.condition.IdentityProviderCondition;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -30,10 +31,20 @@ public class ClientPolicyBuilder {
         return new ClientPolicyBuilder(rep);
     }
 
-    public static GrantTypeCondition.Configuration grantTypeConditionConfiguration(String... types) {
+    public static GrantTypeCondition.Configuration grantTypeConditionConfiguration(boolean negativeLogic, String... types) {
         GrantTypeCondition.Configuration config = new GrantTypeCondition.Configuration();
+        config.setNegativeLogic(negativeLogic);
         if (types != null && types.length > 0) {
             config.setGrantTypes(List.of(types));
+        }
+        return config;
+    }
+
+    public static IdentityProviderCondition.Configuration identityProviderConditionConfiguration(boolean negativeLogic, String... aliases) {
+        IdentityProviderCondition.Configuration config = new IdentityProviderCondition.Configuration();
+        config.setNegativeLogic(negativeLogic);
+        if (aliases != null && aliases.length > 0) {
+            config.setIdentityProviderAliases(List.of(aliases));
         }
         return config;
     }

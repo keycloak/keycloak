@@ -84,6 +84,8 @@ public class ProviderConfigProperty {
      */
     public static final String URL_TYPE ="Url";
 
+    public static final String IDENTITY_PROVIDER_MULTI_LIST_TYPE="IdentityProviderMultiList"; // only in admin console, not in themes
+
     protected String name;
     protected String label;
     protected String helpText;
