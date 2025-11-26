@@ -41,7 +41,7 @@ As this has led to a hard-to-configure URL filtering, for example, in reverse pr
 
 To analyze rejected requests in the server log, enable debug logging for `org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter`.
 
-To revert to the previoius behavior and to accept non-normalized URLs, set the option `http-accept-non-normalized-paths` to `true`. With this configuration, enable and review the HTTP access log to identify problematic requests.
+To revert to the previous behavior and to accept non-normalized URLs, set the option `http-accept-non-normalized-paths` to `true`. With this configuration, enable and review the HTTP access log to identify problematic requests.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
@@ -115,7 +115,7 @@ This was only possible by granting the `admin` role to a master realm user, maki
 In this release, realm administrators with the `realm-admin` role can assign admin roles to users in their realm, allowing them to delegate administrative tasks without needing server admin privileges.
 
 If you are using FGAP to delegate administration to users in a realm other than the master realm,
-make sure the users granted with the `realm-admin` role are expected to have this role to avoid privilege scalation.
+make sure the users granted with the `realm-admin` role are expected to have this role to avoid privilege escalation.
 
 The documentation is also updated with additional information about the different types of realm administrators.
 For more information, see link:{adminguide_link}#_fine_grained_permissions[Delegating realm administration using permissions].
@@ -141,6 +141,15 @@ See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to 
 
 When enabling authorization on a new client (creating a Resource Server), Keycloak no longer automatically creates a "Default Resource", a "Default Policy," and a "Default Permission."
 
+=== New logic to delete expired sessions from the database
+
+New logic has been implemented to delete expired sessions from the database.
+Previously, a cluster-aware scheduled task triggered the removal, where only a single Keycloak instance would check and remove expired entries.
+
+In the new version, each Keycloak instance handles different realms.
+Additionally, a new SPI option has been added to control the frequency of the internal deletion task: `--spi-user-sessions--infinispan--session-expiration-period` (value in seconds).
+
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
@@ -162,6 +171,24 @@ The getter methods like `getSession()` have been deprecated in favor of the `ses
 The option `http-accept-non-normalized-paths` was introduced to restore the previous behavior where {project_name} accepted non-normalized URLs.
 
 As this behavior can be problematic for URL filtering, it is deprecated and will be removed in a future release.
+
+=== Deprecation of methods for removing expired authentication sessions from `AuthenticationSessionProvider`
+
+The methods `removeAllExpired()` and `removeExpired(RealmModel realm)` are annotated with the `@Deprecated` annotation.
+They have been deprecated since Keycloak 19, as the built-in implementations now use their own internal cleanup mechanisms.
+If you are providing a custom implementation of this provider, implement an internal mechanism to delete expired sessions.
+
+=== Deprecation of methods for removing expired user sessions from `UserSessionProvider`
+
+The methods `removeAllExpired()` and `removeExpired(RealmModel realm)` are deprecated.
+A new internal cleanup mechanism has been implemented to automatically remove expired sessions from the database.
+If you are providing a custom implementation of this provider, implement an internal mechanism to delete expired sessions.
+
+=== Deprecation of cluster scheduled task `ClearExpiredUserSessions`
+
+As `AuthenticationSessionProvider` and `UserSessionProvider` now have an internal mechanism to delete expired entries, the scheduled task `ClearExpiredUserSessions` has been deprecated.
+It is still triggered in this Keycloak version, but will be removed in a future release.
+
 
 // ------------------------ Removed features ------------------------ //
 == Removed features
