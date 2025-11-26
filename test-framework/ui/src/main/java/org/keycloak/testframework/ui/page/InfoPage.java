@@ -17,7 +17,8 @@
 
 package org.keycloak.testframework.ui.page;
 
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -29,7 +30,7 @@ public class InfoPage extends AbstractPage {
     @FindBy(className = "instruction")
     private WebElement infoMessage;
 
-    public InfoPage(WebDriver driver) {
+    public InfoPage(ManagedWebDriver driver) {
         super(driver);
     }
 

@@ -49,6 +49,7 @@ import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ConsentPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.admin.model.workflow.DeleteUserWorkflowStepTest.DeleteUserWorkflowServerConf;
 import org.keycloak.testsuite.federation.DummyUserFederationProvider;
@@ -58,7 +59,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.openqa.selenium.WebDriver;
 
 import static org.keycloak.models.workflow.DeleteUserStepProvider.PROPAGATE_TO_SP;
 
@@ -82,7 +82,7 @@ public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
     OAuthClient consumerRealmOAuth;
 
     @InjectWebDriver
-    WebDriver driver;
+    ManagedWebDriver driver;
 
     @InjectPage
     LoginPage loginPage;
@@ -124,7 +124,7 @@ public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
         consumerRealmOAuth.openLoginForm();
         loginPage.fillLogin(USER_NAME, USER_PASSWORD);
         loginPage.submit();
-        assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
 
         runScheduledSteps(Duration.ZERO);
 

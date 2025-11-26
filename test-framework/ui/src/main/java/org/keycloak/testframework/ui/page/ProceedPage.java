@@ -16,7 +16,8 @@
  */
 package org.keycloak.testframework.ui.page;
 
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -32,7 +33,7 @@ public class ProceedPage extends AbstractPage {
     @FindBy(linkText = "» Click here to proceed")
     private WebElement proceedLink;
 
-    public ProceedPage(WebDriver driver) {
+    public ProceedPage(ManagedWebDriver driver) {
         super(driver);
     }
 

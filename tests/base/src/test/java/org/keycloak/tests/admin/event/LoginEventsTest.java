@@ -37,6 +37,8 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.LoginPage;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,6 +63,9 @@ public class LoginEventsTest {
     @InjectRunOnServer
     RunOnServerClient runOnServerClient;
 
+    @InjectPage
+    LoginPage loginPage;
+
     @BeforeEach
     public void init() {
         managedRealm.admin().clearEvents();
@@ -71,7 +76,9 @@ public class LoginEventsTest {
     }
 
     private void badLogin() {
-        oAuthClient.doLogin("bad", "user");
+        oAuthClient.openLoginForm();
+        oAuthClient.fillLoginForm("bad", "user");
+        loginPage.assertCurrent();
     }
 
     private void pause(int seconds) {

@@ -16,7 +16,8 @@
  */
 package org.keycloak.testframework.ui.page;
 
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -43,7 +44,7 @@ public class LoginPasswordUpdatePage extends AbstractPage {
     @FindBy(name = "cancel-aia")
     private WebElement cancelAIAButton;
 
-    public LoginPasswordUpdatePage(WebDriver driver) {
+    public LoginPasswordUpdatePage(ManagedWebDriver driver) {
         super(driver);
     }
 

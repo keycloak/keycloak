@@ -18,7 +18,10 @@ import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
@@ -27,7 +30,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.WebDriver;
 
 @KeycloakIntegrationTest(config = PasswordValidationMetricTest.ServerConfigWithMetrics.class)
 public class PasswordValidationMetricTest {
@@ -48,15 +50,25 @@ public class PasswordValidationMetricTest {
     HttpClient httpClient;
 
     @InjectWebDriver
-    WebDriver webDriver;
+    ManagedWebDriver webDriver;
+
+    @InjectPage
+    LoginPage loginPage;
 
     Pattern passValidationRegex = Pattern.compile("keycloak_credentials_password_hashing_validations_total\\{algorithm=\"([^\"]+)\",hashing_strength=\"([^\"]+)\",outcome=\"([^\"]+)\",realm=\"([^\"]+)\"} ([.0-9]*)");
 
     @Test
     void testValidAndInvalidPasswordValidation() throws IOException {
-        runAuthorizationCodeFlow(user.getUsername(), "invalid_password");
-        webDriver.manage().deleteAllCookies();
-        runAuthorizationCodeFlow(user.getUsername(), user.getPassword());
+        oAuthClient.openLoginForm();
+        oAuthClient.fillLoginForm(user.getUsername(), "invalid_password");
+        loginPage.assertCurrent();
+
+        webDriver.cookies().deleteAll();
+
+        oAuthClient.doLogin(user.getUsername(), user.getPassword());
+
+        AccessTokenResponse tokenResponse = oAuthClient.doAccessTokenRequest(oAuthClient.parseLoginResponse().getCode());
+        Assertions.assertTrue(tokenResponse.isSuccess());
 
         String metrics = EntityUtils.toString(httpClient.execute(new HttpGet(keycloakUrls.getMetric())).getEntity());
         Matcher matcher = passValidationRegex.matcher(metrics);

@@ -59,6 +59,7 @@ import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ConsentPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -68,7 +69,6 @@ import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
 
 import static org.keycloak.tests.utils.admin.AdminApiUtil.findClientByClientId;
 
@@ -113,7 +113,7 @@ public class ConsentsTest {
     Events userRealmEvents;
 
     @InjectWebDriver
-    WebDriver driver;
+    ManagedWebDriver driver;
 
     @InjectPage
     LoginPage loginPage;
@@ -149,11 +149,10 @@ public class ConsentsTest {
         loginPage.fillLogin(userFromProviderRealm.getUsername(), userFromProviderRealm.getPassword());
         loginPage.submit();
 
-        consentPage.waitForPage();
         consentPage.assertCurrent();
         consentPage.confirm();
 
-        assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
 
         UsersResource consumerUsers = consumerRealm.admin().users();
         Assertions.assertTrue(consumerUsers.count() > 0, "There must be at least one user");
@@ -231,12 +230,12 @@ public class ConsentsTest {
         // navigate to account console and login
         providerRealmOAuth.openLoginForm();
 
-        loginPage.waitForPage();
+        loginPage.assertCurrent();
         LOGGER.debug("Logging in");
         loginPage.fillLogin(userFromProviderRealm.getUsername(), userFromProviderRealm.getPassword());
         loginPage.submit();
 
-        consentPage.waitForPage();
+        consentPage.assertCurrent();
         LOGGER.debug("Grant consent for offline_access");
         consentPage.assertCurrent();
         consentPage.confirm();
@@ -278,7 +277,7 @@ public class ConsentsTest {
         consentPage.cancel();
 
         // check an error page after cancelling the consent
-        assertTrue(driver.getPageSource().contains("Happy days"));
+        assertTrue(driver.page().getPageSource().contains("Happy days"));
         assertTrue(driver.getCurrentUrl().contains("error=access_denied"));
 
         providerRealmOAuth.openLoginForm();
@@ -288,7 +287,7 @@ public class ConsentsTest {
 
         // successful login
         assertFalse(driver.getCurrentUrl().contains("error"));
-        assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
     }
 
     @Test
@@ -297,7 +296,7 @@ public class ConsentsTest {
         AccessTokenResponse accessTokenResponse = userRealmOAuth.doAccessTokenRequest(response.getCode());
 
         Assertions.assertNotNull(userRealmOAuth.parseLoginResponse().getCode());
-        assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
 
         EventRepresentation loginEvent = userRealmEvents.poll();
         Assertions.assertNotNull(loginEvent);
@@ -369,7 +368,7 @@ public class ConsentsTest {
         consentPage.confirm();
 
         // successful login
-        assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
         AccountHelper.logout(providerRealm.admin(), userFromProviderRealm.getUsername());
     }
 

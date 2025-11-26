@@ -18,7 +18,8 @@ import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import org.apache.http.client.HttpClient;
@@ -45,12 +46,19 @@ public class PasswordValidationMetricCustomTagsTest {
     @InjectHttpClient
     HttpClient httpClient;
 
+    @InjectPage
+    LoginPage loginPage;
+
     Pattern passValidationRegex = Pattern.compile("keycloak_credentials_password_hashing_validations_total\\{realm=\"([^\"]+)\"} ([.0-9]*)");
 
     @Test
     void testValidAndInvalidPasswordValidation() throws IOException {
-        runAuthorizationCodeFlow(user.getUsername(), "invalid_password", false);
-        runAuthorizationCodeFlow(user.getUsername(), user.getPassword(), true);
+        oAuthClient.openLoginForm();
+        oAuthClient.fillLoginForm(user.getUsername(), "invalid_password");
+        loginPage.assertCurrent();
+
+        AuthorizationEndpointResponse authorizationEndpointResponse = oAuthClient.doLogin(user.getUsername(), user.getPassword());
+        Assertions.assertTrue(oAuthClient.doAccessTokenRequest(authorizationEndpointResponse.getCode()).isSuccess());
 
         String metrics = EntityUtils.toString(httpClient.execute(new HttpGet(keycloakUrls.getMetric())).getEntity());
         Matcher matcher = passValidationRegex.matcher(metrics);
@@ -59,16 +67,6 @@ public class PasswordValidationMetricCustomTagsTest {
         Assertions.assertEquals(realm.getName(), matcher.group(1));
         Assertions.assertEquals("2.0", matcher.group(2));
         Assertions.assertFalse(matcher.find());
-    }
-
-    private void runAuthorizationCodeFlow(String username, String password, boolean success) {
-        AuthorizationEndpointResponse authorizationEndpointResponse = oAuthClient.doLogin(username, password);
-        if (!success) {
-            Assertions.assertFalse(authorizationEndpointResponse.isRedirected());
-            return;
-        }
-        AccessTokenResponse accessTokenResponse = oAuthClient.doAccessTokenRequest(authorizationEndpointResponse.getCode());
-        Assertions.assertTrue(accessTokenResponse.isSuccess());
     }
 
     public static class ServerConfigWithMetrics implements KeycloakServerConfig {
