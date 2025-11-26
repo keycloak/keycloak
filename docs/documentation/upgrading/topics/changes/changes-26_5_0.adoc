@@ -146,7 +146,7 @@ When enabling authorization on a new client (creating a Resource Server), Keyclo
 New logic has been implemented to delete expired sessions from the database.
 Previously, a cluster-aware scheduled task triggered the removal, where only a single Keycloak instance would check and remove expired entries.
 
-In the new version, each Keycloak instance handles different realms.
+In the new version removal is handled by all Keycloak instances, with each instance handling the expiration of sessions in different realms
 Additionally, a new SPI option has been added to control the frequency of the internal deletion task: `--spi-user-sessions--infinispan--session-expiration-period` (value in seconds).
 
 

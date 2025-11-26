@@ -25,7 +25,7 @@ import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- * @deprecated to be removed without replacement. The providers are response to purge the expired entries themselves.
+ * @deprecated to be removed without replacement. The providers are responsible for purging the expired entries themselves.
  */
 @Deprecated(since = "26.5", forRemoval = true)
 public class ClearExpiredUserSessions implements ScheduledTask {
