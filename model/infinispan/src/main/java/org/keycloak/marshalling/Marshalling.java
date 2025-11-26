@@ -67,15 +67,15 @@ public final class Marshalling {
     }
 
     // Model
-    // see org.keycloak.models.UserSessionModel.State
+    /** see {@link org.keycloak.models.UserSessionModel.State} */
     public static final int USER_STATE_ENUM = 65536;
-    // see org.keycloak.sessions.CommonClientSessionModel.ExecutionStatus
+    /** see {@link org.keycloak.sessions.CommonClientSessionModel.ExecutionStatus} */
     public static final int CLIENT_SESSION_EXECUTION_STATUS = 65537;
-    // see org.keycloak.component.ComponentModel.MultiMapEntry
+    /** see {@link org.keycloak.component.ComponentModel.MultiMapEntry} */
     public static final int MULTIMAP_ENTRY = 65538;
-    // see org.keycloak.storage.UserStorageProviderModel
+    /** see {@link org.keycloak.storage.UserStorageProviderModel} */
     public static final int USER_STORAGE_PROVIDER_MODES = 65539;
-    // see org.keycloak.storage.managers.UserStorageSyncManager.UserStorageProviderClusterEvent
+    /** see {@link org.keycloak.storage.UserStorageProviderClusterEvent} */
     public static final int USER_STORAGE_PROVIDER_CLUSTER_EVENT = 65540;
 
     // clustering.infinispan package
