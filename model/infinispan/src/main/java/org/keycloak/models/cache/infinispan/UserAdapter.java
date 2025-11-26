@@ -485,7 +485,7 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void joinGroup(GroupModel group) {
-        if (group.getType() == Type.REALM && cached.getGroups(keycloakSession, modelSupplier).contains(group.getId())) {
+        if (group.getType() == Type.REALM && updated == null && cached.getGroups(keycloakSession, modelSupplier).contains(group.getId())) {
             return;
         }
         getDelegateForUpdate();
