@@ -976,9 +976,13 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         createSessions(sessionCount, value -> value % 2 == 0);
         assertEquals(initialCount + sessionCount, getPersistedUserSessionsCount());
 
+        // clear events
+        withRealmConsumer(realmId, (session, realm) -> session.getProvider(EventStoreProvider.class).clear(realm));
+
         // realm has remember me disabled, so half of the session should be deleted by the expiration job.
         triggerExpiration(realmExpiration.maxIdle() + 10);
         assertEquals(initialCount + (sessionCount / 2), getPersistedUserSessionsCount());
+        assertEquals(sessionCount / 2, getUserSessionInvalidRememberMeEventCount(userId));
 
         triggerExpiration(realmExpiration.maxIdle() + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
         assertEquals(initialCount, getPersistedUserSessionsCount());

@@ -95,8 +95,9 @@ import org.hibernate.annotations.DynamicUpdate;
                 query = "SELECT sess.userSessionId, sess.userId" +
                         " FROM PersistentUserSessionEntity sess" +
                         " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe = :rememberMe AND sess.createdOn < :createdOn"),
-        @NamedQuery(name = "deleteInvalidSessions",
-                query = "DELETE FROM PersistentUserSessionEntity sess" +
+        @NamedQuery(name = "findInvalidRegularUserSessions",
+                query = "SELECT sess.userSessionId, sess.userId" +
+                        " FROM PersistentUserSessionEntity sess" +
                         " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe = true"),
 
 })

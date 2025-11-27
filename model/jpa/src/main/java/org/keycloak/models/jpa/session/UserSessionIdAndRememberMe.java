@@ -23,11 +23,10 @@ import java.util.Objects;
 
 import org.keycloak.util.JsonSerialization;
 
-record UserSessionIdAndRememberMe(String userSessionId, String userId, boolean rememberMe) {
+record UserSessionIdAndRememberMe(UserSessionAndUser sessionAndUser, boolean rememberMe) {
 
     UserSessionIdAndRememberMe {
-        Objects.requireNonNull(userSessionId);
-        Objects.requireNonNull(userId);
+        Objects.requireNonNull(sessionAndUser);
     }
 
     static UserSessionIdAndRememberMe fromQueryProjection(Object[] projection) {
@@ -36,13 +35,13 @@ record UserSessionIdAndRememberMe(String userSessionId, String userId, boolean r
         assert projection[1] != null;
         assert projection[2] != null;
         try {
-            String id = String.valueOf(projection[0]);
+            String sessionId = String.valueOf(projection[0]);
             String userId = String.valueOf(projection[1]);
             String data = String.valueOf(projection[2]);
             Map<?, ?> values = JsonSerialization.readValue(data, Map.class);
             // TODO should we make PersistentUserSessionData public?
             boolean rememberMe = Boolean.parseBoolean(String.valueOf(values.get("rememberMe")));
-            return new UserSessionIdAndRememberMe(id, userId, rememberMe);
+            return new UserSessionIdAndRememberMe(new UserSessionAndUser(sessionId, userId), rememberMe);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
