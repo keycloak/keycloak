@@ -6,7 +6,7 @@
         title
     <#elseif section = "header">
         <span class="${properties.kcWebAuthnKeyIcon!}"></span>
-        ${kcSanitize(msg("webauthn-registration-title"))?no_esc}
+        ${msg("webauthn-registration-title")}
     <#elseif section = "form">
 
         <form id="register" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
@@ -22,28 +22,30 @@
         </form>
 
         <script type="module">
+            <#outputformat "JavaScript">
             import { registerByWebAuthn } from "${url.resourcesPath}/js/webauthnRegister.js";
             const registerButton = document.getElementById('registerWebAuthn');
             registerButton.addEventListener("click", function() {
                 const input = {
-                    challenge : '${challenge}',
-                    userid : '${userid}',
-                    username : '${username}',
+                    challenge : ${challenge?c},
+                    userid : ${userid?c},
+                    username : ${username?c},
                     signatureAlgorithms : [<#list signatureAlgorithms as sigAlg>${sigAlg?c},</#list>],
-                    rpEntityName : '${rpEntityName}',
-                    rpId : '${rpId}',
-                    attestationConveyancePreference : '${attestationConveyancePreference}',
-                    authenticatorAttachment : '${authenticatorAttachment}',
-                    requireResidentKey : '${requireResidentKey}',
-                    userVerificationRequirement : '${userVerificationRequirement}',
+                    rpEntityName : ${rpEntityName?c},
+                    rpId : ${rpId?c},
+                    attestationConveyancePreference : ${attestationConveyancePreference?c},
+                    authenticatorAttachment : ${authenticatorAttachment?c},
+                    requireResidentKey : ${requireResidentKey?c},
+                    userVerificationRequirement : ${userVerificationRequirement?c},
                     createTimeout : ${createTimeout?c},
-                    excludeCredentialIds : '${excludeCredentialIds}',
-                    initLabel : "${msg("webauthn-registration-init-label")?no_esc}",
-                    initLabelPrompt : "${msg("webauthn-registration-init-label-prompt")?no_esc}",
-                    errmsg : "${msg("webauthn-unsupported-browser-text")?no_esc}"
+                    excludeCredentialIds : ${excludeCredentialIds?c},
+                    initLabel : ${msg("webauthn-registration-init-label")?c},
+                    initLabelPrompt : ${msg("webauthn-registration-init-label-prompt")?c},
+                    errmsg : ${msg("webauthn-unsupported-browser-text")?c}
                 };
                 registerByWebAuthn(input);
             }, { once: true });
+            </#outputformat>
         </script>
 
         <input type="submit"
