@@ -143,8 +143,8 @@ When enabling authorization on a new client (creating a Resource Server), {proje
 
 === Deleting expired sessions from the database
 
-Previously, a cluster-aware scheduled task triggered the removal, where only a single instance would check and remove expired entries.
-Each {project_name} node triggered this by default every 15 minutes.
+Previously, a single instance of {project_name} would check and remove expired entries using a cluster-aware scheduled task,
+with each node attempting to trigger this task every 15 minutes.
 This led to a situation that the more instances a cluster had, the more often this ran, although it would never run concurrently on two nodes at the same time.
 
 Starting from this version, removal is handled by all {project_name} instances, with each instance handling the expiration of sessions in different realms.
