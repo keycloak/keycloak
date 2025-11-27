@@ -17,7 +17,6 @@ exportimport,4
 feature,4
 federation,5
 forms,5
-i18n,5
 login,4
 migration,4
 model,6

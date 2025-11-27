@@ -16,6 +16,7 @@ public class ManagedWebDriver {
     private AssertionUtils assertionUtils = new AssertionUtils(this);
     private CookieUtils cookieUtils = new CookieUtils(this);
     private PageUtils pageUtils = new PageUtils(this);
+    private NavigateUtils  navigateUtils = new NavigateUtils(this);
     private WaitUtils waitUtils = new WaitUtils(this);
 
     public ManagedWebDriver(WebDriver driver) {
@@ -63,6 +64,10 @@ public class ManagedWebDriver {
 
     public PageUtils page() {
         return pageUtils;
+    }
+
+    public NavigateUtils navigate() {
+        return navigateUtils;
     }
 
     public WaitUtils waiting() {
