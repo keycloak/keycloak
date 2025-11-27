@@ -22,7 +22,7 @@ import org.jboss.logging.Logger;
  */
 public class DefaultSsfSecurityEventTokenParser implements SsfSecurityEventTokenParser {
 
-    protected static final Logger log = Logger.getLogger(DefaultSsfSecurityEventTokenParser.class);
+    protected static final Logger LOG = Logger.getLogger(DefaultSsfSecurityEventTokenParser.class);
 
     protected final KeycloakSession session;
 
@@ -88,7 +88,7 @@ public class DefaultSsfSecurityEventTokenParser implements SsfSecurityEventToken
 
             return jws.readJsonContent(SecurityEventToken.class);
         } catch (Exception e) {
-            log.debug("Failed to decode token", e);
+            LOG.debug("Failed to decode token", e);
             return null;
         }
     }

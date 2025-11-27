@@ -7,7 +7,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.ssf.event.processor.SsfSecurityEventContext;
+import org.keycloak.protocol.ssf.event.processor.SsfEventContext;
 import org.keycloak.protocol.ssf.event.subjects.SubjectId;
 import org.keycloak.protocol.ssf.event.subjects.SubjectUserLookup;
 import org.keycloak.protocol.ssf.event.types.SsfEvent;
@@ -20,7 +20,7 @@ import org.jboss.logging.Logger;
  */
 public class DefaultSsfEventListener implements SsfEventListener {
 
-    protected static final Logger log = Logger.getLogger(DefaultSsfEventListener.class);
+    protected static final Logger LOG = Logger.getLogger(DefaultSsfEventListener.class);
 
     protected final KeycloakSession session;
 
@@ -29,11 +29,11 @@ public class DefaultSsfEventListener implements SsfEventListener {
     }
 
     @Override
-    public void onEvent(SsfSecurityEventContext eventContext, String eventId, SsfEvent event) {
+    public void onEvent(SsfEventContext eventContext, String eventId, SsfEvent event) {
         String eventType = event.getEventType();
         SubjectId subjectId = event.getSubjectId();
         var eventClass = event.getClass();
-        log.debugf("Security event received. eventId=%s eventType=%s subjectId=%s eventClass=%s", eventId, eventType, subjectId, eventClass.getName());
+        LOG.debugf("Security event received. eventId=%s eventType=%s subjectId=%s eventClass=%s", eventId, eventType, subjectId, eventClass.getName());
 
         KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
@@ -41,14 +41,14 @@ public class DefaultSsfEventListener implements SsfEventListener {
         handleSecurityEvent(eventContext, event, realm, subjectId);
     }
 
-    protected void handleSecurityEvent(SsfSecurityEventContext eventContext, SsfEvent ssfEvent, RealmModel realm, SubjectId subjectId) {
+    protected void handleSecurityEvent(SsfEventContext eventContext, SsfEvent ssfEvent, RealmModel realm, SubjectId subjectId) {
 
         if (ssfEvent instanceof SessionRevoked sessionRevoked) {
             handleSessionRevokedEvent(eventContext, realm, subjectId, sessionRevoked);
         }
     }
 
-    protected void handleSessionRevokedEvent(SsfSecurityEventContext eventContext, RealmModel realm, SubjectId subjectId, SessionRevoked sessionRevoked) {
+    protected void handleSessionRevokedEvent(SsfEventContext eventContext, RealmModel realm, SubjectId subjectId, SessionRevoked sessionRevoked) {
 
         // TODO subject is usually refering to a user, but could also be UserSession, an IdentityProvider, Organization etc. so we might need to be more flexible here
 
@@ -63,7 +63,7 @@ public class DefaultSsfEventListener implements SsfEventListener {
             session.sessions().removeUserSession(realm, userSession);
         }
 
-        log.debugf("Removed %s sessions for user. realm=%s userId=%s for SessionRevoked event. reasonAdmin=%s reasonUser=%s",
+        LOG.debugf("Removed %s sessions for user. realm=%s userId=%s for SessionRevoked event. reasonAdmin=%s reasonUser=%s",
                 userSessions.size(), realm.getName(), user.getId(), sessionRevoked.getReasonAdmin(), sessionRevoked.getReasonUser());
     }
 

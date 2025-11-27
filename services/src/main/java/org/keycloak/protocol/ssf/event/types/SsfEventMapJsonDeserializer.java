@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.keycloak.protocol.ssf.event.StandardSecurityEvents;
+import org.keycloak.protocol.ssf.event.SsfStandardEvents;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -33,7 +33,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * </pre>
  * See: https://datatracker.ietf.org/doc/html/rfc8417#section-2.2
  */
-public class SecurityEventMapJsonDeserializer extends JsonDeserializer<Map<String, SsfEvent>> {
+public class SsfEventMapJsonDeserializer extends JsonDeserializer<Map<String, SsfEvent>> {
 
     @Override
     public Map<String, SsfEvent> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
@@ -47,14 +47,14 @@ public class SecurityEventMapJsonDeserializer extends JsonDeserializer<Map<Strin
             String eventType = entry.getKey();  // Extracts event type key
             JsonNode eventData = entry.getValue(); // Extracts event data
 
-            Class<? extends SsfEvent> eventClass = StandardSecurityEvents.getSecurityEventType(eventType);
+            Class<? extends SsfEvent> eventClass = SsfStandardEvents.getSecurityEventType(eventType);
 
             if (eventClass == null) {
                 throw new IOException("Unknown event type: " + eventType);
             }
 
             SsfEvent event = mapper.treeToValue(eventData, eventClass);
-            event.eventType = eventType;  // Manually set event type since it's not in JSON
+            event.setEventType(eventType);  // Manually set event type since it's not in JSON
             eventsMap.put(eventType, event);
         }
 

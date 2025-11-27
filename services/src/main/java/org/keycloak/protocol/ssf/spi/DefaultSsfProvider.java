@@ -7,9 +7,9 @@ import org.keycloak.protocol.ssf.event.listener.DefaultSsfEventListener;
 import org.keycloak.protocol.ssf.event.listener.SsfEventListener;
 import org.keycloak.protocol.ssf.event.parser.DefaultSsfSecurityEventTokenParser;
 import org.keycloak.protocol.ssf.event.parser.SsfSecurityEventTokenParser;
-import org.keycloak.protocol.ssf.event.processor.DefaultSsfSecurityEventProcessor;
-import org.keycloak.protocol.ssf.event.processor.SsfSecurityEventContext;
-import org.keycloak.protocol.ssf.event.processor.SsfSecurityEventProcessor;
+import org.keycloak.protocol.ssf.event.processor.DefaultSsfEventProcessor;
+import org.keycloak.protocol.ssf.event.processor.SsfEventContext;
+import org.keycloak.protocol.ssf.event.processor.SsfEventProcessor;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.transmitter.DefaultSsfTransmitterClient;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterClient;
@@ -24,7 +24,7 @@ public class DefaultSsfProvider implements SsfProvider {
 
     protected SsfSecurityEventTokenParser securityEventTokenParser;
 
-    protected SsfSecurityEventProcessor eventProcessor;
+    protected SsfEventProcessor eventProcessor;
 
     protected SsfEventListener eventListener;
 
@@ -49,10 +49,9 @@ public class DefaultSsfProvider implements SsfProvider {
         return securityEventTokenParser;
     }
 
-    protected SsfSecurityEventProcessor getSecurityEventProcessor() {
+    protected SsfEventProcessor getSecurityEventProcessor() {
         if (eventProcessor == null) {
-            eventProcessor = new DefaultSsfSecurityEventProcessor(
-                    this,
+            eventProcessor = new DefaultSsfEventProcessor(
                     getEventListener(),
                     getVerificationStore()
             );
@@ -101,14 +100,14 @@ public class DefaultSsfProvider implements SsfProvider {
     }
 
     @Override
-    public SecurityEventToken parseSecurityEventToken(String encodedSecurityEventToken, SsfSecurityEventContext securityEventContext) {
+    public SecurityEventToken parseSecurityEventToken(String encodedSecurityEventToken, SsfEventContext eventContext) {
         var parser = getSsfEventParser();
-        return parser.parseSecurityEventToken(encodedSecurityEventToken, securityEventContext.getReceiver());
+        return parser.parseSecurityEventToken(encodedSecurityEventToken, eventContext.getReceiver());
     }
 
     @Override
-    public void processSecurityEvents(SsfSecurityEventContext securityEventContext) {
-        eventProcessor().processSecurityEvents(securityEventContext);
+    public void processEvents(SecurityEventToken securityEventToken, SsfEventContext eventContext) {
+        eventProcessor().processEvents(securityEventToken, eventContext);
     }
 
     @Override
@@ -123,7 +122,7 @@ public class DefaultSsfProvider implements SsfProvider {
         return verificationStore;
     }
 
-    public SsfSecurityEventProcessor eventProcessor() {
+    public SsfEventProcessor eventProcessor() {
         return getSecurityEventProcessor();
     }
 
@@ -138,9 +137,9 @@ public class DefaultSsfProvider implements SsfProvider {
     }
 
     @Override
-    public SsfSecurityEventContext createSecurityEventContext(SecurityEventToken securityEventToken, SsfReceiver receiver) {
+    public SsfEventContext createEventContext(SecurityEventToken securityEventToken, SsfReceiver receiver) {
 
-        SsfSecurityEventContext context = new SsfSecurityEventContext();
+        SsfEventContext context = new SsfEventContext();
         context.setSecurityEventToken(securityEventToken);
         context.setSession(session);
         context.setReceiver(receiver);

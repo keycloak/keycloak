@@ -5,71 +5,68 @@ import java.util.Map;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.event.SecurityEventToken;
-import org.keycloak.protocol.ssf.event.StandardSecurityEvents;
+import org.keycloak.protocol.ssf.event.SsfStandardEvents;
 import org.keycloak.protocol.ssf.event.listener.SsfEventListener;
 import org.keycloak.protocol.ssf.event.parser.SecurityEventTokenParsingException;
 import org.keycloak.protocol.ssf.event.subjects.OpaqueSubjectId;
 import org.keycloak.protocol.ssf.event.subjects.SubjectId;
 import org.keycloak.protocol.ssf.event.types.SsfEvent;
-import org.keycloak.protocol.ssf.event.types.StreamUpdatedEvent;
-import org.keycloak.protocol.ssf.event.types.VerificationEvent;
+import org.keycloak.protocol.ssf.event.types.stream.StreamUpdatedEvent;
+import org.keycloak.protocol.ssf.event.types.stream.VerificationEvent;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.SsfReceiverProviderConfig;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationException;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationState;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStore;
-import org.keycloak.protocol.ssf.spi.SsfProvider;
-import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
 
 /**
- * Default implementation of a {@link SsfSecurityEventProcessor}.
+ * Default implementation of a {@link SsfEventProcessor}.
  * <p>
  * Handles processing of generic SSF events by delegation to {@link SsfEventListener SsfEventListener's} .
- * SSF protocol related events like the {@link VerificationEvent} and {@link StreamUpdatedEvent} are handled directly by this processor.
+ * SSF stream related events like the {@link VerificationEvent} and {@link StreamUpdatedEvent} are handled directly by this processor.
  */
-public class DefaultSsfSecurityEventProcessor implements SsfSecurityEventProcessor {
+public class DefaultSsfEventProcessor implements SsfEventProcessor {
 
-    protected static final Logger log = Logger.getLogger(DefaultSsfSecurityEventProcessor.class);
+    protected static final Logger LOG = Logger.getLogger(DefaultSsfEventProcessor.class);
 
     protected final SsfEventListener ssfEventListener;
 
     protected final SsfStreamVerificationStore verificationStore;
 
-    public DefaultSsfSecurityEventProcessor(SsfProvider ssfProvider, SsfEventListener ssfEventListener, SsfStreamVerificationStore verificationStore) {
+    public DefaultSsfEventProcessor(SsfEventListener ssfEventListener, SsfStreamVerificationStore verificationStore) {
         this.ssfEventListener = ssfEventListener;
         this.verificationStore = verificationStore;
     }
 
     @Override
-    public void processSecurityEvents(SsfSecurityEventContext securityEventContext) {
+    public void processEvents(SecurityEventToken securityEventToken, SsfEventContext eventContext) {
 
-        SecurityEventToken securityEventToken = securityEventContext.getSecurityEventToken();
-        KeycloakContext keycloakContext = securityEventContext.getSession().getContext();
+        KeycloakContext keycloakContext = eventContext.getSession().getContext();
 
-        Map<String, Map<String, Object>> events = securityEventToken.getEvents();
-        SsfReceiverProviderConfig receiverProviderConfig = securityEventContext.getReceiver().getConfig();
+        Map<String, SsfEvent> events = securityEventToken.getEvents();
+        SsfReceiverProviderConfig receiverProviderConfig = eventContext.getReceiver().getConfig();
 
-        log.debugf("Processing SSF events for security event token. realm=%s jti=%s streamId=%s eventCount=%s", keycloakContext.getRealm().getName(), securityEventToken.getId(), receiverProviderConfig.getStreamId(), events.size());
+        LOG.debugf("Processing SSF events for security event token. realm=%s jti=%s streamId=%s eventCount=%s", keycloakContext.getRealm().getName(), securityEventToken.getId(), receiverProviderConfig.getStreamId(), events.size());
 
         for (var entry : events.entrySet()) {
             String eventId = securityEventToken.getId();
             String securityEventType = entry.getKey();
-            Map<String, Object> securityEventData = entry.getValue();
+            SsfEvent securityEventData = entry.getValue();
 
             int successfullyProcessedEventCounter = 0;
             try {
-                SsfEvent ssfEvent = convertEventPayloadToSecurityEvent(securityEventType, securityEventData, securityEventToken);
+                SsfEvent ssfEvent = narrowEventPayloadToSecurityEvent(securityEventType, securityEventData, securityEventToken);
 
                 if (ssfEvent instanceof VerificationEvent verificationEvent) {
                     // special case: handle verification event
                     // See: https://openid.net/specs/openid-sharedsignals-framework-1_0.html#name-verification
                     if (events.size() > 1) {
-                        log.warnf("Found more than one security event for token with verification request. %s", eventId);
+                        LOG.warnf("Found more than one security event for token with verification request. %s", eventId);
                     }
 
-                    boolean verified = handleVerificationEvent(securityEventContext, verificationEvent, eventId);
+                    boolean verified = handleVerificationEvent(eventContext, verificationEvent, eventId);
                     if (verified) {
                         successfullyProcessedEventCounter++;
                         break;
@@ -77,38 +74,38 @@ public class DefaultSsfSecurityEventProcessor implements SsfSecurityEventProcess
                 } else if (ssfEvent instanceof StreamUpdatedEvent streamUpdatedEvent) {
                     // special case: handle stream updated event, e.g. for stream enabled -> stream paused / disabled
                     // See: https://openid.net/specs/openid-sharedsignals-framework-1_0.html#name-stream-updated-event
-                    boolean streamUpdated = handleStreamUpdatedEvent(securityEventContext, streamUpdatedEvent, eventId);
-                    securityEventContext.setProcessedSuccessfully(streamUpdated);
+                    boolean streamUpdated = handleStreamUpdatedEvent(eventContext, streamUpdatedEvent, eventId, securityEventToken);
+                    eventContext.setProcessedSuccessfully(streamUpdated);
                     if (streamUpdated) {
                         successfullyProcessedEventCounter++;
                         break;
                     }
                 } else {
                     // handle generic SSF event
-                    handleEvent(securityEventContext, eventId, ssfEvent);
+                    handleEvent(eventContext, eventId, ssfEvent);
                     successfullyProcessedEventCounter++;
                 }
             } catch (final SecurityEventTokenParsingException spe) {
-                securityEventContext.setProcessedSuccessfully(false);
+                eventContext.setProcessedSuccessfully(false);
                 throw spe;
             }
 
             boolean allEventsProcessedSuccessfully = successfullyProcessedEventCounter == events.size();
-            securityEventContext.setProcessedSuccessfully(allEventsProcessedSuccessfully);
+            eventContext.setProcessedSuccessfully(allEventsProcessedSuccessfully);
         }
     }
 
-    protected SsfEvent convertEventPayloadToSecurityEvent(String securityEventType, Map<String, Object> securityEventData, SecurityEventToken securityEventToken) {
+    protected SsfEvent narrowEventPayloadToSecurityEvent(String eventType, SsfEvent rawSsfEvent, SecurityEventToken securityEventToken) {
 
-        Class<? extends SsfEvent> eventClass = getEventType(securityEventType);
+        Class<? extends SsfEvent> eventClass = getEventType(eventType);
 
         if (eventClass == null) {
-            throw new SecurityEventTokenParsingException("Could not parse security event. Unknown event type: " + securityEventType);
+            throw new SecurityEventTokenParsingException("Could not parse security event. Unknown event type: " + eventType);
         }
 
         try {
-            SsfEvent ssfEvent = convertEventDataToEvent(securityEventData, eventClass);
-            ssfEvent.setEventType(securityEventType);
+            SsfEvent ssfEvent = eventClass.cast(rawSsfEvent);
+            ssfEvent.setEventType(eventType);
             if (ssfEvent.getSubjectId() == null) {
                 // use subjectId from SET if none was provided for the event explicitly.
                 ssfEvent.setSubjectId(securityEventToken.getSubjectId());
@@ -116,30 +113,26 @@ public class DefaultSsfSecurityEventProcessor implements SsfSecurityEventProcess
 
             return ssfEvent;
         } catch (Exception e) {
-            throw new SecurityEventTokenParsingException("Could not parse security event.", e);
+            throw new SecurityEventTokenParsingException("Could not narrow security event.", e);
         }
     }
 
-    protected SsfEvent convertEventDataToEvent(Map<String, Object> securityEventData, Class<? extends SsfEvent> eventClass) {
-        return JsonSerialization.mapper.convertValue(securityEventData, eventClass);
-    }
-
     protected Class<? extends SsfEvent> getEventType(String securityEventType) {
-        return StandardSecurityEvents.getSecurityEventType(securityEventType);
+        return SsfStandardEvents.getSecurityEventType(securityEventType);
     }
 
-    protected boolean handleVerificationEvent(SsfSecurityEventContext securityEventContext, VerificationEvent verificationEvent, String jti) {
+    protected boolean handleVerificationEvent(SsfEventContext eventContext, VerificationEvent verificationEvent, String jti) {
 
-        KeycloakContext keycloakContext = securityEventContext.getSession().getContext();
+        KeycloakContext keycloakContext = eventContext.getSession().getContext();
 
-        String streamId = extractStreamIdFromVerificationEvent(securityEventContext, verificationEvent);
+        String streamId = extractStreamIdFromVerificationEvent(eventContext, verificationEvent);
 
         RealmModel realm = keycloakContext.getRealm();
-        SsfReceiver receiver = securityEventContext.getReceiver();
+        SsfReceiver receiver = eventContext.getReceiver();
         SsfReceiverProviderConfig receiverProviderConfig = receiver.getConfig();
 
         if (!receiverProviderConfig.getStreamId().equals(streamId)) {
-            log.debugf("Verification failed! StreamId mismatch. jti=%s expectedStreamId=%s actualStreamId=%s", jti, receiverProviderConfig.getStreamId(), streamId);
+            LOG.debugf("Verification failed! StreamId mismatch. jti=%s expectedStreamId=%s actualStreamId=%s", jti, receiverProviderConfig.getStreamId(), streamId);
             return false;
         }
 
@@ -149,16 +142,16 @@ public class DefaultSsfSecurityEventProcessor implements SsfSecurityEventProcess
         String expectedState = verificationState == null ? null : verificationState.getState();
 
         if (givenState.equals(expectedState)) {
-            log.debugf("Verification successful. jti=%s state=%s", jti, givenState);
+            LOG.debugf("Verification successful. jti=%s state=%s", jti, givenState);
             verificationStore.clearVerificationState(realm, receiverProviderConfig.getAlias(), receiverProviderConfig.getStreamId());
             return true;
         }
 
-        log.warnf("Verification failed. jti=%s state=%s", jti, givenState);
+        LOG.warnf("Verification failed. jti=%s state=%s", jti, givenState);
         return false;
     }
 
-    protected String extractStreamIdFromVerificationEvent(SsfSecurityEventContext securityEventContext, SsfEvent ssfEvent) {
+    protected String extractStreamIdFromVerificationEvent(SsfEventContext eventContext, SsfEvent ssfEvent) {
         // see: https://openid.net/specs/openid-sharedsignals-framework-1_0.html#section-7.1.4.2
 
         String streamId = null;
@@ -172,7 +165,7 @@ public class DefaultSsfSecurityEventProcessor implements SsfSecurityEventProcess
 
         if (streamId == null) {
             // as a fallback, try to extract subjectId from securityEventToken
-            subjectId = securityEventContext.getSecurityEventToken().getSubjectId();
+            subjectId = eventContext.getSecurityEventToken().getSubjectId();
             if (subjectId instanceof OpaqueSubjectId opaqueSubjectId) {
                 streamId = opaqueSubjectId.getId();
             }
@@ -189,17 +182,16 @@ public class DefaultSsfSecurityEventProcessor implements SsfSecurityEventProcess
         return verificationStore.getVerificationState(realm, alias, streamId);
     }
 
-    protected boolean handleStreamUpdatedEvent(SsfSecurityEventContext securityEventContext, StreamUpdatedEvent streamUpdatedEvent, String jti) {
+    protected boolean handleStreamUpdatedEvent(SsfEventContext eventContext, StreamUpdatedEvent streamUpdatedEvent, String jti, SecurityEventToken securityEventToken) {
 
-        KeycloakContext keycloakContext = securityEventContext.getSession().getContext();
+        KeycloakContext keycloakContext = eventContext.getSession().getContext();
         RealmModel realm = keycloakContext.getRealm();
 
-        SecurityEventToken securityEventToken = securityEventContext.getSecurityEventToken();
         OpaqueSubjectId opaqueSubjectId = (OpaqueSubjectId) securityEventToken.getSubjectId();
 
         // TODO handle stream status update, do we need to do anything here? currently streams are managed outside of Keycloak.
 
-        log.debugf("Handled stream updated event. realm=%s jti=%s streamId=%s newStatus=%s", realm.getName(), jti, opaqueSubjectId.getId(), streamUpdatedEvent.getStatus());
+        LOG.debugf("Handled stream updated event. realm=%s jti=%s streamId=%s newStatus=%s", realm.getName(), jti, opaqueSubjectId.getId(), streamUpdatedEvent.getStatus());
 
         return true;
     }
@@ -207,11 +199,11 @@ public class DefaultSsfSecurityEventProcessor implements SsfSecurityEventProcess
     /**
      * Deleagte generic SSF event handling to {@link SsfEventListener}.
      *
-     * @param securityEventContext
+     * @param
      * @param eventId
      * @param event
      */
-    protected void handleEvent(SsfSecurityEventContext securityEventContext, String eventId, SsfEvent event) {
-        ssfEventListener.onEvent(securityEventContext, eventId, event);
+    protected void handleEvent(SsfEventContext eventContext, String eventId, SsfEvent event) {
+        ssfEventListener.onEvent(eventContext, eventId, event);
     }
 }
