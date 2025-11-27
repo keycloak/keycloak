@@ -16,19 +16,18 @@ import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.ClientsResource;
-import org.keycloak.validation.jakarta.HibernateValidatorProvider;
-import org.keycloak.validation.jakarta.JakartaValidatorProvider;
+import org.keycloak.validation.jakarta.JakartaValidator;
 
 // TODO
 public class DefaultClientService implements ClientService {
     private final KeycloakSession session;
     private final ClientModelMapper mapper;
-    private final JakartaValidatorProvider validator;
+    private final JakartaValidator validator;
 
     public DefaultClientService(KeycloakSession session) {
         this.session = session;
         this.mapper = session.getProvider(ModelMapper.class).clients();
-        this.validator = new HibernateValidatorProvider();
+        this.validator = session.getProvider(JakartaValidator.class);
     }
 
     @Override

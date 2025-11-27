@@ -1,1 +1,2 @@
 org.keycloak.models.mapper.ModelMapperSpi
+org.keycloak.validation.jakarta.JakartaValidatorSpi

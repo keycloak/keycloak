@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>keycloak-admin-v2-providers</artifactId>
-    <name>Keycloak Admin API v2 Providers Layer</name>
+    <name>Keycloak Admin API v2 Providers</name>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -27,6 +27,10 @@
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
         </dependency>
     </dependencies>
 
