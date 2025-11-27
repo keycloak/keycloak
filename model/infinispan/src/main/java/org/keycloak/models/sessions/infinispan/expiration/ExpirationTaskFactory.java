@@ -93,7 +93,7 @@ public final class ExpirationTaskFactory {
     /**
      * Checks if the local instance is responsible to clean up expired sessions from {@code realm}.
      * <p>
-     * Testing purpose only! Do not invoke in production.
+     * Provided for testing purposes only! Do not invoke in production.
      */
     public static boolean isSelectedForExpireSessionsInRealm(KeycloakSession session, RealmModel realm) {
         return getEventTask(session)
@@ -105,7 +105,7 @@ public final class ExpirationTaskFactory {
     /**
      * Manually trigger the expiration task, bypassing any scheduling.
      * <p>
-     * Testing purpose only! Do not invoke in production.
+     * Provided for testing purposes only! Do not invoke in production.
      */
     public static void manualTriggerTask(KeycloakSession session) {
         getEventTask(session).ifPresent(BaseExpirationTask::purgeExpired);

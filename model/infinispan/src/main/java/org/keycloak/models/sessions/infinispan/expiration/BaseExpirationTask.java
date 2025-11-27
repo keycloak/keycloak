@@ -40,10 +40,10 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.jboss.logging.Logger;
 
 /**
- * It contains the main logic to remove expired sessions from the database.
+ * ${@link BaseExpirationTask} contains the main logic to remove expired sessions from the database.
  * <p>
  * The implementation only need to provide a {@link Predicate}, by implementing {@link #realmFilter()}. This
- * {@link Predicate} decides if the session belonging to the {@link RealmModel} must be check in this round.
+ * {@link Predicate} decides if the session belonging to the {@link RealmModel} must be checked in this round.
  */
 abstract class BaseExpirationTask implements ExpirationTask {
 

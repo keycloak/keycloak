@@ -35,9 +35,9 @@ import org.infinispan.distribution.DistributionManager;
  * It takes advantage of the {@link DistributionManager} to assign Keycloak instances to distinct {@link RealmModel},
  * allowing a distributed check of expired session through the cluster.
  * <p>
- * A consistent hash is not updates at the same time in all Keycloak cluster members, it is possible some realms not
- * being checked during an iteration, or the same realms being checked by two or more Keycloak instances. We rely on
- * database locking in the later case.
+ * A consistent hash is not updated at the same time in all Keycloak cluster members. It is possible some realms are not
+ * checked during an iteration, or the same realms are checked by multiple Keycloak instances. In the latter case, we rely on
+ * database locking.
  */
 class DistributionAwareExpirationTask extends BaseExpirationTask implements Predicate<RealmModel> {
 

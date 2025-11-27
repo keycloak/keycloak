@@ -21,7 +21,7 @@ package org.keycloak.models.sessions.infinispan.expiration;
  * Lifecycle methods for the user and client session expiration task.
  * <p>
  * The task must remove the expired sessions from the database. The {@link #start()} is invoked when Keycloak starts
- * and, respectively, {@link #stop()} when Keycloak shuts.
+ * and, respectively, {@link #stop()} when Keycloak is shutdown.
  */
 public interface ExpirationTask {
 
