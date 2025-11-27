@@ -17,9 +17,10 @@
 
 package org.keycloak.models.sessions.infinispan.expiration;
 
+import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.LongConsumer;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import org.keycloak.models.KeycloakSessionFactory;
@@ -40,7 +41,7 @@ class RemoteExpirationTask extends BaseExpirationTask {
 
     private final ConsistentHash consistentHash;
 
-    RemoteExpirationTask(KeycloakSessionFactory factory, ScheduledExecutorService scheduledExecutorService, int intervalSeconds, LongConsumer onTaskExecuted, RemoteCache<String, String> workCache, String nodeName) {
+    RemoteExpirationTask(KeycloakSessionFactory factory, ScheduledExecutorService scheduledExecutorService, int intervalSeconds, Consumer<Duration> onTaskExecuted, RemoteCache<String, String> workCache, String nodeName) {
         super(factory, scheduledExecutorService, intervalSeconds, onTaskExecuted);
         this.consistentHash = ConsistentHash.create(workCache, scheduledExecutorService, UUID.randomUUID().toString(), nodeName, intervalSeconds);
     }

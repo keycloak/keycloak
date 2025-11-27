@@ -17,9 +17,9 @@
 
 package org.keycloak.models.sessions.infinispan.expiration;
 
+import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.function.LongConsumer;
+import java.util.function.Consumer;
 
 import org.keycloak.Config;
 import org.keycloak.config.MetricsOptions;
@@ -51,13 +51,13 @@ public final class ExpirationTaskFactory {
      * @return A new instance of {@link ExpirationTask}. This instance is not started yet.
      */
     public static ExpirationTask create(KeycloakSession session, int expirationPeriodSeconds) {
-        LongConsumer onTaskExecuted = null;
+        Consumer<Duration> onTaskExecuted = null;
         if (Config.scope().root().getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), Boolean.FALSE)) {
             var timer = Timer.builder("keycloak.session.expiration.task")
                     .description("Keycloak User and Client sessions expiration tasks duration.")
                     .publishPercentileHistogram()
                     .register(Metrics.globalRegistry);
-            onTaskExecuted = value -> timer.record(value, TimeUnit.NANOSECONDS);
+            onTaskExecuted = timer::record;
         }
         return create(session, expirationPeriodSeconds, onTaskExecuted);
     }
@@ -67,11 +67,11 @@ public final class ExpirationTaskFactory {
      *
      * @param session                     The current {@link KeycloakSession}.
      * @param expirationTaskPeriodSeconds The period when the database is checked for expired sessions.
-     * @param onTaskExecuted              An optional {@link LongConsumer}. It is invoked when a database expiration
+     * @param onTaskExecuted              An optional {@link Consumer<Duration>}. It is invoked when a database expiration
      *                                    check finishes with its duration, in nanoseconds.
      * @return A new instance of {@link ExpirationTask}. This instance is not started yet.
      */
-    public static ExpirationTask create(KeycloakSession session, int expirationTaskPeriodSeconds, LongConsumer onTaskExecuted) {
+    public static ExpirationTask create(KeycloakSession session, int expirationTaskPeriodSeconds, Consumer<Duration> onTaskExecuted) {
         var connectionProvider = session.getProvider(InfinispanConnectionProvider.class);
         var schedulerExecutor = connectionProvider.getScheduledExecutor();
 

@@ -18,6 +18,8 @@
 package org.keycloak.models.sessions.infinispan.expiration;
 
 import java.lang.invoke.MethodHandles;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -27,7 +29,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.LongConsumer;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import org.keycloak.models.KeycloakSessionFactory;
@@ -51,10 +53,10 @@ abstract class BaseExpirationTask implements ExpirationTask {
     private final KeycloakSessionFactory factory;
     private final int delaySeconds;
     private final ScheduledExecutorService scheduledExecutorService;
-    private final LongConsumer onTaskExecuted;
+    private final Consumer<Duration> onTaskExecuted;
     private final ExecutorService executorService;
 
-    BaseExpirationTask(KeycloakSessionFactory factory, ScheduledExecutorService scheduledExecutorService, int delaySeconds, LongConsumer onTaskExecuted) {
+    BaseExpirationTask(KeycloakSessionFactory factory, ScheduledExecutorService scheduledExecutorService, int delaySeconds, Consumer<Duration> onTaskExecuted) {
         this.factory = Objects.requireNonNull(factory);
         this.delaySeconds = delaySeconds;
         this.scheduledExecutorService = Objects.requireNonNull(scheduledExecutorService);
@@ -102,7 +104,7 @@ abstract class BaseExpirationTask implements ExpirationTask {
             logUnexpectedErrorDuringDeletion(t);
         } finally {
             long duration = System.nanoTime() - start;
-            onTaskExecuted.accept(duration);
+            onTaskExecuted.accept(Duration.of(duration, ChronoUnit.NANOS));
             log.debugf("PurgeExpired tasks completed in %s seconds", TimeUnit.NANOSECONDS.toSeconds(duration));
         }
     }
