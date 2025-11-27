@@ -10,14 +10,10 @@ import org.keycloak.protocol.ssf.endpoint.SsfSetPushDeliveryFailureResponse;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.SsfReceiverProviderFactory;
 
-import org.jboss.logging.Logger;
-
 /**
  * SsfVerificationResource is used to verify the stream and event delivery setup for a SSF Receiver
  */
 public class SsfVerificationResource {
-
-    protected static final Logger log = Logger.getLogger(SsfVerificationResource.class);
 
     protected final KeycloakSession session;
 
@@ -30,8 +26,9 @@ public class SsfVerificationResource {
 
     /**
      * This calls the verification_endpoint provided by the associated SSF Transmitter.
-     *
+     * <p>
      * Note that the verification_endpoint is called with the current stream_id and the transmitter access token.
+     *
      * @return
      */
     @POST
