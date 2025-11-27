@@ -101,4 +101,9 @@ public abstract class AbstractUpdatesCommand extends AbstractAutoBuildCommand {
         Config.init(configProvider);
     }
 
+    @Override
+    protected OptimizedMixin getOptimizedMixin() {
+        return optimizedMixin;
+    }
+
 }
