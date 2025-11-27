@@ -20,12 +20,10 @@ import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.DefaultClientService;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.ClientsResource;
-import org.keycloak.services.util.ObjectMapperResolver;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 
 public class DefaultClientApi implements ClientApi {
 
@@ -38,9 +36,6 @@ public class DefaultClientApi implements ClientApi {
     private final ClientResource clientResource;
     private final ClientsResource clientsResource;
     private final String clientId;
-    private final ObjectMapper objectMapper;
-
-    private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
 
     public DefaultClientApi(KeycloakSession session, ClientsResource clientsResource, ClientResource clientResource, String clientId) {
         this.session = session;
@@ -51,7 +46,6 @@ public class DefaultClientApi implements ClientApi {
         this.clientsResource = clientsResource;
         this.clientResource = clientResource;
         this.clientId = clientId;
-        this.objectMapper = MAPPER;
     }
 
     @Override
@@ -87,9 +81,7 @@ public class DefaultClientApi implements ClientApi {
             if (mediaType == null || !mediaType.isCompatible(mergePatch)) {
                 throw new WebApplicationException("Unsupported media type", Response.Status.UNSUPPORTED_MEDIA_TYPE);
             }
-
-            final ObjectReader objectReader = objectMapper.readerForUpdating(client);
-            ClientRepresentation updated = objectReader.readValue(patch);
+            ClientRepresentation updated = JsonSerialization.mapper.readerForUpdating(client).readValue(patch);
 
             validateUnknownFields(updated, response);
             return clientService.createOrUpdate(clientsResource, clientResource, realm, updated, true).representation();
