@@ -5,14 +5,10 @@ import jakarta.ws.rs.Path;
 import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.services.resource.RealmResourceProvider;
 
-import org.jboss.logging.Logger;
-
 /**
  * Exposes the realm specific SSF resource endpoints.
  */
 public class SsfRealmResourceProvider implements RealmResourceProvider {
-
-    protected static final Logger log = Logger.getLogger(SsfRealmResourceProvider.class);
 
     @Override
     public Object getResource() {

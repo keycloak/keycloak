@@ -17,6 +17,7 @@ public class ChangeTypeDeserializer extends JsonDeserializer<CredentialChange.Ch
     private static final Map<String, CredentialChange.ChangeType> CHANGE_TYPE_MAP = new HashMap<>();
 
     static {
+        // some existing SSF transmitters use (older) non standard change type identifiers.
         CHANGE_TYPE_MAP.put("create", CredentialChange.ChangeType.CREATE);
         CHANGE_TYPE_MAP.put("created", CredentialChange.ChangeType.CREATE); // Handle non-standard form
 
@@ -24,7 +25,7 @@ public class ChangeTypeDeserializer extends JsonDeserializer<CredentialChange.Ch
         CHANGE_TYPE_MAP.put("revoked", CredentialChange.ChangeType.REVOKE); // Handle non-standard form
 
         CHANGE_TYPE_MAP.put("update", CredentialChange.ChangeType.UPDATE);
-        CHANGE_TYPE_MAP.put("updated", CredentialChange.ChangeType.UPDATE);
+        CHANGE_TYPE_MAP.put("updated", CredentialChange.ChangeType.UPDATE); // Handle non-standard form
 
         CHANGE_TYPE_MAP.put("delete", CredentialChange.ChangeType.DELETE);
         CHANGE_TYPE_MAP.put("deleted", CredentialChange.ChangeType.DELETE); // Handle non-standard form

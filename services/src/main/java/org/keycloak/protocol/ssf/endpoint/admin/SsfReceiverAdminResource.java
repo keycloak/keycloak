@@ -11,14 +11,11 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.logging.Logger;
 
 /**
  * SsfReceiverAdminResource provides access to SSF Receiver operations. SSS
  */
 public class SsfReceiverAdminResource {
-
-    protected static final Logger log = Logger.getLogger(SsfReceiverAdminResource.class);
 
     protected final KeycloakSession session;
     protected final AdminPermissionEvaluator auth;
@@ -30,8 +27,9 @@ public class SsfReceiverAdminResource {
 
     /**
      * Exposes the {@link SsfVerificationResource} to verify the stream and event delivery setup for a SSF Receiver as a custom endpoint.
-     *
+     * <p>
      * The endpoint is available via {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/receivers/{receiverAlias}/verify}
+     *
      * @param alias
      * @return
      */
