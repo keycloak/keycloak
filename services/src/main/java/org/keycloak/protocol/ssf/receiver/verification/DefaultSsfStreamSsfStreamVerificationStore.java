@@ -13,12 +13,19 @@ import org.keycloak.models.SingleUseObjectProvider;
  */
 public class DefaultSsfStreamSsfStreamVerificationStore implements SsfStreamVerificationStore {
 
-    protected int verificationStateLifespanSeconds = 300;
+    public static final int DEFAULT_VERIFICATION_STATE_LIFESPAN_SECONDS = 300;
+
+    protected int verificationStateLifespanSeconds;
 
     protected final KeycloakSession session;
 
     public DefaultSsfStreamSsfStreamVerificationStore(KeycloakSession session) {
+        this(session, DEFAULT_VERIFICATION_STATE_LIFESPAN_SECONDS);
+    }
+
+    public DefaultSsfStreamSsfStreamVerificationStore(KeycloakSession session, int verificationStateLifespanSeconds) {
         this.session = session;
+        this.verificationStateLifespanSeconds = verificationStateLifespanSeconds;
     }
 
     @Override

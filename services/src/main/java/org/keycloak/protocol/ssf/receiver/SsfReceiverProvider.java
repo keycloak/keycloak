@@ -1,15 +1,8 @@
 package org.keycloak.protocol.ssf.receiver;
 
-import java.util.UUID;
-
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterClient;
-import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
-import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationState;
-import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStore;
-import org.keycloak.protocol.ssf.spi.SsfProvider;
 
 import org.jboss.logging.Logger;
 
@@ -18,7 +11,7 @@ import org.jboss.logging.Logger;
  */
 public class SsfReceiverProvider implements IdentityProvider<SsfReceiverProviderConfig> {
 
-    protected static final Logger log = Logger.getLogger(SsfReceiverProvider.class);
+    protected static final Logger LOG = Logger.getLogger(SsfReceiverProvider.class);
 
     private final KeycloakSession session;
 
@@ -36,29 +29,13 @@ public class SsfReceiverProvider implements IdentityProvider<SsfReceiverProvider
 
     public void requestVerification() {
 
-        // TODO make this callable from the Admin UI via the SSF Identity Provider component.
-
-        var ssfProvider = session.getProvider(SsfProvider.class);
-        SsfStreamVerificationStore storage = ssfProvider.verificationStore();
+        // TODO make this callable from the Admin UI via the SSF "Identity Provider" component.
 
         // store current verification state
         RealmModel realm = session.getContext().getRealm();
-        SsfStreamVerificationState verificationState = storage.getVerificationState(realm, model.getAlias(), model.getStreamId());
-        if (verificationState != null) {
-            log.debugf("Resetting pending verification state for stream. %s", verificationState);
-            storage.clearVerificationState(realm, model.getAlias(), model.getStreamId());
-        }
 
         SsfReceiver ssfReceiver = SsfReceiverProviderFactory.getSsfReceiver(session, realm, model.getAlias());
-
-        SsfTransmitterClient ssfTransmitterClient = ssfProvider.transmitterClient();
-        SsfTransmitterMetadata transmitterMetadata = ssfTransmitterClient.loadTransmitterMetadata(ssfReceiver);
-        String state = UUID.randomUUID().toString();
-
-        // store current verification state
-        storage.setVerificationState(realm, model.getAlias(), model.getStreamId(), state);
-
-        ssfProvider.verificationClient().requestVerification(ssfReceiver, transmitterMetadata, state);
+        ssfReceiver.requestVerification();
     }
 
     @Override
