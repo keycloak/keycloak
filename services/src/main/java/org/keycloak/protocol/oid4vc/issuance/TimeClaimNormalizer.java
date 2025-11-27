@@ -23,7 +23,7 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 
-import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.utils.StringUtil;
@@ -71,9 +71,9 @@ public class TimeClaimNormalizer {
     }
 
     public TimeClaimNormalizer(RealmModel realm) {
-        this.strategy = parseStrategy(realm.getAttribute(Oid4VciConstants.TIME_CLAIMS_STRATEGY));
-        this.randomizeWindowSeconds = parseRandomizeWindow(realm.getAttribute(Oid4VciConstants.TIME_RANDOMIZE_WINDOW_SECONDS));
-        this.roundUnit = parseRoundUnit(realm.getAttribute(Oid4VciConstants.TIME_ROUND_UNIT));
+        this.strategy = parseStrategy(realm.getAttribute(OID4VCIConstants.TIME_CLAIMS_STRATEGY));
+        this.randomizeWindowSeconds = parseRandomizeWindow(realm.getAttribute(OID4VCIConstants.TIME_RANDOMIZE_WINDOW_SECONDS));
+        this.roundUnit = parseRoundUnit(realm.getAttribute(OID4VCIConstants.TIME_ROUND_UNIT));
     }
 
     TimeClaimNormalizer(Strategy strategy, Long randomizeWindowSeconds, RoundUnit roundUnit) {

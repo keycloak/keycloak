@@ -18,13 +18,15 @@
 
 package org.keycloak.constants;
 
+import org.keycloak.representations.idm.RoleRepresentation;
+
 /**
  * Keycloak specific constants related to OID4VC and related functionality. Useful for example for internal constants (EG. name of Keycloak realm attributes).
  * For protocol constants defined in the specification, see {@link org.keycloak.OID4VCConstants}
  *
  * @author Pascal Knüppel
  */
-public final class Oid4VciConstants {
+public final class OID4VCIConstants {
 
     public static final String OID4VC_PROTOCOL = "oid4vc";
 
@@ -38,6 +40,9 @@ public final class Oid4VciConstants {
     public static final String SOURCE_ENDPOINT = "source_endpoint";
     public static final String BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE = "batch_credential_issuance.batch_size";
 
-    private Oid4VciConstants() {
+    public static final RoleRepresentation CREDENTIAL_OFFER_CREATE =
+            new RoleRepresentation("credential-offer-create", "Allow credential offer creation", false);
+
+    private OID4VCIConstants() {
     }
 }

@@ -24,7 +24,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
-import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
@@ -68,7 +68,7 @@ public class OID4VCTimeNormalizationSdJwtTest extends OID4VCSdJwtIssuingEndpoint
                 ClientScopeRepresentation clientScope = fromJsonString(clientScopeString, ClientScopeRepresentation.class);
                 ProtocolMapperRepresentation pr = new ProtocolMapperRepresentation();
                 pr.setName("iat-from-vc");
-                pr.setProtocol(Oid4VciConstants.OID4VC_PROTOCOL);
+                pr.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
                 pr.setProtocolMapper(OID4VCIssuedAtTimeClaimMapper.MAPPER_ID);
                 pr.setConfig(Map.of(
                         OID4VCIssuedAtTimeClaimMapper.CLAIM_NAME, "iat",
