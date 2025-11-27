@@ -41,7 +41,7 @@ As this has led to a hard-to-configure URL filtering, for example, in reverse pr
 
 To analyze rejected requests in the server log, enable debug logging for `org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter`.
 
-To revert to the previoius behavior and to accept non-normalized URLs, set the option `http-accept-non-normalized-paths` to `true`. With this configuration, enable and review the HTTP access log to identify problematic requests.
+To revert to the previous behavior and to accept non-normalized URLs, set the option `http-accept-non-normalized-paths` to `true`. With this configuration, enable and review the HTTP access log to identify problematic requests.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
@@ -121,7 +121,7 @@ This was only possible by granting the `admin` role to a master realm user, maki
 In this release, realm administrators with the `realm-admin` role can assign admin roles to users in their realm, allowing them to delegate administrative tasks without needing server admin privileges.
 
 If you are using FGAP to delegate administration to users in a realm other than the master realm,
-make sure the users granted with the `realm-admin` role are expected to have this role to avoid privilege scalation.
+make sure the users granted with the `realm-admin` role are expected to have this role to avoid privilege escalation.
 
 The documentation is also updated with additional information about the different types of realm administrators.
 For more information, see link:{adminguide_link}#_fine_grained_permissions[Delegating realm administration using permissions].
@@ -145,7 +145,25 @@ See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to 
 
 === Default authorization policies and resources are no longer auto-created
 
-When enabling authorization on a new client (creating a Resource Server), Keycloak no longer automatically creates a "Default Resource", a "Default Policy," and a "Default Permission."
+When enabling authorization on a new client (creating a Resource Server), {project_name} no longer automatically creates a "Default Resource", a "Default Policy," and a "Default Permission."
+
+=== Deleting expired sessions from the database
+
+Previously, a single instance of {project_name} would check and remove expired entries using a cluster-aware scheduled task,
+with each node attempting to trigger this task every 15 minutes.
+This led to a situation that the more instances a cluster had, the more often this ran, although it would never run concurrently on two nodes at the same time.
+
+Starting from this version, removal is handled by all {project_name} instances, with each instance handling the expiration of sessions in different realms.
+Additionally, a new SPI option has been added to control the frequency of the internal deletion task: `--spi-user-sessions--infinispan--session-expiration-period` (value in seconds). By default, this runs every three minutes.
+If you now add more instances to a clusters, the expiration is still run at the same interval.
+
+Previously, {project_name} deleted sessions from the database only once the session idle time including the remember-me idle time had passed.
+
+With the new setup and persistent user sessions enabled, sessions are deleted more timely based on the realm settings on session lifetime and idle time, including the remember me settings. For this, the table `OFFLINE_USER_SESSION` now has a new column `REMEMBER_ME`, that is filled for new sessions and updated incrementally for existing sessions.
+The deletion is triggered currently three minutes after the session has expired to allow for clock skew between instances. Note that this interval can change in future release as we optimize this functionality.
+
+For each expired user session there is a new user event `USER_SESSION_DELETED` fired.
+As part of this change, the process now deletes rows from the table in small batches, instead of issuing a delete statements that affects the whole table. This should allow for better response times when there are a lot of sessions in the table.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
@@ -156,7 +174,7 @@ The following sections provide details on deprecated features.
 
 In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, you can choose to send the client secret as *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`). While this violates RFC 6749, it can be used to keep the default behavior of earlier versions of {project_name}.
 
-This behavior is deprecated and will be removed in a future version of Keycloak.
+This behavior is deprecated and will be removed in a future version of {project_name}.
 
 === `AuthenticationManager.AuthResult` is now a record
 
@@ -168,6 +186,24 @@ The getter methods like `getSession()` have been deprecated in favor of the `ses
 The option `http-accept-non-normalized-paths` was introduced to restore the previous behavior where {project_name} accepted non-normalized URLs.
 
 As this behavior can be problematic for URL filtering, it is deprecated and will be removed in a future release.
+
+=== Deprecation of methods for removing expired authentication sessions from `AuthenticationSessionProvider`
+
+The methods `removeAllExpired()` and `removeExpired(RealmModel realm)` are annotated with the `@Deprecated` annotation.
+They have been deprecated since {project_name} 19, as the built-in implementations now use their own internal cleanup mechanisms.
+If you are providing a custom implementation of this provider, implement an internal mechanism to delete expired sessions.
+
+=== Deprecation of methods for removing expired user sessions from `UserSessionProvider`
+
+The methods `removeAllExpired()` and `removeExpired(RealmModel realm)` are deprecated.
+A new internal cleanup mechanism has been implemented to automatically remove expired sessions from the database.
+If you are providing a custom implementation of this provider, implement an internal mechanism to delete expired sessions.
+
+=== Deprecation of cluster scheduled task `ClearExpiredUserSessions`
+
+As `AuthenticationSessionProvider` and `UserSessionProvider` now have an internal mechanism to delete expired entries, the scheduled task `ClearExpiredUserSessions` has been deprecated.
+It is still triggered in this {project_name} version, but will be removed in a future release.
+
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

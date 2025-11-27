@@ -37,6 +37,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
+import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.sessions.infinispan.changes.CacheHolder;
 import org.keycloak.models.sessions.infinispan.changes.ClientSessionPersistentChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
@@ -52,6 +53,8 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.AbstractUserSessionClusterListener;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
+import org.keycloak.models.sessions.infinispan.expiration.ExpirationTask;
+import org.keycloak.models.sessions.infinispan.expiration.ExpirationTaskFactory;
 import org.keycloak.models.sessions.infinispan.listeners.EmbeddedUserSessionExpirationListener;
 import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionProvider;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
@@ -86,12 +89,16 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private static final boolean DEFAULT_USE_CACHES = true;
     public static final String CONFIG_USE_BATCHES = "useBatches";
     private static final boolean DEFAULT_USE_BATCHES = false;
+    public static final String CONFIG_EXPIRATION_PERIOD = "sessionExpirationPeriod";
+    private static final int DEFAULT_EXPIRATION_PERIOD_SECONDS = 180;
+    private static final int MIN_EXPIRATION_PERIOD_SECONDS = 60; // anything below 60s may be too frequent.
 
     private CacheHolder<String, UserSessionEntity> sessionCacheHolder;
     private CacheHolder<String, UserSessionEntity> offlineSessionCacheHolder;
     private CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionCacheHolder;
     private CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineClientSessionCacheHolder;
     private EmbeddedUserSessionExpirationListener expirationListener;
+    private ExpirationTask expirationTask;
 
     private long offlineSessionCacheEntryLifespanOverride;
 
@@ -103,6 +110,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private int maxBatchSize;
     private boolean useCaches;
     private boolean useBatches;
+    private int expirationPeriodSeconds;
 
     @Override
     public UserSessionProvider create(KeycloakSession session) {
@@ -146,6 +154,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         if (useBatches) {
             asyncQueuePersistentUpdate = new ArrayBlockingQueue<>(1000);
         }
+        expirationPeriodSeconds = getExpirationPeriodSeconds(config);
     }
 
     @Override
@@ -213,6 +222,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             // The expired events for offline sessions will be triggered by JpaUserSessionPersisterProvider
             sessionCacheHolder.cache().addListener(expirationListener);
         }
+        // we need the expiration task running because of offline sessions
+        try (var session = factory.create()) {
+            expirationTask = ExpirationTaskFactory.create(session, expirationPeriodSeconds);
+        }
+        expirationTask.start();
     }
 
     public void initializePersisterLastSessionRefreshStore(final KeycloakSessionFactory sessionFactory) {
@@ -303,6 +317,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             sessionCacheHolder.cache().removeListener(expirationListener);
             expirationListener = null;
         }
+        if (expirationTask != null) {
+            expirationTask.stop();
+            expirationTask = null;
+        }
     }
 
     @Override
@@ -328,6 +346,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         info.put(CONFIG_MAX_BATCH_SIZE, Integer.toString(maxBatchSize));
         info.put(CONFIG_USE_CACHES, Boolean.toString(useCaches));
         info.put(CONFIG_USE_BATCHES, Boolean.toString(useBatches));
+        info.put(CONFIG_EXPIRATION_PERIOD, Integer.toString(expirationPeriodSeconds));
         return info;
     }
 
@@ -367,12 +386,39 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 .helpText("Enable or disable caches. Enabled by default unless the external feature to use only external remote caches is used")
                 .add();
 
+        builder.property()
+                .name(CONFIG_EXPIRATION_PERIOD)
+                .type("int")
+                .helpText("Sets the expiration task run period, to remove the expired session.")
+                .add();
+
         return builder.build();
     }
 
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
         return Set.of(InfinispanConnectionProvider.class, InfinispanTransactionProvider.class);
+    }
+
+    public ExpirationTask getExpirationTask() {
+        return expirationTask;
+    }
+
+    /**
+     * @param outTimeUnit The {@link TimeUnit} of the return value.
+     * @return The configured expiration task period, in the {@code outTimeUnit}.
+     */
+    public static long getExpirationPeriod(TimeUnit outTimeUnit) {
+        return outTimeUnit.convert(getExpirationPeriodSeconds(Config.scope(UserSessionSpi.NAME, InfinispanUtils.EMBEDDED_PROVIDER_ID)), TimeUnit.SECONDS);
+    }
+
+    private static int getExpirationPeriodSeconds(Config.Scope config) {
+        int period = config.getInt(CONFIG_EXPIRATION_PERIOD, DEFAULT_EXPIRATION_PERIOD_SECONDS);
+        if (period < MIN_EXPIRATION_PERIOD_SECONDS) {
+            log.warnf("Invalid user session expiration task period of %d seconds. Setting it to %d seconds", period, MIN_EXPIRATION_PERIOD_SECONDS);
+            return MIN_EXPIRATION_PERIOD_SECONDS;
+        }
+        return period;
     }
 
     private VolatileTransactions createVolatileTransaction(KeycloakSession session) {
