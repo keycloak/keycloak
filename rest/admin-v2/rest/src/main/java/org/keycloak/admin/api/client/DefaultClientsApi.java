@@ -9,7 +9,6 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
@@ -24,7 +23,6 @@ import org.keycloak.validation.jakarta.JakartaValidatorProvider;
 public class DefaultClientsApi implements ClientsApi {
     private final KeycloakSession session;
     private final RealmModel realm;
-    private final HttpResponse response;
     private final ClientService clientService;
     private final JakartaValidatorProvider validator;
     private final ClientsResource clientsResource;
@@ -33,7 +31,6 @@ public class DefaultClientsApi implements ClientsApi {
         this.session = session;
         this.realm = Objects.requireNonNull(session.getContext().getRealm());
         this.clientService = new DefaultClientService(session);
-        this.response = session.getContext().getHttpResponse();
         this.validator = new HibernateValidatorProvider();
         this.clientsResource = clientsResource;
     }
@@ -44,12 +41,13 @@ public class DefaultClientsApi implements ClientsApi {
     }
 
     @Override
-    public ClientRepresentation createClient(@Valid ClientRepresentation client) {
+    public Response createClient(@Valid ClientRepresentation client) {
         try {
-            DefaultClientApi.validateUnknownFields(client, response);
+            DefaultClientApi.validateUnknownFields(client);
             validator.validate(client, CreateClientDefault.class);
-            response.setStatus(Response.Status.CREATED.getStatusCode());
-            return clientService.createOrUpdate(clientsResource, null, realm, client, false).representation();
+            return Response.status(Response.Status.CREATED)
+                    .entity(clientService.createOrUpdate(clientsResource, null, realm, client, false).representation())
+                    .build();
         } catch (ServiceException e) {
             throw new WebApplicationException(e.getMessage(), e.getSuggestedResponseStatus().orElse(Response.Status.BAD_REQUEST));
         }
