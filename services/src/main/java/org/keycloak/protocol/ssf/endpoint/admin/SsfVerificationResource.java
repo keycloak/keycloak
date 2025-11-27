@@ -8,7 +8,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.endpoint.SsfSetPushDeliveryFailureResponse;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
-import org.keycloak.protocol.ssf.receiver.SsfReceiverProviderFactory;
+import org.keycloak.protocol.ssf.receiver.registration.SsfReceiverRegistrationProviderFactory;
 
 /**
  * SsfVerificationResource is used to verify the stream and event delivery setup for a SSF Receiver
@@ -35,7 +35,7 @@ public class SsfVerificationResource {
     public Response triggerVerification() {
 
         RealmModel realm = session.getContext().getRealm();
-        SsfReceiver receiver = SsfReceiverProviderFactory.getSsfReceiver(session, realm, receiverAlias);
+        SsfReceiver receiver = SsfReceiverRegistrationProviderFactory.getSsfReceiver(session, realm, receiverAlias);
         if (receiver == null) {
             return Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON_TYPE).build();
         }

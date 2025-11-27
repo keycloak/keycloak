@@ -1,5 +1,6 @@
 package org.keycloak.protocol.ssf.receiver;
 
+import org.keycloak.protocol.ssf.receiver.registration.SsfReceiverRegistrationProviderConfig;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
 import org.keycloak.provider.Provider;
 
@@ -12,7 +13,7 @@ public interface SsfReceiver extends Provider {
     default void close() {
     }
 
-    SsfReceiverProviderConfig getConfig();
+    SsfReceiverRegistrationProviderConfig getConfig();
 
     SsfTransmitterMetadata getTransmitterMetadata();
 

@@ -14,7 +14,7 @@ import org.keycloak.protocol.ssf.event.types.SsfEvent;
 import org.keycloak.protocol.ssf.event.types.stream.StreamUpdatedEvent;
 import org.keycloak.protocol.ssf.event.types.stream.VerificationEvent;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
-import org.keycloak.protocol.ssf.receiver.SsfReceiverProviderConfig;
+import org.keycloak.protocol.ssf.receiver.registration.SsfReceiverRegistrationProviderConfig;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationException;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationState;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStore;
@@ -46,7 +46,7 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
         KeycloakContext keycloakContext = eventContext.getSession().getContext();
 
         Map<String, SsfEvent> events = securityEventToken.getEvents();
-        SsfReceiverProviderConfig receiverProviderConfig = eventContext.getReceiver().getConfig();
+        SsfReceiverRegistrationProviderConfig receiverProviderConfig = eventContext.getReceiver().getConfig();
 
         LOG.debugf("Processing SSF events for security event token. realm=%s jti=%s streamId=%s eventCount=%s", keycloakContext.getRealm().getName(), securityEventToken.getId(), receiverProviderConfig.getStreamId(), events.size());
 
@@ -129,7 +129,7 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
 
         RealmModel realm = keycloakContext.getRealm();
         SsfReceiver receiver = eventContext.getReceiver();
-        SsfReceiverProviderConfig receiverProviderConfig = receiver.getConfig();
+        SsfReceiverRegistrationProviderConfig receiverProviderConfig = receiver.getConfig();
 
         if (!receiverProviderConfig.getStreamId().equals(streamId)) {
             LOG.debugf("Verification failed! StreamId mismatch. jti=%s expectedStreamId=%s actualStreamId=%s", jti, receiverProviderConfig.getStreamId(), streamId);

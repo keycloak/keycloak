@@ -1,4 +1,4 @@
-package org.keycloak.protocol.ssf.spi;
+package org.keycloak.protocol.ssf.receiver.spi;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -6,7 +6,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-public class DefaultSsfProviderFactory implements SsfProviderFactory, EnvironmentDependentProviderFactory {
+public class DefaultSsfReceiverProviderFactory implements SsfReceiverProviderFactory, EnvironmentDependentProviderFactory {
 
     @Override
     public String getId() {
@@ -14,8 +14,8 @@ public class DefaultSsfProviderFactory implements SsfProviderFactory, Environmen
     }
 
     @Override
-    public SsfProvider create(KeycloakSession keycloakSession) {
-        return new DefaultSsfProvider(keycloakSession);
+    public SsfReceiverProvider create(KeycloakSession keycloakSession) {
+        return new DefaultSsfReceiverProvider(keycloakSession);
     }
 
     @Override

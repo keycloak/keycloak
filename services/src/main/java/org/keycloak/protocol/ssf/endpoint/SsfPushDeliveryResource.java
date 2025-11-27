@@ -20,8 +20,8 @@ import org.keycloak.protocol.ssf.event.SecurityEventToken;
 import org.keycloak.protocol.ssf.event.parser.SecurityEventTokenParsingException;
 import org.keycloak.protocol.ssf.event.processor.SsfEventContext;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
-import org.keycloak.protocol.ssf.receiver.SsfReceiverProviderFactory;
-import org.keycloak.protocol.ssf.spi.SsfProvider;
+import org.keycloak.protocol.ssf.receiver.registration.SsfReceiverRegistrationProviderFactory;
+import org.keycloak.protocol.ssf.receiver.spi.SsfReceiverProvider;
 import org.keycloak.services.Urls;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.urls.UrlType;
@@ -45,10 +45,10 @@ public class SsfPushDeliveryResource {
 
     public static final String APPLICATION_SECEVENT_JWT_TYPE = "application/secevent+jwt";
 
-    protected final SsfProvider ssfProvider;
+    protected final SsfReceiverProvider ssfReceiverProvider;
 
-    public SsfPushDeliveryResource(SsfProvider ssfProvider) {
-        this.ssfProvider = ssfProvider;
+    public SsfPushDeliveryResource(SsfReceiverProvider ssfReceiverProvider) {
+        this.ssfReceiverProvider = ssfReceiverProvider;
     }
 
     /**
@@ -117,7 +117,7 @@ public class SsfPushDeliveryResource {
 
         checkPushAuthorizationToken(session, receiver, authToken);
 
-        var eventContext = ssfProvider.createEventContext(null, receiver);
+        var eventContext = ssfReceiverProvider.createEventContext(null, receiver);
 
         SecurityEventToken securityEventToken = parseSecurityEventToken(session, encodedSecurityEventToken, eventContext);
 
@@ -149,12 +149,12 @@ public class SsfPushDeliveryResource {
     }
 
     protected SsfReceiver lookupReceiver(KeycloakSession session, String receiverAlias, KeycloakContext context) {
-        return SsfReceiverProviderFactory.getSsfReceiver(session, context.getRealm(), receiverAlias);
+        return SsfReceiverRegistrationProviderFactory.getSsfReceiver(session, context.getRealm(), receiverAlias);
     }
 
     protected SecurityEventToken parseSecurityEventToken(KeycloakSession session, String encodedSecurityEventToken, SsfEventContext eventContext) {
         try {
-            return ssfProvider.parseSecurityEventToken(encodedSecurityEventToken, eventContext);
+            return ssfReceiverProvider.parseSecurityEventToken(encodedSecurityEventToken, eventContext);
         } catch (SecurityEventTokenParsingException sepe) {
             // see https://www.rfc-editor.org/rfc/rfc8935.html#section-2.4
             throw SsfSetPushDeliveryFailureResponse.newFailureResponse(Response.Status.BAD_REQUEST, SsfSetPushDeliveryFailureResponse.ERROR_INVALID_REQUEST, sepe.getMessage());
@@ -162,7 +162,7 @@ public class SsfPushDeliveryResource {
     }
 
     protected void handleEvents(KeycloakSession session, SecurityEventToken securityEventToken, SsfEventContext eventContext) {
-        ssfProvider.processEvents(securityEventToken, eventContext);
+        ssfReceiverProvider.processEvents(securityEventToken, eventContext);
     }
 
     protected void checkIssuer(KeycloakSession session, SsfReceiver receiver, SecurityEventToken securityEventToken, String issuer) {
