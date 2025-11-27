@@ -4,8 +4,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Registry of SubjectId formats defined in RFC9493 Subject Identifiers.
+ * <p>
+ * See: https://datatracker.ietf.org/doc/html/rfc9493
+ */
 public class SubjectIds {
 
+    /**
+     * Holds all known standard SUBJECT_ID_FORMATS
+     */
     public final static Map<String, Class<? extends SubjectId>> SUBJECT_ID_FORMAT_TYPES;
 
     static {

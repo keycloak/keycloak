@@ -14,7 +14,7 @@ import org.jboss.logging.Logger;
 
 public class DefaultSsfReceiver implements SsfReceiver {
 
-    protected static final Logger log = Logger.getLogger(DefaultSsfReceiver.class);
+    protected static final Logger LOG = Logger.getLogger(DefaultSsfReceiver.class);
 
     protected final KeycloakSession session;
 
@@ -46,12 +46,12 @@ public class DefaultSsfReceiver implements SsfReceiver {
         RealmModel realm = session.getContext().getRealm();
         boolean cleared = ssfTransmitterClient.clearTransmitterMetadata(this);
         if (cleared) {
-            log.debugf("Cleared Transmitter metadata. realm=%s receiver=%s", realm.getName(), receiverProviderConfig.getAlias());
+            LOG.debugf("Cleared Transmitter metadata. realm=%s receiver=%s", realm.getName(), receiverProviderConfig.getAlias());
         }
 
         SsfTransmitterMetadata transmitterMetadata = ssfTransmitterClient.loadTransmitterMetadata(this);
 
-        log.debugf("Refreshed Transmitter metadata. realm=%s receiver=%s", realm.getName(), receiverProviderConfig.getAlias());
+        LOG.debugf("Refreshed Transmitter metadata. realm=%s receiver=%s", realm.getName(), receiverProviderConfig.getAlias());
 
         return transmitterMetadata;
     }
@@ -90,7 +90,7 @@ public class DefaultSsfReceiver implements SsfReceiver {
         RealmModel realm = session.getContext().getRealm();
         SsfStreamVerificationState verificationState = storage.getVerificationState(realm, receiverProviderConfig.getAlias(), receiverProviderConfig.getStreamId());
         if (verificationState != null) {
-            log.debugf("Resetting pending verification state for stream. %s", verificationState);
+            LOG.debugf("Resetting pending verification state for stream. %s", verificationState);
             storage.clearVerificationState(realm, receiverProviderConfig.getAlias(), receiverProviderConfig.getStreamId());
         }
 
