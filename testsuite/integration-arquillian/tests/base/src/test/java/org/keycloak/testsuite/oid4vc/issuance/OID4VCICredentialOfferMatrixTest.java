@@ -69,11 +69,11 @@ import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
 import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
 import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.namedClientId;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 /**
@@ -182,7 +182,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
             fail("Expected " + INVALID_CREDENTIAL_OFFER_REQUEST.name());
         } catch (RuntimeException ex) {
             List.of(INVALID_CREDENTIAL_OFFER_REQUEST.name(), "Pre-Authorized credential offer requires a target user")
-                    .forEach(it -> assertTrue(ex.getMessage().contains(it), ex.getMessage() + " does not contain " + it));
+                    .forEach(it -> assertTrue(ex.getMessage() + " does not contain " + it, ex.getMessage().contains(it)));
         }
     }
 
@@ -198,7 +198,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
             fail("Expected " + INVALID_CREDENTIAL_OFFER_REQUEST.name());
         } catch (RuntimeException ex) {
             List.of(INVALID_CREDENTIAL_OFFER_REQUEST.name(), "Pre-Authorized credential offer requires a target user")
-                    .forEach(it -> assertTrue(ex.getMessage().contains(it), ex.getMessage() + " does not contain " + it));
+                    .forEach(it -> assertTrue(ex.getMessage() + " does not contain " + it, ex.getMessage().contains(it)));
         }
     }
 
@@ -404,8 +404,8 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         String s = IOUtils.toString(credentialRequestResponse.getEntity().getContent(), StandardCharsets.UTF_8);
         CredentialResponse credentialResponse = JsonSerialization.valueFromString(s, CredentialResponse.class);
 
-        assertNotNull(credentialResponse.getCredentials(), "The credentials array should be present in the response.");
-        assertFalse(credentialResponse.getCredentials().isEmpty(), "The credentials array should not be empty.");
+        assertNotNull("The credentials array should be present in the response", credentialResponse.getCredentials());
+        assertFalse("The credentials array should not be empty", credentialResponse.getCredentials().isEmpty());
         return credentialResponse;
     }
 
@@ -413,7 +413,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
         String scope = ctx.supportedCredentialConfiguration.getScope();
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
-        assertNotNull(credentialObj, "The first credential in the array should not be null.");
+        assertNotNull("The first credential in the array should not be null", credentialObj);
 
         String expUsername = ctx.appUser != null ? ctx.appUser : namedUserId;
 
@@ -436,8 +436,8 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     ) throws Exception {
         JsonWebToken jwt = JsonSerialization.readValue(new JWSInput(token).getContent(), JsonWebToken.class);
         List<String> wasScopes = Arrays.stream(((String) jwt.getOtherClaims().get("scope")).split("\\s")).toList();
-        includeScopes.forEach(it -> assertTrue(wasScopes.contains(it), "Missing scope: " + it));
-        excludeScopes.forEach(it -> assertFalse(wasScopes.contains(it), "Invalid scope: " + it));
+        includeScopes.forEach(it -> assertTrue("Missing scope: " + it, wasScopes.contains(it)));
+        excludeScopes.forEach(it -> assertFalse("Invalid scope: " + it, wasScopes.contains(it)));
 
         List<String> allRoles = new ArrayList<>();
         Object realmAccess = jwt.getOtherClaims().get("realm_access");
@@ -454,7 +454,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
                 allRoles.addAll(v.get("roles"));
             });
         }
-        includeRoles.forEach(it -> assertTrue(allRoles.contains(it), "Missing role: " + it));
-        excludeRoles.forEach(it -> assertFalse(allRoles.contains(it), "Invalid role: " + it));
+        includeRoles.forEach(it -> assertTrue("Missing role: " + it, allRoles.contains(it)));
+        excludeRoles.forEach(it -> assertFalse("Invalid role: " + it, allRoles.contains(it)));
     }
 }
