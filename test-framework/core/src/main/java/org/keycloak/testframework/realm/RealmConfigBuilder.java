@@ -251,13 +251,13 @@ public class RealmConfigBuilder {
         return this;
     }
 
-    public RealmConfigBuilder clientProfile(ClientProfileRepresentation clienProfileRep) {
+    public RealmConfigBuilder clientProfile(ClientProfileRepresentation clientProfileRep) {
         ClientProfilesRepresentation clientProfiles = rep.getParsedClientProfiles();
         if (clientProfiles == null) {
             clientProfiles = new ClientProfilesRepresentation();
         }
         List<ClientProfileRepresentation> profiles = clientProfiles.getProfiles();
-        profiles.add(clienProfileRep);
+        profiles.add(clientProfileRep);
         rep.setParsedClientProfiles(clientProfiles);
         return this;
     }
