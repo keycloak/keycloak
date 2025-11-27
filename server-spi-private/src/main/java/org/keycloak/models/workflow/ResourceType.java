@@ -36,7 +36,7 @@ public enum ResourceType {
             org.keycloak.events.admin.ResourceType.CLIENT,
             List.of(OperationType.CREATE),
             List.of(EventType.CLIENT_LOGIN, EventType.CLIENT_REGISTER),
-            (session, id) -> session.users().getUserById(session.getContext().getRealm(), id)
+            (session, id) -> session.clients().getClientById(session.getContext().getRealm(), id)
     );
 
     private final org.keycloak.events.admin.ResourceType supportedAdminResourceType;

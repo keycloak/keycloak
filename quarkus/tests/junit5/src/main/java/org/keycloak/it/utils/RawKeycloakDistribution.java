@@ -132,9 +132,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         ProcessBuilder builder = pb.directory(distPath.resolve("bin").toFile());
 
         // TODO: it is possible to debug kcadm, but it's more involved
-        if (true) {
+        if (debug) {
             builder.environment().put("DEBUG_SUSPEND", "y");
-            builder.environment().put("DEBUG_PORT", "5005");
         }
 
         builder.environment().putAll(envVars);

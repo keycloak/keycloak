@@ -46,7 +46,7 @@ public class DisableClientStepProvider implements WorkflowStepProvider {
         ClientModel client = session.clients().getClientById(realm, context.getResourceId());
 
         if (client != null && client.isEnabled()) {
-            log.debugv("Disabling user {0} ({1})", client.getName(), client.getId());
+            log.debugv("Disabling client {0} ({1})", client.getName(), client.getId());
             client.setEnabled(false);
         }
     }

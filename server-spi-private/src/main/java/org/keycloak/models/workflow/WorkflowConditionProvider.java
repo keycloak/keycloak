@@ -1,13 +1,13 @@
 package org.keycloak.models.workflow;
 
+import java.util.Set;
+
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 import org.keycloak.provider.Provider;
-
-import java.util.Set;
 
 public interface WorkflowConditionProvider extends Provider {
 
