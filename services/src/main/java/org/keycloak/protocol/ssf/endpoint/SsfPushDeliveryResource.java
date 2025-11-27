@@ -18,7 +18,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.event.SecurityEventToken;
 import org.keycloak.protocol.ssf.event.parser.SecurityEventTokenParsingException;
-import org.keycloak.protocol.ssf.event.processor.SsfSecurityEventContext;
+import org.keycloak.protocol.ssf.event.processor.SsfEventContext;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.SsfReceiverProviderFactory;
 import org.keycloak.protocol.ssf.spi.SsfProvider;
@@ -41,7 +41,7 @@ import static org.keycloak.utils.KeycloakSessionUtil.getKeycloakSession;
  */
 public class SsfPushDeliveryResource {
 
-    protected static final Logger log = Logger.getLogger(SsfPushDeliveryResource.class);
+    protected static final Logger LOG = Logger.getLogger(SsfPushDeliveryResource.class);
 
     public static final String APPLICATION_SECEVENT_JWT_TYPE = "application/secevent+jwt";
 
@@ -106,40 +106,40 @@ public class SsfPushDeliveryResource {
 
         SsfReceiver receiver = lookupReceiver(session, receiverAlias, context);
         if (receiver == null) {
-            log.debugf("Ignoring security event token received for unknown receiver. receiverAlias=%s", receiverAlias);
+            LOG.debugf("Ignoring security event token received for unknown receiver. receiverAlias=%s", receiverAlias);
             throw SsfSetPushDeliveryFailureResponse.newFailureResponse(Response.Status.BAD_REQUEST, SsfSetPushDeliveryFailureResponse.ERROR_INVALID_REQUEST, "Invalid receiver");
         }
 
         if (!receiver.getConfig().isEnabled()) {
-            log.debugf("Ignoring security event token received for disabled receiver. receiverAlias=%s", receiverAlias);
+            LOG.debugf("Ignoring security event token received for disabled receiver. receiverAlias=%s", receiverAlias);
             throw SsfSetPushDeliveryFailureResponse.newFailureResponse(Response.Status.BAD_REQUEST, SsfSetPushDeliveryFailureResponse.ERROR_INVALID_REQUEST, "Receiver is disabled");
         }
 
         checkPushAuthorizationToken(session, receiver, authToken);
 
-        var securityEventContext = ssfProvider.createSecurityEventContext(null, receiver);
+        var eventContext = ssfProvider.createEventContext(null, receiver);
 
-        SecurityEventToken securityEventToken = parseSecurityEventToken(session, encodedSecurityEventToken, securityEventContext);
+        SecurityEventToken securityEventToken = parseSecurityEventToken(session, encodedSecurityEventToken, eventContext);
 
         RealmModel realm = context.getRealm();
         if (securityEventToken == null) {
-            log.debugf("Rejected invalid security event token. realm=%s receiverAlias=%s", realm.getName(), receiverAlias);
+            LOG.debugf("Rejected invalid security event token. realm=%s receiverAlias=%s", realm.getName(), receiverAlias);
             throw SsfSetPushDeliveryFailureResponse.newFailureResponse(Response.Status.BAD_REQUEST, SsfSetPushDeliveryFailureResponse.ERROR_INVALID_REQUEST, "Invalid security event token");
         }
 
         // Security Event Token is parsed and signature validated from here on
-        log.debugf("Ingesting valid security event token. realm=%s receiverAlias=%s jti=%s", realm.getName(), receiverAlias, securityEventToken.getId());
+        LOG.debugf("Ingesting valid security event token. realm=%s receiverAlias=%s jti=%s", realm.getName(), receiverAlias, securityEventToken.getId());
 
         // Perform additional validations
         checkIssuer(session, receiver, securityEventToken, securityEventToken.getIssuer());
         checkAudience(session, receiver, securityEventToken, securityEventToken.getAudience());
 
         // Security Event Token is valid
-        securityEventContext.setSecurityEventToken(securityEventToken);
+        eventContext.setSecurityEventToken(securityEventToken);
 
-        handleSecurityEvent(session, securityEventContext);
+        handleEvents(session, securityEventToken, eventContext);
 
-        if (!securityEventContext.isProcessedSuccessfully()) {
+        if (!eventContext.isProcessedSuccessfully()) {
             // See 2.3. Failure Response https://www.rfc-editor.org/rfc/rfc8935.html#section-2.3
             return Response.serverError().type(MediaType.APPLICATION_JSON).build();
         }
@@ -152,17 +152,17 @@ public class SsfPushDeliveryResource {
         return SsfReceiverProviderFactory.getSsfReceiver(session, context.getRealm(), receiverAlias);
     }
 
-    protected SecurityEventToken parseSecurityEventToken(KeycloakSession session, String encodedSecurityEventToken, SsfSecurityEventContext securityEventContext) {
+    protected SecurityEventToken parseSecurityEventToken(KeycloakSession session, String encodedSecurityEventToken, SsfEventContext eventContext) {
         try {
-            return ssfProvider.parseSecurityEventToken(encodedSecurityEventToken, securityEventContext);
+            return ssfProvider.parseSecurityEventToken(encodedSecurityEventToken, eventContext);
         } catch (SecurityEventTokenParsingException sepe) {
             // see https://www.rfc-editor.org/rfc/rfc8935.html#section-2.4
             throw SsfSetPushDeliveryFailureResponse.newFailureResponse(Response.Status.BAD_REQUEST, SsfSetPushDeliveryFailureResponse.ERROR_INVALID_REQUEST, sepe.getMessage());
         }
     }
 
-    protected void handleSecurityEvent(KeycloakSession session, SsfSecurityEventContext securityEventContext) {
-        ssfProvider.processSecurityEvents(securityEventContext);
+    protected void handleEvents(KeycloakSession session, SecurityEventToken securityEventToken, SsfEventContext eventContext) {
+        ssfProvider.processEvents(securityEventToken, eventContext);
     }
 
     protected void checkIssuer(KeycloakSession session, SsfReceiver receiver, SecurityEventToken securityEventToken, String issuer) {

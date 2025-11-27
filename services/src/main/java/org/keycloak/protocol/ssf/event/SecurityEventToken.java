@@ -5,6 +5,8 @@ import java.util.Map;
 
 import org.keycloak.protocol.ssf.event.subjects.SubjectId;
 import org.keycloak.protocol.ssf.event.subjects.SubjectIdJsonDeserializer;
+import org.keycloak.protocol.ssf.event.types.SsfEvent;
+import org.keycloak.protocol.ssf.event.types.SsfEventMapJsonDeserializer;
 import org.keycloak.representations.JsonWebToken;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -25,7 +27,8 @@ public class SecurityEventToken extends JsonWebToken {
     protected String txn;
 
     @JsonProperty("events")
-    protected Map<String, Map<String,Object>> events;
+    @JsonDeserialize(using = SsfEventMapJsonDeserializer.class)
+    protected Map<String, SsfEvent> events;
 
     public SecurityEventToken txn(String txn) {
         setTxn(txn);
@@ -45,14 +48,14 @@ public class SecurityEventToken extends JsonWebToken {
         return this;
     }
 
-    public Map<String, Map<String,Object>> getEvents() {
+    public Map<String, SsfEvent> getEvents() {
         if (events == null) {
             events = new LinkedHashMap<>();
         }
         return events;
     }
 
-    public void setEvents(Map<String, Map<String,Object>> events) {
+    public void setEvents(Map<String, SsfEvent> events) {
         this.events = events;
     }
 

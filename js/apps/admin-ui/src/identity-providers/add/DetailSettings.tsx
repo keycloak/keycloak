@@ -465,7 +465,8 @@ export default function DetailSettings() {
   const sections = [
     {
       title: t("generalSettings"),
-      isHidden: isSPIFFE || isKubernetes || isJWTAuthorizationGrant  || isSsfReceiver,
+      isHidden:
+        isSPIFFE || isKubernetes || isJWTAuthorizationGrant || isSsfReceiver,
       panel: (
         <FormAccess
           role="manage-identity-providers"
@@ -613,7 +614,8 @@ export default function DetailSettings() {
     },
     {
       title: t("advancedSettings"),
-      isHidden: isSPIFFE || isKubernetes || isJWTAuthorizationGrant || isSsfReceiver,
+      isHidden:
+        isSPIFFE || isKubernetes || isJWTAuthorizationGrant || isSsfReceiver,
       panel: (
         <FormAccess
           role="manage-identity-providers"
@@ -665,7 +667,12 @@ export default function DetailSettings() {
           </Tab>
           <Tab
             id="mappers"
-            isHidden={isSPIFFE || isKubernetes || isJWTAuthorizationGrant || isSsfReceiver}
+            isHidden={
+              isSPIFFE ||
+              isKubernetes ||
+              isJWTAuthorizationGrant ||
+              isSsfReceiver
+            }
             data-testid="mappers-tab"
             title={<TabTitleText>{t("mappers")}</TabTitleText>}
             {...mappersTab}

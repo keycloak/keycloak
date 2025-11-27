@@ -10,7 +10,7 @@ import org.jboss.logging.Logger;
 
 public class DefaultSsfVerificationClient implements SsfVerificationClient {
 
-    protected static final Logger log = Logger.getLogger(DefaultSsfVerificationClient.class);
+    protected static final Logger LOG = Logger.getLogger(DefaultSsfVerificationClient.class);
 
     protected final KeycloakSession session;
 
@@ -25,10 +25,10 @@ public class DefaultSsfVerificationClient implements SsfVerificationClient {
         verificationRequest.setStreamId(receiver.getConfig().getStreamId());
         verificationRequest.setState(state);
 
-        log.debugf("Sending verification request to %s. %s", metadata.getVerificationEndpoint(), verificationRequest);
+        LOG.debugf("Sending verification request to %s. %s", metadata.getVerificationEndpoint(), verificationRequest);
         var verificationHttpCall = prepareHttpCall(metadata.getVerificationEndpoint(), receiver.getConfig().getTransmitterAccessToken(), verificationRequest);
         try (var response = verificationHttpCall.asResponse()) {
-            log.debugf("Received verification response. status=%s", response.getStatus());
+            LOG.debugf("Received verification response. status=%s", response.getStatus());
 
             if (response.getStatus() != 204) {
                 throw new SsfStreamVerificationException("Expected a 204 response but got: " + response.getStatus());

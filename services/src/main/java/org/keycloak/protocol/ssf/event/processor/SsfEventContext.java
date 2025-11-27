@@ -7,7 +7,7 @@ import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 /**
  * Context object for SecurityEventToken processing.
  */
-public class SsfSecurityEventContext {
+public class SsfEventContext {
 
     protected KeycloakSession session;
 

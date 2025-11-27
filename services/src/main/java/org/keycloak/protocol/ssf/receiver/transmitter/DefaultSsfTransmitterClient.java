@@ -16,7 +16,7 @@ import org.jboss.logging.Logger;
 
 public class DefaultSsfTransmitterClient implements SsfTransmitterClient {
 
-    protected static final Logger log = Logger.getLogger(DefaultSsfTransmitterClient.class);
+    protected static final Logger LOG = Logger.getLogger(DefaultSsfTransmitterClient.class);
 
     protected final KeycloakSession session;
 
@@ -48,10 +48,10 @@ public class DefaultSsfTransmitterClient implements SsfTransmitterClient {
         RealmModel realm = session.getContext().getRealm();
         String url = receiver.getTransmitterConfigUrl();
 
-        log.debugf("Sending transmitter metadata request. realm=%s url=%s", realm.getName(), url);
+        LOG.debugf("Sending transmitter metadata request. realm=%s url=%s", realm.getName(), url);
         var request = createHttpClient().doGet(url);
         try (var response = request.asResponse()) {
-            log.debugf("Received transmitter metadata response. realm=%s status=%s", realm.getName(), response.getStatus());
+            LOG.debugf("Received transmitter metadata response. realm=%s status=%s", realm.getName(), response.getStatus());
             if (response.getStatus() != 200) {
                 throw new SsfException("Expected a 200 response but got: " + response.getStatus());
             }
@@ -71,7 +71,7 @@ public class DefaultSsfTransmitterClient implements SsfTransmitterClient {
         try {
             String jsonData = JsonSerialization.writeValueAsString(metadata);
             cache.put(makeCacheKey(url), getCacheLifespanSeconds(), Map.of("data", jsonData));
-            log.debugf("Stored transmitter metadata in cache. realm=%s url=%s", realm.getName(), url);
+            LOG.debugf("Stored transmitter metadata in cache. realm=%s url=%s", realm.getName(), url);
         } catch (IOException e) {
             throw new SsfException("Could not store transmitter metadata in cache", e);
         }
@@ -92,7 +92,7 @@ public class DefaultSsfTransmitterClient implements SsfTransmitterClient {
             try {
                 RealmModel realm = session.getContext().getRealm();
                 SsfTransmitterMetadata metadata = JsonSerialization.readValue(jsonData, SsfTransmitterMetadata.class);
-                log.debugf("Loaded transmitter metadata from cache. realm=%s url=%s", realm.getName(), url);
+                LOG.debugf("Loaded transmitter metadata from cache. realm=%s url=%s", realm.getName(), url);
                 return metadata;
             } catch (IOException e) {
                 throw new SsfException("Could load transmitter metadata from cache", e);

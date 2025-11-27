@@ -1,4 +1,4 @@
-package org.keycloak.protocol.ssf.event.types;
+package org.keycloak.protocol.ssf.event.types.stream;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * See: https://openid.net/specs/openid-sharedsignals-framework-1_0-final.html#name-verification
  */
-public class VerificationEvent extends SsfEvent {
+public class VerificationEvent extends StreamEvent {
 
     public static final String TYPE = "https://schemas.openid.net/secevent/ssf/event-type/verification";
 
