@@ -205,7 +205,16 @@ public class SessionTimeouts {
      * @return
      */
     public static long getLoginFailuresLifespanMs(RealmModel realm, ClientModel client, LoginFailureEntity loginFailureEntity) {
-        return IMMORTAL_FLAG;
+        if (realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0) {
+            // If mode is permanent lockout only, the "failure reset time" cannot be configured and login failures should never expire.
+            return IMMORTAL_FLAG;
+        } else {
+            // Use realm-specific "failure reset time" configured in the brute force detection settings.
+            // If the time between login failures is greater than the failure reset time,
+            // the brute force detector will reset the failure counter.
+            // So we can safely evict the login failure entry from the cache after this time.
+            return realm.getMaxDeltaTimeSeconds() * 1000L;
+        }
     }
 
 
