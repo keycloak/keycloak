@@ -48,3 +48,15 @@ MDC enables Keycloak to enrich log entries with contextual information such as r
 
 For more details, see the https://www.keycloak.org/server/logging#_adding_context_for_log_messages[Adding context for log messages] guide.
 
+= Organization invitation management
+
+Organization administrators can now manage organization invitations through both the Admin Console and REST API:
+
+* View all sent invitations with their current status (Pending, Expired)
+* Resend pending invitations to recipients
+* Delete invitation records from the system
+* Filter invitations by status for easier management
+
+All invitations are now persistently stored in the database, providing better tracking and management capabilities.
+
+The invitation management features are available in the *Invitations* tab when managing an organization in the Admin Console, and through the Organizations REST API endpoints under `/admin/realms/{realm}/orgs/{orgId}/invitations`.
