@@ -240,6 +240,11 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder resetPasswordAllowed(boolean allowed) {
+        rep.setResetPasswordAllowed(allowed);
+        return this;
+    }
+
     public RealmConfigBuilder clientPolicy(ClientPolicyRepresentation clienPolicyRep) {
         ClientPoliciesRepresentation clientPolicies = rep.getParsedClientPolicies();
         if (clientPolicies == null) {

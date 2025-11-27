@@ -3,4 +3,3 @@ org.keycloak.testsuite.forms
 KcOidcBrokerLoginHintTest
 KcOidcFirstBrokerLoginTest
 KcOidcMultipleTabsBrokerTest
-LoginPageTest

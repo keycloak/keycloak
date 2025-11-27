@@ -1,6 +1,7 @@
 package org.keycloak.testframework.ui.webdriver;
 
 import org.junit.jupiter.api.Assertions;
+import org.openqa.selenium.By;
 
 public class AssertionUtils {
 
@@ -11,7 +12,8 @@ public class AssertionUtils {
     }
 
     public void assertTitle(String title) {
-        Assertions.assertEquals(title, managed.page().getTitle());
+        String kcPageTitle = managed.findElement(By.id("kc-page-title")).getText();
+        Assertions.assertEquals(title, kcPageTitle);
     }
 
 }

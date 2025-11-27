@@ -3,10 +3,11 @@ package org.keycloak.testframework.ui.page;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-public class LoginPage extends AbstractPage {
+public class LoginPage extends AbstractLoginPage {
 
     @FindBy(id = "username")
     private WebElement usernameInput;
@@ -20,12 +21,23 @@ public class LoginPage extends AbstractPage {
     @FindBy(id = "rememberMe")
     private WebElement rememberMe;
 
+    @FindBy(linkText = "Forgot Password?")
+    private WebElement resetPasswordLink;
+
+    @FindBy(className = "pf-m-success")
+    private WebElement loginSuccessMessage;
+
+    @FindBy(id = "input-error-username")
+    private WebElement userNameInputError;
+
     public LoginPage(ManagedWebDriver driver) {
         super(driver);
     }
 
     public void fillLogin(String username, String password) {
+        usernameInput.clear();
         usernameInput.sendKeys(username);
+        passwordInput.clear();
         passwordInput.sendKeys(password);
     }
 
@@ -54,6 +66,14 @@ public class LoginPage extends AbstractPage {
         return rememberMe.isSelected();
     }
 
+    public void resetPassword() {
+        resetPasswordLink.click();
+    }
+
+    public String getSuccessMessage() {
+        return loginSuccessMessage != null ? loginSuccessMessage.getText() : null;
+    }
+
     @Override
     public String getExpectedPageId() {
         return "login-login";
@@ -66,4 +86,13 @@ public class LoginPage extends AbstractPage {
     public void clearUsernameInput() {
         usernameInput.clear();
     }
+
+    public String getUsernameInputError() {
+        try {
+            return userNameInputError.getText();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
 }
