@@ -23,8 +23,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import org.infinispan.configuration.cache.ExpirationConfiguration;
-
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.marshalling.Marshalling;
@@ -40,6 +38,7 @@ import org.infinispan.configuration.cache.BackupConfiguration;
 import org.infinispan.configuration.cache.BackupFailurePolicy;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.cache.ExpirationConfiguration;
 import org.infinispan.configuration.cache.HashConfiguration;
 import org.infinispan.configuration.cache.HashConfigurationBuilder;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
