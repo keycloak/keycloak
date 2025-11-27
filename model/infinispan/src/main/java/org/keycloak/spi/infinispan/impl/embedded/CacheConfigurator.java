@@ -23,6 +23,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import org.infinispan.configuration.cache.ExpirationConfiguration;
+
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.marshalling.Marshalling;
@@ -204,7 +206,6 @@ public final class CacheConfigurator {
      *                               the {@code holder}. This could indicate a missing or incorrect configuration.
      */
     public static void configureCacheMaxCount(Config.Scope keycloakConfig, ConfigurationBuilderHolder holder, Stream<String> caches) {
-        boolean clustered = isClustered(holder);
         for (var it = caches.iterator(); it.hasNext(); ) {
             var name = it.next();
             var builder = holder.getNamedConfigurationBuilders().get(name);
@@ -370,21 +371,15 @@ public final class CacheConfigurator {
      */
     public static ConfigurationBuilder getRemoteCacheConfiguration(String cacheName, Config.Scope config, String[] sites) {
         return switch (cacheName) {
-            case CLIENT_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME -> {
-                var builder = remoteCacheConfigurationBuilder(cacheName, config, sites, RemoteAuthenticatedClientSessionEntity.class);
-                configureSessionExpirationReaper(builder);
-                yield builder;
-            }
-            case USER_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME -> {
-                var builder = remoteCacheConfigurationBuilder(cacheName, config, sites, RemoteUserSessionEntity.class);
-                configureSessionExpirationReaper(builder);
-                yield builder;
-            }
+            case CLIENT_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME ->
+                    remoteCacheConfigurationBuilder(cacheName, config, sites, RemoteAuthenticatedClientSessionEntity.class, InfinispanUserSessionProviderFactory.getExpirationPeriod(TimeUnit.MILLISECONDS));
+            case USER_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME ->
+                    remoteCacheConfigurationBuilder(cacheName, config, sites, RemoteUserSessionEntity.class, InfinispanUserSessionProviderFactory.getExpirationPeriod(TimeUnit.MILLISECONDS));
             case AUTHENTICATION_SESSIONS_CACHE_NAME ->
-                    remoteCacheConfigurationBuilder(cacheName, config, sites, RootAuthenticationSessionEntity.class);
+                    remoteCacheConfigurationBuilder(cacheName, config, sites, RootAuthenticationSessionEntity.class, ExpirationConfiguration.WAKEUP_INTERVAL.getDefaultValue());
             case LOGIN_FAILURE_CACHE_NAME ->
-                    remoteCacheConfigurationBuilder(cacheName, config, sites, LoginFailureEntity.class);
-            case ACTION_TOKEN_CACHE, WORK_CACHE_NAME -> remoteCacheConfigurationBuilder(cacheName, config, sites, null);
+                    remoteCacheConfigurationBuilder(cacheName, config, sites, LoginFailureEntity.class, ExpirationConfiguration.WAKEUP_INTERVAL.getDefaultValue());
+            case ACTION_TOKEN_CACHE, WORK_CACHE_NAME -> remoteCacheConfigurationBuilder(cacheName, config, sites, null, ExpirationConfiguration.WAKEUP_INTERVAL.getDefaultValue());
             default -> null;
         };
     }
@@ -392,16 +387,17 @@ public final class CacheConfigurator {
     // private methods below
 
     private static void configureSessionExpirationReaper(ConfigurationBuilder builder) {
-        builder.expiration().enableReaper().wakeUpInterval(InfinispanUserSessionProviderFactory.getExpirationPeriodSeconds(), TimeUnit.SECONDS);
+        builder.expiration().enableReaper().wakeUpInterval(InfinispanUserSessionProviderFactory.getExpirationPeriod(TimeUnit.MILLISECONDS));
     }
 
-    private static ConfigurationBuilder remoteCacheConfigurationBuilder(String name, Config.Scope config, String[] sites, Class<?> indexedEntity) {
+    private static ConfigurationBuilder remoteCacheConfigurationBuilder(String name, Config.Scope config, String[] sites, Class<?> indexedEntity, long expirationWakeupPeriodMillis) {
         var builder = new ConfigurationBuilder();
         builder.clustering().cacheMode(CacheMode.DIST_SYNC);
         builder.clustering().hash().numOwners(Math.max(MIN_NUM_OWNERS_REMOTE_CACHE, config.getInt(numOwnerConfigKey(name), MIN_NUM_OWNERS_REMOTE_CACHE)));
         builder.clustering().stateTransfer().chunkSize(STATE_TRANSFER_CHUNK_SIZE);
         builder.encoding().mediaType(MediaType.APPLICATION_PROTOSTREAM);
         builder.statistics().enable();
+        builder.expiration().enableReaper().wakeUpInterval(expirationWakeupPeriodMillis);
 
         if (indexedEntity != null) {
             builder.indexing().enable().addIndexedEntities(Marshalling.protoEntity(indexedEntity));

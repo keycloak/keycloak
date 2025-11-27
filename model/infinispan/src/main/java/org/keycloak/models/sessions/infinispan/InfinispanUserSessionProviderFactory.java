@@ -405,10 +405,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     }
 
     /**
-     * @return The configured expiration task period, in seconds.
+     * @param outTimeUnit The {@link TimeUnit} of the return value.
+     * @return The configured expiration task period, in the {@code outTimeUnit}.
      */
-    public static int getExpirationPeriodSeconds() {
-        return getExpirationPeriodSeconds(Config.scope(UserSessionSpi.NAME, InfinispanUtils.EMBEDDED_PROVIDER_ID));
+    public static long getExpirationPeriod(TimeUnit outTimeUnit) {
+        return outTimeUnit.convert(getExpirationPeriodSeconds(Config.scope(UserSessionSpi.NAME, InfinispanUtils.EMBEDDED_PROVIDER_ID)), TimeUnit.SECONDS);
     }
 
     private static int getExpirationPeriodSeconds(Config.Scope config) {
