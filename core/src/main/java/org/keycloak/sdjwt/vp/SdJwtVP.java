@@ -230,7 +230,10 @@ public class SdJwtVP {
         }
         String sd_hash = SdJwtUtils.hashAndBase64EncodeNoPad(unboundPresentation.getBytes(), getHashAlgorithm());
         keyBindingClaims.put(SD_HASH, sd_hash);
-        KeyBindingJWT keyBindingJWT = new KeyBindingJWT(keyBindingClaims, holdSignatureSignerContext);
+        KeyBindingJWT keyBindingJWT = KeyBindingJWT.builder()
+                .withPayload(keyBindingClaims)
+                .withSignerContext(holdSignatureSignerContext)
+                .build();
         sb.append(keyBindingJWT.getJws());
         return sb.toString();
     }
