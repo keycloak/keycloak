@@ -170,6 +170,11 @@ As `AuthenticationSessionProvider` and `UserSessionProvider` now have an interna
 It is still triggered in this {project_name} version, but will be removed in a future release.
 
 
+=== Fine-Grained Admin Permissions (FGAP) v1
+
+Fine-Grained Admin Permissions (FGAP) v1 is now deprecated. This version no longer receives enhancements and improvements  and will be removed in future
+release. Please migrate to FGAP v2 to ensure continued support.
+
 // ------------------------ Removed features ------------------------ //
 == Removed features
 
