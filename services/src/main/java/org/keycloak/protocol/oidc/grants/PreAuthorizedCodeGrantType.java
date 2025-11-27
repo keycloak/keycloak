@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.grants;
 
 import java.util.List;
+import java.util.Optional;
 
 import jakarta.ws.rs.core.Response;
 
@@ -129,12 +130,28 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
             authorizationDetailsResponses = handleMissingAuthorizationDetails(userSession, sessionContext);
         }
 
+        authorizationDetailsResponses = Optional.ofNullable(authorizationDetailsResponses).orElse(List.of());
+        if (authorizationDetailsResponses.size() != 1) {
+            boolean emptyAuthDetails = authorizationDetailsResponses.isEmpty();
+            String errorMessage = (emptyAuthDetails ? "No" : "Multiple") + " authorization details";
+            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+
+        // Add authorization_details to the OfferState and otherClaims
+        var authDetails = (OID4VCAuthorizationDetailsResponse) authorizationDetailsResponses.get(0);
+        offerState.setAuthorizationDetails(authDetails);
+        offerStorage.replaceOfferState(session, offerState);
+
         AccessToken accessToken = tokenManager.createClientAccessToken(session,
                 clientSession.getRealm(),
                 clientSession.getClient(),
                 userSession.getUser(),
                 userSession,
                 sessionContext);
+
+        accessToken.setOtherClaims(AUTHORIZATION_DETAILS, authorizationDetailsResponses);
 
         AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(
                 clientSession.getRealm(),
@@ -147,30 +164,14 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         AccessTokenResponse tokenResponse;
         try {
             tokenResponse = responseBuilder.build();
+            tokenResponse.setOtherClaims(AUTHORIZATION_DETAILS, authorizationDetailsResponses);
         } catch (RuntimeException re) {
-            String errorMessage = "cannot get encryption KEK";
+            String errorMessage = "Cannot get encryption KEK";
             if (errorMessage.equals(re.getMessage())) {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, errorMessage, Response.Status.BAD_REQUEST);
             } else {
                 throw re;
             }
-        }
-
-        // If authorization_details is present, add it was added to otherClaims
-        if (authorizationDetailsResponses != null && !authorizationDetailsResponses.isEmpty()) {
-            if (authorizationDetailsResponses.size() > 1) {
-                String errorMessage = "Multiple authorization details are not supported";
-                event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                        errorMessage, Response.Status.BAD_REQUEST);
-
-            }
-
-            var authorizationDetails = (OID4VCAuthorizationDetailsResponse) authorizationDetailsResponses.get(0);
-            offerState.setAuthorizationDetails(authorizationDetails);
-            offerStorage.replaceOfferState(session, offerState);
-
-            tokenResponse.setOtherClaims(AUTHORIZATION_DETAILS, authorizationDetailsResponses);
         }
 
         event.success();
