@@ -49,7 +49,7 @@ public class DefaultClientService implements ClientService {
     public CreateOrUpdateResult createOrUpdate(ClientsResource clientsResource, ClientResource clientResource,
             RealmModel realm, ClientRepresentation client, boolean allowUpdate) throws ServiceException {
         boolean created = false;
-        ClientModel model = null;
+        ClientModel model;
         if (clientResource != null) {
             if (!allowUpdate) {
                 throw new ServiceException("Client already exists", Response.Status.CONFLICT);
@@ -61,14 +61,7 @@ public class DefaultClientService implements ClientService {
         } else {
             created = true;
             validator.validate(client, CreateClientDefault.class); // TODO improve it to avoid second validation when we know it is create and not update
-
-            // dummy add/remove to obtain a detached model
-            model = realm.addClient(client.getClientId());
-            realm.removeClient(model.getId());
-
-            mapper.toModel(model, client, realm);
-            var rep = ModelToRepresentation.toRepresentation(model, session);
-            model = clientsResource.createClientModel(rep);
+            model = clientsResource.createClientModel(mapper.mapRepresentationV2toV1(client));
         }
 
         var updated = mapper.fromModel(model);

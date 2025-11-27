@@ -9,4 +9,6 @@ public interface ClientModelMapper {
     ClientRepresentation fromModel(ClientModel model);
 
     void toModel(ClientModel model, ClientRepresentation rep, RealmModel realm);
+
+    org.keycloak.representations.idm.ClientRepresentation mapRepresentationV2toV1(ClientRepresentation representationV2);
 }

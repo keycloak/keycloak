@@ -17,6 +17,8 @@
 
 package org.keycloak.tests.admin.client.v2;
 
+import java.util.Set;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
@@ -163,6 +165,22 @@ public class ClientApiV2Test {
     }
 
     @Test
+    public void createClient() throws Exception {
+        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        ClientRepresentation rep = getTestingFullClientRep();
+        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(request)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            assertThat(client, is(rep));
+        }
+    }
+
+    @Test
     public void deleteClient() throws Exception {
         HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/to-delete");
         setAuthHeader(createRequest);
@@ -258,6 +276,37 @@ public class ClientApiV2Test {
 
     private void setAuthHeader(HttpMessage request) {
         setAuthHeader(request, this.adminClient);
+    }
+
+    private ClientRepresentation getTestingFullClientRep() {
+        var rep = new ClientRepresentation();
+        rep.setClientId("my-client");
+        rep.setDisplayName("My Client");
+        rep.setDescription("This is My Client");
+        rep.setProtocol(ClientRepresentation.OIDC);
+        rep.setEnabled(true);
+        rep.setAppUrl("http://localhost:3000");
+        rep.setAppRedirectUrls(Set.of("http://localhost:3000", "http://localhost:3001"));
+        // no login flows -> only flow overrides map
+        // rep.setLoginFlows(Set.of("browser"));
+        var auth = new ClientRepresentation.Auth();
+        auth.setEnabled(true);
+        auth.setMethod("client-jwt");
+        auth.setSecret("secret-1234");
+        // no certificate inside the old rep
+        // auth.setCertificate("certificate-5678");
+        rep.setAuth(auth);
+        rep.setWebOrigins(Set.of("http://localhost:4000", "http://localhost:4001"));
+        // roles are separate entities -> not sure if we should have them included?
+        // rep.setRoles(Set.of("view-consent", "manage-account"));
+        var serviceAccount = new ClientRepresentation.ServiceAccount();
+        serviceAccount.setEnabled(true);
+        // roles are separate entities -> not sure if we should have them included?
+        // serviceAccount.setRoles(Set.of("default-roles-master", "default-roles-test"));
+        rep.setServiceAccount(serviceAccount);
+        // not implemented yet
+        // rep.setAdditionalFields(Map.of("key1", "val1", "key2", "val2"));
+        return rep;
     }
 
     public static class AdminV2Config implements KeycloakServerConfig {
