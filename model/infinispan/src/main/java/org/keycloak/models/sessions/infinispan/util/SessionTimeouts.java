@@ -205,7 +205,10 @@ public class SessionTimeouts {
      * @return
      */
     public static long getLoginFailuresLifespanMs(RealmModel realm, ClientModel client, LoginFailureEntity loginFailureEntity) {
-        if (realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0) {
+        if (loginFailureEntity.getLastFailure() == 0) {
+            // If login failure has been reset, expire the entry.
+            return 0;
+        } else if (realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0) {
             // If mode is permanent lockout only, the "failure reset time" cannot be configured and login failures should never expire.
             return IMMORTAL_FLAG;
         } else {
