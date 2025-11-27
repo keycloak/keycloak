@@ -1,4 +1,4 @@
-package org.keycloak.protocol.ssf.spi;
+package org.keycloak.protocol.ssf.receiver.spi;
 
 import org.keycloak.protocol.ssf.endpoint.SsfPushDeliveryResource;
 import org.keycloak.protocol.ssf.event.SecurityEventToken;
@@ -10,9 +10,9 @@ import org.keycloak.protocol.ssf.receiver.verification.SsfVerificationClient;
 import org.keycloak.provider.Provider;
 
 /**
- * SsfProvider exposes the SSF infrastructure components.
+ * SsfProvider exposes the SSF Receiver infrastructure components.
  */
-public interface SsfProvider extends Provider {
+public interface SsfReceiverProvider extends Provider {
 
     @Override
     default void close() {

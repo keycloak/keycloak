@@ -1,4 +1,4 @@
-package org.keycloak.protocol.ssf.spi;
+package org.keycloak.protocol.ssf.receiver.spi;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ssf.endpoint.SsfPushDeliveryResource;
@@ -18,7 +18,7 @@ import org.keycloak.protocol.ssf.receiver.verification.DefaultSsfVerificationCli
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStore;
 import org.keycloak.protocol.ssf.receiver.verification.SsfVerificationClient;
 
-public class DefaultSsfProvider implements SsfProvider {
+public class DefaultSsfReceiverProvider implements SsfReceiverProvider {
 
     protected final KeycloakSession session;
 
@@ -38,7 +38,7 @@ public class DefaultSsfProvider implements SsfProvider {
 
     protected SsfVerificationClient verificationClient;
 
-    public DefaultSsfProvider(KeycloakSession session) {
+    public DefaultSsfReceiverProvider(KeycloakSession session) {
         this.session = session;
     }
 

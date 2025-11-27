@@ -1,4 +1,4 @@
-package org.keycloak.protocol.ssf.receiver;
+package org.keycloak.protocol.ssf.receiver.registration;
 
 import java.util.Set;
 
@@ -8,7 +8,7 @@ import org.keycloak.models.RealmModel;
 /**
  * Holds the user configuration of an SSF Receiver.
  */
-public class SsfReceiverProviderConfig extends IdentityProviderModel {
+public class SsfReceiverRegistrationProviderConfig extends IdentityProviderModel {
 
     public static final String DESCRIPTION = "description";
 
@@ -20,10 +20,10 @@ public class SsfReceiverProviderConfig extends IdentityProviderModel {
 
     public static final String PUSH_AUTHORIZATION_HEADER = "pushAuthorizationHeader";
 
-    public SsfReceiverProviderConfig() {
+    public SsfReceiverRegistrationProviderConfig() {
     }
 
-    public SsfReceiverProviderConfig(IdentityProviderModel model) {
+    public SsfReceiverRegistrationProviderConfig(IdentityProviderModel model) {
         super(model);
     }
 
