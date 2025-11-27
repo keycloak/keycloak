@@ -17,5 +17,6 @@
         <module>rest</module>
         <module>api</module>
         <module>tests</module>
+        <module>providers</module>
     </modules>
 </project>

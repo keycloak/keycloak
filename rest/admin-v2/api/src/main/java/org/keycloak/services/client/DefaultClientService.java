@@ -9,7 +9,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.mapper.ClientModelMapper;
-import org.keycloak.models.mapper.MapStructModelMapper;
+import org.keycloak.models.mapper.ModelMapper;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
 import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
@@ -27,7 +27,7 @@ public class DefaultClientService implements ClientService {
 
     public DefaultClientService(KeycloakSession session) {
         this.session = session;
-        this.mapper = new MapStructModelMapper().clients();
+        this.mapper = session.getProvider(ModelMapper.class).clients();
         this.validator = new HibernateValidatorProvider();
     }
 
