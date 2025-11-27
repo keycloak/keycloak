@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -44,6 +45,8 @@ import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.events.Details;
+import org.keycloak.events.Event;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -924,6 +927,13 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             return expiration;
         });
 
+        String userId = withRealm(realmId, (session, realm) -> {
+            // enable events
+            realm.setEventsEnabled(true);
+            realm.setEnabledEventTypes(Set.of(EventType.USER_SESSION_DELETED.name()));
+            return session.users().getUserByUsername(realm, "user1").getId();
+        });
+
         final int initialCount = getPersistedUserSessionsCount();
         final int sessionCount = JpaUserSessionPersisterProviderFactory.DEFAULT_EXPIRATION_BATCH * 2;
 
@@ -945,6 +955,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         // realm has remember me disabled, so half of the session should be deleted by the expiration job.
         triggerExpiration(realmExpiration.maxIdle() + 10);
         assertEquals(initialCount + (sessionCount / 2), getPersistedUserSessionsCount());
+        assertEquals((sessionCount / 2), getUserSessionInvalidRememberMeEventCount(userId));
 
         // check if everything worked as expected.
         withRealmConsumer(realmId, (session, realm) -> {
@@ -1083,6 +1094,14 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
     }
 
     private long getUserSessionExpirationEventCount(String userId) {
+        return getUserSessionDeletedEventCount(userId, Details.USER_SESSION_EXPIRED_REASON);
+    }
+
+    private long getUserSessionInvalidRememberMeEventCount(String userId) {
+        return getUserSessionDeletedEventCount(userId, Details.INVALID_USER_SESSION_REMEMBER_ME_REASON);
+    }
+
+    private long getUserSessionDeletedEventCount(String userId, String reason) {
         return withRealm(realmId, (session, ignored) -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
             return eventStore.createQuery()
@@ -1090,8 +1109,16 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
                     .user(userId)
                     .type(EventType.USER_SESSION_DELETED)
                     .getResultStream()
+                    .map(UserSessionPersisterProviderTest::findReason)
+                    .flatMap(Optional::stream)
+                    .filter(reason::equals)
                     .count();
         });
+    }
+
+    private static Optional<String> findReason(Event event) {
+        return Optional.ofNullable(event.getDetails())
+                .map(map -> map.get(Details.REASON));
     }
 
     private long countUserSessionsInRealm(KeycloakSession session) {

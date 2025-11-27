@@ -216,6 +216,25 @@ final class UserSessionExpirationLogic {
 
     private static boolean handleRememberMeColumnValue(KeycloakSession session, String realmId, String realmName, int batchSize, boolean rememberMeEnabled, String queryName, Consumer<TypedQuery<Object[]>> setParameters, List<String> sessionsWithRememberMeCollector, List<String> sessionsWithoutRememberMeCollector) {
         final EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+        Consumer<UserSessionIdAndRememberMe> collector = userSessionData -> {
+            if (userSessionData.rememberMe()) {
+                sessionsWithRememberMeCollector.add(userSessionData.userSessionId());
+            } else {
+                sessionsWithoutRememberMeCollector.add(userSessionData.userSessionId());
+            }
+        };
+
+        if (!rememberMeEnabled) {
+            RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
+            collector = collector.andThen(userSessionData -> {
+                // The remember me is disabled in the realm, and enabled in the user session.
+                // This session will be removed.
+                if (userSessionData.rememberMe()) {
+                    createInvalidationEvent(session, realm, userSessionData);
+                }
+            });
+        }
 
         TypedQuery<Object[]> query = em.createNamedQuery(queryName, Object[].class);
         setParameters.accept(query);
@@ -224,7 +243,7 @@ final class UserSessionExpirationLogic {
                 .setMaxResults(batchSize)
                 .getResultStream()
                 .map(UserSessionIdAndRememberMe::fromQueryProjection)
-                .forEach(userSession -> (userSession.rememberMe() ? sessionsWithRememberMeCollector : sessionsWithoutRememberMeCollector).add(userSession.id()));
+                .forEach(collector);
 
         int updateCount = updateRememberMeColumn(em, false, sessionsWithoutRememberMeCollector);
         if (rememberMeEnabled) {
@@ -238,12 +257,20 @@ final class UserSessionExpirationLogic {
         return sessionsWithRememberMeCollector.size() + sessionsWithoutRememberMeCollector.size() >= batchSize;
     }
 
-    private static void createExpirationEvent(KeycloakSession session, RealmModel realm, UserSessionAndUser userSessionAndUser) {
+    private static void createExpirationEvent(KeycloakSession session, RealmModel realm, UserSessionAndUser data) {
+        createUserSessionDeletedEvent(session, realm, data.userSessionId(), data.userId(), Details.USER_SESSION_EXPIRED_REASON);
+    }
+
+    private static void createInvalidationEvent(KeycloakSession session, RealmModel realm, UserSessionIdAndRememberMe data) {
+        createUserSessionDeletedEvent(session, realm, data.userSessionId(), data.userId(), Details.INVALID_USER_SESSION_REMEMBER_ME_REASON);
+    }
+
+    private static void createUserSessionDeletedEvent(KeycloakSession session, RealmModel realm, String sessionId, String userId, String reason) {
         new EventBuilder(realm, session)
-                .user(userSessionAndUser.userId())
-                .session(userSessionAndUser.userSessionId())
+                .user(userId)
+                .session(sessionId)
                 .event(EventType.USER_SESSION_DELETED)
-                .detail(Details.REASON, Details.EXPIRED_DETAIL)
+                .detail(Details.REASON, reason)
                 .success();
     }
 
