@@ -111,6 +111,11 @@ public final class ExpirationTaskFactory {
         getEventTask(session).ifPresent(BaseExpirationTask::purgeExpired);
     }
 
+    /**
+     * Returns the number of Keycloak instance when running with an external Infinispan cluster.
+     * <p>
+     * Testing purpose only! Do not invoke in production.
+     */
     public static int membersSize(KeycloakSession session) {
         return getEventTask(session)
                 .filter(RemoteExpirationTask.class::isInstance)

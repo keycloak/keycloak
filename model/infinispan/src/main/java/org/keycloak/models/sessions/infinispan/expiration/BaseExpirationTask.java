@@ -109,10 +109,6 @@ abstract class BaseExpirationTask implements ExpirationTask {
         }
     }
 
-    final int expiration() {
-        return delaySeconds;
-    }
-
     abstract Predicate<RealmModel> realmFilter();
 
     private void scheduleNextTask() {
