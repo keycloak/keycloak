@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.Format;
@@ -83,9 +84,9 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
         // expiry is optional, but should be set if available to comply with HAIP
         // see: https://openid.github.io/OpenID4VC-HAIP/openid4vc-high-assurance-interoperability-profile-wg-draft.html#section-6.1
         // Only set if not already set by a protocol mapper
-        if (!claimSet.containsKey("exp")) {
+        if (!claimSet.containsKey(OID4VCConstants.CLAIM_NAME_EXP)) {
             Optional.ofNullable(verifiableCredential.getExpirationDate())
-                    .ifPresent(d -> claimSet.put("exp", d.getEpochSecond()));
+                    .ifPresent(d -> claimSet.put(OID4VCConstants.CLAIM_NAME_EXP, d.getEpochSecond()));
         }
 
         // jti, nbf, and iat are all optional. So need to be set by a protocol mapper if needed.
