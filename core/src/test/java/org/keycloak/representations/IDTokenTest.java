@@ -12,7 +12,7 @@ import org.junit.Test;
 public class IDTokenTest {
 
     /**
-     * makes sure that the setAddress and getAddress method for the userInfo works as expected
+     * makes sure that the setAddress and getAddress method for the idToken works as expected
      */
     @Test
     public void testSetAddressMethodWorks() {
