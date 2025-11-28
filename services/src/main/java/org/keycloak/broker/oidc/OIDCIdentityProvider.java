@@ -630,7 +630,15 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     protected boolean verify(JWSInput jws) {
         if (!getConfig().isValidateSignature()) return true;
+        return verifySignature(jws);
+    }
 
+    /**
+     * Verify signature on given JWS
+     *
+     * @return true if signature was successfully verified with the keys available to identity provider
+     */
+    protected boolean verifySignature(JWSInput jws) {
         try {
             KeyWrapper key = getIdentityProviderKeyWrapper(jws);
             if (key == null) {
@@ -1054,7 +1062,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public boolean verifyClientAssertion(ClientAuthenticationFlowContext context) throws Exception {
         OIDCIdentityProviderConfig config = getConfig();
 
-        FederatedJWTClientValidator validator = new FederatedJWTClientValidator(context, v -> verify(v.getJws()),
+        FederatedJWTClientValidator validator = new FederatedJWTClientValidator(context, v -> verifySignature(v.getJws()),
                 config.getIssuer(), config.getAllowedClockSkew(), config.isSupportsClientAssertionReuse());
 
         if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_FEDERATED)) {
@@ -1065,24 +1073,16 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             throw new RuntimeException("Issuer does not support client assertions");
         }
 
-        if (!config.isValidateSignature()) {
-            throw new RuntimeException("Signature validation not enabled for issuer");
-        }
-
         return validator.validate();
     }
 
     public BrokeredIdentityContext validateAuthorizationGrantAssertion(JWTAuthorizationGrantValidationContext context) throws IdentityBrokerException {
-        if (!getConfig().getJWTAuthorizationGrantEnabled()) {
+        if (!getConfig().isJWTAuthorizationGrantEnabled()) {
             throw new IdentityBrokerException("JWT Authorization Granted is not enabled for the identity provider");
         }
 
-        if (!getConfig().isValidateSignature()) {
-            throw new IdentityBrokerException("Signature validation not enabled for issuer");
-        }
-
         // verify signature
-        if (!verify(context.getJws())) {
+        if (!verifySignature(context.getJws())) {
             throw new IdentityBrokerException("Invalid signature");
         }
 
@@ -1099,7 +1099,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     @Override
     public boolean isAssertionReuseAllowed() {
-        return getConfig().getJWTAuthorizationGrantAssertionReuseAllowed();
+        return getConfig().isJWTAuthorizationGrantAssertionReuseAllowed();
     }
 
     @Override

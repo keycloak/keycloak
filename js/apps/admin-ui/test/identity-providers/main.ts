@@ -87,7 +87,7 @@ export async function assertInvalidUrlNotification(
   urlType: UrlType,
 ) {
   await expect(page.getByTestId("last-alert")).toHaveText(
-    `Could not update the provider The url [${urlType}${urlType.startsWith("single") ? "U" : "_u"}rl] is malformed`,
+    `Could not update the provider. The url [${urlType}${urlType.startsWith("single") ? "U" : "_u"}rl] is malformed`,
   );
 }
 

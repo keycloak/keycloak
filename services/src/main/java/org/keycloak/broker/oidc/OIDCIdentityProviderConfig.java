@@ -186,6 +186,10 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
         return Boolean.parseBoolean(getConfig().get(SUPPORTS_CLIENT_ASSERTIONS));
     }
 
+    public void setSupportsClientAssertions(boolean supportsClientAssertions) {
+        getConfig().put(SUPPORTS_CLIENT_ASSERTIONS, String.valueOf(supportsClientAssertions));
+    }
+
     public boolean isSupportsClientAssertionReuse() {
         return Boolean.parseBoolean(getConfig().get(SUPPORTS_CLIENT_ASSERTION_REUSE));
     }
@@ -196,5 +200,18 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
         SslRequired sslRequired = realm.getSslRequired();
         checkUrl(sslRequired, getJwksUrl(), "jwks_url");
         checkUrl(sslRequired, getLogoutUrl(), "logout_url");
+
+        if (isValidateSignature() || isJWTAuthorizationGrantEnabled() || isSupportsClientAssertions()) {
+            String optionText = isValidateSignature() ? "Validate signatures" :
+                    (isJWTAuthorizationGrantEnabled() ? "JWT Authorization Grant" : "Supports client assertions");
+
+            if (isUseJwksUrl()) {
+                if (getJwksUrl() == null) {
+                    throw new IllegalArgumentException(String.format("JWKS URL is required when '%s' enabled and 'Use JWKS URL' enabled", optionText));
+                }
+            } else if (getPublicKeySignatureVerifier() == null) {
+                throw new IllegalArgumentException(String.format("The 'Validating public key' is required when '%s' enabled and 'Use JWKS URL' disabled", optionText));
+            }
+        }
     }
 }
