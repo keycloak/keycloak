@@ -305,7 +305,7 @@ final class UserSessionExpirationLogic {
     private static void runInBatches(KeycloakSessionFactory sessionFactory, KeycloakSessionTaskWithResult<Boolean> task, Runnable afterBatchAction) {
         boolean hasMore;
         do {
-            hasMore = runJobInTransactionWithResult(sessionFactory, task);
+            hasMore = runJobInTransactionWithResult(sessionFactory, null, task, "session-expiration-task");
             afterBatchAction.run();
         } while (hasMore);
     }
