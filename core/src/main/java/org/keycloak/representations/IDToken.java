@@ -332,14 +332,12 @@ public class IDToken extends JsonWebToken {
         this.phoneNumberVerified = phoneNumberVerified;
     }
 
+    @JsonProperty("address")
     public Map<String, Object> getAddressClaimsMap() {
         return address;
     }
 
-    public void setAddressClaimsMap(Map<String, Object> address) {
-        this.address = address;
-    }
-
+    @JsonIgnore
     public AddressClaimSet getAddress() {
         return Optional.ofNullable(address).map(a -> {
                            return JsonSerialization.mapper.convertValue(a, AddressClaimSet.class);
@@ -349,6 +347,13 @@ public class IDToken extends JsonWebToken {
 
     public void setAddress(Map<String, Object> address) {
         this.address = address;
+    }
+
+    @JsonIgnore
+    public void setAddress(AddressClaimSet address) {
+        this.address = Optional.ofNullable(address)
+                               .map(a -> JsonSerialization.mapper.convertValue(a, Map.class))
+                               .orElse(null);
     }
 
     public Long getUpdatedAt() {
