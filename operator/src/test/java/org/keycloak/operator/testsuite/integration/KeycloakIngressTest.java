@@ -116,14 +116,17 @@ public class KeycloakIngressTest extends BaseOperatorTest {
         var hostnameSpecBuilder = new HostnameSpecBuilder()
                 .withStrict(false)
                 .withStrictBackchannel(false);
+        IngressSpec ingressSpec = new IngressSpec();
+        ingressSpec.setIngressEnabled(true);
+        kc.getSpec().setIngressSpec(ingressSpec);
         if (isOpenShift) {
-            kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakController.OPENSHIFT_DEFAULT).build());
+            ingressSpec.setIngressClassName(KeycloakController.OPENSHIFT_DEFAULT);
         }
         kc.getSpec().setHostnameSpec(hostnameSpecBuilder.build());
         String secret = kc.getSpec().getHttpSpec().getTlsSecret();
         kc.getSpec().getHttpSpec().setHttpEnabled(true);
         kc.getSpec().getHttpSpec().setTlsSecret(null);
-        kc.getSpec().setIngressSpec(new IngressSpecBuilder().withTlsSecret(secret).build());
+        ingressSpec.setTlsSecret(secret);
 
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
