@@ -31,6 +31,8 @@ import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { toClientScopes } from "../routes/ClientScopes";
 
 const OID4VC_PROTOCOL = "oid4vc";
+const VC_FORMAT_JWT_VC = "jwt_vc";
+const VC_FORMAT_SD_JWT = "dc+sd-jwt";
 
 // Validation function for comma-separated lists
 const validateCommaSeparatedList = (value: string | undefined) => {
@@ -134,7 +136,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
       "attributes.vc.format",
     ),
-    defaultValue: clientScope?.attributes?.["vc.format"] ?? "dc+sd-jwt",
+    defaultValue: clientScope?.attributes?.["vc.format"] ?? VC_FORMAT_SD_JWT,
   });
 
   const isOid4vcProtocol = selectedProtocol === OID4VC_PROTOCOL;
@@ -326,10 +328,16 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               )}
               label={t("supportedFormats")}
               labelIcon={t("supportedFormatsHelp")}
-              controller={{ defaultValue: "dc+sd-jwt" }}
+              controller={{ defaultValue: VC_FORMAT_SD_JWT }}
               options={[
-                { key: "dc+sd-jwt", value: "SD-JWT VC (dc+sd-jwt)" },
-                { key: "jwt_vc", value: "JWT VC (jwt_vc)" },
+                {
+                  key: VC_FORMAT_SD_JWT,
+                  value: `SD-JWT VC (${VC_FORMAT_SD_JWT})`,
+                },
+                {
+                  key: VC_FORMAT_JWT_VC,
+                  value: `JWT VC (${VC_FORMAT_JWT_VC})`,
+                },
               ]}
             />
             <TextControl
@@ -379,8 +387,8 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                 },
               }}
             />
-            {(selectedFormat === "jwt_vc" ||
-              selectedFormat === "dc+sd-jwt") && (
+            {(selectedFormat === VC_FORMAT_JWT_VC ||
+              selectedFormat === VC_FORMAT_SD_JWT) && (
               <TextControl
                 name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
                   "attributes.vc.supported_credential_types",
@@ -392,7 +400,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                 }}
               />
             )}
-            {selectedFormat === "dc+sd-jwt" && (
+            {selectedFormat === VC_FORMAT_SD_JWT && (
               <>
                 <TextControl
                   name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
