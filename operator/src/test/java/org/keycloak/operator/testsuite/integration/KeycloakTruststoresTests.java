@@ -26,6 +26,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreBuilder;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
@@ -81,6 +82,17 @@ public class KeycloakTruststoresTests extends BaseOperatorTest {
         assertTrue(statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().stream()
                 .anyMatch(v -> v.getMountPath()
                         .equals("/opt/keycloak/conf/truststores/configmap-abc")));
+    }
+
+    @DisabledIfApiServerTest
+    @Test
+    public void testDefaultTruststoreLogExists() {
+        var kc = getTestKeycloakDeployment(false);
+        deployKeycloak(k8sclient, kc, true);
+
+        Awaitility.await().ignoreExceptions().until(() ->
+                k8sclient.pods().withName(kc.getMetadata().getName() + "-0").getLog()
+                        .contains("Adding trusted Kubernetes CA from /var/run/secrets/kubernetes.io/serviceaccount/ca.crt"));
     }
 
 }

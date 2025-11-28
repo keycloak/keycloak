@@ -473,17 +473,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
 
 
-        if (!Boolean.FALSE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken())) {
-            String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
-
-            if (useServiceCaCrt) {
-                truststores += "," + SERVICE_CA_CRT;
-            }
-
-            // include the kube CA if the user is not controlling KC_TRUSTSTORE_PATHS via the unsupported or the additional
-            varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
-        }
-
         setTracingEnvVars(keycloakCR, varMap);
 
         var envVars = new ArrayList<>(varMap.values());
