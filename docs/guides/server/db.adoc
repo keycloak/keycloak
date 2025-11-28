@@ -239,8 +239,8 @@ the Microsoft SQL Server might be unable to use indexes.
 === Configuring Unicode support for a MySQL/MariaDB database
 
 Unicode characters are supported in a MySQL/MariaDB database if the database was created with Unicode support in the VARCHAR and CHAR fields when using the following SQL statement.
-+
-[source]
+
+[source,sql]
 ----
 create database keycloak character set utf8mb3;
 ----
