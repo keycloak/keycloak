@@ -34,6 +34,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTaskWithResult;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.RealmExpiration;
 import org.keycloak.models.utils.SessionTimeoutHelper;
@@ -51,6 +52,8 @@ import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransactionWi
 final class UserSessionExpirationLogic {
 
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
+    private static final Consumer<TypedQuery<Object[]>> NO_PARAMETERS = typedQuery -> {
+    };
 
     private UserSessionExpirationLogic() {
     }
@@ -80,19 +83,14 @@ final class UserSessionExpirationLogic {
         String realmId = realm.getId();
         final List<UserSessionAndUser> expiredSessions = new ArrayList<>(batchSize);
 
-        boolean hasMore = true;
-        while (hasMore) {
-            hasMore = runJobInTransactionWithResult(sessionFactory,
-                    s -> removeExpiredOfflineSessionsInTransaction(s, realmId, batchSize, "findExpiredOfflineUserSessionsLastRefresh", setLastSessionRefresh, expiredSessions));
-            expiredSessions.clear();
-        }
+        runInBatches(sessionFactory,
+                s -> findAndRemoveSessions(s, realmId, batchSize, true, Details.USER_SESSION_EXPIRED_REASON, "findExpiredOfflineUserSessionsLastRefresh", setLastSessionRefresh, expiredSessions),
+                expiredSessions::clear);
 
-        hasMore = true;
-        while (hasMore) {
-            hasMore = runJobInTransactionWithResult(sessionFactory,
-                    s -> removeExpiredOfflineSessionsInTransaction(s, realmId, batchSize, "findExpiredOfflineUserSessionsCreatedOn", setCreatedOn, expiredSessions));
-            expiredSessions.clear();
-        }
+        runInBatches(sessionFactory,
+                s -> findAndRemoveSessions(s, realmId, batchSize, true, Details.USER_SESSION_EXPIRED_REASON, "findExpiredOfflineUserSessionsCreatedOn", setCreatedOn, expiredSessions),
+                expiredSessions::clear);
+
 
         long duration = System.nanoTime() - start;
         logger.debugf("Offline user session expiration task completed for realm '%s'. Took %dms", realm.getName(), TimeUnit.NANOSECONDS.toMillis(duration));
@@ -114,27 +112,24 @@ final class UserSessionExpirationLogic {
         logger.tracef("Removing expired regular user sessions for realm '%s'", realm.getName());
 
         int oldestCreatedOn = currentTime - expiration.getLifespan(rememberMe) - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
-        Consumer<TypedQuery<Object[]>> setCreatedOn = setCreatedOn(oldestCreatedOn);
+        Consumer<TypedQuery<Object[]>> setRememberMe = setRememberMe(rememberMe);
+        Consumer<TypedQuery<Object[]>> setCreatedOn = UserSessionExpirationLogic.<Object[]>setCreatedOn(oldestCreatedOn)
+                .andThen(setRememberMe);
 
         int oldestLastSessionRefresh = currentTime - expiration.getMaxIdle(rememberMe) - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
-        Consumer<TypedQuery<Object[]>> setLastSessionRefresh = setLastSessionRefresh(oldestLastSessionRefresh);
+        var setLastSessionRefresh = UserSessionExpirationLogic.<Object[]>setLastSessionRefresh(oldestLastSessionRefresh)
+                .andThen(setRememberMe);
 
         String realmId = realm.getId();
         final List<UserSessionAndUser> expiredSessions = new ArrayList<>(batchSize);
 
-        boolean hasMore = true;
-        while (hasMore) {
-            hasMore = runJobInTransactionWithResult(sessionFactory,
-                    s -> removeExpiredRegularSessionInTransaction(s, realmId, rememberMe, batchSize, "findExpiredRegularUserSessionsLastRefresh", setLastSessionRefresh, expiredSessions));
-            expiredSessions.clear();
-        }
+        runInBatches(sessionFactory,
+                s -> findAndRemoveSessions(s, realmId, batchSize, false, Details.USER_SESSION_EXPIRED_REASON, "findExpiredRegularUserSessionsLastRefresh", setLastSessionRefresh, expiredSessions),
+                expiredSessions::clear);
 
-        hasMore = true;
-        while (hasMore) {
-            hasMore = runJobInTransactionWithResult(sessionFactory,
-                    s -> removeExpiredRegularSessionInTransaction(s, realmId, rememberMe, batchSize, "findExpiredRegularUserSessionsCreatedOn", setCreatedOn, expiredSessions));
-            expiredSessions.clear();
-        }
+        runInBatches(sessionFactory,
+                s -> findAndRemoveSessions(s, realmId, batchSize, false, Details.USER_SESSION_EXPIRED_REASON, "findExpiredRegularUserSessionsCreatedOn", setCreatedOn, expiredSessions),
+                expiredSessions::clear);
 
         long duration = System.nanoTime() - start;
         logger.debugf("Regular user session expiration task completed for realm '%s'. Took %dms", realm.getName(), TimeUnit.NANOSECONDS.toMillis(duration));
@@ -166,23 +161,18 @@ final class UserSessionExpirationLogic {
         final int expireLifespan = currentTime - Math.min(expiration.lifespan(), expiration.rememberMeLifespan());
         Consumer<TypedQuery<Object[]>> setCreatedOn = setCreatedOn(expireLifespan);
 
-        final List<String> sessionsWithRememberMe = new ArrayList<>(batchSize);
+        final List<UserSessionAndUser> sessionsWithRememberMe = new ArrayList<>(batchSize);
         final List<String> sessionsWithoutRememberMe = new ArrayList<>(batchSize);
-        boolean hasMore = true;
-        while (hasMore) {
-            hasMore = runJobInTransactionWithResult(sessionFactory,
-                    s -> handleRememberMeColumnValue(s, realmId, realmName, batchSize, rememberMeEnabledInRealm, "findUserSessionAndDataWithNullRememberMeLastRefresh", setLastSessionRefresh, sessionsWithRememberMe, sessionsWithoutRememberMe));
+        final Runnable cleanup = () -> {
             sessionsWithRememberMe.clear();
             sessionsWithoutRememberMe.clear();
-        }
-
-        hasMore = true;
-        while (hasMore) {
-            hasMore = runJobInTransactionWithResult(sessionFactory,
-                    s -> handleRememberMeColumnValue(s, realmId, realmName, batchSize, rememberMeEnabledInRealm, "findUserSessionAndDataWithNullRememberMeCreatedOn", setCreatedOn, sessionsWithRememberMe, sessionsWithoutRememberMe));
-            sessionsWithRememberMe.clear();
-            sessionsWithoutRememberMe.clear();
-        }
+        };
+        runInBatches(sessionFactory,
+                s -> handleRememberMeColumnValue(s, realmId, realmName, batchSize, rememberMeEnabledInRealm, "findUserSessionAndDataWithNullRememberMeLastRefresh", setLastSessionRefresh, sessionsWithRememberMe, sessionsWithoutRememberMe),
+                cleanup);
+        runInBatches(sessionFactory,
+                s -> handleRememberMeColumnValue(s, realmId, realmName, batchSize, rememberMeEnabledInRealm, "findUserSessionAndDataWithNullRememberMeCreatedOn", setCreatedOn, sessionsWithRememberMe, sessionsWithoutRememberMe),
+                cleanup);
 
         long duration = System.nanoTime() - start;
         logger.debugf("Migration task completed for realm '%s'. Took %dms", realmName, TimeUnit.NANOSECONDS.toMillis(duration));
@@ -196,25 +186,25 @@ final class UserSessionExpirationLogic {
      *
      * @param sessionFactory The {@link KeycloakSessionFactory}, used to start transactions.
      * @param realm          The {@link RealmModel} to check and remove invalid user sessions.
+     * @param batchSize      Sets the maximum number of user sessions to remove in a single transaction.
      */
-    public static void deleteInvalidSessions(KeycloakSessionFactory sessionFactory, RealmModel realm) {
+    public static void deleteInvalidSessions(KeycloakSessionFactory sessionFactory, RealmModel realm, int batchSize) {
         long start = System.nanoTime();
         final String realmId = realm.getId();
         final String realmName = realm.getName();
 
         logger.tracef("Removing invalid user sessions for realm '%s'", realmName);
 
-        int count = runJobInTransactionWithResult(sessionFactory, session -> {
-            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-            return em.createNamedQuery("deleteInvalidSessions")
-                    .setParameter("realmId", realmId)
-                    .executeUpdate();
-        });
+        List<UserSessionAndUser> invalidSession = new ArrayList<>();
+        runInBatches(sessionFactory,
+                s -> findAndRemoveSessions(s, realmId, batchSize, false, Details.INVALID_USER_SESSION_REMEMBER_ME_REASON, "findInvalidRegularUserSessions", NO_PARAMETERS, invalidSession),
+                invalidSession::clear);
+
         long duration = System.nanoTime() - start;
-        logger.debugf("%d invalid session removed for realm '%s'. Took %dms", (Object) count, realmName, TimeUnit.NANOSECONDS.toMillis(duration));
+        logger.debugf("Invalid session removed for realm '%s'. Took %dms", realmName, TimeUnit.NANOSECONDS.toMillis(duration));
     }
 
-    private static boolean handleRememberMeColumnValue(KeycloakSession session, String realmId, String realmName, int batchSize, boolean rememberMeEnabled, String queryName, Consumer<TypedQuery<Object[]>> setParameters, List<String> sessionsWithRememberMeCollector, List<String> sessionsWithoutRememberMeCollector) {
+    private static boolean handleRememberMeColumnValue(KeycloakSession session, String realmId, String realmName, int batchSize, boolean rememberMeEnabled, String queryName, Consumer<TypedQuery<Object[]>> setParameters, List<UserSessionAndUser> sessionsWithRememberMeCollector, List<String> sessionsWithoutRememberMeCollector) {
         final EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
 
         TypedQuery<Object[]> query = em.createNamedQuery(queryName, Object[].class);
@@ -224,35 +214,41 @@ final class UserSessionExpirationLogic {
                 .setMaxResults(batchSize)
                 .getResultStream()
                 .map(UserSessionIdAndRememberMe::fromQueryProjection)
-                .forEach(userSession -> (userSession.rememberMe() ? sessionsWithRememberMeCollector : sessionsWithoutRememberMeCollector).add(userSession.id()));
+                .forEach(userSession -> {
+                    if (userSession.rememberMe()) {
+                        sessionsWithRememberMeCollector.add(userSession.sessionAndUser());
+                    } else {
+                        sessionsWithoutRememberMeCollector.add(userSession.sessionAndUser().userSessionId());
+                    }
+                });
 
         int updateCount = updateRememberMeColumn(em, false, sessionsWithoutRememberMeCollector);
         if (rememberMeEnabled) {
-            int rememberMeUpdateCount = updateRememberMeColumn(em, true, sessionsWithRememberMeCollector);
+            int rememberMeUpdateCount = updateRememberMeColumn(em, true, sessionsWithRememberMeCollector.stream().map(UserSessionAndUser::userSessionId).toList());
             logger.debugf("%d sessions with remember me, and %d sessions without remember updated, for realm '%s'", rememberMeUpdateCount, updateCount, realmName);
         } else {
-            int deletedCount = deleteUserSessions(em, offlineToString(false), sessionsWithRememberMeCollector);
+            int deletedCount = handleResultsToRemove(session, em, realmId, false, Details.INVALID_USER_SESSION_REMEMBER_ME_REASON, sessionsWithRememberMeCollector);
             logger.debugf("%d sessions without remember me updated, and %d invalid sessions deleted, for realm '%s'", updateCount, deletedCount, realmName);
         }
 
         return sessionsWithRememberMeCollector.size() + sessionsWithoutRememberMeCollector.size() >= batchSize;
     }
 
-    private static void createExpirationEvent(KeycloakSession session, RealmModel realm, UserSessionAndUser userSessionAndUser) {
+    private static void createUserSessionDeletedEvent(KeycloakSession session, RealmModel realm, UserSessionAndUser data, String reason) {
         new EventBuilder(realm, session)
-                .user(userSessionAndUser.userId())
-                .session(userSessionAndUser.userSessionId())
+                .user(data.userId())
+                .session(data.userSessionId())
                 .event(EventType.USER_SESSION_DELETED)
-                .detail(Details.REASON, Details.EXPIRED_DETAIL)
+                .detail(Details.REASON, reason)
                 .success();
     }
 
     // returns true if it has more rows to check
-    private static boolean removeExpiredOfflineSessionsInTransaction(KeycloakSession session, String realmId, int batchSize, String queryName, Consumer<TypedQuery<Object[]>> setParameters, List<UserSessionAndUser> expiredSessions) {
+    private static boolean findAndRemoveSessions(KeycloakSession session, String realmId, int batchSize, boolean offline, String eventReason, String queryName, Consumer<TypedQuery<Object[]>> queryParameters, List<UserSessionAndUser> expiredSessions) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
 
         TypedQuery<Object[]> query = em.createNamedQuery(queryName, Object[].class);
-        setParameters.accept(query);
+        queryParameters.accept(query);
         query.setParameter("realmId", realmId)
                 .setHint(AvailableHints.HINT_READ_ONLY, true)
                 .setMaxResults(batchSize)
@@ -260,37 +256,16 @@ final class UserSessionExpirationLogic {
                 .map(UserSessionAndUser::fromQueryProjection)
                 .forEach(expiredSessions::add);
 
-        handleExpirationQueryResults(session, em, realmId, expiredSessions, true);
+        handleResultsToRemove(session, em, realmId, offline, eventReason, expiredSessions);
 
         // This should be safe.
         // If the hits are less than the desired batch size, we should not have expired sessions.
         return expiredSessions.size() >= batchSize;
     }
 
-    // returns true if it has more rows to check
-    private static boolean removeExpiredRegularSessionInTransaction(KeycloakSession session, String realmId, boolean rememberMe, int batchSize, String queryName, Consumer<TypedQuery<Object[]>> setParameters, List<UserSessionAndUser> expiredSessions) {
-        EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-
-        TypedQuery<Object[]> query = em.createNamedQuery(queryName, Object[].class);
-        setParameters.accept(query);
-        query.setParameter("realmId", realmId)
-                .setParameter("rememberMe", rememberMe)
-                .setHint(AvailableHints.HINT_READ_ONLY, true)
-                .setMaxResults(batchSize)
-                .getResultStream()
-                .map(UserSessionAndUser::fromQueryProjection)
-                .forEach(expiredSessions::add);
-
-        handleExpirationQueryResults(session, em, realmId, expiredSessions, false);
-
-        // This should be safe.
-        // If the hits are less than the desired batch size, we should not have expired sessions.
-        return expiredSessions.size() >= batchSize;
-    }
-
-    private static void handleExpirationQueryResults(KeycloakSession session, EntityManager em, String realmId, Collection<UserSessionAndUser> expiredSessions, boolean offline) {
+    private static int handleResultsToRemove(KeycloakSession session, EntityManager em, String realmId, boolean offline, String eventReason, Collection<UserSessionAndUser> expiredSessions) {
         if (expiredSessions.isEmpty()) {
-            return;
+            return 0;
         }
 
         RealmModel realm = session.realms().getRealm(realmId);
@@ -298,7 +273,7 @@ final class UserSessionExpirationLogic {
 
         // creates the expiration events and extracts the user session IDs for the delete statement.
         var sessionIds = expiredSessions.stream()
-                .peek(sessionAndUser -> createExpirationEvent(session, realm, sessionAndUser))
+                .peek(sessionAndUser -> createUserSessionDeletedEvent(session, realm, sessionAndUser, eventReason))
                 .map(UserSessionAndUser::userSessionId)
                 .toList();
 
@@ -309,8 +284,12 @@ final class UserSessionExpirationLogic {
                 .setParameter("offline", offlineStr)
                 .executeUpdate();
 
-        int us = deleteUserSessions(em, offlineStr, sessionIds);
-        logger.debugf("Removed %d expired user sessions and %d expired client sessions in realm '%s'", us, cs, realm.getName());
+        int us = em.createNamedQuery("deleteUserSessions")
+                .setParameter("offline", offlineStr)
+                .setParameter("userSessionIds", sessionIds)
+                .executeUpdate();
+        logger.debugf("Removed %d user sessions and %d client sessions in realm '%s'", us, cs, realm.getName());
+        return us;
     }
 
     private static int updateRememberMeColumn(EntityManager em, boolean rememberMe, Collection<String> sessionIds) {
@@ -323,14 +302,12 @@ final class UserSessionExpirationLogic {
                 .executeUpdate();
     }
 
-    private static int deleteUserSessions(EntityManager em, String offlineStr, Collection<String> sessionIds) {
-        if (sessionIds.isEmpty()) {
-            return 0;
-        }
-        return em.createNamedQuery("deleteUserSessions")
-                .setParameter("offline", offlineStr)
-                .setParameter("userSessionIds", sessionIds)
-                .executeUpdate();
+    private static void runInBatches(KeycloakSessionFactory sessionFactory, KeycloakSessionTaskWithResult<Boolean> task, Runnable afterBatchAction) {
+        boolean hasMore;
+        do {
+            hasMore = runJobInTransactionWithResult(sessionFactory, null, task, "session-expiration-task");
+            afterBatchAction.run();
+        } while (hasMore);
     }
 
     private static <T> Consumer<TypedQuery<T>> setLastSessionRefresh(int value) {
@@ -339,5 +316,9 @@ final class UserSessionExpirationLogic {
 
     private static <T> Consumer<TypedQuery<T>> setCreatedOn(int value) {
         return query -> query.setParameter("createdOn", value);
+    }
+
+    private static <T> Consumer<TypedQuery<T>> setRememberMe(boolean value) {
+        return query -> query.setParameter("rememberMe", value);
     }
 }
