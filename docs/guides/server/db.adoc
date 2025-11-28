@@ -236,13 +236,18 @@ Unicode characters are supported only for the special fields for a Microsoft SQL
 The `sendStringParametersAsUnicode` property of JDBC driver should be set to `false` to significantly improve performance. Without this parameter,
 the Microsoft SQL Server might be unable to use indexes.
 
-=== Configuring Unicode support for a MySQL database
+=== Configuring Unicode support for a MySQL/MariaDB database
 
-Unicode characters are supported in a MySQL database if the database was created with Unicode support in the VARCHAR and CHAR fields when using the CREATE DATABASE command.
+Unicode characters are supported in a MySQL/MariaDB database if the database was created with Unicode support in the VARCHAR and CHAR fields when using the following SQL statement.
++
+[source]
+----
+create database keycloak character set utf8mb3;
+----
 
 Note that the utf8mb4 character set is not supported due to different storage requirements for the utf8 character set. See MySQL documentation for details. In that situation, the length restriction on non-special fields does not apply because columns are created to accommodate the number of characters, not bytes.  If the database default character set does not allow Unicode storage, only the special fields allow storing Unicode values.
 
-. Start MySQL Server.
+. Start MySQL/MariaDB Server.
 . Under JDBC driver settings, locate the *JDBC connection settings*.
 . Add this connection property: `characterEncoding=UTF-8`
 
