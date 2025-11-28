@@ -123,4 +123,11 @@ public final class CRDUtils {
                 .map(ObjectMeta::getAnnotations)
                 .map(annotations -> annotations.get(Constants.KEYCLOAK_UPDATE_REVISION_ANNOTATION));
     }
+
+    public static Optional<String> getUpdateHash(StatefulSet statefulSet) {
+        return Optional.ofNullable(statefulSet)
+                .map(StatefulSet::getMetadata)
+                .map(ObjectMeta::getAnnotations)
+                .map(annotations -> annotations.get(Constants.KEYCLOAK_UPDATE_HASH_ANNOTATION));
+    }
 }
