@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.infinispan.entities.CachedGroup;
@@ -308,5 +309,12 @@ public class GroupAdapter implements GroupModel {
     public Type getType() {
         if (isUpdated()) return updated.getType();
         return cached.getType();
+    }
+
+    @Override
+    public OrganizationModel getOrganization() {
+        //todo caching
+        getDelegateForUpdate();
+        return updated.getOrganization();
     }
 }

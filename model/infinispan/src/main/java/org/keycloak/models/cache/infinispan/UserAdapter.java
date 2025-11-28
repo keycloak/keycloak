@@ -495,6 +495,7 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void leaveGroup(GroupModel group) {
+        // todo cashing
         if (group.getType() == Type.REALM && updated == null && !cached.getGroups(keycloakSession, modelSupplier).contains(group.getId())) {
             return;
         }

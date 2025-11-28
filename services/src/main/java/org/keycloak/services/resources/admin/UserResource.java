@@ -91,6 +91,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.SystemClientUtil;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -1180,6 +1181,9 @@ public class UserResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
+        if (Organizations.isOrganizationGroup(group)) {
+            throw ErrorResponse.error("Cannot access organization related group via non Organization API.", Status.BAD_REQUEST);
+        }
         auth.groups().requireManageMembership(group);
 
         try {
@@ -1218,6 +1222,9 @@ public class UserResource {
         GroupModel group = session.groups().getGroupById(realm, groupId);
         if (group == null) {
             throw new NotFoundException("Group not found");
+        }
+        if (Organizations.isOrganizationGroup(group)) {
+            throw ErrorResponse.error("Cannot access organization related group via non Organization API.", Status.BAD_REQUEST);
         }
         auth.groups().requireManageMembership(group);
 
