@@ -29,7 +29,7 @@ public class JWTClaimEnforcerExecutorFactory implements ClientPolicyExecutorProv
 
     public static final String CLAIM_NAME = "claim-name";
 
-    public static final String ALLOWED_VALUES = "allowed-values";
+    public static final String ALLOWED_VALUE = "allowed-value";
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
@@ -44,12 +44,11 @@ public class JWTClaimEnforcerExecutorFactory implements ClientPolicyExecutorProv
             null
     );
 
-    private static final ProviderConfigProperty ALLOWED_VALUES_PROPERTY = new ProviderConfigProperty(
-            ALLOWED_VALUES,
-            "Allowed Values",
-            "List of allowed values that the JWT claim can contain. You can use wildcards '*' to match any sequence of characters. " +
-                    "If left empty, only the presence of the claim is enforced.",
-            ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
+    private static final ProviderConfigProperty ALLOWED_VALUE_PROPERTY = new ProviderConfigProperty(
+            ALLOWED_VALUE,
+            "Allowed Value",
+            "Value that the JWT claim must match. Regular expressions are supported. If left empty, only the presence of the claim is enforced.",
+            ProviderConfigProperty.STRING_TYPE,
             null
     );
 
@@ -73,17 +72,17 @@ public class JWTClaimEnforcerExecutorFactory implements ClientPolicyExecutorProv
     @Override
     public String getHelpText() {
         return """
-           Enforces the presence and specific values of claim in a JWT.
-           - The configured claim must be present in the received JWT.
-           - If allowed values are empty, only the presence of the claim is enforced.
-           - If allowed values are set, the claim's value must match one of them.
-           - Wildcards '*' are supported for flexible value matching (e.g., 'admin*' matches 'admin123').
-           - Only claims of type string or number are allowed; multi-valued, arrays, maps, or other JSON objects are not supported.
-           """;
+        The executor enforces the presence and specific values of a claim in a JWT.
+        It is applied in client requests where an existing JWT token is passed, such as a JWT Authorization Grant request (RFC 7523) or Standard Token Exchange request.
+        The configured claim must be present in the received JWT.
+        If allowed value is empty, only the presence of the claim is enforced.
+        If allowed value is set, the claim's value must match the configured regular expression.
+        Only claims of type string or number are allowed; multi-valued, arrays, maps, or other JSON objects are not supported.
+        """;
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return List.of(CLAIM_NAME_PROPERTY, ALLOWED_VALUES_PROPERTY);
+        return List.of(CLAIM_NAME_PROPERTY, ALLOWED_VALUE_PROPERTY);
     }
 }

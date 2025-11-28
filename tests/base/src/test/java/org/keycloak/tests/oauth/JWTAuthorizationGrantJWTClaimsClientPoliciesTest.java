@@ -1,6 +1,5 @@
 package org.keycloak.tests.oauth;
 
-import java.util.List;
 import java.util.Map;
 
 import org.keycloak.OAuth2Constants;
@@ -41,16 +40,16 @@ public class JWTAuthorizationGrantJWTClaimsClientPoliciesTest extends BaseAbstra
 
     @Test
     public void testSubjectClaimExactMatch() {
-        updateExecutorConfig("sub", List.of("basic-user-id-1"));
+        updateExecutorConfig("sub", "basic-user-id-1");
 
         JsonWebToken assertionJwt = createDefaultAuthorizationGrantToken();
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(identityProvider.encodeToken(assertionJwt)).send();
-        assertFailurePolicy("invalid_request", "Claim 'sub' not allowed", response, events.poll());
+        assertFailurePolicy("invalid_request", "Value for claim 'sub' not allowed", response, events.poll());
     }
 
     @Test
     public void testClaimExactMatch() {
-        updateExecutorConfig("username", List.of("test-username"));
+        updateExecutorConfig("username", "test-username");
 
         JsonWebToken assertionJwt = createDefaultAuthorizationGrantToken();
         assertionJwt.getOtherClaims().put("username", "test-username");
@@ -61,12 +60,12 @@ public class JWTAuthorizationGrantJWTClaimsClientPoliciesTest extends BaseAbstra
         assertionJwt = createDefaultAuthorizationGrantToken();
         assertionJwt.getOtherClaims().put("username", "wronguser");
         response = oAuthClient.jwtAuthorizationGrantRequest(identityProvider.encodeToken(assertionJwt)).send();
-        assertFailurePolicy("invalid_request", "Claim 'username' not allowed", response, events.poll());
+        assertFailurePolicy("invalid_request", "Value for claim 'username' not allowed", response, events.poll());
     }
 
     @Test
     public void testClaimWildcardMatch() {
-        updateExecutorConfig("username", List.of("test-username*"));
+        updateExecutorConfig("username", "test-username.*");
 
         JsonWebToken assertionJwt = createDefaultAuthorizationGrantToken();
         assertionJwt.getOtherClaims().put("username", "test-username123");
@@ -77,12 +76,12 @@ public class JWTAuthorizationGrantJWTClaimsClientPoliciesTest extends BaseAbstra
         assertionJwt = createDefaultAuthorizationGrantToken();
         assertionJwt.getOtherClaims().put("username", "wronguser");
         response = oAuthClient.jwtAuthorizationGrantRequest(identityProvider.encodeToken(assertionJwt)).send();
-        assertFailurePolicy("invalid_request", "Claim 'username' not allowed", response, events.poll());
+        assertFailurePolicy("invalid_request", "Value for claim 'username' not allowed", response, events.poll());
     }
 
     @Test
     public void testClaimNumberMatch() {
-        updateExecutorConfig("level", List.of("3", "5", "6*"));
+        updateExecutorConfig("level", "^(3|5)$");
 
         JsonWebToken assertionJwt = createDefaultAuthorizationGrantToken();
         assertionJwt.getOtherClaims().put("level", 3);
@@ -91,41 +90,61 @@ public class JWTAuthorizationGrantJWTClaimsClientPoliciesTest extends BaseAbstra
         assertSuccess("test-app", response);
 
         assertionJwt = createDefaultAuthorizationGrantToken();
-        assertionJwt.getOtherClaims().put("level", 61);
+        assertionJwt.getOtherClaims().put("level", 2);
+        response = oAuthClient.jwtAuthorizationGrantRequest(identityProvider.encodeToken(assertionJwt)).send();
+        assertFailurePolicy("invalid_request", "Value for claim 'level' not allowed", response, events.poll());
+    }
+
+    @Test
+    public void testClaimMultiValueRegexMatch() {
+        updateExecutorConfig("username", "^(admin|service|test-[0-9]+)$");
+
+        JsonWebToken assertionJwt = createDefaultAuthorizationGrantToken();
+        assertionJwt.getOtherClaims().put("username", "admin");
+
+        AccessTokenResponse response =
+                oAuthClient.jwtAuthorizationGrantRequest(identityProvider.encodeToken(assertionJwt)).send();
+        assertSuccess("test-app", response);
+
+        assertionJwt = createDefaultAuthorizationGrantToken();
+        assertionJwt.getOtherClaims().put("username", "service");
 
         response = oAuthClient.jwtAuthorizationGrantRequest(identityProvider.encodeToken(assertionJwt)).send();
         assertSuccess("test-app", response);
 
         assertionJwt = createDefaultAuthorizationGrantToken();
-        assertionJwt.getOtherClaims().put("level", 2);
+        assertionJwt.getOtherClaims().put("username", "test-12345");
+
         response = oAuthClient.jwtAuthorizationGrantRequest(identityProvider.encodeToken(assertionJwt)).send();
-        assertFailurePolicy("invalid_request", "Claim 'level' not allowed", response, events.poll());
+        assertSuccess("test-app", response);
+
+        assertionJwt = createDefaultAuthorizationGrantToken();
+        assertionJwt.getOtherClaims().put("username", "unknown-username");
+
+        response = oAuthClient.jwtAuthorizationGrantRequest(identityProvider.encodeToken(assertionJwt)).send();
+        assertFailurePolicy("invalid_request", "Value for claim 'username' not allowed", response, events.poll());
     }
 
     @Test
     public void testClaimNowAllowedType() {
-        updateExecutorConfig("username",  List.of("test-username"));
+        updateExecutorConfig("username", "test-username");
 
         JsonWebToken assertionJwt = createDefaultAuthorizationGrantToken();
-        assertionJwt.getOtherClaims().put("username", Map.of("test-username","asdf"));
+        assertionJwt.getOtherClaims().put("username", Map.of("test-username","tet-username-value"));
 
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(identityProvider.encodeToken(assertionJwt)).send();
-        assertFailurePolicy("invalid_request", "Claim value is not allowed", response, events.poll());
+        assertFailurePolicy("invalid_request", "Value type for claim 'username' not allowed", response, events.poll());
     }
 
-    protected void updateExecutorConfig(String claimName, List<String> allowedValues) {
+    protected void updateExecutorConfig(String claimName, String allowedValue) {
         JWTClaimEnforcerExecutor.Configuration claimsConfig = new JWTClaimEnforcerExecutor.Configuration();
         claimsConfig.setClaimName(claimName);
-        claimsConfig.setAllowedValues(allowedValues);
+        claimsConfig.setAllowedValue(allowedValue);
         updateExecutorConfig(claimsConfig);
     }
     protected void updateExecutorConfig(JWTClaimEnforcerExecutor.Configuration newConfig) {
 
         realm.updateWithCleanup(r -> {
-
-            JWTClaimEnforcerExecutor.Configuration claimsConfig = new JWTClaimEnforcerExecutor.Configuration();
-            claimsConfig.setClaimName("username");
-            claimsConfig.setAllowedValues(List.of("test-username"));
             r.clientProfile(ClientProfileBuilder.create()
                     .name("executor")
                     .description("executor description")
