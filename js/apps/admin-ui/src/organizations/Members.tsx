@@ -1,29 +1,23 @@
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
-  Button,
-  Dropdown,
-  DropdownItem,
-  DropdownList,
-  MenuToggle,
-  ToolbarItem,
-} from "@patternfly/react-core";
+  KeycloakDataTable,
+  ListEmptyState,
+  useAlerts,
+} from "@keycloak/keycloak-ui-shared";
+import { Button, ToolbarItem } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
-import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
-import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
+import { CheckboxFilterComponent } from "../components/dynamic/CheckboxFilterComponent";
+import { SearchInputComponent } from "../components/dynamic/SearchInputComponent";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { MemberModal } from "../groups/MembersModal";
 import { toUser } from "../user/routes/User";
+import { translationFormatter } from "../utils/translationFormatter";
 import { useParams } from "../utils/useParams";
 import useToggle from "../utils/useToggle";
-import { InviteMemberModal } from "./InviteMemberModal";
 import { EditOrganizationParams } from "./routes/EditOrganization";
-import { CheckboxFilterComponent } from "../components/dynamic/CheckboxFilterComponent";
-import { SearchInputComponent } from "../components/dynamic/SearchInputComponent";
-import { translationFormatter } from "../utils/translationFormatter";
 
 type MembershipTypeRepresentation = UserRepresentation & {
   membershipType?: string;
@@ -45,9 +39,7 @@ export const Members = () => {
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
-  const [open, toggle] = useToggle();
   const [openAddMembers, toggleAddMembers] = useToggle();
-  const [openInviteMembers, toggleInviteMembers] = useToggle();
   const [selectedMembers, setSelectedMembers] = useState<UserRepresentation[]>(
     [],
   );
@@ -163,9 +155,6 @@ export const Members = () => {
           }}
         />
       )}
-      {openInviteMembers && (
-        <InviteMemberModal orgId={orgId} onClose={toggleInviteMembers} />
-      )}
       <KeycloakDataTable
         key={key}
         loader={loader}
@@ -186,39 +175,9 @@ export const Members = () => {
               />
             </ToolbarItem>
             <ToolbarItem>
-              <Dropdown
-                onOpenChange={toggle}
-                toggle={(ref) => (
-                  <MenuToggle
-                    ref={ref}
-                    onClick={toggle}
-                    isExpanded={open}
-                    variant="primary"
-                  >
-                    {t("addMember")}
-                  </MenuToggle>
-                )}
-                isOpen={open}
-              >
-                <DropdownList>
-                  <DropdownItem
-                    onClick={() => {
-                      toggleAddMembers();
-                      toggle();
-                    }}
-                  >
-                    {t("addRealmUser")}
-                  </DropdownItem>
-                  <DropdownItem
-                    onClick={() => {
-                      toggleInviteMembers();
-                      toggle();
-                    }}
-                  >
-                    {t("inviteMember")}
-                  </DropdownItem>
-                </DropdownList>
-              </Dropdown>
+              <Button variant="primary" onClick={toggleAddMembers}>
+                {t("addMember")}
+              </Button>
             </ToolbarItem>
             <ToolbarItem>
               <Button
@@ -279,14 +238,12 @@ export const Members = () => {
                 text: t("addRealmUser"),
                 onClick: toggleAddMembers,
               },
-              {
-                text: t("inviteMember"),
-                onClick: toggleInviteMembers,
-              },
             ]}
           />
         }
-        isSearching={filteredMembershipTypes.length > 0}
+        isSearching={
+          filteredMembershipTypes.length > 0 || searchTriggerText.length > 0
+        }
       />
     </>
   );

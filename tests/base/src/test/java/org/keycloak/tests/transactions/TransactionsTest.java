@@ -15,39 +15,38 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.transactions;
+package org.keycloak.tests.transactions;
 
-import java.util.List;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class TransactionsTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class TransactionsTest {
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @Test
     public void testTransactionActive() {
-        testingClient.server().run(
+        runOnServer.run(
                 session -> {
-                    Assert.assertTrue(session.getTransactionManager().isActive());
+                    Assertions.assertTrue(session.getTransactionManager().isActive());
                     session.getTransactionManager().commit();
-                    Assert.assertFalse(session.getTransactionManager().isActive());
+                    Assertions.assertFalse(session.getTransactionManager().isActive());
 
                     session.getTransactionManager().begin();
-                    Assert.assertTrue(session.getTransactionManager().isActive());
+                    Assertions.assertTrue(session.getTransactionManager().isActive());
                     session.getTransactionManager().rollback();
-                    Assert.assertFalse(session.getTransactionManager().isActive());
+                    Assertions.assertFalse(session.getTransactionManager().isActive());
                 }
         );
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
     }
 
 }

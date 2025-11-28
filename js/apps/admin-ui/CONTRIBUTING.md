@@ -66,3 +66,13 @@ Alternatively the tests can also run headless as follows:
 ```
 pnpm test:integration
 ```
+
+#### Running specific tests
+You can execute specific individual tests as follows:
+
+```bash
+# f.e. pnpm test:integration -- test/clients/main.spec.ts
+pnpm test:integration -- <path-to-the-test-or-name>
+```
+
+You can specify the full path or just the test file name.

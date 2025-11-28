@@ -91,6 +91,8 @@ public class ClientAttributesCondition extends AbstractClientPolicyConditionProv
             case REGISTERED:
             case UPDATE:
             case UPDATED:
+            case TOKEN_EXCHANGE_REQUEST:
+            case JWT_AUTHORIZATION_GRANT:
             case SAML_AUTHN_REQUEST:
             case SAML_LOGOUT_REQUEST:
                 if (isAttributesMatched(session.getContext().getClient())) return ClientPolicyVote.YES;

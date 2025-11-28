@@ -38,6 +38,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.JWTAuthorizationGrantContext;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -55,7 +57,9 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
         try {
 
             JWTAuthorizationGrantValidator authorizationGrantContext = JWTAuthorizationGrantValidator.createValidator(
-                    context.getSession(), client, assertion);
+                    context.getSession(), client, assertion, formParams.getFirst(OAuth2Constants.SCOPE));
+            event.detail(Details.IDENTITY_PROVIDER_ISSUER, authorizationGrantContext.getIssuer());
+            event.detail(Details.IDENTITY_PROVIDER_USER_ID, authorizationGrantContext.getSubject());
 
             //client must be confidential
             authorizationGrantContext.validateClient();
@@ -71,6 +75,7 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             if (identityProviderModel == null) {
                 throw new RuntimeException("No Identity Provider for provided issuer");
             }
+            event.detail(Details.IDENTITY_PROVIDER, identityProviderModel.getAlias());
 
             if(!OIDCAdvancedConfigWrapper.fromClientModel(context.getClient()).getJWTAuthorizationGrantAllowedIdentityProviders().contains(identityProviderModel.getAlias())) {
                 throw new RuntimeException("Identity Provider is not allowed for the client");
@@ -107,12 +112,23 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
             String scopeParam = getRequestedScopes();
 
+            try {
+                session.clientPolicy().triggerOnEvent(new JWTAuthorizationGrantContext(authorizationGrantContext, identityProviderModel));
+            } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+                event.error(cpe.getError());
+                throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+            }
+
             RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
             AuthenticationSessionModel authSession = createSessionModel(rootAuthSession, user, client, scopeParam);
             UserSessionModel userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, user, user.getUsername(),
                     clientConnection.getRemoteHost(), "authorization-grant", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
             event.session(userSession);
-            ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, userSession, authSession);
+            ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, userSession,
+                    authSession, authorizationGrantContext.getRestrictedScopes(), false);
             return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, null);
         } catch (CorsErrorResponseException e) {
             throw e;

@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.model.session;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,6 +31,7 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -66,6 +68,8 @@ import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
+import org.keycloak.models.sessions.infinispan.expiration.ExpirationTaskFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RealmExpiration;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -78,6 +82,7 @@ import org.keycloak.testsuite.federation.HardcodedClientStorageProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
+import org.awaitility.Awaitility;
 import org.hamcrest.Matchers;
 import org.infinispan.Cache;
 import org.junit.Assert;
@@ -1045,6 +1050,130 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
         // double batch size sessions
         doExpirationWithSessions(JpaUserSessionPersisterProviderFactory.DEFAULT_EXPIRATION_BATCH * 2, initialSessions, eventCount);
+    }
+
+    @Test
+    public void testExpirationDistribution() throws InterruptedException {
+        Assume.assumeTrue(MultiSiteUtils.isPersistentSessionsEnabled());
+        closeKeycloakSessionFactory();
+
+        final int clusterSize = 4;
+        final CyclicBarrier barrier = new CyclicBarrier(clusterSize);
+        final AtomicInteger indexGenerator = new AtomicInteger();
+        final AtomicInteger count = new AtomicInteger();
+
+        inIndependentFactories(clusterSize, 60, () -> {
+            try {
+                final boolean primary = indexGenerator.incrementAndGet() == 1;
+                final int sessionCount = 10;
+                // await for the startup
+                barrier.await();
+
+                if (primary) {
+                    // persist sessions
+                    createSessions(sessionCount, value -> false);
+                }
+
+                barrier.await();
+                assertEquals(sessionCount, countPersistedSessionsForUser1());
+                if (InfinispanUtils.isRemoteInfinispan()) {
+                    var factory = getFactory();
+                    //let's make sure everybody gets the membership right.
+                    Awaitility.await()
+                            .pollDelay(Duration.ofMillis(100))
+                            .timeout(Duration.ofSeconds(10))
+                            .untilAsserted(() -> assertEquals(4, (long) KeycloakModelUtils.runJobInTransactionWithResult(factory, ExpirationTaskFactory::membersSize)));
+                }
+                barrier.await();
+
+                // let's find out who is going to do the expiration for the realm
+                boolean isResponsibleForExpiration = withRealm(realmId, (session, realmModel) -> {
+                    if (ExpirationTaskFactory.isSelectedForExpireSessionsInRealm(session, realmModel)) {
+                        count.incrementAndGet();
+                        return true;
+                    }
+                    return false;
+                });
+
+                // we should have a single node responsible to remove the expired entries for the test realm
+                barrier.await();
+                assertEquals(1, count.get());
+                barrier.await();
+
+                // advance time
+                if (primary) {
+                    withRealmConsumer(realmId, (session, realm) -> Time.setOffset(realm.getSsoSessionIdleTimeout() + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10));
+                }
+
+                barrier.await();
+
+                // trigger expiration task in other nodes
+                if (!isResponsibleForExpiration) {
+                    inComittedTransaction(ExpirationTaskFactory::manualTriggerTask);
+                }
+
+                barrier.await();
+                if (primary) {
+                    withRealmConsumer(realmId, (session, realm) -> Time.setOffset(0));
+                }
+
+                // it should not delete anything.
+                barrier.await();
+                assertEquals(sessionCount, countPersistedSessionsForUser1());
+                barrier.await();
+
+                // advance time
+                if (primary) {
+                    withRealmConsumer(realmId, (session, realm) -> Time.setOffset(realm.getSsoSessionIdleTimeout() + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10));
+                }
+
+                barrier.await();
+
+                // now expire it
+                if (isResponsibleForExpiration) {
+                    inComittedTransaction(ExpirationTaskFactory::manualTriggerTask);
+                }
+
+                barrier.await();
+                assertEquals(0, countPersistedSessionsForUser1());
+                barrier.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (BrokenBarrierException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Test
+    public void testExpirationTaskFrequency() {
+        Assume.assumeTrue(MultiSiteUtils.isPersistentSessionsEnabled());
+        final AtomicInteger counter = new AtomicInteger();
+        final int sleepSeconds = 5;
+
+        // with 1 second interval between tasks, we should have at lest 4 executions.
+        inComittedTransaction(session -> {
+            var task = ExpirationTaskFactory.create(session, 1, value -> counter.incrementAndGet());
+            task.start();
+            try {
+                Thread.sleep(TimeUnit.SECONDS.toMillis(sleepSeconds));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            task.stop();
+        });
+
+        assertThat(counter.get(), Matchers.greaterThanOrEqualTo(sleepSeconds - 1));
+        assertThat(counter.get(), Matchers.lessThanOrEqualTo(sleepSeconds + 1));
+    }
+
+    private long countPersistedSessionsForUser1() {
+        return withRealm(realmId, (session, realm) -> {
+            var user = session.users().getUserByUsername(realm, "user1");
+            var provider = session.getProvider(UserSessionPersisterProvider.class);
+            return provider.loadUserSessionsStream(realm, user, false, null, null)
+                    .count();
+        });
     }
 
     private long doExpirationWithSessions(int count, int initialSessionCount, long currentEventCount) {

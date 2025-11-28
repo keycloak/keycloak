@@ -32,6 +32,7 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.cache.infinispan.CachedCount;
 import org.keycloak.models.cache.infinispan.RealmCacheSession;
 import org.keycloak.models.cache.infinispan.UserCacheSession;
+import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
 
 import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyOrgId;
@@ -43,6 +44,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     private final KeycloakSession session;
     private final UserCacheSession userCache;
+    private final InfinispanInvitationManager invitationManager;
     private OrganizationProvider orgDelegate;
     private final RealmCacheSession realmCache;
     private final Map<String, OrganizationAdapter> managedOrganizations = new HashMap<>();
@@ -51,6 +53,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         this.session = session;
         this.realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
         this.userCache = (UserCacheSession) session.getProvider(UserCache.class);
+        this.invitationManager = new InfinispanInvitationManager(getDelegate().getInvitationManager());
     }
 
     private static String cacheKeyOrgCount(RealmModel realm) {
@@ -67,7 +70,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         return getDelegate().create(id, name, alias);
     }
 
-    private OrganizationProvider getDelegate() {
+    OrganizationProvider getDelegate() {
         if (orgDelegate == null) {
             // use lazy initialization to avoid touching the entity manager
             orgDelegate = session.getProvider(OrganizationProvider.class, "jpa");
@@ -347,6 +350,11 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
 
         return count;
+    }
+
+    @Override
+    public InvitationManager getInvitationManager() {
+        return invitationManager;
     }
 
     @Override

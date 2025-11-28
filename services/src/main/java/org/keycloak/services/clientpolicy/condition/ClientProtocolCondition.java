@@ -83,6 +83,8 @@ public class ClientProtocolCondition extends AbstractClientPolicyConditionProvid
             case UPDATE:
             case UPDATED:
             case REGISTERED:
+            case TOKEN_REVOKE_RESPONSE:
+            case JWT_AUTHORIZATION_GRANT:
             case SAML_AUTHN_REQUEST:
             case SAML_LOGOUT_REQUEST:
                 if (isCorrectProtocolFromContext()) {

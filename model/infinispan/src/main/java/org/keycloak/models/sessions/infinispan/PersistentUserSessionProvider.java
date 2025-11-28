@@ -404,19 +404,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                 .forEach(s -> removeUserSession(realm, s));
     }
 
-    public void removeAllExpired() {
-        // Rely on expiration of cache entries provided by infinispan. Just expire entries from persister is needed
-        // TODO: Avoid iteration over all realms here (Details in the KEYCLOAK-16802)
-        session.realms().getRealmsStream().forEach(this::removeExpired);
-
-    }
-
-    @Override
-    public void removeExpired(RealmModel realm) {
-        // Rely on expiration of cache entries provided by infinispan. Nothing needed here besides calling persister
-        session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
-    }
-
     @Override
     public void removeUserSessions(RealmModel realm) {
         // Send message to all DCs as each site might have different entries in the cache

@@ -98,8 +98,8 @@ import org.keycloak.models.sessions.infinispan.stream.SessionUnwrapMapper;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.sessions.CommonClientSessionModel;
+import org.keycloak.storage.UserStorageProviderClusterEvent;
 import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.storage.managers.UserStorageSyncManager;
 
 import org.infinispan.protostream.FileDescriptorSource;
 import org.infinispan.protostream.GeneratedSchema;
@@ -126,7 +126,7 @@ import org.infinispan.protostream.types.java.CommonTypes;
                 CommonClientSessionModel.ExecutionStatus.class,
                 ComponentModel.MultiMapEntry.class,
                 UserStorageProviderModel.class,
-                UserStorageSyncManager.UserStorageProviderClusterEvent.class,
+                UserStorageProviderClusterEvent.class,
 
                 // clustering.infinispan package
                 LockEntry.class,

@@ -35,6 +35,7 @@ import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.models.utils.SessionTimeoutHelper;
@@ -305,7 +306,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             kcSession.getContext().setRealm(realm);
             clientSessionsKept.putAll(kcSession.sessions().getUserSessionsStream(realm,
                             kcSession.users().getUserByUsername(realm, "user2"))
-                    .collect(Collectors.toMap(model -> model.getId(), model -> model.getAuthenticatedClientSessions().keySet().size())));
+                    .collect(Collectors.toMap(UserSessionModel::getId, model -> model.getAuthenticatedClientSessions().size())));
 
             kcSession.sessions().removeUserSessions(realm, kcSession.users().getUserByUsername(realm, "user1"));
         });
@@ -315,9 +316,9 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             assertEquals(0, kcSession.sessions().getUserSessionsStream(realm, kcSession.users().getUserByUsername(realm, "user1"))
                     .count());
             List<UserSessionModel> userSessions = kcSession.sessions().getUserSessionsStream(realm,
-                    kcSession.users().getUserByUsername(realm, "user2")).collect(Collectors.toList());
+                    kcSession.users().getUserByUsername(realm, "user2")).toList();
 
-            assertSame(userSessions.size(), 1);
+            assertSame(1, userSessions.size());
 
             for (UserSessionModel userSession : userSessions) {
                 Assert.assertEquals((int) clientSessionsKept.get(userSession.getId()),
@@ -450,7 +451,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             // remove the expired sessions - we expect the first two sessions to have been removed as they either expired the max lifespan or the session idle timeouts.
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session1) -> {
                 session1.getContext().setRealm(realm);
-                session1.sessions().removeExpired(realm);
+                session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
             });
 
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> {
@@ -578,7 +579,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
                 RealmModel realm = kcSession.realms().getRealmByName("test");
                 kcSession.getContext().setRealm(realm);
-                kcSession.sessions().removeExpired(realm);
+                session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
             });
 
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
@@ -624,7 +625,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             // reload userSession in current session
             userSession = session.sessions().getUserSession(realm, userSession.getId());
             Time.setOffset(3600000);
-            session.sessions().removeExpired(realm);
+            session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
 
             // Assert no exception is thrown here
             session.sessions().removeUserSession(realm, userSession);
@@ -689,7 +690,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         session.getContext().setRealm(realm);
         ClientModel client = realm.getClientByClientId("test-app");
         UserSessionModel userSession = session.sessions().createUserSession(null, realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.2", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
-        AuthenticatedClientSessionModel clientSession = createClientSession(session, client, userSession, "http://redirect", "state");
+        createClientSession(session, client, userSession, "http://redirect", "state");
 
         UserSessionModel userSessionLoaded = session.sessions().getUserSession(realm, userSession.getId());
         AuthenticatedClientSessionModel clientSessionLoaded = userSessionLoaded.getAuthenticatedClientSessions().get(client.getId());
@@ -898,8 +899,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
         Map<String, List<String>> attributes = new HashMap<>();
         ProviderEventListener providerEventListener = event -> {
-            if (event instanceof UserModel.UserRemovedEvent) {
-                UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
+            if (event instanceof UserModel.UserRemovedEvent userRemovedEvent) {
                 attributes.putAll(userRemovedEvent.getUser().getAttributes());
             }
         };
@@ -913,12 +913,11 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-    private static AuthenticatedClientSessionModel createClientSession(KeycloakSession session, ClientModel client, UserSessionModel userSession, String redirect, String state) {
+    private static void createClientSession(KeycloakSession session, ClientModel client, UserSessionModel userSession, String redirect, String state) {
         RealmModel realm = session.realms().getRealmByName("test");
         AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, client, userSession);
         clientSession.setRedirectUri(redirect);
         if (state != null) clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, state);
-        return clientSession;
     }
 
     private static UserSessionModel[] createSessions(KeycloakSession session) {

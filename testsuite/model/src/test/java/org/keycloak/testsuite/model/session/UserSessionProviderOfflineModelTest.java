@@ -49,6 +49,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.services.managers.UserSessionManager;
@@ -544,6 +545,18 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
             Assert.assertEquals(2, session.sessions().getOfflineUserSessionsStream(realm, session.users().getUserByUsername(realm, "user1")).count());
 
             return null;
+        });
+    }
+
+    @Test
+    public void testExpirationTaskExists() {
+        // embedded + volatile sessions store offline sessions in the database, the task must be running in this case too.
+        Assume.assumeTrue(InfinispanUtils.isEmbeddedInfinispan());
+        Assume.assumeFalse(MultiSiteUtils.isPersistentSessionsEnabled());
+        inComittedTransaction(session -> {
+            var providerFactory = session.getKeycloakSessionFactory().getProviderFactory(UserSessionProvider.class);
+            Assert.assertTrue(providerFactory instanceof InfinispanUserSessionProviderFactory);
+            Assert.assertNotNull(((InfinispanUserSessionProviderFactory) providerFactory).getExpirationTask());
         });
     }
 

@@ -92,7 +92,7 @@ public class UserResourceTypeSelectorTest extends AbstractWorkflowTest {
         oauth.openLoginForm();
         loginPage.fillLogin("alice", "alice");
         loginPage.submit();
-        assertTrue(driver.getPageSource().contains("Happy days"));
+        assertTrue(driver.page().getPageSource().contains("Happy days"));
 
         // set offset to 11 days - disable step should run now
         runScheduledSteps(Duration.ofDays(12));

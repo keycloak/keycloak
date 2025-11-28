@@ -59,6 +59,7 @@ import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
+import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.MembershipType;
@@ -81,12 +82,14 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     private final GroupProvider groupProvider;
     private final UserProvider userProvider;
     private final KeycloakSession session;
+    private final JpaInvitationManager invitationManager;
 
     public JpaOrganizationProvider(KeycloakSession session) {
         this.session = session;
         em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
         groupProvider = session.groups();
         userProvider = session.users();
+        invitationManager = new JpaInvitationManager(session, em);
     }
 
     @Override
@@ -602,6 +605,11 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     @Override
     public boolean isEnabled() {
         return getRealm().isOrganizationsEnabled();
+    }
+
+    @Override
+    public InvitationManager getInvitationManager() {
+        return invitationManager;
     }
 
     @Override

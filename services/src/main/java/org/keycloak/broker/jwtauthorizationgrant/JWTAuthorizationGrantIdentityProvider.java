@@ -51,7 +51,7 @@ public class JWTAuthorizationGrantIdentityProvider implements JWTAuthorizationGr
 
     @Override
     public boolean isAssertionReuseAllowed() {
-        return config.getJWTAuthorizationGrantAssertionReuseAllowed();
+        return config.isJWTAuthorizationGrantAssertionReuseAllowed();
     }
 
     @Override

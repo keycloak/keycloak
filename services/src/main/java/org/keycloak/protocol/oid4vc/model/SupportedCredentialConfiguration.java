@@ -160,7 +160,7 @@ public class SupportedCredentialConfiguration {
         return null;
     }
 
-    public CredentialConfigId deriveConfiId() {
+    public CredentialConfigId deriveConfigId() {
         return CredentialConfigId.from(id);
     }
 

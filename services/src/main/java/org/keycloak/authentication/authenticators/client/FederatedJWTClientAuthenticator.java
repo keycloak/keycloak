@@ -84,6 +84,11 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
                 return;
             }
 
+            // Ignore for self-signed client assertions
+            if (Objects.equals(clientAssertionState.getToken().getIssuer(), clientAssertionState.getToken().getSubject())) {
+                return;
+            }
+
             ClientAssertionIdentityProviderFactory.ClientAssertionStrategy strategy = findStrategy(clientAssertionState.getClientAssertionType());
             if (strategy == null) {
                 return;

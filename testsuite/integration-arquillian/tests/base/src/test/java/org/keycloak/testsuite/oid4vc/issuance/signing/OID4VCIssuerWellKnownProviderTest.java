@@ -19,7 +19,6 @@ package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,7 +30,6 @@ import java.util.Optional;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
@@ -52,7 +50,6 @@ import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProviderFactory;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.ClaimDisplay;
@@ -64,11 +61,9 @@ import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.AdminClientUtil;
@@ -92,7 +87,7 @@ import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import static org.keycloak.OID4VCConstants.SIGNED_METADATA_JWT_TYPE;
-import static org.keycloak.constants.Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE;
+import static org.keycloak.constants.OID4VCIConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE;
 import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
@@ -133,7 +128,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
     @Test
     public void testUnsignedMetadata() {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            String wellKnownUri = OAuthClient.AUTH_SERVER_ROOT + "/realms/" + TEST_REALM_NAME + "/.well-known/openid-credential-issuer";
+            String wellKnownUri = getRealmMetadataPath(TEST_REALM_NAME);
             String expectedIssuer = getRealmPath(TEST_REALM_NAME);
 
             // Configure realm for unsigned metadata
@@ -173,7 +168,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
     @Test
     public void testSignedMetadata() {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            String wellKnownUri = OAuthClient.AUTH_SERVER_ROOT + "/realms/" + TEST_REALM_NAME + "/.well-known/openid-credential-issuer";
+            String wellKnownUri = getRealmMetadataPath(TEST_REALM_NAME);
             String expectedIssuer = getRealmPath(TEST_REALM_NAME);
 
             // Configure realm for signed metadata
@@ -249,7 +244,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
     @Test
     public void testUnsignedMetadataWhenSignedDisabled() {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            String wellKnownUri = OAuthClient.AUTH_SERVER_ROOT + "/realms/" + TEST_REALM_NAME + "/.well-known/openid-credential-issuer";
+            String wellKnownUri = getRealmMetadataPath(TEST_REALM_NAME);
             String expectedIssuer = getRealmPath(TEST_REALM_NAME);
 
             // Disable signed metadata
@@ -279,7 +274,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
     @Test
     public void testSignedMetadataWithInvalidLifespan() {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            String wellKnownUri = OAuthClient.AUTH_SERVER_ROOT + "/realms/" + TEST_REALM_NAME + "/.well-known/openid-credential-issuer";
+            String wellKnownUri = getRealmMetadataPath(TEST_REALM_NAME);
             String expectedIssuer = getRealmPath(TEST_REALM_NAME);
 
             // Configure invalid lifespan
@@ -309,7 +304,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
     @Test
     public void testSignedMetadataWithInvalidAlgorithm() {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            String wellKnownUri = OAuthClient.AUTH_SERVER_ROOT + "/realms/" + TEST_REALM_NAME + "/.well-known/openid-credential-issuer";
+            String wellKnownUri = getRealmMetadataPath(TEST_REALM_NAME);
             String expectedIssuer = getRealmPath(TEST_REALM_NAME);
 
             // Configure invalid algorithm
@@ -456,10 +451,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
     @Test
     public void testIssuerMetadataIncludesEncryptionSupport() throws IOException {
         try (Client client = AdminClientUtil.createResteasyClient()) {
-            UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
-            URI oid4vciDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder)
-                    .build(TEST_REALM_NAME, OID4VCIssuerWellKnownProviderFactory.PROVIDER_ID);
-            WebTarget oid4vciDiscoveryTarget = client.target(oid4vciDiscoveryUri);
+            String wellKnownUri = getRealmMetadataPath(TEST_REALM_NAME);
+            WebTarget oid4vciDiscoveryTarget = client.target(wellKnownUri);
 
             try (Response discoveryResponse = oid4vciDiscoveryTarget.request().get()) {
                 CredentialIssuer oid4vciIssuerConfig = JsonSerialization.readValue(
@@ -788,32 +781,5 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                         session.realms().removeRealm(testRealm.getId());
                     }
                 });
-    }
-
-    public static void extendConfigureTestRealm(RealmRepresentation testRealm, ClientRepresentation clientRepresentation) {
-        if (testRealm.getComponents() == null) {
-            testRealm.setComponents(new MultivaluedHashMap<>());
-        }
-
-        testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getRsaKeyProvider(RSA_KEY));
-        testRealm.getComponents().add("org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder", getCredentialBuilderProvider(Format.JWT_VC));
-
-        if (testRealm.getClients() != null) {
-            testRealm.getClients().add(clientRepresentation);
-        } else {
-            testRealm.setClients(new ArrayList<>(List.of(clientRepresentation)));
-        }
-
-        if (testRealm.getUsers() != null) {
-            testRealm.getUsers().add(OID4VCTest.getUserRepresentation(Map.of(clientRepresentation.getClientId(), List.of("testRole"))));
-        } else {
-            testRealm.setUsers(new ArrayList<>(List.of(OID4VCTest.getUserRepresentation(Map.of(clientRepresentation.getClientId(), List.of("testRole"))))));
-        }
-
-        if (testRealm.getAttributes() != null) {
-            testRealm.getAttributes().put("issuerDid", TEST_DID.toString());
-        } else {
-            testRealm.setAttributes(new HashMap<>(Map.of("issuerDid", TEST_DID.toString())));
-        }
     }
 }

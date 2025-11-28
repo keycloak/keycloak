@@ -122,7 +122,7 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
         oauth.openLoginForm();
         loginPage.fillLogin(username, username);
         loginPage.submit();
-        assertTrue(driver.getPageSource().contains("Happy days"));
+        assertTrue(driver.page().getPageSource().contains("Happy days"));
 
         // step 2 - use time offset to trigger the scheduled step for those users who match the condition
         // set offset to 6 days to trigger the scheduled step (which is set to run after 5 days)

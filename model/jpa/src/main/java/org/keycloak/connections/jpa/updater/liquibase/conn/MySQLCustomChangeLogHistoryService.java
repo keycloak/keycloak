@@ -16,11 +16,16 @@
  */
 package org.keycloak.connections.jpa.updater.liquibase.conn;
 
+import org.keycloak.connections.jpa.updater.liquibase.LiquibaseConstants;
+
+import liquibase.Scope;
 import liquibase.change.ColumnConfig;
 import liquibase.changelog.StandardChangeLogHistoryService;
 import liquibase.database.Database;
 import liquibase.database.core.MySQLDatabase;
 import liquibase.exception.DatabaseException;
+import liquibase.executor.ExecutorService;
+import liquibase.executor.LoggingExecutor;
 import liquibase.executor.jvm.ChangelogJdbcMdcListener;
 import liquibase.snapshot.InvalidExampleException;
 import liquibase.snapshot.SnapshotGeneratorFactory;
@@ -33,7 +38,7 @@ import liquibase.structure.core.Table;
  *
  * @author hmlnarik
  */
-public class CustomChangeLogHistoryService extends StandardChangeLogHistoryService {
+public class MySQLCustomChangeLogHistoryService extends StandardChangeLogHistoryService {
 
     private boolean serviceInitialized;
 
@@ -49,6 +54,13 @@ public class CustomChangeLogHistoryService extends StandardChangeLogHistoryServi
         if (serviceInitialized) return;
 
         serviceInitialized = true;
+
+
+        // Skip execution in manual migration mode - the PK statement is added to the export by LiquibaseJpaUpdaterProvider
+        ExecutorService executorService = Scope.getCurrentScope().getSingleton(ExecutorService.class);
+        if (executorService.getExecutor(LiquibaseConstants.JDBC_EXECUTOR, getDatabase()) instanceof LoggingExecutor) {
+            return;
+        }
 
         if (!existsDatabaseChangelogPK()) {
             createDatabaseChangelogPK();
@@ -74,8 +86,7 @@ public class CustomChangeLogHistoryService extends StandardChangeLogHistoryServi
     }
 
     private void createDatabaseChangelogPK() throws DatabaseException {
-        AddPrimaryKeyStatement pkStatement = new AddPrimaryKeyStatement(getLiquibaseCatalogName(), getLiquibaseSchemaName(), getDatabaseChangeLogTableName(),
-                ColumnConfig.arrayFromNames("ID, AUTHOR, FILENAME"), "PK_DATABASECHANGELOG");
+        AddPrimaryKeyStatement pkStatement = getAddDatabaseChangeLogPKStatement();
         try {
             ChangelogJdbcMdcListener.execute(getDatabase(), ex -> ex.execute(pkStatement));
             getDatabase().commit();
@@ -85,5 +96,10 @@ public class CustomChangeLogHistoryService extends StandardChangeLogHistoryServi
                 throw e;
             }
         }
+    }
+
+    public AddPrimaryKeyStatement getAddDatabaseChangeLogPKStatement() {
+        return new AddPrimaryKeyStatement(getLiquibaseCatalogName(), getLiquibaseSchemaName(), getDatabaseChangeLogTableName(),
+                ColumnConfig.arrayFromNames("ID, AUTHOR, FILENAME"), "PK_DATABASECHANGELOG");
     }
 }

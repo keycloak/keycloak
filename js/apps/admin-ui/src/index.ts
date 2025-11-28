@@ -190,6 +190,7 @@ export { IdentityProviders as OrganizationIdentityProviders } from "./organizati
 export { InviteMemberModal } from "./organizations/InviteMemberModal";
 export { LinkIdentityProviderModal } from "./organizations/LinkIdentityProviderModal";
 export { Members as OrganizationMembers } from "./organizations/Members";
+export { Invitations as OrganizationInvitations } from "./organizations/Invitations";
 export { OrganizationForm } from "./organizations/OrganizationForm";
 export * as OrganizationSection from "./organizations/OrganizationsSection";
 export * as Page from "./page/Page";

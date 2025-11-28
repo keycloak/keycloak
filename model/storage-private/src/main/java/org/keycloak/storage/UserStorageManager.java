@@ -83,7 +83,6 @@ import io.opentelemetry.api.trace.StatusCode;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
-import static org.keycloak.storage.managers.UserStorageSyncManager.notifyToRefreshPeriodicSync;
 import static org.keycloak.utils.StreamsUtil.distinctByKey;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
@@ -996,7 +995,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
         localStorage().preRemove(realm, component);
         if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, component);
-        notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(component), true);
+        StoreSyncEvent.fire(session, realm, component, true);
     }
 
     @Override
@@ -1024,7 +1023,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
             @Override
             protected void commitImpl() {
-                notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(model), false);
+                StoreSyncEvent.fire(session, realm, model, false);
             }
 
             @Override
@@ -1046,7 +1045,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         UserStorageProviderModel actual= new UserStorageProviderModel(newModel);
 
         if (isSyncSettingsUpdated(previous, actual)) {
-            notifyToRefreshPeriodicSync(session, realm, actual, false);
+            StoreSyncEvent.fire(session, realm, actual, false);
         }
     }
 

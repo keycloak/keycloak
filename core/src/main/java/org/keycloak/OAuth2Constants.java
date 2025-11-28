@@ -164,7 +164,8 @@ public interface OAuth2Constants {
     String CNF = "cnf";
 
     // RAR - https://datatracker.ietf.org/doc/html/rfc9396
-    String AUTHORIZATION_DETAILS_PARAM = "authorization_details";
+    // Used as url parameter in AuthorizationRequest and as claim in TokenResponse
+    String AUTHORIZATION_DETAILS = "authorization_details";
 
     // DPoP - https://datatracker.ietf.org/doc/html/rfc9449
     String DPOP_HTTP_HEADER = "DPoP";
@@ -173,4 +174,7 @@ public interface OAuth2Constants {
     String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
     String ALGS_ATTRIBUTE = "algs";
 
+    // OID4VCI - https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html
+    String OPENID_CREDENTIAL = "openid_credential";
+    String CREDENTIAL_IDENTIFIERS = "credential_identifiers";
 }
