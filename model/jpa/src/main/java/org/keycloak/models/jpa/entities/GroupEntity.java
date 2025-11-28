@@ -25,7 +25,10 @@ import jakarta.persistence.AccessType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
@@ -74,6 +77,14 @@ public class GroupEntity {
 
     @Column(name = "TYPE")
     private int type;
+
+    /**
+     * In case of {@link org.keycloak.models.GroupModel.Type#ORGANIZATION},
+     * this points to the Organization that owns this group
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ORG_ID")
+    private OrganizationEntity organization;
 
     @OneToMany(
             cascade = CascadeType.REMOVE,
@@ -137,6 +148,14 @@ public class GroupEntity {
 
     public void setType(int type) {
         this.type = type;
+    }
+
+    public OrganizationEntity getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(OrganizationEntity organization) {
+        this.organization = organization;
     }
 
     @Override

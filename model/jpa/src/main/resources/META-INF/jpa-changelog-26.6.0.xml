@@ -41,4 +41,18 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.6.0-org-group-relationship">
+        <addColumn tableName="KEYCLOAK_GROUP">
+            <column name="ORG_ID" type="VARCHAR(255)"/>
+        </addColumn>
+
+        <addForeignKeyConstraint baseTableName="KEYCLOAK_GROUP" baseColumnNames="ORG_ID"
+                                 constraintName="FK_GROUP_ORGANIZATION"
+                                 referencedTableName="ORG" referencedColumnNames="ID"/>
+
+        <createIndex indexName="IDX_GROUP_ORG_ID" tableName="KEYCLOAK_GROUP">
+            <column name="ORG_ID"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

@@ -232,5 +232,4 @@
                              columnNames="ORGANIZATION_ID,EMAIL"
                              constraintName="UK_ORG_INVITATION_EMAIL"/>
     </changeSet>
-
 </databaseChangeLog>

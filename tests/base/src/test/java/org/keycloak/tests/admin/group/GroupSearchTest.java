@@ -108,7 +108,7 @@ public class GroupSearchTest extends AbstractGroupTest {
         }
 
         // search for subgroups filtering by name - all groups with 'gro' in the name.
-        subGroups = parentGroupResource.getSubGroups("gro", false, 0, 10, true);
+        subGroups = parentGroupResource.getSubGroups("*gro", false, 0, 10, true);
         assertThat(subGroups, hasSize(8));
 
         // search using a string that matches none of the subgroups.
