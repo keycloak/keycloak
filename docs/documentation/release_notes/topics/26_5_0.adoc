@@ -60,3 +60,7 @@ Organization administrators can now manage organization invitations through both
 All invitations are now persistently stored in the database, providing better tracking and management capabilities.
 
 The invitation management features are available in the *Invitations* tab when managing an organization in the Admin Console, and through the Organizations REST API endpoints under `/admin/realms/{realm}/orgs/{orgId}/invitations`.
+
+= Logout confirmation
+
+The client logout configuration page now includes an option to enable logout confirmation. When enabled, users will see "You are logged out" confirmation page upon successful logout.
