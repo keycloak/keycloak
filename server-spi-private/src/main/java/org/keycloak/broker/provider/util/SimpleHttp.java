@@ -109,7 +109,7 @@ public class SimpleHttp {
         return doDelete(url, provider.getHttpClient(), provider.getMaxConsumedResponseSize());
     }
 
-    protected static SimpleHttp doDelete(String url, HttpClient client, long maxConsumedResponseSize) {
+    public static SimpleHttp doDelete(String url, HttpClient client, long maxConsumedResponseSize) {
         return new SimpleHttp(url, "DELETE", client, maxConsumedResponseSize);
     }
 
@@ -118,7 +118,7 @@ public class SimpleHttp {
         return doGet(url, provider.getHttpClient(), provider.getMaxConsumedResponseSize());
     }
 
-    protected static SimpleHttp doGet(String url, HttpClient client, long maxConsumedResponseSize) {
+    public static SimpleHttp doGet(String url, HttpClient client, long maxConsumedResponseSize) {
         return new SimpleHttp(url, "GET", client, maxConsumedResponseSize);
     }
 
@@ -127,7 +127,7 @@ public class SimpleHttp {
         return doPost(url, provider.getHttpClient(), provider.getMaxConsumedResponseSize());
     }
 
-    protected  static SimpleHttp doPost(String url, HttpClient client, long maxConsumedResponseSize) {
+    public  static SimpleHttp doPost(String url, HttpClient client, long maxConsumedResponseSize) {
         return new SimpleHttp(url, "POST", client, maxConsumedResponseSize);
     }
 
@@ -136,7 +136,7 @@ public class SimpleHttp {
         return doPut(url, provider.getHttpClient(), provider.getMaxConsumedResponseSize());
     }
 
-    protected static SimpleHttp doPut(String url, HttpClient client, long maxConsumedResponseSize) {
+    public static SimpleHttp doPut(String url, HttpClient client, long maxConsumedResponseSize) {
         return new SimpleHttp(url, "PUT", client, maxConsumedResponseSize);
     }
 
@@ -145,7 +145,7 @@ public class SimpleHttp {
         return doHead(url, provider.getHttpClient(), provider.getMaxConsumedResponseSize());
     }
 
-    protected static SimpleHttp doHead(String url, HttpClient client, long maxConsumedResponseSize) {
+    public static SimpleHttp doHead(String url, HttpClient client, long maxConsumedResponseSize) {
         return new SimpleHttp(url, "HEAD", client, maxConsumedResponseSize);
     }
 
@@ -154,7 +154,7 @@ public class SimpleHttp {
         return doPatch(url, provider.getHttpClient(), provider.getMaxConsumedResponseSize());
     }
 
-    protected static SimpleHttp doPatch(String url, HttpClient client, long maxConsumedResponseSize) {
+    public static SimpleHttp doPatch(String url, HttpClient client, long maxConsumedResponseSize) {
         return new SimpleHttp(url, "PATCH", client, maxConsumedResponseSize);
     }
 
