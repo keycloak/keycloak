@@ -48,6 +48,12 @@ public class AuthenticationContextBean {
         return getAuthenticationSelections().size() > 1 && page != LoginFormsPages.LOGIN_SELECT_AUTHENTICATOR;
     }
 
+    public String getCurrentExecutionId() {
+        if (context == null) {
+           return null;
+        }
+        return context.getExecution().getId();
+    }
 
     public boolean showUsername() {
         if (context == null) {
