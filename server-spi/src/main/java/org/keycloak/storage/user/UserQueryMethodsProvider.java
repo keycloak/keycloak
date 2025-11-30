@@ -138,7 +138,42 @@ public interface UserQueryMethodsProvider {
      * @param maxResults  maximum number of results to return. Ignored if negative or {@code null}.
      * @return a non-null {@link Stream} of users that match the search criteria.
      */
-    Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults);
+    default Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults) {
+        return searchForUserStream(realm, params, firstResult, maxResults, null);
+    }
+
+    /**
+     * Searches for user by parameter. If possible, implementations should treat the parameter values as partial match patterns
+     * (i.e. in RDMBS terms use LIKE).
+     * <p/>
+     * Valid parameters are:
+     * <ul>
+     *     <li>{@link UserModel#SEARCH} - search for users whose username, email, first name or last name contain any of the strings in {@code search} separated by whitespace, when {@code SEARCH} is set all other params are ignored</li>
+     *     <li>{@link UserModel#FIRST_NAME} - first name (case insensitive string)</li>
+     *     <li>{@link UserModel#LAST_NAME} - last name (case insensitive string)</li>
+     *     <li>{@link UserModel#EMAIL} - email (case insensitive string)</li>
+     *     <li>{@link UserModel#USERNAME} - username (case insensitive string)</li>
+     *     <li>{@link UserModel#EXACT} - whether search with FIRST_NAME, LAST_NAME, USERNAME or EMAIL should be exact match</li>
+     *     <li>{@link UserModel#EMAIL_VERIFIED} - search only for users with verified/non-verified email (true/false)</li>
+     *     <li>{@link UserModel#ENABLED} - search only for enabled/disabled users (true/false)</li>
+     *     <li>{@link UserModel#IDP_ALIAS} - search only for users that have a federated identity
+     *     from idp with the given alias configured (case sensitive string)</li>
+     *     <li>{@link UserModel#IDP_USER_ID} - search for users with federated identity with
+     *     the given userId (case sensitive string)</li>
+     * </ul>
+     * <p>
+     * Any other parameters will be treated as custom user attributes.
+     * <p>
+     * This method is used by the REST API when querying users.
+     *
+     * @param realm       a reference to the realm.
+     * @param params      a map containing the search parameters.
+     * @param firstResult first result to return. Ignored if negative, zero, or {@code null}.
+     * @param maxResults  maximum number of results to return. Ignored if negative or {@code null}.
+     * @param sortBy      specifies which attribute to sort by
+     * @return a non-null {@link Stream} of users that match the search criteria.
+     */
+    Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults, String sortBy);
 
     /**
      * Obtains users that belong to a specific group.
