@@ -101,6 +101,14 @@ await kcAdminClient.auth(credentials);
 
 setInterval(() => kcAdminClient.auth(credentials), 58 * 1000); // 58 seconds
 ```
+Alternatively, if you don’t know the access token lifespan, you can read the access token `expiresIn` value (in seconds), for example :
+
+```js
+// Say the access token lifespan is set to 1 minute in the realm admin,
+// this will renew the token every 58 seconds:
+const timeout = (kcAdminClient.expiresIn - 2) * 1000;
+setInterval(() => kcAdminClient.auth(credentials), timeout);
+```
 
 ## Building and running the tests
 
