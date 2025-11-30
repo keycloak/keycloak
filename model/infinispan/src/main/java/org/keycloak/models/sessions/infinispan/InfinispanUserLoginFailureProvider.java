@@ -22,9 +22,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
-import org.infinispan.commons.util.concurrent.CompletionStages;
-
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
@@ -41,11 +38,12 @@ import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransac
 import org.keycloak.models.sessions.infinispan.stream.Mappers;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
+import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 import org.infinispan.Cache;
+import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
+import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.jboss.logging.Logger;
-
-import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 
