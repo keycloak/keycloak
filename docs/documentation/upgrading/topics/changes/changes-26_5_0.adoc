@@ -87,11 +87,6 @@ Previous entries in the `loginFailures` cache never expired, and entries accumul
 
 Starting with this release, entries will expire based on the "`Failure reset time`" configured in the "`Brute force detection`" for the modes "`Lockout temporarily`" and "`Lockout permanently after temporary lockout`". For "`Lockout permanently`", entries will not expire as before, as this mode does not have a "`Failure reset time`".
 
-When extending the "`Failure reset time`" for your realm, any existing entries will still expire with their original shorter "`Failure reset time`".
-When shorting it, the setting will be honored at the time of login, but the entries in the cache still expire only with their original "`Failure reset time`".
-Existing entries will still expire if you change to "`Lockout permanently".
-Only updated and new entries will use the new setting.
-
 === Not recommended to use org.keycloak.credential.UserCredentialManager directly in your extensions
 
 If you have user storage extension and you reference the class `org.keycloak.credential.UserCredentialManager` from your providers, it is recommended to avoid using this class directly as it might be

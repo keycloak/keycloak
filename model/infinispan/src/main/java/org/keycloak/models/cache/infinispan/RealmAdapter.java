@@ -53,10 +53,12 @@ import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageUtil;
@@ -259,7 +261,34 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void setBruteForceProtected(boolean value) {
         getDelegateForUpdate();
+        if (updated.isBruteForceProtected() != value) {
+            updateBruteForceSettings();
+        }
         updated.setBruteForceProtected(value);
+    }
+
+    boolean updateBruteForceSettings = false;
+    private void updateBruteForceSettings() {
+        if (!updateBruteForceSettings) {
+            updateBruteForceSettings = true;
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                        UserLoginFailureProvider provider = s.getProvider(UserLoginFailureProvider.class);
+                        RealmModel realm = session.realms().getRealm(getId());
+                        provider.updateWithLatestRealmSettings(realm);
+                    });
+                    // Should not be necessary, as the cache entry of the realm will be discarded
+                    updateBruteForceSettings = false;
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    updateBruteForceSettings = false;
+                }
+            });
+        }
     }
 
     @Override
@@ -271,6 +300,9 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void setPermanentLockout(final boolean val) {
         getDelegateForUpdate();
+        if (updated.isPermanentLockout() != val) {
+            updateBruteForceSettings();
+        }
         updated.setPermanentLockout(val);
     }
 
@@ -283,6 +315,9 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void setMaxTemporaryLockouts(final int val) {
         getDelegateForUpdate();
+        if (updated.getMaxTemporaryLockouts() != val) {
+            updateBruteForceSettings();
+        }
         updated.setMaxTemporaryLockouts(val);
     }
 
@@ -355,6 +390,9 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void setMaxDeltaTimeSeconds(int val) {
         getDelegateForUpdate();
+        if (updated.getMaxDeltaTimeSeconds() != val) {
+            updateBruteForceSettings();
+        }
         updated.setMaxDeltaTimeSeconds(val);
     }
 

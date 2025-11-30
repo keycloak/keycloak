@@ -52,4 +52,14 @@ public interface UserLoginFailureProvider extends Provider {
      */
     void removeAllUserLoginFailures(RealmModel realm);
 
+    /**
+     * Can be triggered on model migrations.
+     */
+    default void migrate(String modelVersion) {};
+
+    /**
+     * This is called when the realm settings change in relation to the brute force timeouts.
+     */
+    default void updateWithLatestRealmSettings(RealmModel realm) {};
+
 }

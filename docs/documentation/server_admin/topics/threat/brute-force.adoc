@@ -109,11 +109,6 @@ wait time will never reach the value you have set to `Max wait`.
 
 |===
 
-When extending the "`Failure reset time`" for your realm, any existing entries will still expire with their original shorter "`Failure reset time`".
-When shorting it, the setting will be honored at the time of login, but the entries in the cache still expire only with their original "`Failure reset time`".
-Existing entries will still expire if you change to "`Lockout permanently".
-Only updated and new entries will use the new setting.
-
 *Temporary Lockout Algorithm*
 ====
 . On successful login
@@ -226,11 +221,6 @@ wait time will never reach the value you have set to `Max wait`.
 |1 minute
 
 |===
-
-When extending the "`Failure reset time`" for your realm, any existing entries will still expire with their original shorter "`Failure reset time`".
-When shorting it, the setting will be honored at the time of login, but the entries in the cache still expire only with their original "`Failure reset time`".
-Existing entries will still expire if you change to "`Lockout permanently".
-Only updated and new entries will use the new setting.
 
 *Permanent lockout after temporary lockouts Algorithm*
 ====
