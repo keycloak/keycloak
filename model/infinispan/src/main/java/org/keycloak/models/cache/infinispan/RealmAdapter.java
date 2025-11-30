@@ -44,6 +44,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ParConfig;
@@ -268,17 +269,15 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     boolean updateBruteForceSettings = false;
+
     private void updateBruteForceSettings() {
         if (!updateBruteForceSettings) {
             updateBruteForceSettings = true;
+            KeycloakSessionFactory sf = session.getKeycloakSessionFactory();
             session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
                 @Override
                 protected void commitImpl() {
-                    KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
-                        UserLoginFailureProvider provider = s.getProvider(UserLoginFailureProvider.class);
-                        RealmModel realm = session.realms().getRealm(getId());
-                        provider.updateWithLatestRealmSettings(realm);
-                    });
+                    runUpdateOfLoginFailureProvider(sf, cached.getId());
                     // Should not be necessary, as the cache entry of the realm will be discarded
                     updateBruteForceSettings = false;
                 }
@@ -289,6 +288,15 @@ public class RealmAdapter implements CachedRealmModel {
                 }
             });
         }
+    }
+
+    private static void runUpdateOfLoginFailureProvider(KeycloakSessionFactory keycloakSessionFactory, String realmId) {
+        KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory,
+                s -> {
+                    UserLoginFailureProvider provider = s.getProvider(UserLoginFailureProvider.class);
+                    RealmModel realm = s.realms().getRealm(realmId);
+                    provider.updateWithLatestRealmSettings(realm);
+                });
     }
 
     @Override
