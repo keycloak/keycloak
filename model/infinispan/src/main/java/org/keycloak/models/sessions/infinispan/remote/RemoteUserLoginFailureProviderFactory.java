@@ -63,7 +63,7 @@ public class RemoteUserLoginFailureProviderFactory implements UserLoginFailurePr
 
     @Override
     public RemoteUserLoginFailureProvider create(KeycloakSession session) {
-        return new RemoteUserLoginFailureProvider(createAndEnlistTransaction(session));
+        return new RemoteUserLoginFailureProvider(createAndEnlistTransaction(session), session);
     }
 
     @Override

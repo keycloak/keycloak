@@ -682,6 +682,9 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             realm.setPermanentLockout(true);
             testRealm().update(realm);
 
+            // expires the temporary lockout
+            this.setTimeOffset(60);
+
             // after switching to permanent lockout the user status is disabled because there are login failures
             // the user did not try to successfully authenticate yet to clear the login failures
             user = users.get(user.getId()).toRepresentation();

@@ -216,7 +216,7 @@ public class SessionTimeouts {
             // If the time between login failures is greater than the failure reset time,
             // the brute force detector will reset the failure counter.
             // So we can safely evict the login failure entry from the cache after this time.
-            return realm.getMaxDeltaTimeSeconds() * 1000L;
+            return Math.max(0, realm.getMaxDeltaTimeSeconds() * 1000L - (Time.currentTimeMillis() - loginFailureEntity.getLastFailure()));
         }
     }
 

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.BaseUpdater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Expiration;
@@ -28,6 +29,7 @@ import org.keycloak.models.sessions.infinispan.changes.remote.updater.Updater;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 /**
  * Implementation of {@link Updater} and {@link UserLoginFailureModel}.
@@ -62,9 +64,10 @@ public class LoginFailuresUpdater extends BaseUpdater<LoginFailureKey, LoginFail
 
     @Override
     public Expiration computeExpiration() {
+        RealmModel realm = KeycloakSessionUtil.getKeycloakSession().getContext().getRealm();
         return new Expiration(
-                SessionTimeouts.getLoginFailuresMaxIdleMs(null, null, getValue()),
-                SessionTimeouts.getLoginFailuresLifespanMs(null, null, getValue()));
+                SessionTimeouts.getLoginFailuresMaxIdleMs(realm, null, getValue()),
+                SessionTimeouts.getLoginFailuresLifespanMs(realm, null, getValue()));
     }
 
     @Override
