@@ -38,6 +38,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.platform.Platform;
 import org.keycloak.platform.PlatformProvider;
+import org.keycloak.provider.KeycloakInitializedEvent;
+import org.keycloak.provider.KeycloakShutdownEvent;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
@@ -97,10 +99,12 @@ public abstract class KeycloakApplication extends Application {
         }
 
         sessionFactory.publish(new PostMigrationEvent(sessionFactory));
+        sessionFactory.publish(new KeycloakInitializedEvent(sessionFactory));
     }
 
     protected void shutdown() {
         if (sessionFactory != null) {
+            sessionFactory.publish(new KeycloakShutdownEvent(sessionFactory));
             sessionFactory.close();
         }
     }
