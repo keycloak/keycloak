@@ -108,7 +108,7 @@ public class ShowConfigCommandDistTest {
         distribution.setEnvVar("KC_LOG", "file");
         distribution.copyOrReplaceFile(Paths.get("src/test/resources/ShowConfigCommandTest/quarkus.properties"), Path.of("conf", "quarkus.properties"));
 
-        result = distribution.run(String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak-keystore.conf").toAbsolutePath().normalize()), ShowConfig.NAME, "all");
+        result = distribution.run(String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak-keystore.conf").toAbsolutePath().normalize()), ShowConfig.NAME, "all", "--db=dev-file");
 
         result.assertMessage("(CLI)");
         result.assertMessage("(ENV)");
