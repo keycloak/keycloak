@@ -120,16 +120,15 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
 
         // we don't want people guessing usernames, so if there is a problem, just continue, but don't set the user
         // a null user will notify further executions, that this was a failure.
+        context.clearUser();
         if (user == null) {
             event.clone()
                     .detail(Details.USERNAME, username)
                     .error(Errors.USER_NOT_FOUND);
-            context.clearUser();
         } else if (!user.isEnabled()) {
             event.clone()
                     .detail(Details.USERNAME, username)
                     .user(user).error(Errors.USER_DISABLED);
-            context.clearUser();
         } else {
             context.setUser(user);
         }
