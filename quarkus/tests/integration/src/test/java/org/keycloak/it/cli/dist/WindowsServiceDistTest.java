@@ -20,13 +20,18 @@ package org.keycloak.it.cli.dist;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import static io.restassured.RestAssured.given;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,11 +39,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
-import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.utils.KeycloakDistribution;
-import org.keycloak.it.utils.RawKeycloakDistribution;
 
+import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -107,12 +109,12 @@ public class WindowsServiceDistTest {
         assertAdminPrivileges();
 
         // Test production mode service installation with Keycloak runtime options (build is not needed)
-        ProcessResult installResult = runServiceScript("service-install.bat",
+        ProcessResult installResult = runKcCommand("service", "install",
                 "--name", testServiceName,
                 "--display-name", "Keycloak Test Service",
                 "--description", "Keycloak integration test service",
                 "--startup", "manual",
-                "--keycloak-args", "start --http-enabled=true --hostname-strict=false");
+                "--kc-args", "start --http-enabled=true --hostname-strict=false");
 
         assertEquals(0, installResult.exitCode, "Service installation failed: " + installResult.output + "\n" + installResult.errorOutput);
         assertThat(installResult.output, containsString("installed successfully"));
@@ -135,7 +137,7 @@ public class WindowsServiceDistTest {
         assertFalse(isKeycloakAccessible(), "Keycloak should not be accessible after service stop");
 
         // Test service uninstall
-        ProcessResult uninstallResult = runServiceScript("service-uninstall.bat", "--name", testServiceName);
+        ProcessResult uninstallResult = runKcCommand("service", "uninstall", "--name", testServiceName);
         assertEquals(0, uninstallResult.exitCode, "Service uninstallation failed: " + uninstallResult.output + "\n" + uninstallResult.errorOutput);
         assertThat(uninstallResult.output, containsString("uninstalled successfully"));
         serviceInstalled = false;
@@ -148,26 +150,28 @@ public class WindowsServiceDistTest {
         assertAdminPrivileges();
 
         // Test development mode service installation with custom JVM args
-        ProcessResult installResult = runServiceScript("service-install.bat",
+        // Note: If an argument starts with '-', kc.bat assumes it's a new option, not a value.
+        // Therefore, omit the leading dash here - it will be added programmatically by ServiceInstall.
+        ProcessResult installResult = runKcCommand("service", "install",
                 "--name", testServiceName,
                 "--display-name", "Keycloak Dev Test Service",
                 "--startup", "manual",
-                "--keycloak-args", "start-dev",
-                "--jvm-args", "-Dtest.prop1=value1;-Dtest.prop2=value2");
+                "--kc-args", "start-dev",
+                "--jvm-args", "\"Djava.net.preferIPv4Stack=true;verbose:gc\"");
 
         assertEquals(0, installResult.exitCode, "Service installation failed: " + installResult.output + "\n" + installResult.errorOutput);
         serviceInstalled = true;
 
         // Verify JVM options are stored in service configuration (in Windows Registry)
         String jvmOptions = getServiceJvmOptions(testServiceName);
-        assertThat("JVM options should contain test.prop1", jvmOptions, containsString("-Dtest.prop1=value1"));
-        assertThat("JVM options should contain test.prop2", jvmOptions, containsString("-Dtest.prop2=value2"));
+        assertThat("JVM options should contain -Djava.net.preferIPv4Stack=true", jvmOptions, containsString("-Djava.net.preferIPv4Stack=true"));
+        assertThat("JVM options should contain -verbose:gc", jvmOptions, containsString("-verbose:gc"));
 
         assertTrue(startService(), "Service should start successfully with custom JVM args");
         assertTrue(waitForKeycloakReady(), "Keycloak should be accessible in dev mode");
 
         stopService();
-        runServiceScript("service-uninstall.bat", "--name", testServiceName);
+        runKcCommand("service", "uninstall", "--name", testServiceName);
         serviceInstalled = false;
     }
 
@@ -177,10 +181,10 @@ public class WindowsServiceDistTest {
         assertAdminPrivileges();
 
         // Test prunsrv native parameters for JVM memory settings
-        ProcessResult installResult = runServiceScript("service-install.bat",
+        ProcessResult installResult = runKcCommand("service", "install",
                 "--name", testServiceName,
                 "--startup", "manual",
-                "--keycloak-args", "start --http-enabled=true --hostname-strict=false",
+                "--kc-args", "start --http-enabled=true --hostname-strict=false",
                 "--jvm-ms", "8",
                 "--jvm-mx", "16");
 
@@ -195,7 +199,7 @@ public class WindowsServiceDistTest {
         
 
         stopService();
-        runServiceScript("service-uninstall.bat", "--name", testServiceName);
+        runKcCommand("service", "uninstall", "--name", testServiceName);
         serviceInstalled = false;
     }
 
@@ -268,19 +272,10 @@ public class WindowsServiceDistTest {
                 .orElse(null);
     }
 
-    private ProcessResult runServiceScript(String scriptName, String... args) throws IOException, InterruptedException {
+    private ProcessResult runKcCommand(String... args) throws IOException, InterruptedException {
         List<String> command = new ArrayList<>();
-        command.add("cmd.exe");
-        command.add("/c");
-        command.add(distPath.resolve("bin").resolve(scriptName).toString());
-        for (String arg : args) {
-            // Wrap args containing = or ; in quotes to preserve them as single arguments
-            if (arg.contains("=") || arg.contains(";")) {
-                command.add("\"" + arg + "\"");
-            } else {
-                command.add(arg);
-            }
-        }
+        command.add(distPath.resolve("bin").resolve("kc.bat").toString());
+        command.addAll(Arrays.asList(args));
 
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(distPath.resolve("bin").toFile());
@@ -321,7 +316,7 @@ public class WindowsServiceDistTest {
     }
 
     private void uninstallService() throws IOException, InterruptedException {
-        runServiceScript("service-uninstall.bat", "--name", testServiceName);
+        runKcCommand("service", "uninstall", "--name=" + testServiceName);
     }
 
     private boolean isServiceInstalled(String serviceName) {

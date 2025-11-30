@@ -59,10 +59,16 @@ For development/testing purposes, you can use `start-dev` mode which doesn't req
 
 ### Installing as a Service
 
-Use the provided script to install Keycloak as a Windows service:
+Use the following command to install Keycloak as a Windows service:
 
 ```bash
-./service-install.bat [options]
+bin\kc.bat service install [options]
+```
+
+To see all available options:
+
+```bash
+bin\kc.bat service install --help
 ```
 
 #### Options
@@ -72,8 +78,8 @@ Use the provided script to install Keycloak as a Windows service:
 - `--description <description>`: The service description (default: Keycloak Identity and Access Management)
 - `--startup <mode>`: Service startup mode: auto, manual (default: auto)
 - `--jvm <path>`: Path to jvm.dll to use (default: auto-detected from JAVA_HOME)
-- `--keycloak-args "<args>"`: Arguments to pass to Keycloak (e.g., "start-dev --http-port=8080")
-- `--jvm-args "<args>"`: Additional JVM options separated by semicolons (e.g., "-Djava.net.preferIPv4Stack=true")
+- `--kc-args "<args>"`: Arguments to pass to Keycloak (e.g., "start --http-port=8080")
+- `--jvm-args "<args>"`: Additional JVM options separated by semicolons. Omit the leading dash - it will be added automatically (e.g., "Djava.net.preferIPv4Stack=true;verbose:gc")
 - `--jvm-ms <size>`: Initial Java heap size in MB (e.g., 256)
 - `--jvm-mx <size>`: Maximum Java heap size in MB (e.g., 1024)
 - `--service-user "<username>"`: The user account the service should run as
@@ -89,39 +95,41 @@ You have these options:
 1. **Run as Local System Account (default and recommended):**
    - Simply omit the `--service-user` and `--service-password` parameters
    - This account has full access to the local system and is the recommended choice
-   - Example: `./service-install.bat --name keycloak --keycloak-args "start --http-port=8080"`
+   - Example: `bin\kc.bat service install --name keycloak --kc-args="start --http-port=8080"`
 
 2. **Run as Specific User (advanced):**
    - Specify both `--service-user` and `--service-password` parameters
    - The user must have "Log on as a service" privilege
-   - Example: `./service-install.bat --service-user "Domain\Username" --service-password "password"`
+   - Example: `bin\kc.bat service install --service-user="Domain\Username" --service-password="password"`
 
 **Note:** If you experience "Access Denied" errors, ensure the service is running as Local System account, which is the default when no user is specified.
 
 **Troubleshooting:** The service runs under Apache Commons Daemon Service Runner. If you need to forcefully terminate the process, look for `prunsrv.exe` in Task Manager or use `taskkill /f /im prunsrv.exe` (use with caution as this will kill all services using Procrun).
 
-#### Example
+#### Examples
+
+Install with production mode and custom memory settings:
 
 ```bash
-./service-install.bat --name keycloak --keycloak-args "start --http-port=8080" --jvm-ms 512 --jvm-mx 1024
+bin\kc.bat service install --name keycloak --kc-args="start --http-port=8080" --jvm-ms=512 --jvm-mx=1024
 ```
 
-For development mode with absolute path to quarkus-run.jar:
+Install for development mode:
 
 ```bash
-./service-install.bat --classpath-jar "C:\path\to\keycloak\quarkus\server\target\lib\quarkus-run.jar" --keycloak-args "start-dev"
+bin\kc.bat service install --kc-args="start-dev"
 ```
 
-For production mode with absolute path to quarkus-run.jar:
+Install with custom classpath to quarkus-run.jar:
 
 ```bash
-./service-install.bat --classpath-jar "C:\path\to\keycloak\quarkus\server\target\lib\quarkus-run.jar" --keycloak-args "start --http-port=8080"
+bin\kc.bat service install --classpath-jar="C:\path\to\keycloak\lib\quarkus-run.jar" --kc-args="start --http-port=8080"
 ```
 
-To run the service as a specific user (ensure the user has "Log on as a service" privilege):
+Install to run as a specific user (ensure the user has "Log on as a service" privilege):
 
 ```bash
-./service-install.bat --service-user "Domain\Username" --service-password "password"
+bin\kc.bat service install --service-user="Domain\Username" --service-password="password"
 ```
 
 ### Managing the Service
@@ -142,7 +150,7 @@ Once installed, you can manage the service using standard Windows tools:
 To remove the service:
 
 ```bash
-./service-uninstall.bat [--name <service-name>]
+bin\kc.bat service uninstall [--name <service-name>]
 ```
 
 ### Logs
