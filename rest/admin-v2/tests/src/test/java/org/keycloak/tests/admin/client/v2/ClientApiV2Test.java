@@ -17,6 +17,8 @@
 
 package org.keycloak.tests.admin.client.v2;
 
+import java.util.Set;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
@@ -48,6 +50,7 @@ import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
@@ -274,6 +277,68 @@ public class ClientApiV2Test {
         try (var response = client.execute(request)) {
             assertEquals(401, response.getStatusLine().getStatusCode());
         }
+    }
+
+    @Test
+    public void createFullClient() throws Exception {
+        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        ClientRepresentation rep = getTestingFullClientRep();
+        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(request)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            assertThat(client, is(rep));
+        }
+    }
+
+    @Test
+    public void createFullClientWrongServiceAccountRoles() throws Exception {
+        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        ClientRepresentation rep = getTestingFullClientRep();
+        rep.getServiceAccount().setRoles(Set.of("non-existing", "bad-role"));
+        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(request)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            assertThat(EntityUtils.toString(response.getEntity()), containsString("Cannot assign role to the service account (field 'serviceAccount.roles') as it does not exist"));
+        }
+    }
+
+    private ClientRepresentation getTestingFullClientRep() {
+        var rep = new ClientRepresentation();
+        rep.setClientId("my-client");
+        rep.setDisplayName("My Client");
+        rep.setDescription("This is My Client");
+        rep.setProtocol(ClientRepresentation.OIDC);
+        rep.setEnabled(true);
+        rep.setAppUrl("http://localhost:3000");
+        rep.setAppRedirectUrls(Set.of("http://localhost:3000", "http://localhost:3001"));
+        // no login flows -> only flow overrides map
+        // rep.setLoginFlows(Set.of("browser"));
+        var auth = new ClientRepresentation.Auth();
+        auth.setEnabled(true);
+        auth.setMethod("client-jwt");
+        auth.setSecret("secret-1234");
+        // no certificate inside the old rep
+        // auth.setCertificate("certificate-5678");
+        rep.setAuth(auth);
+        rep.setWebOrigins(Set.of("http://localhost:4000", "http://localhost:4001"));
+        rep.setRoles(Set.of("view-consent", "manage-account"));
+        var serviceAccount = new ClientRepresentation.ServiceAccount();
+        serviceAccount.setEnabled(true);
+        // TODO when roles are not set and SA is enabled, the default role 'default-roles-master' for the SA is used for the master realm
+        serviceAccount.setRoles(Set.of("default-roles-master"));
+        rep.setServiceAccount(serviceAccount);
+        // not implemented yet
+        // rep.setAdditionalFields(Map.of("key1", "val1", "key2", "val2"));
+        return rep;
     }
 
     // TODO Rewrite the tests to not need explicit auth. They should use the admin client directly.

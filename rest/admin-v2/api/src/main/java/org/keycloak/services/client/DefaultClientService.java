@@ -35,7 +35,7 @@ public class DefaultClientService implements ClientService {
     public Optional<ClientRepresentation> getClient(ClientResource clientResource, RealmModel realm, String clientId,
             ClientProjectionOptions projectionOptions) {
         // TODO: is the access map on the representation needed
-        return Optional.ofNullable(clientResource).map(ClientResource::viewClientModel).map(mapper::fromModel);
+        return Optional.ofNullable(clientResource).map(ClientResource::viewClientModel).map(model -> mapper.fromModel(session, model));
     }
 
     @Override
@@ -43,36 +43,31 @@ public class DefaultClientService implements ClientService {
             ClientProjectionOptions projectionOptions, ClientSearchOptions searchOptions,
             ClientSortAndSliceOptions sortAndSliceOptions) {
         // TODO: is the access map on the representation needed
-        return clientsResource.getClientModels(null, true, false, null, null, null).map(mapper::fromModel);
+        return clientsResource.getClientModels(null, true, false, null, null, null).map(model -> mapper.fromModel(session, model));
     }
 
     @Override
     public CreateOrUpdateResult createOrUpdate(ClientsResource clientsResource, ClientResource clientResource,
             RealmModel realm, ClientRepresentation client, boolean allowUpdate) throws ServiceException {
         boolean created = false;
-        ClientModel model = null;
+        ClientModel model;
         if (clientResource != null) {
             if (!allowUpdate) {
                 throw new ServiceException("Client already exists", Response.Status.CONFLICT);
             }
-            model = clientResource.viewClientModel();
-            mapper.toModel(model, client, realm);
+            model = mapper.toModel(session, realm, clientResource.viewClientModel(), client);
             var rep = ModelToRepresentation.toRepresentation(model, session);
             clientResource.update(rep);
         } else {
             created = true;
             validator.validate(client, CreateClientDefault.class); // TODO improve it to avoid second validation when we know it is create and not update
 
-            // dummy add/remove to obtain a detached model
-            model = realm.addClient(client.getClientId());
-            realm.removeClient(model.getId());
-
-            mapper.toModel(model, client, realm);
+            model = mapper.toModel(session, realm, client);
             var rep = ModelToRepresentation.toRepresentation(model, session);
             model = clientsResource.createClientModel(rep);
         }
 
-        var updated = mapper.fromModel(model);
+        var updated = mapper.fromModel(session, model);
 
         return new CreateOrUpdateResult(updated, created);
     }
