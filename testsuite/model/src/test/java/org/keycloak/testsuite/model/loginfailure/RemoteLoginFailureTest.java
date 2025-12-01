@@ -104,6 +104,7 @@ public class RemoteLoginFailureTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             var realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             var loginFailures = session.loginFailures().getUserLoginFailure(realm, userIds.get(0));
 
             // update all fields
@@ -134,6 +135,7 @@ public class RemoteLoginFailureTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             var realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             var loginFailures = session.loginFailures().getUserLoginFailure(realm, userIds.get(0));
 
             // update all fields
