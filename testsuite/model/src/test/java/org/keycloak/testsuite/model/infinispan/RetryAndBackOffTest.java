@@ -97,6 +97,7 @@ public class RetryAndBackOffTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             var realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             var loginFailures = session.loginFailures().addUserLoginFailure(realm, userId);
             loginFailures.incrementFailures();
         });
@@ -108,6 +109,7 @@ public class RetryAndBackOffTest extends KeycloakModelTest {
     public void testRetryWithReplace() {
         inComittedTransaction(session -> {
             var realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             var loginFailures = session.loginFailures().addUserLoginFailure(realm, userId);
             loginFailures.incrementFailures();
         });
@@ -127,6 +129,7 @@ public class RetryAndBackOffTest extends KeycloakModelTest {
     public void testRetryWithRemove() {
         inComittedTransaction(session -> {
             var realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             var loginFailures = session.loginFailures().addUserLoginFailure(realm, userId);
             loginFailures.incrementFailures();
         });
@@ -146,6 +149,7 @@ public class RetryAndBackOffTest extends KeycloakModelTest {
         // compute is implemented with get() and replace()
         inComittedTransaction(session -> {
             var realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             var loginFailures = session.loginFailures().addUserLoginFailure(realm, userId);
             loginFailures.incrementFailures();
         });
@@ -172,6 +176,7 @@ public class RetryAndBackOffTest extends KeycloakModelTest {
             var ce = assertThrows(CompletionException.class,
                     () -> inComittedTransaction(session -> {
                         var realm = session.realms().getRealm(realmId);
+                        session.getContext().setRealm(realm);
                         session.loginFailures().addUserLoginFailure(realm, userId);
                     }));
             assertTrue(String.valueOf(ce.getCause()), ce.getCause() instanceof HotRodClientException);
