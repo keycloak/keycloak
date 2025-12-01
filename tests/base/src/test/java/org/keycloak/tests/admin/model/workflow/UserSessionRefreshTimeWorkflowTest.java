@@ -17,82 +17,140 @@
 
 package org.keycloak.tests.admin.model.workflow;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailByRecipient;
-import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailsByRecipient;
-import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.verifyEmailContent;
-
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 
 import jakarta.mail.internet.MimeMessage;
-import org.junit.jupiter.api.Test;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.KeycloakSession;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
-import org.keycloak.models.workflow.ResourceOperationType;
-import org.keycloak.models.workflow.WorkflowsManager;
-import org.keycloak.models.workflow.UserSessionRefreshTimeWorkflowProviderFactory;
-import org.keycloak.representations.workflows.WorkflowStepRepresentation;
+import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
+import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
-import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
-import org.keycloak.testframework.oauth.OAuthClient;
-import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.page.LoginPage;
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testframework.util.ApiUtil;
 
-@KeycloakIntegrationTest(config = WorkflowsServerConfig.class)
-public class UserSessionRefreshTimeWorkflowTest {
+import org.junit.jupiter.api.Test;
 
-    private static final String REALM_NAME = "default";
+import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_LOGGED_IN;
+import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailByRecipient;
+import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailsByRecipient;
+import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.verifyEmailContent;
 
-    @InjectRunOnServer(permittedPackages = "org.keycloak.tests")
-    RunOnServerClient runOnServer;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-    @InjectUser(ref = "alice", config = DefaultUserConfig.class, lifecycle = LifeCycle.METHOD)
+@KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
+public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
+
+    @InjectUser(ref = "alice", config = DefaultUserConfig.class, lifecycle = LifeCycle.METHOD, realmRef = DEFAULT_REALM_NAME)
     private ManagedUser userAlice;
-
-    @InjectRealm(lifecycle = LifeCycle.METHOD)
-    ManagedRealm managedRealm;
-
-    @InjectWebDriver
-    WebDriver driver;
-
-    @InjectPage
-    LoginPage loginPage;
-
-    @InjectOAuthClient
-    OAuthClient oauth;
 
     @InjectMailServer
     private MailServer mailServer;
 
     @Test
+    public void testWorkflowIsRestartedOnSameEvent() throws IOException {
+        // create a workflow that can restarted on the same event - i.e. has concurrency setting to cancel if running
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(USER_LOGGED_IN.toString())
+                .concurrency().cancelIfRunning() // this setting enables restarting the workflow
+                .withSteps(
+                        WorkflowStepRepresentation.create()
+                                .of(SetUserAttributeStepProviderFactory.ID)
+                                .withConfig("attribute", "attr1")
+                                .after(Duration.ofDays(1))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build()
+                ).build()).close();
+
+        // login with alice - this will attach the workflow to the user and schedule the first step
+        oauth.openLoginForm();
+        String userId = userAlice.getId();
+        String username = userAlice.getUsername();
+        loginPage.fillLogin(username, userAlice.getPassword());
+        loginPage.submit();
+        assertTrue(driver.getPageSource() != null && driver.getPageSource().contains("Happy days"));
+
+        // store the first step id for later comparison
+        String firstStepId = runOnServer.fetch(session-> {
+            WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
+            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId);
+            assertThat(steps, hasSize(1));
+            return steps.get(0).stepId();
+        }, String.class);
+
+        // run the first schedule task - workflow should now be waiting to run the second step
+        runScheduledSteps(Duration.ofDays(2));
+        String secondStepId = runOnServer.fetch(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            // first step should have run and the attribute should be set
+            assertThat(user.getFirstAttribute("attribute"), is("attr1"));
+            assertTrue(user.isEnabled());
+
+            WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
+            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId);
+            assertThat(steps, hasSize(1));
+            return steps.get(0).stepId();
+        }, String.class);
+        assertThat(secondStepId, is(not(firstStepId)));
+
+        String groupId;
+        // trigger an unrelated event - like user joining a group. The workflow must not be restarted
+        try (Response response = managedRealm.admin().groups().add(GroupConfigBuilder.create()
+                .name("generic-group").build())) {
+            groupId = ApiUtil.getCreatedId(response);
+        }
+        managedRealm.admin().users().get(userAlice.getId()).joinGroup(groupId);
+
+        runOnServer.run(session -> {
+            WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
+            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId);
+            // step id must remain the same as before
+            assertThat(steps, hasSize(1));
+            assertThat(steps.get(0).stepId(), is(secondStepId));
+        });
+
+        // now trigger the same event again that can restart the workflow
+        oauth.openLoginForm();
+
+        // workflow should be restarted and the first step should be scheduled again
+        runOnServer.run(session -> {
+            WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
+            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId);
+            // step id must be the first one now as the workflow was restarted
+            assertThat(steps, hasSize(1));
+            assertThat(steps.get(0).stepId(), is(firstStepId));
+        });
+    }
+
+    @Test
     public void testDisabledUserAfterInactivityPeriod() {
-        managedRealm.admin().workflows().create(WorkflowRepresentation.create()
-                .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .name(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(USER_ADDED.toString(), USER_LOGGED_IN.toString())
                 .concurrency().cancelIfRunning() // this setting enables restarting the workflow
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -108,30 +166,31 @@ public class UserSessionRefreshTimeWorkflowTest {
         String username = userAlice.getUsername();
         loginPage.fillLogin(username, userAlice.getPassword());
         loginPage.submit();
-        assertTrue(driver.getPageSource() != null && driver.getPageSource().contains("Happy days"));
+        assertTrue(driver.page().getPageSource() != null && driver.page().getPageSource().contains("Happy days"));
 
         // test running the scheduled steps
         runOnServer.run((session -> {
-            RealmModel realm = configureSessionContext(session);
-            WorkflowsManager manager = new WorkflowsManager(session);
-
+            RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserByUsername(realm, username);
             assertTrue(user.isEnabled());
+        }));
 
-            // running the scheduled tasks now shouldn't pick up any step as none are due to run yet
-            manager.runScheduledSteps();
-            user = session.users().getUserByUsername(realm, username);
+        // running the scheduled tasks now shouldn't pick up any step as none are due to run yet
+        runScheduledSteps(Duration.ZERO);
+
+        runOnServer.run((session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
             assertTrue(user.isEnabled());
+        }));
 
-            try {
-                // set offset to 6 days - notify step should run now
-                Time.setOffset(Math.toIntExact(Duration.ofDays(5).toSeconds()));
-                manager.runScheduledSteps();
-                user = session.users().getUserByUsername(realm, username);
-                assertTrue(user.isEnabled());
-            } finally {
-                Time.setOffset(0);
-            }
+        // set offset to 6 days - notify step should run now
+        runScheduledSteps(Duration.ofDays(5));
+
+        runOnServer.run((session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertTrue(user.isEnabled());
         }));
 
         // Verify that the notify step was executed by checking email was sent
@@ -143,50 +202,39 @@ public class UserSessionRefreshTimeWorkflowTest {
         // trigger a login event that should reset the flow of the workflow
         oauth.openLoginForm();
 
-        runOnServer.run((session -> {
-            try {
-                // setting the offset to 11 days should not run the second step as we re-started the flow on login
-                RealmModel realm = configureSessionContext(session);
-                Time.setOffset(Math.toIntExact(Duration.ofDays(11).toSeconds()));
-                WorkflowsManager manager = new WorkflowsManager(session);
-                manager.runScheduledSteps();
-                UserModel user = session.users().getUserByUsername(realm, username);
-                assertTrue(user.isEnabled());
-            } finally {
-                Time.setOffset(0);
-            }
+        // setting the offset to 11 days should not run the second step as we re-started the flow on login
+        runScheduledSteps(Duration.ofDays(11));
 
-            try {
-                // first step has run and the next step should be triggered after 5 more days (time difference between the steps)
-                RealmModel realm = configureSessionContext(session);
-                Time.setOffset(Math.toIntExact(Duration.ofDays(17).toSeconds()));
-                WorkflowsManager manager = new WorkflowsManager(session);
-                manager.runScheduledSteps();
-                UserModel user = session.users().getUserByUsername(realm, username);
-                // second step should have run and the user should be disabled now
-                assertFalse(user.isEnabled());
-            } finally {
-                Time.setOffset(0);
-            }
+        runOnServer.run((session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertTrue(user.isEnabled());
+        }));
+
+        // first step has run and the next step should be triggered after 5 more days (time difference between the steps)
+        runScheduledSteps(Duration.ofDays(17));
+
+        runOnServer.run((session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            // second step should have run and the user should be disabled now
+            assertFalse(user.isEnabled());
         }));
     }
 
     @Test
     public void testMultipleWorkflows() {
-        managedRealm.admin().workflows().create(WorkflowRepresentation.create()
-                .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .name(UserSessionRefreshTimeWorkflowProviderFactory.ID + "_1")
-                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(USER_ADDED.toString(), USER_LOGGED_IN.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
                                 .withConfig("custom_subject_key", "notifier1_subject")
                                 .withConfig("custom_message", "notifier1_message")
-                                .build()
-                )
-                .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .name(UserSessionRefreshTimeWorkflowProviderFactory.ID + "_2")
-                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
+                                .build())
+                .build()).close();
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow_2")
+                .onEvent(USER_ADDED.toString(), USER_LOGGED_IN.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(10))
@@ -200,24 +248,20 @@ public class UserSessionRefreshTimeWorkflowTest {
         String username = userAlice.getUsername();
         loginPage.fillLogin(username, userAlice.getPassword());
         loginPage.submit();
-        assertTrue(driver.getPageSource() != null && driver.getPageSource().contains("Happy days"));
+        assertTrue(driver.page().getPageSource() != null && driver.page().getPageSource().contains("Happy days"));
 
         runOnServer.run(session -> {
-            RealmModel realm = configureSessionContext(session);
-            WorkflowsManager manager = new WorkflowsManager(session);
-
-            UserProvider users = session.users();
-            UserModel user = users.getUserByUsername(realm, username);
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
             assertTrue(user.isEnabled());
+        });
 
-            try {
-                Time.setOffset(Math.toIntExact(Duration.ofDays(7).toSeconds()));
-                manager.runScheduledSteps();
-                user = users.getUserByUsername(realm, username);
-                assertTrue(user.isEnabled());
-            } finally {
-                Time.setOffset(0);
-            }
+        runScheduledSteps(Duration.ofDays(7));
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertTrue(user.isEnabled());
         });
 
         // Verify that the first notify step was executed by checking email was sent
@@ -229,18 +273,12 @@ public class UserSessionRefreshTimeWorkflowTest {
 
         mailServer.runCleanup();
 
-        runOnServer.run(session -> {
-            RealmModel realm = configureSessionContext(session);
-            WorkflowsManager manager = new WorkflowsManager(session);
+        runScheduledSteps(Duration.ofDays(11));
 
-            try {
-                Time.setOffset(Math.toIntExact(Duration.ofDays(11).toSeconds()));
-                manager.runScheduledSteps();
-                UserModel user = session.users().getUserByUsername(realm, username);
-                assertTrue(user.isEnabled());
-            } finally {
-                Time.setOffset(0);
-            }
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertTrue(user.isEnabled());
         });
 
         // Verify that the second notify step was executed by checking email was sent
@@ -249,12 +287,6 @@ public class UserSessionRefreshTimeWorkflowTest {
         assertEquals(1, testUserMessages.size());
         assertNotNull(testUserMessages.get(0), "The second step (notify) should have sent an email.");
         verifyEmailContent(testUserMessages.get(0), "master-admin@email.org", "notifier2_subject", "notifier2_message");
-    }
-
-    private static RealmModel configureSessionContext(KeycloakSession session) {
-        RealmModel realm = session.realms().getRealmByName(REALM_NAME);
-        session.getContext().setRealm(realm);
-        return realm;
     }
 
     private static class DefaultUserConfig implements UserConfig {

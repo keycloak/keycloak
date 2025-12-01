@@ -57,6 +57,7 @@ import org.keycloak.operator.controllers.KeycloakDistConfigurator;
 import org.keycloak.operator.controllers.KeycloakRealmImportJobDependentResource;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.controllers.WatchedResources;
+import org.keycloak.operator.controllers.WatchedResources.Watched;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
@@ -122,7 +123,7 @@ public class PodTemplateTest {
 
         //noinspection unchecked
         Context context = mockContext(null);
-        return deployment.desired(kc, context);
+        return deployment.initialDesired(kc, context);
     }
 
     private Keycloak createKeycloak(PodTemplateSpec podTemplate, Consumer<KeycloakSpecBuilder> additionalSpec) {
@@ -620,7 +621,7 @@ public class PodTemplateTest {
                 .findFirst().orElseThrow();
         assertThat(volume.getConfigMap().getName()).isEqualTo("cm");
 
-        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(List.of("cm")), Mockito.eq(ConfigMap.class), Mockito.any(), Mockito.any());
+        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(Watched.of("cm")), Mockito.eq(ConfigMap.class), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -895,7 +896,7 @@ public class PodTemplateTest {
         envVar = env.get("SECRET");
         assertEquals("key", envVar.getValueFrom().getSecretKeyRef().getKey());
 
-        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(List.of("example-tls-secret", "instance-initial-admin", "my-secret")), Mockito.eq(Secret.class), Mockito.any(), Mockito.any());
+        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(Watched.of("example-tls-secret", "instance-initial-admin", "my-secret")), Mockito.eq(Secret.class), Mockito.any(), Mockito.any());
     }
 
 }

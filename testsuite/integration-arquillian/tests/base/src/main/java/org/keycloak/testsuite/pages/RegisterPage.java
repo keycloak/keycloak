@@ -20,13 +20,14 @@ package org.keycloak.testsuite.pages;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.keycloak.models.Constants;
 import org.keycloak.testsuite.auth.page.AccountFields;
 import org.keycloak.testsuite.auth.page.PasswordFields;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.UIUtils;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;

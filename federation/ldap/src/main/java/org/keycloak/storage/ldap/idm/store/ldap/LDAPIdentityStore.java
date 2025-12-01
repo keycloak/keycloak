@@ -17,35 +17,6 @@
 
 package org.keycloak.storage.ldap.idm.store.ldap;
 
-import javax.naming.NameAlreadyBoundException;
-import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.ModelException;
-import org.keycloak.storage.ldap.LDAPConfig;
-import org.keycloak.representations.idm.LDAPCapabilityRepresentation.CapabilityType;
-import org.keycloak.storage.ldap.idm.model.LDAPDn;
-import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
-import org.keycloak.storage.ldap.idm.query.Condition;
-import org.keycloak.storage.ldap.idm.query.internal.EqualCondition;
-import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
-import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
-import org.keycloak.storage.ldap.idm.store.IdentityStore;
-import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
-
-import javax.naming.AuthenticationException;
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.BasicAttribute;
-import javax.naming.directory.BasicAttributes;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.ModificationItem;
-import javax.naming.directory.SearchControls;
-import javax.naming.directory.SearchResult;
-
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
@@ -59,12 +30,40 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
+import javax.naming.AuthenticationException;
+import javax.naming.NameAlreadyBoundException;
 import javax.naming.NameNotFoundException;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
 import javax.naming.directory.AttributeInUseException;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.BasicAttribute;
+import javax.naming.directory.BasicAttributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.ModificationItem;
 import javax.naming.directory.NoSuchAttributeException;
 import javax.naming.directory.SchemaViolationException;
+import javax.naming.directory.SearchControls;
+import javax.naming.directory.SearchResult;
 import javax.naming.ldap.LdapName;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelException;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation.CapabilityType;
+import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.storage.ldap.idm.model.LDAPDn;
+import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.storage.ldap.idm.query.Condition;
+import org.keycloak.storage.ldap.idm.query.internal.EqualCondition;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
+import org.keycloak.storage.ldap.idm.store.IdentityStore;
+import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
+
+import org.jboss.logging.Logger;
 
 /**
  * An IdentityStore implementation backed by an LDAP directory

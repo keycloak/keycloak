@@ -17,9 +17,6 @@
 
 package org.keycloak.dom.xmlsec.w3.xmldsig;
 
-import org.keycloak.saml.common.constants.WSTrustConstants;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPrivateKey;
@@ -27,6 +24,9 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Base64;
+
+import org.keycloak.saml.common.constants.WSTrustConstants;
+import org.keycloak.saml.common.exceptions.ProcessingException;
 
 /**
  * <p>

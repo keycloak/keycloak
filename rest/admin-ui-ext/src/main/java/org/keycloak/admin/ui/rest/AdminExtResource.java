@@ -1,11 +1,11 @@
 package org.keycloak.admin.ui.rest;
 
+import jakarta.ws.rs.Path;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
-
-import jakarta.ws.rs.Path;
 
 public final class AdminExtResource {
     private KeycloakSession session;

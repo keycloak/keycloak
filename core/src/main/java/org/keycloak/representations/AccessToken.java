@@ -17,11 +17,6 @@
 
 package org.keycloak.representations;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.TokenCategory;
-import org.keycloak.representations.idm.authorization.Permission;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,6 +24,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import org.keycloak.TokenCategory;
+import org.keycloak.representations.idm.authorization.Permission;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -1,5 +1,7 @@
 package org.keycloak.services.clientregistration.policy.impl;
 
+import java.util.List;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -8,8 +10,6 @@ import org.keycloak.services.clientregistration.ClientRegistrationProvider;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
 import org.keycloak.services.cors.Cors;
-
-import java.util.List;
 
 public class RegistrationWebOriginsPolicy implements ClientRegistrationPolicy {
 

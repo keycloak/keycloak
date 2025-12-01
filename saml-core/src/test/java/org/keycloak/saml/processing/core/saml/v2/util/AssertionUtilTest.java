@@ -10,8 +10,6 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.Scanner;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.util.DerUtils;
@@ -21,6 +19,9 @@ import org.keycloak.dom.saml.v2.assertion.SubjectType.STSubType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParserTest;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 

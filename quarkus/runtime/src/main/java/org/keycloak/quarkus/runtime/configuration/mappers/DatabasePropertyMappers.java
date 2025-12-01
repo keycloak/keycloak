@@ -1,9 +1,13 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import io.quarkus.datasource.common.runtime.DatabaseKind;
-import io.smallrye.config.ConfigSourceInterceptorContext;
-import io.smallrye.config.ConfigValue;
-import org.jboss.logging.Logger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
@@ -12,13 +16,10 @@ import org.keycloak.config.database.Database;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.StringUtil;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import io.quarkus.datasource.common.runtime.DatabaseKind;
+import io.smallrye.config.ConfigSourceInterceptorContext;
+import io.smallrye.config.ConfigValue;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.config.DatabaseOptions.DB;
 import static org.keycloak.config.DatabaseOptions.Datasources.OPTIONS_DATASOURCES;

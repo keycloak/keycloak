@@ -22,6 +22,13 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.InfinispanUtil;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.sessions.infinispan.CacheDecorators;
+import org.keycloak.models.sessions.infinispan.SessionFunction;
+import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+
 import org.infinispan.Cache;
 import org.infinispan.affinity.KeyAffinityServiceFactory;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
@@ -29,12 +36,6 @@ import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.infinispan.util.concurrent.ActionSequencer;
 import org.jboss.logging.Logger;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.connections.infinispan.InfinispanUtil;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.sessions.infinispan.CacheDecorators;
-import org.keycloak.models.sessions.infinispan.SessionFunction;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
 /**
  * Utility methods for embedded and change-log based transaction

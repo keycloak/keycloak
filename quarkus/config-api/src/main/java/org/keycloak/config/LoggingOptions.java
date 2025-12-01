@@ -1,14 +1,14 @@
 package org.keycloak.config;
 
-import io.quarkus.runtime.logging.LogRuntimeConfig;
-import org.jboss.logmanager.handlers.SyslogHandler;
-
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Function;
+
+import io.quarkus.runtime.logging.LogRuntimeConfig;
+import org.jboss.logmanager.handlers.SyslogHandler;
 
 import static java.lang.String.format;
 

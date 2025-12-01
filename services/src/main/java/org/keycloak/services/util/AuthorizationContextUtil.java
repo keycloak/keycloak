@@ -16,6 +16,8 @@
  */
 package org.keycloak.services.util;
 
+import java.util.stream.Stream;
+
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
@@ -24,8 +26,6 @@ import org.keycloak.protocol.oidc.rar.parsers.ClientScopeAuthorizationRequestPar
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.rar.AuthorizationRequestSource;
-
-import java.util.stream.Stream;
 
 
 /**

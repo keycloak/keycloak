@@ -17,8 +17,10 @@
  */
 package org.keycloak.testsuite.authz.admin;
 
-import org.junit.After;
-import org.junit.BeforeClass;
+import java.util.List;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ResourceScopeResource;
@@ -27,18 +29,18 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.AbstractClientTest;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import jakarta.ws.rs.core.Response;
+import org.junit.After;
+import org.junit.BeforeClass;
 
-import static org.junit.Assert.assertEquals;
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 
-import java.util.List;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

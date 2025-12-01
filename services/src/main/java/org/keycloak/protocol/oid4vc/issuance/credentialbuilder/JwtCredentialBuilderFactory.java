@@ -18,13 +18,13 @@
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
 import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.OffsetTimeProvider;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.List;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
@@ -50,6 +50,6 @@ public class JwtCredentialBuilderFactory implements CredentialBuilderFactory {
 
     @Override
     public CredentialBuilder create(KeycloakSession session, ComponentModel model) {
-        return new JwtCredentialBuilder(new OffsetTimeProvider());
+        return new JwtCredentialBuilder(new OffsetTimeProvider(), session);
     }
 }

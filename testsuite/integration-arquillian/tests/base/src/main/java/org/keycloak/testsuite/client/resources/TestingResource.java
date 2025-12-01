@@ -17,17 +17,9 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.common.Profile;
-import org.keycloak.common.enums.HostnameVerificationPolicy;
-import org.keycloak.events.EventType;
-import org.keycloak.protocol.oidc.encode.AccessTokenContext;
-import org.keycloak.representations.idm.AdminEventRepresentation;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
-import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.rest.representation.AuthenticatorState;
-import org.keycloak.utils.MediaType;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -39,11 +31,19 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import org.keycloak.common.Profile;
+import org.keycloak.common.enums.HostnameVerificationPolicy;
+import org.keycloak.events.EventType;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.rest.representation.AuthenticatorState;
+import org.keycloak.utils.MediaType;
 
 import org.infinispan.commons.time.TimeService;
+import org.jboss.resteasy.reactive.NoCache;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -457,7 +457,7 @@ public interface TestingResource {
      * @param events The events to be included
      */
     @POST
-    @Path("/email-event-litener-provide/add-events")
+    @Path("/email-event-listener-provide/add-events")
     @Consumes(MediaType.APPLICATION_JSON)
     public void addEventsToEmailEventListenerProvider(List<EventType> events);
 
@@ -466,7 +466,7 @@ public interface TestingResource {
      * @param events The events to be removed
      */
     @POST
-    @Path("/email-event-litener-provide/remove-events")
+    @Path("/email-event-listener-provide/remove-events")
     @Consumes(MediaType.APPLICATION_JSON)
     public void removeEventsToEmailEventListenerProvider(List<EventType> events);
 

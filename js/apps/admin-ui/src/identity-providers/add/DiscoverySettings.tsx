@@ -35,6 +35,14 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
     control,
     name: "config.pkceEnabled",
   });
+  const jwtAuthorizationGrantEnabled = useWatch({
+    control,
+    name: "config.jwtAuthorizationGrantEnabled",
+  });
+  const supportsClientAssertions = useWatch({
+    control,
+    name: "config.supportsClientAssertions",
+  });
 
   return (
     <div className="pf-v5-c-form pf-m-horizontal">
@@ -89,21 +97,27 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
           <DefaultSwitchControl
             name="config.validateSignature"
             label={t("validateSignature")}
+            labelIcon={t("validateSignatureHelp")}
             isDisabled={readOnly}
             stringify
           />
-          {validateSignature === "true" && (
+          {(validateSignature === "true" ||
+            jwtAuthorizationGrantEnabled === "true" ||
+            supportsClientAssertions == "true") && (
             <>
               <DefaultSwitchControl
                 name="config.useJwksUrl"
                 label={t("useJwksUrl")}
+                labelIcon={t("useJwksUrlHelp")}
                 isDisabled={readOnly}
                 stringify
               />
               {useJwks === "true" ? (
-                <TextAreaControl
+                <TextControl
                   name="config.jwksUrl"
                   label={t("jwksUrl")}
+                  labelIcon={t("jwksUrlHelp")}
+                  type="url"
                   readOnly={readOnly}
                 />
               ) : (
@@ -111,10 +125,12 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
                   <TextAreaControl
                     name="config.publicKeySignatureVerifier"
                     label={t("validatingPublicKey")}
+                    labelIcon={t("validatingPublicKeyHelp")}
                   />
                   <TextControl
                     name="config.publicKeySignatureVerifierKeyId"
                     label={t("validatingPublicKeyId")}
+                    labelIcon={t("validatingPublicKeyIdHelp")}
                     readOnly={readOnly}
                   />
                 </>

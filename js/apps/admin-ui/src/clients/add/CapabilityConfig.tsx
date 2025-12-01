@@ -21,7 +21,9 @@ import { convertAttributeNameToForm } from "../../util";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { FormFields } from "../ClientDetails";
 import { MultiValuedListComponent } from "../../components/dynamic/MultivaluedListComponent";
-import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import IdentityProviderRepresentation, {
+  IdentityProviderType,
+} from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { useAdminClient } from "../../admin-client";
 import { useState } from "react";
 import { IdentityProvidersQuery } from "@keycloak/keycloak-admin-client/lib/resources/identityProviders";
@@ -65,6 +67,7 @@ export const CapabilityConfig = ({
       if (search) {
         params.search = search;
       }
+      params.type = IdentityProviderType.JWT_AUTHORIZATION_GRANT;
       return await adminClient.identityProviders.find(params);
     },
     setIdps,

@@ -224,7 +224,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         return Stream.concat(updateArgs.stream(), currentArgs.stream().filter(arg -> !arg.equals("start"))).toList();
     }
 
-    static String keycloakHash(Keycloak keycloak) {
+    public static String keycloakHash(Keycloak keycloak) {
         return Utils.hash(
                 List.of(new KeycloakSpecBuilder(keycloak.getSpec()).withInstances(null).withLivenessProbeSpec(null)
                         .withStartupProbeSpec(null).withReadinessProbeSpec(null).withResourceRequirements(null)

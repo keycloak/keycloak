@@ -17,12 +17,12 @@
 
 package org.keycloak.services.util;
 
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.urls.UrlType;
-
-import jakarta.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

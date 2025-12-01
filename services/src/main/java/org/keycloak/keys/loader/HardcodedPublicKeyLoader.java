@@ -16,6 +16,8 @@
  */
 package org.keycloak.keys.loader;
 
+import java.util.Collections;
+
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
@@ -25,8 +27,6 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.keys.PublicKeyLoader;
-
-import java.util.Collections;
 
 /**
  *

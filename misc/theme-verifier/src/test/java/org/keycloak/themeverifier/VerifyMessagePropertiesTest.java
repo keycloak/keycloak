@@ -16,14 +16,14 @@
  */
 package org.keycloak.themeverifier;
 
+import java.io.File;
+import java.net.URL;
+import java.util.List;
+
 import org.apache.maven.plugin.MojoExecutionException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-
-import java.io.File;
-import java.net.URL;
-import java.util.List;
 
 class VerifyMessagePropertiesTest {
 
@@ -108,6 +108,12 @@ class VerifyMessagePropertiesTest {
     void verifyNoDoubleQuoteForUIMessages() throws MojoExecutionException {
         List<String> verify = getFile("doubleSingleQuotes_en.properties").withValidateMessageFormatQuotes(false).verify();
         MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Double single quotes are not allowed")));
+    }
+
+    @Test
+    void verifyNoHtmlEntities() throws MojoExecutionException {
+        List<String> verify = getFile("htmlEntities_en.properties").withValidateMessageFormatQuotes(false).verify();
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("HTML entities should not be used")));
     }
 
     @Test

@@ -3,6 +3,7 @@ import {
   Button,
   ButtonVariant,
   PageSection,
+  Switch,
 } from "@patternfly/react-core";
 import {
   Action,
@@ -46,17 +47,17 @@ export default function WorkflowsSection() {
     );
   };
 
-  const toggleEnabled = async (workflowJSON: WorkflowRepresentation) => {
-    workflowJSON.enabled = !(workflowJSON.enabled ?? true);
-
+  const toggleEnabled = async (workflow: WorkflowRepresentation) => {
+    const enabled = !(workflow.enabled ?? true);
+    const workflowToUpdate = { ...workflow, enabled };
     try {
       await adminClient.workflows.update(
-        { id: workflowJSON.id! },
-        workflowJSON,
+        { id: workflow.id! },
+        workflowToUpdate,
       );
 
       addAlert(
-        workflowJSON.enabled ? t("workflowEnabled") : t("workflowDisabled"),
+        workflowToUpdate.enabled ? t("workflowEnabled") : t("workflowDisabled"),
         AlertVariant.success,
       );
       refresh();
@@ -127,9 +128,14 @@ export default function WorkflowsSection() {
             {
               name: "status",
               displayKey: "status",
-              cellRenderer: (row: WorkflowRepresentation) => {
-                return (row.enabled ?? true) ? t("enabled") : t("disabled");
-              },
+              cellRenderer: (workflow: WorkflowRepresentation) => (
+                <Switch
+                  label={t("enabled")}
+                  labelOff={t("disabled")}
+                  isChecked={workflow.enabled ?? true}
+                  onChange={() => toggleEnabled(workflow)}
+                />
+              ),
             },
           ]}
           actions={[
@@ -147,16 +153,6 @@ export default function WorkflowsSection() {
                 navigate(
                   toWorkflowDetail({ realm, mode: "copy", id: workflow.id! }),
                 );
-              },
-            } as Action<WorkflowRepresentation>,
-            {
-              title: t("changeStatus"),
-              tooltipProps: {
-                content: t("changeStatusTooltip"),
-              },
-              onRowClick: (workflow) => {
-                setSelectedWorkflow(workflow);
-                void toggleEnabled(workflow);
               },
             } as Action<WorkflowRepresentation>,
           ]}

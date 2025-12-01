@@ -88,6 +88,7 @@
         <!-- Organization -->
         <class>org.keycloak.models.jpa.entities.OrganizationEntity</class>
         <class>org.keycloak.models.jpa.entities.OrganizationDomainEntity</class>
+        <class>org.keycloak.models.jpa.entities.OrganizationInvitationEntity</class>
 
         <!-- Server Configuration -->
         <class>org.keycloak.storage.configuration.jpa.entity.ServerConfigEntity</class>

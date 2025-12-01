@@ -19,7 +19,6 @@ package org.keycloak.authorization.config;
 
 import jakarta.ws.rs.core.UriBuilder;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.authorization.AuthorizationService;
 import org.keycloak.authorization.protection.ProtectionService;
 import org.keycloak.models.KeycloakSession;
@@ -29,6 +28,8 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

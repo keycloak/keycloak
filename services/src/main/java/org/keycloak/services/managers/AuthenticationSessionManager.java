@@ -19,9 +19,7 @@ package org.keycloak.services.managers;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Objects;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.cookie.CookieProvider;
@@ -42,6 +40,8 @@ import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.sessions.StickySessionEncoderProvider;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.services.managers.AuthenticationManager.authenticateIdentityCookie;
 
@@ -108,7 +108,7 @@ public class AuthenticationSessionManager {
     public void setAuthSessionCookie(String authSessionId) {
         StickySessionEncoderProvider encoder = session.getProvider(StickySessionEncoderProvider.class);
         String signedAuthSessionId = signAndEncodeToBase64AuthSessionId(authSessionId);
-        String encodedWithRoute = encoder.encodeSessionId(signedAuthSessionId);
+        String encodedWithRoute = encoder.encodeSessionId(signedAuthSessionId, authSessionId);
 
         session.getProvider(CookieProvider.class).set(CookieType.AUTH_SESSION_ID, encodedWithRoute);
 
@@ -195,9 +195,9 @@ public class AuthenticationSessionManager {
 
         StickySessionEncoderProvider routeEncoder = session.getProvider(StickySessionEncoderProvider.class);
         // in case the id is encoded with a route when running in a cluster
-        String decodedAuthSessionId = routeEncoder.decodeSessionId(oldEncodedId);
+        var sessionIdAndRoute = routeEncoder.decodeSessionIdAndRoute(oldEncodedId);
 
-        decodedAuthSessionId = decodeBase64AndValidateSignature(decodedAuthSessionId);
+        String decodedAuthSessionId = decodeBase64AndValidateSignature(sessionIdAndRoute.sessionId());
         if(decodedAuthSessionId == null) {
             return null;
         }
@@ -209,10 +209,10 @@ public class AuthenticationSessionManager {
         if (rootAuthenticationSession == null) {
             return null;
         }
-        String reEncoded = routeEncoder.encodeSessionId(decodedAuthSessionId);
-        boolean routeChanged = !Objects.equals(oldEncodedId, reEncoded);
+        String newRoute = routeEncoder.sessionIdRoute(decodedAuthSessionId);
+        boolean routeChanged = !sessionIdAndRoute.isSameRoute(newRoute);
         if (routeChanged) {
-            log.debugf("Route changed. Will update authentication session cookie. Old: '%s', New: '%s'", oldEncodedId, reEncoded);
+            log.debugf("Route changed. Will update authentication session cookie. Old: '%s', New: '%s'", sessionIdAndRoute.route(), newRoute);
         }
         return new AuthSessionCookie(rootAuthenticationSession, routeChanged);
     }
@@ -289,8 +289,8 @@ public class AuthenticationSessionManager {
         return rootAuthSession==null ? null : rootAuthSession.getAuthenticationSession(client, tabId);
     }
 
-    public AuthenticationSessionModel getAuthenticationSessionByEncodedIdAndClient(RealmModel realm, String encodedAuthSesionId, ClientModel client, String tabId) {
-        String decodedAuthSessionId = decodeBase64AndValidateSignature(encodedAuthSesionId);
+    public AuthenticationSessionModel getAuthenticationSessionByEncodedIdAndClient(RealmModel realm, String encodedAuthSessionId, ClientModel client, String tabId) {
+        String decodedAuthSessionId = decodeBase64AndValidateSignature(encodedAuthSessionId);
         return decodedAuthSessionId==null ? null : getAuthenticationSessionByIdAndClient(realm, decodedAuthSessionId, client, tabId);
     }
 

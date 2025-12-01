@@ -1,8 +1,5 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -21,8 +18,10 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.StringUtil;
 
 import com.google.common.base.CaseFormat;
-
 import io.smallrye.config.ConfigSourceInterceptorContext;
+
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 final class CachingPropertyMappers implements PropertyMapperGrouping {
 

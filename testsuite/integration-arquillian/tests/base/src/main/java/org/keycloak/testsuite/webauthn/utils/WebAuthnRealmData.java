@@ -17,10 +17,10 @@
 
 package org.keycloak.testsuite.webauthn.utils;
 
-import org.keycloak.representations.idm.RealmRepresentation;
-
 import java.util.List;
 import java.util.function.Consumer;
+
+import org.keycloak.representations.idm.RealmRepresentation;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;

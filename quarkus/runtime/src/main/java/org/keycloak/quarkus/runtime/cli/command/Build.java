@@ -17,11 +17,6 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.config.ClassLoaderOptions.QUARKUS_REMOVED_ARTIFACTS_PROPERTY;
-import static org.keycloak.config.DatabaseOptions.DB;
-import static org.keycloak.quarkus.runtime.Environment.getHomePath;
-import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
-
 import java.util.Optional;
 
 import org.keycloak.quarkus.runtime.Environment;
@@ -34,6 +29,11 @@ import io.quarkus.runtime.LaunchMode;
 import io.smallrye.config.ConfigValue;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+
+import static org.keycloak.config.ClassLoaderOptions.QUARKUS_REMOVED_ARTIFACTS_PROPERTY;
+import static org.keycloak.config.DatabaseOptions.DB;
+import static org.keycloak.quarkus.runtime.Environment.getHomePath;
+import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 
 @Command(name = Build.NAME,
         header = "Creates a new and optimized server image.",
@@ -106,11 +106,6 @@ public final class Build extends AbstractCommand {
                 .ifPresent(s -> System.setProperty(QUARKUS_REMOVED_ARTIFACTS_PROPERTY, s));
     }
 
-    @Override
-    public boolean includeBuildTime() {
-        return true;
-    }
-
     private void checkProfileAndDb() {
         if (Environment.isDevProfile()) {
             String cmd = picocli.getParsedCommand().map(AbstractCommand::getName).orElse(getName());
@@ -149,4 +144,10 @@ public final class Build extends AbstractCommand {
     public String getName() {
         return NAME;
     }
+
+    @Override
+    public boolean isHelpAll() {
+        return helpAllMixin != null ? helpAllMixin.allOptions : false;
+    }
+
 }

@@ -17,8 +17,8 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
-import org.infinispan.Cache;
-import org.jboss.logging.Logger;
+import java.util.concurrent.ArrayBlockingQueue;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -28,7 +28,8 @@ import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
-import java.util.concurrent.ArrayBlockingQueue;
+import org.infinispan.Cache;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
@@ -56,6 +57,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
                 LOG.debugf("user-session not found in cache for sessionId=%s offline=%s, loading from persister", key, offline);
                 wrappedEntity = getSessionEntityFromPersister(realm, key, userSession, offline);
             } else {
+                getUpdates(offline).putIfAbsent(key, new SessionUpdatesList<>(realm, wrappedEntity));
                 LOG.debugf("user-session found in cache for sessionId=%s offline=%s %s", key, offline, wrappedEntity.getEntity().getLastSessionRefresh());
             }
 
@@ -72,9 +74,6 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
                 LOG.warnf("Realm mismatch for session %s. Expected realm %s, but found realm %s", wrappedEntity.getEntity(), realm.getId(), realmFromSession.getId());
                 return null;
             }
-
-            myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
-            getUpdates(offline).put(key, myUpdates);
 
             return wrappedEntity;
         } else {

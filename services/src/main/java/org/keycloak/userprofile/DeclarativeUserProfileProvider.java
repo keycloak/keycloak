@@ -19,8 +19,6 @@
 
 package org.keycloak.userprofile;
 
-import static org.keycloak.common.util.ObjectUtil.isBlank;
-import static org.keycloak.protocol.oidc.TokenManager.getRequestedClientScopes;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,21 +38,24 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.userprofile.config.DeclarativeUserProfileModel;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPAttributeSelector;
 import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.representations.userprofile.config.UPGroup;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.userprofile.config.DeclarativeUserProfileModel;
+import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.userprofile.validator.AttributeRequiredByMetadataValidator;
 import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
 import org.keycloak.userprofile.validator.MultiValueValidator;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidatorConfig;
+
+import static org.keycloak.common.util.ObjectUtil.isBlank;
+import static org.keycloak.protocol.oidc.TokenManager.getRequestedClientScopes;
 
 /**
  * {@link UserProfileProvider} loading configuration from the changeable JSON file stored in component config. Parsed

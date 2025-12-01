@@ -16,10 +16,6 @@
  */
 package org.keycloak.connections.httpclient;
 
-import org.apache.http.HttpHost;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.jboss.logging.Logger;
-
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +26,10 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import org.apache.http.HttpHost;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.StringUtil.isBlank;
 

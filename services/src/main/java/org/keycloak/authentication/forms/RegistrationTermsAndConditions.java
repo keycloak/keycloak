@@ -19,7 +19,9 @@ package org.keycloak.authentication.forms;
 
 import java.util.Collections;
 import java.util.List;
+
 import jakarta.ws.rs.core.MultivaluedMap;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;

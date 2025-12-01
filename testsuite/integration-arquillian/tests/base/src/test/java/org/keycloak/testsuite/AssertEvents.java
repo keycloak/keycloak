@@ -17,18 +17,19 @@
 
 package org.keycloak.testsuite;
 
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
-import org.hamcrest.TypeSafeMatcher;
-import org.junit.Assert;
-import org.junit.rules.TestRule;
-import org.junit.runners.model.Statement;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.grants.AuthorizationCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.grants.RefreshTokenGrantTypeFactory;
@@ -41,18 +42,20 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.util.TokenUtil;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
+import org.hamcrest.TypeSafeMatcher;
+import org.junit.Assert;
+import org.junit.rules.TestRule;
+import org.junit.runners.model.Statement;
 
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -68,7 +71,7 @@ public class AssertEvents implements TestRule {
 
     public static final String DEFAULT_REDIRECT_URI = getAuthServerContextRoot() + "/auth/realms/master/app/auth";
 
-    private AbstractKeycloakTest context;
+    private final AbstractKeycloakTest context;
 
     public AssertEvents(AbstractKeycloakTest ctx) {
         context = ctx;
@@ -188,6 +191,44 @@ public class AssertEvents implements TestRule {
                 .session(sessionId);
     }
 
+    public ExpectedEvent expectSessionExpired(String sessionId, String userId) {
+        return expect(EventType.USER_SESSION_DELETED)
+                .session(sessionId)
+                .user(userId)
+                .detail(Details.REASON, Details.USER_SESSION_EXPIRED_REASON)
+                .client((String) null)
+                .ipAddress((String) null);
+    }
+
+    public void assertRefreshTokenErrorAndMaybeSessionExpired(String sessionId, String userId, String clientId) {
+        // events can be in any order
+        ExpectedEvent expired = expectSessionExpired(sessionId, userId);
+        ExpectedEvent refresh = expect(EventType.REFRESH_TOKEN)
+                .session(sessionId)
+                .client(clientId)
+                .error(Errors.INVALID_TOKEN)
+                .user((String) null);
+        EventRepresentation e = poll(5);
+        if (e.getType().equals(EventType.USER_SESSION_DELETED.name())) {
+            // if we get an expiration event, we must receive the refresh token error event.
+            expired.assertEvent(e);
+            refresh.assertEvent();
+            return;
+        }
+        if (e.getType().equals(EventType.REFRESH_TOKEN_ERROR.name())) {
+            refresh.assertEvent(e);
+            // The session expiration event is optional.
+            // With volatile session send an event because Infinispan sends events on reads.
+            // With persistent session only sends the events during the periodic cleanup task.
+            e = fetchNextEvent();
+            if (e != null) {
+                expired.assertEvent(e);
+            }
+            return;
+        }
+        Assert.fail("Unexpected event type: " + e.getType());
+    }
+
     public ExpectedEvent expectLogout(String sessionId) {
         return expect(EventType.LOGOUT)
                 .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI))
@@ -271,7 +312,7 @@ public class AssertEvents implements TestRule {
     }
 
     public class ExpectedEvent {
-        private EventRepresentation expected = new EventRepresentation();
+        private final EventRepresentation expected = new EventRepresentation();
         private Matcher<String> realmId;
         private Matcher<String> userId;
         private Matcher<String> sessionId;
@@ -346,7 +387,7 @@ public class AssertEvents implements TestRule {
             if (key.equals(Details.SCOPE)) {
                 // the scopes can be given in any order,
                 // therefore, use a matcher that takes a string and ignores the order of the scopes
-                return detail(key, new TypeSafeMatcher<String>() {
+                return detail(key, new TypeSafeMatcher<>() {
                     @Override
                     protected boolean matchesSafely(String actualValue) {
                         return Matchers.containsInAnyOrder(value.split(" ")).matches(Arrays.asList(actualValue.split(" ")));
@@ -364,7 +405,7 @@ public class AssertEvents implements TestRule {
 
         public ExpectedEvent detail(String key, Matcher<? super String> matcher) {
             if (details == null) {
-                details = new HashMap<String, Matcher<? super String>>();
+                details = new HashMap<>();
             }
             details.put(key, matcher);
             return this;
@@ -440,23 +481,14 @@ public class AssertEvents implements TestRule {
             assertThat("session ID", actual.getSessionId(), is(sessionId));
 
             if (details == null || details.isEmpty()) {
-//                Assert.assertNull(actual.getDetails());
-            } else {
-                Assert.assertNotNull(actual.getDetails());
-                for (Map.Entry<String, Matcher<? super String>> d : details.entrySet()) {
-                    String actualValue = actual.getDetails().get(d.getKey());
-
-                    assertThat("Unexpected value for " + d.getKey(), actualValue, d.getValue());
-                }
-                /*
-                for (String k : actual.getDetails().keySet()) {
-                    if (!details.containsKey(k)) {
-                        Assert.fail(k + " was not expected");
-                    }
-                }
-                */
+                return actual;
             }
 
+            Assert.assertNotNull(actual.getDetails());
+            for (Map.Entry<String, Matcher<? super String>> d : details.entrySet()) {
+                String actualValue = actual.getDetails().get(d.getKey());
+                assertThat("Unexpected value for " + d.getKey(), actualValue, d.getValue());
+            }
             return actual;
         }
 
@@ -498,7 +530,7 @@ public class AssertEvents implements TestRule {
     }
 
     public static Matcher<String> isUUID() {
-        return new TypeSafeMatcher<String>() {
+        return new TypeSafeMatcher<>() {
             @Override
             protected boolean matchesSafely(String item) {
                 return 36 == item.length() && item.charAt(8) == '-' && item.charAt(13) == '-' && item.charAt(18) == '-' && item.charAt(23) == '-';
@@ -512,7 +544,7 @@ public class AssertEvents implements TestRule {
     }
 
     public static Matcher<String> isAccessTokenId(String expectedGrantShortcut) {
-        return new TypeSafeMatcher<String>() {
+        return new TypeSafeMatcher<>() {
             @Override
             protected boolean matchesSafely(String item) {
                 String[] items = item.split(":");
@@ -530,7 +562,7 @@ public class AssertEvents implements TestRule {
     }
 
     public Matcher<String> defaultRealmId() {
-        return new TypeSafeMatcher<String>() {
+        return new TypeSafeMatcher<>() {
             private String realmId;
 
             @Override
@@ -558,7 +590,7 @@ public class AssertEvents implements TestRule {
     }
 
     public Matcher<String> defaultUserId() {
-        return new TypeSafeMatcher<String>() {
+        return new TypeSafeMatcher<>() {
             private String userId;
 
             @Override

@@ -151,7 +151,7 @@ public class RealmImportTest extends BaseOperatorTest {
         assertThat(envvars.stream().filter(e -> e.getName().equals("MY_SMTP_SERVER")).findAny().get().getValueFrom().getSecretKeyRef().getKey()).isEqualTo("SMTP_SERVER");
     }
 
-    private List<EnvVar> assertWorkingRealmImport(Keycloak kc) {
+    private void waitForRealmImport(Keycloak kc) {
         var crSelector = k8sclient
                 .resources(KeycloakRealmImport.class)
                 .inNamespace(namespace)
@@ -177,6 +177,10 @@ public class RealmImportTest extends BaseOperatorTest {
                     CRAssert.assertKeycloakRealmImportStatusCondition(cr, STARTED, false);
                     CRAssert.assertKeycloakRealmImportStatusCondition(cr, HAS_ERRORS, false);
                 });
+    }
+
+    private List<EnvVar> assertWorkingRealmImport(Keycloak kc) {
+        waitForRealmImport(kc);
         var job = k8sclient.batch().v1().jobs().inNamespace(namespace).withName("example-count0-kc").get();
         assertThat(job.getSpec().getTemplate().getMetadata().getLabels().get("app")).isEqualTo("keycloak-realm-import");
         var container = job.getSpec().getTemplate().getSpec().getContainers().get(0);

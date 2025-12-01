@@ -1,5 +1,7 @@
 package org.freedesktop.dbus;
 
+import java.lang.reflect.Method;
+
 import org.freedesktop.dbus.connections.AbstractConnection;
 import org.freedesktop.dbus.errors.Error;
 import org.freedesktop.dbus.errors.NoReply;
@@ -10,8 +12,6 @@ import org.freedesktop.dbus.messages.MethodCall;
 import org.freedesktop.dbus.messages.MethodReturn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.Method;
 
 /**
  * A handle to an asynchronous method call.

@@ -1,6 +1,7 @@
 package org.keycloak.tests.admin.identityprovider;
 
-import org.junit.jupiter.api.Assertions;
+import java.util.Map;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.IdentityProviderModel;
@@ -13,10 +14,10 @@ import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.admin.ApiUtil;
 
-import java.util.Map;
+import org.junit.jupiter.api.Assertions;
 
 public class AbstractIdentityProviderTest {
 
@@ -35,8 +36,11 @@ public class AbstractIdentityProviderTest {
 
         String secret = idpRep.getConfig() != null ? idpRep.getConfig().get("clientSecret") : null;
         idpRep = StripSecretsUtils.stripSecrets(null, idpRep);
-        // if legacy hide on login page attribute was used, the attr will be removed when converted to model
-        idpRep.setHideOnLogin(Boolean.parseBoolean(idpRep.getConfig().remove(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR)));
+
+        if ("true".equals(idpRep.getConfig().get(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR))) {
+            idpRep.setHideOnLogin(true);
+            idpRep.getConfig().remove(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR);
+        }
 
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.identityProviderPath(idpRep.getAlias()), idpRep, ResourceType.IDENTITY_PROVIDER);
 

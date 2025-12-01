@@ -17,20 +17,26 @@
 
 package org.keycloak.models.workflow;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import org.jboss.logging.Logger;
+
+import org.keycloak.common.util.DurationConverter;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.utils.StringUtil;
 
-import java.util.List;
+import org.jboss.logging.Logger;
 
 public class JpaWorkflowStateProvider implements WorkflowStateProvider {
 
@@ -57,18 +63,24 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
     @Override
     public void scheduleStep(Workflow workflow, WorkflowStep step, String resourceId, String executionId) {
         WorkflowStateEntity entity = em.find(WorkflowStateEntity.class, executionId);
+        Duration duration = DurationConverter.parseDuration(step.getAfter());
+        if (duration == null) {
+            // shouldn't happen as the step duration should have been validated before
+            throw new IllegalArgumentException("Invalid duration (%s) found when scheduling step %s in workflow %s"
+                    .formatted(step.getAfter(), step.getProviderId(), workflow.getName()));
+        }
+
         if (entity == null) {
             entity = new WorkflowStateEntity();
             entity.setResourceId(resourceId);
             entity.setWorkflowId(workflow.getId());
             entity.setExecutionId(executionId);
-            entity.setWorkflowProviderId(workflow.getProviderId());
             entity.setScheduledStepId(step.getId());
-            entity.setScheduledStepTimestamp(Time.currentTimeMillis() + step.getAfter());
+            entity.setScheduledStepTimestamp(Instant.now().plus(duration).toEpochMilli());
             em.persist(entity);
         } else {
             entity.setScheduledStepId(step.getId());
-            entity.setScheduledStepTimestamp(Time.currentTimeMillis() + step.getAfter());
+            entity.setScheduledStepTimestamp(Instant.now().plus(duration).toEpochMilli());
         }
     }
 
@@ -136,6 +148,21 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
     }
 
     @Override
+    public void removeByWorkflowAndResource(String workflowId, String resourceId) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaDelete<WorkflowStateEntity> delete = cb.createCriteriaDelete(WorkflowStateEntity.class);
+        Root<WorkflowStateEntity> root = delete.from(WorkflowStateEntity.class);
+        delete.where(cb.and(cb.equal(root.get("workflowId"), workflowId),  cb.equal(root.get("resourceId"), resourceId)));
+        int deletedCount = em.createQuery(delete).executeUpdate();
+
+        if (LOGGER.isTraceEnabled()) {
+            if (deletedCount > 0) {
+                LOGGER.tracev("Deleted {0} state records for resource {1} of workflow {2}", deletedCount, resourceId, workflowId);
+            }
+        }
+    }
+
+    @Override
     public void removeByWorkflow(String workflowId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaDelete<WorkflowStateEntity> delete = cb.createCriteriaDelete(WorkflowStateEntity.class);
@@ -171,6 +198,22 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
                 LOGGER.tracev("Deleted {0} state records for realm {1}", deletedCount, realm.getId());
             }
         }
+    }
+
+    @Override
+    public boolean hasScheduledSteps(String workflowId) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Long> criteriaQuery = cb.createQuery(Long.class);
+        Root<WorkflowStateEntity> stateRoot = criteriaQuery.from(WorkflowStateEntity.class);
+
+        criteriaQuery.select(cb.count(stateRoot));
+        criteriaQuery.where(cb.equal(stateRoot.get("workflowId"), workflowId));
+
+        TypedQuery<Long> query = em.createQuery(criteriaQuery);
+        query.setMaxResults(1);
+
+        Long count = query.getSingleResult();
+        return count > 0;
     }
 
     @Override

@@ -20,9 +20,8 @@ package org.keycloak.protocol.oid4vc;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -42,7 +41,9 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 
-import static org.keycloak.constants.Oid4VciConstants.OID4VC_PROTOCOL;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.CONFIGURATION_ID;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.CONTEXTS;
@@ -81,7 +82,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 	private static final String LAST_NAME_MAPPER = "last-name";
 	private static final String FIRST_NAME_MAPPER = "first-name";
 
-	public static final String PROTOCOL_ID = Oid4VciConstants.OID4VC_PROTOCOL;
+	public static final String PROTOCOL_ID = OID4VCIConstants.OID4VC_PROTOCOL;
 
 	private final Map<String, ProtocolMapperModel> builtins = new HashMap<>();
 
@@ -179,6 +180,8 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     public int order() {
         return OIDCLoginProtocolFactory.UI_ORDER - 20;
     }
+
+    // Private ---------------------------------------------------------------------------------------------------------
 
     private void addClientScopeDefaults(ClientScopeModel clientScope) {
         ClientScopeRepresentation clientScopeRep = ModelToRepresentation.toRepresentation(clientScope);

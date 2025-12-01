@@ -17,8 +17,15 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Test;
+import java.security.PublicKey;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import java.util.StringJoiner;
+import java.util.UUID;
+
+import org.keycloak.OID4VCConstants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -38,17 +45,17 @@ import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.util.JsonSerialization;
 
-import java.security.PublicKey;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.StringJoiner;
-import java.util.UUID;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.junit.Test;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
+import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -202,7 +209,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
                 .setCredentialIssuer(TEST_DID.toString())
                 .setCredentialType("https://credentials.example.com/test-credential")
                 .setTokenJwsType("example+sd-jwt")
-                .setHashAlgorithm("sha-256")
+                .setHashAlgorithm(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
                 .setNumberOfDecoys(decoys)
                 .setSdJwtVisibleClaims(visibleClaims)
                 .setSigningKeyId(signingKeyId)
@@ -234,7 +241,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
         }
         // the sd-jwt is dot-concatenated header.payload.signature~disclosure1~___~disclosureN
         // we first split the disclosuers
-        String[] splittedSdToken = sdJwt.split("~");
+        String[] splittedSdToken = sdJwt.split(SDJWT_DELIMITER);
         // and then split the actual token part
         String[] splittedToken = splittedSdToken[0].split("\\.");
 
@@ -260,13 +267,15 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
 
             assertEquals("The issuer should be set in the token.", TEST_DID.toString(), theToken.getIssuer());
             assertEquals("The type should be included", "https://credentials.example.com/test-credential", theToken.getOtherClaims().get("vct"));
-            List<String> sds = (List<String>) theToken.getOtherClaims().get("_sd");
+            List<String> sds = (List<String>) theToken.getOtherClaims().get(CLAIM_NAME_SD);
             if (sds != null && !sds.isEmpty()) {
-                assertEquals("The algorithm should be included", "sha-256", theToken.getOtherClaims().get("_sd_alg"));
+                assertEquals("The algorithm should be included", OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM, theToken.getOtherClaims().get(CLAIM_NAME_SD_HASH_ALGORITHM));
             }
             List<String> disclosed = Arrays.asList(splittedSdToken).subList(1, splittedSdToken.length);
             int numSds = sds != null ? sds.size() : 0;
-            assertEquals("All undisclosed claims and decoys should be provided.", disclosed.size() + decoys, numSds);
+            assertEquals("All undisclosed claims and decoys should be provided.",
+                         disclosed.size() + (decoys == 0 ? decoys + SdJwt.DEFAULT_NUMBER_OF_DECOYS : decoys),
+                         numSds);
             verifyDisclosures(sds, disclosed);
 
             visibleClaims
@@ -317,7 +326,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
         private String createHash(String salt, String key, Object value) {
             try {
                 return SdJwtUtils.encodeNoPad(
-                        HashUtils.hash("sha-256",
+                        HashUtils.hash(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM,
                                 SdJwtUtils.encodeNoPad(
                                         SdJwtUtils.printJsonArray(List.of(salt, key, value).toArray()).getBytes()).getBytes()));
             } catch (JsonProcessingException e) {

@@ -16,12 +16,13 @@
  */
 package org.keycloak.tests.utils.matchers;
 
+import java.util.Map;
+
 import jakarta.ws.rs.core.Response;
+
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-
-import java.util.Map;
 
 /**
  * Matcher for matching status code of {@link Response} instance.

@@ -16,13 +16,13 @@
  */
 package org.keycloak.models.utils;
 
+import java.util.List;
+import java.util.function.Function;
+
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.ReadOnlyException;
-
-import java.util.List;
-import java.util.function.Function;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

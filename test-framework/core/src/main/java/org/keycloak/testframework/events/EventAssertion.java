@@ -1,10 +1,11 @@
 package org.keycloak.testframework.events;
 
+import org.keycloak.events.EventType;
+import org.keycloak.representations.idm.EventRepresentation;
+
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
-import org.keycloak.events.EventType;
-import org.keycloak.representations.idm.EventRepresentation;
 
 public class EventAssertion {
 
@@ -38,6 +39,16 @@ public class EventAssertion {
 
     public EventAssertion clientId(String clientId) {
         Assertions.assertEquals(clientId, event.getClientId());
+        return this;
+    }
+
+    public EventAssertion sessionId(String sessionId) {
+        Assertions.assertEquals(sessionId, event.getSessionId());
+        return this;
+    }
+
+    public EventAssertion userId(String userId) {
+        Assertions.assertEquals(userId, event.getUserId());
         return this;
     }
 

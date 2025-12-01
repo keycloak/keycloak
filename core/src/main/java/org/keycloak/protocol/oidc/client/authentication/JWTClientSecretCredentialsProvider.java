@@ -18,11 +18,9 @@ package org.keycloak.protocol.oidc.client.authentication;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
@@ -31,6 +29,8 @@ import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+
+import org.jboss.logging.Logger;
 
 /**
  * Client authentication based on JWT signed by client secret instead of private key .

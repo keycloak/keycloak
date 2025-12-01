@@ -17,11 +17,11 @@
 
 package org.keycloak.theme;
 
+import java.io.File;
+
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-
-import java.io.File;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

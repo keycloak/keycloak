@@ -1,29 +1,25 @@
 package org.keycloak.admin.api.realm;
 
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
-import org.keycloak.models.KeycloakSession;
 
-import java.util.Optional;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.resources.admin.RealmsAdminResource;
 
 public class DefaultRealmsApi implements RealmsApi {
     private final KeycloakSession session;
+    private final RealmsAdminResource realmsAdminResource;
 
-    public DefaultRealmsApi(KeycloakSession session) {
+    public DefaultRealmsApi(KeycloakSession session, RealmsAdminResource realmsAdminResource) {
         this.session = session;
+        this.realmsAdminResource = realmsAdminResource;
     }
 
     @Path("{name}")
     @Override
     public RealmApi realm(@PathParam("name") String name) {
-        var realm = Optional.ofNullable(session.realms().getRealmByName(name)).orElseThrow(() -> new NotFoundException("Realm cannot be found"));
-        session.getContext().setRealm(realm);
-        return session.getProvider(RealmApi.class);
+        var realmAdmin = realmsAdminResource.getRealmAdmin(name);
+        return new DefaultRealmApi(session, realmAdmin);
     }
 
-    @Override
-    public void close() {
-
-    }
 }

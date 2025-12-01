@@ -1,17 +1,18 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.function.Consumer;
+
 import jakarta.ws.rs.core.Response;
-import org.junit.Test;
+
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
-import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.util.JsonSerialization;
 
-import java.util.function.Consumer;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
@@ -34,7 +35,7 @@ public class OID4VCSdJwtIssuingEndpointDisabledTest extends OID4VCIssuerEndpoint
 
             // Test getCredentialOfferURI
             CorsErrorResponseException offerUriException = Assert.assertThrows(CorsErrorResponseException.class, () ->
-                    issuerEndpoint.getCredentialOfferURI("test-credential", OfferUriType.URI, 0, 0)
+                    issuerEndpoint.getCredentialOfferURI("test-credential")
             );
             assertEquals("Should fail with 403 Forbidden when client is not OID4VCI-enabled",
                     Response.Status.FORBIDDEN.getStatusCode(), offerUriException.getResponse().getStatus());

@@ -19,13 +19,14 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantTypeSpi;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.feature.AbstractFeatureStateTest;
+
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

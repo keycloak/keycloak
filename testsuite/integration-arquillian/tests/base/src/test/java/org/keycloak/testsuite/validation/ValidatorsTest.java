@@ -19,8 +19,6 @@
 
 package org.keycloak.testsuite.validation;
 
-import static org.keycloak.validate.ValidatorConfig.configFromMap;
-
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,12 +28,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
+import org.keycloak.validate.BuiltinValidators;
 import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
@@ -46,8 +43,12 @@ import org.keycloak.validate.Validators;
 import org.keycloak.validate.validators.EmailValidator;
 import org.keycloak.validate.validators.LengthValidator;
 import org.keycloak.validate.validators.NotBlankValidator;
-import org.keycloak.validate.BuiltinValidators;
 import org.keycloak.validate.validators.ValidatorConfigValidator;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.keycloak.validate.ValidatorConfig.configFromMap;
 
 public class ValidatorsTest extends AbstractKeycloakTest {
 

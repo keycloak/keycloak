@@ -17,7 +17,9 @@
 
 package org.keycloak.cluster.infinispan.remote;
 
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,16 +27,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.client.hotrod.annotation.ClientCacheEntryCreated;
-import org.infinispan.client.hotrod.annotation.ClientCacheEntryModified;
-import org.infinispan.client.hotrod.annotation.ClientCacheEntryRemoved;
-import org.infinispan.client.hotrod.annotation.ClientListener;
-import org.infinispan.client.hotrod.event.ClientCacheEntryCreatedEvent;
-import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
-import org.infinispan.client.hotrod.event.ClientCacheEntryRemovedEvent;
-import org.infinispan.client.hotrod.exceptions.HotRodClientException;
-import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider.DCNotify;
@@ -43,11 +35,22 @@ import org.keycloak.cluster.infinispan.WrapperClusterEvent;
 import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.connections.infinispan.TopologyInfo;
+import org.keycloak.connections.infinispan.NodeInfo;
+
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.annotation.ClientCacheEntryCreated;
+import org.infinispan.client.hotrod.annotation.ClientCacheEntryModified;
+import org.infinispan.client.hotrod.annotation.ClientCacheEntryRemoved;
+import org.infinispan.client.hotrod.annotation.ClientListener;
+import org.infinispan.client.hotrod.event.ClientCacheEntryCustomEvent;
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
+import org.infinispan.commons.io.UnsignedNumeric;
+import org.infinispan.commons.marshall.Marshaller;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.cluster.infinispan.InfinispanClusterProvider.TASK_KEY_PREFIX;
 
-@ClientListener
+@ClientListener(converterFactoryName = "___eager-key-value-version-converter", useRawData = true)
 public class RemoteInfinispanNotificationManager {
 
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
@@ -56,12 +59,14 @@ public class RemoteInfinispanNotificationManager {
     private final ConcurrentMultivaluedHashMap<String, ClusterListener> listeners = new ConcurrentMultivaluedHashMap<>();
     private final Executor executor;
     private final RemoteCache<String, Object> workCache;
-    private final TopologyInfo topologyInfo;
+    private final NodeInfo nodeInfo;
+    private final Marshaller marshaller;
 
-    public RemoteInfinispanNotificationManager(Executor executor, RemoteCache<String, Object> workCache, TopologyInfo topologyInfo) {
+    public RemoteInfinispanNotificationManager(Executor executor, RemoteCache<String, Object> workCache, NodeInfo nodeInfo) {
         this.executor = executor;
         this.workCache = workCache;
-        this.topologyInfo = topologyInfo;
+        this.nodeInfo = nodeInfo;
+        this.marshaller = workCache.getRemoteCacheContainer().getMarshaller();
     }
 
     public void addClientListener() {
@@ -88,7 +93,7 @@ public class RemoteInfinispanNotificationManager {
         if (events == null || events.isEmpty()) {
             return;
         }
-        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, topologyInfo.getMyNodeName(), topologyInfo.getMySiteName(), dcNotify, ignoreSender);
+        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, nodeInfo.nodeName(), nodeInfo.siteName(), dcNotify, ignoreSender);
 
         var eventKey = SecretGenerator.getInstance().generateSecureID();
 
@@ -114,32 +119,43 @@ public class RemoteInfinispanNotificationManager {
     }
 
     public String getMyNodeName() {
-        return topologyInfo.getMyNodeName();
+        return nodeInfo.nodeName();
     }
 
     @ClientCacheEntryCreated
-    public void created(ClientCacheEntryCreatedEvent<String> event) {
-        String key = event.getKey();
-        hotrodEventReceived(key);
-    }
-
-
     @ClientCacheEntryModified
-    public void updated(ClientCacheEntryModifiedEvent<String> event) {
-        String key = event.getKey();
-        hotrodEventReceived(key);
-    }
+    public void onEntryUpdated(ClientCacheEntryCustomEvent<byte[]> event) {
+        try {
+            byte[] data = event.getEventData();
+            ByteBuffer buffer = ByteBuffer.wrap(data);
+            int length = UnsignedNumeric.readUnsignedInt(buffer);
 
+            // unmarshall the key
+            String key = (String) marshaller.objectFromByteBuffer(data, buffer.position(), length);
+
+            buffer.position(buffer.position() + length);
+            length = UnsignedNumeric.readUnsignedInt(buffer);
+
+            // unmarshall the value
+            Object value = marshaller.objectFromByteBuffer(data, buffer.position(), length);
+            executor.execute(() -> eventReceived(key, value));
+        } catch (IOException | ClassNotFoundException e) {
+            logger.error("Unexpected error handling an update/create event from Infinispan cluster", e);
+        }
+    }
 
     @ClientCacheEntryRemoved
-    public void removed(ClientCacheEntryRemovedEvent<String> event) {
-        String key = event.getKey();
-        taskFinished(key);
-    }
+    public void onEntryRemoved(ClientCacheEntryCustomEvent<byte[]> event) {
+        try {
+            byte[] data = event.getEventData();
+            ByteBuffer buffer = ByteBuffer.wrap(data);
+            int length = UnsignedNumeric.readUnsignedInt(buffer);
 
-    private void hotrodEventReceived(String key) {
-        // TODO [pruivo] cache event converter may work here with protostream
-        workCache.getAsync(key).thenAcceptAsync(value -> eventReceived(key, value), executor);
+            // unmarshall the key
+            taskFinished((String) marshaller.objectFromByteBuffer(data, buffer.position(), length));
+        } catch (IOException | ClassNotFoundException e) {
+            logger.error("Unexpected error handling a remove event from Infinispan cluster", e);
+        }
     }
 
     private void eventReceived(String key, Object obj) {
@@ -152,7 +168,7 @@ public class RemoteInfinispanNotificationManager {
             return;
         }
 
-        if (event.rejectEvent(topologyInfo.getMyNodeName(), topologyInfo.getMySiteName())) {
+        if (event.rejectEvent(nodeInfo.nodeName(), nodeInfo.siteName())) {
             return;
         }
 

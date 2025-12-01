@@ -17,19 +17,22 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import java.util.EnumSet;
+
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
 
 import picocli.CommandLine;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 public abstract class AbstractNonServerCommand extends AbstractAutoBuildCommand {
 
     @CommandLine.Mixin
     OptimizedMixin optimizedMixin = new OptimizedMixin();
+
+    private static EnumSet<OptionCategory> hidden = EnumSet.of(OptionCategory.HTTP, OptionCategory.HTTP_ACCESS_LOG,
+            OptionCategory.PROXY, OptionCategory.HOSTNAME_V1, OptionCategory.HOSTNAME_V2, OptionCategory.METRICS,
+            OptionCategory.SECURITY, OptionCategory.CACHE, OptionCategory.HEALTH, OptionCategory.MANAGEMENT);
 
     @Override
     public String getDefaultProfile() {
@@ -37,24 +40,16 @@ public abstract class AbstractNonServerCommand extends AbstractAutoBuildCommand 
     }
 
     @Override
-    public List<OptionCategory> getOptionCategories() {
-        return super.getOptionCategories().stream().filter(optionCategory ->
-                optionCategory != OptionCategory.HTTP &&
-                        optionCategory != OptionCategory.PROXY &&
-                        optionCategory != OptionCategory.HOSTNAME_V1 &&
-                        optionCategory != OptionCategory.HOSTNAME_V2 &&
-                        optionCategory != OptionCategory.METRICS &&
-                        optionCategory != OptionCategory.SECURITY &&
-                        optionCategory != OptionCategory.CACHE &&
-                        optionCategory != OptionCategory.HEALTH).collect(Collectors.toList());
-    }
-
-    @Override
-    public boolean includeRuntime() {
-        return true;
+    public boolean isHiddenCategory(OptionCategory category) {
+        return super.isHiddenCategory(category) || hidden.contains(category);
     }
 
     public void onStart(QuarkusKeycloakApplication application) {
+    }
+
+    @Override
+    protected OptimizedMixin getOptimizedMixin() {
+        return optimizedMixin;
     }
 
 }

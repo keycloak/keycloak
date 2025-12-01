@@ -17,17 +17,6 @@
 
 package org.keycloak.it.storage.database;
 
-import io.quarkus.logging.Log;
-import io.quarkus.test.junit.main.Launch;
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.utils.RawDistRootPath;
-import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -35,9 +24,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.utils.RawDistRootPath;
+import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
+
+import io.quarkus.logging.Log;
+import io.quarkus.test.junit.main.Launch;
+import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -84,7 +85,7 @@ public abstract class BasicDatabaseTest {
         cliResult.assertMessage("Import finished successfully");
     }
 
-    public void assertManualDbInitialization(CLIResult cliResult, RawDistRootPath rawDistRootPath) {
+    public String assertManualDbInitialization(CLIResult cliResult, RawDistRootPath rawDistRootPath) {
         cliResult.assertMessage("Database not initialized, please initialize database with");
 
         var output = readKeycloakDbUpdateScript(rawDistRootPath);
@@ -93,6 +94,8 @@ public abstract class BasicDatabaseTest {
         assertThat(output, containsString("Keycloak database creation script - apply this script to empty DB"));
         assertThat(output, containsString("Change Log: META-INF/jpa-changelog-master.xml"));
         assertThat(output, containsString("Changeset META-INF/jpa-changelog-26.2.6.xml"));
+
+        return output;
     }
 
     protected static String readKeycloakDbUpdateScript(RawDistRootPath path) {

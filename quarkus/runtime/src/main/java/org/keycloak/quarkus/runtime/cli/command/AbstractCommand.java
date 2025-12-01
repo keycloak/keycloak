@@ -17,22 +17,19 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.Messages.cliExecutionError;
-
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
+
+import static org.keycloak.quarkus.runtime.Messages.cliExecutionError;
 
 public abstract class AbstractCommand implements Callable<Integer> {
 
@@ -52,10 +49,6 @@ public abstract class AbstractCommand implements Callable<Integer> {
      * Get the effective profile used when the config is initialized
      */
     public String getInitProfile() {
-        String configuredProfile = org.keycloak.common.util.Environment.getProfile();
-        if (configuredProfile != null) {
-            return configuredProfile; // the profile was already set by the cli or even ENV
-        }
         if (Environment.isRebuildCheck()) {
             // builds default to prod, if the profile is not overriden via the cli
             return Environment.PROD_PROFILE_VALUE;
@@ -95,28 +88,15 @@ public abstract class AbstractCommand implements Callable<Integer> {
     }
 
     /**
-     * Returns true if this command should include runtime options for the CLI.
+     * @param category
+     * @return true if runtime options for the given category should be hidden from the cli
      */
-    public boolean includeRuntime() {
-        return false;
-    }
-
-    /**
-     * Returns true if this command should include build time options for the CLI.
-     */
-    public boolean includeBuildTime() {
-        return false;
-    }
-
-    /**
-     * Returns a list of all option categories which are available for this command.
-     */
-    public List<OptionCategory> getOptionCategories() {
-        return Arrays.asList(OptionCategory.values());
+    public boolean isHiddenCategory(OptionCategory category) {
+        return category == OptionCategory.IMPORT || category == OptionCategory.EXPORT;
     }
 
     protected void validateConfig() {
-        picocli.validateConfig(ConfigArgsConfigSource.getAllCliArgs(), this);
+        picocli.validateConfig();
     }
 
     public abstract String getName();
@@ -141,6 +121,18 @@ public abstract class AbstractCommand implements Callable<Integer> {
      * @return true if the command starts an http server
      */
     public boolean isServing() {
+        return false;
+    }
+
+    /**
+     * @return true if a form of help all was used. Only valid if this is the parsed command.
+     */
+    public abstract boolean isHelpAll();
+
+    /**
+     * @return true if --optimized was used. Only valid if this is the parsed command.
+     */
+    public boolean isOptimized() {
         return false;
     }
 

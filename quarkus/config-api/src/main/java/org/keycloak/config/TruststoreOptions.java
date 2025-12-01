@@ -1,8 +1,8 @@
 package org.keycloak.config;
 
-import org.keycloak.common.enums.HostnameVerificationPolicy;
-
 import java.util.List;
+
+import org.keycloak.common.enums.HostnameVerificationPolicy;
 
 public class TruststoreOptions {
 

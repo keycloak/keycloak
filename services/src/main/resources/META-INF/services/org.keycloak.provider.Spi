@@ -32,6 +32,7 @@ org.keycloak.protocol.oidc.rar.AuthorizationRequestParserSpi
 org.keycloak.services.resources.admin.ext.AdminRealmResourceSpi
 org.keycloak.theme.freemarker.FreeMarkerSPI
 org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderSpi
+org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorageSpi
 org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidatorSpi
 org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerSpi
 org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandlerSpi

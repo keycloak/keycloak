@@ -17,6 +17,10 @@
 
 package org.keycloak.util;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -26,10 +30,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 /**
  * Utility class to handle simple JSON serializable for Keycloak.
@@ -49,6 +49,22 @@ public class JsonSerialization {
         prettyMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         prettyMapper.enable(SerializationFeature.INDENT_OUTPUT);
         prettyMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    }
+
+    public static String valueAsString(Object obj) {
+        try {
+            return mapper.writeValueAsString(obj);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    public static <T> T valueFromString(String string, Class<T> type) {
+        try {
+            return mapper.readValue(string, type);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     public static void writeValueToStream(OutputStream os, Object obj) throws IOException {
@@ -83,6 +99,10 @@ public class JsonSerialization {
     }
 
     public static <T> T readValue(InputStream bytes, Class<T> type) throws IOException {
+        return mapper.readValue(bytes, type);
+    }
+
+    public static <T> T readValue(byte[] bytes, TypeReference<T> type) throws IOException {
         return mapper.readValue(bytes, type);
     }
 

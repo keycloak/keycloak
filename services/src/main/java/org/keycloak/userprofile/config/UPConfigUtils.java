@@ -16,9 +16,6 @@
  */
 package org.keycloak.userprofile.config;
 
-import static org.keycloak.common.util.ObjectUtil.isBlank;
-import static org.keycloak.userprofile.UserProfileUtil.isRootAttribute;
-
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -50,6 +47,9 @@ import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationResult;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.Validators;
+
+import static org.keycloak.common.util.ObjectUtil.isBlank;
+import static org.keycloak.userprofile.UserProfileUtil.isRootAttribute;
 
 /**
  * Utility methods to work with User Profile Configurations

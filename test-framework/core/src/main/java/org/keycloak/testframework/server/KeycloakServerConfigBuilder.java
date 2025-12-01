@@ -1,12 +1,5 @@
 package org.keycloak.testframework.server;
 
-import io.quarkus.maven.dependency.Dependency;
-import io.quarkus.maven.dependency.DependencyBuilder;
-import io.smallrye.config.SmallRyeConfig;
-import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.keycloak.common.Profile;
-import org.keycloak.testframework.infinispan.CacheType;
-
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -19,6 +12,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.keycloak.common.Profile;
+import org.keycloak.testframework.infinispan.CacheType;
+
+import io.quarkus.maven.dependency.Dependency;
+import io.quarkus.maven.dependency.DependencyBuilder;
+import io.smallrye.config.SmallRyeConfig;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 
 public class KeycloakServerConfigBuilder {
 
@@ -115,8 +116,7 @@ public class KeycloakServerConfigBuilder {
     public boolean tlsEnabled() {
         return tlsEnabled ;
     }
-
-
+    
     public KeycloakServerConfigBuilder cacheConfigFile(String resourcePath) {
         try {
             Path p = Paths.get(Objects.requireNonNull(getClass().getResource(resourcePath)).toURI());

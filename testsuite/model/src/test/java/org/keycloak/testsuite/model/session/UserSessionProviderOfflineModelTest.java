@@ -32,13 +32,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.hamcrest.Matchers;
-import org.infinispan.AdvancedCache;
-import org.infinispan.Cache;
-import org.infinispan.context.Flag;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Time;
@@ -56,6 +49,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.services.managers.UserSessionManager;
@@ -63,6 +57,14 @@ import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.timer.TimerProvider;
+
+import org.hamcrest.Matchers;
+import org.infinispan.AdvancedCache;
+import org.infinispan.Cache;
+import org.infinispan.context.Flag;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assume.assumeFalse;
@@ -166,6 +168,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
             inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 persister = session.getProvider(UserSessionPersisterProvider.class);
 
                 UserSessionModel session0 = session.sessions().getOfflineUserSession(realm, origSessions[0].getId());
@@ -192,6 +195,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 int timeOffset = 1728000 + (i * 86400);
 
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 setTimeOffset(timeOffset);
                 log.infof("Set time offset to %d. Time is: %d", timeOffset, Time.currentTime());
 
@@ -215,6 +219,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
             inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 persister = session.getProvider(UserSessionPersisterProvider.class);
 
                 // assert session0 is the only session found
@@ -297,6 +302,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
             inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 persister = session.getProvider(UserSessionPersisterProvider.class);
 
                 // Expire everything except offline client sessions
@@ -307,6 +313,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
             inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 sessionManager = new UserSessionManager(session);
                 persister = session.getProvider(UserSessionPersisterProvider.class);
 
@@ -320,14 +327,14 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 if (!MultiSiteUtils.isPersistentSessionsEnabled() && InfinispanUtils.isEmbeddedInfinispan()) {
                     // This does not work with persistent user sessions because we currently have two transactions and the one that creates the offline user sessions is not committing the changes
                     // try to load user session from persister
-                    Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "00000000-0000-0000-0000-000000000000").count());
+                    Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "").count());
                 }
             });
 
             if (MultiSiteUtils.isPersistentSessionsEnabled() && InfinispanUtils.isEmbeddedInfinispan()) {
                 inComittedTransaction(session -> {
                     persister = session.getProvider(UserSessionPersisterProvider.class);
-                    Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "00000000-0000-0000-0000-000000000000").count());
+                    Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "").count());
                 });
             }
 
@@ -538,6 +545,18 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
             Assert.assertEquals(2, session.sessions().getOfflineUserSessionsStream(realm, session.users().getUserByUsername(realm, "user1")).count());
 
             return null;
+        });
+    }
+
+    @Test
+    public void testExpirationTaskExists() {
+        // embedded + volatile sessions store offline sessions in the database, the task must be running in this case too.
+        Assume.assumeTrue(InfinispanUtils.isEmbeddedInfinispan());
+        Assume.assumeFalse(MultiSiteUtils.isPersistentSessionsEnabled());
+        inComittedTransaction(session -> {
+            var providerFactory = session.getKeycloakSessionFactory().getProviderFactory(UserSessionProvider.class);
+            Assert.assertTrue(providerFactory instanceof InfinispanUserSessionProviderFactory);
+            Assert.assertNotNull(((InfinispanUserSessionProviderFactory) providerFactory).getExpirationTask());
         });
     }
 

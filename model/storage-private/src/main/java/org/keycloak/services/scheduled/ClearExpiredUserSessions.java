@@ -17,14 +17,17 @@
 
 package org.keycloak.services.scheduled;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.timer.ScheduledTask;
 
+import org.jboss.logging.Logger;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @deprecated to be removed without replacement. The providers are responsible for purging the expired entries themselves.
  */
+@Deprecated(since = "26.5", forRemoval = true)
 public class ClearExpiredUserSessions implements ScheduledTask {
 
     protected static final Logger logger = Logger.getLogger(ClearExpiredUserSessions.class);

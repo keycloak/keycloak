@@ -29,3 +29,38 @@ It is mainly useful for providing tokens in the request.
 You can specify these headers via the `tracing-header-<header>` wildcard option, accepting any custom header name.
 
 For more details, see the  link:{tracingguide_link}[{tracingguide_name}] guide.
+
+= Enable/disable features via a single option
+
+You can now enable or disable individual features using the `feature-<name>` option (like `feature-spiffe=enabled`).
+
+This provides a more fine-grained way to manage features and eliminates the need to maintain long lists of enabled or disabled features.
+
+The `feature-<name>` option takes precedence over both `features` and `features-disabled`.
+
+For more details, see the https://www.keycloak.org/server/features[Enabling and disabling features] guide.
+
+== MDC Logging feature (supported)
+
+The `log-mdc:v1` feature has been promoted from a preview feature to a supported feature.
+
+MDC enables Keycloak to enrich log entries with contextual information such as realm, client, user ID and IP address, significantly improving debugging and observability.
+
+For more details, see the https://www.keycloak.org/server/logging#_adding_context_for_log_messages[Adding context for log messages] guide.
+
+= Organization invitation management
+
+Organization administrators can now manage organization invitations through both the Admin Console and REST API:
+
+* View all sent invitations with their current status (Pending, Expired)
+* Resend pending invitations to recipients
+* Delete invitation records from the system
+* Filter invitations by status for easier management
+
+All invitations are now persistently stored in the database, providing better tracking and management capabilities.
+
+The invitation management features are available in the *Invitations* tab when managing an organization in the Admin Console, and through the Organizations REST API endpoints under `/admin/realms/{realm}/orgs/{orgId}/invitations`.
+
+= Logout confirmation
+
+The client logout configuration page now includes an option to enable logout confirmation. When enabled, users will see "You are logged out" confirmation page upon successful logout.

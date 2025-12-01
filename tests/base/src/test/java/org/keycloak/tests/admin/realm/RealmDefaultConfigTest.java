@@ -17,10 +17,13 @@
 
 package org.keycloak.tests.admin.realm;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.List;
+
 import jakarta.ws.rs.NotFoundException;
-import org.apache.commons.io.IOUtils;
-import org.bouncycastle.util.Strings;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -42,10 +45,8 @@ import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.tests.utils.runonserver.RunHelpers;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.Collections;
-import java.util.List;
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -126,9 +127,9 @@ public class RealmDefaultConfigTest extends AbstractRealmTest {
         role = managedRealm.admin().roles().get("test").toRepresentation();
         assertNotNull(role);
 
-        managedRealm.admin().roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + Strings.toLowerCase(managedRealm.getName())).addComposites(Collections.singletonList(role));
+        managedRealm.admin().roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + managedRealm.getName().toLowerCase()).addComposites(Collections.singletonList(role));
 
-        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + Strings.toLowerCase(managedRealm.getName())), Collections.singletonList(role), ResourceType.REALM_ROLE);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + managedRealm.getName().toLowerCase()), Collections.singletonList(role), ResourceType.REALM_ROLE);
 
         managedRealm.admin().roles().deleteRole("test");
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.roleResourcePath("test"), ResourceType.REALM_ROLE);

@@ -1,9 +1,9 @@
 package org.keycloak.testframework.database;
 
+import java.util.List;
+
 import org.keycloak.testframework.TestFrameworkExtension;
 import org.keycloak.testframework.injection.Supplier;
-
-import java.util.List;
 
 public class TiDBTestFrameworkExtension implements TestFrameworkExtension {
 

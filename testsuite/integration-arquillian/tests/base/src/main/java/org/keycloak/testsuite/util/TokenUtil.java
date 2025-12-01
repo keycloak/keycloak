@@ -16,11 +16,12 @@
  */
 package org.keycloak.testsuite.util;
 
-import org.junit.rules.TestRule;
-import org.junit.runners.model.Statement;
 import org.keycloak.common.util.Time;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import org.junit.rules.TestRule;
+import org.junit.runners.model.Statement;
 
 import static org.junit.Assert.fail;
 

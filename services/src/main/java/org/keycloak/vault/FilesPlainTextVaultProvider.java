@@ -1,8 +1,5 @@
 package org.keycloak.vault;
 
-import org.jboss.logging.Logger;
-
-import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
@@ -10,6 +7,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+
+import jakarta.annotation.Nonnull;
+
+import org.jboss.logging.Logger;
 
 /**
  * A text-based vault provider, which stores each secret in a separate file. The file name needs to match a vault secret id (or

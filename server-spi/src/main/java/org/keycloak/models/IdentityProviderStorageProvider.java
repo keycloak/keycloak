@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.provider.Provider;
+import org.keycloak.util.Booleans;
 
 /**
  * The {@link IdentityProviderStorageProvider} is concerned with the storage/retrieval of the configured identity providers
@@ -214,7 +215,7 @@ public interface IdentityProviderStorageProvider extends Provider {
      * otherwise.
      */
     default boolean isIdentityFederationEnabled() {
-        return getAllStream(IdentityProviderQuery.userAuthentication(), 0, 1).findFirst().isPresent();
+        return getAllStream(IdentityProviderQuery.capability(IdentityProviderCapability.USER_LINKING), 0, 1).findFirst().isPresent();
     }
 
     /**
@@ -236,9 +237,9 @@ public interface IdentityProviderStorageProvider extends Provider {
 
         ENABLED(IdentityProviderModel.ENABLED, Boolean.TRUE.toString(), IdentityProviderModel::isEnabled),
 
-        LINK_ONLY(IdentityProviderModel.LINK_ONLY, Boolean.FALSE.toString(), Predicate.not(IdentityProviderModel::isLinkOnly)),
+        LINK_ONLY(IdentityProviderModel.LINK_ONLY, Boolean.FALSE.toString(), m -> Booleans.isFalse(m.isLinkOnly())),
 
-        HIDE_ON_LOGIN(IdentityProviderModel.HIDE_ON_LOGIN, Boolean.FALSE.toString(), Predicate.not(IdentityProviderModel::isHideOnLogin));
+        HIDE_ON_LOGIN(IdentityProviderModel.HIDE_ON_LOGIN, Boolean.FALSE.toString(), m -> Booleans.isFalse(m.isHideOnLogin()));
 
         private final String key;
         private final String value;

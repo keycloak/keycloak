@@ -10,6 +10,7 @@ import { IdentityProviderAddMapperRoute } from "./routes/AddMapper";
 import { IdentityProviderEditMapperRoute } from "./routes/EditMapper";
 import { IdentityProviderCreateRoute } from "./routes/IdentityProviderCreate";
 import { IdentityProviderOAuth2Route } from "./routes/IdentityProviderOAuth2";
+import { IdentityProviderJWTAuthorizationGrantRoute } from "./routes/IdentityProviderJWTAuthorizationGrant";
 
 const routes: AppRouteObject[] = [
   IdentityProviderAddMapperRoute,
@@ -18,6 +19,7 @@ const routes: AppRouteObject[] = [
   IdentityProviderOidcRoute,
   IdentityProviderSamlRoute,
   IdentityProviderSpiffeRoute,
+  IdentityProviderJWTAuthorizationGrantRoute,
   IdentityProviderKubernetesRoute,
   IdentityProviderKeycloakOidcRoute,
   IdentityProviderCreateRoute,

@@ -17,18 +17,13 @@
 
 package org.keycloak.quarkus.runtime.cli;
 
-import static org.keycloak.quarkus.runtime.cli.OptionRenderer.undecorateDuplicitOptionName;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.getMapper;
-import static org.keycloak.utils.StringUtil.removeSuffix;
-import static picocli.CommandLine.Help.Column.Overflow.SPAN;
-import static picocli.CommandLine.Help.Column.Overflow.WRAP;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
 import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.utils.StringUtil;
@@ -37,16 +32,26 @@ import picocli.CommandLine;
 import picocli.CommandLine.Model.ArgGroupSpec;
 import picocli.CommandLine.Model.OptionSpec;
 
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.getMapper;
+import static org.keycloak.utils.StringUtil.removeSuffix;
+
+import static picocli.CommandLine.Help.Column.Overflow.SPAN;
+import static picocli.CommandLine.Help.Column.Overflow.WRAP;
+
 public final class Help extends CommandLine.Help {
 
     static final String[] OPTION_NAMES = new String[] { "-h", "--help" };
     private static final int HELP_WIDTH = 100;
     private static final String DEFAULT_OPTION_LIST_HEADING = "Options:";
     private static final String DEFAULT_COMMAND_LIST_HEADING = "Commands:";
-    private static boolean ALL_OPTIONS;
+
+    private boolean all;
 
     Help(CommandLine.Model.CommandSpec commandSpec, ColorScheme colorScheme) {
         super(commandSpec, colorScheme);
+        if (commandSpec.userObject() instanceof AbstractCommand ac) {
+            all = ac.isHelpAll();
+        }
         configureUsageMessage(commandSpec);
     }
 
@@ -162,11 +167,11 @@ public final class Help extends CommandLine.Help {
             return false;
         }
 
-        if (ALL_OPTIONS) {
+        if (all) {
             return true;
         }
 
-        String optionName = undecorateDuplicitOptionName(option.longestName());
+        String optionName = option.longestName();
 
         OptionCategory category = null;
         if (option.group() != null && option.group().heading() != null) {
@@ -189,7 +194,4 @@ public final class Help extends CommandLine.Help {
         return PropertyMappers.isSupported(mapper);
     }
 
-    public static void setAllOptions(boolean allOptions) {
-        ALL_OPTIONS = allOptions;
-    }
 }

@@ -1,5 +1,14 @@
 package org.keycloak.testframework.realm;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.ClientProfileRepresentation;
+import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -7,11 +16,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class RealmConfigBuilder {
 
@@ -38,6 +42,11 @@ public class RealmConfigBuilder {
 
     public RealmConfigBuilder displayName(String displayName) {
         rep.setDisplayName(displayName);
+        return this;
+    }
+
+    public RealmConfigBuilder client(ClientRepresentation client) {
+        rep.setClients(Collections.combine(rep.getClients(), client));
         return this;
     }
 
@@ -228,6 +237,33 @@ public class RealmConfigBuilder {
 
     public RealmConfigBuilder setRememberMe(boolean enabled) {
         rep.setRememberMe(enabled);
+        return this;
+    }
+
+    public RealmConfigBuilder resetPasswordAllowed(boolean allowed) {
+        rep.setResetPasswordAllowed(allowed);
+        return this;
+    }
+
+    public RealmConfigBuilder clientPolicy(ClientPolicyRepresentation clienPolicyRep) {
+        ClientPoliciesRepresentation clientPolicies = rep.getParsedClientPolicies();
+        if (clientPolicies == null) {
+            clientPolicies = new ClientPoliciesRepresentation();
+        }
+        List<ClientPolicyRepresentation> policies = clientPolicies.getPolicies();
+        policies.add(clienPolicyRep);
+        rep.setParsedClientPolicies(clientPolicies);
+        return this;
+    }
+
+    public RealmConfigBuilder clientProfile(ClientProfileRepresentation clientProfileRep) {
+        ClientProfilesRepresentation clientProfiles = rep.getParsedClientProfiles();
+        if (clientProfiles == null) {
+            clientProfiles = new ClientProfilesRepresentation();
+        }
+        List<ClientProfileRepresentation> profiles = clientProfiles.getProfiles();
+        profiles.add(clientProfileRep);
+        rep.setParsedClientProfiles(clientProfiles);
         return this;
     }
 

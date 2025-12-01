@@ -19,12 +19,14 @@
 package org.keycloak.authentication.authenticators.client;
 
 import java.util.List;
-import org.jboss.logging.Logger;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.representations.JsonWebToken;
+
+import org.jboss.logging.Logger;
 
 /**
  * Base validator for JWT authorization grant and JWT client validators.

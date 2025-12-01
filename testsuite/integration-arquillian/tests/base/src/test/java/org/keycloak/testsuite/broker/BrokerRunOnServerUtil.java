@@ -16,8 +16,6 @@
  */
 package org.keycloak.testsuite.broker;
 
-import static org.junit.Assert.assertEquals;
-
 import org.keycloak.authentication.authenticators.broker.IdpAutoLinkAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
@@ -30,9 +28,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.FlowUtil;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -181,10 +182,9 @@ final class BrokerRunOnServerUtil {
     }
 
     static RunOnServer removeBrokerExpiredSessions() {
-        return (RunOnServer) session -> {
+        return session -> {
             RealmModel realm = session.getContext().getRealm();
-            session.sessions().removeExpired(realm);
-            session.authenticationSessions().removeExpired(realm);
+            session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
         };
     }
 

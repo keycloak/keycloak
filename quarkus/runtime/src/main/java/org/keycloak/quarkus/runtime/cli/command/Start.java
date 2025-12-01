@@ -17,14 +17,14 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
-
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @Command(name = Start.NAME,
         header = "Start the server.",
@@ -52,11 +52,6 @@ public final class Start extends AbstractAutoBuildCommand {
     }
 
     @Override
-    public boolean includeRuntime() {
-        return true;
-    }
-
-    @Override
     public String getName() {
         return NAME;
     }
@@ -65,4 +60,10 @@ public final class Start extends AbstractAutoBuildCommand {
     public boolean isServing() {
         return true;
     }
+
+    @Override
+    protected OptimizedMixin getOptimizedMixin() {
+        return optimizedMixin;
+    }
+
 }

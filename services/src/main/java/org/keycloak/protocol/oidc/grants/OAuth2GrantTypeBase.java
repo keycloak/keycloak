@@ -17,11 +17,16 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-import org.jboss.logging.Logger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -43,6 +48,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.AccessToken;
@@ -55,15 +64,10 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.util.TokenUtil;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
+import org.jboss.logging.Logger;
 
-import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 
 /**
  * Base class for OAuth 2.0 grant types
@@ -114,13 +118,20 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
             .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token);
-        boolean useRefreshToken = clientConfig.isUseRefreshToken();
+        boolean useRefreshToken = useRefreshToken();
         if (useRefreshToken) {
             responseBuilder.generateRefreshToken();
             if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(responseBuilder.getRefreshToken().getType())
                     && clientSessionCtx.getClientSession().getNote(AuthenticationProcessor.FIRST_OFFLINE_ACCESS) != null) {
                 // the online session can be removed if first created for offline access
                 session.sessions().removeUserSession(realm, userSession);
+            }
+        } else {
+            TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
+            if (encoder.getTokenContextFromTokenId(responseBuilder.getAccessToken().getId()).getSessionType() == AccessTokenContext.SessionType.TRANSIENT) {
+                // transient sessions do not add the session ID to the token
+                responseBuilder.getAccessToken().setSessionId(null);
+                event.session((String) null);
             }
         }
 
@@ -267,7 +278,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      * @return the authorization details response if processing was successful, null otherwise
      */
     protected List<AuthorizationDetailsResponse> processAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-        String authorizationDetailsParam = formParams.getFirst(AUTHORIZATION_DETAILS_PARAM);
+        String authorizationDetailsParam = formParams.getFirst(AUTHORIZATION_DETAILS);
         if (authorizationDetailsParam != null) {
             try {
                 return session.getKeycloakSessionFactory()
@@ -301,7 +312,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      */
     protected List<AuthorizationDetailsResponse> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         try {
-            return session.getKeycloakSessionFactory()
+            var result = session.getKeycloakSessionFactory()
                     .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
                     .sorted((f1, f2) -> f2.order() - f1.order())
                     .map(f -> session.getProvider(AuthorizationDetailsProcessor.class, f.getId()))
@@ -309,6 +320,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
                     .filter(authzDetailsResponse -> authzDetailsResponse != null)
                     .findFirst()
                     .orElse(null);
+            return result;
         } catch (RuntimeException e) {
             logger.warnf(e, "Error when handling missing authorization_details");
             return null;
@@ -326,7 +338,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      */
     protected List<AuthorizationDetailsResponse> processStoredAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) throws CorsErrorResponseException {
         // Check if authorization_details was stored during authorization request (e.g., from PAR)
-        String storedAuthDetails = clientSessionCtx.getClientSession().getNote(AUTHORIZATION_DETAILS_PARAM);
+        String storedAuthDetails = clientSessionCtx.getClientSession().getNote(AUTHORIZATION_DETAILS);
         if (storedAuthDetails != null) {
             logger.debugf("Found authorization_details in client session, processing it");
             try {
@@ -351,6 +363,14 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
             }
         }
         return null;
+    }
+
+    /*
+     * If the grant type generates a refresh token or just the access token.
+     * @return true if refresh token is generated by the grant, false if not
+     */
+    protected boolean useRefreshToken() {
+        return clientConfig.isUseRefreshToken();
     }
 
     @Override

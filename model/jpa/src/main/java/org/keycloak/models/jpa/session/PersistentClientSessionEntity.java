@@ -17,6 +17,9 @@
 
 package org.keycloak.models.jpa.session;
 
+import java.io.Serializable;
+import java.util.Objects;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -25,9 +28,8 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
-import org.hibernate.annotations.DynamicUpdate;
 
-import java.io.Serializable;
+import org.hibernate.annotations.DynamicUpdate;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -39,6 +41,8 @@ import java.io.Serializable;
         @NamedQuery(name="deleteClientSessionsByClientStorageProvider", query="delete from PersistentClientSessionEntity sess where sess.clientStorageProvider = :clientStorageProvider"),
         @NamedQuery(name="deleteClientSessionsByUser", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.userId = :userId)"),
         @NamedQuery(name="deleteClientSessionsByUserSession", query="delete from PersistentClientSessionEntity sess where sess.userSessionId = :userSessionId and sess.offline = :offline"),
+        @NamedQuery(name="deleteClientSessionsByUserSessions", query="delete from PersistentClientSessionEntity sess where sess.userSessionId in (:userSessionId) and sess.offline = :offline"),
+        // The query "deleteExpiredClientSessions" is deprecated (since 26.5) and may be removed in the future.
         @NamedQuery(name="deleteExpiredClientSessions", query="delete from PersistentClientSessionEntity sess where sess.offline = :offline AND sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.realmId = :realmId AND u.offline = :offline AND u.lastSessionRefresh < :lastSessionRefresh)"),
         @NamedQuery(name="deleteClientSessionsByRealmSessionType", query="delete from PersistentClientSessionEntity sess where sess.offline = :offline AND sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.realmId = :realmId and u.offline = :offline)"),
         @NamedQuery(name="findClientSessionsByUserSession", query="select sess from PersistentClientSessionEntity sess where sess.userSessionId=:userSessionId and sess.offline = :offline"),
@@ -191,13 +195,11 @@ public class PersistentClientSessionEntity {
 
             Key key = (Key) o;
 
-            if (this.userSessionId != null ? !this.userSessionId.equals(key.userSessionId) : key.userSessionId != null) return false;
-            if (this.clientId != null ? !this.clientId.equals(key.clientId) : key.clientId != null) return false;
-            if (this.externalClientId != null ? !this.externalClientId.equals(key.externalClientId) : key.externalClientId != null) return false;
-            if (this.clientStorageProvider != null ? !this.clientStorageProvider.equals(key.clientStorageProvider) : key.clientStorageProvider != null) return false;
-            if (this.offline != null ? !this.offline.equals(key.offline) : key.offline != null) return false;
-
-            return true;
+            return Objects.equals(this.userSessionId, key.userSessionId) &&
+                    Objects.equals(this.clientId, key.clientId) &&
+                    Objects.equals(this.externalClientId, key.externalClientId) &&
+                    Objects.equals(this.clientStorageProvider, key.clientStorageProvider) &&
+                    Objects.equals(this.offline, key.offline);
         }
 
         @Override

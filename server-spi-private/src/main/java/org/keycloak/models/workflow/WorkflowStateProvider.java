@@ -34,6 +34,14 @@ public interface WorkflowStateProvider extends Provider {
     void removeByResource(String resourceId);
 
     /**
+     * Deletes the state records associated with the given {@code resourceId} of the given {@code workflowId}.
+     *
+     * @param workflowId the id of the workflow.
+     * @param resourceId the id of the resource.
+     */
+    void removeByWorkflowAndResource(String workflowId, String resourceId);
+
+    /**
      * Removes any record identified by the specified {@code workflowId}.
      * @param workflowId the id of the workflow.
      */
@@ -48,6 +56,14 @@ public interface WorkflowStateProvider extends Provider {
      * Deletes all state records associated with the current realm bound to the session.
      */
     void removeAll();
+
+    /**
+     * Checks whether there are any scheduled steps for the given {@code workflowId}.
+     *
+     * @param workflowId the id of the workflow.
+     * @return {@code true} if there are scheduled steps, {@code false} otherwise.
+     */
+    boolean hasScheduledSteps(String workflowId);
 
     void scheduleStep(Workflow workflow, WorkflowStep step, String resourceId, String executionId);
 

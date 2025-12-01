@@ -1,12 +1,5 @@
 package org.keycloak.client.registration.cli.commands;
 
-import org.keycloak.client.cli.common.AttributeKey;
-import org.keycloak.client.cli.common.BaseGlobalOptionsCmd;
-import org.keycloak.client.registration.cli.EndpointType;
-import org.keycloak.client.registration.cli.ReflectionUtil;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.oidc.OIDCClientRepresentation;
-
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -15,6 +8,13 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import org.keycloak.client.cli.common.AttributeKey;
+import org.keycloak.client.cli.common.BaseGlobalOptionsCmd;
+import org.keycloak.client.registration.cli.EndpointType;
+import org.keycloak.client.registration.cli.ReflectionUtil;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;

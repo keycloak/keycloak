@@ -1,10 +1,7 @@
 AccountRestServiceTest
 AuthorizationCodeTest
-CredentialsTest
 DeployedScriptAuthenticatorTest
 ExportImportTest
-GeneratedRsaKeyProviderTest
-JavaKeystoreKeyProviderTest
 KcOidcBrokerTest
 KerberosLdapTest
 LDAPUserLoginTest
@@ -13,6 +10,5 @@ MutualTLSClientTest
 PasswordPolicyTest
 SSOTest
 SamlClientTest
-TransactionsTest
 X509BrowserLoginTest
 ThemeResourceProviderTest

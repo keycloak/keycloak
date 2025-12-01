@@ -24,8 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import org.hibernate.cfg.AvailableSettings;
-import org.infinispan.protostream.SerializationContextInitializer;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -58,6 +56,8 @@ import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import liquibase.Scope;
 import liquibase.servicelocator.ServiceLocator;
+import org.hibernate.cfg.AvailableSettings;
+import org.infinispan.protostream.SerializationContextInitializer;
 
 @Recorder
 public class KeycloakRecorder {

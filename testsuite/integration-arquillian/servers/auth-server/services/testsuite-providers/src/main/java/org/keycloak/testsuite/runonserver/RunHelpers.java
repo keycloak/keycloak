@@ -1,5 +1,8 @@
 package org.keycloak.testsuite.runonserver;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -7,9 +10,6 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Created by st on 26.01.17.

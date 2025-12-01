@@ -24,11 +24,12 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Signature;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.authorization.client.util.crypto.AuthzClientCryptoProvider;
 import org.keycloak.crypto.ECDSAAlgorithm;
 import org.keycloak.crypto.JavaAlgorithm;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  *
@@ -71,4 +72,3 @@ public class ECDSAAlgorithmTest {
         test(ECDSAAlgorithm.ES512);
     }
 }
-

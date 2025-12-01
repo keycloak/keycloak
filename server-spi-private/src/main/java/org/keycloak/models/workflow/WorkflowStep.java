@@ -17,13 +17,13 @@
 
 package org.keycloak.models.workflow;
 
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
-
 import java.util.Objects;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
 
 public class WorkflowStep implements Comparable<WorkflowStep> {
 
@@ -81,12 +81,12 @@ public class WorkflowStep implements Comparable<WorkflowStep> {
         }
     }
 
-    public void setAfter(Long ms) {
-        setConfig(CONFIG_AFTER, String.valueOf(ms));
+    public void setAfter(String after) {
+        setConfig(CONFIG_AFTER, after);
     }
 
-    public Long getAfter() {
-        return Long.valueOf(getConfig().getFirstOrDefault(CONFIG_AFTER, "0"));
+    public String getAfter() {
+        return getConfig().getFirst(CONFIG_AFTER);
     }
 
     @Override

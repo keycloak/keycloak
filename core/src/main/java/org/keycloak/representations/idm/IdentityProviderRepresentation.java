@@ -49,14 +49,14 @@ public class IdentityProviderRepresentation {
      * @see #UPFLM_OFF
      */
     @Deprecated
-    protected String updateProfileFirstLoginMode = UPFLM_ON;
+    protected String updateProfileFirstLoginMode;
 
-    protected boolean trustEmail;
-    protected boolean storeToken;
-    protected boolean addReadTokenRoleOnCreate;
-    protected boolean authenticateByDefault;
-    protected boolean linkOnly;
-    protected boolean hideOnLogin;
+    protected Boolean trustEmail;
+    protected Boolean storeToken;
+    protected Boolean addReadTokenRoleOnCreate;
+    protected Boolean authenticateByDefault;
+    protected Boolean linkOnly;
+    protected Boolean hideOnLogin;
     protected String firstBrokerLoginFlowAlias;
     protected String postBrokerLoginFlowAlias;
     protected String organizationId;
@@ -103,19 +103,19 @@ public class IdentityProviderRepresentation {
         this.enabled = enabled;
     }
 
-    public boolean isLinkOnly() {
+    public Boolean isLinkOnly() {
         return linkOnly;
     }
 
-    public void setLinkOnly(boolean linkOnly) {
+    public void setLinkOnly(Boolean linkOnly) {
         this.linkOnly = linkOnly;
     }
 
-    public boolean isHideOnLogin() {
+    public Boolean isHideOnLogin() {
         return this.hideOnLogin;
     }
 
-    public void setHideOnLogin(boolean hideOnLogin) {
+    public void setHideOnLogin(Boolean hideOnLogin) {
         this.hideOnLogin = hideOnLogin;
     }
 
@@ -126,8 +126,8 @@ public class IdentityProviderRepresentation {
      * @deprecated {@link #setUpdateProfileFirstLoginMode(String)}
      */
     @Deprecated
-    public void setUpdateProfileFirstLogin(boolean updateProfileFirstLogin) {
-        this.updateProfileFirstLoginMode = updateProfileFirstLogin ? UPFLM_ON : UPFLM_OFF;
+    public void setUpdateProfileFirstLogin(Boolean updateProfileFirstLogin) {
+        this.updateProfileFirstLoginMode = updateProfileFirstLogin == null ? null : (updateProfileFirstLogin ? UPFLM_ON : UPFLM_OFF);
     }
 
     /**
@@ -150,12 +150,12 @@ public class IdentityProviderRepresentation {
      * @deprecated Replaced by configuration option in identity provider authenticator
      */
     @Deprecated
-    public boolean isAuthenticateByDefault() {
+    public Boolean isAuthenticateByDefault() {
         return authenticateByDefault;
     }
 
     @Deprecated
-    public void setAuthenticateByDefault(boolean authenticateByDefault) {
+    public void setAuthenticateByDefault(Boolean authenticateByDefault) {
         this.authenticateByDefault = authenticateByDefault;
     }
 
@@ -175,27 +175,27 @@ public class IdentityProviderRepresentation {
         this.postBrokerLoginFlowAlias = postBrokerLoginFlowAlias;
     }
 
-    public boolean isStoreToken() {
+    public Boolean isStoreToken() {
         return this.storeToken;
     }
 
-    public void setStoreToken(boolean storeToken) {
+    public void setStoreToken(Boolean storeToken) {
         this.storeToken = storeToken;
     }
 
-    public boolean isAddReadTokenRoleOnCreate() {
+    public Boolean isAddReadTokenRoleOnCreate() {
         return addReadTokenRoleOnCreate;
     }
 
-    public void setAddReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
+    public void setAddReadTokenRoleOnCreate(Boolean addReadTokenRoleOnCreate) {
         this.addReadTokenRoleOnCreate = addReadTokenRoleOnCreate;
     }
 
-    public boolean isTrustEmail() {
+    public Boolean isTrustEmail() {
         return trustEmail;
     }
 
-    public void setTrustEmail(boolean trustEmail) {
+    public void setTrustEmail(Boolean trustEmail) {
         this.trustEmail = trustEmail;
     }
 

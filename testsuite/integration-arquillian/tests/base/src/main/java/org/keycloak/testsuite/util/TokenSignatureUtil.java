@@ -27,7 +27,6 @@ import java.util.Base64;
 
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -45,6 +44,8 @@ import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.TestContext;
+
+import org.jboss.logging.Logger;
 
 public class TokenSignatureUtil {
     private static Logger log = Logger.getLogger(TokenSignatureUtil.class);

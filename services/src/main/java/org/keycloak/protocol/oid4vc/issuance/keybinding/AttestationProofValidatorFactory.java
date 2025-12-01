@@ -17,11 +17,11 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
+import java.util.Map;
+
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.model.ProofType;
-
-import java.util.Map;
 
 /**
  * @author <a href="mailto:Rodrick.Awambeng@adorsys.com">Rodrick Awambeng</a>

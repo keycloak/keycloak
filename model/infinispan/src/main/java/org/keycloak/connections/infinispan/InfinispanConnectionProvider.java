@@ -24,12 +24,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import org.infinispan.Cache;
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.util.concurrent.BlockingManager;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.Provider;
+
+import org.infinispan.Cache;
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.util.concurrent.BlockingManager;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -167,8 +168,15 @@ public interface InfinispanConnectionProvider extends Provider {
 
     /**
      * @return Information about cluster topology
+     * @deprecated The logic in {@link TopologyInfo} is not used anymore in Keycloak. To get the node or site name, use {@link #getNodeInfo()}.
      */
+    @Deprecated(since = "26.5", forRemoval = true)
     TopologyInfo getTopologyInfo();
+
+    /**
+     * @return The information about the local node.
+     */
+    NodeInfo getNodeInfo();
 
     /**
      * Migrates the JBoss Marshalling encoding to Infinispan ProtoStream

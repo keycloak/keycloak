@@ -25,6 +25,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.representations.idm.OrganizationRepresentation;
 
 public interface OrganizationResource {
@@ -42,6 +43,9 @@ public interface OrganizationResource {
 
     @Path("members")
     OrganizationMembersResource members();
+
+    @Path("invitations")
+    OrganizationInvitationsResource invitations();
 
     @Path("identity-providers")
     OrganizationIdentityProvidersResource identityProviders();

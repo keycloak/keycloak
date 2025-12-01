@@ -16,9 +16,6 @@
  */
 package org.keycloak.userprofile.validator;
 
-import static org.keycloak.common.util.CollectionUtil.collectionEquals;
-import static org.keycloak.validate.BuiltinValidators.notBlankValidator;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -32,6 +29,9 @@ import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+
+import static org.keycloak.common.util.CollectionUtil.collectionEquals;
+import static org.keycloak.validate.BuiltinValidators.notBlankValidator;
 
 /**
  * A validator that fails when the attribute is marked as read only and its value has changed.

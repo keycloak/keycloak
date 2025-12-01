@@ -24,13 +24,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.logging.Handler;
 import java.util.logging.Level;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.jboss.logmanager.Logger;
-import org.jboss.logmanager.formatters.PatternFormatter;
-import org.jboss.logmanager.handlers.WriterHandler;
-import org.jboss.resteasy.mock.MockHttpRequest;
-import org.junit.Test;
+
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -46,6 +40,14 @@ import org.keycloak.services.resteasy.HttpRequestImpl;
 import org.keycloak.services.resteasy.ResteasyKeycloakSession;
 import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 import org.keycloak.utils.ScopeUtil;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.jboss.logmanager.Logger;
+import org.jboss.logmanager.formatters.PatternFormatter;
+import org.jboss.logmanager.handlers.WriterHandler;
+import org.jboss.resteasy.mock.MockHttpRequest;
+import org.junit.Test;
 
 /**
  *

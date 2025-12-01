@@ -17,13 +17,23 @@
 
 package org.keycloak.tests.admin;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
@@ -60,28 +70,24 @@ import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.tests.utils.Assert;
-import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.testframework.realm.RoleConfigBuilder;
+import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.Assert;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
+import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
+
+import static org.keycloak.models.Constants.defaultClients;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -97,7 +103,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.keycloak.models.Constants.defaultClients;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -148,7 +153,7 @@ public class ClientTest {
         Response response = managedRealm.admin().clients().create(rep);
         String id = ApiUtil.getCreatedId(response);
         managedRealm.cleanup().add(r -> r.clients().get(id).remove());
-        ClientRepresentation found = ApiUtil.findClientByClientId(managedRealm.admin(), "my-app").toRepresentation();
+        ClientRepresentation found = AdminApiUtil.findClientByClientId(managedRealm.admin(), "my-app").toRepresentation();
 
         assertEquals("my-app", found.getClientId());
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientResourcePath(id), rep, ResourceType.CLIENT);
@@ -167,7 +172,7 @@ public class ClientTest {
         Response response = managedRealm.admin().clients().create(rep);
         String id = ApiUtil.getCreatedId(response);
         managedRealm.cleanup().add(r -> r.clients().get(id).remove());
-        ClientRepresentation found = ApiUtil.findClientByClientId(managedRealm.admin(), "my-app").toRepresentation();
+        ClientRepresentation found = AdminApiUtil.findClientByClientId(managedRealm.admin(), "my-app").toRepresentation();
 
         assertEquals("my-app", found.getClientId());
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientResourcePath(id), rep, ResourceType.CLIENT);
@@ -384,9 +389,9 @@ public class ClientTest {
         String id = ApiUtil.getCreatedId(response);
         adminEvents.skip();
 
-        assertNotNull(ApiUtil.findClientByClientId(managedRealm.admin(), "my-app"));
+        assertNotNull(AdminApiUtil.findClientByClientId(managedRealm.admin(), "my-app"));
         managedRealm.admin().clients().get(id).remove();
-        assertNull(ApiUtil.findClientResourceById(managedRealm.admin(), "my-app"));
+        assertNull(AdminApiUtil.findClientResourceById(managedRealm.admin(), "my-app"));
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.clientResourcePath(id), ResourceType.CLIENT);
     }
 
@@ -415,14 +420,14 @@ public class ClientTest {
 
     @Test
     public void removeInternalClientExpectingBadRequestException() {
-        final String testRealmClientId = ApiUtil.findClientByClientId(managedMasterRealm.admin(), managedRealm.getName() + "-realm")
+        final String testRealmClientId = AdminApiUtil.findClientByClientId(managedMasterRealm.admin(), managedRealm.getName() + "-realm")
                 .toRepresentation().getId();
 
         assertThrows(BadRequestException.class,
                 () -> managedMasterRealm.admin().clients().get(testRealmClientId).remove());
 
         defaultClients.forEach(defaultClient -> {
-            final String defaultClientId = ApiUtil.findClientByClientId(managedRealm.admin(), defaultClient)
+            final String defaultClientId = AdminApiUtil.findClientByClientId(managedRealm.admin(), defaultClient)
                     .toRepresentation().getId();
 
             assertThrows(BadRequestException.class,
@@ -462,7 +467,7 @@ public class ClientTest {
         AccessTokenResponse response2 = oauth.doAccessTokenRequest(codeResponse.getCode());
         assertEquals(200, response2.getStatusCode());
 
-        ClientResource app = ApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ClientResource app = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
 
         assertEquals(2, (long) app.getApplicationSessionCount().get("count"));
 
@@ -505,7 +510,7 @@ public class ClientTest {
     @Test
     public void getClientById() {
         createClient();
-        ClientRepresentation rep = ApiUtil.findClientByClientId(managedRealm.admin(), "my-app").toRepresentation();
+        ClientRepresentation rep = AdminApiUtil.findClientByClientId(managedRealm.admin(), "my-app").toRepresentation();
         ClientRepresentation gotById = managedRealm.admin().clients().get(rep.getId()).toRepresentation();
         assertClient(rep, gotById);
     }
@@ -542,7 +547,7 @@ public class ClientTest {
     @Test
     public void testProtocolMappers() {
         String clientDbId = createClient().getId();
-        ProtocolMappersResource mappersResource = ApiUtil.findClientByClientId(managedRealm.admin(), "my-app").getProtocolMappers();
+        ProtocolMappersResource mappersResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "my-app").getProtocolMappers();
 
         protocolMappersTest(clientDbId, mappersResource);
     }
@@ -607,7 +612,7 @@ public class ClientTest {
     public void pushRevocation() throws InterruptedException {
         testApp.kcAdmin().clear();
 
-        ClientResource client = ApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ClientResource client = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         String id = client.toRepresentation().getId();
 
         client.pushRevocation();
@@ -621,7 +626,7 @@ public class ClientTest {
     @Test
     public void testAddNodeWithReservedCharacter() {
         testApp.kcAdmin().clear();
-        String id = ApiUtil.findClientByClientId(managedRealm.admin(), "test-app").toRepresentation().getId();
+        String id = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app").toRepresentation().getId();
         assertThrows(BadRequestException.class,
                 () -> managedRealm.admin().clients().get(id).registerNode(Collections.singletonMap("node", "foo#"))
         );
@@ -631,7 +636,7 @@ public class ClientTest {
     public void nodes() throws MalformedURLException, InterruptedException {
         testApp.kcAdmin().clear();
 
-        String id = ApiUtil.findClientByClientId(managedRealm.admin(), "test-app").toRepresentation().getId();
+        String id = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app").toRepresentation().getId();
 
         String myhost = new URL(managedRealm.getBaseUrl()).getHost();
         managedRealm.admin().clients().get(id).registerNode(Collections.singletonMap("node", myhost));
@@ -661,7 +666,7 @@ public class ClientTest {
 
     @Test
     public void offlineUserSessions() {
-        ClientRepresentation client = ApiUtil.findClientByClientId(managedRealm.admin(), "test-app").toRepresentation();
+        ClientRepresentation client = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app").toRepresentation();
         String id = client.getId();
 
         Response response = managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").password("password").email("testuser@localhost").name("test", "user").build());

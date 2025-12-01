@@ -17,9 +17,10 @@
  */
 package org.keycloak.authorization.client.util;
 
-import org.apache.http.client.methods.RequestBuilder;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProvider;
+
+import org.apache.http.client.methods.RequestBuilder;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

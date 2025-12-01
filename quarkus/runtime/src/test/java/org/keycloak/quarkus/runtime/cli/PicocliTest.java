@@ -17,6 +17,35 @@
 
 package org.keycloak.quarkus.runtime.cli;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Map;
+import java.util.Properties;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+
+import org.keycloak.common.Profile;
+import org.keycloak.config.LoggingOptions;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.KeycloakMain;
+import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.configuration.AbstractConfigurationTest;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
+
+import io.smallrye.config.SmallRyeConfig;
+import org.apache.commons.io.FileUtils;
+import org.junit.Ignore;
+import org.junit.Test;
+import picocli.CommandLine;
+import picocli.CommandLine.Help;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -26,35 +55,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
-
-import org.apache.commons.io.FileUtils;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.keycloak.config.LoggingOptions;
-import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.KeycloakMain;
-import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
-import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
-import org.keycloak.quarkus.runtime.configuration.AbstractConfigurationTest;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
-import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
-
-import io.smallrye.config.SmallRyeConfig;
-import picocli.CommandLine;
-import picocli.CommandLine.Help;
 
 public class PicocliTest extends AbstractConfigurationTest {
 
@@ -104,10 +104,10 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
 
         @Override
-        public void initConfig(List<String> cliArgs, AbstractCommand command) {
+        public void initConfig(AbstractCommand command) {
             KeycloakConfigSourceProvider.reload();
             boolean checkBuild = Environment.isRebuildCheck();
-            super.initConfig(cliArgs, command);
+            super.initConfig(command);
             if (!checkBuild && PersistedConfigSource.getInstance().getConfigValueProperties().isEmpty()) {
                 System.getProperties().remove(Environment.KC_CONFIG_REBUILD_CHECK);
             }
@@ -263,7 +263,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--features", "xyz,account3");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(),
-                containsString("xyz is an unrecognized feature, it should be one of"));
+                containsString("'xyz' is an unrecognized feature, it should be one of"));
     }
 
     @Test
@@ -373,6 +373,13 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void unnecessaryExportOption() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--dir=data", "--http-enabled=true");
+        assertThat(nonRunningPicocli.getOutString(), containsString("The following options were specified, but are typically not relevant for this command: --http-enabled"));
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
+
+    @Test
     public void testReaugFromProdToDev() {
         build("build", "--db=dev-file");
 
@@ -396,7 +403,7 @@ public class PicocliTest extends AbstractConfigurationTest {
     private NonRunningPicocli build(Consumer<String> outChecker, String... args) {
         int code = CommandLine.ExitCode.OK;
         if (Stream.of(args).anyMatch("start-dev"::equals)) {
-            Environment.setRebuildCheck();
+            Environment.setRebuildCheck(true);
             code = AbstractAutoBuildCommand.REBUILT_EXIT_CODE;
         }
         NonRunningPicocli nonRunningPicocli = pseudoLaunch(args);
@@ -422,7 +429,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         build("build", "--db=dev-file");
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--db=dev-file", "--file=file");
-        assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertFalse(nonRunningPicocli.reaug);
     }
 
@@ -449,7 +456,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         build("start-dev");
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("--profile=dev", "export", "--file=file");
-        assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertFalse(nonRunningPicocli.reaug);
     }
 
@@ -620,9 +627,9 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void buildOptionChangedWithOptimized() {
         build("build", "--db=dev-file");
 
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--db=dev-mem");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertTrue(nonRunningPicocli.getErrString().contains("Build time option: '--db' not usable with pre-built image and --optimized"));
+        assertTrue(nonRunningPicocli.getErrString(), nonRunningPicocli.getErrString().contains("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.db"));
     }
 
     @Test
@@ -827,7 +834,6 @@ public class PicocliTest extends AbstractConfigurationTest {
         nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(logHandlerName), "--log-%s-async-queue-length=768".formatted(logHandlerOptionsName));
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-%s-async-queue-length'. Available only when %s is activated and asynchronous logging is enabled".formatted(logHandlerOptionsName, logHandlerFullName)));
-
     }
 
     @Test
@@ -985,6 +991,43 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void duplicatedCliOptions() {
+        var nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-enabled=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("WARNING: Duplicated options present in CLI: --http-access-log-enabled"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-enabled=false", "--db=postgres", "--db=dev-mem");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("WARNING: Duplicated options present in CLI: --http-access-log-enabled, --db"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev",
+                "--http-access-log-enabled=true", "--http-access-log-enabled=false",
+                "--db=postgres", "--db=dev-mem",
+                "--db-kind-my-store=mariadb", "--db-kind-my-store=dev-mem");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("Duplicated options present in CLI: --db-kind-my-store, --http-access-log-enabled, --db"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--non-existing=yes", "--non-existing=no");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), not(containsString("WARNING: Duplicated options present in CLI: --non-existing")));
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--non-existing'"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "-Dsome.property=123", "-Dsome.property=456");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("WARNING: Duplicated options present in CLI: -Dsome.property"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "something-wrong=asdf", "something-wrong=not-here");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), not(containsString("WARNING: Duplicated options present in CLI: something-wrong")));
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: 'something-wrong'"));
+    }
+
+    @Test
     public void httpOptimizedSerializers() {
         var nonRunningPicocli = pseudoLaunch("start-dev");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
@@ -1049,5 +1092,143 @@ public class PicocliTest extends AbstractConfigurationTest {
         nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--tracing-headers=Overridden-by-me=yes", "--tracing-header-Authorization=Bearer asdlkfjadsflkj", "--tracing-header-Host=localhost:8080");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Overridden-by-me=yes");
+    }
+
+    @Test
+    public void singleFeatureFlag() {
+        var nonRunningPicocli = pseudoLaunch("start-dev", "--feature-impersonation=disabled");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.IMPERSONATION), is(false));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-ipa-tuura-federation=enabled");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.IPA_TUURA_FEDERATION), is(true));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-ipa-tuura-federation=ENABLED");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Wrong value for feature 'ipa-tuura-federation': ENABLED. You can specify either 'enabled', 'disabled', or specific version (lowercase) that will be enabled"));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.IPA_TUURA_FEDERATION), is(false));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-ipa-tuura-federation=v1");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.IPA_TUURA_FEDERATION), is(true));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-ipa-tuura-federation=V1");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Wrong value for feature 'ipa-tuura-federation': V1. You can specify either 'enabled', 'disabled', or specific version (lowercase) that will be enabled"));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.IPA_TUURA_FEDERATION), is(false));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-admin-fine-grained-authz=v1");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ), is(true));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2), is(false));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-admin-fine-grained-authz=disabled");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ), is(false));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2), is(false));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-admin-fine-grained-authz=enabled");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ), is(false));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2), is(true));
+        onAfter();
+
+        // duplicates
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-passkeys=enabled", "--feature-passkeys=disabled");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("WARNING: Duplicated options present in CLI: --feature-passkeys"));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.PASSKEYS), is(false));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-passkeys=enabled", "--feature-passkeys=disabled", "--feature-spiffe=v1", "--feature-spiffe=disabled");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("WARNING: Duplicated options present in CLI: --feature-spiffe, --feature-passkeys"));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.PASSKEYS), is(false));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.SPIFFE), is(false));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-passkeys=enabled", "--feature-passkeys=disabled", "--feature-spiffe=v1", "--feature-spiffe=");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Missing value for feature 'spiffe'"));
+        onAfter();
+
+        // Non-existing
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-not-here=enabled");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("'not-here' is an unrecognized feature, it should be one of"));
+        assertThat(nonRunningPicocli.getErrString(), not(containsString("preview")));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-non-existing=v2");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("'non-existing' is an unrecognized feature, it should be one of"));
+        assertThat(nonRunningPicocli.getErrString(), not(containsString("preview")));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-non-existing-feature=disabled");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("'non-existing-feature' is an unrecognized feature, it should be one of"));
+        assertThat(nonRunningPicocli.getErrString(), not(containsString("preview")));
+        onAfter();
+
+        // wrong value
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-impersonation=false");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Wrong value for feature 'impersonation': false. You can specify either 'enabled', 'disabled', or specific version (lowercase) that will be enabled"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-impersonation=v3");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Feature 'impersonation' has an unrecognized feature version, it should be one of [1]"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-impersonation=");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Missing value for feature 'impersonation'"));
+        onAfter();
+
+        // ENV variables
+        putEnvVar("KC_FEATURE_IPA_TUURA_FEDERATION", "v1");
+        nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.IPA_TUURA_FEDERATION), is(true));
+        onAfter();
+
+        putEnvVar("KC_FEATURE_TRANSIENT_USERS", "enabled");
+        nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.TRANSIENT_USERS), is(true));
+        onAfter();
+
+        putEnvVar("KC_FEATURE_TRANSIENT_USERS", "");
+        nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Missing value for feature 'transient-users'"));
+        onAfter();
+
+        putEnvVar("KC_FEATURE_TRANSIENT_USERS", "v1");
+        nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.TRANSIENT_USERS), is(true));
+        onAfter();
+
+        putEnvVar("KC_FEATURE_DPOP", "disabled");
+        nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.DPOP), is(false));
+        onAfter();
+
+        putEnvVar("KC_FEATURE_DPOP", "wrong");
+        nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Wrong value for feature 'dpop': wrong. You can specify either 'enabled', 'disabled', or specific version (lowercase) that will be enabled"));
     }
 }

@@ -17,8 +17,10 @@
 
 package org.keycloak.sdjwt.consumer;
 
-import org.junit.ClassRule;
-import org.junit.Test;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import org.keycloak.common.VerificationException;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
@@ -27,9 +29,8 @@ import org.keycloak.sdjwt.TestUtils;
 import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -101,19 +102,19 @@ public abstract class SdJwtPresentationConsumerTest {
 
     private IssuerSignedJwtVerificationOpts defaultIssuerSignedJwtVerificationOpts() {
         return IssuerSignedJwtVerificationOpts.builder()
-                .withValidateIssuedAtClaim(false)
-                .withValidateNotBeforeClaim(false)
+                .withIatCheck(Integer.MAX_VALUE, true)
+                .withNbfCheck(true)
                 .build();
     }
 
     private KeyBindingJwtVerificationOpts defaultKeyBindingJwtVerificationOpts() {
         return KeyBindingJwtVerificationOpts.builder()
                 .withKeyBindingRequired(true)
-                .withAllowedMaxAge(Integer.MAX_VALUE)
-                .withNonce("1234567890")
-                .withAud("https://verifier.example.org")
-                .withValidateExpirationClaim(false)
-                .withValidateNotBeforeClaim(false)
+                .withIatCheck(Integer.MAX_VALUE)
+                .withNonceCheck("1234567890")
+                .withAudCheck("https://verifier.example.org")
+                .withNbfCheck(true)
+                .withExpCheck(true)
                 .build();
     }
 }

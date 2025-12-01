@@ -1,9 +1,9 @@
 package org.keycloak.testframework.realm;
 
-import org.keycloak.representations.idm.GroupRepresentation;
-
 import java.util.List;
 import java.util.Map;
+
+import org.keycloak.representations.idm.GroupRepresentation;
 
 public class GroupConfigBuilder {
     private final GroupRepresentation rep;

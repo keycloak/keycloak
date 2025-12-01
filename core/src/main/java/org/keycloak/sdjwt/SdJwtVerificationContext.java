@@ -17,17 +17,6 @@
 
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.jboss.logging.Logger;
-import org.keycloak.common.VerificationException;
-import org.keycloak.crypto.SignatureVerifierContext;
-import org.keycloak.sdjwt.consumer.PresentationRequirements;
-import org.keycloak.sdjwt.vp.KeyBindingJWT;
-import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
-
-import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +27,26 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.keycloak.OID4VCConstants;
+import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.sdjwt.consumer.PresentationRequirements;
+import org.keycloak.sdjwt.vp.KeyBindingJWT;
+import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_UNDISCLOSED_ARRAY;
+import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
+import static org.keycloak.OID4VCConstants.SD_HASH;
+
 
 /**
  * Runs SD-JWT verification in isolation with only essential properties.
@@ -51,14 +60,15 @@ public class SdJwtVerificationContext {
     private String sdJwtVpString;
 
     private final IssuerSignedJWT issuerSignedJwt;
+
     private final Map<String, String> disclosures;
+
     private KeyBindingJWT keyBindingJwt;
 
-    public SdJwtVerificationContext(
-            String sdJwtVpString,
-            IssuerSignedJWT issuerSignedJwt,
-            Map<String, String> disclosures,
-            KeyBindingJWT keyBindingJwt) {
+    public SdJwtVerificationContext(String sdJwtVpString,
+                                    IssuerSignedJWT issuerSignedJwt,
+                                    Map<String, String> disclosures,
+                                    KeyBindingJWT keyBindingJwt) {
         this(issuerSignedJwt, disclosures);
         this.keyBindingJwt = keyBindingJwt;
         this.sdJwtVpString = sdJwtVpString;
@@ -85,7 +95,7 @@ public class SdJwtVerificationContext {
     }
 
     /**
-     * Verifies SD-JWT as to whether the Issuer-signed JWT's signature and disclosures are valid.
+     * Verifies SD-JWT whether the Issuer-signed JWT's signature and disclosures are valid.
      *
      * <p>Upon receiving an SD-JWT, a Holder or a Verifier needs to ensure that:</p>
      * - the Issuer-signed JWT is valid, i.e., it is signed by the Issuer and the signature is valid, and
@@ -100,22 +110,22 @@ public class SdJwtVerificationContext {
      *                                        disclosing the Issuer-signed JWT during the verification.
      * @throws VerificationException if verification failed
      */
-    public void verifyIssuance(
-            List<SignatureVerifierContext> issuerVerifyingKeys,
-            IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
-            PresentationRequirements presentationRequirements
-    ) throws VerificationException {
+    public void verifyIssuance(List<SignatureVerifierContext> issuerVerifyingKeys,
+                               IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
+                               PresentationRequirements presentationRequirements)
+            throws VerificationException
+    {
         // Validate the Issuer-signed JWT.
         validateIssuerSignedJwt(issuerVerifyingKeys);
 
         // Validate disclosures.
         JsonNode disclosedPayload = validateDisclosuresDigests();
 
-        // Validate time claims.
+        // Validate time claims and algorithm header claim.
         // Issuers will typically include claims controlling the validity of the SD-JWT in plaintext in the
         // SD-JWT payload, but there is no guarantee they would do so. Therefore, Verifiers cannot reliably
         // depend on that and need to operate as though security-critical claims might be selectively disclosable.
-        validateIssuerSignedJwtTimeClaims(disclosedPayload, issuerSignedJwtVerificationOpts);
+        issuerSignedJwtVerificationOpts.verify(issuerSignedJwt);
 
         // Enforce presentation requirements.
         if (presentationRequirements != null) {
@@ -142,12 +152,12 @@ public class SdJwtVerificationContext {
      *                                        disclosing the Issuer-signed JWT during the verification.
      * @throws VerificationException if verification failed
      */
-    public void verifyPresentation(
-            List<SignatureVerifierContext> issuerVerifyingKeys,
-            IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
-            KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts,
-            PresentationRequirements presentationRequirements
-    ) throws VerificationException {
+    public void verifyPresentation(List<SignatureVerifierContext> issuerVerifyingKeys,
+                                   IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
+                                   KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts,
+                                   PresentationRequirements presentationRequirements)
+            throws VerificationException
+    {
         // If Key Binding is required and a Key Binding JWT is not provided,
         // the Verifier MUST reject the Presentation.
         if (keyBindingJwtVerificationOpts.isKeyBindingRequired() && keyBindingJwt == null) {
@@ -204,9 +214,9 @@ public class SdJwtVerificationContext {
      *
      * @throws VerificationException if verification failed
      */
-    private void validateKeyBindingJwt(
-            KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts
-    ) throws VerificationException {
+    private void validateKeyBindingJwt(KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts)
+            throws VerificationException
+    {
         // Check that the typ of the Key Binding JWT is kb+jwt
         validateKeyBindingJwtTyp();
 
@@ -226,12 +236,8 @@ public class SdJwtVerificationContext {
             throw new VerificationException("Key binding JWT invalid", e);
         }
 
-        // Check that the creation time of the Key Binding JWT is within an acceptable window.
-        validateKeyBindingJwtTimeClaims(keyBindingJwtVerificationOpts);
-
-        // Determine that the Key Binding JWT is bound to the current transaction and was created
-        // for this Verifier (replay protection) by validating nonce and aud claims.
-        preventKeyBindingJwtReplay(keyBindingJwtVerificationOpts);
+        // Check timestamps of the keybinding-jwt and the header algorithm
+        keyBindingJwtVerificationOpts.verify(keyBindingJwt);
 
         // The same hash algorithm as for the Disclosures MUST be used (defined by the _sd_alg element
         // in the Issuer-signed JWT or the default value, as defined in Section 5.1.1).
@@ -248,9 +254,9 @@ public class SdJwtVerificationContext {
      * @throws VerificationException if verification failed
      */
     private void validateKeyBindingJwtTyp() throws VerificationException {
-        String typ = keyBindingJwt.getHeader().getType();
-        if (!typ.equals(KeyBindingJWT.TYP)) {
-            throw new VerificationException("Key Binding JWT is not of declared typ " + KeyBindingJWT.TYP);
+        String typ = keyBindingJwt.getJwsHeader().getType();
+        if (!OID4VCConstants.KEYBINDING_JWT_TYP.equals(typ)) {
+            throw new VerificationException("Key Binding JWT is not of declared typ " + OID4VCConstants.KEYBINDING_JWT_TYP);
         }
     }
 
@@ -263,7 +269,7 @@ public class SdJwtVerificationContext {
         Objects.requireNonNull(cnf);
 
         // Read JWK
-        JsonNode cnfJwk = cnf.get("jwk");
+        JsonNode cnfJwk = cnf.get(CLAIM_NAME_JWK);
         if (cnfJwk == null) {
             throw new UnsupportedOperationException("Only cnf/jwk claim supported");
         }
@@ -273,92 +279,6 @@ public class SdJwtVerificationContext {
             return JwkParsingUtils.convertJwkNodeToVerifierContext(cnfJwk);
         } catch (Exception e) {
             throw new VerificationException("Could not process cnf/jwk", e);
-        }
-    }
-
-    /**
-     * Validate Issuer-Signed JWT time claims.
-     *
-     * <p>
-     * Check that the SD-JWT is valid using claims such as nbf, iat, and exp in the processed payload.
-     * If a required validity-controlling claim is missing, the SD-JWT MUST be rejected.
-     * </p>
-     *
-     * @throws VerificationException if verification failed
-     */
-    private void validateIssuerSignedJwtTimeClaims(
-            JsonNode payload,
-            IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts
-    ) throws VerificationException {
-        long now = Instant.now().getEpochSecond();
-
-        try {
-            if (issuerSignedJwtVerificationOpts.mustValidateIssuedAtClaim()
-                    && now < SdJwtUtils.readTimeClaim(payload, "iat")) {
-                throw new VerificationException("JWT issued in the future");
-            }
-        } catch (VerificationException e) {
-            throw new VerificationException("Issuer-Signed JWT: Invalid `iat` claim", e);
-        }
-
-        try {
-            if (issuerSignedJwtVerificationOpts.mustValidateExpirationClaim()
-                    && now >= SdJwtUtils.readTimeClaim(payload, "exp")) {
-                throw new VerificationException("JWT has expired");
-            }
-        } catch (VerificationException e) {
-            throw new VerificationException("Issuer-Signed JWT: Invalid `exp` claim", e);
-        }
-
-        try {
-            if (issuerSignedJwtVerificationOpts.mustValidateNotBeforeClaim()
-                    && now < SdJwtUtils.readTimeClaim(payload, "nbf")) {
-                throw new VerificationException("JWT is not yet valid");
-            }
-        } catch (VerificationException e) {
-            throw new VerificationException("Issuer-Signed JWT: Invalid `nbf` claim", e);
-        }
-    }
-
-    /**
-     * Validate key binding JWT time claims.
-     *
-     * @throws VerificationException if verification failed
-     */
-    private void validateKeyBindingJwtTimeClaims(
-            KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts
-    ) throws VerificationException {
-        // Check that the creation time of the Key Binding JWT, as determined by the iat claim,
-        // is within an acceptable window
-
-        try {
-            keyBindingJwt.verifyIssuedAtClaim();
-        } catch (VerificationException e) {
-            throw new VerificationException("Key binding JWT: Invalid `iat` claim", e);
-        }
-
-        try {
-            keyBindingJwt.verifyAge(keyBindingJwtVerificationOpts.getAllowedMaxAge());
-        } catch (VerificationException e) {
-            throw new VerificationException("Key binding JWT is too old");
-        }
-
-        // Check other time claims
-
-        try {
-            if (keyBindingJwtVerificationOpts.mustValidateExpirationClaim()) {
-                keyBindingJwt.verifyExpClaim();
-            }
-        } catch (VerificationException e) {
-            throw new VerificationException("Key binding JWT: Invalid `exp` claim", e);
-        }
-
-        try {
-            if (keyBindingJwtVerificationOpts.mustValidateNotBeforeClaim()) {
-                keyBindingJwt.verifyNotBeforeClaim();
-            }
-        } catch (VerificationException e) {
-            throw new VerificationException("Key binding JWT: Invalid `nbf` claim", e);
         }
     }
 
@@ -419,7 +339,7 @@ public class SdJwtVerificationContext {
         if (currentNode.isObject()) {
             ObjectNode currentObjectNode = ((ObjectNode) currentNode);
 
-            JsonNode sdArray = currentObjectNode.get(IssuerSignedJWT.CLAIM_NAME_SELECTIVE_DISCLOSURE);
+            JsonNode sdArray = currentObjectNode.get(CLAIM_NAME_SD);
             if (sdArray != null && sdArray.isArray()) {
                 for (JsonNode el : sdArray) {
                     if (!el.isTextual()) {
@@ -457,10 +377,10 @@ public class SdJwtVerificationContext {
 
             // Remove all _sd keys and their contents from the Issuer-signed JWT payload.
             // If this results in an object with no properties, it should be represented as an empty object {}
-            currentObjectNode.remove(IssuerSignedJWT.CLAIM_NAME_SELECTIVE_DISCLOSURE);
+            currentObjectNode.remove(CLAIM_NAME_SD);
 
             // Remove the claim _sd_alg from the SD-JWT payload.
-            currentObjectNode.remove(IssuerSignedJWT.CLAIM_NAME_SD_HASH_ALGORITHM);
+            currentObjectNode.remove(CLAIM_NAME_SD_HASH_ALGORITHM);
         }
 
         // Find all array elements that are objects with one key, that key being ... and referring to a string
@@ -473,7 +393,7 @@ public class SdJwtVerificationContext {
                 if (itemNode.isObject() && itemNode.size() == 1) {
                     // Check single "..." field
                     Map.Entry<String, JsonNode> field = itemNode.fields().next();
-                    if (field.getKey().equals(UndisclosedArrayElement.SD_CLAIM_NAME)
+                    if (field.getKey().equals(CLAIM_NAME_SD_UNDISCLOSED_ARRAY)
                             && field.getValue().isTextual()) {
                         // Compare the value with the digests calculated previously and find the matching Disclosure.
                         // If no such Disclosure can be found, the digest MUST be ignored.
@@ -575,8 +495,8 @@ public class SdJwtVerificationContext {
         // If the claim name is _sd or ..., the SD-JWT MUST be rejected.
 
         List<String> denylist = Arrays.asList(
-                IssuerSignedJWT.CLAIM_NAME_SELECTIVE_DISCLOSURE,
-                UndisclosedArrayElement.SD_CLAIM_NAME
+                CLAIM_NAME_SD,
+                CLAIM_NAME_SD_UNDISCLOSED_ARRAY
         );
 
         String claimName = arrayNode.get(1).asText();
@@ -637,32 +557,6 @@ public class SdJwtVerificationContext {
     }
 
     /**
-     * Run checks for replay protection.
-     *
-     * <p>
-     * Determine that the Key Binding JWT is bound to the current transaction and was created for this
-     * Verifier (replay protection) by validating nonce and aud claims.
-     * </p>
-     *
-     * @throws VerificationException if verification failed
-     */
-    private void preventKeyBindingJwtReplay(
-            KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts
-    ) throws VerificationException {
-        JsonNode nonce = keyBindingJwt.getPayload().get("nonce");
-        if (nonce == null || !nonce.isTextual()
-                || !nonce.asText().equals(keyBindingJwtVerificationOpts.getNonce())) {
-            throw new VerificationException("Key binding JWT: Unexpected `nonce` value");
-        }
-
-        JsonNode aud = keyBindingJwt.getPayload().get("aud");
-        if (aud == null || !aud.isTextual()
-                || !aud.asText().equals(keyBindingJwtVerificationOpts.getAud())) {
-            throw new VerificationException("Key binding JWT: Unexpected `aud` value");
-        }
-    }
-
-    /**
      * Validate integrity of Key Binding JWT's sd_hash.
      *
      * <p>
@@ -675,12 +569,12 @@ public class SdJwtVerificationContext {
     private void validateKeyBindingJwtSdHashIntegrity() throws VerificationException {
         Objects.requireNonNull(sdJwtVpString);
 
-        JsonNode sdHash = keyBindingJwt.getPayload().get("sd_hash");
+        JsonNode sdHash = keyBindingJwt.getPayload().get(SD_HASH);
         if (sdHash == null || !sdHash.isTextual()) {
             throw new VerificationException("Key binding JWT: Claim `sd_hash` missing or not a string");
         }
 
-        int lastDelimiterIndex = sdJwtVpString.lastIndexOf(SdJwt.DELIMITER);
+        int lastDelimiterIndex = sdJwtVpString.lastIndexOf(SDJWT_DELIMITER);
         String toHash = sdJwtVpString.substring(0, lastDelimiterIndex + 1);
 
         String digest = SdJwtUtils.hashAndBase64EncodeNoPad(

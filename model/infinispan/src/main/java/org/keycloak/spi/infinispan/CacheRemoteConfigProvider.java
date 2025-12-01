@@ -19,8 +19,9 @@ package org.keycloak.spi.infinispan;
 
 import java.util.Optional;
 
-import org.infinispan.client.hotrod.configuration.Configuration;
 import org.keycloak.provider.Provider;
+
+import org.infinispan.client.hotrod.configuration.Configuration;
 
 /**
  * A provider to create a configuration to the Hot Rod client.

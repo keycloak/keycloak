@@ -17,21 +17,11 @@
 
 package org.keycloak.tests.admin.identityprovider;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import java.util.UUID;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.events.admin.OperationType;
@@ -46,10 +36,21 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-
-import jakarta.ws.rs.ClientErrorException;
-import jakarta.ws.rs.core.Response;
 import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -93,8 +94,8 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
         assertEquals("clientId", representation.getConfig().get("clientId"));
         assertEquals(ComponentRepresentation.SECRET_VALUE, representation.getConfig().get("clientSecret"));
         assertTrue(representation.isEnabled());
-        assertFalse(representation.isStoreToken());
-        assertFalse(representation.isTrustEmail());
+        assertNull(representation.isStoreToken());
+        assertNull(representation.isTrustEmail());
         assertNull(representation.getFirstBrokerLoginFlowAlias());
 
         assertEquals("some secret value", runOnServer.fetch(s -> s.identityProviders().getByAlias("new-identity-provider").getConfig().get("clientSecret"), String.class));
@@ -211,8 +212,8 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, representation.getConfig().get("clientAuthMethod"));
 
         assertTrue(representation.isEnabled());
-        assertFalse(representation.isStoreToken());
-        assertFalse(representation.isTrustEmail());
+        assertNull(representation.isStoreToken());
+        assertNull(representation.isTrustEmail());
 
         assertEquals("some secret value", runOnServer.fetch(s -> s.identityProviders().getByAlias("new-identity-provider").getConfig().get("clientSecret"), String.class));
 
@@ -249,8 +250,8 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
         assertEquals(OIDCLoginProtocol.PRIVATE_KEY_JWT, representation.getConfig().get("clientAuthMethod"));
         assertNull(representation.getConfig().get("jwtX509HeadersEnabled"));
         assertTrue(representation.isEnabled());
-        assertFalse(representation.isStoreToken());
-        assertFalse(representation.isTrustEmail());
+        assertNull(representation.isStoreToken());
+        assertNull(representation.isTrustEmail());
 
         managedRealm.cleanup().add(r -> r.identityProviders().get(id).remove());
     }
@@ -283,8 +284,8 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
         assertEquals(OIDCLoginProtocol.PRIVATE_KEY_JWT, representation.getConfig().get("clientAuthMethod"));
         assertEquals("true", representation.getConfig().get("jwtX509HeadersEnabled"));
         assertTrue(representation.isEnabled());
-        assertFalse(representation.isStoreToken());
-        assertFalse(representation.isTrustEmail());
+        assertNull(representation.isStoreToken());
+        assertNull(representation.isTrustEmail());
 
         managedRealm.cleanup().add(r -> r.identityProviders().get(id).remove());
     }
@@ -364,11 +365,7 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
             resource.update(representation);
             fail("Invalid URL");
         } catch (Exception e) {
-            assertTrue(e instanceof  ClientErrorException);
-            Response response = ClientErrorException.class.cast(e).getResponse();
-            assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-            ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
-            assertEquals("The url [authorization_url] is malformed", error.getErrorMessage());
+            assertError(e, "The url [authorization_url] is malformed");
         }
 
         oidcConfig.setAuthorizationUrl(null);
@@ -378,11 +375,7 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
             resource.update(representation);
             fail("Invalid URL");
         } catch (Exception e) {
-            assertTrue(e instanceof  ClientErrorException);
-            Response response = ClientErrorException.class.cast(e).getResponse();
-            assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-            ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
-            assertEquals("The url [token_url] requires secure connections", error.getErrorMessage());
+            assertError(e, "The url [token_url] requires secure connections");
         }
 
         oidcConfig.setAuthorizationUrl(null);
@@ -392,11 +385,7 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
             resource.update(representation);
             fail("Invalid URL");
         } catch (Exception e) {
-            assertTrue(e instanceof  ClientErrorException);
-            Response response = ClientErrorException.class.cast(e).getResponse();
-            assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-            ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
-            assertEquals("The url [jwks_url] requires secure connections", error.getErrorMessage());
+            assertError(e, "The url [jwks_url] requires secure connections");
         }
 
         oidcConfig.setAuthorizationUrl(null);
@@ -407,11 +396,7 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
             resource.update(representation);
             fail("Invalid URL");
         } catch (Exception e) {
-            assertTrue(e instanceof  ClientErrorException);
-            Response response = ClientErrorException.class.cast(e).getResponse();
-            assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-            ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
-            assertEquals("The url [logout_url] requires secure connections", error.getErrorMessage());
+            assertError(e, "The url [logout_url] requires secure connections");
         }
 
         oidcConfig.setAuthorizationUrl(null);
@@ -424,17 +409,74 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
             resource.update(representation);
             fail("Invalid URL");
         } catch (Exception e) {
-            assertTrue(e instanceof  ClientErrorException);
-            Response response = ClientErrorException.class.cast(e).getResponse();
-            assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-            ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
-            assertEquals("The url [userinfo_url] requires secure connections", error.getErrorMessage());
+            assertError(e, "The url [userinfo_url] requires secure connections");
         }
 
         managedRealm.updateWithCleanup(r -> r.sslRequired(SslRequired.EXTERNAL.name()));
         resource.update(representation);
 
         managedRealm.cleanup().add(r -> r.identityProviders().get(id).remove());
+    }
+
+    @Test
+    public void testOIDCKeysRequiredForVariousConfigs() {
+        String id = create(createRep("keycloak-oidc", "keycloak-oidc"));
+
+        IdentityProviderResource resource = this.managedRealm.admin().identityProviders().get("keycloak-oidc");
+        IdentityProviderRepresentation representation = resource.toRepresentation();
+        OIDCIdentityProviderConfigRep oidcConfig = new OIDCIdentityProviderConfigRep(representation);
+
+        // OIDC Keys required when "validate signature" is ON
+        oidcConfig.setValidateSignature(true);
+        try {
+            resource.update(representation);
+            fail("Not expected to update identity provider");
+        } catch (Exception e) {
+            assertError(e, "The 'Validating public key' is required when 'Validate signatures' enabled and 'Use JWKS URL' disabled");
+        }
+
+        // OIDC Keys (set by JWKS URL) required when "validate signature" is ON
+        oidcConfig.setUseJwksUrl(true);
+        try {
+            resource.update(representation);
+            fail("JWKS URL is required when 'Validate signatures' enabled and 'Use JWKS URL' enabled");
+        } catch (Exception e) {
+            assertError(e, "JWKS URL is required when 'Validate signatures' enabled and 'Use JWKS URL' enabled");
+        }
+
+        // OIDC Keys (set by JWKS URL) required when "authorization grant" is ON
+        oidcConfig.setValidateSignature(false);
+        oidcConfig.setJWTAuthorizationGrantEnabled(true);
+        try {
+            resource.update(representation);
+            fail("JWKS URL is required when 'Validate signatures' enabled and 'Use JWKS URL' enabled");
+        } catch (Exception e) {
+            assertError(e, "JWKS URL is required when 'JWT Authorization Grant' enabled and 'Use JWKS URL' enabled");
+        }
+
+        // OIDC Keys (set by JWKS URL) required when "federated client authentication" is ON
+        oidcConfig.setJWTAuthorizationGrantEnabled(false);
+        oidcConfig.setSupportsClientAssertions(true);
+        try {
+            resource.update(representation);
+            fail("JWKS URL is required when 'Validate signatures' enabled and 'Use JWKS URL' enabled");
+        } catch (Exception e) {
+            assertError(e, "JWKS URL is required when 'Supports client assertions' enabled and 'Use JWKS URL' enabled");
+        }
+
+        // Successful update when JWKS URL set
+        oidcConfig.setJwksUrl("https://foo");
+        resource.update(representation);
+
+        managedRealm.cleanup().add(r -> r.identityProviders().get(id).remove());
+    }
+
+    private void assertError(Exception e, String expectedError) {
+        assertTrue(e instanceof  ClientErrorException);
+        Response response = ClientErrorException.class.cast(e).getResponse();
+        assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
+        assertEquals(expectedError, error.getErrorMessage());
     }
 
     @Test

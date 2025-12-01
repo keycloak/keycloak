@@ -19,11 +19,7 @@ package org.keycloak.testsuite.webauthn.passwordless;
 
 import java.io.IOException;
 import java.util.Optional;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.models.IdentityProviderSyncMode;
@@ -50,6 +46,12 @@ import org.keycloak.testsuite.webauthn.authenticators.VirtualAuthenticatorManage
 import org.keycloak.testsuite.webauthn.pages.WebAuthnErrorPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.firefox.FirefoxDriver;
 

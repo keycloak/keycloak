@@ -25,12 +25,13 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import org.keycloak.testsuite.util.WaitUtils;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
-
 import org.openqa.selenium.By;
+
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * @author mhajas

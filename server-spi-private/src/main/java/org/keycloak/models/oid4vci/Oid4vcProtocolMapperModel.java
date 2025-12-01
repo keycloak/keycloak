@@ -18,13 +18,13 @@
 
 package org.keycloak.models.oid4vci;
 
-import org.keycloak.models.ProtocolMapperModel;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import org.keycloak.models.ProtocolMapperModel;
 
 /**
  * This class acts as delegate for a {@link ProtocolMapperModel} implementation and adds additional functionality for

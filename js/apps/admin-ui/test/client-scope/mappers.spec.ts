@@ -99,4 +99,34 @@ test.describe("Mappers tab", () => {
 
     await removeMappers(page, mapperNames);
   });
+
+  test("auto-navigates after creating an Audience mapper", async ({ page }) => {
+    const mapperName = "test-audience-mapper";
+
+    await using testBed = await createTestBed(testBedData);
+
+    await login(page, { to: toClientScopes({ realm: testBed.realm }) });
+
+    await searchItem(page, placeHolderClientScope, "test-scope");
+    await clickTableRowItem(page, "test-scope");
+    await goToMappersTab(page);
+
+    await page.getByRole("button", { name: "Add mapper" }).click();
+    await page.getByRole("menuitem", { name: "By configuration" }).click();
+
+    await page
+      .locator('[role="dialog"]')
+      .getByText("Audience", { exact: true })
+      .click();
+    await page.getByTestId("name").fill(mapperName);
+    await clickSaveButton(page);
+    await assertNotificationMessage(page, "Mapping successfully created");
+
+    await assertRowExists(page, mapperName);
+    await page
+      .getByRole("button", { name: "Add mapper" })
+      .waitFor({ state: "visible" });
+
+    await removeMappers(page, [mapperName]);
+  });
 });

@@ -17,36 +17,34 @@
 
 package org.keycloak.quarkus.runtime;
 
-import static org.keycloak.quarkus.runtime.Environment.getKeycloakModeFromProfile;
-import static org.keycloak.quarkus.runtime.Environment.isNonServerMode;
-import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import picocli.CommandLine;
 
+import org.keycloak.common.Version;
 import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
+import org.keycloak.quarkus.runtime.cli.Picocli;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
+import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
 
-import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.quarkus.arc.Arc;
+import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
-
-import org.jboss.logging.Logger;
-import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
-import org.keycloak.quarkus.runtime.cli.Picocli;
-import org.keycloak.common.Version;
-import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
-import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
-
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
+import org.jboss.logging.Logger;
+import picocli.CommandLine;
+
+import static org.keycloak.quarkus.runtime.Environment.getKeycloakModeFromProfile;
+import static org.keycloak.quarkus.runtime.Environment.isNonServerMode;
+import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 
 /**
  * <p>The main entry point, responsible for initialize and run the CLI as well as start the server.

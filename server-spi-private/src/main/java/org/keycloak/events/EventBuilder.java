@@ -17,21 +17,6 @@
 
 package org.keycloak.events;
 
-import io.opentelemetry.api.common.Attributes;
-import io.opentelemetry.api.trace.StatusCode;
-import org.jboss.logging.Logger;
-import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.tracing.TracingAttributes;
-import org.keycloak.tracing.TracingProvider;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,6 +27,21 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Time;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.tracing.TracingAttributes;
+import org.keycloak.tracing.TracingProvider;
+
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.StatusCode;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

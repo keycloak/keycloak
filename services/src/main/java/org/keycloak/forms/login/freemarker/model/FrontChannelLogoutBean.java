@@ -1,6 +1,7 @@
 package org.keycloak.forms.login.freemarker.model;
 
 import java.util.List;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.FrontChannelLogoutHandler;
 

@@ -17,14 +17,18 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.util.List;
+import java.util.Map;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-import org.apache.http.HttpStatus;
-import org.jboss.logging.Logger;
-import org.junit.Test;
+
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.KeyUse;
@@ -34,6 +38,7 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
@@ -46,19 +51,18 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.util.List;
-import java.util.Map;
+import org.apache.http.HttpStatus;
+import org.jboss.logging.Logger;
+import org.junit.Test;
+
+import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
+import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_ENCRYPTION_PARAMETERS;
+import static org.keycloak.utils.MediaType.APPLICATION_JWT;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
-import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_ENCRYPTION_PARAMETERS;
-import static org.keycloak.utils.MediaType.APPLICATION_JWT;
 
 /**
  * Test class for Credential Request and Response Encryption
@@ -72,6 +76,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
     @Test
     public void testRequestCredentialWithEncryption() {
         final String scopeName = jwtTypeCredentialClientScope.getName();
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
         String token = getBearerToken(oauth, client, scopeName);
         testingClient
                 .server(TEST_REALM_NAME)
@@ -90,7 +95,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                     PrivateKey privateKey = (PrivateKey) jwkPair.get("privateKey");
 
                     CredentialRequest credentialRequest = new CredentialRequest()
-                            .setCredentialIdentifier(scopeName)
+                            .setCredentialConfigurationId(credConfigId)
                             .setCredentialResponseEncryption(
                                     new CredentialResponseEncryption()
                                             .setEnc(A256GCM)
@@ -166,6 +171,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
     @Test
     public void testEncryptedCredentialRequest() {
         final String scopeName = jwtTypeCredentialClientScope.getName();
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
         String token = getBearerToken(oauth, client, scopeName);
         testingClient.server(TEST_REALM_NAME).run(session -> {
             try {
@@ -191,7 +197,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 PrivateKey responsePrivateKey = (PrivateKey) jwkPair.get("privateKey");
 
                 CredentialRequest credentialRequest = new CredentialRequest()
-                        .setCredentialIdentifier(scopeName)
+                        .setCredentialConfigurationId(credConfigId)
                         .setCredentialResponseEncryption(
                                 new CredentialResponseEncryption()
                                         .setEnc(A256GCM)
@@ -231,6 +237,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
     @Test
     public void testEncryptedCredentialRequestWithCompression() {
         final String scopeName = jwtTypeCredentialClientScope.getName();
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
         String token = getBearerToken(oauth, client, scopeName);
         testingClient.server(TEST_REALM_NAME).run(session -> {
             try {
@@ -259,7 +266,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
 
                 // Create credential request with response encryption parameters
                 CredentialRequest credentialRequest = new CredentialRequest()
-                        .setCredentialIdentifier(scopeName)
+                        .setCredentialConfigurationId(credConfigId)
                         .setCredentialResponseEncryption(
                                 new CredentialResponseEncryption()
                                         .setEnc(A256GCM)
@@ -471,6 +478,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
     @Test
     public void testRequestCredentialWithInvalidJWK() throws Throwable {
         final String scopeName = jwtTypeCredentialClientScope.getName();
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
         String token = getBearerToken(oauth, client, scopeName);
         testingClient.server(TEST_REALM_NAME).run(session -> {
             AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
@@ -480,7 +488,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
             // Invalid JWK (missing modulus but WITH alg parameter)
             JWK jwk = JWKParser.create().parse("{\"kty\":\"RSA\",\"alg\":\"RSA-OAEP-256\",\"e\":\"AQAB\"}").getJwk();
             CredentialRequest credentialRequest = new CredentialRequest()
-                    .setCredentialIdentifier(scopeName)
+                    .setCredentialConfigurationId(credConfigId)
                     .setCredentialResponseEncryption(
                             new CredentialResponseEncryption()
                                     .setEnc("A256GCM")
@@ -532,4 +540,3 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         });
     }
 }
-

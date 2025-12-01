@@ -18,8 +18,6 @@
 package org.keycloak.authentication.requiredactions;
 
 import java.util.ArrayList;
-import static org.keycloak.services.messages.Messages.EMAIL_VERIFICATION_PENDING;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +27,7 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
-import org.jboss.logging.Logger;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.AuthenticatorUtil;
@@ -38,6 +36,7 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.updateemail.UpdateEmailActionToken;
+import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.email.EmailException;
@@ -69,7 +68,10 @@ import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
-import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
+
+import org.jboss.logging.Logger;
+
+import static org.keycloak.services.messages.Messages.EMAIL_VERIFICATION_PENDING;
 
 public class UpdateEmail implements RequiredActionProvider, RequiredActionFactory, EnvironmentDependentProviderFactory {
 
@@ -355,7 +357,6 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     private void setPendingEmailVerification(RequiredActionContext context, String email) {
         UserModel user = context.getUser();
         user.setSingleAttribute(UserModel.EMAIL_PENDING, email);
-        user.setEmailVerified(false);
     }
 
     private String getPendingEmailVerification(RequiredActionContext context) {

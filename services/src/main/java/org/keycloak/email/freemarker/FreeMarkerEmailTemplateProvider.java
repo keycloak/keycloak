@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import jakarta.enterprise.context.ContextNotActiveException;
+
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.email.EmailException;
@@ -50,6 +51,7 @@ import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.LinkExpirationFormatterMethod;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

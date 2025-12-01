@@ -17,28 +17,13 @@
 
 package org.keycloak.tests.admin.authz.fgap;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.IMPERSONATE;
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP;
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.RESET_PASSWORD;
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
-
 import java.util.List;
 import java.util.Set;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
@@ -63,6 +48,24 @@ import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
+
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.IMPERSONATE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.RESET_PASSWORD;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest
 public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
@@ -147,7 +150,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
 
         // creating user requires manage scope
-        String newUserId = ApiUtil.handleCreatedResponse(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
+        String newUserId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
 
         // it should be possible to update the user due to fallback to all-users permission
         realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserConfigBuilder.create().email("new@test.com").build());
@@ -161,7 +164,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         ScopePermissionRepresentation allUsersPermission = createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
 
         // creating user requires manage scope
-        String newUserId = ApiUtil.handleCreatedResponse(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
+        String newUserId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
 
         // remove all-users permissions to test user-permission
         allUsersPermission = getScopePermissionsResource(client).findByName(allUsersPermission.getName());
@@ -487,7 +490,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         // Create group 'test_admins'
         GroupRepresentation testAdminsGroup = new GroupRepresentation();
         testAdminsGroup.setName("test_admins");
-        testAdminsGroup.setId(ApiUtil.handleCreatedResponse(realm.admin().groups().add(testAdminsGroup)));
+        testAdminsGroup.setId(ApiUtil.getCreatedId(realm.admin().groups().add(testAdminsGroup)));
 
         // Add user 'myadmin' as a member of 'test_admins'
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
