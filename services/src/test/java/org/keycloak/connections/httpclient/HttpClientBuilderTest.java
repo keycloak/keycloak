@@ -18,6 +18,7 @@ public class HttpClientBuilderTest {
 
         Assert.assertEquals("Default socket timeout is -1 and can be converted by TimeUnit", -1, requestConfig.getSocketTimeout());
         Assert.assertEquals("Default connect timeout is -1 and can be converted by TimeUnit", -1, requestConfig.getConnectTimeout());
+        Assert.assertEquals("Default connection request timeout is " + HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS, HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS, requestConfig.getConnectionRequestTimeout());
     }
 
     @Test
@@ -25,13 +26,15 @@ public class HttpClientBuilderTest {
         HttpClientBuilder httpClientBuilder = new HttpClientBuilder();
         httpClientBuilder
                 .socketTimeout(2, TimeUnit.SECONDS)
-                .establishConnectionTimeout(1, TimeUnit.SECONDS);
+                .establishConnectionTimeout(1, TimeUnit.SECONDS)
+                .connectionRequestTimeout(3, TimeUnit.SECONDS);
         CloseableHttpClient httpClient = httpClientBuilder.build();
 
         RequestConfig requestConfig = getRequestConfig(httpClient);
 
         Assert.assertEquals("Socket timeout is converted to milliseconds", 2000, requestConfig.getSocketTimeout());
         Assert.assertEquals("Connect timeout is converted to milliseconds", 1000, requestConfig.getConnectTimeout());
+        Assert.assertEquals("Connection request timeout is converted to milliseconds", 3000, requestConfig.getConnectionRequestTimeout());
     }
 
     @Test
