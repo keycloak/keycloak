@@ -31,3 +31,4 @@ org.keycloak.services.clientpolicy.executor.SamlSignatureEnforcerExecutorFactory
 org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutorFactory
 org.keycloak.services.clientpolicy.executor.SecureClientAuthenticationAssertionExecutorFactory
 org.keycloak.services.clientpolicy.executor.DownscopeAssertionGrantEnforcerExecutorFactory
+org.keycloak.services.clientpolicy.executor.JWTClaimEnforcerExecutorFactory
