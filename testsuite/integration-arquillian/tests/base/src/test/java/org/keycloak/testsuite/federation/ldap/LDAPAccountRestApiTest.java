@@ -262,9 +262,11 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
     public void testReadOnlyLdapUserCannotUpdatePassword() throws IOException {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
 
             ctx.getLdapModel().getConfig().putSingle(LDAPConstants.EDIT_MODE,
                 org.keycloak.storage.UserStorageProvider.EditMode.READ_ONLY.toString());
+            realm.updateComponent(ctx.getLdapModel());
         });
 
         List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
@@ -284,8 +286,10 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
             ctx.getLdapModel().getConfig().putSingle(LDAPConstants.EDIT_MODE,
                 org.keycloak.storage.UserStorageProvider.EditMode.WRITABLE.toString());
+            realm.updateComponent(ctx.getLdapModel());
         });
     }
 
@@ -293,8 +297,10 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
     public void testWritableLdapUserCanUpdatePassword() throws IOException {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
             ctx.getLdapModel().getConfig().putSingle(LDAPConstants.EDIT_MODE,
                 org.keycloak.storage.UserStorageProvider.EditMode.WRITABLE.toString());
+            realm.updateComponent(ctx.getLdapModel());
         });
 
         List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
