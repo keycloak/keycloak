@@ -117,5 +117,6 @@ public interface Details {
     String CLIENT_POLICY_ERROR = "client_policy_error";
     String CLIENT_POLICY_ERROR_DETAIL = "client_policy_error_detail";
 
-    String EXPIRED_DETAIL = "expired";
+    String USER_SESSION_EXPIRED_REASON = "user_session_expired";
+    String INVALID_USER_SESSION_REMEMBER_ME_REASON = "invalid_user_session_remember_me";
 }

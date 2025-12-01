@@ -340,6 +340,7 @@ This redirect usually happens when the user clicks the `Log Out` link on the pag
 Once the user is redirected to the logout endpoint, {project_name} is going to send logout requests to
 clients attached to the current browser SSO session to let them invalidate their local user sessions, and potentially redirect the user to some URL
 once the logout process is finished. The user might be optionally requested to confirm the logout in case the `id_token_hint` parameter was not used.
+If the client has xref:_logout-confirmation[Logout confirmation] enabled, {project_name} renders a confirmation page after a successful logout informing the user that they are logged out. When a valid `post_logout_redirect_uri` is provided, this page includes an option to continue to that URL.
 After logout, the user is automatically redirected to the specified `post_logout_redirect_uri` as long as it is provided as a parameter.
 Note that you need to include either the `client_id` or `id_token_hint` parameter in case the `post_logout_redirect_uri` is included. Also the `post_logout_redirect_uri` parameter
 needs to match one of the `Valid Post Logout Redirect URIs` specified in the client configuration.

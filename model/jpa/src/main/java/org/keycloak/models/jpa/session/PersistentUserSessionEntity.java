@@ -68,11 +68,11 @@ import org.hibernate.annotations.DynamicUpdate;
                 " WHERE sess.offline = :offline AND sess.realmId = :realmId AND sess.lastSessionRefresh >= :lastSessionRefresh" +
                 " GROUP BY clientSess.clientId, clientSess.externalClientId, clientSess.clientStorageProvider"),
         @NamedQuery(name = "findUserSessionAndDataWithNullRememberMeLastRefresh",
-                query = "SELECT sess.userSessionId, sess.data" +
+                query = "SELECT sess.userSessionId, sess.userId, sess.data" +
                         " FROM PersistentUserSessionEntity sess" +
                         " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe IS NULL AND sess.lastSessionRefresh < :lastSessionRefresh"),
         @NamedQuery(name = "findUserSessionAndDataWithNullRememberMeCreatedOn",
-                query = "SELECT sess.userSessionId, sess.data" +
+                query = "SELECT sess.userSessionId, sess.userId, sess.data" +
                         " FROM PersistentUserSessionEntity sess" +
                         " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe IS NULL AND sess.createdOn < :createdOn"),
         @NamedQuery(name = "updateUserSessionRememberMeColumn",
@@ -95,8 +95,9 @@ import org.hibernate.annotations.DynamicUpdate;
                 query = "SELECT sess.userSessionId, sess.userId" +
                         " FROM PersistentUserSessionEntity sess" +
                         " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe = :rememberMe AND sess.createdOn < :createdOn"),
-        @NamedQuery(name = "deleteInvalidSessions",
-                query = "DELETE FROM PersistentUserSessionEntity sess" +
+        @NamedQuery(name = "findInvalidRegularUserSessions",
+                query = "SELECT sess.userSessionId, sess.userId" +
+                        " FROM PersistentUserSessionEntity sess" +
                         " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe = true"),
 
 })
