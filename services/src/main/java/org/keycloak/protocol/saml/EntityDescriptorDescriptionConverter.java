@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.BadRequestException;
+
 import org.keycloak.Config;
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntitiesDescriptorType;
@@ -153,7 +155,7 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         try {
             metadata = SAMLParser.getInstance().parse(is);
         } catch (ParsingException e) {
-            throw new RuntimeException(e);
+            throw new BadRequestException(e);
         }
         EntitiesDescriptorType entities;
 
@@ -165,7 +167,7 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         }
 
         if (entities.getEntityDescriptor().size() != 1) {
-            throw new RuntimeException("Expected one entity descriptor");
+            throw new BadRequestException("Expected one entity descriptor");
         }
 
         EntityDescriptorType entity = (EntityDescriptorType) entities.getEntityDescriptor().get(0);
@@ -187,6 +189,9 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         attributes.put(SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM, SignatureAlgorithm.RSA_SHA256.toString());
         attributes.put(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
         SPSSODescriptorType spDescriptorType = getSPDescriptor(entity);
+        if (spDescriptorType == null) {
+            throw new BadRequestException("No SPSSODescriptorType defined in the entity descriptor file");
+        }
         if (spDescriptorType.isWantAssertionsSigned()) {
             attributes.put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
         }
@@ -265,9 +270,9 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
             try {
                 cert = SAMLMetadataUtil.getCertificate(keyDescriptor);
             } catch (ConfigurationException e) {
-                throw new RuntimeException(e);
+                throw new BadRequestException(e);
             } catch (ProcessingException e) {
-                throw new RuntimeException(e);
+                throw new BadRequestException(e);
             }
             String certPem = KeycloakModelUtils.getPemFromCertificate(cert);
             if (keyDescriptor.getUse() == KeyTypes.SIGNING) {
