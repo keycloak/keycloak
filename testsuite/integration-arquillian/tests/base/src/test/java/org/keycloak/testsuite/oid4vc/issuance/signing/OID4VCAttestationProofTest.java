@@ -7,6 +7,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JWK;
@@ -200,7 +201,7 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
     private static void configureTrustedKeysInRealm(KeycloakSession session, List<JWK> trustedKeys) throws IOException {
         RealmModel realm = session.getContext().getRealm();
         String trustedKeysJson = JsonSerialization.writeValueAsString(trustedKeys);
-        realm.setAttribute(AttestationProofValidatorFactory.TRUSTED_KEYS_REALM_ATTR, trustedKeysJson);
+        realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR, trustedKeysJson);
     }
 
     /**

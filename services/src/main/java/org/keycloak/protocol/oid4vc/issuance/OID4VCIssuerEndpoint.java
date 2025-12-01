@@ -166,6 +166,14 @@ public class OID4VCIssuerEndpoint {
 
     private Cors cors;
 
+    /**
+     * Cached authentication result to prevent DPoP proof reuse.
+     * <p>
+     * This cache ensures that when authentication is performed multiple times during
+     * a single request processing (e.g., when issuing multiple credentials), the same
+     * authentication result is reused instead of re-authenticating, which would allow
+     * the same DPoP proof to be used multiple times.
+     */
     private AuthenticationManager.AuthResult cachedAuthResult;
 
     private static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
@@ -571,7 +579,7 @@ public class OID4VCIssuerEndpoint {
         if (vcIssuanceFlow == null || !vcIssuanceFlow.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
             // Use getAuthResult() instead of bearerTokenAuthenticator.authenticate() directly
             // This ensures we benefit from the cachedAuthResult caching that prevents DPoP proof reuse
-            AccessToken accessToken = getAuthResult().getToken();
+            AccessToken accessToken = getAuthResult().token();
             if (Arrays.stream(accessToken.getScope().split(" "))
                     .noneMatch(tokenScope -> tokenScope.equals(requestedCredential.getScope()))) {
                 LOGGER.debugf("Scope check failure: required scope = %s, " +
@@ -773,22 +781,12 @@ public class OID4VCIssuerEndpoint {
             // Issue credentials for each proof
             Proofs originalProofs = credentialRequestVO.getProofs();
             // Determine the proof type from the original proofs
-            String proofType = null;
-            if (originalProofs != null) {
-                if (originalProofs.getJwt() != null && !originalProofs.getJwt().isEmpty()) {
-                    proofType = ProofType.JWT;
-                } else if (originalProofs.getAttestation() != null && !originalProofs.getAttestation().isEmpty()) {
-                    proofType = ProofType.ATTESTATION;
-                }
-            }
+            String proofType = originalProofs != null ? originalProofs.getProofType() : null;
 
             for (String currentProof : allProofs) {
                 Proofs proofForIteration = new Proofs();
-                if (ProofType.JWT.equals(proofType)) {
-                    proofForIteration.setJwt(List.of(currentProof));
-                } else if (ProofType.ATTESTATION.equals(proofType)) {
-                    proofForIteration.setAttestation(List.of(currentProof));
-                }
+                proofForIteration.setProofByType(proofType, currentProof);
+                // Creating credential with keybinding to the current proof
                 credentialRequestVO.setProofs(proofForIteration);
                 Object theCredential = getCredential(authResult, supportedCredential, credentialRequestVO);
                 responseVO.addCredential(theCredential);
@@ -850,7 +848,8 @@ public class OID4VCIssuerEndpoint {
             return credentialRequest;
         } catch (JsonProcessingException e) {
             String errorMessage = "Failed to parse JSON request: " + e.getMessage();
-            LOGGER.debug(errorMessage);
+            LOGGER.errorf(e, "JSON parsing failed. Request payload length: %d", 
+                    requestPayload != null ? requestPayload.length() : 0);
             throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
     }
@@ -983,8 +982,6 @@ public class OID4VCIssuerEndpoint {
             }
             credentialRequest.setProofs(proofsArray);
             credentialRequest.setProof(null);
-            validateProofTypes(proofsArray);
-            return;
         }
 
         validateProofTypes(credentialRequest.getProofs());
@@ -1017,21 +1014,13 @@ public class OID4VCIssuerEndpoint {
     }
 
     private List<String> getAllProofs(CredentialRequest credentialRequestVO) {
-        List<String> allProofs = new ArrayList<>();
-
         Proofs proofs = credentialRequestVO.getProofs();
         if (proofs == null) {
-            return allProofs; // No proofs provided
+            return new ArrayList<>(); // No proofs provided
         }
 
         // Validation already happened in normalizeProofFields, so we can safely extract proofs
-        if (hasProofEntries(proofs.getJwt())) {
-            allProofs.addAll(proofs.getJwt());
-        } else if (hasProofEntries(proofs.getAttestation())) {
-            allProofs.addAll(proofs.getAttestation());
-        }
-
-        return allProofs;
+        return proofs.getAllProofs();
     }
 
     private void validateProofTypes(Proofs proofs) {
@@ -1253,16 +1242,6 @@ public class OID4VCIssuerEndpoint {
         return cachedAuthResult;
     }
 
-    // get the auth result from the authentication manager
-    private AuthenticationManager.AuthResult getAuthResult(WebApplicationException errorResponse) {
-        try {
-            return getAuthResult();
-        } catch (BadRequestException e) {
-            LOGGER.debugf(e, "Authentication failed, throwing error response");
-            throw errorResponse;
-        }
-    }
-
     /**
      * Get a signed credential
      *
@@ -1405,14 +1384,9 @@ public class OID4VCIssuerEndpoint {
             return;
         }
 
-        // Validate each JWT proof if present
-        if (proofs.getJwt() != null && !proofs.getJwt().isEmpty()) {
-            validateProofs(vcIssuanceContext, ProofType.JWT);
-        }
-
-        // Validate each attestation proof if present
-        if (proofs.getAttestation() != null && !proofs.getAttestation().isEmpty()) {
-            validateProofs(vcIssuanceContext, ProofType.ATTESTATION);
+        // Validate each proof type that is present
+        for (String proofType : proofs.getPresentProofTypes()) {
+            validateProofs(vcIssuanceContext, proofType);
         }
     }
 
