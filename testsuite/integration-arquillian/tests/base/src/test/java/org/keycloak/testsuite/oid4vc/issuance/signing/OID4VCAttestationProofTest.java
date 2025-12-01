@@ -14,6 +14,7 @@ import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
@@ -103,6 +104,8 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testCredentialIssuanceWithAttestationProof() {
         final String scopeName = jwtTypeCredentialClientScope.getName();
+        String configIdFromScope = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        final String credConfigId = configIdFromScope != null ? configIdFromScope : scopeName;
         String token = getBearerToken(oauth, client, scopeName);
         String cNonce = getCNonce();
 
@@ -125,7 +128,7 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
                 Proofs proofs = new Proofs().setAttestation(List.of(attestationJwt));
 
                 CredentialRequest request = new CredentialRequest()
-                        .setCredentialIdentifier(scopeName)
+                        .setCredentialConfigurationId(credConfigId)
                         .setProofs(proofs);
 
                 OID4VCIssuerEndpoint endpoint = prepareIssuerEndpoint(session, authenticator);
