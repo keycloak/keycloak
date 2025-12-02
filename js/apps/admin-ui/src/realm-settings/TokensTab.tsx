@@ -95,6 +95,7 @@ export const RealmSettingsTokensTab = ({
     ),
     defaultValue: realm.attributes?.["oid4vci.signed_metadata.enabled"],
   });
+
   const encryptionRequired = useWatch({
     control,
     name: convertAttributeNameToForm("attributes.oid4vci.encryption.required"),
