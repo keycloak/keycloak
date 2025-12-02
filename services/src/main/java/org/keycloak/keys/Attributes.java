@@ -92,4 +92,7 @@ public interface Attributes {
             JWEConstants.RSA_OAEP,
             JWEConstants.RSA1_5, JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256);
 
+    ProviderConfigProperty MLDSA_ALGORITHM_PROPERTY = new ProviderConfigProperty(ALGORITHM_KEY, "Algorithm", "Intended algorithm for the key", LIST_TYPE,
+            Algorithm.ML_DSA_65,
+            Algorithm.ML_DSA_44, Algorithm.ML_DSA_65, Algorithm.ML_DSA_87);
 }
