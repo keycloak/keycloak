@@ -2,6 +2,9 @@ package org.keycloak.testframework.database;
 
 import java.util.List;
 
+import org.jboss.logmanager.Level;
+import org.jboss.logmanager.LogManager;
+
 import org.keycloak.testframework.util.ContainerImages;
 
 import org.jboss.logging.Logger;
@@ -44,6 +47,19 @@ class MSSQLServerTestDatabase extends AbstractContainerTestDatabase {
     @Override
     public String getJdbcUrl(boolean internal) {
         return super.getJdbcUrl(internal) + ";integratedSecurity=false;encrypt=false;trustServerCertificate=true;sendStringParametersAsUnicode=false;";
+    }
+
+    @Override
+    public void start(DatabaseConfiguration config) {
+        // avoid WARNING [com.microsoft.sqlserver.jdbc.internals.SQLServerConnection] (main) ConnectionID:32 ClientConnectionId: Prelogin error ...
+        java.util.logging.Logger mssqlLogger = LogManager.getLogManager().getLogger("com.microsoft.sqlserver.jdbc.internals.SQLServerConnection");
+        java.util.logging.Level level = mssqlLogger.getLevel();
+        try {
+            mssqlLogger.setLevel(Level.ERROR);
+            super.start(config);
+        } finally {
+            mssqlLogger.setLevel(level);
+        }
     }
 
     @Override
