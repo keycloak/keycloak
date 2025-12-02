@@ -1,12 +1,9 @@
 package org.keycloak.models.mapper;
 
 import java.util.Collections;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -14,10 +11,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
 import org.keycloak.services.ServiceException;
-import org.keycloak.services.managers.ClientManager;
-import org.keycloak.services.managers.RealmManager;
 
-import org.mapstruct.AfterMapping;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -78,30 +72,6 @@ public interface MapStructClientModelMapper extends ClientModelMapper {
         var model = realm.addClient(rep.getClientId());
         realm.removeClient(model.getId());
         return model;
-    }
-
-    @AfterMapping
-    default void addRoles(@MappingTarget ClientModel model, ClientRepresentation rep, @Context RealmModel realm, @Context KeycloakSession session) {
-        Optional.ofNullable(rep.getRoles())
-                .orElse(Collections.emptySet())
-                .stream()
-                .filter(role -> model.getRole(role) == null)
-                .forEach(model::addRole);
-
-        // Service Account roles
-        var serviceAccount = rep.getServiceAccount();
-        if (serviceAccount != null && serviceAccount.getEnabled() && !serviceAccount.getRoles().isEmpty()) {
-            new ClientManager(new RealmManager(session)).enableServiceAccount(model);
-            var sa = session.users().getServiceAccount(model);
-
-            serviceAccount.getRoles().forEach(role -> {
-                var foundRole = realm.getRole(role);
-                if (foundRole == null) {
-                    throw new ServiceException("Cannot assign role to the service account (field 'serviceAccount.roles') as it does not exist", Response.Status.BAD_REQUEST);
-                }
-                sa.grantRole(foundRole);
-            });
-        }
     }
 
     @Named("isPublicClientPrimitive")

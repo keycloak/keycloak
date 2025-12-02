@@ -289,7 +289,7 @@ public class ClientApiV2Test {
         request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
         try (var response = client.execute(request)) {
-            assertEquals(200, response.getStatusLine().getStatusCode());
+            assertEquals(201, response.getStatusLine().getStatusCode());
             ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
             assertThat(client, is(rep));
         }
@@ -308,6 +308,144 @@ public class ClientApiV2Test {
         try (var response = client.execute(request)) {
             assertEquals(400, response.getStatusLine().getStatusCode());
             assertThat(EntityUtils.toString(response.getEntity()), containsString("Cannot assign role to the service account (field 'serviceAccount.roles') as it does not exist"));
+        }
+    }
+
+    @Test
+    public void declarativeRoleManagement() throws Exception {
+        // 1. Create a client with initial roles
+        HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/declarative-role-test");
+        setAuthHeader(createRequest);
+        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setClientId("declarative-role-test");
+        rep.setEnabled(true);
+        rep.setRoles(Set.of("role1", "role2", "role3"));
+
+        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(createRequest)) {
+            assertEquals(201, response.getStatusLine().getStatusCode());
+            ClientRepresentation created = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            assertThat(created.getRoles(), is(Set.of("role1", "role2", "role3")));
+        }
+
+        // 2. Update with completely new roles - should remove old ones and add new ones
+        HttpPut updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/declarative-role-test");
+        setAuthHeader(updateRequest);
+        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        rep.setRoles(Set.of("new-role1", "new-role2"));
+        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(updateRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            assertThat(updated.getRoles(), is(Set.of("new-role1", "new-role2")));
+        }
+
+        // 3. Update with partial overlap - keep some, add some, remove some
+        rep.setRoles(Set.of("new-role1", "add-role3", "add-role4"));
+        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(updateRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            assertThat(updated.getRoles(), is(Set.of("new-role1", "add-role3", "add-role4")));
+        }
+
+        // 4. Update with same roles - should be idempotent
+        rep.setRoles(Set.of("new-role1", "add-role3", "add-role4"));
+        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(updateRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            assertThat(updated.getRoles(), is(Set.of("new-role1", "add-role3", "add-role4")));
+        }
+
+        // 5. Update with empty set - should remove all roles
+        rep.setRoles(Set.of());
+        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(updateRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            assertThat(updated.getRoles(), is(Set.of()));
+        }
+    }
+
+    @Test
+    public void declarativeServiceAccountRoleManagement() throws Exception {
+        // 1. Create a client with service account and initial realm roles
+        HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/sa-declarative-test");
+        setAuthHeader(createRequest);
+        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setClientId("sa-declarative-test");
+        rep.setEnabled(true);
+
+        var serviceAccount = new ClientRepresentation.ServiceAccount();
+        serviceAccount.setEnabled(true);
+        serviceAccount.setRoles(Set.of("default-roles-master", "offline_access"));
+        rep.setServiceAccount(serviceAccount);
+
+        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(createRequest)) {
+            assertEquals(201, response.getStatusLine().getStatusCode());
+            ClientRepresentation created = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            assertThat(created.getServiceAccount().getRoles(), is(Set.of("default-roles-master", "offline_access")));
+        }
+
+        // 2. Update with completely new roles - should remove old ones and add new ones
+        HttpPut updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/sa-declarative-test");
+        setAuthHeader(updateRequest);
+        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        serviceAccount.setRoles(Set.of("uma_authorization", "offline_access"));
+        rep.setServiceAccount(serviceAccount);
+        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(updateRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            assertThat(updated.getServiceAccount().getRoles(), is(Set.of("uma_authorization", "offline_access")));
+        }
+
+        // 3. Update with partial overlap - keep some, add some, remove some
+        serviceAccount.setRoles(Set.of("offline_access", "default-roles-master"));
+        rep.setServiceAccount(serviceAccount);
+        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(updateRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            assertThat(updated.getServiceAccount().getRoles(), is(Set.of("offline_access", "default-roles-master")));
+        }
+
+        // 4. Update with same roles - should be idempotent
+        serviceAccount.setRoles(Set.of("offline_access", "default-roles-master"));
+        rep.setServiceAccount(serviceAccount);
+        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(updateRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            assertThat(updated.getServiceAccount().getRoles(), is(Set.of("offline_access", "default-roles-master")));
+        }
+
+        // 5. Update with empty set - should remove all roles
+        serviceAccount.setRoles(Set.of());
+        rep.setServiceAccount(serviceAccount);
+        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(updateRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            assertThat(updated.getServiceAccount().getRoles(), is(Set.of()));
         }
     }
 
