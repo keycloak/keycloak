@@ -92,7 +92,7 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
         String username = userAlice.getUsername();
         loginPage.fillLogin(username, userAlice.getPassword());
         loginPage.submit();
-        assertTrue(driver.getPageSource() != null && driver.getPageSource().contains("Happy days"));
+        assertTrue(driver.page().getPageSource() != null && driver.page().getPageSource().contains("Happy days"));
 
         // store the first step id for later comparison
         String firstStepId = runOnServer.fetch(session-> {

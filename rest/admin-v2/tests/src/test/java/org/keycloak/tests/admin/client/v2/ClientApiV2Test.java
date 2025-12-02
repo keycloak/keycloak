@@ -147,7 +147,7 @@ public class ClientApiV2Test {
         request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
         try (var response = client.execute(request)) {
-            assertEquals(200, response.getStatusLine().getStatusCode());
+            assertEquals(201, response.getStatusLine().getStatusCode());
             ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
             assertEquals("I'm new", client.getDescription());
         }
@@ -159,6 +159,32 @@ public class ClientApiV2Test {
             assertEquals(200, response.getStatusLine().getStatusCode());
             ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
             assertEquals("I'm updated", client.getDescription());
+        }
+    }
+
+    @Test
+    public void createClient() throws Exception {
+        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("client-123");
+        rep.setDescription("I'm new");
+
+        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(),is(201));
+            ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            assertThat(client.getEnabled(),is(true));
+            assertThat(client.getClientId(),is("client-123"));
+            assertThat(client.getDescription(),is("I'm new"));
+        }
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(),is(409));
         }
     }
 
@@ -175,7 +201,7 @@ public class ClientApiV2Test {
         createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
         try (var response = client.execute(createRequest)) {
-            assertEquals(200, response.getStatusLine().getStatusCode());
+            assertEquals(201, response.getStatusLine().getStatusCode());
         }
 
         HttpGet getRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/to-delete");

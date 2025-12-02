@@ -199,7 +199,7 @@ public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
         oauth.openLoginForm();
         loginPage.fillLogin(USER_NAME, USER_PASSWORD);
         loginPage.submit();
-        assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        assertTrue(driver.driver().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
 
         // check that we have two scheduled steps for the user
         runOnServer.run((RunOnServer) session -> {
