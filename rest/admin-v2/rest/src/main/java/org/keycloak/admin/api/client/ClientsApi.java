@@ -10,6 +10,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.admin.v2.ClientRepresentation;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -28,11 +29,14 @@ public interface ClientsApi {
     @Operation(summary = "Get all clients", description = "Returns a list of all clients in the realm")
     Stream<ClientRepresentation> getClients();
 
+    /**
+     * @return {@link ClientRepresentation} of created client
+     */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Create a new client", description = "Creates a new client in the realm")
-    ClientRepresentation createClient(@Valid ClientRepresentation client);
+    Response createClient(@Valid ClientRepresentation client);
 
     @Path("{id}")
     ClientApi client(@PathParam("id") String id);
