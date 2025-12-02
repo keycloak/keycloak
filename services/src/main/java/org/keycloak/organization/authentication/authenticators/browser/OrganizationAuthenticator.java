@@ -183,7 +183,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             // if re-authenticating in the scope of an organization
             context.success();
         } else {
-            attempted(context);
+            attempted(context, username);
         }
     }
 

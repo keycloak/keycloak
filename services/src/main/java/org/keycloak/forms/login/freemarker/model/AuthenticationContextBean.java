@@ -84,4 +84,8 @@ public class AuthenticationContextBean {
 
         return username;
     }
+
+    public AuthenticationFlowContext getContext() {
+        return context;
+    }
 }

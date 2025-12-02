@@ -26,10 +26,13 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareAuthenticationContextBean;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -126,6 +129,18 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
 
     protected Response challenge(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
         LoginFormsProvider forms = context.form();
+        
+        // Check if we're in an organization context and apply organization-aware beans
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        String organizationId = authSession.getAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        if (organizationId != null && context.getRealm().isOrganizationsEnabled()) {
+            forms.setAttributeMapper(attributes -> {
+                attributes.computeIfPresent("auth",
+                        (key, bean) -> new OrganizationAwareAuthenticationContextBean((AuthenticationContextBean) bean, false)
+                );
+                return attributes;
+            });
+        }
 
         if (!formData.isEmpty()) forms.setFormData(formData);
 
