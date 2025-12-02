@@ -136,7 +136,7 @@
         <org.snakeyaml.snakeyaml-engine.version>2.6</org.snakeyaml.snakeyaml-engine.version>
 
         <!-- Others -->
-        <apacheds.version>2.0.0.AM27</apacheds.version>
+        <apacheds.version>2.0.0.AM26</apacheds.version>
         <apacheds.codec.version>2.0.0</apacheds.codec.version>
         <google.zxing.version>3.4.0</google.zxing.version>
         <freemarker.version>2.3.32</freemarker.version>
@@ -244,6 +244,8 @@
         <!-- Set to true on release to update proto.lock files -->
         <commitProtoLockChanges>false</commitProtoLockChanges>
         <skipProtoLock>false</skipProtoLock>
+
+        <commons.collections.version>3.2.2</commons.collections.version>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -1343,6 +1345,12 @@
                 <artifactId>infinispan-core</artifactId>
                 <type>test-jar</type>
                 <version>${infinispan.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>${commons.collections.version}</version>
             </dependency>
 
         </dependencies>
