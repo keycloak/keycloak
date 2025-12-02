@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 import org.keycloak.common.Profile;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
+import org.keycloak.config.TelemetryOptions;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
@@ -40,6 +41,8 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
     private static final String CONSOLE_ENABLED_MSG = "Console log handler is activated";
     private static final String FILE_ENABLED_MSG = "File log handler is activated";
     private static final String SYSLOG_ENABLED_MSG = "Syslog is activated";
+    private static final String OTEL_LOGS_ENABLED_MSG = "feature '%s' is enabled".formatted(Profile.Feature.OPENTELEMETRY_LOGS.getVersionedKey());
+    private static final String EXPORT_ENABLED_MSG = "export ('log-export-enabled') is enabled";
     private static final String DEFAULT_ROOT_LOG_LEVEL = toLevel(LoggingOptions.LOG_LEVEL.getDefaultValue().orElseThrow().get(0)).getName();
 
     private final static Map<String, Map<String, String>> rootLogLevels = new HashMap<String, Map<String,String>>();
@@ -261,8 +264,31 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(LoggingPropertyMappers::isMdcActive, "MDC logging is enabled")
                         .to("kc.spi-mapped-diagnostic-context--default--mdc-keys")
                         .paramLabel("keys")
+                        .build(),
+                // Export (OpenTelemetry)
+                fromOption(LoggingOptions.LOG_EXPORT_ENABLED)
+                        .isEnabled(LoggingPropertyMappers::isOtelLogsFeatureEnabled, OTEL_LOGS_ENABLED_MSG)
+                        .to("quarkus.otel.logs.enabled")
+                        .build(),
+                fromOption(LoggingOptions.LOG_EXPORT_ENDPOINT)
+                        .isEnabled(LoggingPropertyMappers::isExportEnabled, EXPORT_ENABLED_MSG)
+                        .mapFrom(TelemetryOptions.TELEMETRY_ENDPOINT)
+                        .to("quarkus.otel.exporter.otlp.logs.endpoint")
+                        .validator(TelemetryPropertyMappers::validateEndpoint)
+                        .paramLabel("url")
+                        .build(),
+                fromOption(LoggingOptions.LOG_EXPORT_PROTOCOL)
+                        .isEnabled(LoggingPropertyMappers::isExportEnabled, EXPORT_ENABLED_MSG)
+                        .mapFrom(TelemetryOptions.TELEMETRY_PROTOCOL)
+                        .to("quarkus.otel.exporter.otlp.logs.protocol")
+                        .paramLabel("protocol")
+                        .build(),
+                fromOption(LoggingOptions.LOG_EXPORT_LEVEL)
+                        .isEnabled(LoggingPropertyMappers::isExportEnabled, EXPORT_ENABLED_MSG)
+                        .to("quarkus.otel.logs.level")
+                        .paramLabel("level")
+                        .transformer(LoggingPropertyMappers::upperCase)
                         .build()
-
         );
     }
 
@@ -312,6 +338,14 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
 
     public static boolean isSyslogJsonEnabled() {
         return isSyslogEnabled() && isTrue("quarkus.log.syslog.json.enabled");
+    }
+
+    public static boolean isOtelLogsFeatureEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.OPENTELEMETRY_LOGS);
+    }
+
+    public static boolean isExportEnabled() {
+        return isTrue(LoggingOptions.LOG_EXPORT_ENABLED);
     }
 
     private static boolean isHandlerEnabled(LoggingOptions.Handler handler) {
