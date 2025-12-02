@@ -25,15 +25,22 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.keycloak.OAuthErrorException;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
+import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 import org.keycloak.util.JsonSerialization;
@@ -81,7 +88,75 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             throw getInvalidRequestException("no valid authorization details found");
         }
 
+        // For authorization code flow, create CredentialOfferState if credential identifiers are present
+        // This allows credential requests with credential_identifier to find the associated offer state
+        createOfferStateForAuthorizationCodeFlow(userSession, clientSessionCtx, authDetailsResponse);
+
         return authDetailsResponse;
+    }
+
+    /**
+     * Creates CredentialOfferState for authorization code flow when credential identifiers are generated.
+     * This is only done for authorization code flow (not pre-authorized flow which already has an offer state).
+     * Processes all OID4VC authorization details to support multiple credential requests.
+     */
+    private void createOfferStateForAuthorizationCodeFlow(UserSessionModel userSession, ClientSessionContext clientSessionCtx,
+                                                          List<AuthorizationDetailsResponse> authDetailsResponse) {
+        AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
+        ClientModel client = clientSession != null ? clientSession.getClient() : null;
+        UserModel user = userSession != null ? userSession.getUser() : null;
+
+        if (client == null || user == null) {
+            return;
+        }
+
+        // Skip if we're in pre-authorized code flow (it already has an offer state that will be updated)
+        // Pre-authorized flow sets VC_ISSUANCE_FLOW note on the client session
+        if (clientSession != null) {
+            String vcIssuanceFlow = clientSession.getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
+            if (vcIssuanceFlow != null && vcIssuanceFlow.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
+                logger.debugf("Skipping offer state creation for pre-authorized code flow (offer state already exists and will be updated)");
+                return;
+            }
+        }
+
+        CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+
+        // Process all OID4VC authorization details to create offer states for each credential
+        for (AuthorizationDetailsResponse authDetail : authDetailsResponse) {
+            if (authDetail instanceof OID4VCAuthorizationDetailsResponse) {
+                OID4VCAuthorizationDetailsResponse oid4vcDetail = (OID4VCAuthorizationDetailsResponse) authDetail;
+                if (oid4vcDetail.getCredentialIdentifiers() != null && !oid4vcDetail.getCredentialIdentifiers().isEmpty()) {
+                    for (String credentialId : oid4vcDetail.getCredentialIdentifiers()) {
+                        // Check if offer state already exists
+                        CredentialOfferStorage.CredentialOfferState existingState = offerStorage.findOfferStateByCredentialId(session, credentialId);
+
+                        if (existingState == null) {
+                            // Create a new offer state for authorization code flow
+                            CredentialsOffer credOffer = new CredentialsOffer()
+                                    .setCredentialIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
+                                    .setCredentialConfigurationIds(List.of(oid4vcDetail.getCredentialConfigurationId()));
+
+                            // Use a reasonable expiration time (e.g., 1 hour)
+                            int expiration = Time.currentTime() + 3600;
+                            CredentialOfferStorage.CredentialOfferState offerState = new CredentialOfferStorage.CredentialOfferState(
+                                    credOffer, client.getClientId(), user.getUsername(), expiration);
+                            offerState.setAuthorizationDetails(oid4vcDetail);
+
+                            offerStorage.putOfferState(session, offerState);
+                            logger.debugf("Created credential offer state for authorization code flow: [cid=%s, uid=%s, credConfigId=%s, credId=%s]",
+                                    client.getClientId(), user.getUsername(), oid4vcDetail.getCredentialConfigurationId(), credentialId);
+                        } else {
+                            // Update existing offer state with new authorization details (e.g., if same credential identifier is reused)
+                            existingState.setAuthorizationDetails(oid4vcDetail);
+                            offerStorage.replaceOfferState(session, existingState);
+                            logger.debugf("Updated existing credential offer state for authorization code flow: [cid=%s, uid=%s, credConfigId=%s, credId=%s]",
+                                    client.getClientId(), user.getUsername(), oid4vcDetail.getCredentialConfigurationId(), credentialId);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private List<AuthorizationDetail> parseAuthorizationDetails(String authorizationDetailsParam) {
