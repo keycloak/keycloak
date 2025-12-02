@@ -91,7 +91,11 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         client.setAdminUrl(getConsumerRoot() +
                 "/auth/realms/" + consumerRealmName() + "/broker/" + getIDPAlias() + "/endpoint");
 
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(Collections.singletonList("+"));
+        OIDCAdvancedConfigWrapper oidcClient = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
+        oidcClient.setPostLogoutRedirectUris(Collections.singletonList("+"));
+
+        oidcClient.setBackchannelLogoutUrl(getConsumerRoot() +
+                "/auth/realms/" + consumerRealmName() + "/protocol/openid-connect/logout/backchannel-logout");
 
         ProtocolMapperRepresentation emailMapper = new ProtocolMapperRepresentation();
         emailMapper.setName("email");
