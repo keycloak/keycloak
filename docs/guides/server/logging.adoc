@@ -300,7 +300,14 @@ You can use regular expressions to exclude them, such as:
 
 In this case, all calls to the `/realms/my-internal-realm/` and subsequent paths will be excluded from the HTTP Access log.
 
-<@opts.printRelevantOptions includedOptions="log log-*" excludedOptions="log-console-* log-file log-file-* log-syslog-* log-mdc*">
+[[logs-export-opentelemetry]]
+== Logs export (OpenTelemetry)
+
+It is possible to export OpenTelemetry logs from your deployment to the OpenTelemetry collector for centralized log management.
+
+For more details, see the _Centralize your observability stack with OpenTelemetry_ guide.
+
+<@opts.printRelevantOptions includedOptions="log log-*" excludedOptions="log-console-* log-file log-file-* log-syslog-* log-mdc* log-export-*">
 
 === Console
 <@opts.includeOptions includedOptions="log-console-*"/>
@@ -316,6 +323,9 @@ In this case, all calls to the `/realms/my-internal-realm/` and subsequent paths
 
 === Mapped Diagnostic Context (MDC)
 <@opts.includeOptions includedOptions="log-mdc*"/>
+
+=== Logs export (OpenTelemetry)
+<@opts.includeOptions includedOptions="log-export-*"/>
 
 </@opts.printRelevantOptions>
 
