@@ -443,7 +443,7 @@ Make sure to update your code to `await` these methods.
 
 == A secure context is now required
 
-Keycloak JS now requires a link:https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts[secure context] to run. The reason for this is that the library now uses the Web Crypto API for various cryptographic functions. This API is only available in secure contexts, which are contexts that are served over HTTPS, `localhost` or a `.localhost` domain. If you are using the library in a non-secure context you'll need to update your development environment to use a secure context.
+Keycloak JS now requires a link:https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Secure_Contexts[secure context] to run. The reason for this is that the library now uses the Web Crypto API for various cryptographic functions. This API is only available in secure contexts, which are contexts that are served over HTTPS, `localhost` or a `.localhost` domain. If you are using the library in a non-secure context you'll need to update your development environment to use a secure context.
 
 = Stricter startup behavior for build-time options
 
