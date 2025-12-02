@@ -1,4 +1,7 @@
-package org.keycloak.models.mapper;
+package org.keycloak.admin.providers.models.mapper;
+
+import org.keycloak.models.mapper.ClientModelMapper;
+import org.keycloak.models.mapper.ModelMapper;
 
 import org.mapstruct.factory.Mappers;
 

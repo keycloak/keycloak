@@ -9,26 +9,25 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.mapper.ClientModelMapper;
-import org.keycloak.models.mapper.MapStructModelMapper;
+import org.keycloak.models.mapper.ModelMapper;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
 import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.ClientsResource;
-import org.keycloak.validation.jakarta.HibernateValidatorProvider;
-import org.keycloak.validation.jakarta.JakartaValidatorProvider;
+import org.keycloak.validation.jakarta.JakartaValidator;
 
 // TODO
 public class DefaultClientService implements ClientService {
     private final KeycloakSession session;
     private final ClientModelMapper mapper;
-    private final JakartaValidatorProvider validator;
+    private final JakartaValidator validator;
 
     public DefaultClientService(KeycloakSession session) {
         this.session = session;
-        this.mapper = new MapStructModelMapper().clients();
-        this.validator = new HibernateValidatorProvider();
+        this.mapper = session.getProvider(ModelMapper.class).clients();
+        this.validator = session.getProvider(JakartaValidator.class);
     }
 
     @Override
