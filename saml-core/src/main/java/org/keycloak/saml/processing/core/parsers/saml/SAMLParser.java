@@ -118,13 +118,18 @@ public class SAMLParser extends AbstractParser {
                     throw logger.parserException(new RuntimeException(ErrorCodes.UNKNOWN_START_ELEMENT + name + "::location="
                             + startElement.getLocation()));
                 }
+                try {
+                    return pf.create().parse(xmlEventReader);
+                } catch (RuntimeException e) {
+                     throw logger.parserException(e);
+                }
 
-                return pf.create().parse(xmlEventReader);
             }
 
             StaxParserUtil.getNextEvent(xmlEventReader);
         }
 
-        throw new RuntimeException(ErrorCodes.FAILED_PARSING + "SAML Parsing has failed");
+        throw logger.parserException(
+            new RuntimeException(ErrorCodes.FAILED_PARSING + "SAML Parsing has failed"));
     }
 }
