@@ -1,4 +1,5 @@
 import {
+  FormErrorText,
   HelpItem,
   KeycloakSelect,
   SelectVariant,
@@ -17,6 +18,10 @@ function toStringValue(formValue: string[]): string {
   return formValue.join("##");
 }
 
+type MultiValuedListComponentProps = ComponentProps & {
+  variant?: `${SelectVariant}`;
+};
+
 export const MultiValuedListComponent = ({
   name,
   label,
@@ -28,9 +33,13 @@ export const MultiValuedListComponent = ({
   required,
   convertToName,
   onSearch,
-}: ComponentProps) => {
+  variant = SelectVariant.typeaheadMulti,
+}: MultiValuedListComponentProps) => {
   const { t } = useTranslation();
-  const { control } = useFormContext();
+  const {
+    control,
+    formState: { errors },
+  } = useFormContext();
   const [open, setOpen] = useState(false);
 
   function setSearch(value: string) {
@@ -38,6 +47,14 @@ export const MultiValuedListComponent = ({
       onSearch(value);
     }
   }
+
+  const convertedName = convertToName(name!);
+
+  const getError = () => {
+    return convertedName
+      .split(".")
+      .reduce((record: any, key) => record?.[key], errors);
+  };
 
   return (
     <FormGroup
@@ -47,53 +64,78 @@ export const MultiValuedListComponent = ({
       isRequired={required}
     >
       <Controller
-        name={convertToName(name!)}
+        name={convertedName}
         control={control}
         defaultValue={
-          stringify ? defaultValue || "" : defaultValue ? [defaultValue] : []
+          stringify || variant !== SelectVariant.typeaheadMulti
+            ? defaultValue || ""
+            : defaultValue
+              ? [defaultValue]
+              : []
         }
+        rules={{
+          required: { value: required || false, message: t("required") },
+        }}
         render={({ field }) => (
-          <KeycloakSelect
-            toggleId={name}
-            data-testid={name}
-            isDisabled={isDisabled}
-            chipGroupProps={{
-              numChips: 3,
-              expandedText: t("hide"),
-              collapsedText: t("showRemaining"),
-            }}
-            variant={SelectVariant.typeaheadMulti}
-            typeAheadAriaLabel="Select"
-            onToggle={(isOpen) => setOpen(isOpen)}
-            selections={
-              stringify ? stringToMultiline(field.value) : field.value
-            }
-            onSelect={(v) => {
-              const option = v.toString();
-              const values = stringify
-                ? stringToMultiline(field.value)
-                : field.value;
-              let newValue;
-              if (values.includes(option)) {
-                newValue = values.filter((item: string) => item !== option);
-              } else {
-                newValue = [...values, option];
+          <>
+            <KeycloakSelect
+              toggleId={name}
+              data-testid={name}
+              isDisabled={isDisabled}
+              chipGroupProps={{
+                numChips: 3,
+                expandedText: t("hide"),
+                collapsedText: t("showRemaining"),
+              }}
+              variant={variant}
+              typeAheadAriaLabel={t("choose")}
+              onToggle={setOpen}
+              selections={
+                stringify && variant === SelectVariant.typeaheadMulti
+                  ? stringToMultiline(field.value)
+                  : field.value
               }
-              field.onChange(stringify ? toStringValue(newValue) : newValue);
-            }}
-            onClear={() => {
-              field.onChange(stringify ? "" : []);
-            }}
-            onFilter={(value) => setSearch(value)}
-            isOpen={open}
-            aria-label={t(label!)}
-          >
-            {options?.map((option) => (
-              <SelectOption key={option} value={option}>
-                {option}
-              </SelectOption>
-            ))}
-          </KeycloakSelect>
+              onSelect={(v) => {
+                const option = v.toString();
+                if (variant === SelectVariant.typeaheadMulti) {
+                  const values = stringify
+                    ? stringToMultiline(field.value)
+                    : field.value;
+                  let newValue;
+                  if (values.includes(option)) {
+                    newValue = values.filter((item: string) => item !== option);
+                  } else if (option !== "") {
+                    newValue = [...values, option];
+                  } else {
+                    newValue = values;
+                  }
+                  field.onChange(
+                    stringify && variant === SelectVariant.typeaheadMulti
+                      ? toStringValue(newValue)
+                      : newValue,
+                  );
+                } else {
+                  field.onChange(option);
+                }
+              }}
+              onClear={() => {
+                field.onChange(
+                  stringify || variant !== SelectVariant.typeaheadMulti
+                    ? ""
+                    : [],
+                );
+              }}
+              onFilter={setSearch}
+              isOpen={open}
+            >
+              {options?.map((option) => (
+                <SelectOption key={option} value={option}>
+                  {option}
+                </SelectOption>
+              ))}
+            </KeycloakSelect>
+            {getError() && <FormErrorText message={getError().message} />}
+          </>
         )}
       />
     </FormGroup>

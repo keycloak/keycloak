@@ -55,7 +55,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.models.AccountRoles;
@@ -1241,7 +1241,7 @@ public final class KeycloakModelUtils {
     public static List<String> getAcceptedClientScopeProtocols(ClientModel client) {
         List<String> acceptedClientProtocols;
         if (client.getProtocol() == null || "openid-connect".equals(client.getProtocol())) {
-            acceptedClientProtocols = List.of("openid-connect", Oid4VciConstants.OID4VC_PROTOCOL);
+            acceptedClientProtocols = List.of("openid-connect", OID4VCIConstants.OID4VC_PROTOCOL);
         }else {
             acceptedClientProtocols = List.of(client.getProtocol());
         }

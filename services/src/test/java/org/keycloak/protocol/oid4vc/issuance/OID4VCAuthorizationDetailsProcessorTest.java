@@ -24,6 +24,9 @@ import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 
 import org.junit.Test;
 
+import static org.keycloak.OAuth2Constants.CREDENTIAL_IDENTIFIERS;
+import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -48,7 +51,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
      */
     private AuthorizationDetail createValidAuthorizationDetail() {
         AuthorizationDetail authDetail = new AuthorizationDetail();
-        authDetail.setType("openid_credential");
+        authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId("test-config-id");
         authDetail.setLocations(List.of("https://test-issuer.com"));
         return authDetail;
@@ -87,7 +90,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
      */
     private AuthorizationDetail createMissingCredentialIdAuthorizationDetail() {
         AuthorizationDetail authDetail = new AuthorizationDetail();
-        authDetail.setType("openid_credential");
+        authDetail.setType(OPENID_CREDENTIAL);
         return authDetail;
     }
 
@@ -116,7 +119,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
      * Asserts that an AuthorizationDetail has valid structure
      */
     private void assertValidAuthorizationDetail(AuthorizationDetail authDetail) {
-        assertEquals("Type should be openid_credential", "openid_credential", authDetail.getType());
+        assertEquals("Type should be openid_credential", OPENID_CREDENTIAL, authDetail.getType());
         assertEquals("Credential configuration ID should be set", "test-config-id", authDetail.getCredentialConfigurationId());
         assertNotNull("Locations should not be null", authDetail.getLocations());
         assertEquals("Should have exactly one location", 1, authDetail.getLocations().size());
@@ -127,7 +130,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
      * Asserts that an AuthorizationDetail has invalid type
      */
     private void assertInvalidTypeAuthorizationDetail(AuthorizationDetail authDetail) {
-        assertNotEquals("Type should not be openid_credential", "openid_credential", authDetail.getType());
+        assertNotEquals("Type should not be openid_credential", OPENID_CREDENTIAL, authDetail.getType());
         assertEquals("Invalid type should be preserved", "invalid_type", authDetail.getType());
     }
 
@@ -135,7 +138,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
      * Asserts that an AuthorizationDetail has missing credential configuration ID
      */
     private void assertMissingCredentialIdAuthorizationDetail(AuthorizationDetail authDetail) {
-        assertEquals("Type should be openid_credential", "openid_credential", authDetail.getType());
+        assertEquals("Type should be openid_credential", OPENID_CREDENTIAL, authDetail.getType());
         assertNull("Credential configuration ID should be null", authDetail.getCredentialConfigurationId());
     }
 
@@ -317,7 +320,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
         assertEquals("Should have exactly one authorization detail", 1, authDetails.size());
 
         AuthorizationDetail parsedDetail = authDetails.get(0);
-        assertEquals("Type should be preserved", "openid_credential", parsedDetail.getType());
+        assertEquals("Type should be preserved", OPENID_CREDENTIAL, parsedDetail.getType());
         assertEquals("Credential configuration ID should be preserved", "test-config-id", parsedDetail.getCredentialConfigurationId());
         assertNotNull("Claims should be preserved", parsedDetail.getClaims());
         assertEquals("Should have exactly one claim", 1, parsedDetail.getClaims().size());
@@ -365,29 +368,34 @@ public class OID4VCAuthorizationDetailsProcessorTest {
 
     @Test
     public void testBuildAuthorizationDetailResponseLogic() {
+        // Test the response structure that would be built
+        String expectedCredentialConfigurationId = "test-config-id";
+        List<String> expectedCredentialIdentifiers = List.of("test-identifier-123");
+        ClaimsDescription claim = createValidClaimsDescription();
+        List<ClaimsDescription> expectedClaims = List.of(claim);
+
         // Test authorization detail that would be used to build response
         AuthorizationDetail authDetail = createValidAuthorizationDetail();
-        ClaimsDescription claim = createValidClaimsDescription();
-        authDetail.setClaims(List.of(claim));
+        authDetail.setAdditionalField(CREDENTIAL_IDENTIFIERS, expectedCredentialIdentifiers);
+        authDetail.setClaims(expectedClaims);
 
         // Verify the data structure that buildAuthorizationDetailResponse() would process
         assertValidAuthorizationDetail(authDetail);
         assertNotNull("Claims should not be null", authDetail.getClaims());
         assertEquals("Should have exactly one claim", 1, authDetail.getClaims().size());
 
-        // Test the response structure that would be built
-        String expectedType = "openid_credential";
-        String expectedCredentialConfigurationId = "test-config-id";
-        List<String> expectedCredentialIdentifiers = List.of("test-identifier-123");
-        List<ClaimsDescription> expectedClaims = List.of(claim);
+        @SuppressWarnings("unchecked")
+        List<String> actualCredentialIdentifiers = (List<String>) authDetail.getAdditionalFields().get(CREDENTIAL_IDENTIFIERS);
 
         // Verify the response data that would be created
-        assertEquals("Response type should match", expectedType, "openid_credential");
-        assertEquals("Response credential configuration ID should match", expectedCredentialConfigurationId, "test-config-id");
-        assertNotNull("Response credential identifiers should not be null", expectedCredentialIdentifiers);
-        assertEquals("Response should have exactly one credential identifier", 1, expectedCredentialIdentifiers.size());
-        assertNotNull("Response claims should not be null", expectedClaims);
-        assertEquals("Response should have exactly one claim", 1, expectedClaims.size());
+        assertEquals("Response type should match", OPENID_CREDENTIAL, authDetail.getType());
+        assertEquals("Response credential configuration ID should match", expectedCredentialConfigurationId, authDetail.getCredentialConfigurationId());
+        assertNotNull("Response credential identifiers should not be null", actualCredentialIdentifiers);
+        assertEquals("Response should have exactly one credential identifier", 1, actualCredentialIdentifiers.size());
+        assertEquals("Response credential identifiers should match", expectedCredentialIdentifiers, actualCredentialIdentifiers);
+        assertNotNull("Response claims should not be null", authDetail.getClaims());
+        assertEquals("Response should have exactly one claim", 1, authDetail.getClaims().size());
+        assertEquals("Response claims should match", expectedClaims, authDetail.getClaims());
     }
 
     @Test

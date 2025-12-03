@@ -21,8 +21,7 @@ public class ClientAssertionState {
     private final JWSInput jws;
     private final JsonWebToken token;
 
-    public ClientAssertionState(ClientModel client, String clientAssertionType, String clientAssertion, JWSInput jws, JsonWebToken token) {
-        this.client = client;
+    public ClientAssertionState(String clientAssertionType, String clientAssertion, JWSInput jws, JsonWebToken token) {
         this.clientAssertionType = clientAssertionType;
         this.clientAssertion = clientAssertion;
         this.jws = jws;
@@ -69,8 +68,6 @@ public class ClientAssertionState {
             JWSInput jws = null;
             JsonWebToken token = null;
 
-            ClientModel client = null;
-
             if (clientAssertion != null) {
                 jws = new JWSInput(clientAssertion);
                 token = jws.readJsonContent(JsonWebToken.class);
@@ -79,13 +76,9 @@ public class ClientAssertionState {
                 event.detail(Details.CLIENT_ASSERTION_ID, token.getId());
                 event.detail(Details.CLIENT_ASSERTION_ISSUER, token.getIssuer());
                 event.detail(Details.CLIENT_ASSERTION_SUB, token.getSubject());
-
-                if (token.getSubject() != null) {
-                    client = context.getRealm().getClientByClientId(token.getSubject());
-                }
             }
 
-            return new ClientAssertionState(client, clientAssertionType, clientAssertion, jws, token);
+            return new ClientAssertionState(clientAssertionType, clientAssertion, jws, token);
         }
 
     }

@@ -60,13 +60,13 @@ import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ConsentPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.WebDriver;
 
 import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
 import static org.keycloak.models.workflow.ResourceOperationType.USER_LOGGED_IN;
@@ -110,7 +110,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest extends AbstractWorkflow
     ManagedClient providerRealmClient;
 
     @InjectWebDriver
-    WebDriver driver;
+    ManagedWebDriver driver;
 
     @InjectPage
     LoginPage loginPage;
@@ -208,7 +208,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest extends AbstractWorkflow
         consumerRealmOAuth.openLoginForm();
         loginPage.fillLogin(bobFromConsumerRealm.getUsername(), bobFromConsumerRealm.getPassword());
         loginPage.submit();
-        assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
 
         // run the scheduled tasks - bob should not be affected.
         runScheduledSteps(Duration.ZERO);
@@ -296,10 +296,9 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest extends AbstractWorkflow
         Assertions.assertTrue(driver.getCurrentUrl().contains("/realms/" + providerRealm.getName() + "/"), "Driver should be on the provider realm page right now");
         loginPage.fillLogin(aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getPassword());
         loginPage.submit();
-        consentPage.waitForPage();
         consentPage.assertCurrent();
         consentPage.confirm();
-        assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
     }
 
     private static IdentityProviderRepresentation setUpIdentityProvider() {

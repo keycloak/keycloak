@@ -67,6 +67,15 @@ test.describe.serial("OIDC identity provider test", () => {
     await assertPkceMethodExists(page);
 
     await clickSaveButton(page);
+    await assertNotificationMessage(
+      page,
+      "Could not update the provider. The 'Validating public key' is required when 'Validate signatures' enabled and 'Use JWKS URL' disabled",
+    );
+
+    await switchOn(page, "#config\\.useJwksUrl");
+    await assertJwksUrlExists(page, true);
+    await clickSaveButton(page);
+
     await assertNotificationMessage(page, "Provider successfully updated");
   });
 });

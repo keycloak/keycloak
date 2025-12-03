@@ -71,7 +71,7 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
         property.setLabel("Claim Display Information");
         property.setHelpText("Display metadata for wallet applications to show user-friendly claim names. " +
                 "Provide display entries with name and locale for internationalization support.");
-        property.setType("ClaimDisplay");
+        property.setType(ProviderConfigProperty.CLAIM_DISPLAY_TYPE);
         property.setDefaultValue(null);
         OID4VC_CONFIG_PROPERTIES.add(property);
     }

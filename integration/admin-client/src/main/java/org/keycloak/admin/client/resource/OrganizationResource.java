@@ -44,6 +44,9 @@ public interface OrganizationResource {
     @Path("members")
     OrganizationMembersResource members();
 
+    @Path("invitations")
+    OrganizationInvitationsResource invitations();
+
     @Path("identity-providers")
     OrganizationIdentityProvidersResource identityProviders();
 }

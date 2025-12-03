@@ -28,11 +28,13 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.JWTAuthorizationGrantContext;
 import org.keycloak.services.clientpolicy.context.TokenExchangeRequestContext;
 
 /**
@@ -62,6 +64,22 @@ public class DownscopeAssertionGrantEnforcerExecutor implements ClientPolicyExec
                         tokenExchangeContext.getParams().getScope());
                 tokenExchangeContext.setRestrictedScopes(restrictedScopes);
             }
+            case JWT_AUTHORIZATION_GRANT -> {
+                JWTAuthorizationGrantContext jwtAuthnGrantContext = ((JWTAuthorizationGrantContext) context);
+                JWTAuthorizationGrantValidationContext jwtContext = jwtAuthnGrantContext.getAuthorizationGrantContext();
+                Set<String> restrictedScopes = checkDownscope(session.getContext().getClient(),
+                        getAccessTokenFromAssertion(jwtContext.getAssertion()),
+                        jwtContext.getScopeParam());
+                jwtContext.setRestrictedScopes(restrictedScopes);
+            }
+        }
+    }
+
+    private AccessToken getAccessTokenFromAssertion(String assertion) throws ClientPolicyException {
+        try {
+            return new JWSInput(assertion).readJsonContent(AccessToken.class);
+        } catch (JWSInputException e) {
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Assertion contains an invalid access token");
         }
     }
 
@@ -69,12 +87,7 @@ public class DownscopeAssertionGrantEnforcerExecutor implements ClientPolicyExec
         if (!OAuth2Constants.ACCESS_TOKEN_TYPE.equals(context.getParams().getSubjectTokenType())) {
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Parameter 'subject_token' should be access_token for the executor");
         }
-        try {
-            return new JWSInput(context.getParams().getSubjectToken())
-                    .readJsonContent(AccessToken.class);
-        } catch (JWSInputException e) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Parameter 'subject_token' contains an invalid access token");
-        }
+        return getAccessTokenFromAssertion(context.getParams().getSubjectToken());
     }
 
     private Set<String> checkDownscope(ClientModel client, AccessToken token, String scopeParam) throws ClientPolicyException {

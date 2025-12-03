@@ -255,11 +255,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
     }
 
     private String getCredentialOfferUriUrl() {
-        return getBasePath("test") + "credential-offer-uri?credential_configuration_id=" + jwtTypeCredentialConfigurationIdName;
-    }
-
-    private String getCredentialOfferUrl(String sessionCode) {
-        return getBasePath("test") + "credential-offer/" + sessionCode;
+        return getCredentialOfferUriUrl(jwtTypeCredentialConfigurationIdName);
     }
 
     private String getSessionCodeFromOfferUri(String accessToken) throws Exception {

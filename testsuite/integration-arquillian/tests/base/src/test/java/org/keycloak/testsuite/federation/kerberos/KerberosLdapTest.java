@@ -35,7 +35,6 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
-import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.federation.ldap.LDAPTestAsserts;
@@ -105,7 +104,6 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
                 RealmModel testRealm = ctx.getRealm();
 
                 ctx.getLdapModel().getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.WRITABLE.toString());
-                UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
 
                 renameUserInLDAP(ctx, testRealm, "hnelson", "hnelson2", "hnelson2@keycloak.org", "hnelson2@KEYCLOAK.ORG", "secret2");
 
@@ -114,7 +112,7 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
 
                 // Trigger sync
                 KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-                SynchronizationResult syncResult = usersSyncManager.syncAllUsers(sessionFactory, testRealm.getId(), ctx.getLdapModel());
+                SynchronizationResult syncResult = UserStoragePrivateUtil.runFullSync(sessionFactory, ctx.getLdapModel());
                 Assert.assertEquals(0, syncResult.getFailed());
             });
 

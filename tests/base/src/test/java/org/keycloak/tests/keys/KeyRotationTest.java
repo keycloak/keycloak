@@ -50,6 +50,8 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.common.BasicRealmWithUserConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -60,7 +62,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -79,6 +80,9 @@ public class KeyRotationTest {
 
     @InjectCryptoHelper
     CryptoHelper cryptoHelper;
+
+    @InjectPage
+    LoginPage loginPage;
 
     @Test
     public void testIdentityCookie() {
@@ -108,7 +112,7 @@ public class KeyRotationTest {
 
         // Login again with key #2 dropped - should fail as cookie hasn't been refreshed
         oauth.openLoginForm();
-        assertFalse(oauth.parseLoginResponse().isRedirected());
+        loginPage.assertCurrent();
     }
 
     @Test

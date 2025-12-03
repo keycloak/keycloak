@@ -195,7 +195,7 @@ public class AssertEvents implements TestRule {
         return expect(EventType.USER_SESSION_DELETED)
                 .session(sessionId)
                 .user(userId)
-                .detail(Details.REASON, Details.EXPIRED_DETAIL)
+                .detail(Details.REASON, Details.USER_SESSION_EXPIRED_REASON)
                 .client((String) null)
                 .ipAddress((String) null);
     }
@@ -387,7 +387,7 @@ public class AssertEvents implements TestRule {
             if (key.equals(Details.SCOPE)) {
                 // the scopes can be given in any order,
                 // therefore, use a matcher that takes a string and ignores the order of the scopes
-                return detail(key, new TypeSafeMatcher<String>() {
+                return detail(key, new TypeSafeMatcher<>() {
                     @Override
                     protected boolean matchesSafely(String actualValue) {
                         return Matchers.containsInAnyOrder(value.split(" ")).matches(Arrays.asList(actualValue.split(" ")));
@@ -405,7 +405,7 @@ public class AssertEvents implements TestRule {
 
         public ExpectedEvent detail(String key, Matcher<? super String> matcher) {
             if (details == null) {
-                details = new HashMap<String, Matcher<? super String>>();
+                details = new HashMap<>();
             }
             details.put(key, matcher);
             return this;
@@ -530,7 +530,7 @@ public class AssertEvents implements TestRule {
     }
 
     public static Matcher<String> isUUID() {
-        return new TypeSafeMatcher<String>() {
+        return new TypeSafeMatcher<>() {
             @Override
             protected boolean matchesSafely(String item) {
                 return 36 == item.length() && item.charAt(8) == '-' && item.charAt(13) == '-' && item.charAt(18) == '-' && item.charAt(23) == '-';
@@ -544,7 +544,7 @@ public class AssertEvents implements TestRule {
     }
 
     public static Matcher<String> isAccessTokenId(String expectedGrantShortcut) {
-        return new TypeSafeMatcher<String>() {
+        return new TypeSafeMatcher<>() {
             @Override
             protected boolean matchesSafely(String item) {
                 String[] items = item.split(":");
@@ -562,7 +562,7 @@ public class AssertEvents implements TestRule {
     }
 
     public Matcher<String> defaultRealmId() {
-        return new TypeSafeMatcher<String>() {
+        return new TypeSafeMatcher<>() {
             private String realmId;
 
             @Override
@@ -590,7 +590,7 @@ public class AssertEvents implements TestRule {
     }
 
     public Matcher<String> defaultUserId() {
-        return new TypeSafeMatcher<String>() {
+        return new TypeSafeMatcher<>() {
             private String userId;
 
             @Override

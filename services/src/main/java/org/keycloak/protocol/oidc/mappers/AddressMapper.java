@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
@@ -123,14 +124,29 @@ public class AddressMapper extends AbstractOIDCProtocolMapper implements OIDCAcc
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
         UserModel user = userSession.getUser();
-        AddressClaimSet addressSet = new AddressClaimSet();
-        addressSet.setStreetAddress(getUserModelAttributeValue(user, mappingModel, STREET));
-        addressSet.setLocality(getUserModelAttributeValue(user, mappingModel, AddressClaimSet.LOCALITY));
-        addressSet.setRegion(getUserModelAttributeValue(user, mappingModel, AddressClaimSet.REGION));
-        addressSet.setPostalCode(getUserModelAttributeValue(user, mappingModel, AddressClaimSet.POSTAL_CODE));
-        addressSet.setCountry(getUserModelAttributeValue(user, mappingModel, AddressClaimSet.COUNTRY));
-        addressSet.setFormattedAddress(getUserModelAttributeValue(user, mappingModel, AddressClaimSet.FORMATTED));
-        token.getOtherClaims().put("address", addressSet);
+        Map<String, Object> addressSet = Optional.ofNullable(token.getAddressClaimsMap()).orElseGet(() -> {
+            return Optional.ofNullable(token.getOtherClaims().get(IDToken.ADDRESS))
+                           .filter(Map.class::isInstance)
+                           .map(o -> (HashMap<String, Object>) o)
+                           .orElseGet(HashMap::new);
+        });
+        Optional.ofNullable(getUserModelAttributeValue(user, mappingModel, STREET))
+                .ifPresent(street -> addressSet.put(AddressClaimSet.STREET_ADDRESS, street));
+        Optional.ofNullable(getUserModelAttributeValue(user, mappingModel, AddressClaimSet.LOCALITY))
+                .ifPresent(locality -> addressSet.put(AddressClaimSet.LOCALITY, locality));
+        Optional.ofNullable(getUserModelAttributeValue(user, mappingModel, AddressClaimSet.REGION))
+                .ifPresent(region -> addressSet.put(AddressClaimSet.REGION, region));
+        Optional.ofNullable(getUserModelAttributeValue(user, mappingModel, AddressClaimSet.POSTAL_CODE))
+                .ifPresent(postalCode -> addressSet.put(AddressClaimSet.POSTAL_CODE, postalCode));
+        Optional.ofNullable(getUserModelAttributeValue(user, mappingModel, AddressClaimSet.COUNTRY))
+                .ifPresent(country -> addressSet.put(AddressClaimSet.COUNTRY, country));
+        Optional.ofNullable(getUserModelAttributeValue(user, mappingModel, AddressClaimSet.FORMATTED))
+                .ifPresent(formatted -> addressSet.put(AddressClaimSet.FORMATTED, formatted));
+
+        if (!addressSet.isEmpty()) {
+            token.setAddress(addressSet);
+            token.getOtherClaims().put(IDToken.ADDRESS, addressSet);
+        }
     }
 
     private String getUserModelAttributeValue(UserModel user, ProtocolMapperModel mappingModel, String claim) {

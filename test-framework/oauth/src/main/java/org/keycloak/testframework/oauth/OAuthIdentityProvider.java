@@ -4,12 +4,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.spec.ECGenParameterSpec;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyUse;
@@ -25,6 +24,8 @@ import org.keycloak.util.JsonSerialization;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+
+import static org.keycloak.common.crypto.CryptoConstants.EC_KEY_SECP256R1;
 
 public class OAuthIdentityProvider {
 
@@ -123,10 +124,7 @@ public class OAuthIdentityProvider {
 
                 KeyUse keyUse = spiffe ? KeyUse.JWT_SVID : KeyUse.SIG;
 
-                KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
-                ECGenParameterSpec ecSpec = new ECGenParameterSpec("secp256r1");
-                keyPairGenerator.initialize(ecSpec);
-                KeyPair keyPair = keyPairGenerator.generateKeyPair();
+                KeyPair keyPair = KeyUtils.generateEcKeyPair(EC_KEY_SECP256R1);
 
                 JWK jwk = JWKBuilder.create().ec(keyPair.getPublic());
                 if (!spiffe) {

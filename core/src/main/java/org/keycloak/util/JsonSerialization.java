@@ -51,6 +51,22 @@ public class JsonSerialization {
         prettyMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
+    public static String valueAsString(Object obj) {
+        try {
+            return mapper.writeValueAsString(obj);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    public static <T> T valueFromString(String string, Class<T> type) {
+        try {
+            return mapper.readValue(string, type);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
     public static void writeValueToStream(OutputStream os, Object obj) throws IOException {
         mapper.writeValue(os, obj);
     }
@@ -83,6 +99,10 @@ public class JsonSerialization {
     }
 
     public static <T> T readValue(InputStream bytes, Class<T> type) throws IOException {
+        return mapper.readValue(bytes, type);
+    }
+
+    public static <T> T readValue(byte[] bytes, TypeReference<T> type) throws IOException {
         return mapper.readValue(bytes, type);
     }
 

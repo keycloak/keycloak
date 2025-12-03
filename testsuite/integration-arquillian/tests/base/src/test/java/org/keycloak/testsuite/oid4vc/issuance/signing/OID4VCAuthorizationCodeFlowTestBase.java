@@ -52,6 +52,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Test;
 
+import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -62,8 +64,6 @@ import static org.junit.Assert.assertNotNull;
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
 public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEndpointTest {
-
-    public static final String OPENID_CREDENTIAL_TYPE = "openid_credential";
 
     /**
      * Test context for OID4VC tests
@@ -96,7 +96,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         Oid4vcTestContext ctx = new Oid4vcTestContext();
 
         // Get credential issuer metadata
-        HttpGet getCredentialIssuer = new HttpGet(getRealmPath(TEST_REALM_NAME) + "/.well-known/openid-credential-issuer");
+        HttpGet getCredentialIssuer = new HttpGet(getRealmMetadataPath(TEST_REALM_NAME));
         try (CloseableHttpResponse response = httpClient.execute(getCredentialIssuer)) {
             assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
             String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
@@ -140,7 +140,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         claim.setMandatory(true);
 
         AuthorizationDetail authDetail = new AuthorizationDetail();
-        authDetail.setType(OPENID_CREDENTIAL_TYPE);
+        authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID));
         authDetail.setClaims(Arrays.asList(claim));
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
@@ -176,8 +176,8 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         assertNotNull("Credential identifiers should be present", authDetailResponse.getCredentialIdentifiers());
         assertEquals(1, authDetailResponse.getCredentialIdentifiers().size());
 
-        String credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
-        assertNotNull("Credential identifier should not be null", credentialIdentifier);
+        String credentialConfigurationId = authDetailResponse.getCredentialConfigurationId();
+        assertNotNull("Credential configuration id should not be null", credentialConfigurationId);
 
         // Request the actual credential using the identifier
         HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
@@ -185,7 +185,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
         CredentialRequest credentialRequest = new CredentialRequest();
-        credentialRequest.setCredentialIdentifier(credentialIdentifier);
+        credentialRequest.setCredentialConfigurationId(credentialConfigurationId);
 
         String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
         postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));

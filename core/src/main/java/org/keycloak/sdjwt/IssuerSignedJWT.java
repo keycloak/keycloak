@@ -34,7 +34,6 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
-import org.keycloak.sdjwt.vp.KeyBindingJWT;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -44,6 +43,7 @@ import com.fasterxml.jackson.databind.node.LongNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
 
@@ -70,15 +70,6 @@ public class IssuerSignedJWT extends JwsToken {
         this.decoyClaims = new ArrayList<>();
     }
 
-    public IssuerSignedJWT(JWSHeader jwsHeader,
-                           ObjectNode payload,
-                           SignatureSignerContext signer) {
-        super(jwsHeader, payload, signer);
-        this.disclosureSpec = null;
-        this.disclosureClaims = new ArrayList<>();
-        this.decoyClaims = new ArrayList<>();
-    }
-
     public IssuerSignedJWT(String jwsString) {
         super(jwsString);
         this.disclosureSpec = null;
@@ -86,71 +77,7 @@ public class IssuerSignedJWT extends JwsToken {
         this.decoyClaims = new ArrayList<>();
     }
 
-    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
-                           ObjectNode disclosureClaims) {
-        this(disclosureSpec, disclosureClaims, OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM);
-    }
-
-    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
-                           ObjectNode disclosureClaims,
-                           String hashAlg) {
-        this(disclosureSpec, new JWSHeader(), disclosureClaims, null, hashAlg, false);
-    }
-
-    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
-                           ObjectNode disclosureClaims,
-                           String hashAlg,
-                           boolean nestedDisclosures) {
-        this(disclosureSpec, new JWSHeader(), disclosureClaims, null, hashAlg, nestedDisclosures);
-    }
-
-    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
-                           ObjectNode disclosureClaims,
-                           List<DecoyClaim> decoyClaims,
-                           String hashAlg,
-                           boolean nestedDisclosures) {
-        this(disclosureSpec, new JWSHeader(), disclosureClaims, decoyClaims, hashAlg, nestedDisclosures);
-    }
-
-    public IssuerSignedJWT(List<SdJwtClaim> disclosureClaims,
-                           List<DecoyClaim> decoyClaims,
-                           String hashAlg,
-                           boolean nestedDisclosures) {
-        this(DisclosureSpec.builder().build(), new JWSHeader(),
-             disclosureClaims, decoyClaims, hashAlg, nestedDisclosures);
-    }
-
-    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
-                           JWSHeader jwsHeader,
-                           ObjectNode disclosureClaims,
-                           List<DecoyClaim> decoyClaims,
-                           String hashAlg,
-                           boolean nestedDisclosures) {
-        this(disclosureSpec,
-             jwsHeader,
-             SdJwtClaimFactory.parsePayload(disclosureClaims, disclosureSpec),
-             decoyClaims,
-             hashAlg,
-             nestedDisclosures);
-    }
-
-    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
-                           JWSHeader jwsHeader,
-                           ObjectNode disclosureClaims,
-                           List<DecoyClaim> decoyClaims,
-                           String hashAlg,
-                           boolean nestedDisclosures,
-                           SignatureSignerContext signer) {
-        this(disclosureSpec,
-             jwsHeader,
-             SdJwtClaimFactory.parsePayload(disclosureClaims, disclosureSpec),
-             decoyClaims,
-             hashAlg,
-             nestedDisclosures,
-             signer);
-    }
-
-    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
+    protected IssuerSignedJWT(DisclosureSpec disclosureSpec,
                            JWSHeader jwsHeader,
                            List<SdJwtClaim> disclosureClaims,
                            List<DecoyClaim> decoyClaims,
@@ -162,17 +89,7 @@ public class IssuerSignedJWT extends JwsToken {
         this.decoyClaims = decoyClaims;
     }
 
-    public IssuerSignedJWT(List<SdJwtClaim> disclosureClaims,
-                           List<DecoyClaim> decoyClaims,
-                           String hashAlg,
-                           boolean nestedDisclosures,
-                           SignatureSignerContext signer,
-                           String jwsType) {
-        this(null, new JWSHeader(null, jwsType, null),
-             disclosureClaims, decoyClaims, hashAlg, nestedDisclosures, signer);
-    }
-
-    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
+    protected IssuerSignedJWT(DisclosureSpec disclosureSpec,
                            JWSHeader jwsHeader,
                            List<SdJwtClaim> disclosureClaims,
                            List<DecoyClaim> decoyClaims,
@@ -461,27 +378,10 @@ public class IssuerSignedJWT extends JwsToken {
             return this;
         }
 
-        /**
-         * this method requires the public key to be present in the keybindingJwts header as "jwk" claim
-         */
-        public Builder withKeyBinding(KeyBindingJWT keyBinding) {
+        public Builder withKeyBindingKey(JWK keyBinding) {
+            ObjectNode jwkNode = JsonSerialization.mapper.convertValue(keyBinding, ObjectNode.class);
             ObjectNode cnf = JsonNodeFactory.instance.objectNode();
-            Optional.ofNullable(keyBinding.getJwsHeader().getOtherClaims().get(OID4VCConstants.CLAIM_NAME_JWK))
-                    .map(map -> JsonSerialization.mapper.convertValue(map, ObjectNode.class))
-                    .ifPresent(jwkNode -> cnf.set(OID4VCConstants.CLAIM_NAME_JWK, jwkNode));
-            if (!cnf.isEmpty()) {
-                getClaims().add(new VisibleSdJwtClaim(SdJwtClaimName.of(CLAIM_NAME_CNF), cnf));
-            }
-            return this;
-        }
-
-        public Builder withKeyBinding(JWK keyBinding) {
-            return withKeyBinding(JsonSerialization.mapper.convertValue(keyBinding, ObjectNode.class));
-        }
-
-        public Builder withKeyBinding(ObjectNode keyBinding) {
-            ObjectNode cnf = JsonNodeFactory.instance.objectNode();
-            cnf.set("jwk", keyBinding);
+            cnf.set(CLAIM_NAME_JWK, jwkNode);
             getClaims().add(new VisibleSdJwtClaim(SdJwtClaimName.of(CLAIM_NAME_CNF), cnf));
             return this;
         }

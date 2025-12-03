@@ -150,12 +150,12 @@ public abstract class AbstractOAuthClient<T> {
         logoutForm().open();
     }
 
-    public LogoutRequest logoutRequest(String refreshToken) {
-        return new LogoutRequest(refreshToken, this);
+    public LogoutRequest logoutRequest() {
+        return new LogoutRequest(this);
     }
 
     public LogoutResponse doLogout(String refreshToken) {
-        return logoutRequest(refreshToken).send();
+        return logoutRequest().refreshToken(refreshToken).send();
     }
 
     public BackchannelLogoutRequest backchannelLogoutRequest(String logoutToken) {

@@ -184,16 +184,6 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public void removeAllExpired() {
-        //rely on Infinispan expiration
-    }
-
-    @Override
-    public void removeExpired(RealmModel realm) {
-        //rely on Infinispan expiration
-    }
-
-    @Override
     public void removeUserSessions(RealmModel realm) {
         transaction.removeAllSessionsByRealmId(realm.getId());
     }
