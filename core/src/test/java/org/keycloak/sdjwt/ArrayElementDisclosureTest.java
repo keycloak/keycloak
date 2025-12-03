@@ -39,10 +39,13 @@ public class ArrayElementDisclosureTest {
                                 .withUndisclosedArrayElt("nationalities", 1, "nPuoQnkRFq3BIeAm7AnXFA")
                                 .build();
 
-                IssuerSignedJWT issuerSignedJWT = new IssuerSignedJWT(disclosureSpec, claimSet);
+                IssuerSignedJWT issuerSignedJWT = IssuerSignedJWT.builder()
+                        .withClaims(claimSet, disclosureSpec)
+                        .build();
                 SdJwt sdJwt = SdJwt.builder()
                                 .withIssuerSignedJwt(issuerSignedJWT)
-                                .build(false);
+                                .withUseDefaultDecoys(false)
+                                .build();
 
                 IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
@@ -65,10 +68,13 @@ public class ArrayElementDisclosureTest {
                                 .withDecoyArrayElt("nationalities", 1, "5bPs1IquZNa0hkaFzzzZNw")
                                 .build();
 
-                IssuerSignedJWT issuerSignedJWT = new IssuerSignedJWT(disclosureSpec, claimSet);
+            IssuerSignedJWT issuerSignedJWT = IssuerSignedJWT.builder()
+                    .withClaims(claimSet, disclosureSpec)
+                    .build();
                 SdJwt sdJwt = SdJwt.builder()
                                 .withIssuerSignedJwt(issuerSignedJWT)
-                                .build(false);
+                                .withUseDefaultDecoys(false)
+                                .build();
                 IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
                 JsonNode expected = TestUtils.readClaimSet(getClass(),

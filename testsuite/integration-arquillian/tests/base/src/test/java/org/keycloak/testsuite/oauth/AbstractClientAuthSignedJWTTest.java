@@ -291,7 +291,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             try (BufferedWriter writer = Files.newBufferedWriter(tempFile)) {
                 writer.write(ksInfo.getCertificateInfo().getCertificate());
             }
-            testUploadKeystore(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.CERTIFICATE_PEM,
+            testUploadKeystore(CertificateInfoHelper.CERTIFICATE_PEM,
                     tempFile.toFile().getAbsolutePath(), "undefined", "undefined");
             Files.delete(tempFile);
 
@@ -309,7 +309,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             try (BufferedWriter writer = Files.newBufferedWriter(tempFile)) {
                 writer.write(ksInfo.getCertificateInfo().getPublicKey());
             }
-            testUploadKeystore(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.PUBLIC_KEY_PEM,
+            testUploadKeystore(CertificateInfoHelper.PUBLIC_KEY_PEM,
                     tempFile.toFile().getAbsolutePath(), "undefined", "undefined");
             Files.delete(tempFile);
 
@@ -540,11 +540,11 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         client = getClient(testRealm.getRealm(), client.getId()).toRepresentation();
 
         // Assert the uploaded certificate
-        if (keystoreFormat.equals(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.PUBLIC_KEY_PEM)) {
+        if (keystoreFormat.equals(CertificateInfoHelper.PUBLIC_KEY_PEM)) {
             String pem = new String(Files.readAllBytes(keystoreFile.toPath()));
             final String publicKeyNew = client.getAttributes().get(JWTClientAuthenticator.ATTR_PREFIX + "." + CertificateInfoHelper.PUBLIC_KEY);
             assertEquals("Certificates don't match", pem, publicKeyNew);
-        } else if (keystoreFormat.equals(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.JSON_WEB_KEY_SET)) {
+        } else if (keystoreFormat.equals(CertificateInfoHelper.JSON_WEB_KEY_SET)) {
             Assert.assertEquals("true", client.getAttributes().get(OIDCConfigAttributes.USE_JWKS_STRING));
             String jwks = new String(Files.readAllBytes(keystoreFile.toPath()));
             Assert.assertEquals(jwks, client.getAttributes().get(OIDCConfigAttributes.JWKS_STRING));
@@ -554,7 +554,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             // Just assert it's valid public key
             PublicKey pk = KeycloakModelUtils.getPublicKey(info.getPublicKey());
             Assert.assertNotNull(pk);
-        } else if (keystoreFormat.equals(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.CERTIFICATE_PEM)) {
+        } else if (keystoreFormat.equals(CertificateInfoHelper.CERTIFICATE_PEM)) {
             String pem = new String(Files.readAllBytes(keystoreFile.toPath()));
             assertCertificate(client, certOld, pem);
         } else {

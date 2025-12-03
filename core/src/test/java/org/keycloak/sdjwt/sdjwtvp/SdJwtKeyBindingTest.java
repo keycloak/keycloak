@@ -140,7 +140,9 @@ public abstract class SdJwtKeyBindingTest {
         SdJwt sdJwt = SdJwt.builder()
                 .withIssuerSignedJwt(issuerSignedJWT)
                 .withKeybindingJwt(keyBindingJWT)
-                .build(TestSettings.getInstance().getIssuerSignerContext(), KeyWrapperUtil.createSignatureSignerContext(keyWrapper));
+                .withIssuerSigningContext(TestSettings.getInstance().getIssuerSignerContext())
+                .withKeyBindingSigningContext(KeyWrapperUtil.createSignatureSignerContext(keyWrapper))
+                .build();
 
         String sdJwtString = sdJwt.toString();
 
@@ -168,7 +170,9 @@ public abstract class SdJwtKeyBindingTest {
         String invalidSdJwt = SdJwt.builder()
                 .withIssuerSignedJwt(issuerSignedJWT)
                 .withKeybindingJwt(invalidBindingJWT)
-                .build(TestSettings.getInstance().getIssuerSignerContext(), KeyWrapperUtil.createSignatureSignerContext(keyWrapper))
+                .withIssuerSigningContext(TestSettings.getInstance().getIssuerSignerContext())
+                .withKeyBindingSigningContext(KeyWrapperUtil.createSignatureSignerContext(keyWrapper))
+                .build()
                 .toString();
 
         // Replace signature with the signature from valid sdJwt
