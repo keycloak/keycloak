@@ -24,10 +24,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
@@ -49,6 +49,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for the Windows service lifecycle using Apache Commons Daemon (Procrun).
+ * 
+ * The service is created in exe mode to run 'kc.bat start', which handles
+ * automatic re-augmentation if needed. The service respects all environment
+ * variables and configuration files.
  */
 @EnabledOnOs(value = OS.WINDOWS, disabledReason = "Windows service tests are only applicable on Windows")
 @DistributionTest
@@ -60,14 +64,16 @@ public class WindowsServiceDistTest {
     private static final int SERVICE_START_TIMEOUT_SECONDS = 60;
     private static final int SERVICE_STOP_TIMEOUT_SECONDS = 30;
 
+    private RawKeycloakDistribution rawDist;
     private Path distPath;
     private String testServiceName;
-    private boolean serviceInstalled = false;
+    private boolean serviceCreated = false;
     private boolean prunsrvAvailable = false;
 
     @BeforeEach
     void setUp(KeycloakDistribution dist) {
-        this.distPath = dist.unwrap(RawKeycloakDistribution.class).getDistPath();
+        this.rawDist = dist.unwrap(RawKeycloakDistribution.class);
+        this.distPath = rawDist.getDistPath();
         this.testServiceName = TEST_SERVICE_NAME_PREFIX + System.currentTimeMillis();
 
         // Check if prunsrv.exe is available in the distribution
@@ -89,118 +95,92 @@ public class WindowsServiceDistTest {
 
     @AfterEach
     void tearDown() {
-        if (serviceInstalled) {
+        if (serviceCreated) {
             try {
                 stopService();
             } catch (Exception e) {
                 System.err.println("Failed to stop service during cleanup: " + e.getMessage());
             }
             try {
-                uninstallService();
+                deleteService();
             } catch (Exception e) {
-                System.err.println("Failed to uninstall service during cleanup: " + e.getMessage());
+                System.err.println("Failed to delete service during cleanup: " + e.getMessage());
             }
         }
     }
 
+    /**
+     * Comprehensive test for the Windows service lifecycle including:
+     * - Service creation with custom name and display name
+     * - Service start and Keycloak accessibility verification
+     * - Log file verification (Keycloak file logging)
+     * - Service stop
+     * - Service deletion
+     */
     @Test
     void testServiceLifecycle() throws Exception {
         assertPrunsrvAvailable();
         assertAdminPrivileges();
 
-        // Test production mode service installation with Keycloak runtime options (build is not needed)
-        ProcessResult installResult = runKcCommand("service", "install",
-                "--name", testServiceName,
-                "--display-name", "Keycloak Test Service",
-                "--description", "Keycloak integration test service",
-                "--startup", "manual",
-                "--kc-args", "start --http-enabled=true --hostname-strict=false");
+        String customDisplayName = "Keycloak Test Service " + testServiceName;
+        String customDescription = "Keycloak integration test service";
 
-        assertEquals(0, installResult.exitCode, "Service installation failed: " + installResult.output + "\n" + installResult.errorOutput);
-        assertThat(installResult.output, containsString("installed successfully"));
-        serviceInstalled = true;
-        assertTrue(isServiceInstalled(testServiceName), "Service should be installed");
+        // Configure runtime options in keycloak.conf (including file logging)
+        rawDist.setProperty("http-enabled", "true");
+        rawDist.setProperty("hostname-strict", "false");
+        rawDist.setProperty("log", "console,file");
+        rawDist.setProperty("log-file", distPath.resolve("log").resolve("keycloak.log").toString());
+
+        // Create the service with custom name and display name
+        CLIResult createResult = rawDist.run("service", "create",
+                "--name=" + testServiceName,
+                "--display-name=" + customDisplayName,
+                "--description=" + customDescription,
+                "--startup=manual");
+
+        assertEquals(0, createResult.exitCode(), "Service creation failed: " + createResult.getOutput());
+        assertThat(createResult.getOutput(), containsString("created successfully"));
+        serviceCreated = true;
+        assertTrue(isServiceCreated(testServiceName), "Service should be created");
+
+        // Verify the display name in service configuration
+        String serviceInfo = getServiceInfo(testServiceName);
+        assertThat("Service info should contain custom display name", serviceInfo, containsString(customDisplayName));
 
         // Test service start
         assertTrue(startService(), "Service should start successfully");
         assertTrue(waitForKeycloakReady(), "Keycloak should be accessible after service start");
         assertEquals("RUNNING", getServiceState(testServiceName), "Service should be in RUNNING state");
 
-        // Test service logging
-        Path logDir = distPath.resolve("log");
-        String stdoutLog = readServiceStdoutLog(logDir);
-        assertThat("Stdout log should contain Keycloak startup message", stdoutLog, containsString("Listening on:"));
+        // Verify log file was created and contains startup message
+        Path logFile = distPath.resolve("log").resolve("keycloak.log");
+        assertTrue(waitForLogFile(logFile), "Log file should be created");
+        String logContent = Files.readString(logFile);
+        assertThat("Log should contain Keycloak startup message", logContent, containsString("Listening on:"));
 
         // Test service stop
         assertTrue(stopService(), "Service should stop successfully");
         assertTrue(waitForServiceStopped(), "Service should be in STOPPED state");
         assertFalse(isKeycloakAccessible(), "Keycloak should not be accessible after service stop");
 
-        // Test service uninstall
-        ProcessResult uninstallResult = runKcCommand("service", "uninstall", "--name", testServiceName);
-        assertEquals(0, uninstallResult.exitCode, "Service uninstallation failed: " + uninstallResult.output + "\n" + uninstallResult.errorOutput);
-        assertThat(uninstallResult.output, containsString("uninstalled successfully"));
-        serviceInstalled = false;
-        assertFalse(isServiceInstalled(testServiceName), "Service should be uninstalled");
+        // Test service delete
+        CLIResult deleteResult = rawDist.run("service", "delete", "--name=" + testServiceName);
+        assertEquals(0, deleteResult.exitCode(), "Service deletion failed: " + deleteResult.getOutput());
+        assertThat(deleteResult.getOutput(), containsString("deleted successfully"));
+        serviceCreated = false;
+        assertFalse(isServiceCreated(testServiceName), "Service should be deleted");
     }
 
-    @Test
-    void testServiceWithDevModeAndJvmArgs() throws Exception {
-        assertPrunsrvAvailable();
-        assertAdminPrivileges();
-
-        // Test development mode service installation with custom JVM args
-        // Note: If an argument starts with '-', kc.bat assumes it's a new option, not a value.
-        // Therefore, omit the leading dash here - it will be added programmatically by ServiceInstall.
-        ProcessResult installResult = runKcCommand("service", "install",
-                "--name", testServiceName,
-                "--display-name", "Keycloak Dev Test Service",
-                "--startup", "manual",
-                "--kc-args", "start-dev",
-                "--jvm-args", "\"Djava.net.preferIPv4Stack=true;verbose:gc\"");
-
-        assertEquals(0, installResult.exitCode, "Service installation failed: " + installResult.output + "\n" + installResult.errorOutput);
-        serviceInstalled = true;
-
-        // Verify JVM options are stored in service configuration (in Windows Registry)
-        String jvmOptions = getServiceJvmOptions(testServiceName);
-        assertThat("JVM options should contain -Djava.net.preferIPv4Stack=true", jvmOptions, containsString("-Djava.net.preferIPv4Stack=true"));
-        assertThat("JVM options should contain -verbose:gc", jvmOptions, containsString("-verbose:gc"));
-
-        assertTrue(startService(), "Service should start successfully with custom JVM args");
-        assertTrue(waitForKeycloakReady(), "Keycloak should be accessible in dev mode");
-
-        stopService();
-        runKcCommand("service", "uninstall", "--name", testServiceName);
-        serviceInstalled = false;
-    }
-
-    @Test
-    void testJvmMemoryArgsApplied() throws Exception {
-        assertPrunsrvAvailable();
-        assertAdminPrivileges();
-
-        // Test prunsrv native parameters for JVM memory settings
-        ProcessResult installResult = runKcCommand("service", "install",
-                "--name", testServiceName,
-                "--startup", "manual",
-                "--kc-args", "start --http-enabled=true --hostname-strict=false",
-                "--jvm-ms", "8",
-                "--jvm-mx", "16");
-
-        assertEquals(0, installResult.exitCode, "Service installation should succeed even with low memory args");
-        serviceInstalled = true;
-
-        boolean started = startService();
-
-        if (started) {
-            assertFalse(waitForKeycloakReady(10), "Keycloak should NOT be accessible with only 16MB heap");
+    private boolean waitForLogFile(Path logFile) {
+        try {
+            org.awaitility.Awaitility.await()
+                    .atMost(SERVICE_START_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .pollInterval(2, TimeUnit.SECONDS)
+                    .until(() -> Files.exists(logFile) && Files.size(logFile) > 0);
+            return true;
+        } catch (org.awaitility.core.ConditionTimeoutException e) {
+            return false;
         }
-        
-
-        stopService();
-        runKcCommand("service", "uninstall", "--name", testServiceName);
-        serviceInstalled = false;
     }
 
     private boolean waitForKeycloakReady(int timeoutSeconds) {
@@ -213,24 +193,6 @@ public class WindowsServiceDistTest {
         } catch (org.awaitility.core.ConditionTimeoutException e) {
             return false;
         }
-    }
-
-    private String readServiceStdoutLog(Path logDir) throws IOException {
-        StringBuilder allLogs = new StringBuilder();
-        if (Files.exists(logDir)) {
-            try (var files = Files.list(logDir)) {
-                files.filter(p -> p.getFileName().toString().contains("-stdout.") ||
-                                  p.getFileName().toString().contains("stdout"))
-                        .forEach(logFile -> {
-                            try {
-                                allLogs.append(Files.readString(logFile));
-                            } catch (IOException e) {
-                                // ignore
-                            }
-                        });
-            }
-        }
-        return allLogs.toString();
     }
 
     private void assertPrunsrvAvailable() {
@@ -272,30 +234,6 @@ public class WindowsServiceDistTest {
                 .orElse(null);
     }
 
-    private ProcessResult runKcCommand(String... args) throws IOException, InterruptedException {
-        List<String> command = new ArrayList<>();
-        command.add(distPath.resolve("bin").resolve("kc.bat").toString());
-        command.addAll(Arrays.asList(args));
-
-        ProcessBuilder pb = new ProcessBuilder(command);
-        pb.directory(distPath.resolve("bin").toFile());
-        pb.environment().put("JAVA_HOME", System.getProperty("java.home"));
-        pb.redirectErrorStream(true);
-
-        Process process = pb.start();
-
-        // Read all output (stdout + stderr merged)
-        String output = new String(process.getInputStream().readAllBytes());
-
-        boolean finished = process.waitFor(120, TimeUnit.SECONDS);
-        if (!finished) {
-            process.destroyForcibly();
-            return new ProcessResult(-1, output, "Process timed out after 120 seconds");
-        }
-
-        return new ProcessResult(process.exitValue(), output, "");
-    }
-
     private boolean startService() throws IOException, InterruptedException {
         ProcessBuilder pb = new ProcessBuilder("net", "start", testServiceName);
         pb.redirectErrorStream(true);
@@ -315,11 +253,11 @@ public class WindowsServiceDistTest {
         return true;
     }
 
-    private void uninstallService() throws IOException, InterruptedException {
-        runKcCommand("service", "uninstall", "--name=" + testServiceName);
+    private void deleteService() throws IOException, InterruptedException {
+        rawDist.run("service", "delete", "--name=" + testServiceName);
     }
 
-    private boolean isServiceInstalled(String serviceName) {
+    private boolean isServiceCreated(String serviceName) {
         try {
             ProcessBuilder pb = new ProcessBuilder("sc", "query", serviceName);
             Process process = pb.start();
@@ -354,12 +292,9 @@ public class WindowsServiceDistTest {
         return "UNKNOWN";
     }
 
-    private String getServiceJvmOptions(String serviceName) {
+    private String getServiceInfo(String serviceName) {
         try {
-            // On 64-bit Windows, procrun uses the 32-bit registry view (Wow6432Node)
-            ProcessBuilder pb = new ProcessBuilder("reg", "query",
-                    "HKLM\\SOFTWARE\\WOW6432Node\\Apache Software Foundation\\ProcRun 2.0\\" + serviceName + "\\Parameters\\Java",
-                    "/v", "Options");
+            ProcessBuilder pb = new ProcessBuilder("sc", "qc", serviceName);
             pb.redirectErrorStream(true);
             Process process = pb.start();
             String output = new String(process.getInputStream().readAllBytes());
@@ -395,8 +330,5 @@ public class WindowsServiceDistTest {
         } catch (Exception e) {
             return false;
         }
-    }
-
-    private record ProcessResult(int exitCode, String output, String errorOutput) {
     }
 }

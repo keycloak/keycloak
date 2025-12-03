@@ -29,26 +29,26 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-@Command(name = ServiceUninstall.NAME,
-        header = "Uninstall Keycloak Windows service.",
+@Command(name = ServiceDelete.NAME,
+        header = "Delete Keycloak Windows service.",
         description = {
-            "%nRemove Keycloak Windows service installed with 'kc.bat service install'.",
-            "",
-            "This command requires prunsrv.exe to be present in the bin directory."
+                "%nRemove Keycloak Windows service created with 'kc.bat service create'.",
+                "",
+                "This command requires prunsrv.exe to be present in the bin directory."
         },
         footerHeading = "Examples:",
-        footer = { "  Uninstall with default service name:%n%n"
+        footer = { "  Delete with default service name:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME}%n%n"
-                + "  Uninstall a custom-named service:%n%n"
+                + "  Delete a custom-named service:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --name=my-keycloak%n"})
-public class ServiceUninstall extends AbstractCommand {
+public class ServiceDelete extends AbstractCommand {
 
-    public static final String NAME = "uninstall";
+    public static final String NAME = "delete";
 
     private static final String DEFAULT_SERVICE_NAME = "keycloak";
 
     @Option(names = "--name",
-            description = "The name of the Windows service to uninstall.",
+            description = "The name of the Windows service to delete.",
             defaultValue = DEFAULT_SERVICE_NAME)
     String serviceName;
 
@@ -63,9 +63,9 @@ public class ServiceUninstall extends AbstractCommand {
             executionError(spec.commandLine(), "Windows service management is only available on Windows.");
         }
 
-        Path homePath = Environment.getHomePath().orElseThrow(() -> 
-            new CommandLine.ExecutionException(spec.commandLine(), 
-                "Could not determine Keycloak home directory"));
+        Path homePath = Environment.getHomePath().orElseThrow(() ->
+                new CommandLine.ExecutionException(spec.commandLine(),
+                        "Could not determine Keycloak home directory"));
 
         Path prunsrvPath = homePath.resolve("bin").resolve("prunsrv.exe");
         if (!Files.exists(prunsrvPath)) {
@@ -74,7 +74,7 @@ public class ServiceUninstall extends AbstractCommand {
             executionError(spec.commandLine(), "Apache Commons Daemon (Procrun) executable not found at " + prunsrvPath);
         }
 
-        picocli.println("Uninstalling Keycloak service '" + serviceName + "'...");
+        picocli.println("Deleting Keycloak service '" + serviceName + "'...");
 
         List<String> command = new ArrayList<>();
         command.add(prunsrvPath.toString());
@@ -88,10 +88,10 @@ public class ServiceUninstall extends AbstractCommand {
             int exitCode = process.waitFor();
 
             if (exitCode == 0) {
-                picocli.println("Service '" + serviceName + "' uninstalled successfully.");
+                picocli.println("Service '" + serviceName + "' deleted successfully.");
             } else {
-                executionError(spec.commandLine(), 
-                    "Failed to uninstall service '" + serviceName + "'. Exit code: " + exitCode);
+                executionError(spec.commandLine(),
+                        "Failed to delete service '" + serviceName + "'. Exit code: " + exitCode);
             }
         } catch (IOException | InterruptedException e) {
             executionError(spec.commandLine(), "Failed to execute prunsrv: " + e.getMessage(), e);
