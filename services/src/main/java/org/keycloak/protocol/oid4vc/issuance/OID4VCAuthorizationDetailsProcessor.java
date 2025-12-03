@@ -112,20 +112,17 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
 
         // Skip if we're in pre-authorized code flow (it already has an offer state that will be updated)
         // Pre-authorized flow sets VC_ISSUANCE_FLOW note on the client session
-        if (clientSession != null) {
-            String vcIssuanceFlow = clientSession.getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
-            if (vcIssuanceFlow != null && vcIssuanceFlow.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
-                logger.debugf("Skipping offer state creation for pre-authorized code flow (offer state already exists and will be updated)");
-                return;
-            }
+        String vcIssuanceFlow = clientSession.getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
+        if (vcIssuanceFlow != null && vcIssuanceFlow.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
+            logger.debugf("Skipping offer state creation for pre-authorized code flow (offer state already exists and will be updated)");
+            return;
         }
 
         CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
 
         // Process all OID4VC authorization details to create offer states for each credential
         for (AuthorizationDetailsResponse authDetail : authDetailsResponse) {
-            if (authDetail instanceof OID4VCAuthorizationDetailsResponse) {
-                OID4VCAuthorizationDetailsResponse oid4vcDetail = (OID4VCAuthorizationDetailsResponse) authDetail;
+            if (authDetail instanceof OID4VCAuthorizationDetailsResponse oid4vcDetail) {
                 if (oid4vcDetail.getCredentialIdentifiers() != null && !oid4vcDetail.getCredentialIdentifiers().isEmpty()) {
                     for (String credentialId : oid4vcDetail.getCredentialIdentifiers()) {
                         // Check if offer state already exists

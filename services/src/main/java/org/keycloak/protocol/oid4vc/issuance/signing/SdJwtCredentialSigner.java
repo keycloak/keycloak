@@ -21,6 +21,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.keycloak.crypto.SignatureSignerContext;
@@ -82,7 +83,7 @@ public class SdJwtCredentialSigner extends AbstractCredentialSigner<String> {
 
         if (certificateChain != null && !certificateChain.isEmpty()) {
             List<String> x5cList = certificateChain.stream()
-                    .filter(cert -> cert != null)
+                    .filter(Objects::nonNull)
                     .map(cert -> {
                         try {
                             return Base64.getEncoder().encodeToString(cert.getEncoded());
