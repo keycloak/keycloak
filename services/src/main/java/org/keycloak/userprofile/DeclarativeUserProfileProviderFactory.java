@@ -115,7 +115,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
     private static void addDefaultAttributesForVerifiableCredentials(UPConfig defaultConfig) {
 
-        // For all intends and purposes a Verifiable Credential (VC) is bound to a Holder's Digital Identity (DID).
+        // For all intents and purposes, a Verifiable Credential (VC) is bound to a Holder's Digital Identity (DID).
         // The Holder's DID is in turn bound to Key Material that the Issuer + Verifier can discover from the DID Document.
         // In case of "did:key:..." the Public Key is already encoded in the DID.
         //
@@ -124,15 +124,15 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         //
         // In future, it may be possible that ...
         //
-        //  * The Holder communicates the DID at the time of Authentication
+        //  * The Holder communicates the DID at the time of Authorization
         //  * The Issuer then verifies Holder possession of the associated Key Material
-        //  * The Issuer then somehow associates the Authentication request with a registered User
+        //  * The Issuer then somehow associates the AuthorizationRequest with a registered User
         //  * The VC is then issued to the Holder without the Issuer needing to remember that Holder DID
         //
-        // This kind of Authentication protocol is for example required by EBSI, which we aim to become compatible with.
+        // This kind of Authorization protocol is for example required by EBSI, which we aim to become compatible with.
         // https://hub.ebsi.eu/conformance/build-solutions/issue-to-holder-functional-flows
         //
-        // Note, that current EBSI Compatibility Tests use the Holder's DID as OIDC client_id in the AuthenticationRequest.
+        // Note, that current EBSI Compatibility Tests use the Holder's DID as OIDC client_id in the AuthorizationRequest.
         // That is something we need to work with, but I don't think we should model it like that in our realm config.
         //
         // Here the attribute definition that we add by default (when not defined already)
@@ -151,9 +151,9 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         //       }
         //     }
         //   }
-        
+
         if (!defaultConfig.hasAttribute("did")) {
-            var attr = new UPAttribute("did");
+            UPAttribute attr = new UPAttribute("did");
             attr.setDisplayName("DID");
             attr.setMultivalued(false);
             attr.setPermissions(new UPAttributePermissions(

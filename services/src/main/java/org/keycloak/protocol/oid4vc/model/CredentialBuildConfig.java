@@ -93,11 +93,11 @@ public class CredentialBuildConfig {
         SupportedCredentialConfiguration credConfig,
         CredentialScopeModel credModel
 ) {
-        var credentialIssuer = Optional.ofNullable(credModel.getIssuerDid()).orElse(
+        String credentialIssuer = Optional.ofNullable(credModel.getIssuerDid()).orElse(
                 OID4VCIssuerWellKnownProvider.getIssuer(keycloakSession.getContext()));
 
-        var signingAlgSupported = credConfig.getCredentialSigningAlgValuesSupported();
-        var buildConfig = new CredentialBuildConfig()
+        List<String> signingAlgSupported = credConfig.getCredentialSigningAlgValuesSupported();
+        CredentialBuildConfig buildConfig = new CredentialBuildConfig()
             .setCredentialIssuer(credentialIssuer)
             .setCredentialId(credConfig.getId())
             .setCredentialType(credConfig.getVct())
