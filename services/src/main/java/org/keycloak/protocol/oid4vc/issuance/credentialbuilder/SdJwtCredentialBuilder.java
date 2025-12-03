@@ -60,28 +60,29 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
     ) throws CredentialBuilderException {
 
         Instant issuanceDate = verifiableCredential.getIssuanceDate();
-        Integer expirySeconds = credentialBuildConfig.getExpiryInSeconds();
+        Instant expirationDate = verifiableCredential.getExpirationDate();
 
         // Retrieve subject claims
         CredentialSubject credentialSubject = verifiableCredential.getCredentialSubject();
         Map<String, Object> claims = new LinkedHashMap<>(credentialSubject.getClaims());
 
         // Add inner (disclosed) claims iat, sub - the latter being derived from Subject.id
-        Optional.ofNullable(issuanceDate).ifPresent(it -> {
-            claims.put(CLAIM_NAME_IAT, it.getEpochSecond());
-        });
-        Optional.ofNullable(claims.get(CLAIM_NAME_SUBJECT_ID)).ifPresent(it -> {
-            claims.put(CLAIM_NAME_SUB, claims.remove(CLAIM_NAME_SUBJECT_ID));
-        });
+        Optional.ofNullable(issuanceDate).ifPresent(it ->
+            claims.put(CLAIM_NAME_IAT, it.getEpochSecond())
+        );
+        // Map subject id => sub
+        Optional.ofNullable(claims.get(CLAIM_NAME_SUBJECT_ID)).ifPresent(it ->
+            claims.put(CLAIM_NAME_SUB, claims.remove(CLAIM_NAME_SUBJECT_ID))
+        );
 
         // Put inner claims into the disclosure spec, except the one to be kept visible
         DisclosureSpec.Builder disclosureSpecBuilder = DisclosureSpec.builder();
         List<String> visibleClaims = credentialBuildConfig.getSdJwtVisibleClaims();
         claims.keySet().stream()
                 .filter(it -> !visibleClaims.contains(it))
-                .forEach(it -> {
-                    disclosureSpecBuilder.withUndisclosedClaim(it, SdJwtUtils.randomSalt());
-                });
+                .forEach(it ->
+                    disclosureSpecBuilder.withUndisclosedClaim(it, SdJwtUtils.randomSalt())
+                );
 
         // Add outer (always visible) claims: iss, vct, exp
         // https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-11.html#section-3.2.2.2
@@ -93,7 +94,7 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
         // see: https://openid.github.io/OpenID4VC-HAIP/openid4vc-high-assurance-interoperability-profile-wg-draft.html#section-6.1
         // Only set if not already set by a protocol mapper
         if (!claims.containsKey(CLAIM_NAME_EXP)) {
-            Optional.ofNullable(verifiableCredential.getExpirationDate())
+            Optional.ofNullable(expirationDate)
                     .ifPresent(d -> claims.put(CLAIM_NAME_EXP, d.getEpochSecond()));
         }
 

@@ -33,8 +33,6 @@ import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import org.apache.commons.collections4.ListUtils;
-
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 import static org.keycloak.OID4VCConstants.USER_ATTRIBUTE_NAME_DID;
 
@@ -63,8 +61,7 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         userAttributeConfig.setHelpText("The user attribute to be added to the credential subject.");
         userAttributeConfig.setType(ProviderConfigProperty.LIST_TYPE);
         userAttributeConfig.setOptions(
-                List.of(UserModel.USERNAME, UserModel.LOCALE, UserModel.FIRST_NAME, UserModel.LAST_NAME,
-                        UserModel.DISABLED_REASON, UserModel.EMAIL, UserModel.EMAIL_VERIFIED));
+                List.of(USER_ATTRIBUTE_NAME_DID, UserModel.USERNAME, UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL));
         CONFIG_PROPERTIES.add(userAttributeConfig);
     }
 
@@ -94,18 +91,14 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         UserModel userModel = userSessionModel.getUser();
         List<String> attributePath = getMetadataAttributePath();
         String propertyName = attributePath.get(attributePath.size() - 1);
-        var userAttr = KeycloakModelUtils.resolveAttribute(userModel, USER_ATTRIBUTE_NAME_DID,false).stream()
+        String userAttributeName = mapperModel.getConfig().get(OID4VCMapper.USER_ATTRIBUTE_KEY);
+        String userAttr = KeycloakModelUtils.resolveAttribute(userModel, userAttributeName,false).stream()
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
-        if (userAttr != null) {
+        if (userAttr != null && !userAttr.isEmpty()) {
             claims.put(propertyName, userAttr);
         }
-    }
-
-    @Override
-    public List<String> getMetadataAttributePath() {
-        return ListUtils.union(getAttributePrefix(), List.of(CLAIM_NAME_SUBJECT_ID));
     }
 
     @Override

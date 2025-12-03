@@ -419,9 +419,19 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                     assertNotNull("The sd-jwt-credential can optionally provide a claims claim.",
                             jwtVcClaims);
 
-                    assertEquals(4,  jwtVcClaims.size());
+                    assertEquals(5,  jwtVcClaims.size());
                     {
                         Claim claim = jwtVcClaims.get(0);
+                        assertEquals("The sd-jwt-credential claim id is present.",
+                                "id",
+                                claim.getPath().get(0));
+                        assertFalse("The sd-jwt-credential claim id is not mandatory.",
+                                claim.isMandatory());
+                        assertNull("The sd-jwt-credential claim id has no display configured",
+                                claim.getDisplay());
+                    }
+                    {
+                        Claim claim = jwtVcClaims.get(1);
                         assertEquals("The sd-jwt-credential claim email is present.",
                                 "email",
                                 claim.getPath().get(0));
@@ -431,7 +441,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                 claim.getDisplay());
                     }
                     {
-                        Claim claim = jwtVcClaims.get(1);
+                        Claim claim = jwtVcClaims.get(2);
                         assertEquals("The sd-jwt-credential claim firstName is present.",
                                 "firstName",
                                 claim.getPath().get(0));
@@ -441,7 +451,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                 claim.getDisplay());
                     }
                     {
-                        Claim claim = jwtVcClaims.get(2);
+                        Claim claim = jwtVcClaims.get(3);
                         assertEquals("The sd-jwt-credential claim lastName is present.",
                                 "lastName",
                                 claim.getPath().get(0));
@@ -451,7 +461,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                 claim.getDisplay());
                     }
                     {
-                        Claim claim = jwtVcClaims.get(3);
+                        Claim claim = jwtVcClaims.get(4);
                         assertEquals("The sd-jwt-credential claim scope-name is present.",
                                 "scope-name",
                                 claim.getPath().get(0));
@@ -566,6 +576,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             assertFalse("Only mappers supported for the requested type should have been evaluated.", disclosureMap.containsKey("given_name"));
             assertTrue("Test credential shall include an iat claim.", disclosureMap.containsKey("iat"));
+            assertTrue("The credentials should include the id claim.", disclosureMap.containsKey("sub")); // id -> sub
             assertTrue("The credentials should include the firstName claim.", disclosureMap.containsKey("firstName"));
             assertEquals("firstName claim incorrectly mapped.", "John", disclosureMap.get("firstName").get(2).asText());
             assertTrue("The credentials should include the lastName claim.", disclosureMap.containsKey("lastName"));

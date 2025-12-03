@@ -120,8 +120,12 @@ public class IssuerSignedJwtVerificationOpts extends ClaimVerifier {
             return (Builder) super.withClaimCheck(claimName, expectedValue, isOptionalCheck);
         }
 
-        public IssuerSignedJwtVerificationOpts build() {
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder removeCheck(java.util.function.Predicate<Predicate<ObjectNode>> filter) {
+            return (Builder) super.removeCheck(filter);
+        }
 
+        public IssuerSignedJwtVerificationOpts build() {
             return new IssuerSignedJwtVerificationOpts(headerVerifiers, contentVerifiers);
         }
     }

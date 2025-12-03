@@ -27,6 +27,7 @@ import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBo
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.sdjwt.ClaimVerifier;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
 import org.keycloak.sdjwt.SdJwt;
@@ -35,6 +36,7 @@ import org.keycloak.sdjwt.vp.SdJwtVP;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.junit.Test;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_ISSUER;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
@@ -118,6 +120,10 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
                 credentialBuildConfig.getCredentialType(),
                 jwt.getPayload().get(CLAIM_NAME_VCT).asText());
 
+        assertEquals("The expiry should be included",
+                TEST_EXPIRATION_DATE.getEpochSecond(),
+                jwt.getPayload().get(CLAIM_NAME_EXP).asLong());
+
         assertEquals("The JWS token type should be included",
                 credentialBuildConfig.getTokenJwsType(),
                 jwt.getJwsHeader().getType());
@@ -132,7 +138,7 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
         List<String> disclosed = sdJwt.getDisclosures().values().stream().toList();
         assertEquals("All undisclosed claims and decoys should be provided.",
                 disclosed.size() + (decoys == 0 ? SdJwt.DEFAULT_NUMBER_OF_DECOYS : decoys),
-                     sdArrayNode == null ? 0 : sdArrayNode.size());
+                sdArrayNode == null ? 0 : sdArrayNode.size());
 
         visibleClaims.forEach(vc ->
                 assertTrue("The visible claims should be present within the token.",
@@ -141,12 +147,13 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
 
         // Will check disclosure conformity
         sdJwt.getSdJwtVerificationContext()
-             .verifyIssuance(List.of(exampleVerifier()),
-                             IssuerSignedJwtVerificationOpts.builder()
-                                                            .withIatCheck(true)
-                                                            .withNbfCheck(true)
-                                                            .withExpCheck(true)
-                                                            .build(),
-                             null);
+                .verifyIssuance(List.of(exampleVerifier()),
+                        IssuerSignedJwtVerificationOpts.builder()
+                                .withIatCheck(true)
+                                .withNbfCheck(true)
+                                // We test that exp exists, but 2000 isn't a valid value
+                                .removeCheck(ClaimVerifier.ExpCheck.class::isInstance)
+                                .build(),
+                        null);
     }
 }
