@@ -17,7 +17,6 @@
 package org.keycloak.sdjwt;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -45,10 +44,5 @@ public class DisclosureRedList {
 
     public boolean isRedListedClaimName(SdJwtClaimName claimName) {
         return redListClaimNames.contains(claimName);
-    }
-
-    public boolean containsRedListedClaimNames(Collection<SdJwtClaimName> claimNames) {
-        return !redListClaimNames.isEmpty() && !claimNames.isEmpty()
-                && !Collections.disjoint(redListClaimNames, claimNames);
     }
 }
