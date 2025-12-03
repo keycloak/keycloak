@@ -332,18 +332,21 @@ public class UPConfigUtils {
     }
 
     public static UPConfig parseUserProfileConfig(String resource) {
-        return parseConfig(getUserProfileConfig(resource));
+        try (InputStream inputStream = getUserProfileConfig(resource)) {
+            return parseConfig(inputStream);
+        } catch (IOException ioe) {
+            throw new RuntimeException("Failed to parse user profile configuration: " + resource, ioe);
+        }
     }
 
     public static UPConfig parseConfig(Path configPath) {
         if (configPath == null) {
             throw new IllegalArgumentException("Null configPath");
         }
-
         try (InputStream is = new FileInputStream(configPath.toFile())) {
             return parseConfig(is);
         } catch (IOException ioe) {
-            throw new RuntimeException("Failed to reaad default user profile configuration: " + configPath, ioe);
+            throw new RuntimeException("Failed to read default user profile configuration: " + configPath, ioe);
         }
     }
 

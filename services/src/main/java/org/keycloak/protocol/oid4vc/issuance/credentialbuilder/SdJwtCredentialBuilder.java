@@ -76,9 +76,9 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
 
         // Put inner claims into the disclosure spec, except the one to be kept visible
         DisclosureSpec.Builder disclosureSpecBuilder = DisclosureSpec.builder();
-        List<String> outerClaims = credentialBuildConfig.getSdJwtVisibleClaims();
+        List<String> visibleClaims = credentialBuildConfig.getSdJwtVisibleClaims();
         claims.keySet().stream()
-                .filter(it -> !outerClaims.contains(it))
+                .filter(it -> !visibleClaims.contains(it))
                 .forEach(it -> {
                     disclosureSpecBuilder.withUndisclosedClaim(it, SdJwtUtils.randomSalt());
                 });

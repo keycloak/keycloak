@@ -104,7 +104,7 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
         String userAttribute = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
         boolean aggregate = Optional.ofNullable(mapperModel.getConfig().get(AGGREGATE_ATTRIBUTES_KEY))
                 .map(Boolean::parseBoolean).orElse(false);
-        var attributes = KeycloakModelUtils.resolveAttribute(userModel, userAttribute, aggregate).stream()
+        List<String> attributes = KeycloakModelUtils.resolveAttribute(userModel, userAttribute, aggregate).stream()
                 .filter(Objects::nonNull)
                 .toList();
         if (!attributes.isEmpty()) {
