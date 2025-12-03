@@ -63,6 +63,17 @@ public class ProtocolMappersUpdater extends ServerResourceUpdater<ProtocolMapper
         return this;
     }
 
+    public ProtocolMappersUpdater removeByName(String name) {
+        for (Iterator<ProtocolMapperRepresentation> it = rep.iterator(); it.hasNext();) {
+            ProtocolMapperRepresentation mapper = it.next();
+            if (name.equals(mapper.getName())) {
+                it.remove();
+                break;
+            }
+        }
+        return this;
+    }
+
     private void update(List<ProtocolMapperRepresentation> expectedMappers) {
         List<ProtocolMapperRepresentation> currentMappers = resource.getMappers();
 

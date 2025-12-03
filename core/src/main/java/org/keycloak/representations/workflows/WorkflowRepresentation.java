@@ -8,6 +8,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
@@ -25,6 +26,7 @@ import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WI
 
 @JsonPropertyOrder({"id", CONFIG_NAME, CONFIG_USES, CONFIG_ENABLED, CONFIG_ON_EVENT, CONFIG_CONCURRENCY, CONFIG_IF, CONFIG_STEPS, CONFIG_STATE})
 @JsonIgnoreProperties(CONFIG_WITH)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public final class WorkflowRepresentation extends AbstractWorkflowComponentRepresentation {
 
     public static Builder withName(String name) {
@@ -137,7 +139,6 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
             return false;
         }
         WorkflowRepresentation that = (WorkflowRepresentation) obj;
-        // TODO: include state in comparison?
         return Objects.equals(getConfig(), that.getConfig()) && Objects.equals(getSteps(), that.getSteps());
     }
 

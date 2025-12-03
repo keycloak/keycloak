@@ -8,6 +8,7 @@ import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.admin.v2.ClientRepresentation;
 
@@ -22,10 +23,13 @@ public interface ClientApi {
     @Produces(MediaType.APPLICATION_JSON)
     ClientRepresentation getClient();
 
+    /**
+     * @return {@link ClientRepresentation} of created/updated client
+     */
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    ClientRepresentation createOrUpdateClient(@Valid ClientRepresentation client);
+    Response createOrUpdateClient(@Valid ClientRepresentation client);
 
     @PATCH
     @Consumes(CONTENT_TYPE_MERGE_PATCH)

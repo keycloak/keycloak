@@ -24,6 +24,8 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.jose.JOSE;
 import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -92,6 +94,14 @@ public class JWSInput implements JOSE {
     }
 
     public <T> T readJsonContent(Class<T> type) throws JWSInputException {
+        try {
+            return JsonSerialization.readValue(content, type);
+        } catch (IOException e) {
+            throw new JWSInputException(e);
+        }
+    }
+
+    public <T> T readJsonContent(TypeReference<T> type) throws JWSInputException {
         try {
             return JsonSerialization.readValue(content, type);
         } catch (IOException e) {
