@@ -46,7 +46,7 @@ class MSSQLServerTestDatabase extends AbstractContainerTestDatabase {
 
     @Override
     public String getJdbcUrl(boolean internal) {
-        return super.getJdbcUrl(internal) + ";integratedSecurity=false;encrypt=false;trustServerCertificate=true;sendStringParametersAsUnicode=false;";
+        return super.getJdbcUrl(internal) + ";integratedSecurity=false;encrypt=false;trustServerCertificate=true;sendStringParametersAsUnicode=false;databaseName=" + getDatabase();
     }
 
     @Override
@@ -64,7 +64,9 @@ class MSSQLServerTestDatabase extends AbstractContainerTestDatabase {
 
     @Override
     public List<String> getPostStartCommand() {
-        return List.of("/opt/mssql-tools18/bin/sqlcmd", "-U", "sa", "-P", getPassword(), "-No", "-Q", "CREATE DATABASE " + getDatabase() + "; ALTER DATABASE " + getDatabase() + " SET READ_COMMITTED_SNAPSHOT ON;");
+        return List.of("/opt/mssql-tools18/bin/sqlcmd", "-U", "sa", "-P", getPassword(), "-No", "-Q", "CREATE DATABASE " + getDatabase() + "; " +
+                // READ_COMMITTED_SNAPSHOT is recommended for MSSQL to avoid deadlocks
+                "ALTER DATABASE " + getDatabase() + " SET READ_COMMITTED_SNAPSHOT ON;");
     }
 
     @Override
