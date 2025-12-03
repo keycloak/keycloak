@@ -365,7 +365,12 @@ You then need to disable it by setting the parameter `sql_generate_invisible_pri
 
 On MS SQL Server, the default transaction isolation level is `READ_COMMITTED`, which can lead to deadlocks during high load. Therefore, the recommended isolation level for {project_name} is `READ_COMMITTED_SNAPSHOT`. This isolation level is used by default on Azure SQL.
 
-However, on MS SQL Server, the database isolation level needs to be modified by executing the following command on your database: `ALTER DATABASE [your-database-name] SET READ_COMMITTED_SNAPSHOT ON;`
+However, on MS SQL Server, the database isolation level needs to be modified by executing the following command on your database:
+
+[source,sql]
+----
+ALTER DATABASE <your-database-name> SET READ_COMMITTED_SNAPSHOT ON;
+----
 
 == Changing database locking timeout in a cluster configuration
 

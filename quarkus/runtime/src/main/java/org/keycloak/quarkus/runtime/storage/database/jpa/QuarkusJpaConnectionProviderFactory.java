@@ -342,7 +342,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
                 String option = rs.getString(1);
                 String value = rs.getString(2);
                 if ("isolation level".equalsIgnoreCase(option) && (!"read committed snapshot".equalsIgnoreCase(value))) {
-                    logger.warnf("%s 'isolation level' for database '%s' is set to '%s'. Keycloak requires 'read committed snapshot' isolation level to function properly. Please adjust the isolation level by executing 'ALTER DATABASE <database_name> SET READ_COMMITTED_SNAPSHOT ON'.", vendor, dbName, rs.getString(2));
+                    logger.warnf("%s 'isolation level' for database '%s' is set to '%s'. Keycloak recommends 'read committed snapshot' isolation level to avoid deadlocks under high load. Please adjust the isolation level by executing 'ALTER DATABASE <database_name> SET READ_COMMITTED_SNAPSHOT ON'.", vendor, dbName, rs.getString(2));
                 }
             }
         } catch (SQLException e) {

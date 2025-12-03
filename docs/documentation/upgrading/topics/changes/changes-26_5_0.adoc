@@ -54,6 +54,18 @@ The SPIFFE Identity Provider preview feature now uses the `trustDomain` configur
 was done to make it more explicit that a `trustDomain` is configured and not the `iss` of the token, which is
 usually not set in SPIFFE JWT SVIDs.
 
+=== Running on Microsoft SQL Server now recommends READ_COMMITTED_SNAPSHOT
+
+On MS SQL Server, the default transaction isolation level is `READ_COMMITTED`, which can lead to deadlocks during high load. Therefore, the recommended isolation level for {project_name} is `READ_COMMITTED_SNAPSHOT`.
+
+Use the following statement to changes this for your database:
+
+[source,sql]
+----
+ALTER DATABASE [your-database-name] SET READ_COMMITTED_SNAPSHOT ON;
+----
+
+
 === `session_state` and `sid` are no longer UUIDs
 
 In OpenID connect, there are several places where the protocol shares a `session_state` and a `sid`.
