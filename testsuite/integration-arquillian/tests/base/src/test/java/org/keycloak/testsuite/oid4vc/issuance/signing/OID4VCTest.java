@@ -105,6 +105,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest.TIME_PROVIDER;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getCredentialIssuer;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getJtiGeneratedIdMapper;
@@ -327,6 +328,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	public List<ProtocolMapperRepresentation> getProtocolMappers(String scopeName) {
 		return List.of(
+                getSubjectIdMapper(CLAIM_NAME_SUBJECT_ID, "username"), //USER_ATTRIBUTE_NAME_DID),
 				getUserAttributeMapper("email", "email"),
 				getUserAttributeMapper("firstName", "firstName"),
 				getUserAttributeMapper("lastName", "lastName"),
@@ -525,7 +527,21 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 		return protocolMapperRepresentation;
 	}
 
-	protected ProtocolMapperRepresentation getIssuedAtTimeMapper(String subjectProperty, String truncateToTimeUnit, String valueSource) {
+    protected ProtocolMapperRepresentation getSubjectIdMapper(String subjectProperty, String attributeName) {
+        ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
+        protocolMapperRepresentation.setName(attributeName + "-mapper");
+        protocolMapperRepresentation.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
+        protocolMapperRepresentation.setId(UUID.randomUUID().toString());
+        protocolMapperRepresentation.setProtocolMapper("oid4vc-subject-id-mapper");
+        protocolMapperRepresentation.setConfig(
+                Map.of(
+                        "claim.name", subjectProperty,
+                        "userAttribute", attributeName)
+        );
+        return protocolMapperRepresentation;
+    }
+
+    protected ProtocolMapperRepresentation getIssuedAtTimeMapper(String subjectProperty, String truncateToTimeUnit, String valueSource) {
 		ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
 		protocolMapperRepresentation.setName(subjectProperty + "-oid4vc-issued-at-time-claim-mapper");
 		protocolMapperRepresentation.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
