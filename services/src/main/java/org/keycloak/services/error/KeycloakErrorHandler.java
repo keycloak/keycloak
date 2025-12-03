@@ -9,6 +9,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jakarta.validation.ValidationException;
+import org.jboss.logging.Logger;
+import org.jboss.logging.MDC;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
@@ -31,6 +33,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.util.RequestIdUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.theme.beans.LocaleBean;
@@ -56,6 +59,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
     public static final String UNCAUGHT_SERVER_ERROR_TEXT = "Uncaught server error";
     public static final String ERROR_RESPONSE_TEXT = "Error response {0}";
+    public static final String ERROR_ID = "error.id";
+    public static final String ERROR_ATTRIBUTE_ID = "errorId";
 
     @Override
     public Response toResponse(Throwable throwable) {
@@ -82,9 +87,16 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         Response.Status responseStatus = getResponseStatus(throwable);
         boolean isServerError = responseStatus.getFamily().equals(Response.Status.Family.SERVER_ERROR);
 
+        String errorId =  RequestIdUtil.getCurrentRequestId(); //ErrorIdGenerator.generate();
+
+        if (MDC.get(ERROR_ID) == null) {
+            MDC.put(ERROR_ID, errorId);
+        }
+
         if (isServerError) {
             logger.error(UNCAUGHT_SERVER_ERROR_TEXT, throwable);
         } else {
+            // ToDo: Discuss if this should be logged at warn level. Risk of flooding the log files.
             logger.debugv(throwable, ERROR_RESPONSE_TEXT, responseStatus);
         }
 
@@ -121,6 +133,10 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
             FreeMarkerProvider freeMarker = session.getProvider(FreeMarkerProvider.class);
             Map<String, Object> attributes = initAttributes(session, realm, theme, locale, responseStatus);
+
+            if (!attributes.containsKey(ERROR_ATTRIBUTE_ID)) {
+                attributes.put(ERROR_ATTRIBUTE_ID, errorId);
+            }
 
             String templateName = "error.ftl";
 
