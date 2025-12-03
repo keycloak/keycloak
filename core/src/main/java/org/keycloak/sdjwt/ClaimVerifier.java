@@ -459,11 +459,8 @@ public class ClaimVerifier {
 
         public Builder withIatCheck(Integer allowedMaxAge, boolean isCheckOptional) {
             this.allowedMaxAge = Optional.ofNullable(allowedMaxAge).orElse(0);
-            contentVerifiers.removeIf(verifier -> {
-                return verifier instanceof ClaimVerifier.IatLifetimeCheck ||
-                    (verifier instanceof ClaimVerifier.ClaimCheck
-                        && ((ClaimCheck) verifier).getClaimName().equalsIgnoreCase(OID4VCConstants.CLAIM_NAME_IAT));
-            });
+            contentVerifiers.removeIf(verifier -> 
+                isTypeOrNamedCheck(verifier, ClaimVerifier.IatLifetimeCheck.class, OID4VCConstants.CLAIM_NAME_IAT));
             if (allowedMaxAge != null) {
                 contentVerifiers.add(new ClaimVerifier.IatLifetimeCheck(Optional.ofNullable(clockSkew).orElse(0),
                                                                         allowedMaxAge,
@@ -478,11 +475,8 @@ public class ClaimVerifier {
         }
 
         public Builder withNbfCheck(boolean isCheckOptional) {
-            contentVerifiers.removeIf(verifier -> {
-                return verifier instanceof ClaimVerifier.NbfCheck ||
-                    (verifier instanceof ClaimVerifier.ClaimCheck
-                        && ((ClaimCheck) verifier).getClaimName().equalsIgnoreCase(OID4VCConstants.CLAIM_NAME_NBF));
-            });
+            contentVerifiers.removeIf(verifier ->
+                    isTypeOrNamedCheck(verifier, ClaimVerifier.NbfCheck.class, OID4VCConstants.CLAIM_NAME_NBF));
             if (clockSkew != null) {
                 contentVerifiers.add(new ClaimVerifier.NbfCheck(clockSkew, isCheckOptional));
             }
@@ -495,11 +489,8 @@ public class ClaimVerifier {
         }
 
         public Builder withExpCheck(boolean isCheckOptional) {
-            contentVerifiers.removeIf(verifier -> {
-                return verifier instanceof ClaimVerifier.ExpCheck ||
-                    (verifier instanceof ClaimVerifier.ClaimCheck
-                        && ((ClaimCheck) verifier).getClaimName().equalsIgnoreCase(OID4VCConstants.CLAIM_NAME_EXP));
-            });
+            contentVerifiers.removeIf(verifier ->
+                    isTypeOrNamedCheck(verifier, ClaimVerifier.ExpCheck.class, OID4VCConstants.CLAIM_NAME_EXP));
             if (clockSkew != null) {
                 contentVerifiers.add(new ClaimVerifier.ExpCheck(clockSkew, isCheckOptional));
             }
@@ -507,11 +498,8 @@ public class ClaimVerifier {
         }
 
         public Builder withAudCheck(String expectedAud) {
-            contentVerifiers.removeIf(verifier -> {
-                return verifier instanceof ClaimVerifier.AudienceCheck ||
-                    (verifier instanceof ClaimVerifier.ClaimCheck
-                        && ((ClaimCheck) verifier).getClaimName().equalsIgnoreCase(JsonWebToken.AUD));
-            });
+            contentVerifiers.removeIf(verifier ->
+                    isTypeOrNamedCheck(verifier, ClaimVerifier.AudienceCheck.class, JsonWebToken.AUD));
             if (expectedAud != null) {
                 contentVerifiers.add(new ClaimVerifier.AudienceCheck(expectedAud));
             }
@@ -523,10 +511,7 @@ public class ClaimVerifier {
         }
 
         public Builder withClaimCheck(String claimName, String expectedValue, boolean isOptionalCheck) {
-            contentVerifiers.removeIf(verifier -> {
-                return verifier instanceof ClaimVerifier.ClaimCheck &&
-                    ((ClaimVerifier.ClaimCheck) verifier).getClaimName().equals(claimName);
-            });
+            contentVerifiers.removeIf(verifier -> isNamedCheck(verifier, claimName));
             if (expectedValue != null) {
                 contentVerifiers.add(new ClaimVerifier.ClaimCheck(claimName, expectedValue, isOptionalCheck));
             }
@@ -544,9 +529,21 @@ public class ClaimVerifier {
             return this;
         }
 
-        public ClaimVerifier build() {
+        public Builder removeCheck(java.util.function.Predicate<Predicate<ObjectNode>> filter) {
+            contentVerifiers.removeIf(filter);
+            return this;
+        }
 
+        public ClaimVerifier build() {
             return new ClaimVerifier(headerVerifiers, contentVerifiers);
+        }
+
+        private boolean isTypeOrNamedCheck(Predicate<?> it, Class<?> type, String claimName) {
+            return type.isInstance(it) || isNamedCheck(it, claimName);
+        }
+
+        private boolean isNamedCheck(Predicate<?> it, String claimName) {
+            return it instanceof ClaimCheck && ((ClaimCheck) it).getClaimName().equalsIgnoreCase(claimName);
         }
     }
 }
