@@ -22,8 +22,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import org.keycloak.config.LoggingOptions;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -32,16 +35,16 @@ import picocli.CommandLine.Option;
 @Command(name = ServiceCreate.NAME,
         header = "Create a Keycloak Windows service.",
         description = {
-                "%nCreate a Windows service that runs Keycloak using 'kc.bat start'.",
-                "",
-                "This command requires prunsrv.exe to be present in the bin directory.",
-                "Download it from https://downloads.apache.org/commons/daemon/binaries/windows/",
-                "",
-                "The service runs in exe mode, executing kc.bat as an external process.",
-                "This means all environment variables and configuration files are respected.",
-                "",
-                "For faster startup, run 'kc.bat build' before creating the service.",
-                "Without a pre-build, the first service start will be slower as it builds."
+            "%nCreate a Windows service that runs Keycloak using 'kc.bat start'.",
+            "",
+            "This command requires prunsrv.exe to be present in the bin directory.",
+            "Download it from https://downloads.apache.org/commons/daemon/binaries/windows/",
+            "",
+            "The service runs in exe mode, executing kc.bat as an external process.",
+            "This means all environment variables and configuration files are respected.",
+            "",
+            "For faster startup, run 'kc.bat build' before creating the service.",
+            "Without a pre-build, the first service start will be slower as it builds."
         },
         footerHeading = "Examples:",
         footer = { "  Create with default settings:%n%n"
@@ -53,6 +56,8 @@ import picocli.CommandLine.Option;
 public class ServiceCreate extends AbstractCommand {
 
     public static final String NAME = "create";
+
+    public static final String SERVICE_PASSWORD_ENV = "KC_SERVICE_PASSWORD";
 
     private static final String DEFAULT_SERVICE_NAME = "keycloak";
     private static final String DEFAULT_DISPLAY_NAME = "Keycloak Server";
@@ -83,7 +88,7 @@ public class ServiceCreate extends AbstractCommand {
     String serviceUser;
 
     @Option(names = "--service-password",
-            description = "The password for the service user account.")
+            description = "The password for the service user account. Can also be set via the " + SERVICE_PASSWORD_ENV + " environment variable.")
     String servicePassword;
 
     @Option(names = "--stop-timeout",
@@ -101,14 +106,24 @@ public class ServiceCreate extends AbstractCommand {
     }
 
     @Override
+    public boolean isHelpAll() {
+        return false;
+    }
+
+    @Override
     protected void runCommand() {
         if (!Environment.isWindows()) {
             executionError(spec.commandLine(), "Windows service management is only available on Windows.");
         }
 
-        Path homePath = Environment.getHomePath().orElseThrow(() ->
-                new CommandLine.ExecutionException(spec.commandLine(),
-                        "Could not determine Keycloak home directory"));
+        // Check for password from environment variable if not provided via command line
+        if (servicePassword == null || servicePassword.isEmpty()) {
+            servicePassword = System.getenv(SERVICE_PASSWORD_ENV);
+        }
+
+        Path homePath = Environment.getHomePath().orElseThrow(() -> 
+            new CommandLine.ExecutionException(spec.commandLine(), 
+                "Could not determine Keycloak home directory"));
 
         Path prunsrvPath = homePath.resolve("bin").resolve("prunsrv.exe");
         if (!Files.exists(prunsrvPath)) {
@@ -122,8 +137,19 @@ public class ServiceCreate extends AbstractCommand {
             executionError(spec.commandLine(), "kc.bat not found at " + kcBatPath);
         }
 
-        // Ensure log directory exists
-        Path logPath = homePath.resolve("log");
+        // If a custom log file location is set, the service wrapper logs are stored in the same directory
+        Path logPath;
+        Optional<String> logFileOption = Configuration.getOptionalKcValue(LoggingOptions.LOG_FILE);
+        if (logFileOption.isPresent()) {
+            Path logFile = Path.of(logFileOption.get());
+            if (!logFile.isAbsolute()) {
+                logFile = homePath.resolve(logFile);
+            }
+            logPath = logFile.getParent();
+        } else {
+            logPath = homePath.resolve("data").resolve("log");
+        }
+
         try {
             Files.createDirectories(logPath);
         } catch (IOException e) {
@@ -150,8 +176,8 @@ public class ServiceCreate extends AbstractCommand {
                 picocli.println("To start the service, run as Administrator:");
                 picocli.println("   net start " + serviceName);
             } else {
-                executionError(spec.commandLine(),
-                        "Failed to create service '" + serviceName + "'. Exit code: " + exitCode);
+                executionError(spec.commandLine(), 
+                    "Failed to create service '" + serviceName + "'. Exit code: " + exitCode);
             }
         } catch (IOException | InterruptedException e) {
             executionError(spec.commandLine(), "Failed to execute prunsrv: " + e.getMessage(), e);
@@ -186,8 +212,6 @@ public class ServiceCreate extends AbstractCommand {
 
         cmd.add("--LogPath=" + logPath);
         cmd.add("--LogLevel=Info");
-        cmd.add("--StdOutput=auto");
-        cmd.add("--StdError=auto");
 
         // Configure service account
         if (serviceUser != null && !serviceUser.isEmpty()) {

@@ -58,6 +58,11 @@ public class ServiceDelete extends AbstractCommand {
     }
 
     @Override
+    public boolean isHelpAll() {
+        return false;
+    }
+
+    @Override
     protected void runCommand() {
         if (!Environment.isWindows()) {
             executionError(spec.commandLine(), "Windows service management is only available on Windows.");

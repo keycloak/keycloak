@@ -17,16 +17,21 @@
 
 package org.keycloak.it.cli.dist;
 
+import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.regex.Pattern;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.command.BootstrapAdmin;
 import org.keycloak.quarkus.runtime.cli.command.BootstrapAdminService;
 import org.keycloak.quarkus.runtime.cli.command.BootstrapAdminUser;
@@ -45,7 +50,7 @@ import org.approvaltests.Approvals;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.OS;
+import picocli.CommandLine;
 
 import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
@@ -193,7 +198,7 @@ public class HelpCommandDistTest {
             for (String cmd : List.of("", "start", "start-dev", "build")) {
                 String debugOption = "--debug";
 
-                if (OS.WINDOWS.isCurrentOs()) {
+                if (Environment.isWindows()) {
                     debugOption = "--debug=8787";
                 }
 
@@ -213,8 +218,7 @@ public class HelpCommandDistTest {
                 .replaceAll("((Disables|Enables) a set of one or more features. Possible values are: )[^.]{30,}", "$1<...>")
                 .replaceAll("(create a metric.\\s+Possible values are:)[^.]{30,}.[^.]*.", "$1<...>");
 
-        String osName = System.getProperty("os.name");
-        if(osName.toLowerCase(Locale.ROOT).contains("windows")) {
+        if (Environment.isWindows()) {
             // On Windows, all output should have at least one "kc.bat" in it.
             MatcherAssert.assertThat(output, Matchers.containsString("kc.bat"));
             output = output.replaceAll("kc.bat", "kc.sh");
@@ -223,6 +227,60 @@ public class HelpCommandDistTest {
             output = output.replaceAll("including\nbuild ", "including build\n");
         }
 
+        CommandLine cmd = createCommandLine();
+        // Determine which commands are hidden
+        List<String> hiddenCommands = getHiddenCommandRegexes(cmd);
+
+        if (!hiddenCommands.isEmpty()) {
+            verifyWithHiddenCommands(output, hiddenCommands);
+        } else {
+            verifyStandard(output);
+        }
+    }
+
+    private CommandLine createCommandLine() {
+        try {
+            Method method = Picocli.class.getDeclaredMethod("createCommandLine", List.class);
+            method.setAccessible(true);
+            return (CommandLine) method.invoke(new Picocli(), Collections.emptyList());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create CommandLine via reflection", e);
+        }
+    }
+
+    private List<String> getHiddenCommandRegexes(CommandLine cmd) {
+        List<String> regexes = new ArrayList<>();
+        for (CommandLine sub : cmd.getSubcommands().values()) {
+            if (sub.getCommandSpec().usageMessage().hidden()) {
+                for (String name : sub.getCommandSpec().names()) {
+                    regexes.add("(?m)^  " + Pattern.quote(name) + ".*\\R");
+                }
+                for (CommandLine subSub : sub.getSubcommands().values()) {
+                    for (String name : subSub.getCommandSpec().names()) {
+                        regexes.add("(?m)^    " + Pattern.quote(name) + ".*\\R");
+                    }
+                }
+            }
+        }
+        return regexes;
+    }
+
+    private void verifyWithHiddenCommands(String output, List<String> hiddenCommandRegexes) {
+        File approvedFile = Approvals.createApprovalNamer().getApprovedFile(".txt");
+        try {
+            String expected = FileUtils.readFileToString(approvedFile, StandardCharsets.UTF_8);
+            expected = expected.replace("\r\n", "\n");
+            output = output.replace("\r\n", "\n");
+            for (String regex : hiddenCommandRegexes) {
+                expected = expected.replaceAll(regex, "");
+            }
+            MatcherAssert.assertThat(output.trim(), Matchers.equalTo(expected.trim()));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read approved file", e);
+        }
+    }
+
+    private void verifyStandard(String output) {
         try {
             Approvals.verify(output);
         } catch (Error cause) {

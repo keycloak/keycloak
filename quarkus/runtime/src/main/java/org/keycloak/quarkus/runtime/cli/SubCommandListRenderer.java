@@ -52,7 +52,9 @@ class SubCommandListRenderer implements CommandLine.IHelpSectionRenderer {
 
     private void addHierarchy(Collection<CommandLine> collection, CommandLine.Help.TextTable textTable,
             String indent) {
-        collection.stream().distinct().forEach(subcommand -> {
+        collection.stream().distinct()
+                .filter(subcommand -> !subcommand.getCommandSpec().usageMessage().hidden())
+                .forEach(subcommand -> {
             // create comma-separated list of command name and aliases
             String names = String.join(", ", subcommand.getCommandSpec().names());
             String description = description(subcommand.getCommandSpec().usageMessage());

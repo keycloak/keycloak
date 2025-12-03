@@ -47,13 +47,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Tests for the Windows service lifecycle using Apache Commons Daemon (Procrun).
- * 
- * The service is created in exe mode to run 'kc.bat start', which handles
- * automatic re-augmentation if needed. The service respects all environment
- * variables and configuration files.
- */
 @EnabledOnOs(value = OS.WINDOWS, disabledReason = "Windows service tests are only applicable on Windows")
 @DistributionTest
 @RawDistOnly(reason = "Windows service management requires raw distribution")
@@ -109,14 +102,6 @@ public class WindowsServiceDistTest {
         }
     }
 
-    /**
-     * Comprehensive test for the Windows service lifecycle including:
-     * - Service creation with custom name and display name
-     * - Service start and Keycloak accessibility verification
-     * - Log file verification (Keycloak file logging)
-     * - Service stop
-     * - Service deletion
-     */
     @Test
     void testServiceLifecycle() throws Exception {
         assertPrunsrvAvailable();
@@ -125,7 +110,6 @@ public class WindowsServiceDistTest {
         String customDisplayName = "Keycloak Test Service " + testServiceName;
         String customDescription = "Keycloak integration test service";
 
-        // Configure runtime options in keycloak.conf (including file logging)
         rawDist.setProperty("http-enabled", "true");
         rawDist.setProperty("hostname-strict", "false");
         rawDist.setProperty("log", "console,file");
@@ -183,10 +167,10 @@ public class WindowsServiceDistTest {
         }
     }
 
-    private boolean waitForKeycloakReady(int timeoutSeconds) {
+    private boolean waitForKeycloakReady() {
         try {
             org.awaitility.Awaitility.await()
-                    .atMost(timeoutSeconds, TimeUnit.SECONDS)
+                    .atMost(SERVICE_START_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                     .pollInterval(2, TimeUnit.SECONDS)
                     .until(this::isKeycloakAccessible);
             return true;
@@ -253,7 +237,7 @@ public class WindowsServiceDistTest {
         return true;
     }
 
-    private void deleteService() throws IOException, InterruptedException {
+    private void deleteService() {
         rawDist.run("service", "delete", "--name=" + testServiceName);
     }
 
@@ -315,10 +299,6 @@ public class WindowsServiceDistTest {
         } catch (org.awaitility.core.ConditionTimeoutException e) {
             return false;
         }
-    }
-
-    private boolean waitForKeycloakReady() {
-        return waitForKeycloakReady(SERVICE_START_TIMEOUT_SECONDS);
     }
 
     private boolean isKeycloakAccessible() {

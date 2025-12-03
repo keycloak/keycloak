@@ -17,6 +17,8 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import org.keycloak.quarkus.runtime.Environment;
+
 import picocli.CommandLine.Command;
 
 @Command(name = Service.NAME,
@@ -25,5 +27,12 @@ import picocli.CommandLine.Command;
 public class Service {
 
     public static final String NAME = "service";
+
+    /**
+     * Returns true if this command should be hidden (i.e., on non-Windows platforms).
+     */
+    public static boolean shouldBeHidden() {
+        return !Environment.isWindows();
+    }
 
 }
