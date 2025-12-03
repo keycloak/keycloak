@@ -43,6 +43,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
@@ -414,7 +415,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
 
     @Test
     public void testUploadJWKS() throws Exception {
-        testUploadKeystore(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.JSON_WEB_KEY_SET, "clientreg-test/jwks.json", "undefined", "undefined");
+        testUploadKeystore(CertificateInfoHelper.JSON_WEB_KEY_SET, "clientreg-test/jwks.json", "undefined", "undefined");
     }
 
     // TEST ERRORS

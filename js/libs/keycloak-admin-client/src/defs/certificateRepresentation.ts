@@ -6,4 +6,5 @@ export default interface CertificateRepresentation {
   publicKey?: string;
   certificate?: string;
   kid?: string;
+  jwks?: string;
 }
