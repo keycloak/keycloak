@@ -8,7 +8,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -28,19 +28,24 @@ public interface WorkflowResource {
     @Produces(APPLICATION_JSON)
     WorkflowRepresentation toRepresentation();
 
+    @Path("activate-all")
+    @POST
+    void activateAll();
+
+    @Path("activate-all")
+    @POST
+    void activateAll(@QueryParam("notBefore") String notBefore);
+
     @Path("activate/{type}/{resourceId}")
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
     void activate(@PathParam("type") String type, @PathParam("resourceId") String resourceId);
 
     @Path("activate/{type}/{resourceId}")
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    void activate(@PathParam("type") String type, @PathParam("resourceId") String resourceId, String notBefore);
+    void activate(@PathParam("type") String type, @PathParam("resourceId") String resourceId, @QueryParam("notBefore") String notBefore);
 
     @Path("deactivate/{type}/{resourceId}")
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
     void deactivate(@PathParam("type") String type, @PathParam("resourceId") String resourceId);
 
 }
