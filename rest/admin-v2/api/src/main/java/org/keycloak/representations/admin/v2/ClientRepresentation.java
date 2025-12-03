@@ -1,6 +1,7 @@
 package org.keycloak.representations.admin.v2;
 
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import jakarta.validation.Valid;
@@ -211,6 +212,21 @@ public class ClientRepresentation extends BaseRepresentation {
         public void setCertificate(String certificate) {
             this.certificate = certificate;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Auth auth)) return false;
+            return Objects.equals(enabled, auth.enabled)
+                    && Objects.equals(method, auth.method)
+                    && Objects.equals(secret, auth.secret)
+                    && Objects.equals(certificate, auth.certificate);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(enabled, method, secret, certificate);
+        }
     }
 
     @JsonInclude(JsonInclude.Include.NON_ABSENT)
@@ -238,5 +254,44 @@ public class ClientRepresentation extends BaseRepresentation {
         public void setRoles(Set<String> roles) {
             this.roles = roles;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof ServiceAccount that)) return false;
+            return Objects.equals(enabled, that.enabled)
+                    && Objects.equals(roles, that.roles);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(enabled, roles);
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ClientRepresentation that = (ClientRepresentation) o;
+        return Objects.equals(clientId, that.clientId)
+                && Objects.equals(displayName, that.displayName)
+                && Objects.equals(description, that.description)
+                && Objects.equals(protocol, that.protocol)
+                && Objects.equals(enabled, that.enabled)
+                && Objects.equals(appUrl, that.appUrl)
+                && Objects.equals(appRedirectUrls, that.appRedirectUrls)
+                && Objects.equals(loginFlows, that.loginFlows)
+                && Objects.equals(auth, that.auth)
+                && Objects.equals(webOrigins, that.webOrigins)
+                && Objects.equals(roles, that.roles)
+                && Objects.equals(serviceAccount, that.serviceAccount);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(clientId, displayName, description, protocol, enabled, appUrl, appRedirectUrls,
+                loginFlows, auth, webOrigins, roles, serviceAccount
+        );
     }
 }
