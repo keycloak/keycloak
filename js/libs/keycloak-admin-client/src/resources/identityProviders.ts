@@ -3,6 +3,7 @@ import type IdentityProviderMapperRepresentation from "../defs/identityProviderM
 import type { IdentityProviderMapperTypeRepresentation } from "../defs/identityProviderMapperTypeRepresentation.js";
 import type IdentityProviderRepresentation from "../defs/identityProviderRepresentation.js";
 import type { ManagementPermissionReference } from "../defs/managementPermissionReference.js";
+import type CertificateRepresentation from "../defs/certificateRepresentation.js";
 import Resource from "./resource.js";
 
 export interface PaginatedQuery {
@@ -48,6 +49,15 @@ export class IdentityProviders extends Resource<{ realm?: string }> {
     path: "/instances/{alias}",
     urlParamKeys: ["alias"],
     catchNotFound: true,
+  });
+
+  public uploadCertificate = this.makeUpdateRequest<
+    {},
+    FormData,
+    CertificateRepresentation
+  >({
+    method: "POST",
+    path: "/upload-certificate",
   });
 
   public update = this.makeUpdateRequest<

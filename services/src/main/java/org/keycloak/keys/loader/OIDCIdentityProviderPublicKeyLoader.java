@@ -17,16 +17,7 @@
 
 package org.keycloak.keys.loader;
 
-import java.security.PublicKey;
-import java.util.Collections;
-
-import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
-import org.keycloak.common.util.KeyUtils;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantConfig;
 import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
@@ -34,6 +25,8 @@ import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
 import org.keycloak.util.JWKSUtils;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
@@ -45,9 +38,9 @@ public class OIDCIdentityProviderPublicKeyLoader implements PublicKeyLoader {
     private static final Logger logger = Logger.getLogger(OIDCIdentityProviderPublicKeyLoader.class);
 
     private final KeycloakSession session;
-    private final OIDCIdentityProviderConfig config;
+    private final JWTAuthorizationGrantConfig config;
 
-    public OIDCIdentityProviderPublicKeyLoader(KeycloakSession session, OIDCIdentityProviderConfig config) {
+    public OIDCIdentityProviderPublicKeyLoader(KeycloakSession session, JWTAuthorizationGrantConfig config) {
         this.session = session;
         this.config = config;
     }
@@ -59,36 +52,18 @@ public class OIDCIdentityProviderPublicKeyLoader implements PublicKeyLoader {
             JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, jwksUrl);
             return JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG, true);
         } else {
+            String publicKeySignatureVerifier = config.getPublicKeySignatureVerifier();
+            if (StringUtil.isBlank(publicKeySignatureVerifier)) {
+                return PublicKeysWrapper.EMPTY;
+            }
             try {
-            	KeyWrapper publicKey = getSavedPublicKey();
-                if (publicKey == null) {
-                    return PublicKeysWrapper.EMPTY;
-                }
-                return new PublicKeysWrapper(Collections.singletonList(publicKey));
+                // only load jwks, direct pem public key needs to load a hardcoded key locator
+                JSONWebKeySet jwks = JsonSerialization.readValue(publicKeySignatureVerifier, JSONWebKeySet.class);
+                return JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG);
             } catch (Exception e) {
-                logger.warnf(e, "Unable to retrieve publicKey for verify signature of identityProvider '%s' . Error details: %s", config.getAlias(), e.getMessage());
+                logger.warnf(e, "Unable to retrieve publicKey for verify signature of identityProvider '%s'.", config.getAlias());
                 return PublicKeysWrapper.EMPTY;
             }
         }
-    }
-
-    protected KeyWrapper getSavedPublicKey() throws Exception {
-        KeyWrapper keyWrapper = null;
-        if (config.getPublicKeySignatureVerifier() != null && !config.getPublicKeySignatureVerifier().trim().equals("")) {
-            PublicKey publicKey = PemUtils.decodePublicKey(config.getPublicKeySignatureVerifier());
-            keyWrapper = new KeyWrapper();
-            String presetKeyId = config.getPublicKeySignatureVerifierKeyId();
-            String kid = (presetKeyId == null || presetKeyId.trim().isEmpty())
-              ? KeyUtils.createKeyId(publicKey)
-              : presetKeyId;
-            keyWrapper.setKid(kid);
-            keyWrapper.setType(KeyType.RSA);
-            keyWrapper.setAlgorithm(Algorithm.RS256);
-            keyWrapper.setUse(KeyUse.SIG);
-            keyWrapper.setPublicKey(publicKey);
-        } else {
-            logger.warnf("No public key saved on identityProvider %s", config.getAlias());
-        }
-        return keyWrapper;
     }
 }
