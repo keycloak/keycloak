@@ -440,16 +440,36 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         Integer clientIdle = parseIntAttribute(clientModel.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT));
         Integer clientMax = parseIntAttribute(clientModel.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN));
 
+        if(!rememberMeEnabled) {
+            // Idle Timeout validation
+            if (clientIdle != null && clientIdle > realmIdle) {
+                context.addError(
+                        OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT,
+                        "Client session idle timeout cannot exceed realm SSO session idle timeout",
+                        "clientSessionIdleTimeoutExceedsRealm"
+                );
+            }
 
-        // Idle Timeout validation
-        if (clientIdle != null && clientIdle > realmIdle) {
+            // Max Lifespan validation
+            if (clientMax != null && clientMax > realmMax) {
+                context.addError(
+                        OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN,
+                        "Client session max lifespan cannot exceed realm SSO session max lifespan",
+                        "clientSessionMaxLifespanExceedsRealm"
+                );
+            }
+            return;
+        }
+        int allowedMaxIdleTimeIfRememberMeEnabled = Math.max(realmIdle, realmRememberIdle);
+
+        if(clientIdle != null && clientIdle > allowedMaxIdleTimeIfRememberMeEnabled) {
             context.addError(
                     OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT,
-                    "Client session idle timeout cannot exceed realm SSO session idle timeout",
-                    "clientSessionIdleTimeoutExceedsRealm"
-            );
-        }
+                    "Client session idle timeout cannot exceed realm SSO session idle timeout or RememberMe idle timeout",
+                    "clientIdleExceedsRealmRememberMeIdle"
 
+                    );
+        }
         // Max Lifespan validation
         if (clientMax != null && clientMax > realmMax) {
             context.addError(
@@ -458,15 +478,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
                     "clientSessionMaxLifespanExceedsRealm"
             );
         }
-        // Remember me
-        if(rememberMeEnabled && clientIdle != null && clientIdle > realmRememberIdle){
-            context.addError(
-                    OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT,
-                    "Client session idle timeout cannot exceed realm SSO Remember-Me idle timeout",
-                    "clientIdleExceedsRealmRememberMeIdle"
-            );
 
-        }
     }
     private Integer parseIntAttribute(String value){
         try
