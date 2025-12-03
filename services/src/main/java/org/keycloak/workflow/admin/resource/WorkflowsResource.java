@@ -44,7 +44,7 @@ public class WorkflowsResource {
     }
 
     @POST
-    @Consumes({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
+    @Consumes({YAMLMediaTypes.APPLICATION_JACKSON_YAML, MediaType.APPLICATION_JSON})
     public Response create(WorkflowRepresentation rep) {
         auth.realm().requireManageRealm();
 
@@ -70,7 +70,7 @@ public class WorkflowsResource {
     }
 
     @GET
-    @Produces({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
+    @Produces({YAMLMediaTypes.APPLICATION_JACKSON_YAML, MediaType.APPLICATION_JSON})
     public List<WorkflowRepresentation> list(
             @Parameter(description = "A String representing the workflow name - either partial or exact") @QueryParam("search") String search,
             @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
