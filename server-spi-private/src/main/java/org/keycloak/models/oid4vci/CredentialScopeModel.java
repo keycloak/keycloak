@@ -126,7 +126,7 @@ public class CredentialScopeModel implements ClientScopeModel {
      * key_storage and user_authentication parameters are absent, the key_attestations_required parameter may be empty,
      * indicating a key attestation is needed without additional constraints.
      */
-    public static final String KEY_ATTESTATION_REQUIRED = "vc.key_attestation_required";
+    public static final String KEY_ATTESTATION_REQUIRED = "vc.key_attestations_required";
 
     /**
      * OPTIONAL. A non-empty array defining values specified in Appendix D.2 accepted by the Credential Issuer.
