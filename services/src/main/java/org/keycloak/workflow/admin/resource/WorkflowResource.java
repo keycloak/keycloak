@@ -21,8 +21,15 @@ import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.services.ErrorResponse;
 
 import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.keycloak.services.resources.KeycloakOpenAPI;
+
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
+@Tag(name = KeycloakOpenAPI.Admin.Tags.WORKFLOWS)
 public class WorkflowResource {
 
     private final WorkflowProvider provider;
@@ -34,6 +41,10 @@ public class WorkflowResource {
     }
 
     @DELETE
+    @Operation(
+            summary = "Delete workflow",
+            description = "Delete the workflow and its configuration."
+    )
     public void delete() {
         try {
             provider.removeWorkflow(workflow);
@@ -46,6 +57,11 @@ public class WorkflowResource {
      * Update the workflow configuration. The method does not update the workflow steps.
      */
     @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(
+            summary = "Update workflow",
+            description = "Update the workflow configuration. This method does not update the workflow steps."
+    )
     public void update(WorkflowRepresentation rep) {
         try {
             provider.updateWorkflow(workflow, rep);
@@ -56,8 +72,15 @@ public class WorkflowResource {
 
     @GET
     @Produces({YAMLMediaTypes.APPLICATION_JACKSON_YAML, MediaType.APPLICATION_JSON})
+    @Operation(
+            summary = "Get workflow",
+            description = "Get the workflow representation. Optionally exclude the workflow id from the response."
+    )
     public WorkflowRepresentation toRepresentation(
-            @Parameter(description = "Indicates whether the workflow id should be included in the representation or not - defaults to true") @QueryParam("includeId") Boolean includeId
+            @Parameter(
+                    description = "Indicates whether the workflow id should be included in the representation or not - defaults to true"
+            )
+            @QueryParam("includeId") Boolean includeId
     ) {
         WorkflowRepresentation rep = provider.toRepresentation(workflow);
         if (Boolean.FALSE.equals(includeId)) {
@@ -72,13 +95,29 @@ public class WorkflowResource {
      * @param type the resource type
      * @param resourceId the resource id
      * @param notBefore optional value representing the time to schedule the first workflow step, overriding the first
-     *                 step time configuration (after). The value is either an integer representing the seconds from now,
-     *                 an integer followed by 'ms' representing milliseconds from now, or an ISO-8601 date string.
+     *                  step time configuration (after). The value is either an integer representing the seconds from now,
+     *                  an integer followed by 'ms' representing milliseconds from now, or an ISO-8601 date string.
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("activate/{type}/{resourceId}")
-    public void activate(@PathParam("type") ResourceType type, @PathParam("resourceId") String resourceId, String notBefore) {
+    @Operation(
+            summary = "Activate workflow for resource",
+            description = "Activate the workflow for the given resource type and identifier. Optionally schedule the first step using the notBefore parameter."
+    )
+    public void activate(
+            @Parameter(description = "Resource type")
+            @PathParam("type") ResourceType type,
+            @Parameter(description = "Resource identifier")
+            @PathParam("resourceId") String resourceId,
+            @Parameter(
+                    description = "Optional value representing the time to schedule the first workflow step. " +
+                            "The value is either an integer representing the seconds from now, " +
+                            "an integer followed by 'ms' representing milliseconds from now, " +
+                            "or an ISO-8601 date string."
+            )
+            String notBefore
+    ) {
         Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
 
         if (resource == null) {
@@ -101,7 +140,16 @@ public class WorkflowResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("deactivate/{type}/{resourceId}")
-    public void deactivate(@PathParam("type") ResourceType type, @PathParam("resourceId") String resourceId) {
+    @Operation(
+            summary = "Deactivate workflow for resource",
+            description = "Deactivate the workflow for the given resource type and identifier."
+    )
+    public void deactivate(
+            @Parameter(description = "Resource type")
+            @PathParam("type") ResourceType type,
+            @Parameter(description = "Resource identifier")
+            @PathParam("resourceId") String resourceId
+    ) {
         Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
 
         if (resource == null) {
