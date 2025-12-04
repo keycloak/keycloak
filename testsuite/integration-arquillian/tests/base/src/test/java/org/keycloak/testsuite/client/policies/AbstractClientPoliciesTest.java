@@ -719,6 +719,10 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return null;
     }
 
+    protected ClientRepresentation findByClientIdByAdmin(String clientId) throws ClientPolicyException {
+        return adminClient.realm(REALM_NAME).clients().findByClientId(clientId).iterator().next();
+    }
+
     protected void updateClientByAdmin(String cId, Consumer<ClientRepresentation> op) throws ClientPolicyException {
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cId);
         ClientRepresentation clientRep = clientResource.toRepresentation();

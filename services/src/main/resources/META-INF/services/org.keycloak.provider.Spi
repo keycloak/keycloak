@@ -37,3 +37,4 @@ org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidatorSpi
 org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerSpi
 org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandlerSpi
 org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorSpi
+org.keycloak.protocol.oauth2.cimd.provider.ClientIdMetadataDocumentProviderSpi
