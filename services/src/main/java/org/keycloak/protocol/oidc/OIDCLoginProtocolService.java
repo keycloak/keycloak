@@ -17,9 +17,11 @@
 
 package org.keycloak.protocol.oidc;
 
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -40,6 +42,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
+import org.keycloak.protocol.oidc.endpoints.DirectPostEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LoginStatusIframeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
 import org.keycloak.protocol.oidc.endpoints.ThirdPartyCookiesIframeEndpoint;
@@ -169,6 +172,18 @@ public class OIDCLoginProtocolService {
     public Object forgotCredentialsPage() {
         AuthorizationEndpoint endpoint = new AuthorizationEndpoint(session, event);
         return endpoint.forgotCredentials();
+    }
+
+    /**
+     * Direct POST endpoint
+     * @see SIOPAuthenticator
+     */
+    @POST
+    @Path("direct_post")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response directPost() {
+        DirectPostEndpoint endpoint = new DirectPostEndpoint(session, event);
+        return endpoint.process();
     }
 
     /**
