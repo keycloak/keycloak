@@ -66,7 +66,7 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
         }
 
         String username = getUsername(context, serializedCtx, brokerContext);
-        if (username == null) {
+        if (username == null || username.trim().isEmpty()) {
             ServicesLogger.LOGGER.resetFlow(realm.isRegistrationEmailAsUsername() ? "Email" : "Username");
             context.getAuthenticationSession().setAuthNote(ENFORCE_UPDATE_PROFILE, "true");
             context.resetFlow();
