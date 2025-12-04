@@ -159,6 +159,8 @@ public class Profile {
 
         OPENAPI("OpenAPI specification served at runtime", Type.EXPERIMENTAL, CLIENT_ADMIN_API_V2),
 
+        CIMD("OAuth Client ID Metadata Document", Type.EXPERIMENTAL),
+
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
          */
