@@ -458,25 +458,28 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
                         "clientSessionMaxLifespanExceedsRealm"
                 );
             }
-            return;
-        }
-        int allowedMaxIdleTimeIfRememberMeEnabled = Math.max(realmIdle, realmRememberIdle);
+        } else {
+            int allowedMaxIdleTimeIfRememberMeEnabled = Math.max(realmIdle, realmRememberIdle);
 
-        if(clientIdle != null && clientIdle > allowedMaxIdleTimeIfRememberMeEnabled) {
-            context.addError(
-                    OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT,
-                    "Client session idle timeout cannot exceed realm SSO session idle timeout or RememberMe idle timeout",
-                    "clientIdleExceedsRealmRememberMeIdle"
+            if (clientIdle != null && clientIdle > allowedMaxIdleTimeIfRememberMeEnabled) {
+                context.addError(
+                        OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT,
+                        "Client session idle timeout cannot exceed realm SSO session idle timeout or RememberMe idle timeout",
+                        "clientIdleExceedsRealmRememberMeIdle"
 
-                    );
-        }
-        // Max Lifespan validation
-        if (clientMax != null && clientMax > realmMax) {
-            context.addError(
-                    OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN,
-                    "Client session max lifespan cannot exceed realm SSO session max lifespan",
-                    "clientSessionMaxLifespanExceedsRealm"
-            );
+                );
+            }
+
+            // TODO: do the max
+
+            // Max Lifespan validation
+            if (clientMax != null && clientMax > realmMax) { // TODO: update comparison
+                context.addError(
+                        OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN,
+                        "Client session max lifespan cannot exceed realm SSO session max lifespan", // TODO: update the message
+                        "clientSessionMaxLifespanExceedsRealm"
+                );
+            }
         }
 
     }
