@@ -36,6 +36,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
@@ -75,6 +76,7 @@ import org.keycloak.protocol.oidc.grants.ciba.channel.HttpAuthenticationChannelP
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
 import org.keycloak.services.managers.AppAuthManager;
@@ -101,14 +103,20 @@ public class TestingOIDCEndpointsApplicationResource {
     private final ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests;
     private final ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications;
     private final ConcurrentMap<String, String> intentClientBindings;
+    private final ConcurrentMap<String, OIDCClientRepresentation> oidcClientRepresentations;
+    private final ConcurrentMap<String, String> clientMetadataCacheControlHeaders;
 
     public TestingOIDCEndpointsApplicationResource(TestApplicationResourceProviderFactory.OIDCClientData oidcClientData,
             ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests, ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications,
-            ConcurrentMap<String, String> intentClientBindings) {
+            ConcurrentMap<String, String> intentClientBindings,
+            ConcurrentMap<String, OIDCClientRepresentation> oidcClientRepresentations,
+            ConcurrentMap<String, String> clientMetadataCacheControlHeaders) {
         this.clientData = oidcClientData;
         this.authenticationChannelRequests = authenticationChannelRequests;
         this.cibaClientNotifications = cibaClientNotifications;
         this.intentClientBindings = intentClientBindings;
+        this.oidcClientRepresentations = oidcClientRepresentations;
+        this.clientMetadataCacheControlHeaders = clientMetadataCacheControlHeaders;
     }
 
     @GET
@@ -780,5 +788,54 @@ public class TestingOIDCEndpointsApplicationResource {
             response.setIsBound(Boolean.TRUE);
         }
         return response;
+    }
+
+    @GET
+    @Path("/set-client-id-metadata")
+    @NoCache
+    public void setClientIdMetadata(@QueryParam("path") String path, @QueryParam("encodedClientMetadata") String encodedClientMetadata, @QueryParam("cacheControlHeaderValue") String cacheControlHeaderValue) {
+        System.out.println("::::: setClientIdMetadata: encodedClientMetadata = " + encodedClientMetadata);
+        System.out.println("::::: setClientIdMetadata: cacheControlHeaderValue = " + cacheControlHeaderValue);
+        if (cacheControlHeaderValue == null || cacheControlHeaderValue.isEmpty()) cacheControlHeaderValue = "no-cache"; // default
+        byte[] serializedRequestObject = Base64Url.decode(encodedClientMetadata);
+        OIDCClientRepresentation oidcClientRepresentation = null;
+        try {
+            oidcClientRepresentation = JsonSerialization.readValue(serializedRequestObject, OIDCClientRepresentation.class);
+        } catch (IOException e) {
+            throw new BadRequestException("deserialize client metadata failed : " + e.getMessage());
+        }
+        this.oidcClientRepresentations.put(path, oidcClientRepresentation);
+        this.clientMetadataCacheControlHeaders.put(path, cacheControlHeaderValue);
+    }
+
+    @POST
+    @Path("/register-client-id-metadata")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public OIDCClientRepresentation registerClientIdMetadata(OIDCClientRepresentation oidcClientRepresentation, @QueryParam("cacheControlHeaderValue") String cacheControlHeaderValue) {
+        String[] parts = oidcClientRepresentation.getClientId().split("/");
+        System.out.println("::::: registerClientIdMetadata: oidcClientRepresentation = " + oidcClientRepresentation);
+        System.out.println("::::: registerClientIdMetadata: path = " + parts[parts.length - 1]);
+        System.out.println("::::: registerClientIdMetadata: cacheControlHeaderValue = " + cacheControlHeaderValue);
+        if (cacheControlHeaderValue == null || cacheControlHeaderValue.isEmpty()) cacheControlHeaderValue = "no-cache"; // default
+        this.oidcClientRepresentations.put(parts[parts.length - 1], oidcClientRepresentation);
+        this.clientMetadataCacheControlHeaders.put(parts[parts.length - 1], cacheControlHeaderValue);
+        return oidcClientRepresentation;
+    }
+
+    @GET
+    @Path("/get-client-id-metadata/{path}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getClientIdMetadata(@PathParam("path") String path) {
+        System.out.println("::::: getClientIdMetadata: this.oidcClientRepresentation = " + this.oidcClientRepresentations.get(path));
+        System.out.println("::::: getClientIdMetadata: this.oidcClientRepresentation client id = " + this.oidcClientRepresentations.get(path).getClientId());
+        String cacheControlHeaderValue = this.clientMetadataCacheControlHeaders.get(path);
+        System.out.println("::::: getClientIdMetadata: this.clientMetadataCacheControlHeaders cacheControlHeaderValue = " + cacheControlHeaderValue);
+        if (cacheControlHeaderValue == null || cacheControlHeaderValue.isEmpty()) cacheControlHeaderValue = "no-cache"; // default
+        return Response.status(Response.Status.OK)
+                .entity(this.oidcClientRepresentations.get(path))
+                .header("Cache-Control", cacheControlHeaderValue)
+                .build();
     }
 }

@@ -35,6 +35,7 @@ import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
@@ -54,11 +55,14 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
     private ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests = new ConcurrentHashMap<>();
     private ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications = new ConcurrentHashMap<>();
     private ConcurrentMap<String, String> intentClientBindings = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, OIDCClientRepresentation> oidcClientRepresentations = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, String> clientMetadataCacheControlHeaders = new ConcurrentHashMap<>();
+
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
         return new TestApplicationResourceProvider(session, adminLogoutActions,
-                backChannelLogoutTokens, frontChannelLogoutTokens, pushNotBeforeActions, testAvailabilityActions, oidcClientData, authenticationChannelRequests, cibaClientNotifications, intentClientBindings);
+                backChannelLogoutTokens, frontChannelLogoutTokens, pushNotBeforeActions, testAvailabilityActions, oidcClientData, authenticationChannelRequests, cibaClientNotifications, intentClientBindings, oidcClientRepresentations, clientMetadataCacheControlHeaders);
     }
 
     @Override

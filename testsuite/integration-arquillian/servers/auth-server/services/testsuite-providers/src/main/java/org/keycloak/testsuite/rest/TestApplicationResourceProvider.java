@@ -43,6 +43,7 @@ import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
@@ -69,6 +70,8 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     private final ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests;
     private final ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications;
     private final ConcurrentMap<String, String> intentClientBindings;
+    private final ConcurrentMap<String, OIDCClientRepresentation> oidcClientRepresentations;
+    private final ConcurrentMap<String, String> clientMetadataCacheControlHeaders;
 
     private final HttpRequest request;
 
@@ -80,7 +83,9 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
             TestApplicationResourceProviderFactory.OIDCClientData oidcClientData,
             ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests,
             ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications,
-            ConcurrentMap<String, String> intentClientBindings) {
+            ConcurrentMap<String, String> intentClientBindings,
+            ConcurrentMap<String, OIDCClientRepresentation> oidcClientRepresentations,
+            ConcurrentMap<String, String> clientMetadataCacheControlHeaders) {
         this.session = session;
         this.adminLogoutActions = adminLogoutActions;
         this.backChannelLogoutTokens = backChannelLogoutTokens;
@@ -91,6 +96,8 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         this.authenticationChannelRequests = authenticationChannelRequests;
         this.cibaClientNotifications = cibaClientNotifications;
         this.intentClientBindings = intentClientBindings;
+        this.oidcClientRepresentations = oidcClientRepresentations;
+        this.clientMetadataCacheControlHeaders = clientMetadataCacheControlHeaders;
         this.request = session.getContext().getHttpRequest();
     }
 
@@ -267,7 +274,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
 
     @Path("/oidc-client-endpoints")
     public TestingOIDCEndpointsApplicationResource getTestingOIDCClientEndpoints() {
-        return new TestingOIDCEndpointsApplicationResource(oidcClientData, authenticationChannelRequests, cibaClientNotifications, intentClientBindings);
+        return new TestingOIDCEndpointsApplicationResource(oidcClientData, authenticationChannelRequests, cibaClientNotifications, intentClientBindings, oidcClientRepresentations, clientMetadataCacheControlHeaders);
     }
 
     @Override

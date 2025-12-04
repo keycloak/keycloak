@@ -50,6 +50,7 @@ import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition;
 import org.keycloak.services.clientpolicy.condition.ClientAttributesCondition;
+import org.keycloak.services.clientpolicy.condition.ClientIdUriSchemeCondition;
 import org.keycloak.services.clientpolicy.condition.ClientRolesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientScopesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextCondition;
@@ -57,6 +58,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsCon
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCondition;
 import org.keycloak.services.clientpolicy.condition.GrantTypeCondition;
+import org.keycloak.services.clientpolicy.executor.ClientIdMetadataDocumentExecutor;
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutor;
 import org.keycloak.services.clientpolicy.executor.DPoPBindEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutor;
@@ -276,6 +278,40 @@ public final class ClientPoliciesUtil {
     public static SecureRedirectUrisEnforcerExecutor.Configuration createSecureRedirectUrisEnforcerExecutorConfig(
             Consumer<SecureRedirectUrisEnforcerExecutor.Configuration> apply) {
         SecureRedirectUrisEnforcerExecutor.Configuration config = new SecureRedirectUrisEnforcerExecutor.Configuration();
+        if (apply != null) {
+            apply.accept(config);
+        }
+        return config;
+    }
+
+    public static ClientIdMetadataDocumentExecutor.Configuration createClientIdMetadataDocumentExecutorConfig(
+            Consumer<ClientIdMetadataDocumentExecutor.Configuration> apply) {
+        ClientIdMetadataDocumentExecutor.Configuration config = new ClientIdMetadataDocumentExecutor.Configuration();
+        if (apply != null) {
+            apply.accept(config);
+        }
+        return config;
+    }
+
+    public static ClientIdUriSchemeCondition.Configuration createClientIdUriSchemeConditionConfig(
+            Consumer<ClientIdUriSchemeCondition.Configuration> apply) {
+        ClientIdUriSchemeCondition.Configuration config = new ClientIdUriSchemeCondition.Configuration();
+        if (apply != null) {
+            apply.accept(config);
+        }
+        return config;
+    }
+
+    public static <CONFIG extends ClientPolicyExecutorConfigurationRepresentation> CONFIG createExecutorConfig(
+            CONFIG config, Consumer<CONFIG> apply) {
+        if (apply != null) {
+            apply.accept(config);
+        }
+        return config;
+    }
+
+    public static <CONFIG extends ClientPolicyConditionConfigurationRepresentation> CONFIG createConditionConfig(
+            CONFIG config, Consumer<CONFIG> apply) {
         if (apply != null) {
             apply.accept(config);
         }
