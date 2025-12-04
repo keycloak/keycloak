@@ -163,29 +163,7 @@ public class AttestationValidatorUtil {
 
         // Get resistance level requirements from configuration
         KeyAttestationsRequired attestationRequirements = getAttestationRequirements(vcIssuanceContext);
-
-        // if the KeyAttestationRequired object is null it is not necessary to validate it because the issuer does
-        // not require it:
-        // From the spec:
-        // ----
-        // If the Credential Issuer does not require a key attestation, this parameter MUST NOT be present in the
-        // metadata.
-        // ---
-        // Meaning if the object is null we do not need to validate the resistance level
-        if (attestationRequirements != null) {
-            // Validate key_storage if present in attestation and required by config
-            if (attestationBody.getKeyStorage() != null) {
-                validateResistanceLevel(attestationBody.getKeyStorage(),
-                                        attestationRequirements.getKeyStorage(),
-                                        "key_storage");
-            }
-            // Validate user_authentication if present in attestation and required by config
-            if (attestationBody.getUserAuthentication() != null) {
-                validateResistanceLevel(attestationBody.getUserAuthentication(),
-                                        attestationRequirements.getUserAuthentication(),
-                                        "user_authentication");
-            }
-        }
+        validateResistanceLevel(attestationBody, attestationRequirements);
 
         KeycloakContext keycloakContext = keycloakSession.getContext();
         CNonceHandler cNonceHandler = keycloakSession.getProvider(CNonceHandler.class);
@@ -237,26 +215,70 @@ public class AttestationValidatorUtil {
         return proofTypeData != null ? proofTypeData.getKeyAttestationsRequired() : null;
     }
 
+    /**
+     * validates the configured key_attestations_required attribute against the given attestationBody
+     *
+     * @param attestationBody the body to be validated
+     * @param attestationRequirements the configuration object that is also displayed in the metadata endpoint
+     */
+    private static void validateResistanceLevel(KeyAttestationJwtBody attestationBody,
+                                                KeyAttestationsRequired attestationRequirements) {
+        // if the KeyAttestationRequired object is null it is not necessary to validate it because the issuer does
+        // not require it:
+        // From the spec:
+        // ----
+        // If the Credential Issuer does not require a key attestation, this parameter MUST NOT be present in the
+        // metadata.
+        // ---
+        // Meaning if the object is null we do not need to validate the resistance level
+        if (attestationRequirements != null) {
+            // Validate key_storage if present in attestation and required by config
+            validateResistanceLevel(attestationBody.getKeyStorage(),
+                                    attestationRequirements.getKeyStorage(),
+                                    "key_storage");
+            // Validate user_authentication if present in attestation and required by config
+            validateResistanceLevel(attestationBody.getUserAuthentication(),
+                                    attestationRequirements.getUserAuthentication(),
+                                    "user_authentication");
+        }
+    }
+
+    /**
+     * Validates the given key_attestations (key_storage or user_authentication) against the current configuration as
+     * provided by the metadata endpoint.
+     *
+     * @param providedLevels  the attestation levels to be validated
+     * @param acceptedLevels  the attestation levels as exposed by the metadata endpoint
+     * @param levelType       either "key_storage" or "user_authentication"
+     * @throws VCIssuerException if the required resistance level is not met
+     */
     private static void validateResistanceLevel(List<String> providedLevels,
                                                 List<String> acceptedLevels,
                                                 String levelType)
         throws VCIssuerException {
 
-        if (acceptedLevels == null || acceptedLevels.isEmpty()) {
-            // If both key_storage and user_authentication parameters are absent, the key_attestations_required
-            // parameter may be empty, indicating a key attestation is needed without additional constraints.
-            if (providedLevels == null || providedLevels.isEmpty()) {
-                throw new VCIssuerException(levelType + " is required but was missing in the request");
+        // If both key_storage and user_authentication parameters are absent, the key_attestations_required
+        // parameter may be empty, indicating a key attestation is needed without additional constraints.
+        // from: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-12.2.4
+        if (providedLevels == null || providedLevels.isEmpty()) {
+            if (acceptedLevels != null && !acceptedLevels.isEmpty()) {
+                // a key_- or user_attestation is required by configuration but none was provided.
+                throw new VCIssuerException(levelType + " is required but was missing.");
             }
             return;
         }
+
+        if (acceptedLevels == null || acceptedLevels.isEmpty()) {
+            // We accept all provided levels
+            return;
+        }
+
         // Check each provided level against the accepted levels
-        for (String providedLevel : providedLevels) {
-            if (!acceptedLevels.contains(providedLevel)) {
-                throw new VCIssuerException(
-                    levelType + " level '" + providedLevel + "' is not accepted by credential issuer. " +
-                        "Allowed values: " + acceptedLevels);
-            }
+        boolean foundMatch = providedLevels.stream().anyMatch(acceptedLevels::contains);
+        if (!foundMatch) {
+            throw new VCIssuerException(
+                levelType + " none of the provided levels from '" + providedLevels + "' did match any of the " +
+                    "accepted levels: " + acceptedLevels);
         }
     }
 

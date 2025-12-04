@@ -587,8 +587,9 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerEndpointTest {
             validator.validateProof(context);
             fail("Expected VCIssuerException for missing attested_keys");
         } catch (VCIssuerException e) {
-            assertTrue("Expected error about missing keys but got: " + e.getMessage(),
-                    e.getMessage().contains("attested_keys"));
+            assertEquals("Expected error about missing keys but got: " + e.getMessage(),
+                         "key_storage is required but was missing.",
+                         e.getMessage());
         } catch (Exception e) {
             fail("Unexpected exception: " + e.getMessage());
         }

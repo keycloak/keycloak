@@ -131,12 +131,12 @@ public class CredentialScopeModel implements ClientScopeModel {
     /**
      * OPTIONAL. A non-empty array defining values specified in Appendix D.2 accepted by the Credential Issuer.
      */
-    public static final String KEY_ATTESTATION_REQUIRED_KEY_STORAGE = "vc.key_attestation_required.key_storage";
+    public static final String KEY_ATTESTATION_REQUIRED_KEY_STORAGE = "vc.key_attestations_required.key_storage";
 
     /**
      * OPTIONAL. A non-empty array defining values specified in Appendix D.2 accepted by the Credential Issuer.
      */
-    public static final String KEY_ATTESTATION_REQUIRED_USER_AUTH = "vc.key_attestation_required.user_authentication";
+    public static final String KEY_ATTESTATION_REQUIRED_USER_AUTH = "vc.key_attestations_required.user_authentication";
 
 
     /**
