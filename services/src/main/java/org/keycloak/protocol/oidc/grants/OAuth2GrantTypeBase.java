@@ -270,6 +270,22 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
     }
 
     /**
+     * Hook method called after authorization_details are processed and before the token response is created.
+     * This allows authorization details processors to perform post-processing actions (e.g., creating state objects).
+     * Processors can store information in session notes during processing, and this hook allows them to act on it.
+     * Default implementation does nothing.
+     *
+     * @param userSession                  the user session
+     * @param clientSessionCtx             the client session context
+     * @param authorizationDetailsResponse the processed authorization details response
+     */
+    protected void afterAuthorizationDetailsProcessed(UserSessionModel userSession, ClientSessionContext clientSessionCtx,
+                                                      List<AuthorizationDetailsResponse> authorizationDetailsResponse) {
+        // Default: do nothing
+        // Subclasses or processors can override/extend this to perform post-processing
+    }
+
+    /**
      * Processes the authorization_details parameter using provider discovery.
      * This method can be overridden by subclasses to customize the behavior.
      *
