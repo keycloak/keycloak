@@ -17,7 +17,7 @@
 
 package org.keycloak.models.workflow;
 
-import java.util.List;
+import java.util.stream.Stream;
 
 import org.keycloak.provider.Provider;
 
@@ -69,19 +69,19 @@ public interface WorkflowStateProvider extends Provider {
 
     ScheduledStep getScheduledStep(String workflowId, String resourceId);
 
-    List<ScheduledStep> getScheduledStepsByResource(String resourceId);
+    Stream<ScheduledStep> getScheduledStepsByResource(String resourceId);
 
-    List<ScheduledStep> getScheduledStepsByWorkflow(String workflowId);
+    Stream<ScheduledStep> getScheduledStepsByWorkflow(String workflowId);
 
-    default List<ScheduledStep> getScheduledStepsByWorkflow(Workflow workflow) {
+    default Stream<ScheduledStep> getScheduledStepsByWorkflow(Workflow workflow) {
         if (workflow == null) {
-            return List.of();
+            return Stream.empty();
         }
 
         return getScheduledStepsByWorkflow(workflow.getId());
     }
 
-    List<ScheduledStep> getDueScheduledSteps(Workflow workflow);
+    Stream<ScheduledStep> getDueScheduledSteps(Workflow workflow);
 
-    record ScheduledStep(String workflowId, String stepId, String resourceId, String executionId) {}
+    record ScheduledStep(String workflowId, String stepId, String resourceId, String executionId, long scheduledAt) {}
 }
