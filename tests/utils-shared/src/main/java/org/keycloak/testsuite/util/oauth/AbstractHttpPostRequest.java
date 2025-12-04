@@ -128,7 +128,7 @@ public abstract class AbstractHttpPostRequest<T, R> {
 
     protected void authorization() {
         String clientId = this.clientId != null ? this.clientId : client.config().getClientId();
-        String clientSecret = this.clientId != null ? this.clientSecret : client.config().getClientSecret();
+        String clientSecret = this.clientSecret != null ? this.clientSecret : client.config().getClientSecret();
 
         if (clientAssertion != null && clientAssertionType != null) {
             parameter("client_assertion_type", clientAssertionType);
@@ -153,6 +153,17 @@ public abstract class AbstractHttpPostRequest<T, R> {
 
     protected String getAccept() {
         return MediaType.APPLICATION_JSON;
+    }
+
+    protected String getParameter(String key) {
+        return parameters.stream()
+                .filter(vp -> vp.getName().equals(key))
+                .map(NameValuePair::getValue)
+                .findFirst().orElse(null);
+    }
+
+    protected boolean hasParameter(String key) {
+        return getParameter(key) != null;
     }
 
     protected abstract R toResponse(CloseableHttpResponse response) throws IOException;

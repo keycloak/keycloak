@@ -127,7 +127,7 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
     }
 
     @Override
-    protected void afterAbstractKeycloakTestRealmImport() {
+    protected void afterAbstractKeycloakTestRealmImport() throws Exception {
         super.afterAbstractKeycloakTestRealmImport();
 
         // configure WebAuthn

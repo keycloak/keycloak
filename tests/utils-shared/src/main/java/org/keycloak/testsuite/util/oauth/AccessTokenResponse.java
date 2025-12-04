@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
@@ -87,7 +88,8 @@ public class AccessTokenResponse extends AbstractHttpResponse {
     }
 
     public String getAccessToken() {
-        return accessToken;
+        return Optional.ofNullable(accessToken).orElseThrow(() ->
+                new IllegalStateException(String.format("[%s] %s", getError(), getErrorDescription())));
     }
 
     public int getExpiresIn() {

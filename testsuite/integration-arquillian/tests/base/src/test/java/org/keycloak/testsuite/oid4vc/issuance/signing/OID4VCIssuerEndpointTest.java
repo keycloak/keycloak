@@ -211,8 +211,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     public void setup() {
         CryptoIntegration.init(this.getClass().getClassLoader());
         httpClient = HttpClientBuilder.create().build();
-        client = testRealm().clients().findByClientId(clientId).get(0);
-        namedClient = testRealm().clients().findByClientId(namedClientId).get(0);
 
         // Enable OID4VCI at realm level (required before assigning OID4VCI scopes)
         RealmRepresentation realmRep = testRealm().toRepresentation();
@@ -249,19 +247,23 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                                                                           null,
                                                                           null, null);
 
-        List.of(client, namedClient).forEach(client -> {
-            String clientId = client.getClientId();
+        // Assign the 'natural_person' client scopes to the default client
+        assignOptionalClientScopeToClient(jwtTypeNaturalPersonClientScope.getId(), clientId);
+        assignOptionalClientScopeToClient(sdJwtTypeNaturalPersonClientScope.getId(), clientId);
+
+        List.of(clientId, namedClientId).forEach(cid -> {
 
             // Assign the registered optional client scopes to the client
-            assignOptionalClientScopeToClient(jwtTypeNaturalPersonClientScope.getId(), clientId);
-            assignOptionalClientScopeToClient(sdJwtTypeNaturalPersonClientScope.getId(), clientId);
-            assignOptionalClientScopeToClient(jwtTypeCredentialClientScope.getId(), clientId);
-            assignOptionalClientScopeToClient(sdJwtTypeCredentialClientScope.getId(), clientId);
-            assignOptionalClientScopeToClient(minimalJwtTypeCredentialClientScope.getId(), clientId);
+            assignOptionalClientScopeToClient(jwtTypeCredentialClientScope.getId(), cid);
+            assignOptionalClientScopeToClient(sdJwtTypeCredentialClientScope.getId(), cid);
+            assignOptionalClientScopeToClient(minimalJwtTypeCredentialClientScope.getId(), cid);
 
             // Enable OID4VCI for the client by default, but allow tests to override
-            setClientOid4vciEnabled(clientId, shouldEnableOid4vci());
+            setClientOid4vciEnabled(cid, shouldEnableOid4vci());
         });
+
+        client = testRealm().clients().findByClientId(clientId).get(0);
+        namedClient = testRealm().clients().findByClientId(namedClientId).get(0);
     }
 
     private ClientResource findClientByClientId(RealmResource realm, String clientId) {
@@ -480,10 +482,10 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     protected void setClientOid4vciEnabled(String clientId, boolean enabled) {
-        ClientRepresentation clientRepresentation = adminClient.realm(TEST_REALM_NAME).clients().findByClientId(clientId).get(0);
-        ClientResource clientResource = adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId());
+        ClientResource clientResource = Optional.ofNullable(findClientByClientId(testRealm(), clientId)).orElseThrow();
+        ClientRepresentation clientRepresentation = clientResource.toRepresentation();
 
-        Map<String, String> attributes = new HashMap<>(clientRepresentation.getAttributes() != null ? clientRepresentation.getAttributes() : Map.of());
+        Map<String, String> attributes = Optional.ofNullable(clientRepresentation.getAttributes()).orElse(new HashMap<>());
         attributes.put("oid4vci.enabled", String.valueOf(enabled));
         clientRepresentation.setAttributes(attributes);
 

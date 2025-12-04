@@ -53,6 +53,11 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
         return this;
     }
 
+    public AccessTokenRequest redirectUri(String redirectUri) {
+        parameter(OAuth2Constants.REDIRECT_URI, redirectUri);
+        return this;
+    }
+
     public AccessTokenRequest param(String name, String value) {
         parameter(name, value);
         return this;
@@ -62,12 +67,23 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE);
 
         parameter(OAuth2Constants.CODE, code);
-        parameter(OAuth2Constants.REDIRECT_URI, client.getRedirectUri());
+        if (!hasParameter(OAuth2Constants.REDIRECT_URI)) {
+            parameter(OAuth2Constants.REDIRECT_URI, client.getRedirectUri());
+        }
+
+//        parameter(OAuth2Constants.GRANT_TYPE, grantType);
+//        if (grantType.equals(OAuth2Constants.AUTHORIZATION_CODE)) {
+//            parameter(OAuth2Constants.CODE, code);
+//            if (!hasParameter(OAuth2Constants.REDIRECT_URI)) {
+//                parameter(OAuth2Constants.REDIRECT_URI, client.getRedirectUri());
+//            }
+//        } else if (grantType.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
+//            parameter(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, code);
+//        }
     }
 
     @Override
     protected AccessTokenResponse toResponse(CloseableHttpResponse response) throws IOException {
         return new AccessTokenResponse(response);
     }
-
 }

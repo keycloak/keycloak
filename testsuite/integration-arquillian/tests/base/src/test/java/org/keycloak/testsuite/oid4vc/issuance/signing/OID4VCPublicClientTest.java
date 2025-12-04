@@ -67,13 +67,12 @@ public class OID4VCPublicClientTest extends OID4VCIssuerEndpointTest {
     String clientId = "test-app-pub";
 
     class TestContext {
-
-        String targetUser;
+        String username;
         CredentialIssuer issuerMetadata;
         SupportedCredentialConfiguration credentialConfig;
 
-        TestContext(String targetUser, String credConfigId) {
-            this.targetUser = targetUser;
+        TestContext(String credConfigId, String username) {
+            this.username = username;
             this.issuerMetadata = getCredentialIssuerMetadata();
             this.credentialConfig = issuerMetadata.getCredentialsSupported().get(credConfigId);
         }
@@ -92,7 +91,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testCredentialFromPublicClient() throws Exception {
 
-        TestContext ctx = new TestContext("alice", jwtTypeNaturalPersonScopeName);
+        TestContext ctx = new TestContext(jwtTypeNaturalPersonScopeName, "alice");
         String credScope = ctx.credentialConfig.getScope();
         String credConfigId = ctx.credentialConfig.getId();
 
@@ -116,7 +115,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerEndpointTest {
                 .build();
 
         AuthorizationRequestResponse authResponse = new AuthorizationRequestRequest(oauth, authRequest)
-                .credentials(ctx.targetUser, "password")
+                .credentials(ctx.username, "password")
                 .send();
 
         String authCode = authResponse.assertCode();
@@ -142,7 +141,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testCredentialFromPreAuthCode() throws Exception {
 
-        TestContext ctx = new TestContext("alice", jwtTypeNaturalPersonScopeName);
+        TestContext ctx = new TestContext(jwtTypeNaturalPersonScopeName, "alice");
         String credConfigId = ctx.credentialConfig.getId();
 
         String issuerToken = getIssuerAccessToken();
@@ -151,7 +150,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerEndpointTest {
         //
         CredentialOfferURI credOfferUri = oauth.oid4vc().credentialOfferUriRequest(credConfigId)
                 .preAuthorized(true)
-                .username(ctx.targetUser)
+                .username(ctx.username)
                 .bearerToken(issuerToken)
                 .send().getCredentialOfferURI();
 
@@ -194,7 +193,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testAuthorizationRequestNoPkce() throws Exception {
 
-        TestContext ctx = new TestContext("alice", jwtTypeNaturalPersonScopeName);
+        TestContext ctx = new TestContext(jwtTypeNaturalPersonScopeName, "alice");
         String credScope = ctx.credentialConfig.getScope();
 
         String redirectUri = verifiedRedirectUri(clientId, oauth.getRedirectUri());
@@ -209,7 +208,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerEndpointTest {
                 .build();
 
         AuthorizationRequestResponse authResponse = new AuthorizationRequestRequest(oauth, authRequest)
-                .credentials(ctx.targetUser, "password")
+                .credentials(ctx.username, "password")
                 .send();
 
         assertEquals("invalid_request", authResponse.getError());
@@ -220,7 +219,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testAuthorizationRequestNoRedirectUri() throws Exception {
 
-        TestContext ctx = new TestContext("alice", jwtTypeNaturalPersonScopeName);
+        TestContext ctx = new TestContext(jwtTypeNaturalPersonScopeName, "alice");
         String credScope = ctx.credentialConfig.getScope();
 
         PkceGenerator pkce = PkceGenerator.s256();
@@ -235,7 +234,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerEndpointTest {
                 .build();
 
         AuthorizationRequestResponse authResponse = new AuthorizationRequestRequest(oauth, authRequest)
-                .credentials(ctx.targetUser, "password")
+                .credentials(ctx.username, "password")
                 .send();
 
         assertEquals("invalid_request", authResponse.getError());
@@ -312,7 +311,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerEndpointTest {
         VerifiableCredential credential = JsonSerialization.mapper.convertValue(vc, VerifiableCredential.class);
         assertEquals(List.of(credScope), credential.getType());
         assertEquals(URI.create(issuer), credential.getIssuer());
-        assertEquals(ctx.targetUser + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
+        assertEquals(ctx.username + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
     }
 
     private String verifyAccessToken(

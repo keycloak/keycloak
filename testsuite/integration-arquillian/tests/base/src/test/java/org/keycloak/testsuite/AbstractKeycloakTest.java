@@ -218,7 +218,7 @@ public abstract class AbstractKeycloakTest {
      * <p>
      * In @Before block
      */
-    protected void afterAbstractKeycloakTestRealmImport() {
+    protected void afterAbstractKeycloakTestRealmImport() throws Exception {
     }
 
     /**
