@@ -55,6 +55,7 @@ import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyM
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.validation.ValidationUtil;
 
 /**
@@ -171,6 +172,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier modified", Response.Status.BAD_REQUEST);
         }
 
+        ClientResource.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());
         RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
         RepresentationToModel.updateClientScopes(rep, client);
