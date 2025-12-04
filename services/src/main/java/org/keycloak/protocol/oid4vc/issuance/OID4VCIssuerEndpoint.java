@@ -95,6 +95,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.AttestationProof;
 import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
@@ -974,11 +975,28 @@ public class OID4VCIssuerEndpoint {
 
         if (credentialRequest.getProof() != null) {
             LOGGER.debugf("Converting single 'proof' field to 'proofs' array for backward compatibility");
-            JwtProof singleProof = credentialRequest.getProof();
+            Object singleProof = credentialRequest.getProof();
             Proofs proofsArray = new Proofs();
-            if (singleProof.getJwt() != null) {
-                proofsArray.setJwt(List.of(singleProof.getJwt()));
+
+            // Handle AttestationProof
+            if (singleProof instanceof AttestationProof attestationProof) {
+                String attestationValue = attestationProof.getAttestation();
+                if (attestationValue != null) {
+                    proofsArray.setAttestation(List.of(attestationValue));
+                }
             }
+            // Handle JwtProof
+            else if (singleProof instanceof JwtProof jwtProof) {
+                String jwtValue = jwtProof.getJwt();
+                if (jwtValue != null) {
+                    proofsArray.setJwt(List.of(jwtValue));
+                }
+            } else {
+                String message = "Unsupported proof type: " + (singleProof != null ? singleProof.getClass().getName() : "null");
+                LOGGER.debug(message);
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, message));
+            }
+
             credentialRequest.setProofs(proofsArray);
             credentialRequest.setProof(null);
         }

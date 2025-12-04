@@ -1,5 +1,8 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import org.jboss.logging.Logger;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -33,9 +36,6 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.util.JsonSerialization;
 
-import org.jboss.logging.Logger;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -54,6 +54,37 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
         String cNonce = getCNonce();
         testingClient.server(TEST_REALM_NAME).run(session -> {
             runAttestationProofWithRealmAttributeTrustedKeys(session, cNonce);
+        });
+    }
+
+    @Test
+    public void testAttestationProofAcceptsLegacyTyp() {
+        String cNonce = getCNonce();
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            try {
+                KeyWrapper attestationKey = createECKey("legacyAttestationKey");
+                KeyWrapper proofKey = createECKey("legacyProofKey");
+
+                JWK proofJwk = createJWK(proofKey);
+                String attestationJwt = createValidAttestationJwt(
+                        session,
+                        attestationKey,
+                        List.of(proofJwk),
+                        cNonce,
+                        AttestationValidatorUtil.LEGACY_ATTESTATION_JWT_TYP);
+
+                configureTrustedKeysInRealm(session, List.of(createJWK(attestationKey)));
+
+                VCIssuanceContext vcIssuanceContext = createVCIssuanceContextWithAttestationProof(session, attestationJwt);
+
+                AttestationProofValidatorFactory factory = new AttestationProofValidatorFactory();
+                AttestationProofValidator validator = (AttestationProofValidator) factory.create(session);
+
+                validateProofAndAssert(validator, vcIssuanceContext, proofKey);
+            } catch (Exception e) {
+                LOGGER.error("Legacy typ test failed with exception", e);
+                fail("Legacy typ attestation proof should be accepted: " + e.getMessage());
+            }
         });
     }
 
