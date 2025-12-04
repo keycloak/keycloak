@@ -47,4 +47,3 @@ public class AttestationProof {
         return this;
     }
 }
-

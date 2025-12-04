@@ -1,8 +1,5 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import org.jboss.logging.Logger;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -35,6 +32,9 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.logging.Logger;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
