@@ -86,6 +86,11 @@ public class ProviderConfigProperty {
 
     public static final String IDENTITY_PROVIDER_MULTI_LIST_TYPE="IdentityProviderMultiList"; // only in admin console, not in themes
 
+    /**
+     * Display metadata for wallet applications to show user-friendly claim names
+     */
+    public static final String CLAIM_DISPLAY_TYPE="ClaimDisplay";
+
     protected String name;
     protected String label;
     protected String helpText;

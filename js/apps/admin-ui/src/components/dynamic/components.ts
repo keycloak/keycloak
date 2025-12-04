@@ -3,6 +3,7 @@ import { FunctionComponent } from "react";
 
 import { BooleanComponent } from "./BooleanComponent";
 import { ClientSelectComponent } from "./ClientSelectComponent";
+import { ClaimDisplayComponent } from "./ClaimDisplayComponent";
 import { IdentityProviderMultiSelectComponent } from "./IdentityProviderMultiSelectComponent";
 import { FileComponent } from "./FileComponent";
 import { GroupComponent } from "./GroupComponent";
@@ -51,7 +52,8 @@ type ComponentType =
   | "MultivaluedString"
   | "File"
   | "Password"
-  | "Url";
+  | "Url"
+  | "ClaimDisplay";
 
 export const COMPONENTS: {
   [index in ComponentType]: FunctionComponent<ComponentProps>;
@@ -74,6 +76,7 @@ export const COMPONENTS: {
   File: FileComponent,
   Password: PasswordComponent,
   Url: UrlComponent,
+  ClaimDisplay: ClaimDisplayComponent,
 } as const;
 
 export const isValidComponentType = (value: string): value is ComponentType =>
