@@ -57,7 +57,6 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.OID4VCIConstants;
@@ -67,6 +66,7 @@ import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.RSAPublicJWK;
+import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
@@ -164,6 +164,92 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return true;
     }
 
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.setVerifiableCredentialsEnabled(shouldEnableOid4vci());
+
+        testRealm.getComponents().add(KeyProvider.class.getName(), getKeyProvider());
+
+        testRealm.getComponents().add(KeyProvider.class.getName(),
+                getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100));
+        testRealm.getComponents().add(KeyProvider.class.getName(),
+                getRsaEncKeyProvider(RSA_OAEP, "enc-key-oaep", 101));
+
+        // Find existing client representation
+        Map<String, ClientRepresentation> realmClients = testRealm.getClients().stream()
+                .collect(Collectors.toMap(ClientRepresentation::getClientId, Function.identity()));
+        ClientRepresentation existingClient = Optional.ofNullable(realmClients.get(clientId))
+                .orElseThrow(() -> new IllegalStateException("Client with ID " + clientId + " not found in realm"));
+
+        // Add a role to an existing client
+        RolesRepresentation realmRoles = testRealm.getRoles();
+        if (realmRoles != null) {
+            realmRoles.getClient().merge(
+                    existingClient.getClientId(),
+                    List.of(getRoleRepresentation("testRole", existingClient.getClientId())),
+                    (existingRoles, newRoles) -> {
+                        List<RoleRepresentation> mergedRoles = new ArrayList<>(existingRoles);
+                        mergedRoles.addAll(newRoles);
+                        return mergedRoles;
+                    }
+            );
+        }
+
+        Map<String, List<String>> clientRoles = Map.of(clientId, List.of("testRole"));
+        List<UserRepresentation> realmUsers = Optional.ofNullable(testRealm.getUsers()).map(ArrayList::new).orElse(new ArrayList<>());
+        realmUsers.add(getUserRepresentation("John Doe", Map.of("did", "did:key:1234"), List.of(CREDENTIAL_OFFER_CREATE.getName()), clientRoles));
+        realmUsers.add(getUserRepresentation("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
+        testRealm.setUsers(realmUsers);
+    }
+
+    @Before
+    public void setup() {
+        CryptoIntegration.init(this.getClass().getClassLoader());
+        httpClient = HttpClientBuilder.create().build();
+        client = testRealm().clients().findByClientId(clientId).get(0);
+        namedClient = testRealm().clients().findByClientId(namedClientId).get(0);
+
+        // Lookup the pre-installed oid4vc_natural_person client scope
+        jwtTypeNaturalPersonClientScope = requireExistingClientScope(jwtTypeNaturalPersonScopeName);
+        sdJwtTypeNaturalPersonClientScope = requireExistingClientScope(sdJwtTypeNaturalPersonScopeName);
+
+        // Register the optional client scopes
+        sdJwtTypeCredentialClientScope = registerOptionalClientScope(sdJwtTypeCredentialScopeName,
+                null,
+                sdJwtTypeCredentialConfigurationIdName,
+                sdJwtTypeCredentialScopeName,
+                sdJwtCredentialVct,
+                VCFormat.SD_JWT_VC.getValue(),
+                null,
+                List.of(KeyAttestationResistanceLevels.HIGH,
+                        KeyAttestationResistanceLevels.MODERATE));
+        jwtTypeCredentialClientScope = registerOptionalClientScope(jwtTypeCredentialScopeName,
+                TEST_DID.toString(),
+                jwtTypeCredentialConfigurationIdName,
+                jwtTypeCredentialScopeName,
+                null,
+                VCFormat.JWT_VC.getValue(),
+                TEST_CREDENTIAL_MAPPERS_FILE,
+                Collections.emptyList());
+        minimalJwtTypeCredentialClientScope = registerOptionalClientScope("vc-with-minimal-config",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null, null);
+
+        // Assign the registered optional client scopes to the client
+        assignOptionalClientScopeToClient(jwtTypeNaturalPersonClientScope.getId(), clientId);
+        assignOptionalClientScopeToClient(sdJwtTypeNaturalPersonClientScope.getId(), clientId);
+        assignOptionalClientScopeToClient(jwtTypeCredentialClientScope.getId(), clientId);
+        assignOptionalClientScopeToClient(sdJwtTypeCredentialClientScope.getId(), clientId);
+        assignOptionalClientScopeToClient(minimalJwtTypeCredentialClientScope.getId(), clientId);
+
+        // Enable OID4VCI for the client by default, but allow tests to override
+        setClientOid4vciEnabled(clientId, shouldEnableOid4vci());
+    }
+
     protected static OAuth2CodeEntry prepareSessionCode(KeycloakSession session, AppAuthManager.BearerTokenAuthenticator authenticator, String note) {
         AuthenticationManager.AuthResult authResult = authenticator.authenticate();
         UserSessionModel userSessionModel = authResult.session();
@@ -206,58 +292,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 authenticator,
                 TIME_PROVIDER,
                 30);
-    }
-
-    @Before
-    public void setup() {
-        CryptoIntegration.init(this.getClass().getClassLoader());
-        httpClient = HttpClientBuilder.create().build();
-        client = testRealm().clients().findByClientId(clientId).get(0);
-        namedClient = testRealm().clients().findByClientId(namedClientId).get(0);
-
-        // Lookup the pre-installed oid4vc_natural_person client scope
-        jwtTypeNaturalPersonClientScope = requireExistingClientScope(jwtTypeNaturalPersonScopeName);
-        sdJwtTypeNaturalPersonClientScope = requireExistingClientScope(sdJwtTypeNaturalPersonScopeName);
-
-        // Register the optional client scopes
-        sdJwtTypeCredentialClientScope = registerOptionalClientScope(sdJwtTypeCredentialScopeName,
-                                                                     null,
-                                                                     sdJwtTypeCredentialConfigurationIdName,
-                                                                     sdJwtTypeCredentialScopeName,
-                                                                     sdJwtCredentialVct,
-                                                                     VCFormat.SD_JWT_VC.getValue(),
-                                                                     null,
-                                                                     List.of(KeyAttestationResistanceLevels.HIGH,
-                                                                             KeyAttestationResistanceLevels.MODERATE));
-        jwtTypeCredentialClientScope = registerOptionalClientScope(jwtTypeCredentialScopeName,
-                                                                   TEST_DID.toString(),
-                                                                   jwtTypeCredentialConfigurationIdName,
-                                                                   jwtTypeCredentialScopeName,
-                                                                   null,
-                                                                   VCFormat.JWT_VC.getValue(),
-                                                                   TEST_CREDENTIAL_MAPPERS_FILE,
-                                                                   Collections.emptyList());
-        minimalJwtTypeCredentialClientScope = registerOptionalClientScope("vc-with-minimal-config",
-                                                                          null,
-                                                                          null,
-                                                                          null,
-                                                                          null,
-                                                                          null,
-                                                                          null, null);
-
-        List.of(client, namedClient).forEach(client -> {
-            String clientId = client.getClientId();
-
-            // Assign the registered optional client scopes to the client
-            assignOptionalClientScopeToClient(jwtTypeNaturalPersonClientScope.getId(), clientId);
-            assignOptionalClientScopeToClient(sdJwtTypeNaturalPersonClientScope.getId(), clientId);
-            assignOptionalClientScopeToClient(jwtTypeCredentialClientScope.getId(), clientId);
-            assignOptionalClientScopeToClient(sdJwtTypeCredentialClientScope.getId(), clientId);
-            assignOptionalClientScopeToClient(minimalJwtTypeCredentialClientScope.getId(), clientId);
-
-            // Enable OID4VCI for the client by default, but allow tests to override
-            setClientOid4vciEnabled(clientId, shouldEnableOid4vci());
-        });
     }
 
     private ClientResource findClientByClientId(RealmResource realm, String clientId) {
@@ -371,7 +405,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         }
     }
 
-    private void assignOptionalClientScopeToClient(String scopeId, String clientId) {
+    protected void assignOptionalClientScopeToClient(String scopeId, String clientId) {
         ClientResource clientResource = findClientByClientId(testRealm(), clientId);
         clientResource.addOptionalClientScope(scopeId);
     }
@@ -478,7 +512,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return out.toByteArray();
     }
 
-    void setClientOid4vciEnabled(String clientId, boolean enabled) {
+    protected void setClientOid4vciEnabled(String clientId, boolean enabled) {
         ClientRepresentation clientRepresentation = adminClient.realm(TEST_REALM_NAME).clients().findByClientId(clientId).get(0);
         ClientResource clientResource = adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId());
 
@@ -653,48 +687,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 .filter(it -> it.getScope().equals(scope))
                 .findFirst().orElse(null);
         return result;
-    }
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        testRealm.setVerifiableCredentialsEnabled(true);
-        
-        if (testRealm.getComponents() == null) {
-            testRealm.setComponents(new MultivaluedHashMap<>());
-        }
-
-        testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getKeyProvider());
-
-        testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
-                getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100));
-        testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
-                getRsaEncKeyProvider(RSA_OAEP, "enc-key-oaep", 101));
-
-        // Find existing client representation
-        Map<String, ClientRepresentation> realmClients = testRealm.getClients().stream()
-                .collect(Collectors.toMap(ClientRepresentation::getClientId, Function.identity()));
-        ClientRepresentation existingClient = Optional.ofNullable(realmClients.get(clientId))
-                .orElseThrow(() -> new IllegalStateException("Client with ID " + clientId + " not found in realm"));
-
-        // Add a role to an existing client
-        RolesRepresentation realmRoles = testRealm.getRoles();
-        if (realmRoles != null) {
-            realmRoles.getClient().merge(
-                    existingClient.getClientId(),
-                    List.of(getRoleRepresentation("testRole", existingClient.getClientId())),
-                    (existingRoles, newRoles) -> {
-                        List<RoleRepresentation> mergedRoles = new ArrayList<>(existingRoles);
-                        mergedRoles.addAll(newRoles);
-                        return mergedRoles;
-                    }
-            );
-        }
-
-        Map<String, List<String>> clientRoles = Map.of(clientId, List.of("testRole"));
-        List<UserRepresentation> realmUsers = Optional.ofNullable(testRealm.getUsers()).map(ArrayList::new).orElse(new ArrayList<>());
-        realmUsers.add(getUserRepresentation("John Doe", Map.of("did", "did:key:1234"), List.of(CREDENTIAL_OFFER_CREATE.getName()), clientRoles));
-        realmUsers.add(getUserRepresentation("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
-        testRealm.setUsers(realmUsers);
     }
 
     protected void withCausePropagation(Runnable r) throws Throwable {

@@ -149,10 +149,6 @@ public class CredentialRequest {
 
     @Override
     public String toString() {
-        try {
-            return JsonSerialization.mapper.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        return JsonSerialization.valueAsString(this);
     }
 }
