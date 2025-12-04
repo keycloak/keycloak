@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -61,7 +62,7 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         userAttributeConfig.setHelpText("The user attribute to be added to the credential subject.");
         userAttributeConfig.setType(ProviderConfigProperty.LIST_TYPE);
         userAttributeConfig.setOptions(
-                List.of(USER_ATTRIBUTE_NAME_DID, UserModel.USERNAME, UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL));
+                List.of(USER_ATTRIBUTE_NAME_DID, UserModel.ID, UserModel.USERNAME, UserModel.EMAIL));
         CONFIG_PROPERTIES.add(userAttributeConfig);
     }
 
@@ -92,12 +93,14 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         List<String> attributePath = getMetadataAttributePath();
         String propertyName = attributePath.get(attributePath.size() - 1);
         String userAttributeName = mapperModel.getConfig().get(OID4VCMapper.USER_ATTRIBUTE_KEY);
-        String userAttr = KeycloakModelUtils.resolveAttribute(userModel, userAttributeName,false).stream()
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
-        if (userAttr != null && !userAttr.isEmpty()) {
-            claims.put(propertyName, userAttr);
+        Consumer<String> userIdConsumer = (val) -> claims.put(propertyName, val);
+        if (UserModel.ID.equals(userAttributeName)) {
+            userIdConsumer.accept(userModel.getId());
+        } else {
+            KeycloakModelUtils.resolveAttribute(userModel, userAttributeName, false).stream()
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .ifPresent(userIdConsumer);
         }
     }
 
@@ -117,5 +120,7 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
     }
 
     @Override
-    public String getId() { return MAPPER_ID; }
+    public String getId() {
+        return MAPPER_ID;
+    }
 }

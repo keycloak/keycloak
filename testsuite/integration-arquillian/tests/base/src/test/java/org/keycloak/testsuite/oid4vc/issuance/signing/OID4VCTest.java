@@ -328,7 +328,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	public List<ProtocolMapperRepresentation> getProtocolMappers(String scopeName) {
 		return List.of(
-                getSubjectIdMapper(CLAIM_NAME_SUBJECT_ID, "username"), //USER_ATTRIBUTE_NAME_DID),
+                getSubjectIdMapper(CLAIM_NAME_SUBJECT_ID, "username"), // defaults to USER_ATTRIBUTE_NAME_DID
 				getUserAttributeMapper("email", "email"),
 				getUserAttributeMapper("firstName", "firstName"),
 				getUserAttributeMapper("lastName", "lastName"),
