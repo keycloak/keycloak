@@ -27,7 +27,7 @@ public class WorkflowDefinitionTest {
         expected.setSteps(null);
         expected.setEnabled(true);
 
-        expected.setConcurrency(new WorkflowConcurrencyRepresentation(true));
+        expected.setConcurrency(new WorkflowConcurrencyRepresentation("true", "user-role-removed(admin)"));
 
         expected.setSteps(Arrays.asList(
                 WorkflowStepRepresentation.create()

@@ -200,8 +200,11 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
         WorkflowValidator.validateWorkflow(session, rep);
 
         MultivaluedHashMap<String, String> config = ofNullable(rep.getConfig()).orElse(new MultivaluedHashMap<>());
-        if (rep.isCancelIfRunning()) {
-            config.putSingle(WorkflowConstants.CONFIG_CANCEL_IF_RUNNING, "true");
+        if (rep.getCancelInProgress() != null) {
+            config.putSingle(WorkflowConstants.CONFIG_CANCEL_IN_PROGRESS, rep.getCancelInProgress());
+        }
+        if (rep.getRestartInProgress() != null) {
+            config.putSingle(WorkflowConstants.CONFIG_RESTART_IN_PROGRESS, rep.getRestartInProgress());
         }
 
         Workflow workflow = addWorkflow(new Workflow(session, rep.getId(), config));
