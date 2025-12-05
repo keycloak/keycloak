@@ -418,7 +418,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                   defaultValue={
                     clientScope?.attributes?.[
                       "vc.credential_build_config.sd_jwt.visible_claims"
-                    ] ?? "id,iat,nbf,exp,jti"
+                    ] ?? "jti,iss,nbf,exp,cnf,vct"
                   }
                   rules={{
                     validate: validateCommaSeparatedList,
