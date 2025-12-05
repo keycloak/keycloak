@@ -41,7 +41,7 @@ public abstract class AbstractCredentialSigner<T> implements CredentialSigner<T>
         if (credentialBuildConfig.getSigningAlgorithm() == null) {
             throw new CredentialSignerException(String.format(
                     "A signing algorithm must be configured for credential %s",
-                    credentialBuildConfig.getCredentialId()
+                    credentialBuildConfig.getCredentialConfigId()
             ));
         }
 

@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -74,9 +75,16 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
+import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.testcontainers.shaded.org.apache.commons.lang3.exception.ExceptionUtils;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_VC_ID;
+import static org.keycloak.util.JsonSerialization.valueAsPrettyString;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -422,12 +430,12 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                     assertEquals(5,  jwtVcClaims.size());
                     {
                         Claim claim = jwtVcClaims.get(0);
-                        assertEquals("The sd-jwt-credential claim id is present.",
-                                "id",
+                        assertEquals("The sd-jwt-credential claim sub is present.",
+                                "sub",
                                 claim.getPath().get(0));
-                        assertFalse("The sd-jwt-credential claim id is not mandatory.",
+                        assertFalse("The sd-jwt-credential claim sub is not mandatory.",
                                 claim.isMandatory());
-                        assertNull("The sd-jwt-credential claim id has no display configured",
+                        assertNull("The sd-jwt-credential claim sub has no display configured",
                                 claim.getDisplay());
                     }
                     {
@@ -518,17 +526,13 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 30);
     }
 
-    private static final String JTI_KEY = "jti";
-
-    public static ProtocolMapperRepresentation getJtiGeneratedIdMapper() {
+    public static ProtocolMapperRepresentation getGeneratedCredentialIdMapper() {
         ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
         protocolMapperRepresentation.setName("generated-id-mapper");
         protocolMapperRepresentation.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
         protocolMapperRepresentation.setId(UUID.randomUUID().toString());
         protocolMapperRepresentation.setProtocolMapper("oid4vc-generated-id-mapper");
-        protocolMapperRepresentation.setConfig(Map.of(
-                OID4VCGeneratedIdMapper.CLAIM_NAME, JTI_KEY
-        ));
+        protocolMapperRepresentation.setConfig(Map.of(OID4VCGeneratedIdMapper.CLAIM_NAME, CLAIM_NAME_VC_ID));
         return protocolMapperRepresentation;
     }
 
@@ -548,6 +552,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     static class TestCredentialResponseHandler extends CredentialResponseHandler {
+        final Logger log = Logger.getLogger(OID4VCSdJwtIssuingEndpointTest.class);
         final String vct;
 
         TestCredentialResponseHandler(String vct) {
@@ -559,12 +564,22 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
             // SDJWT have a special format.
             SdJwtVP sdJwtVP = SdJwtVP.of(credentialResponse.getCredentials().get(0).getCredential().toString());
             JsonWebToken jsonWebToken = TokenVerifier.create(sdJwtVP.getIssuerSignedJWT().getJws(), JsonWebToken.class).getToken();
+            Map<String, Object> otherClaims = jsonWebToken.getOtherClaims();
 
-            assertNotNull("A valid credential string should have been responded", jsonWebToken);
-            assertNotNull("The credentials should be included at the vct-claim.", jsonWebToken.getOtherClaims().get("vct"));
-            assertEquals("The credentials should be included at the vct-claim.", vct, jsonWebToken.getOtherClaims().get("vct").toString());
+            log.infof("JsonWebToken: %s", valueAsPrettyString(jsonWebToken));
+            assertNotNull("Expected jti claim", jsonWebToken.getId());
+            assertNotNull("Expected exp claim", jsonWebToken.getExp());
+            assertNotNull("Expected nbf claim", jsonWebToken.getNbf());
+            assertNotNull("Expected iss claim", jsonWebToken.getIssuer());
 
-            Map<String, JsonNode> disclosureMap = sdJwtVP.getDisclosures().values().stream()
+            assertNull("Unexpected aud claim", jsonWebToken.getAudience());
+            assertNull("Unexpected iat claim", jsonWebToken.getIat());
+
+            assertTrue(otherClaims.keySet().containsAll(Set.of(CLAIM_NAME_SD, CLAIM_NAME_SD_HASH_ALGORITHM, CLAIM_NAME_VCT))); // may also contain cnf
+            assertEquals("_sd_alg claim mapped correctly", "SHA-256", otherClaims.get("_sd_alg"));
+            assertEquals("vct claim mapped correctly", vct, otherClaims.get("vct"));
+
+            Map<String, String> disclosureMap = sdJwtVP.getDisclosures().values().stream()
                     .map(disclosure -> {
                         try {
                             JsonNode jsonNode = JsonSerialization.mapper.readTree(Base64Url.decode(disclosure));
@@ -573,24 +588,19 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                             throw new RuntimeException(e); // Re-throw as unchecked exception
                         }
                     })
+                    .peek(en -> log.infof("%s", en.getValue()))
+                    .map(en -> Map.entry(en.getKey(), en.getValue().get(2).asText()))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            assertFalse("Only mappers supported for the requested type should have been evaluated.", disclosureMap.containsKey("given_name"));
-            assertTrue("Test credential shall include an iat claim.", disclosureMap.containsKey("iat"));
-            assertTrue("The credentials should include the id claim.", disclosureMap.containsKey("sub")); // id -> sub
-            assertEquals("is claim incorrectly mapped.", "did:key:1234", disclosureMap.get("sub").get(2).asText());
-            assertTrue("The credentials should include the firstName claim.", disclosureMap.containsKey("firstName"));
-            assertEquals("firstName claim incorrectly mapped.", "John", disclosureMap.get("firstName").get(2).asText());
-            assertTrue("The credentials should include the lastName claim.", disclosureMap.containsKey("lastName"));
-            assertEquals("lastName claim incorrectly mapped.", "Doe", disclosureMap.get("lastName").get(2).asText());
-            assertTrue("The credentials should include the scope-name claim.",
-                    disclosureMap.containsKey("scope-name"));
-            assertEquals("The credentials should include the scope-name claims correct value.",
-                    clientScope.getName(),
-                    disclosureMap.get("scope-name").get(2).textValue());
-            assertTrue("The credentials should include the email claim.", disclosureMap.containsKey("email"));
-            assertEquals("email claim incorrectly mapped.", "john@email.cz", disclosureMap.get("email").get(2).asText());
 
-            assertNotNull("Test credential shall include an nbf claim.", jsonWebToken.getNbf());
+            assertTrue("Expected id claim", disclosureMap.containsKey("id"));
+            assertTrue("Expected iat claim", disclosureMap.containsKey("iat"));
+            assertFalse("Unexpected other claim", disclosureMap.containsKey("given_name"));
+
+            assertEquals("sub claim mapped correctly", "did:key:1234", disclosureMap.get("sub"));
+            assertEquals("firstName claim mapped correctly", "John", disclosureMap.get("firstName"));
+            assertEquals("lastName claim mapped correctly", "Doe", disclosureMap.get("lastName"));
+            assertEquals("scope-name claim mapped correctly", clientScope.getName(), disclosureMap.get("scope-name"));
+            assertEquals("email claim mapped correctly", "john@email.cz", disclosureMap.get("email"));
         }
     }
 }

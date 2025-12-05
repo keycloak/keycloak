@@ -44,7 +44,7 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     // Also see DisclosureRedList#redList
     // https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-11.html#section-3.2.2.2
-    public static final String SD_JWT_VISIBLE_CLAIMS_DEFAULT = "iss,nbf,exp,cnf,vct,status";
+    public static final String SD_JWT_VISIBLE_CLAIMS_DEFAULT = "jti,iss,nbf,exp,cnf,vct,status";
     
     public static final int SD_JWT_DECOYS_DEFAULT = 10;
     public static final String FORMAT_DEFAULT = SD_JWT_VC_FORMAT;
