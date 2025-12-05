@@ -76,10 +76,9 @@ public class TruststoreBuilder {
      *
      * @param truststores the existing truststore paths
      * @param includeKubernetesCa {@code true} to include the Kubernetes service account CA certificate
-     * @param includeServiceCa {@code true} to include the OpenShift service CA certificate
      * @return the updated truststore paths
      */
-    public static String[] includeKubernetesTrustStorePaths(String[] truststores, boolean includeKubernetesCa, boolean includeServiceCa) {
+    public static String[] includeKubernetesTrustStorePaths(String[] truststores, boolean includeKubernetesCa) {
         final List<String> truststoreList = new ArrayList<>(Arrays.asList(truststores));
 
         if (includeKubernetesCa) {
@@ -89,9 +88,7 @@ public class TruststoreBuilder {
                 LOGGER.infof("Adding trusted Kubernetes CA from %s", kubernetesCaPath);
                 truststoreList.add(kubernetesCaPath);
             }
-        }
 
-        if (includeServiceCa) {
             String serviceCaPath = System.getProperty(SERVICE_CA_PATH_PROPERTY, DEFAULT_SERVICE_CA_PATH);
             File serviceCA = new File(serviceCaPath);
             if (serviceCA.exists() && serviceCA.isFile()) {
@@ -99,6 +96,7 @@ public class TruststoreBuilder {
                 truststoreList.add(serviceCaPath);
             }
         }
+
         return truststoreList.toArray(new String[0]);
     }
 

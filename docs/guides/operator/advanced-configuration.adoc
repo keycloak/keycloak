@@ -390,8 +390,6 @@ spec:
   additionalOptions:
     - name: truststore-kubernetes-enabled
       value: "false"
-    - name: truststore-openshift-enabled
-      value: "false"
 ----
 
 Deprecated: The `automountServiceAccountToken` field in the Keycloak CR is deprecated and has no effect on truststore configuration. If your security policies require not mounting the service account token, consider adjusting your Pod/ServiceAccount settings accordingly, but use the server options above to control whether cluster CAs are trusted by the server.

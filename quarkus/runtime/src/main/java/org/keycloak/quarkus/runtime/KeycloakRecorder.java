@@ -88,11 +88,10 @@ public class KeycloakRecorder {
         String[] truststores = Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
                 .map(s -> s.split(",")).orElse(new String[0]);
 
+        // Service CA discovery is tied to the Kubernetes CA flag
         boolean includeKubernetesCa = Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_KUBERNETES_CA_ENABLED.getKey())
                 .map(Boolean::parseBoolean).orElse(true);
-        boolean includeServiceCa = Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_SERVICE_CA_ENABLED.getKey())
-                .map(Boolean::parseBoolean).orElse(true);
-        truststores = TruststoreBuilder.includeKubernetesTrustStorePaths(truststores, includeKubernetesCa, includeServiceCa);
+        truststores = TruststoreBuilder.includeKubernetesTrustStorePaths(truststores, includeKubernetesCa);
 
         Optional<String> dataDir = Environment.getDataDir();
 

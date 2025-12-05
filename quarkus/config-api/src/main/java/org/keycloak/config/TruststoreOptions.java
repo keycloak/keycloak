@@ -17,12 +17,6 @@ public class TruststoreOptions {
             .defaultValue(true)
             .build();
 
-    public static final Option<Boolean> TRUSTSTORE_SERVICE_CA_ENABLED = new OptionBuilder<>("truststore-openshift-enabled", Boolean.class)
-            .category(OptionCategory.TRUSTSTORE)
-            .description("If enabled, the server will automatically include the OpenShift service CA certificate from \"/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt\" when running in a container environment.")
-            .defaultValue(true)
-            .build();
-
     public static final Option<HostnameVerificationPolicy> HOSTNAME_VERIFICATION_POLICY = new OptionBuilder<>("tls-hostname-verifier", HostnameVerificationPolicy.class)
             .category(OptionCategory.TRUSTSTORE)
             .description("The TLS hostname verification policy for out-going HTTPS and SMTP requests. ANY should not be used in production.")

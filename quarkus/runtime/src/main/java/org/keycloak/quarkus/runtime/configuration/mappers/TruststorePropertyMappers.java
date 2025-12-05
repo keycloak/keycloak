@@ -17,9 +17,6 @@ public class TruststorePropertyMappers implements PropertyMapperGrouping {
                 fromOption(TruststoreOptions.TRUSTSTORE_KUBERNETES_CA_ENABLED)
                         .paramLabel(TruststoreOptions.TRUSTSTORE_KUBERNETES_CA_ENABLED.getKey())
                         .build(),
-                fromOption(TruststoreOptions.TRUSTSTORE_SERVICE_CA_ENABLED)
-                        .paramLabel(TruststoreOptions.TRUSTSTORE_SERVICE_CA_ENABLED.getKey())
-                        .build(),
                 fromOption(TruststoreOptions.HOSTNAME_VERIFICATION_POLICY)
                         .paramLabel(TruststoreOptions.HOSTNAME_VERIFICATION_POLICY.getKey())
                         .to("kc.spi-truststore--file--hostname-verification-policy")

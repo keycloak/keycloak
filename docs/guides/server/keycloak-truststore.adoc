@@ -4,7 +4,7 @@
 <@tmpl.guide
 title="Configuring trusted certificates"
 summary="Configure the {project_name} Truststore to communicate through TLS."
-includedOptions="truststore-paths truststore-kubernetes-enabled truststore-openshift-enabled tls-hostname-verifier">
+includedOptions="truststore-paths truststore-kubernetes-enabled tls-hostname-verifier">
 
 When {project_name} communicates with external services or has an incoming connection through TLS, it has to validate the remote certificate in order to ensure it is connecting to a trusted server. This is necessary in order to prevent man-in-the-middle attacks.
 
@@ -31,14 +31,13 @@ When running {project_name} on Kubernetes or OpenShift, the server will automati
 * Kubernetes service account CA: `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`
 * OpenShift service CA: `/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt`
 
-This behavior is enabled by default and does not require the Operator. It can be controlled with the following options:
+This behavior is enabled by default and does not require the Operator. It can be controlled with the following option:
 
 * `--truststore-kubernetes-enabled=true|false` (default: `true`)
-* `--truststore-openshift-enabled=true|false` (default: `true`)
 
-For example, to disable automatically trusting the cluster CAs:
+When `truststore-kubernetes-enabled` is set to `true`, {project_name} will also discover and include the OpenShift Service CA if it is present on the filesystem. To disable automatically trusting the cluster CAs entirely:
 
-<@kc.start parameters="--truststore-kubernetes-enabled=false --truststore-openshift-enabled=false" />
+<@kc.start parameters="--truststore-kubernetes-enabled=false" />
 
 Note that if the corresponding files are not mounted into the container, they will not be included regardless of the option values.
 
