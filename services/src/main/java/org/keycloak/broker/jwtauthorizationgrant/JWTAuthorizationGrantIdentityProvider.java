@@ -75,6 +75,11 @@ public class JWTAuthorizationGrantIdentityProvider implements JWTAuthorizationGr
     }
 
     @Override
+    public boolean isLimitAccessTokenExpiration() {
+        return getConfig().isJwtAuthorizationGrantLimitAccessTokenExp();
+    }
+
+    @Override
     public JWTAuthorizationGrantIdentityProviderConfig getConfig() {
         return this.config instanceof  JWTAuthorizationGrantIdentityProviderConfig ? (JWTAuthorizationGrantIdentityProviderConfig)this.config : null;
     }

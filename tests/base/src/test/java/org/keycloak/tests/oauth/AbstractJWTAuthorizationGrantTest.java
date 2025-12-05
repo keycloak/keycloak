@@ -78,6 +78,7 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         //reduce max expiration to 10 seconds
         realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_MAX_ALLOWED_ASSERTION_EXPIRATION, "10");
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_LIMIT_ACCESS_TOKEN_EXP, "false");
         });
 
         jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 11L));
@@ -273,6 +274,17 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         } finally {
             oAuthClient.openid(true).scope(null);
         }
+    }
+
+    @Test
+    public void textLimitAccessTokenExpiration() {
+        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_LIMIT_ACCESS_TOKEN_EXP, "true");
+        });
+        JsonWebToken jsonWebToken = createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 10L);
+        String jwt = getIdentityProvider().encodeToken(jsonWebToken);
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Generated access token cannot expire after JWT assertion", response, events.poll());
     }
 
     @Test
