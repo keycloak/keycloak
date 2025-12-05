@@ -88,9 +88,15 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         var credOffer = offerState.getCredentialsOffer();
 
         var appUserId = offerState.getUserId();
-        var userModel = session.users().getUserByUsername(realm, appUserId);
+        var userModel = session.users().getUserById(realm, appUserId);
         if (userModel == null) {
-            var errorMessage = "No user model for: " + appUserId;
+            var errorMessage = "No user with ID: " + appUserId;
+            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+        if (!userModel.isEnabled()) {
+            var errorMessage = "User '" + userModel.getUsername() + "' disabled";
             event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     errorMessage, Response.Status.BAD_REQUEST);

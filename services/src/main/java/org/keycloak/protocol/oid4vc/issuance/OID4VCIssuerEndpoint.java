@@ -348,18 +348,18 @@ public class OID4VCIssuerEndpoint {
     /**
      * Creates a Credential Offer Uri that can be pre-authorized and hence bound to a specific client/user id.
      * <p>
-     * Credential Offer Validity Matrix for the supported request parameters "pre_authorized", "client_id", "user_id" combinations.
+     * Credential Offer Validity Matrix for the supported request parameters "pre_authorized", "client_id", "username" combinations.
      * </p>
      * +----------+-----------+---------+---------+-----------------------------------------------------+
-     * | pre-auth | clientId  | userId  | Valid   | Notes                                               |
+     * | pre-auth | clientId  | username  | Valid   | Notes                                               |
      * +----------+-----------+---------+---------+-----------------------------------------------------+
      * | no       | no        | no      | yes     | Generic offer; any logged-in user may redeem.       |
      * | no       | no        | yes     | yes     | Offer restricted to a specific user.                |
      * | no       | yes       | no      | yes     | Bound to client; user determined at login.          |
      * | no       | yes       | yes     | yes     | Bound to both client and user.                      |
      * +----------+-----------+---------+---------+-----------------------------------------------------+
-     * | yes      | no        | no      | no      | Pre-auth requires a user subject; missing userId.   |
-     * | yes      | yes       | no      | no      | Same as above; userId required.                     |
+     * | yes      | no        | no      | no      | Pre-auth requires a user subject; missing username.   |
+     * | yes      | yes       | no      | no      | Same as above; username required.                     |
      * | yes      | no        | yes     | yes     | Pre-auth for a specific user; client unconstrained. |
      * | yes      | yes       | yes     | yes     | Fully constrained: user + client.                   |
      * +----------+-----------+---------+---------+-----------------------------------------------------+
@@ -367,7 +367,7 @@ public class OID4VCIssuerEndpoint {
      * @param credConfigId  A valid credential configuration id
      * @param preAuthorized A flag whether the offer should be pre-authorized (requires targetUser)
      * @param appClientId   The client id that the offer is authorized for
-     * @param appUserId     The user id that the offer is authorized for
+     * @param appUsername   The username that the offer is authorized for
      * @param type          The response type, which can be 'uri' or 'qr-code'
      * @param width         The width of the QR code image
      * @param height        The height of the QR code image
@@ -380,7 +380,7 @@ public class OID4VCIssuerEndpoint {
             @QueryParam("credential_configuration_id") String credConfigId,
             @QueryParam("pre_authorized") @DefaultValue("true") boolean preAuthorized,
             @QueryParam("client_id") String appClientId,
-            @QueryParam("user_id") String appUserId,
+            @QueryParam("username") String appUsername,
             @QueryParam("type") @DefaultValue("uri") OfferUriType type,
             @QueryParam("width") @DefaultValue("200") int width,
             @QueryParam("height") @DefaultValue("200") int height
@@ -414,10 +414,21 @@ public class OID4VCIssuerEndpoint {
             throw new CorsErrorResponseException(cors,
                     INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
         }
-        if (appUserId != null && session.users().getUserByUsername(realmModel, appUserId) == null) {
-            var errorMessage = "No such user id: " + appUserId;
-            throw new CorsErrorResponseException(cors,
-                    INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
+
+        String userId = null;
+        if (appUsername != null) {
+            UserModel user = session.users().getUserByUsername(realmModel, appUsername);
+            if (user == null) {
+                var errorMessage = "Not found user with username: " + appUsername;
+                throw new CorsErrorResponseException(cors,
+                        INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
+            }
+            if (!user.isEnabled()) {
+                var errorMessage = "User '" + appUsername + "' disabled";
+                throw new CorsErrorResponseException(cors,
+                        INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
+            }
+            userId = user.getId();
         }
 
         if (preAuthorized) {
@@ -425,7 +436,7 @@ public class OID4VCIssuerEndpoint {
                 appClientId = clientModel.getClientId();
                 LOGGER.warnf("Using fallback client id for credential offer: %s", appClientId);
             }
-            if (appUserId == null) {
+            if (appUsername == null) {
                 var errorMessage = "Pre-Authorized credential offer requires a target user";
                 throw new CorsErrorResponseException(cors,
                         INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
@@ -450,7 +461,7 @@ public class OID4VCIssuerEndpoint {
                 .setCredentialConfigurationIds(List.of(credConfigId));
 
         int expiration = timeProvider.currentTimeSeconds() + preAuthorizedCodeLifeSpan;
-        CredentialOfferState offerState = new CredentialOfferState(credOffer, appClientId, appUserId, expiration);
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, appClientId, userId, expiration);
 
         if (preAuthorized) {
             String code = "urn:oid4vci:code:" + SecretGenerator.getInstance().randomString(64);
@@ -723,7 +734,7 @@ public class OID4VCIssuerEndpoint {
             //
             UserSessionModel userSession = authResult.session();
             UserModel userModel = userSession.getUser();
-            if (!userModel.getUsername().equals(offerState.getUserId())) {
+            if (!userModel.getId().equals(offerState.getUserId())) {
                 var errorMessage = "Unexpected login user: " + userModel.getUsername();
                 LOGGER.errorf(errorMessage + " != %s", offerState.getUserId());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
