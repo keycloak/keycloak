@@ -229,8 +229,8 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
-                                .withConfig("custom_subject_key", "notifier1_subject")
-                                .withConfig("custom_message", "notifier1_message")
+                                .withConfig("subject", "notifier1_subject")
+                                .withConfig("message", "notifier1_message")
                                 .build())
                 .build()).close();
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow_2")
@@ -238,8 +238,8 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(10))
-                                .withConfig("custom_subject_key", "notifier2_subject")
-                                .withConfig("custom_message", "notifier2_message")
+                                .withConfig("subject", "notifier2_subject")
+                                .withConfig("message", "notifier2_message")
                                 .build())
                 .build()).close();
 

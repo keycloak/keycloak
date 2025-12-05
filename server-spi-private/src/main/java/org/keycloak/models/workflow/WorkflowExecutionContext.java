@@ -19,4 +19,11 @@ public interface WorkflowExecutionContext {
      * @return the event bound to the current execution.
      */
     WorkflowEvent getEvent();
+
+    /**
+     * Returns the next step to be executed in the workflow.
+     *
+     * @return the next workflow step
+     */
+    WorkflowStep getNextStep();
 }

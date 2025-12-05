@@ -213,10 +213,6 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
     public void close() {
     }
 
-    WorkflowStepProvider getStepProvider(WorkflowStep step) {
-        return getStepProviderFactory(step).create(session, realm.getComponent(step.getId()));
-    }
-
     private ComponentModel getWorkflowComponent(String id) {
         ComponentModel component = realm.getComponent(id);
 
@@ -233,17 +229,6 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
         ComponentFactory<?, ?> factory = (ComponentFactory<?, ?>) sessionFactory
                 .getProviderFactory(WorkflowProvider.class, DefaultWorkflowProviderFactory.ID);
         return (WorkflowProvider) factory.create(session, realm.getComponent(workflow.getId()));
-    }
-
-    private WorkflowStepProviderFactory<WorkflowStepProvider> getStepProviderFactory(WorkflowStep step) {
-        WorkflowStepProviderFactory<WorkflowStepProvider> factory = (WorkflowStepProviderFactory<WorkflowStepProvider>) session
-                .getKeycloakSessionFactory().getProviderFactory(WorkflowStepProvider.class, step.getProviderId());
-
-        if (factory == null) {
-            throw new WorkflowInvalidStateException("Step not found: " + step.getProviderId());
-        }
-
-        return factory;
     }
 
     private void processEvent(Stream<Workflow> workflows, WorkflowEvent event) {

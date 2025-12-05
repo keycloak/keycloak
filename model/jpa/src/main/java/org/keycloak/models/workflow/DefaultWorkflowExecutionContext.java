@@ -77,6 +77,11 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
         return event;
     }
 
+    @Override
+    public WorkflowStep getNextStep() {
+        return workflow.getSteps(currentStep.getId()).skip(1).findFirst().orElse(null);
+    }
+
     String getExecutionId() {
         return this.executionId;
     }
