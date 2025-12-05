@@ -56,6 +56,15 @@ All invitations are now persistently stored in the database, providing better tr
 
 The invitation management features are available in the *Invitations* tab when managing an organization in the Admin Console, and through the Organizations REST API endpoints under `+/admin/realms/{realm}/orgs/{orgId}/invitations+`.
 
+== New event `USER_SESSION_DELETED`
+
+For each expired user session there is a new user event `USER_SESSION_DELETED` fired.
+This event is published approximately 3-10 minutes after the session has expired depending on job scheduling and load on the system.
+By default, this event is not persisted.
+
+As part of this change, the process now deletes rows from the table in small batches, instead of issuing a delete statements that affects the whole table.
+This should allow for better response times when there are a lot of sessions in the table.
+
 = Configuring and Running
 
 == Containers for PowerPC 64-bit Little Endian architecture
@@ -76,15 +85,6 @@ The latest major release of PostgreSQL 18 is now supported.
 As PostgreSQL 13 is end-of-life it is now longer supported.
 
 We also updated the docs on how to use a TLS certificate for the JDBC-connection when connecting to a PostgreSQL database.
-
-== Export traces with custom request headers
-
-It is now possible to set request headers for exporting traces via Open Telemetry Protocol (OTLP).
-It is mainly useful for providing tokens in the request.
-
-You can specify these headers via the `tracing-header-<header>` wildcard option, accepting any custom header name.
-
-For more details, see the  link:{tracingguide_link}[{tracingguide_name}] guide.
 
 == Enhanced HTTP performance (preview)
 
@@ -109,6 +109,17 @@ This provides a more fine-grained way to manage features and eliminates the need
 The `feature-<name>` option takes precedence over both `features` and `features-disabled`.
 
 For more details, see the https://www.keycloak.org/server/features[Enabling and disabling features] guide.
+
+= Observability
+
+== Export traces with custom request headers
+
+It is now possible to set request headers for exporting traces via Open Telemetry Protocol (OTLP).
+It is mainly useful for providing tokens in the request.
+
+You can specify these headers via the `tracing-header-<header>` wildcard option, accepting any custom header name.
+
+For more details, see the  link:{tracingguide_link}[{tracingguide_name}] guide.
 
 == MDC Logging feature (supported)
 

@@ -1,24 +1,6 @@
 // ------------------------ Breaking changes ------------------------  //
 == Breaking changes
 
-=== Corrected encoding when sending OpenID Connect client secrets when acting as a broker
-
-In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC 6749.
-You are not affected if you configured {project_name} to send the credentials in the request body.
-
-This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
-
-To revert to the old behavior, change the client authentication to the deprecated option *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`).
-
-=== Accepting only normalized paths in requests
-
-Previously {project_name} accepted HTTP requests with paths containing double dots (`..`) or double slashes (`//`). When processing them, it normalized the path by collapsing double slashes and normalized the path according to RFC 3986.
-As this has led to a hard-to-configure URL filtering, for example, in reverse proxies, the normalization is now disabled, and {project_name} responds with an HTTP 400 response code.
-
-To analyze rejected requests in the server log, enable debug logging for `org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter`.
-
-To revert to the previous behavior and to accept non-normalized URLs, set the option `http-accept-non-normalized-paths` to `true`. With this configuration, enable and review the HTTP access log to identify problematic requests.
-
 = Loopback Hostname Verification on Windows
 
 Setups on Windows that previously relied on custom machine names or non-standard hostnames for loopback (for example, `127.0.0.1` resolving to a custom name) may require updates to their trusted domain configuration. Only `localhost` and `*.localhost` are now recognized for loopback verification.
@@ -80,12 +62,6 @@ The following message keys in translations no longer support HTML entities: `bac
 
 The default themes have already been updated. If you used them in your translations, please update your translation to use the UTF-8 equivalent.
 
-=== User sessions created with "Remember Me" are no longer valid if "Remember Me" is disabled for the realm
-
-When the "Remember Me" option is disabled in the realm settings, all user sessions previously created with the "Remember Me" flag are now considered invalid.
-Users will be required to log in again, and any associated refresh tokens will no longer be usable.
-User sessions created without selecting "Remember Me" are not affected.
-
 === Permissions of the database user for PostgreSQL
 
 If you are running on PostgreSQL as a database for {project_name}, ensure that the database user has `SELECT` permissions to the following tables to ensure an efficient upgrade: `pg_class`, `pg_namespace`.
@@ -117,19 +93,6 @@ public org.keycloak.models.UserCredentialManager credentialManager() {
 }
 ----
 
-=== Allowing realm administrators granted with the `realm-admin` role to assign admin roles
-
-In previous versions, realm administrators granted with the `realm-admin` role were not able to grant admin roles for delegated realm administrators.
-This was only possible by granting the `admin` role to a master realm user, making this user a server admin.
-
-In this release, realm administrators with the `realm-admin` role can assign admin roles to users in their realm, allowing them to delegate administrative tasks without needing server admin privileges.
-
-If you are using FGAP to delegate administration to users in a realm other than the master realm,
-make sure the users granted with the `realm-admin` role are expected to have this role to avoid privilege escalation.
-
-The documentation is also updated with additional information about the different types of realm administrators.
-For more information, see link:{adminguide_link}#_fine_grained_permissions[Delegating realm administration using permissions].
-
 === OCSP request timeouts follow HTTP client configuration
 
 In previous versions, OCSP requests used hardcoded connection and socket timeouts of 10 seconds.
@@ -139,13 +102,6 @@ In this release, OCSP requests inherit timeouts from the outgoing HTTP client co
 - **Establish connection timeout property**: `establish-connection-timeout-millis` (default: not set / `-1`)
 
 If you relied on the previous 10-second behavior, explicitly set the HTTP client timeouts.
-
-=== Added database indexes on `OFFLINE_CLIENT_SESSION` table
-
-This adds new indexes on `OFFLINE_CLIENT_SESSION` table to improve performance when retrieving or deleting client sessions.
-
-If those tables contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
-See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
 
 === Default authorization policies and resources are no longer auto-created
 
@@ -166,6 +122,11 @@ Previously, {project_name} deleted sessions from the database only once the sess
 With the new setup and persistent user sessions enabled, sessions are deleted more timely based on the realm settings on session lifetime and idle time, including the remember me settings. For this, the table `OFFLINE_USER_SESSION` now has a new column `REMEMBER_ME`, that is filled for new sessions and updated incrementally for existing sessions.
 The deletion is triggered currently three minutes after the session has expired to allow for clock skew between instances. Note that this interval can change in future release as we optimize this functionality.
 
+This adds new indexes on `OFFLINE_USER_SESSION` table to improve performance when retrieving or deleting client sessions.
+
+If those tables contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
 For each expired user session there is a new user event `USER_SESSION_DELETED` fired.
 As part of this change, the process now deletes rows from the table in small batches, instead of issuing a delete statements that affects the whole table. This should allow for better response times when there are a lot of sessions in the table.
 
@@ -174,22 +135,10 @@ As part of this change, the process now deletes rows from the table in small bat
 
 The following sections provide details on deprecated features.
 
-=== Sending OpenID Connect client secret via basic authentication without URL encoding
-
-In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, you can choose to send the client secret as *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`). While this violates RFC 6749, it can be used to keep the default behavior of earlier versions of {project_name}.
-
-This behavior is deprecated and will be removed in a future version of {project_name}.
-
 === `AuthenticationManager.AuthResult` is now a record
 
 The inner class `AuthenticationManager.AuthResult` in the `keycloak-services` module is now a record.
 The getter methods like `getSession()` have been deprecated in favor of the `session()` accessors.
-
-=== Accepting HTTP requests with non-normalized paths
-
-The option `http-accept-non-normalized-paths` was introduced to restore the previous behavior where {project_name} accepted non-normalized URLs.
-
-As this behavior can be problematic for URL filtering, it is deprecated and will be removed in a future release.
 
 === Deprecation of methods for removing expired authentication sessions from `AuthenticationSessionProvider`
 
