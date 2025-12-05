@@ -24,4 +24,5 @@ public final class WorkflowConstants {
     // Entry configuration keys for WorkflowStep
     public static final String CONFIG_AFTER = "after";
     public static final String CONFIG_PRIORITY = "priority";
+    public static final String CONFIG_SCHEDULED_AT = "scheduled-at";
 }

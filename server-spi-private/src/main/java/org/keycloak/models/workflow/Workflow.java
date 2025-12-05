@@ -119,6 +119,26 @@ public class Workflow {
                 .map(WorkflowStep::new).sorted();
     }
 
+    /**
+     * Get steps starting from the specified stepId (inclusive)
+     *
+     * @param stepId the step id to start from
+     * @return the stream of workflow steps
+     */
+    public Stream<WorkflowStep> getSteps(String stepId) {
+        boolean[] startAdding = {stepId == null};
+        return getSteps().filter(step -> {
+            if (startAdding[0]) {
+                return true;
+            }
+            if (step.getId().equals(stepId)) {
+                startAdding[0] = true;
+                return true;
+            }
+            return false;
+        });
+    }
+
     public WorkflowStep getStepById(String id) {
         return getSteps().filter(s -> s.getId().equals(id)).findAny().orElse(null);
     }

@@ -83,4 +83,14 @@ public class WorkflowsResource {
         int max = Optional.ofNullable(maxResults).orElse(10);
         return provider.getWorkflows(search, exact, first, max).map(provider::toRepresentation).toList();
     }
+
+    @Path("scheduled/{resource-id}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<WorkflowRepresentation> getScheduledSteps(
+            @PathParam("resource-id") String resourceId
+    ) {
+        auth.realm().requireManageRealm();
+        return provider.getScheduledWorkflowsByResource(resourceId).toList();
+    }
 }

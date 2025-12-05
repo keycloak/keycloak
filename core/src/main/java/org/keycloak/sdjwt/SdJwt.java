@@ -208,6 +208,14 @@ public class SdJwt {
 
         private KeyBindingJWT keyBindingJWT;
 
+        private SignatureSignerContext issuerSigningContext;
+
+        private SignatureSignerContext keyBindingSigningContext;
+
+        private String sdHashAlgorithm;
+
+        private boolean useDefaultDecoys = true;
+
         public Builder withIssuerSignedJwt(IssuerSignedJWT issuerSignedJwt) {
             this.issuerSignedJwt = issuerSignedJwt;
             return this;
@@ -223,37 +231,27 @@ public class SdJwt {
             return this;
         }
 
+        public Builder withIssuerSigningContext(SignatureSignerContext issuerSigningContext) {
+            this.issuerSigningContext = issuerSigningContext;
+            return this;
+        }
+
+        public Builder withKeyBindingSigningContext(SignatureSignerContext keyBindingSigningContext) {
+            this.keyBindingSigningContext = keyBindingSigningContext;
+            return this;
+        }
+
+        public Builder withSdHashAlgorithm(String sdHashAlgorithm) {
+            this.sdHashAlgorithm = sdHashAlgorithm;
+            return this;
+        }
+
+        public Builder withUseDefaultDecoys(boolean useDefaultDecoys) {
+            this.useDefaultDecoys = useDefaultDecoys;
+            return this;
+        }
+
         public SdJwt build() {
-            return build(true);
-        }
-
-        public SdJwt build(boolean useDefaultDecoys) {
-            return build(null, null, null, useDefaultDecoys);
-        }
-
-        public SdJwt build(SignatureSignerContext issuerSigningContext) {
-            return build(issuerSigningContext, null, null, true);
-        }
-
-        public SdJwt build(SignatureSignerContext issuerSigningContext, boolean useDefaultDecoys) {
-            return build(issuerSigningContext, null, null, useDefaultDecoys);
-        }
-
-        public SdJwt build(SignatureSignerContext issuerSigningContext,
-                           SignatureSignerContext keybindingSigningContext) {
-            return build(issuerSigningContext, keybindingSigningContext, null, true);
-        }
-
-        public SdJwt build(SignatureSignerContext issuerSigningContext,
-                           SignatureSignerContext keybindingSigningContext,
-                           boolean useDefaultDecoys) {
-            return build(issuerSigningContext, keybindingSigningContext, null, useDefaultDecoys);
-        }
-
-        public SdJwt build(SignatureSignerContext issuerSigningContext,
-                           SignatureSignerContext keybindingSigningContext,
-                           String sdHashAlgorithm,
-                           boolean useDefaultDecoys) {
             int numberOfDecoys = Optional.ofNullable(issuerSignedJwt.getDecoyClaims()).map(List::size).orElse(0);
             if (useDefaultDecoys && numberOfDecoys == 0) {
                 List<DecoyClaim> decoyClaims = new ArrayList<>();
@@ -288,7 +286,7 @@ public class SdJwt {
                 }
                 String sdHash = SdJwtUtils.hashAndBase64EncodeNoPad(sdHashString.getBytes(), hashAlgorithm);
                 keyBindJwt.getPayload().put(OID4VCConstants.SD_HASH, sdHash);
-                Optional.ofNullable(keybindingSigningContext).ifPresent(keyBindJwt::sign);
+                Optional.ofNullable(keyBindingSigningContext).ifPresent(keyBindJwt::sign);
             });
             // if issuerSignedJwt was not signed yet
             if (issuerSigningContext != null && signCounter.get() == 0) {

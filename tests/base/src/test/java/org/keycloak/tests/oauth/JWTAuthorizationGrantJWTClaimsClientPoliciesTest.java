@@ -155,7 +155,7 @@ public class JWTAuthorizationGrantJWTClaimsClientPoliciesTest extends BaseAbstra
                     .name("policy")
                     .description("description of policy")
                     .condition(GrantTypeConditionFactory.PROVIDER_ID, ClientPolicyBuilder.grantTypeConditionConfiguration(
-                            OAuth2Constants.JWT_AUTHORIZATION_GRANT))
+                            false, OAuth2Constants.JWT_AUTHORIZATION_GRANT))
                     .profile("executor")
                     .build());
 

@@ -231,9 +231,11 @@ public abstract class SdJwtCreationAndSigningTest {
                                                          .build();
 
         SdJwt sdJwt = SdJwt.builder()
-                           .withIssuerSignedJwt(issuerSignedJWT)
-                           .withKeybindingJwt(keyBindingJWT)
-                           .build(issuerSignerContext, holderSignerContext);
+                .withIssuerSignedJwt(issuerSignedJWT)
+                .withKeybindingJwt(keyBindingJWT)
+                .withIssuerSigningContext(issuerSignerContext)
+                .withKeyBindingSigningContext(holderSignerContext)
+                .build();
 
         // validate object content
         {

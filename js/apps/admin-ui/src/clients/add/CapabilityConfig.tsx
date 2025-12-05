@@ -1,9 +1,5 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import {
-  HelpItem,
-  SelectControl,
-  useFetch,
-} from "@keycloak/keycloak-ui-shared";
+import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
 import {
   Checkbox,
   FormGroup,
@@ -20,13 +16,8 @@ import { FormAccess } from "../../components/form/FormAccess";
 import { convertAttributeNameToForm } from "../../util";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { FormFields } from "../ClientDetails";
-import { MultiValuedListComponent } from "../../components/dynamic/MultivaluedListComponent";
-import IdentityProviderRepresentation, {
-  IdentityProviderType,
-} from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import { useAdminClient } from "../../admin-client";
-import { useState } from "react";
-import { IdentityProvidersQuery } from "@keycloak/keycloak-admin-client/lib/resources/identityProviders";
+import { IdentityProviderSelect } from "../../components/identity-provider/IdentityProviderSelect";
+import { IdentityProviderType } from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { useAccess } from "../../context/access/Access";
 
 type CapabilityConfigProps = {
@@ -38,7 +29,6 @@ export const CapabilityConfig = ({
   unWrap,
   protocol: type,
 }: CapabilityConfigProps) => {
-  const { adminClient } = useAdminClient();
   const { t } = useTranslation();
   const { control, watch, setValue } = useFormContext<FormFields>();
   const protocol = type || watch("protocol");
@@ -51,28 +41,8 @@ export const CapabilityConfig = ({
     false,
   );
   const isFeatureEnabled = useIsFeatureEnabled();
-  const [idps, setIdps] = useState<IdentityProviderRepresentation[]>([]);
-  const [search, setSearch] = useState("");
   const { hasSomeAccess } = useAccess();
   const showIdentityProviders = hasSomeAccess("view-identity-providers");
-  useFetch(
-    async () => {
-      if (!showIdentityProviders) {
-        return [];
-      }
-      const params: IdentityProvidersQuery = {
-        max: 20,
-        realmOnly: true,
-      };
-      if (search) {
-        params.search = search;
-      }
-      params.type = IdentityProviderType.JWT_AUTHORIZATION_GRANT;
-      return await adminClient.identityProviders.find(params);
-    },
-    setIdps,
-    [search],
-  );
   return (
     <FormAccess
       isHorizontal
@@ -436,17 +406,19 @@ export const CapabilityConfig = ({
           {isFeatureEnabled(Feature.JWTAuthorizationGrant) &&
             showIdentityProviders &&
             jwtAuthorizationGrantEnabled.toString() === "true" && (
-              <MultiValuedListComponent
+              <IdentityProviderSelect
                 name={convertAttributeNameToForm<FormFields>(
                   "attributes.oauth2.jwt.authorization.grant.idp",
                 )}
                 label={t("jwtAuthorizationGrantIdp")}
                 helpText={t("jwtAuthorizationGrantIdpHelp")}
                 convertToName={convertAttributeNameToForm}
-                stringify
+                identityProviderType={
+                  IdentityProviderType.JWT_AUTHORIZATION_GRANT
+                }
                 isDisabled={clientAuthentication}
-                options={idps.map(({ alias }) => alias ?? "")}
-                onSearch={setSearch}
+                realmOnly
+                stringify
               />
             )}
           {isFeatureEnabled(Feature.DPoP) && (

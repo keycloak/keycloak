@@ -16,6 +16,9 @@
  */
 package org.keycloak.crypto;
 
+import java.security.cert.X509Certificate;
+import java.util.List;
+
 public interface SignatureSignerContext {
 
     String getKid();
@@ -25,5 +28,16 @@ public interface SignatureSignerContext {
     String getHashAlgorithm();
 
     byte[] sign(byte[] data) throws SignatureException;
+
+    /**
+     * Returns the X.509 certificate chain associated with this signer, if available.
+     * Returns null if certificates are not available (e.g., for MAC-based signers).
+     * This allows access to certificates without requiring a separate KeyWrapper parameter.
+     *
+     * @return List of X.509 certificates, or null if not available
+     */
+    default List<X509Certificate> getCertificateChain() {
+        return null;
+    }
 
 }

@@ -53,6 +53,8 @@ public interface WorkflowProvider extends Provider {
                 .skip(first).limit(max);
     }
 
+    Stream<WorkflowRepresentation> getScheduledWorkflowsByResource(String resourceId);
+
     WorkflowRepresentation toRepresentation(Workflow workflow);
 
     void updateWorkflow(Workflow workflow, WorkflowRepresentation rep);

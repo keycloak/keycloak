@@ -19,10 +19,12 @@ package org.keycloak.quarkus.runtime.configuration;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.keycloak.Config;
+import org.keycloak.Config.AbstractScope;
 import org.keycloak.Config.Scope;
 
 import io.smallrye.config.SmallRyeConfig;
@@ -64,7 +66,7 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
         return new MicroProfileScope(SPI_PREFIX, scope);
     }
 
-    public class MicroProfileScope implements Config.Scope {
+    public class MicroProfileScope extends AbstractScope {
 
         private final String prefix;
         private final String separatorPrefix;
@@ -80,47 +82,7 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
 
         @Override
         public String get(String key) {
-            return getValue(key, String.class, null);
-        }
-
-        @Override
-        public String get(String key, String defaultValue) {
-            return getValue(key, String.class, defaultValue);
-        }
-
-        @Override
-        public String[] getArray(String key) {
-            return getValue(key, String[].class, null);
-        }
-
-        @Override
-        public Integer getInt(String key) {
-            return getValue(key, Integer.class, null);
-        }
-
-        @Override
-        public Integer getInt(String key, Integer defaultValue) {
-            return getValue(key, Integer.class, defaultValue);
-        }
-
-        @Override
-        public Long getLong(String key) {
-            return getValue(key, Long.class, null);
-        }
-
-        @Override
-        public Long getLong(String key, Long defaultValue) {
-            return getValue(key, Long.class, defaultValue);
-        }
-
-        @Override
-        public Boolean getBoolean(String key) {
-            return getValue(key, Boolean.class, null);
-        }
-
-        @Override
-        public Boolean getBoolean(String key, Boolean defaultValue) {
-            return getValue(key, Boolean.class, defaultValue);
+            return get(key, null);
         }
 
         @Override
@@ -135,7 +97,8 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
                     .collect(Collectors.toSet());
         }
 
-        private <T> T getValue(String key, Class<T> clazz, T defaultValue) {
+        @Override
+        protected <T> T getValue(String key, Function<String, T> conversion, Class<T> clazz, T defaultValue) {
             if (NS_KEYCLOAK_PREFIX.equals(separatorPrefix)) {
                 return config.getOptionalValue(separatorPrefix.concat(key), clazz).orElse(defaultValue);
             }

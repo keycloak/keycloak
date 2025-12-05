@@ -1,8 +1,9 @@
 import { useTranslation } from "react-i18next";
-
 import { TextControl, NumberControl } from "@keycloak/keycloak-ui-shared";
 import { JWTAuthorizationGrantAssertionSettings } from "./JWTAuthorizationGrantAssertionSettings";
 import { Divider } from "@patternfly/react-core";
+import { JwksSettings } from "./JwksSettings";
+
 export default function JWTAuthorizationGrantSettings() {
   const { t } = useTranslation();
   return (
@@ -22,14 +23,7 @@ export default function JWTAuthorizationGrantSettings() {
           required: t("required"),
         }}
       />
-      <TextControl
-        name="config.jwksUrl"
-        label={t("jwtAuthorizationGrantJWKSUrl")}
-        labelIcon={t("jwtAuthorizationGrantJWKSUrlHelp")}
-        rules={{
-          required: t("required"),
-        }}
-      />
+      <JwksSettings />
       <JWTAuthorizationGrantAssertionSettings />
       <NumberControl
         name="config.jwtAuthorizationGrantAllowedClockSkew"

@@ -209,7 +209,7 @@ public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
             assertEquals(2, registeredWorkflows.size());
 
             WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
-            List<WorkflowStateProvider.ScheduledStep> steps = stateProvider.getScheduledStepsByResource(userId);
+            List<WorkflowStateProvider.ScheduledStep> steps = stateProvider.getScheduledStepsByResource(userId).toList();
             assertThat(steps, hasSize(2));
         });
 
@@ -237,7 +237,7 @@ public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
             }
 
             WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
-            List<WorkflowStateProvider.ScheduledStep> steps = stateProvider.getScheduledStepsByResource(userId);
+            List<WorkflowStateProvider.ScheduledStep> steps = stateProvider.getScheduledStepsByResource(userId).toList();
             assertThat(steps, hasSize(0));
         });
     }

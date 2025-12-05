@@ -19,7 +19,7 @@ public class DefaultRealmApi implements RealmApi {
     @Path("clients")
     @Override
     public ClientsApi clients() {
-        return new DefaultClientsApi(session, realmAdminResource.getClients());
+        return new DefaultClientsApi(session, realmAdminResource);
     }
 
 }

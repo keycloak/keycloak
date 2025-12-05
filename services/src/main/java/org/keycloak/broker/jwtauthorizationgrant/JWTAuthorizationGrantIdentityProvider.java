@@ -11,8 +11,7 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.keys.PublicKeyStorageProvider;
-import org.keycloak.keys.PublicKeyStorageUtils;
+import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
@@ -82,14 +81,14 @@ public class JWTAuthorizationGrantIdentityProvider implements JWTAuthorizationGr
 
     private boolean verifySignature(JWSInput jws) {
         try {
-            String jwkurl = config.getJwksUrl();
             JWSHeader header = jws.getHeader();
-            String kid = header.getKeyId();
             String alg = header.getRawAlgorithm();
-            String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), config.getInternalId());
 
-            PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
-            KeyWrapper publicKey = keyStorage.getPublicKey(modelKey, kid, alg, new JWTAuthorizationGrantJWKSEndpointLoader(session, jwkurl));
+            KeyWrapper publicKey = PublicKeyStorageManager.getIdentityProviderKeyWrapper(session, session.getContext().getRealm(), getConfig(), jws);
+            if (publicKey == null) {
+                LOGGER.debugf("Failed to verify token, key not found for algorithm %s", alg);
+                return false;
+            }
 
             SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, alg);
             if (signatureProvider == null) {

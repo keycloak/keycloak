@@ -70,15 +70,6 @@ public class IssuerSignedJWT extends JwsToken {
         this.decoyClaims = new ArrayList<>();
     }
 
-    public IssuerSignedJWT(JWSHeader jwsHeader,
-                           ObjectNode payload,
-                           SignatureSignerContext signer) {
-        super(jwsHeader, payload, signer);
-        this.disclosureSpec = null;
-        this.disclosureClaims = new ArrayList<>();
-        this.decoyClaims = new ArrayList<>();
-    }
-
     public IssuerSignedJWT(String jwsString) {
         super(jwsString);
         this.disclosureSpec = null;
@@ -86,71 +77,7 @@ public class IssuerSignedJWT extends JwsToken {
         this.decoyClaims = new ArrayList<>();
     }
 
-    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
-                           ObjectNode disclosureClaims) {
-        this(disclosureSpec, disclosureClaims, OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM);
-    }
-
-    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
-                           ObjectNode disclosureClaims,
-                           String hashAlg) {
-        this(disclosureSpec, new JWSHeader(), disclosureClaims, null, hashAlg, false);
-    }
-
-    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
-                           ObjectNode disclosureClaims,
-                           String hashAlg,
-                           boolean nestedDisclosures) {
-        this(disclosureSpec, new JWSHeader(), disclosureClaims, null, hashAlg, nestedDisclosures);
-    }
-
-    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
-                           ObjectNode disclosureClaims,
-                           List<DecoyClaim> decoyClaims,
-                           String hashAlg,
-                           boolean nestedDisclosures) {
-        this(disclosureSpec, new JWSHeader(), disclosureClaims, decoyClaims, hashAlg, nestedDisclosures);
-    }
-
-    public IssuerSignedJWT(List<SdJwtClaim> disclosureClaims,
-                           List<DecoyClaim> decoyClaims,
-                           String hashAlg,
-                           boolean nestedDisclosures) {
-        this(DisclosureSpec.builder().build(), new JWSHeader(),
-             disclosureClaims, decoyClaims, hashAlg, nestedDisclosures);
-    }
-
-    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
-                           JWSHeader jwsHeader,
-                           ObjectNode disclosureClaims,
-                           List<DecoyClaim> decoyClaims,
-                           String hashAlg,
-                           boolean nestedDisclosures) {
-        this(disclosureSpec,
-             jwsHeader,
-             SdJwtClaimFactory.parsePayload(disclosureClaims, disclosureSpec),
-             decoyClaims,
-             hashAlg,
-             nestedDisclosures);
-    }
-
-    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
-                           JWSHeader jwsHeader,
-                           ObjectNode disclosureClaims,
-                           List<DecoyClaim> decoyClaims,
-                           String hashAlg,
-                           boolean nestedDisclosures,
-                           SignatureSignerContext signer) {
-        this(disclosureSpec,
-             jwsHeader,
-             SdJwtClaimFactory.parsePayload(disclosureClaims, disclosureSpec),
-             decoyClaims,
-             hashAlg,
-             nestedDisclosures,
-             signer);
-    }
-
-    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
+    protected IssuerSignedJWT(DisclosureSpec disclosureSpec,
                            JWSHeader jwsHeader,
                            List<SdJwtClaim> disclosureClaims,
                            List<DecoyClaim> decoyClaims,
@@ -162,17 +89,7 @@ public class IssuerSignedJWT extends JwsToken {
         this.decoyClaims = decoyClaims;
     }
 
-    public IssuerSignedJWT(List<SdJwtClaim> disclosureClaims,
-                           List<DecoyClaim> decoyClaims,
-                           String hashAlg,
-                           boolean nestedDisclosures,
-                           SignatureSignerContext signer,
-                           String jwsType) {
-        this(null, new JWSHeader(null, jwsType, null),
-             disclosureClaims, decoyClaims, hashAlg, nestedDisclosures, signer);
-    }
-
-    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
+    protected IssuerSignedJWT(DisclosureSpec disclosureSpec,
                            JWSHeader jwsHeader,
                            List<SdJwtClaim> disclosureClaims,
                            List<DecoyClaim> decoyClaims,

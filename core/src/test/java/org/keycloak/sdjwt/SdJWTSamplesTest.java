@@ -42,7 +42,8 @@ public class SdJWTSamplesTest {
                 .build();
         SdJwt sdJwt = SdJwt.builder()
                 .withIssuerSignedJwt(IssuerSignedJWT.builder().withClaims(holderClaimSet, disclosureSpec).build())
-                .build(false);
+                .withUseDefaultDecoys(false)
+                .build();
 
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
         ObjectNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/s7.1-issuer-payload.json");
@@ -70,7 +71,8 @@ public class SdJWTSamplesTest {
         // produce the nested sdJwt
         SdJwt addrSdJWT = SdJwt.builder()
                 .withIssuerSignedJwt(IssuerSignedJWT.builder().withClaims(addressClaimSet, addrDisclosureSpec).build())
-                .build(false);
+                .withUseDefaultDecoys(false)
+                .build();
         // cleanup e.g nested _sd_alg
         JsonNode addPayload = addrSdJWT.asNestedPayload();
         // Set payload back into main claim set
@@ -84,7 +86,8 @@ public class SdJWTSamplesTest {
                                                     .withHashAlg(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
                                                     .build())
                 .withNestedSdJwt(addrSdJWT)
-                .build(false);
+                .withUseDefaultDecoys(false)
+                .build();
 
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
         ObjectNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/s7.2-issuer-payload.json");
@@ -111,7 +114,8 @@ public class SdJWTSamplesTest {
         // produce the nested sdJwt
         SdJwt addrSdJWT = SdJwt.builder()
                 .withIssuerSignedJwt(IssuerSignedJWT.builder().withClaims(addressClaimSet, addrDisclosureSpec).build())
-                .build(false);
+                .withUseDefaultDecoys(false)
+                .build();
         // cleanup e.g nested _sd_alg
         JsonNode addPayload = addrSdJWT.asNestedPayload();
         // Set payload back into main claim set
@@ -122,7 +126,8 @@ public class SdJWTSamplesTest {
         SdJwt sdJwt = SdJwt.builder()
                 .withIssuerSignedJwt(IssuerSignedJWT.builder().withClaims(holderClaimSet, disclosureSpec).build())
                 .withNestedSdJwt(addrSdJWT)
-                .build(false);
+                .withUseDefaultDecoys(false)
+                .build();
 
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
         ObjectNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/s7.2b-issuer-payload.json");
@@ -150,7 +155,8 @@ public class SdJWTSamplesTest {
         // produce the nested sdJwt
         SdJwt addrSdJWT = SdJwt.builder()
                 .withIssuerSignedJwt(IssuerSignedJWT.builder().withClaims(addressClaimSet, addrDisclosureSpec).build())
-                .build(false);
+                .withUseDefaultDecoys(false)
+                .build();
         // cleanup e.g nested _sd_alg
         JsonNode addPayload = addrSdJWT.asNestedPayload();
         // Set payload back into main claim set
@@ -162,7 +168,8 @@ public class SdJWTSamplesTest {
         // produce the main sdJwt, adding nested sdJwts
         SdJwt sdJwt = SdJwt.builder()
                 .withIssuerSignedJwt(IssuerSignedJWT.builder().withClaims(holderClaimSet, disclosureSpec).build())
-                .build(false);
+                .withUseDefaultDecoys(false)
+                .build();
 
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
         JsonNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/s7.3-issuer-payload.json");

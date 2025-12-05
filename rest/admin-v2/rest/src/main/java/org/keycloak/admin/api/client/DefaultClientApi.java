@@ -18,7 +18,7 @@ import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.DefaultClientService;
 import org.keycloak.services.resources.admin.ClientResource;
-import org.keycloak.services.resources.admin.ClientsResource;
+import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.util.ObjectMapperResolver;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -34,26 +34,26 @@ public class DefaultClientApi implements ClientApi {
     private final ClientService clientService;
 
     private final ClientResource clientResource;
-    private final ClientsResource clientsResource;
     private final String clientId;
     private final ObjectMapper objectMapper;
 
     private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
 
-    public DefaultClientApi(KeycloakSession session, ClientsResource clientsResource, ClientResource clientResource, String clientId) {
+    public DefaultClientApi(KeycloakSession session, RealmAdminResource realmAdminResource, ClientResource clientResource, String clientId) {
         this.session = session;
-        this.realm = Objects.requireNonNull(session.getContext().getRealm());
-        this.client = Objects.requireNonNull(session.getContext().getClient());
-        this.clientService = new DefaultClientService(session);
-        this.clientsResource = clientsResource;
         this.clientResource = clientResource;
         this.clientId = clientId;
+
+        this.realm = Objects.requireNonNull(session.getContext().getRealm());
+        this.client = Objects.requireNonNull(session.getContext().getClient());
+        this.clientService = new DefaultClientService(session, realmAdminResource, clientResource);
+
         this.objectMapper = MAPPER;
     }
 
     @Override
     public ClientRepresentation getClient() {
-        return clientService.getClient(clientResource, realm, client.getClientId(), null)
+        return clientService.getClient(realm, client.getClientId(), null)
                 .orElseThrow(() -> new NotFoundException("Cannot find the specified client"));
     }
 
@@ -64,7 +64,7 @@ public class DefaultClientApi implements ClientApi {
                 throw new WebApplicationException("cliendId in payload does not match the clientId in the path", Response.Status.BAD_REQUEST);
             }
             validateUnknownFields(client);
-            var result = clientService.createOrUpdate(clientsResource, clientResource, realm, client, true);
+            var result = clientService.createOrUpdate(realm, client, true);
             return Response.status(result.created() ? Response.Status.CREATED : Response.Status.OK).entity(result.representation()).build();
         } catch (ServiceException e) {
             throw new WebApplicationException(e.getMessage(), e.getSuggestedResponseStatus().orElse(Response.Status.BAD_REQUEST));
@@ -86,7 +86,7 @@ public class DefaultClientApi implements ClientApi {
             ClientRepresentation updated = objectReader.readValue(patch);
 
             validateUnknownFields(updated);
-            return clientService.createOrUpdate(clientsResource, clientResource, realm, updated, true).representation();
+            return clientService.createOrUpdate(realm, updated, true).representation();
         } catch (IllegalArgumentException e) {
             throw new WebApplicationException("Unsupported media type", Response.Status.UNSUPPORTED_MEDIA_TYPE);
         } catch (JsonProcessingException e) {
