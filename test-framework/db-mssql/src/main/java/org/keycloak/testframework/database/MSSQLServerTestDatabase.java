@@ -5,6 +5,8 @@ import java.util.List;
 import org.keycloak.testframework.util.ContainerImages;
 
 import org.jboss.logging.Logger;
+import org.jboss.logmanager.Level;
+import org.jboss.logmanager.LogManager;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MSSQLServerContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -43,12 +45,27 @@ class MSSQLServerTestDatabase extends AbstractContainerTestDatabase {
 
     @Override
     public String getJdbcUrl(boolean internal) {
-        return super.getJdbcUrl(internal) + ";integratedSecurity=false;encrypt=false;trustServerCertificate=true;sendStringParametersAsUnicode=false;";
+        return super.getJdbcUrl(internal) + ";integratedSecurity=false;encrypt=false;trustServerCertificate=true;sendStringParametersAsUnicode=false;databaseName=" + getDatabase();
+    }
+
+    @Override
+    public void start(DatabaseConfiguration config) {
+        // avoid WARNING [com.microsoft.sqlserver.jdbc.internals.SQLServerConnection] (main) ConnectionID:32 ClientConnectionId: Prelogin error ...
+        java.util.logging.Logger mssqlLogger = LogManager.getLogManager().getLogger("com.microsoft.sqlserver.jdbc.internals.SQLServerConnection");
+        java.util.logging.Level level = mssqlLogger.getLevel();
+        try {
+            mssqlLogger.setLevel(Level.ERROR);
+            super.start(config);
+        } finally {
+            mssqlLogger.setLevel(level);
+        }
     }
 
     @Override
     public List<String> getPostStartCommand() {
-        return List.of("/opt/mssql-tools18/bin/sqlcmd", "-U", "sa", "-P", getPassword(), "-No", "-Q", "CREATE DATABASE " + getDatabase());
+        return List.of("/opt/mssql-tools18/bin/sqlcmd", "-U", "sa", "-P", getPassword(), "-No", "-Q", "CREATE DATABASE " + getDatabase() + "; " +
+                // READ_COMMITTED_SNAPSHOT is recommended for MSSQL to avoid deadlocks
+                "ALTER DATABASE " + getDatabase() + " SET READ_COMMITTED_SNAPSHOT ON;");
     }
 
     @Override
