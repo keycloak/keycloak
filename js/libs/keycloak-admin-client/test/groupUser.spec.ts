@@ -66,7 +66,9 @@ describe("Group user integration", () => {
       id: currentUser.id!,
     });
     // expect id,name,path to be the same
-    expect(groups[0]).to.be.eql(pick(currentGroup, ["id", "name", "path"]));
+    expect(pick(groups[0], ["id", "name", "path"])).to.be.eql(
+      pick(currentGroup, ["id", "name", "path"]),
+    );
   });
 
   it("should list members using group api", async () => {

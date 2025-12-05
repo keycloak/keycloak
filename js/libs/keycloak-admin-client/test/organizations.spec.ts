@@ -11,6 +11,10 @@ describe("Organizations", () => {
   before(async () => {
     kcAdminClient = new KeycloakAdminClient();
     await kcAdminClient.auth(credentials);
+    await kcAdminClient.realms.update(
+      { realm: "master" },
+      { organizationsEnabled: true },
+    );
   });
 
   it("retrieves empty organizations list", async () => {

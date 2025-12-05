@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { joinPath } from "../lib/utils/joinPath.js";
+import { joinPath } from "../src/utils/joinPath.ts";
 
 describe("joinPath", () => {
   it("returns an empty string when no paths are provided", () => {
