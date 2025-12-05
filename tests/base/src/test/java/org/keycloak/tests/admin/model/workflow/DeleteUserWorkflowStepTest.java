@@ -107,7 +107,7 @@ public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
         }
 
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
+                .onEvent(ResourceOperationType.USER_AUTHENTICATED.toString())
                 .withSteps(builder.build()).build()).close();
 
         String componentId = addDummyFederationProvider();
@@ -167,7 +167,7 @@ public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
         // create a couple of workflows that will activate for the test user
         // the first one will run the delete user step before the second one runs its first step
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("workflow1")
-                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
+                .onEvent(ResourceOperationType.USER_AUTHENTICATED.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(DeleteUserStepProviderFactory.ID)
@@ -175,7 +175,7 @@ public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
                                 .build()
                 ).build()).close();
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("workflow2")
-                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
+                .onEvent(ResourceOperationType.USER_AUTHENTICATED.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(SetUserAttributeStepProviderFactory.ID)
