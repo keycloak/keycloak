@@ -1,0 +1,113 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Integrating with MCP (Model Context Protocol)"
+priority=115
+summary="Using {project_name} as an authorization server in MCP">
+
+There are the following four MCP versions:
+
+* 2024-11-05 (initial version)
+* 2025-03-26
+* 2025-06-18
+* 2025-11-25 (latest version)
+
+The initial version is outdated, so this guide treats other three versions. The guide tells you the following:
+
+* Which MCP version {project_name} supports.
+* How to set up {project_name} as an authorization server in MCP.
+
+== Standards Compliance MCP requires
+
+According to the https://modelcontextprotocol.io/specification/draft/basic/authorization#standards-compliance[MCP specification], there are several standards regarding an authorization server in MCP. The following table shows:
+
+* Which MCP version requires an authorization server to support which standards in which level (MUST, SHOULD, MAY).
+* With which standards {project_name} complies.
+
+[%autowidth]
+|======
+|Standard |2025-03-26 |2025-06-18 |2025-11-25 |{project_name}
+
+| https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-14[Internet Draft - The OAuth 2.1 Authorization Framework]
+| MUST
+| MUST
+| MUST
+| Supported
+
+| https://datatracker.ietf.org/doc/html/rfc8414[RFC 8414 OAuth 2.0 Authorization Server Metadata]
+| MUST
+| MUST
+| MUST
+| Supported
+
+| https://datatracker.ietf.org/doc/html/rfc7591[RFC 7591 OAuth 2.0 Dynamic Client Registration Protocol]
+| SHOULD
+| SHOULD
+| MAY
+| Supported
+
+| https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-00[Internet Draft - OAuth Client ID Metadata Document]
+| -
+| -
+| SHOULD
+| Not supported
+
+|======
+
+== MCP version compliance
+
+In this guide, as criteria for compliance, "{project_name} supports MCP" means that {project_name} meets all MUST and SHOULD requirements by MCP.
+
+According to these criteria, the following table shows which MCP version {project_name} supports.
+
+[%autowidth]
+|===
+|MCP Version |Conformance
+
+| https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization[2025-03-26]
+| Supported
+
+| https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization[2025-06-18]
+| Supported, but need some consideration
+
+| https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization[2025-11-25]
+| Supported without OAuth Client ID Metadata Document, but need some consideration
+
+|===
+
+Regarding MCP version 2025-06-18 and 2025-11-25, there is one feature that MCP specification does not explicitly mandate an authorization server to support but {project_name} needs to support in practice. It will be described in detail later.
+
+== Setup
+
+=== For MCP 2025-03-26
+
+No special setup is required.
+
+=== For MCP 2025-06-18 and 2025-11-25
+
+==== Token Audience Binding and Validation
+
+To gain security benefit, the MCP specification requires an access token to be bound with its audience. In order to do so, the MCP specification requires the following:
+
+* An MCP client MUST include the `resource` parameter defined in https://datatracker.ietf.org/doc/html/rfc8707[RFC 8707 Resource Indicators for OAuth 2.0] in an authorization request and token request. The parameter's value MUST identify an MCP server that the MCP client intends to use the token with.
+
+* An MCP server MUST validate that tokens presented to them were specifically issued for their use.
+
+The MCP specification does not explicitly describe that an authorization server needs to support RFC 8707. But in practice, the authorization server needs to issue an access token that an MCP server can verify its audience, which is called Token Audience Binding.
+
+The MCP specification does not describe how to do this binding. One method for the binding is to set a value of `resource` parameter to an `aud` claim in an access token. However, {project_name} cannot recognize `resource` parameter.
+
+Therefore, instead of using the `resource` parameter, you can use OAuth 2.0's `scope` parameter. For example, the MCP server's url is `+https://example.com/mcp+` and one of its supporting scope is `mcp:tools`, an MCP client set `+https://example.com/mcp+` to `resource` parameter and `mcp:tools` to `scope` parameter. If you add a client scope `mcp:tools` and add to the client scope a new `Audience` mapper whose `Included Custom Audience` field is `+https://example.com/mcp+`, you can make {project_name} issue an access token whose `aud` claim include the value of `resource` parameter, namely `+https://example.com/mcp+`.
+
+==== MCP Inspector integration
+
+If you want to use https://github.com/modelcontextprotocol/inspector[MCP Inspector], an official debugging tools for MCP server, with {project_name} as an authorization server, you need to do an appropriate setup regarding CORS on {project_name}'s' client registration endpoint because MCP Inspector executes JavaScript downloaded from the MCP Inspector's backend server to register an MCP client dynamically to {project_name}.
+
+You need to do an appropriate setup for Client Registration's anonymous access policies as follows:
+
+* Allowed Client Scopes: Needs to include scopes supported by an MCP server.
+* Allowed Registration Web Origins: Needs to include web origin of MCP inspector's backend server.
+* Trusted Hosts: Needs to include hostname or IP address of the machine that sends a dynamic client registration request to {project_name}, namely the machine your browser runs on.
+
+</@tmpl.guide>
