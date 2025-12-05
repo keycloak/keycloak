@@ -256,20 +256,16 @@ public class AttestationValidatorUtil {
                                                 String levelType)
         throws VCIssuerException {
 
+        if (acceptedLevels == null || acceptedLevels.isEmpty()) {
+            // We accept all provided levels
+            return;
+        }
+
         // If both key_storage and user_authentication parameters are absent, the key_attestations_required
         // parameter may be empty, indicating a key attestation is needed without additional constraints.
         // from: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-12.2.4
         if (providedLevels == null || providedLevels.isEmpty()) {
-            if (acceptedLevels != null && !acceptedLevels.isEmpty()) {
-                // a key_- or user_attestation is required by configuration but none was provided.
-                throw new VCIssuerException(levelType + " is required but was missing.");
-            }
-            return;
-        }
-
-        if (acceptedLevels == null || acceptedLevels.isEmpty()) {
-            // We accept all provided levels
-            return;
+            throw new VCIssuerException(levelType + " is required but was missing.");
         }
 
         // Check each provided level against the accepted levels
