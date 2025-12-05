@@ -34,7 +34,7 @@ import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUB;
 import static org.keycloak.OID4VCConstants.USER_ATTRIBUTE_NAME_DID;
 
 /**
@@ -62,7 +62,7 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         userAttributeConfig.setHelpText("The user attribute to be added to the credential subject.");
         userAttributeConfig.setType(ProviderConfigProperty.LIST_TYPE);
         userAttributeConfig.setOptions(
-                List.of(USER_ATTRIBUTE_NAME_DID, UserModel.ID, UserModel.USERNAME, UserModel.EMAIL));
+                List.of(USER_ATTRIBUTE_NAME_DID, UserModel.USERNAME, UserModel.EMAIL, UserModel.ID));
         CONFIG_PROPERTIES.add(userAttributeConfig);
     }
 
@@ -70,7 +70,7 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         var mapperModel = new ProtocolMapperModel();
         mapperModel.setName(name);
         Map<String, String> configMap = new HashMap<>();
-        configMap.put(CLAIM_NAME, CLAIM_NAME_SUBJECT_ID);
+        configMap.put(CLAIM_NAME, CLAIM_NAME_SUB);
         configMap.put(USER_ATTRIBUTE_KEY, USER_ATTRIBUTE_NAME_DID);
         mapperModel.setConfig(configMap);
         mapperModel.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);

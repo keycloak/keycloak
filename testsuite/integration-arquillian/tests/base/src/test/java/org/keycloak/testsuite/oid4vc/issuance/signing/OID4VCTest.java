@@ -107,12 +107,12 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUB;
 import static org.keycloak.OID4VCConstants.USER_ATTRIBUTE_NAME_DID;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest.TIME_PROVIDER;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getCredentialIssuer;
-import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getJtiGeneratedIdMapper;
+import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getGeneratedCredentialIdMapper;
 
 /**
  * Super class for all OID4VC tests. Provides convenience methods to ease the testing.
@@ -343,11 +343,11 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	public List<ProtocolMapperRepresentation> getProtocolMappers(String scopeName) {
 		return List.of(
-                getSubjectIdMapper(CLAIM_NAME_SUBJECT_ID, USER_ATTRIBUTE_NAME_DID),
+                getSubjectIdMapper(CLAIM_NAME_SUB, USER_ATTRIBUTE_NAME_DID),
 				getUserAttributeMapper("email", "email"),
 				getUserAttributeMapper("firstName", "firstName"),
 				getUserAttributeMapper("lastName", "lastName"),
-				getJtiGeneratedIdMapper(),
+				getGeneratedCredentialIdMapper(),
 				getStaticClaimMapper(scopeName),
 				getIssuedAtTimeMapper("iat", ChronoUnit.HOURS.name(), "COMPUTE"),
 				getIssuedAtTimeMapper("nbf", null, "COMPUTE"));

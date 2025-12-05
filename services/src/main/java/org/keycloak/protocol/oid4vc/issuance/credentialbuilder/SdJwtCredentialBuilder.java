@@ -17,11 +17,13 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
@@ -39,9 +41,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_ISSUER;
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUB;
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_JTI;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_VC_ID;
 
 public class SdJwtCredentialBuilder implements CredentialBuilder {
 
@@ -59,6 +61,7 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
             CredentialBuildConfig credentialBuildConfig
     ) throws CredentialBuilderException {
 
+        URI vcId = verifiableCredential.getId();
         Instant issuanceDate = verifiableCredential.getIssuanceDate();
         Instant expirationDate = verifiableCredential.getExpirationDate();
 
@@ -66,13 +69,15 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
         CredentialSubject credentialSubject = verifiableCredential.getCredentialSubject();
         Map<String, Object> claims = new LinkedHashMap<>(credentialSubject.getClaims());
 
-        // Add inner (disclosed) claims iat, sub - the latter being derived from Subject.id
-        Optional.ofNullable(issuanceDate).ifPresent(it ->
-            claims.put(CLAIM_NAME_IAT, it.getEpochSecond())
+        // Always add a new jti - this cannot and should not be mapped
+        claims.put(CLAIM_NAME_JTI, String.format("urn:uuid:%s", UUID.randomUUID()));
+
+        // Add inner (disclosed) claims id, iat
+        Optional.ofNullable(vcId).ifPresent(it ->
+                claims.put(CLAIM_NAME_VC_ID, it)
         );
-        // Map subject id => sub
-        Optional.ofNullable(claims.get(CLAIM_NAME_SUBJECT_ID)).ifPresent(it ->
-            claims.put(CLAIM_NAME_SUB, claims.remove(CLAIM_NAME_SUBJECT_ID))
+        Optional.ofNullable(issuanceDate).ifPresent(it ->
+                claims.put(CLAIM_NAME_IAT, it.getEpochSecond())
         );
 
         // Put inner claims into the disclosure spec, except the one to be kept visible
@@ -81,7 +86,7 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
         claims.keySet().stream()
                 .filter(it -> !visibleClaims.contains(it))
                 .forEach(it ->
-                    disclosureSpecBuilder.withUndisclosedClaim(it, SdJwtUtils.randomSalt())
+                        disclosureSpecBuilder.withUndisclosedClaim(it, SdJwtUtils.randomSalt())
                 );
 
         // Add outer (always visible) claims: iss, vct, exp
@@ -109,11 +114,11 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
 
         ObjectNode claimsNode = JsonSerialization.mapper.convertValue(claims, ObjectNode.class);
         IssuerSignedJWT issuerSignedJWT = IssuerSignedJWT.builder()
-                                                         .withClaims(claimsNode,
-                                                                     disclosureSpecBuilder.build())
-                                                         .withHashAlg(credentialBuildConfig.getHashAlgorithm())
-                                                         .withJwsType(credentialBuildConfig.getTokenJwsType())
-                                                         .build();
+                .withClaims(claimsNode,
+                        disclosureSpecBuilder.build())
+                .withHashAlg(credentialBuildConfig.getHashAlgorithm())
+                .withJwsType(credentialBuildConfig.getTokenJwsType())
+                .build();
         SdJwt.Builder sdJwtBuilder = SdJwt.builder();
 
         return new SdJwtCredentialBody(sdJwtBuilder, issuerSignedJWT);

@@ -243,7 +243,7 @@ public class OID4VCIssuerEndpoint {
                 .map(factory -> (CredentialBuilderFactory) factory)
                 .map(factory -> factory.create(keycloakSession, null))
                 .collect(Collectors.toMap(CredentialBuilder::getSupportedFormat,
-                        credentialBuilder ->  credentialBuilder));
+                        credentialBuilder -> credentialBuilder));
     }
 
     /**
@@ -849,7 +849,7 @@ public class OID4VCIssuerEndpoint {
             return credentialRequest;
         } catch (JsonProcessingException e) {
             String errorMessage = "Failed to parse JSON request: " + e.getMessage();
-            LOGGER.errorf(e, "JSON parsing failed. Request payload length: %d", 
+            LOGGER.errorf(e, "JSON parsing failed. Request payload length: %d",
                     requestPayload != null ? requestPayload.length() : 0);
             throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
@@ -859,7 +859,7 @@ public class OID4VCIssuerEndpoint {
      * Decrypts a JWE-encoded Credential Request and validates it against metadata.
      *
      * @param jweString The JWE compact serialization
-     * @param metadata The CredentialRequestEncryptionMetadata
+     * @param metadata  The CredentialRequestEncryptionMetadata
      * @return The parsed CredentialRequest
      * @throws JWEException If decryption or validation fails
      */
@@ -939,7 +939,7 @@ public class OID4VCIssuerEndpoint {
     /**
      * Decompresses content using the specified algorithm.
      *
-     * @param content The compressed content
+     * @param content      The compressed content
      * @param zipAlgorithm The compression algorithm (e.g., "DEF")
      * @return The decompressed content
      * @throws JWEException If decompression fails
@@ -1063,10 +1063,10 @@ public class OID4VCIssuerEndpoint {
     /**
      * Encrypts a CredentialResponse as a JWE using the provided encryption parameters.
      *
-     * @param response The CredentialResponse to encrypt
+     * @param response         The CredentialResponse to encrypt
      * @param encryptionParams The encryption parameters (alg, enc, jwk)
      * @return The compact JWE serialization
-     * @throws BadRequestException If encryption parameters are invalid
+     * @throws BadRequestException     If encryption parameters are invalid
      * @throws WebApplicationException If encryption fails due to server issues
      */
     private String encryptCredentialResponse(CredentialResponse response,
@@ -1366,15 +1366,14 @@ public class OID4VCIssuerEndpoint {
                 .setExpirationDate(normalizedExpiration)
                 .setType(List.of(credentialConfig.getScope()));
 
-        Map<String, Object> subjectClaims = new HashMap<>();
-        protocolMappers
-                .forEach(mapper -> mapper.setClaimsForSubject(subjectClaims, authResult.session()));
+        Map<String, Object> credClaims = new HashMap<>();
+        protocolMappers.forEach(mapper -> mapper.setClaimsForSubject(credClaims, authResult.session()));
 
         // Validate that requested claims from authorization_details are present
-        validateRequestedClaimsArePresent(subjectClaims, authResult.session(), credentialConfig.getScope());
+        validateRequestedClaimsArePresent(credClaims, authResult.session(), credentialConfig.getScope());
 
         // Include all available claims
-        subjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
+        credClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
 
         protocolMappers
                 .forEach(mapper -> mapper.setClaimsForCredential(vc, authResult.session()));
