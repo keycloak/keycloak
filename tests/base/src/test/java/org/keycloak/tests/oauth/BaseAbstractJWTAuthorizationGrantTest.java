@@ -87,7 +87,11 @@ public class BaseAbstractJWTAuthorizationGrantTest {
     TimeOffSet timeOffSet;
 
     protected JsonWebToken createDefaultAuthorizationGrantToken() {
-        return createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 300L, null, null);
+        return createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 300L);
+    }
+
+    protected JsonWebToken createAuthorizationGrantToken(long expiration) {
+        return createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + expiration);
     }
 
     protected JsonWebToken createAuthorizationGrantToken(String subject, String audience, String issuer) {
