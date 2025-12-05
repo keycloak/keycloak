@@ -1134,7 +1134,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
                 .setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(
                     new PreAuthorizedCode().setPreAuthorizedCode(code)));
 
-        String userId = userSession.getUser().getUsername();
+        String userId = userSession.getUser().getId();
         var offerStorage = session.getProvider(CredentialOfferStorage.class);
         offerStorage.putOfferState(session, new CredentialOfferState(credOffer, clientId, userId, expiration));
 

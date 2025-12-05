@@ -569,14 +569,14 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return getCredentialOfferUriUrl(configId, preAuthorized, targetUser, null);
     }
 
-    protected String getCredentialOfferUriUrl(String configId, Boolean preAuthorized, String appUserId, String appClientId) {
+    protected String getCredentialOfferUriUrl(String configId, Boolean preAuthorized, String appUsername, String appClientId) {
         String res = getBasePath("test") + "credential-offer-uri?credential_configuration_id=" + configId;
         if (preAuthorized != null)
             res += "&pre_authorized=" + preAuthorized;
         if (appClientId != null)
             res += "&client_id=" + appClientId;
-        if (appUserId != null)
-            res += "&user_id=" + appUserId;
+        if (appUsername != null)
+            res += "&username=" + appUsername;
         return res;
     }
 
