@@ -28,6 +28,7 @@ import java.util.Set;
 
 import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -193,6 +194,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validateJwks(context);
         validateDefaultAcrValues(context);
         validateMinimumAcrValue(context);
+        validateClientSessionTimeout(context);
 
         return context.toResult();
     }
@@ -205,7 +207,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         new CibaClientValidation(context).validate();
         validateDefaultAcrValues(context);
         validateMinimumAcrValue(context);
-
+        //context.getSession().getContext().getRealm().
         return context.toResult();
     }
 
@@ -218,6 +220,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
 
     private void validateUrls(ValidationContext<ClientModel> context) {
         ClientModel client = context.getObjectToValidate();
+
 
         // Use a fake URL for validating relative URLs as we may not be validating clients in the context of a request (import at startup)
         String authServerUrl = "https://localhost/auth";
@@ -419,6 +422,74 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
                     context.addError("minimumAcrValue", "Minimum ACR value needs to be value specified in the ACR-To-Loa mapping or number level from set realm browser flow");
                 }
             }
+        }
+    }
+    private void validateClientSessionTimeout(ValidationContext<ClientModel> context) {
+        ClientModel clientModel = context.getObjectToValidate();
+        if (clientModel == null ) return;
+        RealmModel realmModel =  clientModel.getRealm();
+        if (realmModel == null ) return;
+
+        //Realm values
+        int realmIdle = realmModel.getSsoSessionIdleTimeout();
+        int realmMax = realmModel.getSsoSessionMaxLifespan();
+        int realmRememberIdle = realmModel.getSsoSessionIdleTimeoutRememberMe();
+
+        boolean rememberMeEnabled = realmModel.isRememberMe();
+
+        Integer clientIdle = parseIntAttribute(clientModel.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT));
+        Integer clientMax = parseIntAttribute(clientModel.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN));
+
+        if(!rememberMeEnabled) {
+            // Idle Timeout validation
+            if (clientIdle != null && clientIdle > realmIdle) {
+                context.addError(
+                        OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT,
+                        "Client session idle timeout cannot exceed realm SSO session idle timeout",
+                        "clientSessionIdleTimeoutExceedsRealm"
+                );
+            }
+
+            // Max Lifespan validation
+            if (clientMax != null && clientMax > realmMax) {
+                context.addError(
+                        OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN,
+                        "Client session max lifespan cannot exceed realm SSO session max lifespan",
+                        "clientSessionMaxLifespanExceedsRealm"
+                );
+            }
+        } else {
+            int allowedMaxIdleTimeIfRememberMeEnabled = Math.max(realmIdle, realmRememberIdle);
+
+            if (clientIdle != null && clientIdle > allowedMaxIdleTimeIfRememberMeEnabled) {
+                context.addError(
+                        OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT,
+                        "Client session idle timeout cannot exceed realm SSO session idle timeout or RememberMe idle timeout",
+                        "clientIdleExceedsRealmRememberMeIdle"
+
+                );
+            }
+
+            // TODO: do the max
+
+            // Max Lifespan validation
+            if (clientMax != null && clientMax > realmMax) { // TODO: update comparison
+                context.addError(
+                        OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN,
+                        "Client session max lifespan cannot exceed realm SSO session max lifespan", // TODO: update the message
+                        "clientSessionMaxLifespanExceedsRealm"
+                );
+            }
+        }
+
+    }
+    private Integer parseIntAttribute(String value){
+        try
+            {
+            return (value == null || value.isEmpty()) ? null : Integer.parseInt(value);
+            }
+        catch (NumberFormatException e){
+            return null;
         }
     }
 }
