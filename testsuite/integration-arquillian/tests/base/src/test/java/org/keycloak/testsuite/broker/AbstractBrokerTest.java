@@ -128,7 +128,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
     }
 
     protected Stream<UserRepresentation> getConsumerUserRepresentations() {
-        String consumerClientBrokerAppId = adminClient.realm(bc.consumerRealmName()).clients().findByClientId("broker-app").get(0).getId();
+        String consumerClientBrokerAppId = adminClient.realm(bc.consumerRealmName()).clients().findClientByClientId("broker-app").orElseThrow().getId();
         List<UserSessionRepresentation> brokeredSessions = adminClient.realm(bc.consumerRealmName()).clients().get(consumerClientBrokerAppId).getUserSessions(0, 10);
 
         final List<UserRepresentation> persistentUsers = adminClient.realm(bc.consumerRealmName()).users().list();

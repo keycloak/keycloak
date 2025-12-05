@@ -35,8 +35,7 @@ public class SamlConsentTest extends AbstractSamlTest {
     public void rejectedConsentResponseTest() throws ParsingException, ConfigurationException, ProcessingException {
         ClientRepresentation client = adminClient.realm(REALM_NAME)
                 .clients()
-                .findByClientId(SAML_CLIENT_ID_SALES_POST)
-                .get(0);
+                .findClientByClientId(SAML_CLIENT_ID_SALES_POST).orElseThrow();
 
         adminClient.realm(REALM_NAME)
                 .clients()

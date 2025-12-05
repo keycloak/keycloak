@@ -492,8 +492,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     public void testPublicClientConsentWithoutScopes() throws Exception {
 
         ClientsResource clients = realmsResouce().realm(REALM_NAME).clients();
-        ClientRepresentation clientRep = clients.findByClientId(DEVICE_APP_WITHOUT_SCOPES).get(0);
-        ClientResource client =  clients.get(clientRep.getId());
+        ClientResource client =  clients.getByClientId(DEVICE_APP_WITHOUT_SCOPES);
 
         List<ClientScopeRepresentation> defaultClientScopes =  client.getDefaultClientScopes();
         defaultClientScopes.forEach(scope -> client.removeDefaultClientScope(scope.getId()));
@@ -577,7 +576,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         grantPage.cancel();
 
         verificationPage.assertDeniedPage();
- 
+
         AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
 
         Assert.assertEquals(400, tokenResponse.getStatusCode());
@@ -734,7 +733,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         oauth.realm(REALM_NAME);
         oauth.client(DEVICE_APP_PUBLIC);
         DeviceAuthorizationResponse response = doDeviceAuthorizationWithDuplicatedParams(DEVICE_APP_PUBLIC, null);
-        
+
         Assert.assertEquals(400, response.getStatusCode());
         Assert.assertEquals("invalid_grant", response.getError());
         Assert.assertEquals("duplicated parameter", response.getErrorDescription());

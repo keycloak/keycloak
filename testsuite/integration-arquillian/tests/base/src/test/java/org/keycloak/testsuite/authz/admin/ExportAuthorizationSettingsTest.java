@@ -52,7 +52,7 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
     @Test
     public void testResourceBasedPermission() throws Exception {
         String permissionName = "resource-based-permission";
-        
+
         ClientResource clientResource = getClientResource();
         AuthorizationResource authorizationResource = clientResource.authorization();
 
@@ -98,16 +98,15 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
         }
         Assert.assertTrue("Permission \"role-based-permission\" was not found.", found);
     }
-    
+
     //KEYCLOAK-4340
     @Test
     public void testRoleBasedPolicy() {
         ClientResource clientResource = getClientResource();
         AuthorizationResource authorizationResource = clientResource.authorization();
-        
-        ClientRepresentation account = testRealmResource().clients().findByClientId("account").get(0);
-        RoleRepresentation role = testRealmResource().clients().get(account.getId()).roles().get("view-profile").toRepresentation();
-        
+
+        RoleRepresentation role = testRealmResource().clients().getByClientId("account").roles().get("view-profile").toRepresentation();
+
         PolicyRepresentation policy = new PolicyRepresentation();
         policy.setName("role-based-policy");
         policy.setType("role");
@@ -120,15 +119,15 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
         } finally {
             create.close();
         }
-        
+
         //this call was messing up with DB, see KEYCLOAK-4340
         authorizationResource.exportSettings();
-        
+
         //this call failed with NPE
         authorizationResource.exportSettings();
     }
-    
-    
+
+
     //KEYCLOAK-4983
     @Test
     public void testRoleBasedPolicyWithMultipleRoles() {
@@ -146,7 +145,7 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
 
         RoleRepresentation role1 = testRealmResource().clients().get(client1.getId()).roles().get("client-role").toRepresentation();
         RoleRepresentation role2 = testRealmResource().clients().get(client2.getId()).roles().get("client-role").toRepresentation();
-        
+
         PolicyRepresentation policy = new PolicyRepresentation();
         policy.setName("role-based-policy");
         policy.setType("role");
@@ -156,15 +155,15 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
         try (Response create = authorizationResource.policies().create(policy)) {
             Assert.assertEquals(Status.CREATED, create.getStatusInfo());
         }
-        
+
         //export authorization settings
         ResourceServerRepresentation exportSettings = authorizationResource.exportSettings();
-        
+
         boolean found = false;
         for (PolicyRepresentation p : exportSettings.getPolicies()) {
             if (p.getName().equals("role-based-policy")) {
                 found = true;
-                Assert.assertTrue(p.getConfig().get("roles").contains("test-client-1/client-role") && 
+                Assert.assertTrue(p.getConfig().get("roles").contains("test-client-1/client-role") &&
                         p.getConfig().get("roles").contains("test-client-2/client-role"));
             }
         }
@@ -172,10 +171,8 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
             Assert.fail("Policy \"role-based-policy\" was not found in exported settings.");
         }
     }
-    
+
     private ClientRepresentation getClientByClientId(String clientId) {
-        List<ClientRepresentation> findByClientId = testRealmResource().clients().findByClientId(clientId);
-        Assert.assertTrue(findByClientId.size() == 1);
-        return findByClientId.get(0);
+        return testRealmResource().clients().findClientByClientId(clientId).orElseThrow();
     }
 }

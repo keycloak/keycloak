@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.broker;
 
-import java.util.List;
 import java.util.Map;
 
 import org.keycloak.admin.client.resource.RealmResource;
@@ -37,8 +36,6 @@ import static org.keycloak.testsuite.broker.BrokerTestConstants.CLIENT_ID;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * This class tests the propagation of the {@code prompt=none} request parameter to a default IDP (if one has been specified)
@@ -191,11 +188,9 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
     @Test
     public void testRequireConsentReturnsInteractionRequired() throws Exception {
         RealmResource brokeredRealm = adminClient.realm(bc.providerRealmName());
-        List<ClientRepresentation> clients = brokeredRealm.clients().findByClientId(CLIENT_ID);
-        assertEquals(1, clients.size());
-        ClientRepresentation brokerApp = clients.get(0);
-        brokerApp.setConsentRequired(true);
-        brokeredRealm.clients().get(brokerApp.getId()).update(brokerApp);
+        ClientRepresentation client = brokeredRealm.clients().findClientByClientId(CLIENT_ID).orElseThrow();
+        client.setConsentRequired(true);
+        brokeredRealm.clients().get(client.getId()).update(client);
         /* verify that the interaction_required error is returned with sending auth request to the consumer realm with prompt=none. */
         checkAuthWithPromptNoneReturnsInteractionRequired();
     }

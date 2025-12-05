@@ -202,20 +202,16 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
             String[] parts = roleName.split("/");
             String clientId = parts[0];
             String clientRoleName = parts[1];
-            List<ClientRepresentation> clients = managedRealm.admin().clients().findByClientId(clientId);
+            ClientRepresentation client = managedRealm.admin().clients().findClientByClientId(clientId).orElseGet(() -> {
+                ClientRepresentation newClient = new ClientRepresentation();
+                newClient.setClientId(clientId);
+                newClient.setName(clientId);
+                newClient.setProtocol("openid-connect");
+                managedRealm.admin().clients().create(newClient).close();
+                return managedRealm.admin().clients().findClientByClientId(clientId).orElseThrow();
+            });
 
-            if (clients.isEmpty()) {
-                ClientRepresentation client = new ClientRepresentation();
-                client.setClientId(clientId);
-                client.setName(clientId);
-                client.setProtocol("openid-connect");
-                managedRealm.admin().clients().create(client).close();
-                clients = managedRealm.admin().clients().findByClientId(clientId);
-            }
-
-            assertThat(clients.isEmpty(), is(false));
-
-            RolesResource roles = managedRealm.admin().clients().get(clients.get(0).getId()).roles();
+            RolesResource roles = managedRealm.admin().clients().get(client.getId()).roles();
 
             if (roles.list(clientRoleName, -1, -1).isEmpty()) {
                 roles.create(RoleConfigBuilder.create()

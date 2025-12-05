@@ -1,7 +1,5 @@
 package org.keycloak.test.examples;
 
-import java.util.List;
-
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -33,8 +31,8 @@ public class ManagedResources2Test {
     public void testCreatedClient() {
         Assertions.assertEquals("default", client.getClientId());
 
-        List<ClientRepresentation> clients = realm.admin().clients().findByClientId("default");
-        Assertions.assertEquals(1, clients.size());
+        ClientRepresentation client = realm.admin().clients().findClientByClientId("default").orElse(null);
+        Assertions.assertNotNull(client);
     }
 
 }

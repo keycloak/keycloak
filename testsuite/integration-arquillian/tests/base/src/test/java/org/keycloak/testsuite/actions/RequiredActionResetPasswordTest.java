@@ -156,7 +156,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         AuthorizationEndpointResponse os = oauth2.doLogin("test-user@localhost", "password");
         EventRepresentation offlineSession = events.expectLogin().assertEvent();
         AccessTokenResponse at = oauth2.doAccessTokenRequest(os.getCode());
-        String clientUuid = testRealm().clients().findByClientId(oauth2.getClientId()).get(0).getId();
+        String clientUuid = testRealm().clients().findClientByClientId(oauth2.getClientId()).orElseThrow().getId();
         assertEquals(1, testUser.getOfflineSessions(clientUuid).size());
 
         requireUpdatePassword();

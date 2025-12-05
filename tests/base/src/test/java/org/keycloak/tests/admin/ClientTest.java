@@ -729,7 +729,7 @@ public class ClientTest {
 
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath("realm-composite"), List.of(roleRep2), ResourceType.REALM_ROLE);
 
-        String accountMgmtId = managedRealm.admin().clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0).getId();
+        String accountMgmtId = managedRealm.admin().clients().findClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).orElseThrow().getId();
         RoleRepresentation viewAccountRoleRep = managedRealm.admin().clients().get(accountMgmtId).roles().get(AccountRoles.VIEW_PROFILE).toRepresentation();
 
         scopesResource.realmLevel().add(List.of(roleRep1));
@@ -968,6 +968,12 @@ public class ClientTest {
 
         ClientRepresentation storedClient = managedRealm.admin().clients().get(client.getId()).toRepresentation();
         assertClient(client, storedClient);
+    }
+    @Test
+    @SuppressWarnings("deprecation")
+    void findByClientListResult() {
+        assertTrue( managedRealm.admin().clients().findByClientId("client-0").isEmpty());
+        assertEquals(1,  managedRealm.admin().clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).size());
     }
 
     public static void assertClient(ClientRepresentation client, ClientRepresentation storedClient) {

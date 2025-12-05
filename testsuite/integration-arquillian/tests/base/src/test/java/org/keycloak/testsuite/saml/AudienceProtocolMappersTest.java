@@ -147,7 +147,7 @@ public class AudienceProtocolMappersTest extends AbstractSamlTest {
         // this way it should contain the three apps by default
         this.testExpectedAudiences(SAML_CLIENT_ID_EMPLOYEE_2, "http://localhost:8280/employee/", "http://localhost:8280/employee-role-mapping/");
         // remove one of the groups (employee) and check the employee audience is removed
-        String employeeId = adminClient.realm(REALM_NAME).clients().findByClientId("http://localhost:8280/employee/").get(0).getId();
+        String employeeId = adminClient.realm(REALM_NAME).clients().findClientByClientId("http://localhost:8280/employee/").orElseThrow().getId();
         Assert.assertNotNull(employeeId);
         try (RoleScopeUpdater rsc = UserAttributeUpdater.forUserByUsername(adminClient, REALM_NAME, bburkeUser.getUsername())
                 .clientRoleScope(employeeId)
@@ -168,9 +168,9 @@ public class AudienceProtocolMappersTest extends AbstractSamlTest {
             this.testExpectedAudiences(SAML_CLIENT_ID_EMPLOYEE_2);
 
             // add another client in the scope
-            String employee2Id = adminClient.realm(REALM_NAME).clients().findByClientId("http://localhost:8280/employee2/").get(0).getId();
+            String employee2Id = adminClient.realm(REALM_NAME).clients().findClientByClientId("http://localhost:8280/employee2/").orElseThrow().getId();
             Assert.assertNotNull(employee2Id);
-            String employeeId = adminClient.realm(REALM_NAME).clients().findByClientId("http://localhost:8280/employee/").get(0).getId();
+            String employeeId = adminClient.realm(REALM_NAME).clients().findClientByClientId("http://localhost:8280/employee/").orElseThrow().getId();
             Assert.assertNotNull(employeeId);
             List<RoleRepresentation> availables = adminClient.realm(REALM_NAME).clients().get(employee2Id).getScopeMappings().clientLevel(employeeId).listAvailable();
             assertThat(availables.size(), greaterThan(0));
@@ -196,9 +196,9 @@ public class AudienceProtocolMappersTest extends AbstractSamlTest {
 
         try {
             // add a mapping to the client scope to employee2.employee role (this way employee should be in the audience)
-            String employee2Id = adminClient.realm(REALM_NAME).clients().findByClientId("http://localhost:8280/employee2/").get(0).getId();
+            String employee2Id = adminClient.realm(REALM_NAME).clients().findClientByClientId("http://localhost:8280/employee2/").orElseThrow().getId();
             Assert.assertNotNull(employee2Id);
-            String employeeId = adminClient.realm(REALM_NAME).clients().findByClientId("http://localhost:8280/employee/").get(0).getId();
+            String employeeId = adminClient.realm(REALM_NAME).clients().findClientByClientId("http://localhost:8280/employee/").orElseThrow().getId();
             Assert.assertNotNull(employeeId);
             List<RoleRepresentation> availables = adminClient.realm(REALM_NAME).clientScopes().get(clientScopeId).getScopeMappings().clientLevel(employeeId).listAvailable();
             assertThat(availables.size(), greaterThan(0));

@@ -214,7 +214,7 @@ public class ConsentsTest {
         providerRealm.admin().update(providerRealmRep);
         providerRealm.admin().clients().create(ClientConfigBuilder.create().clientId("test-app").redirectUris("*").publicClient(true).webOrigins("*").build());
 
-        ClientRepresentation providerAccountRep = providerRealm.admin().clients().findByClientId("test-app").get(0);
+        ClientRepresentation providerAccountRep = providerRealm.admin().clients().findClientByClientId("test-app").orElseThrow();
 
         // add offline_scope to default account-console client scope
         ClientScopeRepresentation offlineAccessScope = providerRealm.admin().getDefaultOptionalClientScopes().stream()
@@ -314,7 +314,7 @@ public class ConsentsTest {
         userRealm.updateWithCleanup(r -> r.enabledEventTypes("REFRESH_TOKEN_ERROR"));
         String sessionId = loginEvent.getSessionId();
 
-        ClientRepresentation clientRepresentation = userRealm.admin().clients().findByClientId("test-app").get(0);
+        ClientRepresentation clientRepresentation = userRealm.admin().clients().findClientByClientId("test-app").orElseThrow();
         try {
             clientRepresentation.setConsentRequired(true);
             userRealm.admin().clients().get(clientRepresentation.getId()).update(clientRepresentation);

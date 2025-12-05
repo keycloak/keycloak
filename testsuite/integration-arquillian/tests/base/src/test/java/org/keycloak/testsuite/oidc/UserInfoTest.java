@@ -709,7 +709,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             realm.update(rep);
 
             // do the same with client's notBefore
-            ClientResource clientResource = realm.clients().get(realm.clients().findByClientId("test-app").get(0).getId());
+            ClientResource clientResource = realm.clients().get(realm.clients().findClientByClientId("test-app").orElseThrow().getId());
             ClientRepresentation clientRep = clientResource.toRepresentation();
             clientRep.setNotBefore(time);
             clientResource.update(clientRep);
@@ -909,7 +909,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         String accessToken = oauth.client("saml-client", "secret").doPasswordGrantRequest( "test-user@localhost", "password").getAccessToken();
 
         // change client's protocol
-        ClientRepresentation samlClient = adminClient.realm("test").clients().findByClientId("saml-client").get(0);
+        ClientRepresentation samlClient = adminClient.realm("test").clients().findClientByClientId("saml-client").orElseThrow();
         samlClient.setProtocol("saml");
         adminClient.realm("test").clients().get(samlClient.getId()).update(samlClient);
 

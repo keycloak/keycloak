@@ -76,8 +76,6 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesCo
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -196,7 +194,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
             assertEquals(ClientPolicyEvent.REGISTERED.toString(), cpe.getError());
         }
 
-        assertThat(adminClient.realm(REALM_NAME).clients().findByClientId(clientName), empty());
+        assertNull(adminClient.realm(REALM_NAME).clients().findClientByClientId(clientName).orElse(null));
     }
 
     @Test

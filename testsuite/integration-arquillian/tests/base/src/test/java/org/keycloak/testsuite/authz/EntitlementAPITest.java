@@ -36,7 +36,6 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.ResourceResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
@@ -1118,7 +1117,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
         AuthorizationRequest request = new AuthorizationRequest();
-        
+
         request.addPermission(resource.getName());
 
         try {
@@ -1130,17 +1129,17 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         }
 
         ResourceServerRepresentation settings = authorization.getSettings();
-        
+
         settings.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
-        
+
         authorization.update(settings);
 
         assertPermissions(authzClient, accessToken, request, resource, "read");
 
         scopePermission1 = scopePermissions.findByName(scopePermission1.getName());
-        
+
         scopePermission1.addScope("read", "delete");
-        
+
         scopePermissions.findById(scopePermission1.getId()).update(scopePermission1);
 
         assertPermissions(authzClient, accessToken, request, resource, "read", "delete");
@@ -1177,12 +1176,12 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         assertPermissions(authzClient, accessToken, request, resource, "read", "delete", "write");
 
         scopePermission3 = scopePermissions.findByName(scopePermission3.getName());
-        
+
         scopePermission3.addScope("write", "delete");
         scopePermissions.findById(scopePermission3.getId()).update(scopePermission3);
 
         assertPermissions(authzClient, accessToken, request, resource, "delete", "write");
-        
+
         scopePermissions.findById(scopePermission3.getId()).remove();
 
         try {
@@ -1202,7 +1201,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         authorization.permissions().resource().create(grantResourcePermission).close();
 
         assertPermissions(authzClient, accessToken, request, resource, "read", "delete", "write");
-        
+
         settings.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
         authorization.update(settings);
 
@@ -2279,7 +2278,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
         AccessTokenResponse response = authzClient.authorization(accessToken).authorize();
         assertNotNull(response.getToken());
-        
+
         getRealm().logoutAll();
 
         AuthorizationRequest request = new AuthorizationRequest();
@@ -2300,12 +2299,12 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     @Test
     public void testInvalidTokenSignature() throws Exception {
         RealmEventsConfigRepresentation eventConfig = getRealm().getRealmEventsConfig();
-        
+
         eventConfig.setEventsEnabled(true);
         eventConfig.setEnabledEventTypes(Arrays.asList(EventType.PERMISSION_TOKEN_ERROR.name()));
-        
+
         getRealm().updateRealmEventsConfig(eventConfig);
-        
+
         ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
         AuthorizationResource authorization = client.authorization();
 
@@ -2774,8 +2773,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     }
 
     private ClientResource getClient(RealmResource realm, String clientId) {
-        ClientsResource clients = realm.clients();
-        return clients.findByClientId(clientId).stream().map(representation -> clients.get(representation.getId())).findFirst().orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
+        return realm.clients().getByClientId(clientId);
     }
 
     private AuthzClient getAuthzClient(String configFile) {
@@ -2836,7 +2834,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         client.update(representation);
     }
-    
+
     private void assertPermissions(AuthzClient authzClient, String accessToken, AuthorizationRequest request, ResourceRepresentation resource, String... expectedScopes) {
         AuthorizationResponse response = authzClient.authorization(accessToken).authorize(request);
         assertNotNull(response.getToken());

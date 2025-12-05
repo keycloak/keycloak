@@ -54,11 +54,9 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
         super.beforeBrokerTest();
         // Require broker to show consent screen
         RealmResource brokeredRealm = adminClient.realm(bc.providerRealmName());
-        List<ClientRepresentation> clients = brokeredRealm.clients().findByClientId(bc.getIDPClientIdInProviderRealm());
-        org.junit.Assert.assertEquals(1, clients.size());
-        ClientRepresentation brokerApp = clients.get(0);
-        brokerApp.setConsentRequired(true);
-        brokeredRealm.clients().get(brokerApp.getId()).update(brokerApp);
+        ClientRepresentation client = brokeredRealm.clients().findClientByClientId(bc.getIDPClientIdInProviderRealm()).orElseThrow();
+        client.setConsentRequired(true);
+        brokeredRealm.clients().get(client.getId()).update(client);
     }
 
     @Test
@@ -163,9 +161,9 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
         if (defaultIdpValue != null && !defaultIdpValue.isEmpty()) {
             defaultIdpConfig.put(IdentityProviderAuthenticatorFactory.DEFAULT_PROVIDER, defaultIdpValue);
             newFlowAlias = "Browser - Default IdP " + defaultIdpValue;
-        }
-        else
+        } else {
             newFlowAlias = "Browser - Default IdP OFF";
+        }
 
         testingClient.server("consumer").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
         testingClient.server("consumer").run(session ->

@@ -26,7 +26,6 @@ import java.util.function.Supplier;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
@@ -170,8 +169,7 @@ public abstract class AbstractPolicyManagementTest extends AbstractKeycloakTest 
     }
 
     protected ClientResource getClient(RealmResource realm) {
-        ClientsResource clients = realm.clients();
-        return clients.findByClientId("resource-server-test").stream().map(representation -> clients.get(representation.getId())).findFirst().orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
+        return realm.clients().getByClientId("resource-server-test");
     }
 
     protected RealmResource getRealm() {

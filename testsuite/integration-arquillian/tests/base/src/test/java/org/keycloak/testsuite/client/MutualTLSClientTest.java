@@ -287,7 +287,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
    }
 
    private void disableClient(String clientId) {
-      ClientRepresentation disabledClientRepresentation = adminClient.realm(REALM).clients().findByClientId(clientId).get(0);
+      ClientRepresentation disabledClientRepresentation = adminClient.realm(REALM).clients().findClientByClientId(clientId).orElseThrow();
       ClientResource disabledClientResource = adminClient.realms().realm(REALM).clients().get(disabledClientRepresentation.getId());
       disabledClientRepresentation.setEnabled(false);
       disabledClientResource.update(disabledClientRepresentation);
