@@ -197,7 +197,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         }
 
         workflows.create(WorkflowRepresentation.withName("another-workflow")
-                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
+                .onEvent(ResourceOperationType.USER_AUTHENTICATED.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -255,12 +255,12 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         // while the workflow has no scheduled steps - i.e. no resource is currently going through the workflow - we can update any property
         workflow.setName("changed");
         workflow.setConditions(IdentityProviderWorkflowConditionFactory.ID + "(someidp)");
-        workflow.setOn("user-logged-in");
+        workflow.setOn("user-authenticated");
 
         managedRealm.admin().workflows().workflow(workflow.getId()).update(workflow).close();
         workflow = workflows.workflow(workflow.getId()).toRepresentation();
         assertThat(workflow.getName(), is("changed"));
-        assertThat(workflow.getOn(), is("user-logged-in"));
+        assertThat(workflow.getOn(), is("user-authenticated"));
         assertThat(workflow.getConditions(), is(IdentityProviderWorkflowConditionFactory.ID + "(someidp)"));
 
         // even adding or removing steps should be allowed

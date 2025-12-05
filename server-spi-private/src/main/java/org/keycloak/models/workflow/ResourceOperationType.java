@@ -23,7 +23,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.GROUP_PATH_SEPARATOR;
 public enum ResourceOperationType {
 
     USER_ADDED(List.of(OperationType.CREATE, EventType.REGISTER)),
-    USER_LOGGED_IN(List.of(EventType.LOGIN), userLoginPredicate()),
+    USER_AUTHENTICATED(List.of(EventType.LOGIN), userLoginPredicate()),
     USER_FEDERATED_IDENTITY_ADDED(List.of(FederatedIdentityCreatedEvent.class), fedIdentityPredicate()),
     USER_FEDERATED_IDENTITY_REMOVED(List.of(FederatedIdentityRemovedEvent.class), fedIdentityPredicate()),
     USER_GROUP_MEMBERSHIP_ADDED(List.of(GroupMemberJoinEvent.class), groupMembershipPredicate()),
