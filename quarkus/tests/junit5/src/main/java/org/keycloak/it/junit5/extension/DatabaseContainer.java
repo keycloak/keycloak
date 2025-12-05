@@ -20,11 +20,10 @@ package org.keycloak.it.junit5.extension;
 import java.time.Duration;
 import java.util.logging.Logger;
 
-import org.jboss.logmanager.Level;
-import org.jboss.logmanager.LogManager;
-
 import org.keycloak.it.utils.KeycloakDistribution;
 
+import org.jboss.logmanager.Level;
+import org.jboss.logmanager.LogManager;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MSSQLServerContainer;

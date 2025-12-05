@@ -17,13 +17,13 @@
 
 package org.keycloak.it.storage.database;
 
-import io.quarkus.test.junit.main.Launch;
-import org.junit.jupiter.api.Test;
-
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.CLITest;
 import org.keycloak.it.junit5.extension.WithDatabase;
 import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
+
+import io.quarkus.test.junit.main.Launch;
+import org.junit.jupiter.api.Test;
 
 @CLITest
 @WithDatabase(alias = "mssql")
