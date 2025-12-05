@@ -14,7 +14,7 @@ import {
 } from "@patternfly/react-core";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getIssuer, requestVCOffer } from "../api";
+import { getVCIssuer, requestVCOffer } from "../api";
 import { CredentialsIssuer } from "../api/representations";
 import { Page } from "../components/page/Page";
 import { usePromise } from "../utils/usePromise";
@@ -33,7 +33,7 @@ export const Oid4Vci = () => {
   const [credentialsIssuer, setCredentialsIssuer] =
     useState<CredentialsIssuer>();
 
-  usePromise(() => getIssuer(context), setCredentialsIssuer);
+  usePromise(() => getVCIssuer(context), setCredentialsIssuer);
 
   const selectOptions = useMemo(() => {
     if (typeof credentialsIssuer !== "undefined") {
@@ -119,8 +119,8 @@ export const Oid4Vci = () => {
               {offerQRVisible && (
                 <ActionListItem>
                   <img
-                    width="500"
-                    height="500"
+                    width="300"
+                    height="300"
                     src={qrCode}
                     data-testid="qr-code"
                   />
