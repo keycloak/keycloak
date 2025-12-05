@@ -58,6 +58,37 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
     }
 
     @Test
+    public void testAttestationProofAcceptsLegacyTyp() {
+        String cNonce = getCNonce();
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            try {
+                KeyWrapper attestationKey = createECKey("legacyAttestationKey");
+                KeyWrapper proofKey = createECKey("legacyProofKey");
+
+                JWK proofJwk = createJWK(proofKey);
+                String attestationJwt = createValidAttestationJwt(
+                        session,
+                        attestationKey,
+                        List.of(proofJwk),
+                        cNonce,
+                        AttestationValidatorUtil.LEGACY_ATTESTATION_JWT_TYP);
+
+                configureTrustedKeysInRealm(session, List.of(createJWK(attestationKey)));
+
+                VCIssuanceContext vcIssuanceContext = createVCIssuanceContextWithAttestationProof(session, attestationJwt);
+
+                AttestationProofValidatorFactory factory = new AttestationProofValidatorFactory();
+                AttestationProofValidator validator = (AttestationProofValidator) factory.create(session);
+
+                validateProofAndAssert(validator, vcIssuanceContext, proofKey);
+            } catch (Exception e) {
+                LOGGER.error("Legacy typ test failed with exception", e);
+                fail("Legacy typ attestation proof should be accepted: " + e.getMessage());
+            }
+        });
+    }
+
+    @Test
     public void testAttestationProofExtractsAttestedKeysFromPayload() {
         String cNonce = getCNonce();
         testingClient.server(TEST_REALM_NAME).run(session -> {

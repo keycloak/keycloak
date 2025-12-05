@@ -541,8 +541,12 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
             withCausePropagation(() -> testingClient.server(TEST_REALM_NAME).run((session -> {
                 ProofTypesSupported expectedProofTypesSupported = ProofTypesSupported.parse(session,
                         List.of(Algorithm.RS256));
-                assertEquals(expectedProofTypesSupported,
-                        ProofTypesSupported.fromJsonString(proofTypesSupportedString));
+                // Normalize expected object: serialize and deserialize to match the behavior
+                // where empty key_attestations_required are excluded from JSON
+                String expectedJson = expectedProofTypesSupported.toJsonString();
+                ProofTypesSupported normalizedExpected = ProofTypesSupported.fromJsonString(expectedJson);
+                ProofTypesSupported actualFromMetadata = ProofTypesSupported.fromJsonString(proofTypesSupportedString);
+                assertEquals(normalizedExpected, actualFromMetadata);
 
                 List<String> expectedSigningAlgs = OID4VCIssuerWellKnownProvider.getSupportedSignatureAlgorithms(session);
                 MatcherAssert.assertThat(signingAlgsSupported,

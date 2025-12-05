@@ -45,7 +45,9 @@ public class ProofTypesSupported {
         ProofTypesSupported proofTypesSupported = new ProofTypesSupported();
         keycloakSession.getAllProviders(ProofValidator.class).forEach(proofValidator -> {
             String type = proofValidator.getProofType();
-            KeyAttestationsRequired keyAttestationsRequired = new KeyAttestationsRequired();
+            // Set to null by default - if attestation is not required, the parameter MUST NOT be present.
+            // TODO: When configuration mechanism is implemented, this should be set based on configuration.
+            KeyAttestationsRequired keyAttestationsRequired = null;
             SupportedProofTypeData supportedProofTypeData = new SupportedProofTypeData(globalSupportedSigningAlgorithms,
                     keyAttestationsRequired);
             proofTypesSupported.getSupportedProofTypes().put(type, supportedProofTypeData);
