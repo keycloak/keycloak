@@ -151,7 +151,8 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     protected ClientRepresentation client;
     protected ClientRepresentation namedClient;
 
-    record OAuth2CodeEntry(String key, OAuth2Code code) {}
+    record OAuth2CodeEntry(String key, OAuth2Code code) {
+    }
 
     protected boolean shouldEnableOid4vci() {
         return true;
@@ -675,8 +676,8 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
         Map<String, List<String>> clientRoles = Map.of(clientId, List.of("testRole"));
         List<UserRepresentation> realmUsers = Optional.ofNullable(testRealm.getUsers()).map(ArrayList::new).orElse(new ArrayList<>());
-        realmUsers.add(getUserRepresentation("John Doe", List.of(CREDENTIAL_OFFER_CREATE.getName()), clientRoles));
-        realmUsers.add(getUserRepresentation("Alice Wonderland", List.of(), Map.of()));
+        realmUsers.add(getUserRepresentation("John Doe", Map.of("did", "did:key:1234"), List.of(CREDENTIAL_OFFER_CREATE.getName()), clientRoles));
+        realmUsers.add(getUserRepresentation("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
         testRealm.setUsers(realmUsers);
     }
 

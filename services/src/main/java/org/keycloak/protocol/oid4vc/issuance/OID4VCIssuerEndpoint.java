@@ -342,19 +342,19 @@ public class OID4VCIssuerEndpoint {
      * <p>
      * Credential Offer Validity Matrix for the supported request parameters "pre_authorized", "client_id", "username" combinations.
      * </p>
-     * +----------+-----------+---------+---------+-----------------------------------------------------+
-     * | pre-auth | clientId  | username  | Valid   | Notes                                               |
-     * +----------+-----------+---------+---------+-----------------------------------------------------+
-     * | no       | no        | no      | yes     | Generic offer; any logged-in user may redeem.       |
-     * | no       | no        | yes     | yes     | Offer restricted to a specific user.                |
-     * | no       | yes       | no      | yes     | Bound to client; user determined at login.          |
-     * | no       | yes       | yes     | yes     | Bound to both client and user.                      |
-     * +----------+-----------+---------+---------+-----------------------------------------------------+
-     * | yes      | no        | no      | no      | Pre-auth requires a user subject; missing username.   |
-     * | yes      | yes       | no      | no      | Same as above; username required.                     |
-     * | yes      | no        | yes     | yes     | Pre-auth for a specific user; client unconstrained. |
-     * | yes      | yes       | yes     | yes     | Fully constrained: user + client.                   |
-     * +----------+-----------+---------+---------+-----------------------------------------------------+
+     * +----------+-----------+----------+---------+------------------------------------------------------+
+     * | pre-auth | clientId  | username | Valid   | Notes                                                |
+     * +----------+-----------+----------+---------+------------------------------------------------------+
+     * | no       | no        | no       | yes     | Generic offer; any logged-in user may redeem.        |
+     * | no       | no        | yes      | yes     | Offer restricted to a specific user.                 |
+     * | no       | yes       | no       | yes     | Bound to client; user determined at login.           |
+     * | no       | yes       | yes      | yes     | Bound to both client and user.                       |
+     * +----------+-----------+----------+---------+------------------------------------------------------+
+     * | yes      | no        | no       | no      | Pre-auth requires a user subject; missing username.  |
+     * | yes      | no        | yes      | yes     | Pre-auth for a specific user; client issuer defined. |
+     * | yes      | yes       | no       | no      | Same as above; username required.                    |
+     * | yes      | yes       | yes      | yes     | Fully constrained: user + client.                    |
+     * +----------+-----------+----------+---------+------------------------------------------------------+
      *
      * @param credConfigId  A valid credential configuration id
      * @param preAuthorized A flag whether the offer should be pre-authorized (requires targetUser)
