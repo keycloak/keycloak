@@ -174,7 +174,7 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
 
     private String createWorkflow(String expression, boolean creationExpectedToSucceed) {
         WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
-                .onEvent("user-logged-in(test-app)")
+                .onEvent("user-authenticated(test-app)")
                 .onCondition(expression)
                 .withSteps(
                         WorkflowStepRepresentation.create()
