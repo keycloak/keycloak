@@ -577,6 +577,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
             assertFalse("Only mappers supported for the requested type should have been evaluated.", disclosureMap.containsKey("given_name"));
             assertTrue("Test credential shall include an iat claim.", disclosureMap.containsKey("iat"));
             assertTrue("The credentials should include the id claim.", disclosureMap.containsKey("sub")); // id -> sub
+            assertEquals("is claim incorrectly mapped.", "did:key:1234", disclosureMap.get("sub").get(2).asText());
             assertTrue("The credentials should include the firstName claim.", disclosureMap.containsKey("firstName"));
             assertEquals("firstName claim incorrectly mapped.", "John", disclosureMap.get("firstName").get(2).asText());
             assertTrue("The credentials should include the lastName claim.", disclosureMap.containsKey("lastName"));
