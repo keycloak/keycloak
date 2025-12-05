@@ -33,6 +33,7 @@ import org.keycloak.operator.testsuite.utils.K8sUtils;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 
@@ -90,9 +91,19 @@ public class KeycloakTruststoresTests extends BaseOperatorTest {
         var kc = getTestKeycloakDeployment(false);
         deployKeycloak(k8sclient, kc, true);
 
-        Awaitility.await().ignoreExceptions().until(() ->
-                k8sclient.pods().withName(kc.getMetadata().getName() + "-0").getLog()
-                        .contains("Adding trusted Kubernetes CA from /var/run/secrets/kubernetes.io/serviceaccount/ca.crt"));
+        assertTrue(k8sclient.pods().withName(kc.getMetadata().getName() + "-0").getLog()
+                .contains("Adding trusted Kubernetes CA from /var/run/secrets/kubernetes.io/serviceaccount/ca.crt"));
+    }
+
+    @DisabledIfApiServerTest
+    @Test
+    public void testDisablingKubernetesCAAutoDiscovery() {
+        var kc = getTestKeycloakDeployment(false);
+        kc.getSpec().setAutomountServiceAccountToken(false);
+        deployKeycloak(k8sclient, kc, true);
+
+        assertFalse(k8sclient.pods().withName(kc.getMetadata().getName() + "-0").getLog()
+                .contains("Adding trusted Kubernetes CA from /var/run/secrets/kubernetes.io/serviceaccount/ca.crt"));
     }
 
 }
