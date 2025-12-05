@@ -42,6 +42,7 @@ import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.utils.StringUtil;
 
@@ -434,6 +435,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         int realmIdle = realmModel.getSsoSessionIdleTimeout();
         int realmMax = realmModel.getSsoSessionMaxLifespan();
         int realmRememberIdle = realmModel.getSsoSessionIdleTimeoutRememberMe();
+        int realmRememberMax = realmModel.getSsoSessionMaxLifespanRememberMe();
 
         boolean rememberMeEnabled = realmModel.isRememberMe();
 
@@ -441,43 +443,43 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         Integer clientMax = parseIntAttribute(clientModel.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN));
 
         if(!rememberMeEnabled) {
-            // Idle Timeout validation
+            // Client idle Timeout validation on Remember me disabled
             if (clientIdle != null && clientIdle > realmIdle) {
                 context.addError(
                         OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT,
-                        "Client session idle timeout cannot exceed realm SSO session idle timeout",
-                        "clientSessionIdleTimeoutExceedsRealm"
+                        "null",
+                        Messages.CLIENT_IDLE
                 );
             }
 
-            // Max Lifespan validation
+            // Max Lifespan validation on Remember me disabled
             if (clientMax != null && clientMax > realmMax) {
                 context.addError(
                         OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN,
-                        "Client session max lifespan cannot exceed realm SSO session max lifespan",
-                        "clientSessionMaxLifespanExceedsRealm"
+                        "null",
+                        Messages.CLIENT_MAXLIFE_SPAN
                 );
             }
         } else {
             int allowedMaxIdleTimeIfRememberMeEnabled = Math.max(realmIdle, realmRememberIdle);
+            int allowedMaxSpanIfRememberMeEnabled = Math.max(realmMax,realmRememberMax);
 
+            //Client idle Timeout validation on Remember me enabled
             if (clientIdle != null && clientIdle > allowedMaxIdleTimeIfRememberMeEnabled) {
                 context.addError(
                         OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT,
-                        "Client session idle timeout cannot exceed realm SSO session idle timeout or RememberMe idle timeout",
-                        "clientIdleExceedsRealmRememberMeIdle"
+                        "null",
+                        Messages.CLIENT_IDLE_REMEMBERME
 
                 );
             }
 
-            // TODO: do the max
-
-            // Max Lifespan validation
-            if (clientMax != null && clientMax > realmMax) { // TODO: update comparison
+            // Max Lifespan validation on Remember me enabled
+            if (clientMax != null && clientMax > allowedMaxSpanIfRememberMeEnabled) {
                 context.addError(
                         OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN,
-                        "Client session max lifespan cannot exceed realm SSO session max lifespan", // TODO: update the message
-                        "clientSessionMaxLifespanExceedsRealm"
+                        "null",
+                        Messages.CLIENT_MAXLIFESPAN_REMEMBERME
                 );
             }
         }
