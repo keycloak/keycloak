@@ -199,6 +199,19 @@ The option `http-accept-non-normalized-paths` was introduced to restore the prev
 
 As this behavior can be problematic for URL filtering, it is deprecated and will be removed in a future release.
 
+==== Truststore initialization moved to the server; Operator CRD field deprecated
+
+Keycloak now automatically discovers and trusts cluster certificate authorities when running on Kubernetes or OpenShift, without relying on the Operator to preconfigure the truststore. Specifically, if present in the container filesystem, the following files are added to the system truststore at runtime:
+
+* `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt` (Kubernetes service account CA)
+* `/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt` (OpenShift service CA)
+
+This behavior is enabled by default and can be controlled with the server option:
+
+* `--truststore-kubernetes-enabled=true|false` (default: `true`)
+
+No changes are required for most deployments. If you previously relied on the Operator to manage these truststore entries, the server now performs the same function directly. For details, see the server guide section "Cluster CA certificates (Kubernetes and OpenShift)" in the Truststore guide.
+
 === Deprecation of methods for removing expired authentication sessions from `AuthenticationSessionProvider`
 
 The methods `removeAllExpired()` and `removeExpired(RealmModel realm)` are annotated with the `@Deprecated` annotation.

@@ -26,12 +26,14 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreBuilder;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 
@@ -81,6 +83,27 @@ public class KeycloakTruststoresTests extends BaseOperatorTest {
         assertTrue(statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().stream()
                 .anyMatch(v -> v.getMountPath()
                         .equals("/opt/keycloak/conf/truststores/configmap-abc")));
+    }
+
+    @DisabledIfApiServerTest
+    @Test
+    public void testDefaultTruststoreLogExists() {
+        var kc = getTestKeycloakDeployment(false);
+        deployKeycloak(k8sclient, kc, true);
+
+        assertTrue(k8sclient.pods().withName(kc.getMetadata().getName() + "-0").getLog()
+                .contains("Adding trusted Kubernetes CA from /var/run/secrets/kubernetes.io/serviceaccount/ca.crt"));
+    }
+
+    @DisabledIfApiServerTest
+    @Test
+    public void testDisablingKubernetesCAAutoDiscovery() {
+        var kc = getTestKeycloakDeployment(false);
+        kc.getSpec().setAutomountServiceAccountToken(false);
+        deployKeycloak(k8sclient, kc, true);
+
+        assertFalse(k8sclient.pods().withName(kc.getMetadata().getName() + "-0").getLog()
+                .contains("Adding trusted Kubernetes CA from /var/run/secrets/kubernetes.io/serviceaccount/ca.crt"));
     }
 
 }
