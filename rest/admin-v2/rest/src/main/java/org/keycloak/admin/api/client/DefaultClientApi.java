@@ -3,7 +3,11 @@ package org.keycloak.admin.api.client;
 import java.io.IOException;
 import java.util.Objects;
 
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.PATCH;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -25,6 +29,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+
+import static org.keycloak.admin.api.AdminApiRootV2.CONTENT_TYPE_MERGE_PATCH;
 
 public class DefaultClientApi implements ClientApi {
 
@@ -51,12 +57,14 @@ public class DefaultClientApi implements ClientApi {
         this.objectMapper = MAPPER;
     }
 
+    @GET
     @Override
     public ClientRepresentation getClient() {
         return clientService.getClient(realm, client.getClientId(), null)
                 .orElseThrow(() -> new NotFoundException("Cannot find the specified client"));
     }
 
+    @PUT
     @Override
     public Response createOrUpdateClient(ClientRepresentation client) {
         try {
@@ -71,13 +79,14 @@ public class DefaultClientApi implements ClientApi {
         }
     }
 
+    @PATCH
     @Override
     public ClientRepresentation patchClient(JsonNode patch) {
         ClientRepresentation client = getClient();
         try {
             String contentType = session.getContext().getHttpRequest().getHttpHeaders().getHeaderString(HttpHeaders.CONTENT_TYPE);
             MediaType mediaType = contentType == null ? null : MediaType.valueOf(contentType);
-            MediaType mergePatch = MediaType.valueOf(ClientApi.CONTENT_TYPE_MERGE_PATCH);
+            MediaType mergePatch = MediaType.valueOf(CONTENT_TYPE_MERGE_PATCH);
             if (mediaType == null || !mediaType.isCompatible(mergePatch)) {
                 throw new WebApplicationException("Unsupported media type", Response.Status.UNSUPPORTED_MEDIA_TYPE);
             }
@@ -96,6 +105,7 @@ public class DefaultClientApi implements ClientApi {
         }
     }
 
+    @DELETE
     @Override
     public void deleteClient() {
         if (clientResource == null) {
