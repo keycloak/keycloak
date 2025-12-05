@@ -1,6 +1,36 @@
 // ------------------------ Breaking changes ------------------------  //
 == Breaking changes
 
+=== Corrected encoding when sending OpenID Connect client secrets when acting as a broker
+
+In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC 6749.
+You are not affected if you configured {project_name} to send the credentials in the request body.
+
+This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
+
+To revert to the old behavior, change the client authentication to the deprecated option *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`).
+
+=== Accepting only normalized paths in requests
+
+Previously {project_name} accepted HTTP requests with paths containing double dots (`..`) or double slashes (`//`). When processing them, it normalized the path by collapsing double slashes and normalized the path according to RFC 3986.
+As this has led to a hard-to-configure URL filtering, for example, in reverse proxies, the normalization is now disabled, and {project_name} responds with an HTTP 400 response code.
+
+To analyze rejected requests in the server log, enable debug logging for `org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter`.
+
+To revert to the previous behavior and to accept non-normalized URLs, set the option `http-accept-non-normalized-paths` to `true`. With this configuration, enable and review the HTTP access log to identify problematic requests.
+
+= Loopback Hostname Verification on Windows
+
+Setups on Windows that previously relied on custom machine names or non-standard hostnames for loopback (for example, `127.0.0.1` resolving to a custom name) may require updates to their trusted domain configuration. Only `localhost` and `*.localhost` are now recognized for loopback verification.
+
+{project_name} now consistently normalizes loopback addresses to `localhost` for domain verification across all platforms. This change ensures predictable behavior for trusted domain checks, regardless of the underlying OS.
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
 === Method `UserProfile#toRepresentation(boolean)` added
 
 The `UserProfile` interface has a new method `toRepresentation(boolean)`. This method allows clients to specify whether to include
@@ -12,18 +42,9 @@ implement this interface, you will need to update your code to accommodate this 
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
-=== Corrected encoding when sending OpenID Connect client secrets when acting as a broker
-
-In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC 6749.
-You are not affected if you configured {project_name} to send the credentials in the request body.
-
-This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
-
-To revert to the old behavior, change the client authentication to the deprecated option *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`).
-
 === Identity Provider refactoring
 
-The private SPI for identity providers have been refactored. This is to allow identity providers to support more use
+The private SPI for identity providers has been refactored. This is to allow identity providers to support more use
 -cases than federated user authentication.
 
 For anyone implementing a custom federated user authentication identity provider and are not extending one provided
@@ -33,20 +54,6 @@ the new `UserAuthenticationIdentityProvider` interface (all methods remain the s
 Additionally, both `IdentityProviderModel` and `IdentityProviderRepresentation` are now using Boolean values to allow
 configuration like `isHideOnLogin` to be null in order to not include these in Identity Provider types that do
 not need these configurations.
-
-=== Accepting only normalized paths in requests
-
-Previously {project_name} accepted HTTP requests with paths containing double dots (`..`) or double slashes (`//`). When processing them, it normalized the path by collapsing double slashes and normalized the path according to RFC 3986.
-As this has led to a hard-to-configure URL filtering, for example, in reverse proxies, the normalization is now disabled, and {project_name} responds with an HTTP 400 response code.
-
-To analyze rejected requests in the server log, enable debug logging for `org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter`.
-
-To revert to the previous behavior and to accept non-normalized URLs, set the option `http-accept-non-normalized-paths` to `true`. With this configuration, enable and review the HTTP access log to identify problematic requests.
-
-// ------------------------ Notable changes ------------------------ //
-== Notable changes
-
-Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 
 === SPIFFE Identity Provider configuration changed
 
@@ -79,14 +86,6 @@ When the "Remember Me" option is disabled in the realm settings, all user sessio
 Users will be required to log in again, and any associated refresh tokens will no longer be usable.
 User sessions created without selecting "Remember Me" are not affected.
 
-=== Correct encoding for OpenID Connect client credentials when acting as a broker
-
-In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC 6749.
-
-This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
-
-To revert to the old behavior, change the client authentication to *Client secret sent as HTTP Basic authentication without URL encoding (deprecated)* (`client_secret_basic_unencoded`).
-
 === Permissions of the database user for PostgreSQL
 
 If you are running on PostgreSQL as a database for {project_name}, ensure that the database user has `SELECT` permissions to the following tables to ensure an efficient upgrade: `pg_class`, `pg_namespace`.
@@ -99,19 +98,24 @@ If {project_name} does not have permissions to access these tables, it will log 
 If you have user storage extension and you reference the class `org.keycloak.credential.UserCredentialManager` from your providers, it is recommended to avoid using this class directly as it might be
 moved to the private modules in the future releases. The class may be typically used in the method `credentialManager()` of the implementations of `UserModel` interface. In that case,
 it is recommended to replace the code like this:
-```
+
+[source,java]
+----
 @Override
 public SubjectCredentialManager credentialManager() {
     return new UserCredentialManager(keycloakSession, realmModel, this);
 }
-```
+----
+
 with the code similar to this:
-```
+
+[source,java]
+----
 @Override
 public org.keycloak.models.UserCredentialManager credentialManager() {
     return keycloakSession.users().getUserCredentialManager(this);
 }
-```
+----
 
 === Allowing realm administrators granted with the `realm-admin` role to assign admin roles
 
@@ -145,7 +149,7 @@ See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to 
 
 === Default authorization policies and resources are no longer auto-created
 
-When enabling authorization on a new client (creating a Resource Server), {project_name} no longer automatically creates a "Default Resource", a "Default Policy," and a "Default Permission."
+When enabling authorization on a new client (creating a Resource Server), {project_name} no longer automatically creates a "`Default Resource`", a "`Default Policy`", and a "`Default Permission`".
 
 === Deleting expired sessions from the database
 
@@ -208,7 +212,6 @@ It is still triggered in this {project_name} version, but will be removed in a f
 // ------------------------ Removed features ------------------------ //
 == Removed features
 
-The following features have been removed from this release.
+=== PostgreSQL 13 (end of life)
 
-=== <TODO>
-
+Version PostgreSQL is end-of-life since November 2025 and therefore no longer supported.
