@@ -81,7 +81,7 @@ const TEST_VALUES = {
   ISSUER_DID: "did:key:test123",
   EXPIRY_SECONDS: "86400",
   TOKEN_JWS_TYPE: "dc+sd-jwt",
-  VISIBLE_CLAIMS: "id,iat,nbf,exp,jti,given_name",
+  VISIBLE_CLAIMS: "jti,iss,nbf,exp,cnf,vct",
   DISPLAY:
     '[{"name": "Test Credential", "locale": "en-US", "logo": {"uri": "https://example.com/logo.png", "alt_text": "Logo"}, "background_color": "#12107c", "text_color": "#FFFFFF"}]',
   SUPPORTED_CREDENTIAL_TYPES: "VerifiableCredential,UniversityDegreeCredential",
