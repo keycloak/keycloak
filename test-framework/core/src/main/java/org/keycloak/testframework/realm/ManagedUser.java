@@ -9,7 +9,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 public class ManagedUser {
 
     private final UserRepresentation createdRepresentation;
-
     private final UserResource userResource;
 
     public ManagedUser(UserRepresentation createdRepresentation, UserResource userResource) {

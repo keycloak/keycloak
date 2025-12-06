@@ -5,7 +5,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.KeyManagementException;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -20,27 +19,24 @@ import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.crypto.def.DefaultCryptoProvider;
 
-import org.apache.http.ssl.SSLContextBuilder;
 import org.jboss.logging.Logger;
 
-public class ManagedCertificates {
-
-    private static final Logger LOGGER = Logger.getLogger(ManagedCertificates.class);
+public abstract class AbstractManagedCertificates implements Certificates {
 
     private final CryptoProvider cryptoProvider;
 
-    private KeyStore serverKeyStore;
-    private KeyStore clientsTrustStore;
+    protected KeyStore serverKeyStore;
+    protected KeyStore clientsTrustStore;
     private final Path serverKeystorePath;
-    private final Path clientsTruststorePath;
-    private final char[] password;
+    protected final Path clientsTruststorePath;
+    protected final char[] password;
 
     private final static Path KEYSTORES_DIR = Path.of(System.getProperty("java.io.tmpdir"));
     private final static String PRV_KEY_ENTRY = "prvKey";
     public final static String CERT_ENTRY = "cert";
 
 
-    public ManagedCertificates(CertificatesConfigBuilder configBuilder) throws ManagedCertificatesException {
+    public AbstractManagedCertificates(CertificatesConfigBuilder configBuilder) throws ManagedCertificatesException {
         if (!CryptoIntegration.isInitialised()) {
             CryptoIntegration.setProvider(new DefaultCryptoProvider());
         }
@@ -54,11 +50,21 @@ public class ManagedCertificates {
         initServerCerts(configBuilder.getKeystoreFormat());
     }
 
+    @Override
+    public abstract Logger getLogger();
+
+    @Override
+    public abstract SSLContext getClientSSLContext();
+
     public String getKeycloakServerKeyStorePath() {
         return serverKeystorePath.toString();
     }
 
-    public String getKeycloakServerKeyStorePassword() {
+    public String getClientTrustStorePath() {
+        return clientsTruststorePath.toString();
+    }
+
+    public String getKeyAndTrustStorePassword() {
         return String.valueOf(password);
     }
 
@@ -74,28 +80,18 @@ public class ManagedCertificates {
         }
     }
 
-    public SSLContext getClientSSLContext() {
-        try {
-            return SSLContextBuilder.create()
-                    .loadTrustMaterial(clientsTrustStore, null)
-                    .build();
-        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
-            throw new ManagedCertificatesException(e);
-        }
-    }
-
     private void initServerCerts(KeystoreUtil.KeystoreFormat keystoreFormat) throws ManagedCertificatesException {
         try {
             serverKeyStore = cryptoProvider.getKeyStore(keystoreFormat);
             clientsTrustStore = cryptoProvider.getKeyStore(keystoreFormat);
 
             if (Files.exists(serverKeystorePath) && Files.exists(clientsTruststorePath)) {
-                LOGGER.debugv("Existing Server KeyStore files found in {0}", KEYSTORES_DIR);
+                getLogger().debugv("Existing Server KeyStore files found in {0}", KEYSTORES_DIR);
 
                 loadKeyStore(serverKeyStore, serverKeystorePath, password);
                 loadKeyStore(clientsTrustStore, clientsTruststorePath, password);
             } else {
-                LOGGER.debugv("Generating Server KeyStore files in {0}", KEYSTORES_DIR);
+                getLogger().debugv("Generating Server KeyStore files in {0}", KEYSTORES_DIR);
 
                 generateKeystoreAndTruststore(serverKeyStore, clientsTrustStore, "localhost");
                 // store the generated keystore and truststore in a temp folder

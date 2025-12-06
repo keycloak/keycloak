@@ -3,7 +3,8 @@ package org.keycloak.testframework.server;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.database.TestDatabase;
-import org.keycloak.testframework.https.ManagedCertificates;
+import org.keycloak.testframework.https.ManagedClientCertificates;
+import org.keycloak.testframework.https.ManagedServerCertificates;
 import org.keycloak.testframework.infinispan.InfinispanServer;
 import org.keycloak.testframework.injection.AbstractInterceptorHelper;
 import org.keycloak.testframework.injection.InstanceContext;
@@ -51,9 +52,16 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
         command = interceptor.intercept(command, instanceContext);
 
         if (command.tlsEnabled()) {
-            ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
+            ManagedServerCertificates managedCert = instanceContext.getDependency(ManagedServerCertificates.class);
             command.option("https-key-store-file", managedCert.getKeycloakServerKeyStorePath());
-            command.option("https-key-store-password", managedCert.getKeycloakServerKeyStorePassword());
+            command.option("https-key-store-password", managedCert.getKeyAndTrustStorePassword());
+        }
+
+        if (command.mTlsEnabled()) {
+            command.option("https-client-auth", "request");
+            ManagedClientCertificates managedCert = instanceContext.getDependency(ManagedClientCertificates.class);
+            command.option("https-trust-store-file", managedCert.getClientTrustStorePath());
+            command.option("https-trust-store-password", managedCert.getKeyAndTrustStorePassword());
         }
 
         command.log().fromConfig(Config.getConfig());

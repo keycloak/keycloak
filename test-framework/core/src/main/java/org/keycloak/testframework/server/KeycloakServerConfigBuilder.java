@@ -35,6 +35,7 @@ public class KeycloakServerConfigBuilder {
     private CacheType cacheType = CacheType.LOCAL;
     private boolean externalInfinispan = false;
     private boolean tlsEnabled = false;
+    private boolean mTlsEnabled = false;
 
     private KeycloakServerConfigBuilder(String command) {
         this.command = command;
@@ -115,6 +116,15 @@ public class KeycloakServerConfigBuilder {
 
     public boolean tlsEnabled() {
         return tlsEnabled ;
+    }
+
+    public KeycloakServerConfigBuilder mTlsEnabled(boolean enabled) {
+        mTlsEnabled = enabled;
+        return this;
+    }
+
+    public boolean mTlsEnabled() {
+        return mTlsEnabled ;
     }
     
     public KeycloakServerConfigBuilder cacheConfigFile(String resourcePath) {
