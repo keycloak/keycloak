@@ -16,7 +16,11 @@
  */
 package org.keycloak.models.sessions.infinispan;
 
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -34,8 +38,11 @@ import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransac
 import org.keycloak.models.sessions.infinispan.stream.Mappers;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
+import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 import org.infinispan.Cache;
+import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
+import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
@@ -118,7 +125,7 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
                 .map(Mappers.loginFailureId())
                 .forEach(loginFailureKey -> {
                     // Remove loginFailure from remoteCache too. Use removeAsync for better perf
-                    Future<?> future = localCache.removeAsync(loginFailureKey);
+                    Future<?> future = removeKeyFromCache(localCache, loginFailureKey);
                     futures.addTask(future);
                 });
 
@@ -145,4 +152,57 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
     public void close() {
 
     }
+
+    @Override
+    public void migrate(String modelVersion) {
+        if ("26.5.0".equals(modelVersion)) {
+            // This version introduced updated lifetimes for login failures. Recalculate values for existing entries.
+            Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> cache = loginFailuresTx.getCache();
+            AggregateCompletionStage<Void> stage = CompletionStages.aggregateCompletionStage();
+            cache.getAdvancedCache().entrySet()
+                    .forEach(entry -> {
+                        RealmModel realm = session.realms().getRealm(entry.getKey().realmId());
+                        if (!realm.isBruteForceProtected()) {
+                            stage.dependsOn(removeKeyFromCache(cache, entry.getKey()));
+                        } else {
+                            updateLifetimeOfCacheEntry(entry, realm, stage, cache);
+                        }
+                    });
+            CompletionStages.join(stage.freeze());
+        }
+    }
+
+    @Override
+    public void updateWithLatestRealmSettings(RealmModel realm) {
+        Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> cache = loginFailuresTx.getCache();
+        AggregateCompletionStage<Void> stage = CompletionStages.aggregateCompletionStage();
+        if (!realm.isBruteForceProtected()) {
+            cache.getAdvancedCache().entrySet().stream()
+                    .filter(entry -> Objects.equals(entry.getKey().realmId(), realm.getId()))
+                    .forEach(entry -> stage.dependsOn(removeKeyFromCache(cache, entry.getKey())));
+        } else {
+            cache.getAdvancedCache().entrySet().stream()
+                    .filter(SessionWrapperPredicate.create(realmId))
+                    .forEach(entry -> {
+                        updateLifetimeOfCacheEntry(entry, realm, stage, cache);
+                    });
+        }
+        CompletionStages.join(stage.freeze());
+    }
+
+    private static void updateLifetimeOfCacheEntry(Map.Entry<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> entry, RealmModel realm, AggregateCompletionStage<Void> stage, Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> cache) {
+        long lifespanMs = SessionTimeouts.getLoginFailuresLifespanMs(realm, null, entry.getValue().getEntity());
+        long maxIdleMs = SessionTimeouts.getLoginFailuresMaxIdleMs(realm, null, entry.getValue().getEntity());
+        stage.dependsOn(
+                cache.getAdvancedCache().computeIfPresentAsync(entry.getKey(),
+                        // Keep the original value - this should only update the lifespan and idle time
+                        (loginFailureKey, loginFailureEntitySessionEntityWrapper) -> loginFailureEntitySessionEntityWrapper,
+                        lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS)
+        );
+    }
+
+    private static CompletableFuture<SessionEntityWrapper<LoginFailureEntity>> removeKeyFromCache(Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> cache, LoginFailureKey key) {
+        return cache.removeAsync(key);
+    }
+
 }
