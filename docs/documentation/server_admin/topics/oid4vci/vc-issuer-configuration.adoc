@@ -253,7 +253,7 @@ Create a JSON file (e.g., `client-scopes.json`) with the following content:
     "vc.signing_key_id": "key-id-123456",
     "vc.display": "[{\"name\": \"IdentityCredential\", \"logo\": {\"uri\": \"https://university.example.edu/public/logo.png\", \"alt_text\": \"a square logo of a university\"}, \"locale\": \"en-US\", \"background_color\": \"#12107c\", \"text_color\": \"#FFFFFF\"}]",
     "vc.sd_jwt.number_of_decoys": "2",
-    "vc.credential_build_config.sd_jwt.visible_claims": "iat,jti,nbf,exp,given_name",
+    "vc.credential_build_config.sd_jwt.visible_claims": "jti,iss,nbf,exp,cnf,vct",
     "vc.credential_build_config.hash_algorithm": "SHA-256",
     "vc.credential_build_config.token_jws_type": "JWS",
     "vc.include_in_metadata": "true"

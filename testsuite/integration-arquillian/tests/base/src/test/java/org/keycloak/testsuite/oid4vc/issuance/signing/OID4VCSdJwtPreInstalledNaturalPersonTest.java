@@ -68,9 +68,10 @@ public class OID4VCSdJwtPreInstalledNaturalPersonTest extends OID4VCIssuerEndpoi
                     var credentialMetadata = jwtVcConfig.getCredentialMetadata();
                     var jwtVcClaims = credentialMetadata.getClaims().stream()
                             .collect(Collectors.toMap(Claim::getName, Function.identity()));
+                    assertEquals(4, jwtVcClaims.size());
                     {
-                        Claim claim = jwtVcClaims.get("id");
-                        assertEquals("id", claim.getPath().get(0));
+                        Claim claim = jwtVcClaims.get("sub");
+                        assertEquals("sub", claim.getPath().get(0));
                         assertFalse(claim.isMandatory());
                         assertNull(claim.getDisplay());
                     }

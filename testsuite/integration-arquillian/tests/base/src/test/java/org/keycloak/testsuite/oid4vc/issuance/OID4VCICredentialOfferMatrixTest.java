@@ -42,6 +42,7 @@ import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
@@ -129,6 +130,9 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testVariousLogins() {
+        UserRepresentation alice = testRealm().users().search(namedUserId).get(0);
+        assertNotNull("Alice has attributes", alice.getAttributes());
+        assertEquals("did:key:5678", alice.getAttributes().get("did").get(0));
         assertNotNull(getBearerTokenAndLogout(issClientId, issUserId, "openid"));
         assertNotNull(getBearerTokenAndLogout(issClientId, namedUserId, "openid"));
         assertNotNull(getBearerTokenAndLogout(namedClientId, issUserId, "openid"));

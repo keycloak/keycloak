@@ -46,12 +46,15 @@ public class CredentialBuildConfig {
 
     private String credentialIssuer;
 
-    private String credentialId;
+    private String credentialConfigId;
 
     //-- Proper building configuration fields --//
 
     // The vct field to be used for the SD-JWT.
     private String credentialType;
+
+    // Credential expiry as defined on the model
+    private Integer expiryInSeconds;
 
     // The type of the token to be created.
     // Will be used as `typ` claim in the JWT-Header.
@@ -85,22 +88,27 @@ public class CredentialBuildConfig {
     // Needs to fit the provided signing key.
     private String ldpProofType;
 
-    public static CredentialBuildConfig parse(KeycloakSession keycloakSession,
-                                              SupportedCredentialConfiguration credentialConfiguration,
-                                              CredentialScopeModel credentialModel) {
-        final String credentialIssuer = Optional.ofNullable(credentialModel.getIssuerDid()).orElse(
+    public static CredentialBuildConfig parse(
+        KeycloakSession keycloakSession,
+        SupportedCredentialConfiguration credConfig,
+        CredentialScopeModel credModel
+) {
+        String credentialIssuer = Optional.ofNullable(credModel.getIssuerDid()).orElse(
                 OID4VCIssuerWellKnownProvider.getIssuer(keycloakSession.getContext()));
 
-        return new CredentialBuildConfig().setCredentialIssuer(credentialIssuer)
-                                          .setCredentialId(credentialConfiguration.getId())
-                                          .setCredentialType(credentialConfiguration.getVct())
-                                          .setTokenJwsType(credentialModel.getTokenJwsType())
-                                          .setNumberOfDecoys(credentialModel.getSdJwtNumberOfDecoys())
-                                          .setSigningKeyId(credentialModel.getSigningKeyId())
-                                          .setSigningAlgorithm(credentialConfiguration.getCredentialSigningAlgValuesSupported()
-                                                                                      .get(0))
-                                          .setHashAlgorithm(credentialModel.getHashAlgorithm())
-                                          .setSdJwtVisibleClaims(credentialModel.getSdJwtVisibleClaims());
+        List<String> signingAlgSupported = credConfig.getCredentialSigningAlgValuesSupported();
+        CredentialBuildConfig buildConfig = new CredentialBuildConfig()
+            .setCredentialIssuer(credentialIssuer)
+            .setCredentialConfigId(credConfig.getId())
+            .setCredentialType(credConfig.getVct())
+            .setExpiryInSeconds(credModel.getExpiryInSeconds())
+            .setTokenJwsType(credModel.getTokenJwsType())
+            .setNumberOfDecoys(credModel.getSdJwtNumberOfDecoys())
+            .setSigningKeyId(credModel.getSigningKeyId())
+            .setSigningAlgorithm(signingAlgSupported.get(0))
+            .setHashAlgorithm(credModel.getHashAlgorithm())
+            .setSdJwtVisibleClaims(credModel.getSdJwtVisibleClaims());
+        return buildConfig;
     }
 
     public String getCredentialIssuer() {
@@ -112,12 +120,21 @@ public class CredentialBuildConfig {
         return this;
     }
 
-    public String getCredentialId() {
-        return credentialId;
+    public String getCredentialConfigId() {
+        return credentialConfigId;
     }
 
-    public CredentialBuildConfig setCredentialId(String credentialId) {
-        this.credentialId = credentialId;
+    public CredentialBuildConfig setCredentialConfigId(String credentialId) {
+        this.credentialConfigId = credentialId;
+        return this;
+    }
+
+    public Integer getExpiryInSeconds() {
+        return expiryInSeconds;
+    }
+
+    public CredentialBuildConfig setExpiryInSeconds(Integer expiryInSeconds) {
+        this.expiryInSeconds = expiryInSeconds;
         return this;
     }
 
@@ -211,7 +228,7 @@ public class CredentialBuildConfig {
             return false;
         }
         CredentialBuildConfig that = (CredentialBuildConfig) o;
-        return Objects.equals(credentialId, that.credentialId) && Objects.equals(credentialType,
+        return Objects.equals(credentialConfigId, that.credentialConfigId) && Objects.equals(credentialType,
                                                                                  that.credentialType) && Objects.equals(
                 tokenJwsType,
                 that.tokenJwsType) && Objects.equals(hashAlgorithm, that.hashAlgorithm) && Objects.equals(
@@ -226,7 +243,7 @@ public class CredentialBuildConfig {
 
     @Override
     public int hashCode() {
-        return Objects.hash(credentialId,
+        return Objects.hash(credentialConfigId,
                             credentialType,
                             tokenJwsType,
                             hashAlgorithm,
