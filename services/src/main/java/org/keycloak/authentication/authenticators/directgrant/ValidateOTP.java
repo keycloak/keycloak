@@ -51,8 +51,8 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator implements Cre
             if (context.getExecution().isConditional()) {
                 context.attempted();
             } else if (context.getExecution().isRequired()) {
-                context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-                Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+                context.getEvent().error(Errors.INVALID_OTP_CREDENTIALS);
+                Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid OTP credentials");
                 context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             }
             return;
@@ -72,16 +72,16 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator implements Cre
             if (context.getUser() != null) {
                 context.getEvent().user(context.getUser());
             }
-            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+            context.getEvent().error(Errors.INVALID_OTP_CREDENTIALS);
+            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid OTP credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
         boolean valid = getCredentialProvider(context.getSession()).isValid(context.getRealm(), context.getUser(), new UserCredentialModel(credentialId, OTPCredentialModel.TYPE, otp));
         if (!valid) {
             context.getEvent().user(context.getUser());
-            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+            context.getEvent().error(Errors.INVALID_OTP_CREDENTIALS);
+            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid OTP credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
