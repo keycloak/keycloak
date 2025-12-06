@@ -626,15 +626,12 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                 assertTrue(user.getUsername().startsWith("new-idp-user-"));
             });
         });
-        runOnServer.run((RunOnServer) session -> {
-            // check the same users are now scheduled to run the second step.
-            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
-            List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
-            assertEquals(1, registeredWorkflows.size());
-            Workflow workflow = registeredWorkflows.get(0);
-            // activate the workflow for all eligible users - i.e. only users from the same idp who are not yet assigned to the workflow.
-            provider.activateForAllEligibleResources(workflow);
-        });
+
+        List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
+        assertThat(workflows, hasSize(1));
+        // activate the workflow for all eligible users - i.e. only users from the same idp who are not yet assigned to the workflow.
+        managedRealm.admin().workflows().workflow(workflows.get(0).getId()).activateAll();
+
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = session.getContext().getRealm();
             // check the same users are now scheduled to run the second step.

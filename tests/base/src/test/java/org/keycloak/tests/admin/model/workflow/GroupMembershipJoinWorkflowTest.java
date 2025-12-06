@@ -163,15 +163,10 @@ public class GroupMembershipJoinWorkflowTest extends AbstractWorkflowTest {
                                 .build()
                 ).build()).close();
 
-
-        runOnServer.run((RunOnServer) session -> {
-            // check the same users are now scheduled to run the second step.
-            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
-            List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
-            assertThat(registeredWorkflows, hasSize(1));
-            // activate the workflow for all eligible users
-            provider.activateForAllEligibleResources(registeredWorkflows.get(0));
-        });
+        List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
+        assertThat(workflows, hasSize(1));
+        // activate the workflow for all eligible users
+        managedRealm.admin().workflows().workflow(workflows.get(0).getId()).activateAll();
 
         runOnServer.run((RunOnServer) session -> {
             // check the same users are now scheduled to run the second step.
