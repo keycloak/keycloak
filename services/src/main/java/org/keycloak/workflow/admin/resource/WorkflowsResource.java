@@ -21,12 +21,17 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowProvider;
+
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
+
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 
 public class WorkflowsResource {
 
@@ -45,6 +50,11 @@ public class WorkflowsResource {
 
     @POST
     @Consumes({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation(
+            summary = "Create workflow",
+            description = "Create a new workflow from the provided representation."
+    )
     public Response create(WorkflowRepresentation rep) {
         auth.realm().requireManageRealm();
 
@@ -57,7 +67,15 @@ public class WorkflowsResource {
     }
 
     @Path("{id}")
-    public WorkflowResource get(@PathParam("id") String id) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation(
+            summary = "Get workflow sub-resource",
+            description = "Locate the workflow sub-resource for the given identifier."
+    )
+    public WorkflowResource get(
+            @Parameter(description = "Workflow identifier")
+            @PathParam("id") String id
+    ) {
         auth.realm().requireManageRealm();
 
         Workflow workflow = provider.getWorkflow(id);
@@ -71,11 +89,20 @@ public class WorkflowsResource {
 
     @GET
     @Produces({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation(
+            summary = "List workflows",
+            description = "List workflows filtered by name and paginated using first and max parameters."
+    )
     public List<WorkflowRepresentation> list(
-            @Parameter(description = "A String representing the workflow name - either partial or exact") @QueryParam("search") String search,
-            @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
-            @Parameter(description = "The position of the first result to be processed (pagination offset)") @QueryParam("first") @DefaultValue("0") Integer firstResult,
-            @Parameter(description = "The maximum number of results to be returned - defaults to 10") @QueryParam("max") @DefaultValue("10") Integer maxResults
+            @Parameter(description = "A String representing the workflow name - either partial or exact")
+            @QueryParam("search") String search,
+            @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not")
+            @QueryParam("exact") Boolean exact,
+            @Parameter(description = "The position of the first result to be processed (pagination offset)")
+            @QueryParam("first") @DefaultValue("0") Integer firstResult,
+            @Parameter(description = "The maximum number of results to be returned - defaults to 10")
+            @QueryParam("max") @DefaultValue("10") Integer maxResults
     ) {
         auth.realm().requireManageRealm();
 
