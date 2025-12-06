@@ -182,7 +182,7 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
                     .forEach(entry -> stage.dependsOn(removeKeyFromCache(cache, entry.getKey())));
         } else {
             cache.getAdvancedCache().entrySet().stream()
-                    .filter(SessionWrapperPredicate.create(realmId))
+                    .filter(SessionWrapperPredicate.create(realm.getId()))
                     .forEach(entry -> {
                         updateLifetimeOfCacheEntry(entry, realm, stage, cache);
                     });

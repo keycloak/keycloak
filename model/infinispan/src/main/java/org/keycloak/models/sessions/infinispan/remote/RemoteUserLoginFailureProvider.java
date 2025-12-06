@@ -17,10 +17,10 @@
 package org.keycloak.models.sessions.infinispan.remote;
 
 import java.lang.invoke.MethodHandles;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -28,12 +28,15 @@ import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
+import org.keycloak.models.sessions.infinispan.query.LoginFailureQueries;
 import org.keycloak.models.sessions.infinispan.remote.transaction.LoginFailureChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
+import org.infinispan.commons.api.query.Query;
 import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.infinispan.util.concurrent.WithinThreadExecutor;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
@@ -92,47 +95,43 @@ public class RemoteUserLoginFailureProvider implements UserLoginFailureProvider 
         if ("26.5.0".equals(modelVersion)) {
             // This version introduced updated lifetimes for login failures. Recalculate values for existing entries.
             RemoteCache<LoginFailureKey, LoginFailureEntity> cache = transaction.getCache();
-            AggregateCompletionStage<Void> stage = CompletionStages.aggregateCompletionStage();
-            cache.entrySet()
-                    .forEach(entry -> {
+            CompletionStages.performConcurrently(
+                    cache.entrySet().stream(),
+                    20,
+                    Schedulers.from(new WithinThreadExecutor()),
+                    entry -> {
                         RealmModel realm = session.realms().getRealm(entry.getKey().realmId());
                         if (!realm.isBruteForceProtected()) {
-                            stage.dependsOn(removeKeyFromCache(cache, entry.getKey()));
+                            return removeKeyFromCache(cache, entry.getKey());
                         } else {
-                            updateLifetimeOfCacheEntry(entry, realm, stage, cache);
+                            return updateLifetimeOfCacheEntry(entry.getKey(), entry.getValue(), realm, cache);
                         }
-                    });
-            CompletionStages.join(stage.freeze());
+                    }, Collectors.counting());
         }
     }
 
     @Override
     public void updateWithLatestRealmSettings(RealmModel realm) {
         RemoteCache<LoginFailureKey, LoginFailureEntity> cache = transaction.getCache();
-        AggregateCompletionStage<Void> stage = CompletionStages.aggregateCompletionStage();
         if (!realm.isBruteForceProtected()) {
-            cache.entrySet().stream()
-                    .filter(entry -> Objects.equals(entry.getKey().realmId(), realm.getId()))
-                    .forEach(entry -> stage.dependsOn(removeKeyFromCache(cache, entry.getKey())));
+            removeAllUserLoginFailures(realm);
         } else {
-            cache.entrySet().stream()
-                    .filter(entry -> Objects.equals(entry.getKey().realmId(), realm.getId()))
-                    .forEach(entry -> {
-                        updateLifetimeOfCacheEntry(entry, realm, stage, cache);
-                    });
+            Query<LoginFailureEntity> query = LoginFailureQueries.searchByRealmId(cache, realm.getId());
+            CompletionStages.performConcurrently(
+                    query,
+                    20,
+                    Schedulers.from(new WithinThreadExecutor()),
+                    entry -> updateLifetimeOfCacheEntry(new LoginFailureKey(entry.getRealmId(), entry.getUserId()), entry, realm, cache), Collectors.counting());
         }
-        CompletionStages.join(stage.freeze());
     }
 
-    private static void updateLifetimeOfCacheEntry(Map.Entry<LoginFailureKey, LoginFailureEntity> entry, RealmModel realm, AggregateCompletionStage<Void> stage, RemoteCache<LoginFailureKey, LoginFailureEntity> cache) {
-        long lifespanMs = SessionTimeouts.getLoginFailuresLifespanMs(realm, null, entry.getValue());
-        long maxIdleMs = SessionTimeouts.getLoginFailuresMaxIdleMs(realm, null, entry.getValue());
-        stage.dependsOn(
-                cache.computeIfPresentAsync(entry.getKey(),
-                        // Keep the original value - this should only update the lifespan and idle time
-                        (loginFailureKey, loginFailureEntitySessionEntityWrapper) -> loginFailureEntitySessionEntityWrapper,
-                        lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS)
-        );
+    private static CompletableFuture<LoginFailureEntity> updateLifetimeOfCacheEntry(LoginFailureKey key, LoginFailureEntity value, RealmModel realm, RemoteCache<LoginFailureKey, LoginFailureEntity> cache) {
+        long lifespanMs = SessionTimeouts.getLoginFailuresLifespanMs(realm, null, value);
+        long maxIdleMs = SessionTimeouts.getLoginFailuresMaxIdleMs(realm, null, value);
+        return cache.computeIfPresentAsync(key,
+                // Keep the original value - this should only update the lifespan and idle time
+                (loginFailureKey, loginFailureEntitySessionEntityWrapper) -> loginFailureEntitySessionEntityWrapper,
+                lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
     }
 
     private static CompletableFuture<LoginFailureEntity> removeKeyFromCache(RemoteCache<LoginFailureKey, LoginFailureEntity> cache, LoginFailureKey key) {
