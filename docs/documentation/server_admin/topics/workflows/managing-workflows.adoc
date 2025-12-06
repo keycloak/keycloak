@@ -1,0 +1,7 @@
+[id="managing-workflows_{context}"]
+
+[[_managing_workflows_]]
+=  Managing workflows
+[role="_abstract"]
+
+Managing workflows

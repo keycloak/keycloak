@@ -1,0 +1,31 @@
+[id="understanding-workflow_{context}"]
+
+[[_understanding_workflows_]]
+=  Understanding workflows
+[role="_abstract"]
+
+A workflow is an activity or process within {project_name} that executes a series of predefined steps on a
+specific realm resource in response to specific events and based on the defined conditions.
+
+In {project_name}, there are two main types of events:
+
+*   **User Events**: These events are initiated by users, such as logging in or registering a new account.
+*   **Admin Events**: These events are initiated by administrators through the Admin Console or Admin API, such as creating or updating a user or any other realm resource.
+
+Workflows are designed to respond to these events by automating tasks and processes that need to be performed on the
+associated realm resources.
+
+Once an event is fired, the workflow engine evaluates all defined workflows in the realm to determine if any should be
+triggered based on the event type and the specified conditions. If the event matches the conditions defined in a workflow,
+that workflow is triggered and a workflow instance is created and assigned with a execution identifier. A workflow instance
+is bound to the realm resource associated with an event, and only a single instance of a workflow can be active for that realm resource at any given time.
+
+A realm resource can be any entity within the realm, such as a user, client, group, or even a role.
+
+Once a workflow is active for a realm resource, it will execute the defined steps in the workflow sequentially. These steps
+can be run immediately or scheduled for a later time, depending on the configuration of each step.
+Once the workflow has completed all its steps, the workflow instance is considered finished and removed from the system.
+
+That is the main gist of how workflows works in {project_name}. However, there are more details and settings that can be
+configured to customize the behavior and the lifecycle of a workflow, how their instances are created, managed, and bound to realm resources,
+and how their steps are executed.

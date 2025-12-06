@@ -1,0 +1,58 @@
+[id="understanding-workflow-definition_{context}"]
+
+[[_understanding_workflow_definition_]]
+=  Understanding the workflow definition
+[role="_abstract"]
+
+Workflows are defined in YAML format. This format allows for a clear and human-readable way to specify the automation process
+represented by a workflow.
+
+In its simplest form, a workflow definition can be defined as follows:
+
+```yaml
+name: "Onboarding new users"
+on: user_added
+steps:
+  - uses: "notify-user"
+    with:
+      message: "Welcome to My Realm!"
+  - uses: "set-user-required-action"
+    with:
+      action: "UPDATE_PASSWORD"
+      after: "30d"
+```
+
+The example above is very simple but illustrates the core structure and the flexibility of a workflow to automate administrative tasks.
+It is composed of three main sections:
+
+*   `name`: A unique and user-friendly name to identify the workflow within the realm.
+*   `on`: The event that will trigger the workflow. In this case, the workflow is triggered when a new user is added to the realm.
+*   `steps`: A list of actions to be executed when the workflow is triggered. In this example, two steps are defined:
+    1. The first step uses the built-in `notify-user` action to send a welcome message to the new user.
+    2. The second step uses the built-in `set-user-required-action` action to require the user to update their password within 30 days
+
+Here is a more detailed look at all settings available from the workflow definition:
+
+`name`::
+A unique and user-friendly name to identify the workflow within the realm. This name is crucial for management and logging purposes.
+
+`on`::
+This setting specifies the event that will trigger the workflow. Events are tied to operations on realm resources. Keycloak distinguishes between two main types of events:
+*   **User Events**: Events initiated by a user, such as `user_logged_in` or `user_registered`.
+*   **Admin Events**: Events initiated by an administrator through the Admin Console or Admin API, such as creating or updating a user.
++
+While the event system is designed to support various resources (like clients, groups, etc.), workflow triggers are currently limited to events related to the **user** resource.
+
+`if`::
+An optional setting that defines a condition that must be met for the workflow to be triggered. This condition is written using an Expression Language (EL) that supports a variety of checks on the realm resource associated with the event.
++
+Conditions provide fine-grained control over whether a workflow instance should be created. They allow you to inspect the context of the event and the state of the resource. For example, you can create conditions to check:
+* If a user has a specific attribute.
+* If a specific role or group is being granted to a user.
++
+The expression must evaluate to `true` for the workflow to be triggered. If the condition is not met or evaluates to `false`, the workflow is not triggered, even if the `on` event occurs. If this setting is omitted, the workflow will always trigger when the specified `on` event happens.
++
+Within the EL context, you have access to information about the resource associated with the event. For example, in a user-triggered event, a `user` object is available to be used in expressions.
+
+`steps`::
+This is a list defining the sequence of actions to be executed on the resource. Each step in the list is an object that specifies the action to perform. The most important setting within a step is `uses`, which defines the name of the built-in (or custom) step to execute. Steps can also include a `with` block to provide parameters to the action and an `after` setting to schedule its execution.
