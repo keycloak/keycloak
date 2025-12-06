@@ -90,7 +90,7 @@ public class JsonConfigProvider implements Config.ConfigProvider {
 
         private String toString(JsonNode n) {
             String v = replaceProperties(n.textValue());
-            return !v.isEmpty() ? v : null;
+            return v != null && !v.isEmpty() ? v : null;
         }
 
         @Override
