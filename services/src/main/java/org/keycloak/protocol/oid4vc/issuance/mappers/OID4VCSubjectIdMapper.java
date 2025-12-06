@@ -106,12 +106,12 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
 
     @Override
     public String getDisplayType() {
-        return "Subject ID Mapper";
+        return "CredentialSubject ID Mapper";
     }
 
     @Override
     public String getHelpText() {
-        return "Assigns the Subject ID from the User's DID";
+        return "Assigns a subject ID to the credentials subject. The preferred attribute is the user's DID, others can be selected.";
     }
 
     @Override
