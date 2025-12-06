@@ -70,6 +70,12 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-kerberos-federation</artifactId>
         </dependency>
+        <!-- SCIM federation -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-scim-federation</artifactId>
+            <scope>compile</scope>
+        </dependency>
         <!-- saml -->
         <dependency>
             <groupId>org.keycloak</groupId>
