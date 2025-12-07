@@ -346,7 +346,7 @@ public class AbstractPartialImportTest {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder builder) {
-            return builder.dependency("org.keycloak.tests", "keycloak-tests-custom-scripts");
+            return builder.dependency("org.keycloak.tests", "keycloak-tests-custom-providers");
         }
     }
 }
