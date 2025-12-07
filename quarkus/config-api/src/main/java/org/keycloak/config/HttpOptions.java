@@ -18,7 +18,7 @@ public class HttpOptions {
 
     public static final Option<String> HTTP_HOST = new OptionBuilder<>("http-host", String.class)
             .category(OptionCategory.HTTP)
-            .description("The HTTP Host.")
+            .description("The HTTP Host. By default, Keycloak binds to all network addresses (0.0.0.0), which means the server may be accessible from other machines on your network. For local development, you can restrict access to localhost only by setting this to 127.0.0.1.")
             .defaultValue("0.0.0.0")
             .build();
 
