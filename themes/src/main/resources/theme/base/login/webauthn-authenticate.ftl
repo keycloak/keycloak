@@ -12,6 +12,7 @@
                 <input type="hidden" id="signature" name="signature"/>
                 <input type="hidden" id="credentialId" name="credentialId"/>
                 <input type="hidden" id="userHandle" name="userHandle"/>
+                <input type="hidden" id="authenticatorAttachment" name="authenticatorAttachment"/>
                 <input type="hidden" id="error" name="error"/>
             </form>
 
