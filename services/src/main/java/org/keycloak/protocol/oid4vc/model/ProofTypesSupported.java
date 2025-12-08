@@ -41,13 +41,11 @@ public class ProofTypesSupported {
     protected Map<String, SupportedProofTypeData> supportedProofTypes = new HashMap<>();
 
     public static ProofTypesSupported parse(KeycloakSession keycloakSession,
+                                            KeyAttestationsRequired keyAttestationsRequired,
                                             List<String> globalSupportedSigningAlgorithms) {
         ProofTypesSupported proofTypesSupported = new ProofTypesSupported();
         keycloakSession.getAllProviders(ProofValidator.class).forEach(proofValidator -> {
             String type = proofValidator.getProofType();
-            // Set to null by default - if attestation is not required, the parameter MUST NOT be present.
-            // TODO: When configuration mechanism is implemented, this should be set based on configuration.
-            KeyAttestationsRequired keyAttestationsRequired = null;
             SupportedProofTypeData supportedProofTypeData = new SupportedProofTypeData(globalSupportedSigningAlgorithms,
                     keyAttestationsRequired);
             proofTypesSupported.getSupportedProofTypes().put(type, supportedProofTypeData);
@@ -80,6 +78,11 @@ public class ProofTypesSupported {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return toJsonString();
     }
 
     @Override

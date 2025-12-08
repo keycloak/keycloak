@@ -200,8 +200,11 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
         WorkflowValidator.validateWorkflow(session, rep);
 
         MultivaluedHashMap<String, String> config = ofNullable(rep.getConfig()).orElse(new MultivaluedHashMap<>());
-        if (rep.isCancelIfRunning()) {
-            config.putSingle(WorkflowConstants.CONFIG_CANCEL_IF_RUNNING, "true");
+        if (rep.getCancelInProgress() != null) {
+            config.putSingle(WorkflowConstants.CONFIG_CANCEL_IN_PROGRESS, rep.getCancelInProgress());
+        }
+        if (rep.getRestartInProgress() != null) {
+            config.putSingle(WorkflowConstants.CONFIG_RESTART_IN_PROGRESS, rep.getRestartInProgress());
         }
 
         Workflow workflow = addWorkflow(new Workflow(session, rep.getId(), config));
@@ -211,10 +214,6 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
 
     @Override
     public void close() {
-    }
-
-    WorkflowStepProvider getStepProvider(WorkflowStep step) {
-        return getStepProviderFactory(step).create(session, realm.getComponent(step.getId()));
     }
 
     private ComponentModel getWorkflowComponent(String id) {
@@ -233,17 +232,6 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
         ComponentFactory<?, ?> factory = (ComponentFactory<?, ?>) sessionFactory
                 .getProviderFactory(WorkflowProvider.class, DefaultWorkflowProviderFactory.ID);
         return (WorkflowProvider) factory.create(session, realm.getComponent(workflow.getId()));
-    }
-
-    private WorkflowStepProviderFactory<WorkflowStepProvider> getStepProviderFactory(WorkflowStep step) {
-        WorkflowStepProviderFactory<WorkflowStepProvider> factory = (WorkflowStepProviderFactory<WorkflowStepProvider>) session
-                .getKeycloakSessionFactory().getProviderFactory(WorkflowStepProvider.class, step.getProviderId());
-
-        if (factory == null) {
-            throw new WorkflowInvalidStateException("Step not found: " + step.getProviderId());
-        }
-
-        return factory;
     }
 
     private void processEvent(Stream<Workflow> workflows, WorkflowEvent event) {

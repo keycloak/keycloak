@@ -59,6 +59,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -537,16 +538,33 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         List<String> signingAlgsSupported = new ArrayList<>(supportedConfig.getCredentialSigningAlgValuesSupported());
         String proofTypesSupportedString = supportedConfig.getProofTypesSupported().toJsonString();
 
+        KeyAttestationsRequired expectedKeyAttestationsRequired = null;
+        if (Boolean.parseBoolean(clientScope.getAttributes().get(CredentialScopeModel.KEY_ATTESTATION_REQUIRED))) {
+            expectedKeyAttestationsRequired = new KeyAttestationsRequired();
+            expectedKeyAttestationsRequired.setKeyStorage(
+                Optional.ofNullable(clientScope.getAttributes()
+                                               .get(CredentialScopeModel.KEY_ATTESTATION_REQUIRED_KEY_STORAGE))
+                        .map(s -> Arrays.asList(s.split(",")))
+                        .orElse(null));
+            expectedKeyAttestationsRequired.setUserAuthentication(
+                Optional.ofNullable(clientScope.getAttributes()
+                                               .get(CredentialScopeModel.KEY_ATTESTATION_REQUIRED_USER_AUTH))
+                        .map(s -> Arrays.asList(s.split(",")))
+                        .orElse(null));
+        }
+        String expectedKeyAttestationsRequiredString = toJsonString(expectedKeyAttestationsRequired);
+
         try {
             withCausePropagation(() -> testingClient.server(TEST_REALM_NAME).run((session -> {
+                KeyAttestationsRequired keyAttestationsRequired = //
+                    Optional.ofNullable(expectedKeyAttestationsRequiredString)
+                            .map(s -> fromJsonString(s, KeyAttestationsRequired.class))
+                            .orElse(null);
                 ProofTypesSupported expectedProofTypesSupported = ProofTypesSupported.parse(session,
-                        List.of(Algorithm.RS256));
-                // Normalize expected object: serialize and deserialize to match the behavior
-                // where empty key_attestations_required are excluded from JSON
-                String expectedJson = expectedProofTypesSupported.toJsonString();
-                ProofTypesSupported normalizedExpected = ProofTypesSupported.fromJsonString(expectedJson);
-                ProofTypesSupported actualFromMetadata = ProofTypesSupported.fromJsonString(proofTypesSupportedString);
-                assertEquals(normalizedExpected, actualFromMetadata);
+                                                                                            keyAttestationsRequired,
+                                                                                            List.of(Algorithm.RS256));
+                assertEquals(expectedProofTypesSupported,
+                        ProofTypesSupported.fromJsonString(proofTypesSupportedString));
 
                 List<String> expectedSigningAlgs = OID4VCIssuerWellKnownProvider.getSupportedSignatureAlgorithms(session);
                 MatcherAssert.assertThat(signingAlgsSupported,

@@ -17,19 +17,15 @@
 
 package org.keycloak.tests.admin.model.workflow;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 
 import jakarta.mail.internet.MimeMessage;
-import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
-import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
-import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -37,11 +33,9 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
-import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Test;
 
@@ -51,10 +45,6 @@ import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.fin
 import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailsByRecipient;
 import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.verifyEmailContent;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -69,89 +59,12 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
     @InjectMailServer
     private MailServer mailServer;
 
-    @Test
-    public void testWorkflowIsRestartedOnSameEvent() throws IOException {
-        // create a workflow that can restarted on the same event - i.e. has concurrency setting to cancel if running
-        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_LOGGED_IN.toString())
-                .concurrency().cancelIfRunning() // this setting enables restarting the workflow
-                .withSteps(
-                        WorkflowStepRepresentation.create()
-                                .of(SetUserAttributeStepProviderFactory.ID)
-                                .withConfig("attribute", "attr1")
-                                .after(Duration.ofDays(1))
-                                .build(),
-                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
-                                .after(Duration.ofDays(5))
-                                .build()
-                ).build()).close();
-
-        // login with alice - this will attach the workflow to the user and schedule the first step
-        oauth.openLoginForm();
-        String userId = userAlice.getId();
-        String username = userAlice.getUsername();
-        loginPage.fillLogin(username, userAlice.getPassword());
-        loginPage.submit();
-        assertTrue(driver.page().getPageSource() != null && driver.page().getPageSource().contains("Happy days"));
-
-        // store the first step id for later comparison
-        String firstStepId = runOnServer.fetch(session-> {
-            WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
-            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId).toList();
-            assertThat(steps, hasSize(1));
-            return steps.get(0).stepId();
-        }, String.class);
-
-        // run the first schedule task - workflow should now be waiting to run the second step
-        runScheduledSteps(Duration.ofDays(2));
-        String secondStepId = runOnServer.fetch(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            UserModel user = session.users().getUserByUsername(realm, username);
-            // first step should have run and the attribute should be set
-            assertThat(user.getFirstAttribute("attribute"), is("attr1"));
-            assertTrue(user.isEnabled());
-
-            WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
-            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId).toList();
-            assertThat(steps, hasSize(1));
-            return steps.get(0).stepId();
-        }, String.class);
-        assertThat(secondStepId, is(not(firstStepId)));
-
-        String groupId;
-        // trigger an unrelated event - like user joining a group. The workflow must not be restarted
-        try (Response response = managedRealm.admin().groups().add(GroupConfigBuilder.create()
-                .name("generic-group").build())) {
-            groupId = ApiUtil.getCreatedId(response);
-        }
-        managedRealm.admin().users().get(userAlice.getId()).joinGroup(groupId);
-
-        runOnServer.run(session -> {
-            WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
-            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId).toList();
-            // step id must remain the same as before
-            assertThat(steps, hasSize(1));
-            assertThat(steps.get(0).stepId(), is(secondStepId));
-        });
-
-        // now trigger the same event again that can restart the workflow
-        oauth.openLoginForm();
-
-        // workflow should be restarted and the first step should be scheduled again
-        runOnServer.run(session -> {
-            WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
-            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId).toList();
-            // step id must be the first one now as the workflow was restarted
-            assertThat(steps, hasSize(1));
-            assertThat(steps.get(0).stepId(), is(firstStepId));
-        });
-    }
 
     @Test
     public void testDisabledUserAfterInactivityPeriod() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .onEvent(USER_ADDED.toString(), USER_LOGGED_IN.toString())
-                .concurrency().cancelIfRunning() // this setting enables restarting the workflow
+                .concurrency().restartInProgress("true") // this setting enables restarting the workflow
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -229,8 +142,8 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
-                                .withConfig("custom_subject_key", "notifier1_subject")
-                                .withConfig("custom_message", "notifier1_message")
+                                .withConfig("subject", "notifier1_subject")
+                                .withConfig("message", "notifier1_message")
                                 .build())
                 .build()).close();
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow_2")
@@ -238,8 +151,8 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(10))
-                                .withConfig("custom_subject_key", "notifier2_subject")
-                                .withConfig("custom_message", "notifier2_message")
+                                .withConfig("subject", "notifier2_subject")
+                                .withConfig("message", "notifier2_message")
                                 .build())
                 .build()).close();
 

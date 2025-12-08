@@ -407,6 +407,23 @@ _Default_: `31536000` (one year)
 | optional
 | If this claim should be listed in the credentials metadata. +
 _Default_: `true` but depends on the mapper-type. Claims like `jti`, `nbf`, `exp`, etc. are set to `false` by default.
+
+| `vc.key_attestations_required`
+| optional
+| Indicates whether issuing this credential requires a key attestation. +
+_Default_: `false`.
+
+| `vc.key_attestations_required.key_storage`
+| optional
+| Comma separated list of accepted key-storage attack potential levels (see ISO 18045 levels, e.g. `iso_18045_high`). +
+Only relevant if `vc.key_attestations_required` is present. +
+_Default_: none
+
+| `vc.key_attestations_required.user_authentication`
+| optional
+| Comma separated list of accepted user-authentication attack potential levels (see ISO 18045 levels). +
+Only relevant if `vc.key_attestations_required` is present. +
+_Default_: none
 |===
 
 ==== Attribute Breakdown - ProtocolMappers
