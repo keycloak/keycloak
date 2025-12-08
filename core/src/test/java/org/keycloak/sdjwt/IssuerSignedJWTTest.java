@@ -91,7 +91,8 @@ public class IssuerSignedJWTTest {
 
         SdJwt sdJwt = SdJwt.builder()
                            .withIssuerSignedJwt(IssuerSignedJWT.builder().withClaims(claimSet, disclosureSpec).build())
-                           .build(false);
+                           .withUseDefaultDecoys(false)
+                           .build();
 
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
@@ -123,7 +124,8 @@ public class IssuerSignedJWTTest {
 
         SdJwt sdJwt = SdJwt.builder()
                 .withIssuerSignedJwt(IssuerSignedJWT.builder().withClaims(holderClaimSet, disclosureSpec).build())
-                .build(false);
+                .withUseDefaultDecoys(false)
+                .build();
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
         JsonNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/s3.3-issuer-payload.json");

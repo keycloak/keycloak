@@ -41,11 +41,11 @@ public class ProofTypesSupported {
     protected Map<String, SupportedProofTypeData> supportedProofTypes = new HashMap<>();
 
     public static ProofTypesSupported parse(KeycloakSession keycloakSession,
+                                            KeyAttestationsRequired keyAttestationsRequired,
                                             List<String> globalSupportedSigningAlgorithms) {
         ProofTypesSupported proofTypesSupported = new ProofTypesSupported();
         keycloakSession.getAllProviders(ProofValidator.class).forEach(proofValidator -> {
             String type = proofValidator.getProofType();
-            KeyAttestationsRequired keyAttestationsRequired = new KeyAttestationsRequired();
             SupportedProofTypeData supportedProofTypeData = new SupportedProofTypeData(globalSupportedSigningAlgorithms,
                     keyAttestationsRequired);
             proofTypesSupported.getSupportedProofTypes().put(type, supportedProofTypeData);
@@ -78,6 +78,11 @@ public class ProofTypesSupported {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return toJsonString();
     }
 
     @Override

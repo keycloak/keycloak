@@ -116,7 +116,27 @@ public class Workflow {
 
     public Stream<WorkflowStep> getSteps() {
         return realm.getComponentsStream(getId(), WorkflowStepProvider.class.getName())
-                .map(WorkflowStep::new).sorted();
+                .map((c) -> new WorkflowStep(session, c)).sorted();
+    }
+
+    /**
+     * Get steps starting from the specified stepId (inclusive)
+     *
+     * @param stepId the step id to start from
+     * @return the stream of workflow steps
+     */
+    public Stream<WorkflowStep> getSteps(String stepId) {
+        boolean[] startAdding = {stepId == null};
+        return getSteps().filter(step -> {
+            if (startAdding[0]) {
+                return true;
+            }
+            if (step.getId().equals(stepId)) {
+                startAdding[0] = true;
+                return true;
+            }
+            return false;
+        });
     }
 
     public WorkflowStep getStepById(String id) {

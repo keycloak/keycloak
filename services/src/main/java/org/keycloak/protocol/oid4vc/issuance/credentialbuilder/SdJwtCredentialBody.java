@@ -54,7 +54,8 @@ public class SdJwtCredentialBody implements CredentialBody {
 
     public String sign(SignatureSignerContext signatureSignerContext) {
         SdJwt sdJwt = sdJwtBuilder.withIssuerSignedJwt(issuerSignedJWT)
-                                  .build(signatureSignerContext);
+                .withIssuerSigningContext(signatureSignerContext)
+                .build();
 
         return sdJwt.toSdJwtString();
     }

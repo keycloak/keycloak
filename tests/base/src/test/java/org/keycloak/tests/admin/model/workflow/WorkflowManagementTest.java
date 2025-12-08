@@ -85,6 +85,7 @@ import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -221,7 +222,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
             List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
             assertEquals(1, registeredWorkflows.size());
             WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
-            List<ScheduledStep> steps = stateProvider.getScheduledStepsByWorkflow(workflowId);
+            List<ScheduledStep> steps = stateProvider.getScheduledStepsByWorkflow(workflowId).toList();
             assertTrue(steps.isEmpty());
         });
     }
@@ -364,14 +365,8 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         managedRealm.admin().workflows().workflow(workflowId).activate(ResourceType.USERS.name(), userAlice.getId());
 
         // check step has been scheduled for the user
-        runOnServer.run((RunOnServer) session -> {
-            RealmModel realm = session.getContext().getRealm();
-            UserModel user = session.users().getUserByUsername(realm, "alice");
-
-            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByResource(user.getId());
-            assertThat("A step should have been scheduled for the user " + user.getUsername(), scheduledSteps, hasSize(1));
-        });
+        List<WorkflowRepresentation> scheduledSteps = managedRealm.admin().workflows().getScheduledWorkflows(userAlice.getId());
+        assertThat("A step should have been scheduled for the user " + userAlice.getUsername(), scheduledSteps, hasSize(1));
 
         // now update the workflow to add a condition that will make the user no longer eligible
         WorkflowRepresentation workflow = managedRealm.admin().workflows().workflow(workflowId).toRepresentation();
@@ -382,15 +377,8 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         runScheduledSteps(Duration.ofDays(6));
 
         // check the user is still enabled and no scheduled steps exist
-        runOnServer.run((RunOnServer) session -> {
-            RealmModel realm = session.getContext().getRealm();
-            UserModel user = session.users().getUserByUsername(realm, "alice");
-            assertThat(user.isEnabled(), is(true));
-
-            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByResource(user.getId());
-            assertThat(scheduledSteps, empty());
-        });
+        scheduledSteps = managedRealm.admin().workflows().getScheduledWorkflows(userAlice.getId());
+        assertThat(scheduledSteps, empty());
 
     }
 
@@ -434,6 +422,54 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         assertThat(representations.get(0).getName(), is("gamma-workflow"));
     }
 
+    @Test
+    public void testGetActiveWorkflowsForResource() {
+        // create a few of simple workflows
+        String[] workflowNames = {"workflow-one", "workflow-two", "workflow-three", "workflow-four"};
+        for (String name : workflowNames) {
+
+            String workflowId;
+            try (Response response =
+            managedRealm.admin().workflows().create(WorkflowRepresentation.withName(name)
+                    .withSteps(
+                            WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                    .after(Duration.ofDays(5))
+                                    .build(),
+                            WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
+                                    .withConfig("key", "value")
+                                    .build(),
+                            WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                    .after(Duration.ofDays(15))
+                                    .build()
+                    ).build())) {
+                workflowId = ApiUtil.getCreatedId(response);
+            }
+
+            // bind all workflows, except the second one, to user alice
+            if (!name.equals("workflow-two")) {
+                managedRealm.admin().workflows().workflow(workflowId).activate(ResourceType.USERS.name(), userAlice.getId());
+            }
+        }
+
+        // use the API to fetch the active workflows for the user
+        List<WorkflowRepresentation> scheduledWorkflows = managedRealm.admin().workflows().getScheduledWorkflows(userAlice.getId());
+        assertThat(scheduledWorkflows, hasSize(3));
+        // assert that "workflow-two" is not among them
+        assertTrue(scheduledWorkflows.stream().noneMatch(step -> step.getName().equals("workflow-two")));
+
+        // assert that all workflows have the scheduledAt set to a positive value, and that the first and second steps are scheduled for the same time
+        for (WorkflowRepresentation workflow : scheduledWorkflows) {
+            assertThat(workflow.getSteps(), hasSize(3));
+            assertThat(workflow.getSteps().get(0).getScheduledAt(), greaterThan(0L));
+            assertThat(workflow.getSteps().get(1).getScheduledAt(), greaterThan(0L));
+            assertThat(workflow.getSteps().get(0).getScheduledAt(), equalTo(workflow.getSteps().get(1).getScheduledAt()));
+            // the third step have a scheduledAt higher than the previous two
+            assertThat(workflow.getSteps().get(2).getScheduledAt(), greaterThan(workflow.getSteps().get(1).getScheduledAt()));
+            // it should be precisely 15 days after the second step
+            long expectedThirdStepScheduledAt = workflow.getSteps().get(1).getScheduledAt() + Duration.ofDays(15).toMillis();
+            assertThat(workflow.getSteps().get(2).getScheduledAt(), is(expectedThirdStepScheduledAt));
+        }
+    }
 
     @Test
     public void testWorkflowDoesNotFallThroughStepsInSingleRun() {
@@ -558,7 +594,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
 
             // check no workflows are yet attached to the previous users, only to the ones created after the workflow was in place
             WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
-            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow);
+            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
             assertEquals(3, scheduledSteps.size());
             scheduledSteps.forEach(scheduledStep -> {
                 assertEquals(notifyStep.getId(), scheduledStep.stepId());
@@ -581,7 +617,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
             Workflow workflow = registeredWorkflows.get(0);
             WorkflowStep disableStep = workflow.getSteps().toList().get(1);
             WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
-            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow);
+            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
             assertEquals(3, scheduledSteps.size());
             scheduledSteps.forEach(scheduledStep -> {
                 assertEquals(disableStep.getId(), scheduledStep.stepId());
@@ -608,7 +644,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
             Workflow workflow = registeredWorkflows.get(0);
             // check workflow was correctly assigned to the old users, not affecting users already associated with the workflow.
             WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow);
+            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
             assertEquals(13, scheduledSteps.size());
 
             List<WorkflowStep> steps = workflow.getSteps().toList();
@@ -693,7 +729,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
             List<Workflow> registeredWorkflow = provider.getWorkflows().toList();
             assertEquals(1, registeredWorkflow.size());
             WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
-            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(registeredWorkflow.get(0));
+            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(registeredWorkflow.get(0)).toList();
 
             // verify that there's only one scheduled step, for the first user
             assertEquals(1, scheduledSteps.size());
@@ -881,8 +917,8 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
                                 .withConfig("reason", "compliance requirement")
-                                .withConfig("custom_message", "Your account requires immediate attention due to new compliance policies.")
-                                .withConfig("custom_subject_key", "customComplianceSubject")
+                                .withConfig("message", "${user.firstName}, your account requires immediate attention due to new compliance policies.")
+                                .withConfig("subject", "customComplianceSubject")
                                 .build(),
                         WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(7))
@@ -915,18 +951,17 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                                 .build()
                 ).build()).close();
 
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser4").name("NoEmail", "").build()).close();
+        String userId;
+        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser4").name("NoEmail", "").build())) {
+            userId = ApiUtil.getCreatedId(response);
+        }
 
         runScheduledSteps(Duration.ofDays(5));
-
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            // But should still create state record for the workflow flow
-            UserModel user = session.users().getUserByUsername(realm, "testuser4");
-            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-            var scheduledSteps = stateProvider.getScheduledStepsByResource(user.getId());
-            assertEquals(1, scheduledSteps.size());
-        });
+        List<WorkflowRepresentation> scheduledWorkflows = managedRealm.admin().workflows().getScheduledWorkflows(userId);
+        assertThat(scheduledWorkflows, hasSize(1));
+        List<WorkflowStepRepresentation> steps = scheduledWorkflows.get(0).getSteps();
+        assertThat(steps, hasSize(1));
+        assertEquals(DisableUserStepProviderFactory.ID, steps.get(0).getUses());
 
         // Should NOT send email to user without email address
         MimeMessage testUserMessage = findEmailByRecipientContaining("testuser4");

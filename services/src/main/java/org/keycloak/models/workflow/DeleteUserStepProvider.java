@@ -70,4 +70,14 @@ public class DeleteUserStepProvider implements WorkflowStepProvider {
             userCache.evict(realm, user);
         }
     }
+
+    @Override
+    public String getNotificationMessage() {
+        return "accountDeleteNotificationBody";
+    }
+
+    @Override
+    public String getNotificationSubject() {
+        return "accountDeleteNotificationSubject";
+    }
 }

@@ -17,9 +17,11 @@
 
 package org.keycloak.utils;
 
+import java.util.Optional;
 import java.util.Set;
 
 import org.keycloak.Config;
+import org.keycloak.Config.AbstractScope;
 import org.keycloak.Config.Scope;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.common.util.SystemEnvProperties;
@@ -73,7 +75,7 @@ public class JsonConfigProvider implements Config.ConfigProvider {
         return StringPropertyReplacer.replaceProperties(value, SystemEnvProperties.UNFILTERED::getProperty);
     }
 
-    public class JsonScope implements Config.Scope {
+    public class JsonScope extends AbstractScope {
 
         private JsonNode config;
 
@@ -83,20 +85,12 @@ public class JsonConfigProvider implements Config.ConfigProvider {
 
         @Override
         public String get(String key) {
-            return get(key, null);
+            return Optional.ofNullable(config).map(c -> c.get(key)).map(this::toString).orElse(null);
         }
 
-        @Override
-        public String get(String key, String defaultValue) {
-            if (config == null) {
-                return defaultValue;
-            }
-            JsonNode n = config.get(key);
-            if (n == null) {
-                return defaultValue;
-            }
+        private String toString(JsonNode n) {
             String v = replaceProperties(n.textValue());
-            return !v.isEmpty() ? v : defaultValue;
+            return !StringUtil.isNullOrEmpty(v) ? v : null;
         }
 
         @Override
@@ -111,77 +105,11 @@ public class JsonConfigProvider implements Config.ConfigProvider {
             } else if (n.isArray()) {
                 String[] a = new String[n.size()];
                 for (int i = 0; i < a.length; i++) {
-                    a[i] = replaceProperties(n.get(i).textValue());
+                    a[i] = toString(n.get(i));
                 }
                 return a;
             } else {
-               return new String[] { replaceProperties(n.textValue()) };
-            }
-        }
-
-        @Override
-        public Integer getInt(String key) {
-            return getInt(key, null);
-        }
-
-        @Override
-        public Integer getInt(String key, Integer defaultValue) {
-            if (config == null) {
-                return defaultValue;
-            }
-            JsonNode n = config.get(key);
-            if (n == null) {
-                return defaultValue;
-            }
-            if (n.isTextual()) {
-                String v = replaceProperties(n.textValue());
-                return !v.isEmpty() ? Integer.valueOf(v) : defaultValue;
-            } else {
-                return n.intValue();
-            }
-        }
-
-        @Override
-        public Long getLong(String key) {
-            return getLong(key, null);
-        }
-
-        @Override
-        public Long getLong(String key, Long defaultValue) {
-            if (config == null) {
-                return defaultValue;
-            }
-            JsonNode n = config.get(key);
-            if (n == null) {
-                return defaultValue;
-            }
-            if (n.isTextual()) {
-                String v = replaceProperties(n.textValue());
-                return !v.isEmpty() ? Long.valueOf(v) : defaultValue;
-            } else {
-                return n.longValue();
-            }
-        }
-
-        @Override
-        public Boolean getBoolean(String key) {
-            return getBoolean(key, null);
-        }
-
-        @Override
-        public Boolean getBoolean(String key, Boolean defaultValue) {
-            if (config == null) {
-                return defaultValue;
-            }
-            JsonNode n = config.get(key);
-            if (n == null) {
-                return defaultValue;
-            }
-            if (n.isTextual()) {
-                String v = replaceProperties(n.textValue());
-                return !v.isEmpty() ? Boolean.valueOf(v) : defaultValue;
-            } else {
-                return n.booleanValue();
+               return new String[] { toString(n) };
             }
         }
 

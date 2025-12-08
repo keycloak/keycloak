@@ -18,6 +18,7 @@ import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider;
+import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.workflow.conditions.RoleWorkflowConditionFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -112,7 +113,7 @@ public class RoleWorkflowConditionTest extends AbstractWorkflowTest {
             Workflow workflow = registeredWorkflows.get(0);
             // check workflow was correctly assigned to the users
             WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-            List<WorkflowStateProvider.ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow);
+            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
             assertThat(scheduledSteps, hasSize(10));
         });
     }

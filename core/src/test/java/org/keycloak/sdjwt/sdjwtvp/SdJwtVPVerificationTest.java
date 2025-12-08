@@ -512,7 +512,10 @@ public abstract class SdJwtVPVerificationTest {
     }
 
     private SdJwtVP exampleSdJwtWithCustomKbPayload(ObjectNode kbPayloadSubstitute) {
-        KeyBindingJWT keyBindingJWT = new KeyBindingJWT(kbPayloadSubstitute, testSettings.holderSigContext);
+        KeyBindingJWT keyBindingJWT = KeyBindingJWT.builder()
+                .withPayload(kbPayloadSubstitute)
+                .withSignerContext(testSettings.holderSigContext)
+                .build();
 
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s20.1-sdjwt+kb.txt");
         String sdJwtWithoutKb = sdJwtVPString.substring(0, sdJwtVPString.lastIndexOf(OID4VCConstants.SDJWT_DELIMITER) + 1);

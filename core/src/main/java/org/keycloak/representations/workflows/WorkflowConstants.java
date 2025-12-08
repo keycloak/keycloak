@@ -10,7 +10,8 @@ public final class WorkflowConstants {
     // Entry configuration keys for Workflow
     public static final String CONFIG_ON_EVENT = "on";
     public static final String CONFIG_CONCURRENCY = "concurrency";
-    public static final String CONFIG_CANCEL_IF_RUNNING = "cancel-if-running";
+    public static final String CONFIG_RESTART_IN_PROGRESS = "restart-in-progress";
+    public static final String CONFIG_CANCEL_IN_PROGRESS = "cancel-in-progress";
     public static final String CONFIG_NAME = "name";
     public static final String CONFIG_ENABLED = "enabled";
     public static final String CONFIG_CONDITIONS = "conditions";
@@ -24,4 +25,5 @@ public final class WorkflowConstants {
     // Entry configuration keys for WorkflowStep
     public static final String CONFIG_AFTER = "after";
     public static final String CONFIG_PRIORITY = "priority";
+    public static final String CONFIG_SCHEDULED_AT = "scheduled-at";
 }

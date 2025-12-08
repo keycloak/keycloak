@@ -39,6 +39,8 @@ public final class OID4VCIConstants {
     // --- Keybinding/Credential Builder ---
     public static final String SOURCE_ENDPOINT = "source_endpoint";
     public static final String BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE = "batch_credential_issuance.batch_size";
+    public static final String TRUSTED_KEYS_REALM_ATTR = "oid4vc.attestation.trusted_keys";
+    public static final String TRUSTED_KEY_IDS_REALM_ATTR = "oid4vc.attestation.trusted_key_ids";
 
     public static final RoleRepresentation CREDENTIAL_OFFER_CREATE =
             new RoleRepresentation("credential-offer-create", "Allow credential offer creation", false);

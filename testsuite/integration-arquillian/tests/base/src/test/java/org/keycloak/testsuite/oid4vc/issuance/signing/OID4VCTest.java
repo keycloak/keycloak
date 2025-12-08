@@ -46,6 +46,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
+import org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.common.Profile;
@@ -75,8 +76,8 @@ import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.Format;
-import org.keycloak.protocol.oid4vc.model.ISO18045ResistanceLevel;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
+import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
@@ -118,7 +119,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 	protected static final String CONTEXT_URL = "https://www.w3.org/2018/credentials/v1";
 	protected static final URI TEST_DID = URI.create("did:web:test.org");
 	protected static final List<String> TEST_TYPES = List.of("VerifiableCredential");
-	protected static final Instant TEST_EXPIRATION_DATE = Instant.ofEpochSecond(2000);
+	protected static final Instant TEST_EXPIRATION_DATE = Instant.now().plus(365, ChronoUnit.DAYS).truncatedTo(ChronoUnit.SECONDS);
 	protected static final Instant TEST_ISSUANCE_DATE = Instant.ofEpochSecond(1000);
 
 	protected static final KeyWrapper RSA_KEY = getRsaKey();
@@ -652,8 +653,8 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 			payload.setIat((long) TIME_PROVIDER.currentTimeSeconds());
 			payload.setNonce(cNonce);
 			payload.setAttestedKeys(proofJwks);
-			payload.setKeyStorage(List.of(ISO18045ResistanceLevel.HIGH.getValue()));
-			payload.setUserAuthentication(List.of(ISO18045ResistanceLevel.HIGH.getValue()));
+			payload.setKeyStorage(List.of(KeyAttestationResistanceLevels.HIGH));
+			payload.setUserAuthentication(List.of(KeyAttestationResistanceLevels.HIGH));
 
 			return new JWSBuilder()
 					.type(AttestationValidatorUtil.ATTESTATION_JWT_TYP)
@@ -667,11 +668,14 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	protected static VCIssuanceContext createVCIssuanceContext(KeycloakSession session) {
 		VCIssuanceContext context = new VCIssuanceContext();
+		KeyAttestationsRequired keyAttestationsRequired = new KeyAttestationsRequired();
+		keyAttestationsRequired.setKeyStorage(List.of(KeyAttestationResistanceLevels.HIGH,
+													  KeyAttestationResistanceLevels.MODERATE));
 		SupportedCredentialConfiguration config = new SupportedCredentialConfiguration()
 				.setFormat(Format.SD_JWT_VC)
 				.setVct("https://credentials.example.com/test-credential")
 				.setCryptographicBindingMethodsSupported(List.of("jwk"))
-				.setProofTypesSupported(ProofTypesSupported.parse(session, List.of("ES256")));
+				.setProofTypesSupported(ProofTypesSupported.parse(session, keyAttestationsRequired, List.of("ES256")));
 
 		context.setCredentialConfig(config)
 				.setCredentialRequest(new CredentialRequest());
@@ -718,8 +722,8 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 		Map<String, Object> payload = new HashMap<>();
 		payload.put("iat", TIME_PROVIDER.currentTimeSeconds());
 		payload.put("attested_keys", List.of(proofJwk));
-		payload.put("key_storage", List.of(ISO18045ResistanceLevel.HIGH.getValue()));
-		payload.put("user_authentication", List.of(ISO18045ResistanceLevel.HIGH.getValue()));
+		payload.put("key_storage", List.of(KeyAttestationResistanceLevels.HIGH));
+		payload.put("user_authentication", List.of(KeyAttestationResistanceLevels.HIGH));
 		payload.put("nonce", cNonce);
 
 		return payload;

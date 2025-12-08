@@ -27,6 +27,12 @@ public class WorkflowValidator {
         if (StringUtil.isNotBlank(rep.getConditions())) {
             validateConditionExpression(session, rep.getConditions(), "if");
         }
+        if (StringUtil.isNotBlank(rep.getCancelInProgress())) {
+            validateConditionExpression(session, rep.getCancelInProgress(), "cancel-in-progress");
+        }
+        if (StringUtil.isNotBlank(rep.getRestartInProgress())) {
+            validateConditionExpression(session, rep.getRestartInProgress(), "restart-in-progress");
+        }
 
         // if a workflow has a restart step, at least one of the previous steps must be scheduled to prevent an infinite loop of immediate executions
         List<WorkflowStepRepresentation> steps = ofNullable(rep.getSteps()).orElse(List.of());
@@ -82,12 +88,16 @@ public class WorkflowValidator {
     }
 
     private static void validateConditionExpression(KeycloakSession session, String expression, String fieldName) throws WorkflowInvalidStateException {
+        if (Boolean.parseBoolean(expression)) {
+            // some fields allow the value "true" to be used - in this case there's nothing to validate
+            return;
+        }
         BooleanConditionParser.EvaluatorContext context = EvaluatorUtils.createEvaluatorContext(expression);
         ConditionNameCollector collector = new ConditionNameCollector();
         collector.visit(context);
 
         // check if there are providers for the conditions used in the expression
-        if ("on".equals(fieldName)) {
+        if ("on".equals(fieldName) || "restart-in-progress".equals(fieldName) || "cancel-in-progress".equals(fieldName)) {
             // check if we can get a ResourceOperationType for the events in the expression
             for (String name : collector.getConditionNames()) {
                 try {

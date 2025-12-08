@@ -241,10 +241,14 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
         Map<String, String> config = representation.getConfig();
         Map<String, String> originalConfig = new HashMap<>(config);
 
-        try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, bc.consumerRealmName(), "broker-app")
+        try (ClientAttributeUpdater clientUpdaterConsumer = ClientAttributeUpdater.forClient(adminClient, bc.consumerRealmName(), "broker-app")
                 .setFrontchannelLogout(true)
                 .setAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, getConsumerRoot() + "/auth/realms/" + bc.consumerRealmName() + "/app/logout")
-                .update()){
+                .update();
+             ClientAttributeUpdater clientUpdaterProvider = ClientAttributeUpdater.forClient(adminClient, bc.providerRealmName(), bc.getIDPClientIdInProviderRealm())
+                .setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "") // use frontchannel in client logout
+                .update();) {
+
             config.put("backchannelSupported", Boolean.FALSE.toString());
             config.put("sendIdTokenOnLogout", Boolean.FALSE.toString());
             config.put("sendClientIdOnLogout", Boolean.TRUE.toString());

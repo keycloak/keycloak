@@ -41,6 +41,11 @@ public interface WorkflowsResource {
             @QueryParam("max") Integer maxResults
     );
 
+    @Path("scheduled/{resource-id}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<WorkflowRepresentation> getScheduledWorkflows(@PathParam("resource-id") String resourceId);
+
     @Path("{id}")
     WorkflowResource workflow(@PathParam("id") String id);
 }

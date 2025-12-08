@@ -11,7 +11,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
-import org.keycloak.models.workflow.WorkflowStateProvider;
+import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -244,10 +244,10 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
             assertThat(user.getAttributes().keySet(), hasItems("workflowOne", "workflowTwo"));
 
             // Verify that the steps are scheduled for the user
-            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-            List<WorkflowStateProvider.ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByResource(user.getId());
-            assertNotNull(scheduledSteps, "Two steps should have been scheduled for the user " + user.getUsername());
-            assertThat(scheduledSteps, hasSize(2));
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            List<WorkflowRepresentation> scheduledWorkflows = provider.getScheduledWorkflowsByResource(user.getId()).toList();
+            assertNotNull(scheduledWorkflows, "Two workflow steps should have been scheduled for the user " + user.getUsername());
+            assertThat(scheduledWorkflows, hasSize(2));
         });
 
         //deactivate workflow One
@@ -255,9 +255,9 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
 
         runOnServer.run(session -> {
             // Verify that there is single step scheduled for the user
-            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-            List<WorkflowStateProvider.ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByResource(id);
-            assertThat(scheduledSteps, hasSize(1));
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            List<WorkflowRepresentation> scheduledWorkflows = provider.getScheduledWorkflowsByResource(id).toList();
+            assertThat(scheduledWorkflows, hasSize(1));
         });
     }
 
