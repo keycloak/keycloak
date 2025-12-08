@@ -1,0 +1,78 @@
+[id="understanding-workflow-definition_{context}"]
+
+[[_understanding_workflow_definition_]]
+=  Understanding the workflow definition
+[role="_abstract"]
+
+Workflows are defined in YAML format. This format allows for a clear and human-readable way to specify the automation process
+represented by a workflow.
+
+In its simplest form, a workflow definition can be defined as follows:
+
+```yaml
+name: Onboarding new users
+on: user_added
+steps:
+  - uses: notify-user
+    with:
+      message: |
+        <p>Dear ${user.firstName} ${user.lastName}, </p>
+
+        <p>Welcome to ${realm.displayName}!</p>
+
+        <p>
+           Best regards,<br/>
+           ${realm.displayName} Team
+        </p>
+  - uses: set-user-required-action
+    after: 30d
+    with:
+      action: UPDATE_PASSWORD
+  - uses: restart
+    with:
+      position: 1
+```
+
+The example above is very simple but illustrates the core structure and the flexibility of a workflow to automate administrative tasks.
+It is composed of three main sections:
+
+*   `name`: A unique and user-friendly name to identify the workflow within the realm.
+*   `on`: The event that will trigger the workflow. In this case, the workflow is triggered when a new user is added to the realm.
+*   `steps`: A set of one or more steps to be executed when executing a workflow execution. In this example, three steps are defined:
+    1. The first step uses the built-in `notify-user` action to send a welcome message to the new user.
+    2. The second step uses the built-in `set-user-required-action` action to require the user to update their password after 30 days.
+    3. The third step uses the built-in `restart` action to restart the workflow from the second step so that the user is forced to update their password every 30 days.
+
+Here is a more detailed look at all settings available from the workflow definition:
+
+`name`::
+A unique and user-friendly name to identify the workflow within the realm.
+This name is crucial for management and logging purposes.
+This setting is mandatory.
+
+`on`::
+Define a condition that determines the event that will trigger the workflow.
+The condition is written using an expression language that supports a variety of checks on the event.
+This setting is optional.
+
+`if`::
+Define a condition that must be met for the workflow to be triggered.
+The condition is written using an expression language that supports a variety of checks on the realm resource
+associated with the event.
+A workflow execution is only created if the expression evaluates to `true`.
+If this setting is omitted, the event defined in the `on` setting will always create the workflow execution.
+This setting is optional.
+
+`steps`::
+Define the step chain consisting of one or more steps to be sequentially executed during the lifetime of a workflow.
+This setting is mandatory.
+
+`concurrency`::
+This setting controls the behavior when multiple events that would trigger the same workflow occur for the same realm resource while a workflow execution is already active for that resource. This setting is optional.
++ The available options are:
+*   `restart-in-progress`: A new event causes the current workflow execution to restart from the beginning.
+*   `cancel-in-progress`: A new event causes the current workflow execution to be canceled and disassociated from the realm resource.
+
+`enabled`::
+This setting enables or disables the workflow. If set to `false`, new workflow executions will not be created for the workflow and any active workflow execution will be paused.
+This setting is optional and defaults to `true`.
