@@ -34,6 +34,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 public class DefaultCorsFactory implements CorsFactory {
 
     private static final String PROVIDER_ID = "default";
+    private static final String ALLOWED_HEADERS = "allowedHeaders";
     private String allowedHeaders;
 
     @Override
@@ -45,7 +46,7 @@ public class DefaultCorsFactory implements CorsFactory {
     public void init(Config.Scope config) {
         Set<String> allowedHeaders = new HashSet<>(Cors.DEFAULT_ALLOW_HEADERS);
 
-        String[] customAllowedHeaders = config.getArray("allowedHeaders");
+        String[] customAllowedHeaders = config.getArray(ALLOWED_HEADERS);
         if (customAllowedHeaders != null) {
             allowedHeaders.addAll(Arrays.asList(customAllowedHeaders));
         }
@@ -70,10 +71,10 @@ public class DefaultCorsFactory implements CorsFactory {
     public List<ProviderConfigProperty> getConfigMetadata() {
         return ProviderConfigurationBuilder.create()
                 .property()
-                .name("allowedHeaders")
+                .name(ALLOWED_HEADERS)
                 .type("string")
                 .helpText("A comma-separated list of additional allowed headers for CORS requests")
-                .defaultValue(false)
+                .defaultValue("")
                 .add()
                 .build();
     }
