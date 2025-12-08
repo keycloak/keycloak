@@ -116,12 +116,28 @@ public class ApplianceBootstrap {
 
     /**
      * Create a temporary admin user
-     * @param username
-     * @param password
+     * @param username the admin username
+     * @param password the admin password
+     * @param isTemporary whether the user is a temporary admin
      * @param initialUser if true only create the user if no other users exist
      * @return false if the user could not be created
      */
     public boolean createMasterRealmAdminUser(String username, String password, boolean isTemporary, /*Integer expriationMinutes,*/ boolean initialUser) {
+        return createMasterRealmAdminUser(username, password, null, null, null, isTemporary, initialUser);
+    }
+
+    /**
+     * Create a temporary admin user with additional profile information
+     * @param username the admin username
+     * @param password the admin password
+     * @param firstName the admin user's first name (optional)
+     * @param lastName the admin user's last name (optional)
+     * @param email the admin user's email address (optional)
+     * @param isTemporary whether the user is a temporary admin
+     * @param initialUser if true only create the user if no other users exist
+     * @return false if the user could not be created
+     */
+    public boolean createMasterRealmAdminUser(String username, String password, String firstName, String lastName, String email, boolean isTemporary, /*Integer expriationMinutes,*/ boolean initialUser) {
         RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
         session.getContext().setRealm(realm);
 
@@ -136,6 +152,15 @@ public class ApplianceBootstrap {
         try {
             UserModel adminUser = session.users().addUser(realm, username);
             adminUser.setEnabled(true);
+            if (StringUtil.isNotBlank(firstName)) {
+                adminUser.setFirstName(firstName);
+            }
+            if (StringUtil.isNotBlank(lastName)) {
+                adminUser.setLastName(lastName);
+            }
+            if (StringUtil.isNotBlank(email)) {
+                adminUser.setEmail(email);
+            }
             if (isTemporary) {
                 adminUser.setSingleAttribute(IS_TEMP_ADMIN_ATTR_NAME, Boolean.TRUE.toString());
                 // also set the expiration - could be relative to a creation timestamp, or computed
@@ -200,7 +225,11 @@ public class ApplianceBootstrap {
     }
 
     public void createMasterRealmUser(String username, String password, boolean isTemporary) {
-        createMasterRealmAdminUser(username, password, isTemporary, true);
+        createMasterRealmAdminUser(username, password, null, null, null, isTemporary, true);
+    }
+
+    public void createMasterRealmUser(String username, String password, String firstName, String lastName, String email, boolean isTemporary) {
+        createMasterRealmAdminUser(username, password, firstName, lastName, email, isTemporary, true);
     }
 
 }
