@@ -16,6 +16,6 @@
                 <@buttons.button name="continue" id="kc-continue" label="doContinue" class=["kcButtonPrimaryClass"]/>
                 <@buttons.button name="cancel-aia" id="kc-cancel" label="doCancel" class=["kcButtonSecondaryClass"]/>
             </@buttons.actionGroup>
-        </form
+        </form>
     </#if>
 </@layout.registrationLayout>
