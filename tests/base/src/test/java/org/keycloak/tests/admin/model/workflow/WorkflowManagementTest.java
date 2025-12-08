@@ -917,8 +917,8 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
                                 .withConfig("reason", "compliance requirement")
-                                .withConfig("custom_message", "Your account requires immediate attention due to new compliance policies.")
-                                .withConfig("custom_subject_key", "customComplianceSubject")
+                                .withConfig("message", "${user.firstName}, your account requires immediate attention due to new compliance policies.")
+                                .withConfig("subject", "customComplianceSubject")
                                 .build(),
                         WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(7))

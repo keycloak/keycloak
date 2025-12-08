@@ -7,6 +7,8 @@ import org.keycloak.models.KeycloakSession;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.models.workflow.Workflows.getStepProvider;
+
 class RunWorkflowTask extends WorkflowTransactionalTask {
 
     private static final Logger log = Logger.getLogger(RunWorkflowTask.class);
@@ -28,7 +30,7 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
 
         if (currentStep != null) {
             // we are resuming from a scheduled step - run it and then continue with the rest of the workflow
-            runWorkflowStep(provider, context);
+            runWorkflowStep(session, provider, context);
         }
 
         List<WorkflowStep> stepsToRun = workflow.getSteps()
@@ -38,14 +40,14 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
         for (WorkflowStep step : stepsToRun) {
             if (DurationConverter.isPositiveDuration(step.getAfter())) {
                 // If a step has a time defined, schedule it and stop processing the other steps of workflow
-                log.debugf("Scheduling step %s to run in %d ms for resource %s (execution id: %s)",
+                log.debugf("Scheduling step %s to run in %s ms for resource %s (execution id: %s)",
                         step.getProviderId(), step.getAfter(), resourceId, executionId);
                 stateProvider.scheduleStep(workflow, step, resourceId, executionId);
                 return;
             } else {
                 // Otherwise, run the step right away
                 context.setCurrentStep(step);
-                runWorkflowStep(provider, context);
+                runWorkflowStep(session, provider, context);
             }
         }
         if (context.isRestarted()) {
@@ -59,13 +61,13 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
         stateProvider.remove(executionId);
     }
 
-    private void runWorkflowStep(DefaultWorkflowProvider provider, DefaultWorkflowExecutionContext context) {
+    private void runWorkflowStep(KeycloakSession session, DefaultWorkflowProvider provider, DefaultWorkflowExecutionContext context) {
         String executionId = context.getExecutionId();
         WorkflowStep step = context.getCurrentStep();
         String resourceId = context.getResourceId();
         log.debugf("Running step %s on resource %s (execution id: %s)", step.getProviderId(), resourceId, executionId);
         try {
-            provider.getStepProvider(step).run(context);
+            getStepProvider(session, step).run(context);
             log.debugf("Step %s completed successfully (execution id: %s)", step.getProviderId(), executionId);
         } catch(WorkflowExecutionException e) {
             StringBuilder sb = new StringBuilder();
