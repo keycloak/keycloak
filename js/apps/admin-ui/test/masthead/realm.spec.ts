@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { DEFAULT_REALM } from "../utils/constants.ts";
@@ -114,6 +114,13 @@ test.describe.serial("Realm tests", () => {
 
     await goToClients(page);
     await assertRowExists(page, "account-console");
+  });
+
+  test("should be sorted alphabetically", async ({ page }) => {
+    const realms = await page
+      .locator(".pf-v5-c-table tr td:nth-child(2)")
+      .allInnerTexts();
+    expect(realms.every((v, i, a) => !i || a[i - 1] <= v)).toBeTruthy();
   });
 
   test("should disable preview if json very long", async ({ page }) => {
