@@ -497,11 +497,11 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         realm.admin().users().get(myadmin.getId()).joinGroup(testAdminsGroup.getId());
 
         // Create user permission allowing to 'view' all users by members of 'test_admins' group
-        GroupPolicyRepresentation allowAdmins = createGroupPolicy(realm, client, "Allow 'test_admins'", testAdminsGroup.getId(), Logic.POSITIVE);
+        GroupPolicyRepresentation allowAdmins = createGroupPolicy(realm, client, "Allow 'test_admins'", Logic.POSITIVE, testAdminsGroup.getId());
         createAllPermission(client, usersType, allowAdmins, Set.of(VIEW));
 
         // Create group permission denying to 'manage' specific group: 'test_admins' by members of 'test_admins'
-        GroupPolicyRepresentation denyAdmins = createGroupPolicy(realm, client, "Deny Policy", testAdminsGroup.getId(), Logic.NEGATIVE);
+        GroupPolicyRepresentation denyAdmins = createGroupPolicy(realm, client, "Deny Policy", Logic.NEGATIVE, testAdminsGroup.getId());
         createGroupPermission(testAdminsGroup, Set.of(MANAGE), denyAdmins);
 
         UserRepresentation representation = realmAdminClient.realm(realm.getName()).users().get(myadmin.getId()).toRepresentation();

@@ -26,21 +26,31 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERS;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERSHIP;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW_MEMBERS;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -171,5 +181,68 @@ public class GroupResourceTypeFilteringTest extends AbstractPermissionTest {
 
         groups = userAlice.admin().groups();
         assertEquals(2, groups.size());
+    }
+
+    @Test
+    public void testViewGroupNotAffectQueryUsers() {
+        // create groups
+        String companyId = ApiUtil.getCreatedId(realm.admin().groups().add(GroupConfigBuilder.create().name("Company").build()));
+        String sub1Id = ApiUtil.getCreatedId(realm.admin().groups().group(companyId).subGroup(GroupConfigBuilder.create().name("Sub1").build()));
+        String sub2Id = ApiUtil.getCreatedId(realm.admin().groups().group(companyId).subGroup(GroupConfigBuilder.create().name("Sub2").build()));
+        String depAId = ApiUtil.getCreatedId(realm.admin().groups().group(sub1Id).subGroup(GroupConfigBuilder.create().name("DepartmentA").build()));
+        String depBId = ApiUtil.getCreatedId(realm.admin().groups().group(sub1Id).subGroup(GroupConfigBuilder.create().name("DepartmentB").build()));
+        String depCId = ApiUtil.getCreatedId(realm.admin().groups().group(sub2Id).subGroup(GroupConfigBuilder.create().name("DepartmentC").build()));
+        String depDId = ApiUtil.getCreatedId(realm.admin().groups().group(sub2Id).subGroup(GroupConfigBuilder.create().name("DepartmentD").build()));
+        realm.cleanup().add(r -> r.groups().group(companyId).remove());
+
+        GroupRepresentation company = realm.admin().groups().group(companyId).toRepresentation();
+        GroupRepresentation sub1 = realm.admin().groups().group(sub1Id).toRepresentation();
+        GroupRepresentation sub2 = realm.admin().groups().group(sub2Id).toRepresentation();
+        GroupRepresentation depA = realm.admin().groups().group(depAId).toRepresentation();
+        GroupRepresentation depB = realm.admin().groups().group(depBId).toRepresentation();
+        GroupRepresentation depC = realm.admin().groups().group(depCId).toRepresentation();
+        GroupRepresentation depD = realm.admin().groups().group(depDId).toRepresentation();
+
+        // create members
+        List<String> userIds = List.of(
+                ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username("company-admin").groups("/Company").build())),
+                ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username("sub1-admin").groups("/Company/Sub1").build())),
+                ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username("sub2-admin").groups("/Company/Sub2").build())),
+                ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username("department-a-member").groups("/Company/Sub1/DepartmentA").build())),
+                ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username("department-b-member").groups("/Company/Sub1/DepartmentB").build())),
+                ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username("department-c-member").groups("/Company/Sub2/DepartmentC").build())),
+                ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username("department-d-member").groups("/Company/Sub2/DepartmentD").build()))
+        );
+        realm.cleanup().add(r -> userIds.forEach(userId -> r.users().delete(userId).close()));
+
+        // add myadmin as member of Sub1
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        realm.admin().users().get(myadmin.getId()).joinGroup(sub1.getId());
+
+        // create policies
+        GroupPolicyRepresentation allowCompany = createGroupPolicy(realm, client, "Allow Company", Logic.POSITIVE, sub1.getId(), sub2.getId());
+        GroupPolicyRepresentation allowSub1 = createGroupPolicy(realm, client, "Allow Sub1", Logic.POSITIVE, sub1.getId());
+        GroupPolicyRepresentation allowSub2 = createGroupPolicy(realm, client, "Allow Sub2", Logic.POSITIVE, sub2.getId());
+
+        // create permissions
+        createGroupPermission(Set.of(sub1, depA, depB), Set.of(VIEW, VIEW_MEMBERS, MANAGE_MEMBERS, MANAGE_MEMBERSHIP), allowSub1);
+        createGroupPermission(Set.of(sub2, depC, depD), Set.of(VIEW, VIEW_MEMBERS, MANAGE_MEMBERS, MANAGE_MEMBERSHIP), allowSub2);
+        ScopePermissionRepresentation companyPermission = createGroupPermission(company, Set.of(VIEW), allowCompany);
+
+        // test listing users
+        List<String> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1).stream().map(UserRepresentation::getUsername).toList();
+        assertThat(search, containsInAnyOrder("myadmin", "sub1-admin", "department-a-member", "department-b-member"));
+
+        // grant access to view company members
+        companyPermission.setScopes(Set.of(VIEW, VIEW_MEMBERS));
+        realm.admin().clients().get(client.getId()).authorization().permissions().scope().findById(companyPermission.getId()).update(companyPermission);
+        search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1).stream().map(UserRepresentation::getUsername).toList();
+        assertThat(search, containsInAnyOrder("company-admin", "myadmin", "sub1-admin", "department-a-member", "department-b-member"));
+
+        // create negative permission on view-members of company group
+        GroupPolicyRepresentation disallowSubAdmins = createGroupPolicy(realm, client, "Disallow Subadmins", Logic.NEGATIVE, sub1.getId(), sub2.getId());
+        createGroupPermission(company, Set.of(VIEW_MEMBERS), disallowSubAdmins);
+        search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1).stream().map(UserRepresentation::getUsername).toList();
+        assertThat(search, containsInAnyOrder("myadmin", "sub1-admin", "department-a-member", "department-b-member"));
     }
 }
