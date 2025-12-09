@@ -197,7 +197,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         }
 
         workflows.create(WorkflowRepresentation.withName("another-workflow")
-                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
+                .onEvent(ResourceOperationType.USER_AUTHENTICATED.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -255,12 +255,12 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         // while the workflow has no scheduled steps - i.e. no resource is currently going through the workflow - we can update any property
         workflow.setName("changed");
         workflow.setConditions(IdentityProviderWorkflowConditionFactory.ID + "(someidp)");
-        workflow.setOn("user-logged-in");
+        workflow.setOn("user-authenticated");
 
         managedRealm.admin().workflows().workflow(workflow.getId()).update(workflow).close();
         workflow = workflows.workflow(workflow.getId()).toRepresentation();
         assertThat(workflow.getName(), is("changed"));
-        assertThat(workflow.getOn(), is("user-logged-in"));
+        assertThat(workflow.getOn(), is("user-authenticated"));
         assertThat(workflow.getConditions(), is(IdentityProviderWorkflowConditionFactory.ID + "(someidp)"));
 
         // even adding or removing steps should be allowed
@@ -626,15 +626,12 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                 assertTrue(user.getUsername().startsWith("new-idp-user-"));
             });
         });
-        runOnServer.run((RunOnServer) session -> {
-            // check the same users are now scheduled to run the second step.
-            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
-            List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
-            assertEquals(1, registeredWorkflows.size());
-            Workflow workflow = registeredWorkflows.get(0);
-            // activate the workflow for all eligible users - i.e. only users from the same idp who are not yet assigned to the workflow.
-            provider.activateForAllEligibleResources(workflow);
-        });
+
+        List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
+        assertThat(workflows, hasSize(1));
+        // activate the workflow for all eligible users - i.e. only users from the same idp who are not yet assigned to the workflow.
+        managedRealm.admin().workflows().workflow(workflows.get(0).getId()).activateAll();
+
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = session.getContext().getRealm();
             // check the same users are now scheduled to run the second step.

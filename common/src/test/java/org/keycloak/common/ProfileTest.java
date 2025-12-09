@@ -214,7 +214,7 @@ public class ProfileTest {
         properties.setProperty(PropertiesProfileConfigResolver.getPropertyKey(PREVIEW_FEATURE), "enabled");
         properties.setProperty(PropertiesProfileConfigResolver.getPropertyKey(EXPERIMENTAL_FEATURE), "enabled");
         if (DEPRECATED_FEATURE != null) {
-            properties.setProperty(PropertiesProfileConfigResolver.getPropertyKey(DEPRECATED_FEATURE), "enabled");
+            properties.setProperty(PropertiesProfileConfigResolver.getPropertyKey(DEPRECATED_FEATURE.getVersionedKey()), "enabled");
         }
 
         Profile.configure(new PropertiesProfileConfigResolver(properties));

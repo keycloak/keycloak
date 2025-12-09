@@ -1,0 +1,59 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Accepting only normalized paths in requests
+
+Previously {project_name} accepted HTTP requests with paths containing double dots (`..`) or double slashes (`//`). When processing them, it normalized the path by collapsing double slashes and normalized the path according to RFC3986.
+As this has led to a hard-to-configure URL filtering, for example, in reverse proxies, the normalization is now disabled, and {project_name} responds with an HTTP 400 response code.
+
+To analyze rejected requests in the server log, enable debug logging for `org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter`.
+
+To revert to the previous behavior and to accept non-normalized URLs, set the option `http-accept-non-normalized-paths` to `true`. With this configuration, enable and review the HTTP access log to identify problematic requests.
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+
+=== Allowing realm administrators granted with the `realm-admin` role to assign admin roles
+
+In previous versions, realm administrators granted with the `realm-admin` role were not able to grant admin roles for delegated realm administrators.
+This was only possible by granting the `admin` role to a master realm user, making this user a server admin.
+
+In this release, realm administrators with the `realm-admin` role can assign admin roles to users in their realm, allowing them to delegate administrative tasks without needing server admin privileges.
+
+If you are using FGAP to delegate administration to users in a realm other than the master realm,
+make sure the users granted with the `realm-admin` role are expected to have this role to avoid privilege scalation.
+
+The documentation is also updated with additional information about the different types of realm administrators.
+For more information, see link:{adminguide_link}#_fine_grained_permissions[Delegating realm administration using permissions].
+
+=== Added database indexes on `OFFLINE_CLIENT_SESSION` table
+
+This adds new indexes on the `OFFLINE_CLIENT_SESSION` table to improve performance when retrieving or deleting client sessions.
+
+If those tables contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== Accepting HTTP requests with non-normalized paths
+
+The option `http-accept-non-normalized-paths` was introduced to restore the previous behavior where {project_name} accepted non-normalized URLs.
+
+As this behavior can be problematic for URL filtering, it is deprecated and will be removed in a future release.
+
+// ------------------------ Removed features ------------------------ //
+////
+== Removed features
+
+The following features have been removed from this release.
+
+=== <TODO>
+////

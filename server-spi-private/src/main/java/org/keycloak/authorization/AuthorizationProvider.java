@@ -443,13 +443,13 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, String configValue) {
-                return policyStore.findDependentPolicies(resourceServer, resourceType, associatedPolicyType, configKey, configValue);
+            public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String groupResourceType, String associatedPolicyType, String configKey, String configValue) {
+                return policyStore.findDependentPolicies(resourceServer, resourceType, groupResourceType, associatedPolicyType, configKey, configValue);
             }
 
             @Override
-            public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, List<String> configValues) {
-                return policyStore.findDependentPolicies(resourceServer, resourceType, associatedPolicyType, configKey, configValues);
+            public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String groupResourceType, String associatedPolicyType, String configKey, List<String> configValues) {
+                return policyStore.findDependentPolicies(resourceServer, resourceType, groupResourceType, associatedPolicyType, configKey, configValues);
             }
 
             @Override
