@@ -271,6 +271,7 @@ public class RealmAdapter implements CachedRealmModel {
     boolean updateBruteForceSettings = false;
 
     private void updateBruteForceSettings() {
+        // TODO: This should really be an event where the recipient could figure out what has changed and can react accordingly
         if (!updateBruteForceSettings) {
             updateBruteForceSettings = true;
             KeycloakSessionFactory sf = session.getKeycloakSessionFactory();

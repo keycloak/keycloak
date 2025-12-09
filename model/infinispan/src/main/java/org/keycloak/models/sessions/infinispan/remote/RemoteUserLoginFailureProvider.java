@@ -91,26 +91,6 @@ public class RemoteUserLoginFailureProvider implements UserLoginFailureProvider 
     }
 
     @Override
-    public void migrate(String modelVersion) {
-        if ("26.5.0".equals(modelVersion)) {
-            // This version introduced updated lifetimes for login failures. Recalculate values for existing entries.
-            RemoteCache<LoginFailureKey, LoginFailureEntity> cache = transaction.getCache();
-            CompletionStages.performConcurrently(
-                    cache.entrySet().stream(),
-                    20,
-                    Schedulers.from(new WithinThreadExecutor()),
-                    entry -> {
-                        RealmModel realm = session.realms().getRealm(entry.getKey().realmId());
-                        if (!realm.isBruteForceProtected()) {
-                            return removeKeyFromCache(cache, entry.getKey());
-                        } else {
-                            return updateLifetimeOfCacheEntry(entry.getKey(), entry.getValue(), realm, cache);
-                        }
-                    }, Collectors.counting());
-        }
-    }
-
-    @Override
     public void updateWithLatestRealmSettings(RealmModel realm) {
         RemoteCache<LoginFailureKey, LoginFailureEntity> cache = transaction.getCache();
         if (!realm.isBruteForceProtected()) {

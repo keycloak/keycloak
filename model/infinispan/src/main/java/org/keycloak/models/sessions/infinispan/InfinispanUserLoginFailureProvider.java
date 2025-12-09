@@ -17,7 +17,6 @@
 package org.keycloak.models.sessions.infinispan;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -154,31 +153,12 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
     }
 
     @Override
-    public void migrate(String modelVersion) {
-        if ("26.5.0".equals(modelVersion)) {
-            // This version introduced updated lifetimes for login failures. Recalculate values for existing entries.
-            Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> cache = loginFailuresTx.getCache();
-            AggregateCompletionStage<Void> stage = CompletionStages.aggregateCompletionStage();
-            cache.getAdvancedCache().entrySet()
-                    .forEach(entry -> {
-                        RealmModel realm = session.realms().getRealm(entry.getKey().realmId());
-                        if (!realm.isBruteForceProtected()) {
-                            stage.dependsOn(removeKeyFromCache(cache, entry.getKey()));
-                        } else {
-                            updateLifetimeOfCacheEntry(entry, realm, stage, cache);
-                        }
-                    });
-            CompletionStages.join(stage.freeze());
-        }
-    }
-
-    @Override
     public void updateWithLatestRealmSettings(RealmModel realm) {
         Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> cache = loginFailuresTx.getCache();
         AggregateCompletionStage<Void> stage = CompletionStages.aggregateCompletionStage();
         if (!realm.isBruteForceProtected()) {
             cache.getAdvancedCache().entrySet().stream()
-                    .filter(entry -> Objects.equals(entry.getKey().realmId(), realm.getId()))
+                    .filter(SessionWrapperPredicate.create(realm.getId()))
                     .forEach(entry -> stage.dependsOn(removeKeyFromCache(cache, entry.getKey())));
         } else {
             cache.getAdvancedCache().entrySet().stream()
