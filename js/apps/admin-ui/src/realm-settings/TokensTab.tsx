@@ -62,6 +62,10 @@ export const RealmSettingsTokensTab = ({
     serverInfo.providers!["signature"].providers,
   );
 
+  const asymmetricSigAlgOptions = defaultSigAlgOptions.filter(
+    (p) => !p.startsWith("HS"),
+  );
+
   const { control, register, reset, formState, handleSubmit } =
     useFormContext<RealmRepresentation>();
 
@@ -729,7 +733,7 @@ export const RealmSettingsTokensTab = ({
                 controller={{
                   defaultValue: "RS256",
                 }}
-                options={defaultSigAlgOptions.map((p) => ({
+                options={asymmetricSigAlgOptions.map((p) => ({
                   key: p,
                   value: p,
                 }))}
