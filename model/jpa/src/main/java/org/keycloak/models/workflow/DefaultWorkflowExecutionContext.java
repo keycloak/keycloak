@@ -49,16 +49,16 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
      * @param step the scheduled step
      */
     DefaultWorkflowExecutionContext(KeycloakSession session, Workflow workflow, ScheduledStep step) {
-        this(session, workflow, null, step, step.executionId(), step.resourceId());
+        this(session, workflow, null, step.stepId(), step.executionId(), step.resourceId());
     }
 
-    private DefaultWorkflowExecutionContext(KeycloakSession session, Workflow workflow, WorkflowEvent event, ScheduledStep step, String executionId, String resourceId) {
+    DefaultWorkflowExecutionContext(KeycloakSession session, Workflow workflow, WorkflowEvent event, String stepId, String executionId, String resourceId) {
         this.session = session;
         this.workflow = workflow;
         this.event = event;
 
-        if (step != null) {
-            this.currentStep = workflow.getStepById(step.stepId());
+        if (stepId != null) {
+            this.currentStep = workflow.getStepById(stepId);
         } else {
             this.currentStep = null;
         }
