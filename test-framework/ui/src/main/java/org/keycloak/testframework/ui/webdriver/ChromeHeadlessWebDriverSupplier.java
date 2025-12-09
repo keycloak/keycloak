@@ -22,6 +22,12 @@ public class ChromeHeadlessWebDriverSupplier extends AbstractWebDriverSupplier {
                 "--ignore-certificate-errors",
                 "--disable-dev-shm-usage"
         );
+
+        String chromeBinary = resolveDriverBinary("CHROMEWEBDRIVER", "ChromeWebDriver");
+        if (chromeBinary != null) {
+            options.setBinary(chromeBinary);
+        }
+
         return new ChromeDriver(options);
     }
 }

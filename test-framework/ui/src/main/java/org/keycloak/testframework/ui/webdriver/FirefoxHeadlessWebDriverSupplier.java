@@ -16,6 +16,12 @@ public class FirefoxHeadlessWebDriverSupplier extends AbstractWebDriverSupplier 
         FirefoxOptions options = new FirefoxOptions();
         setCommonCapabilities(options);
         options.addArguments("-headless");
+
+        String geckoBinary = resolveDriverBinary("GECKOWEBDRIVER");
+        if (geckoBinary != null) {
+            options.setBinary(geckoBinary);
+        }
+
         return new FirefoxDriver(options);
     }
 }

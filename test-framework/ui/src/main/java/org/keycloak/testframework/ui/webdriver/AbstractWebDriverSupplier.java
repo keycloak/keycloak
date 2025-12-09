@@ -43,4 +43,14 @@ public abstract class AbstractWebDriverSupplier implements Supplier<ManagedWebDr
         capabilities.setCapability("timeouts", Map.of("implicit", Duration.ofSeconds(5).toMillis()));
     }
 
+    public String resolveDriverBinary(String... names) {
+        for (String name : names) {
+            String binary = System.getenv(name);
+            if (binary != null) {
+                return binary;
+            }
+        }
+        return null;
+    }
+
 }

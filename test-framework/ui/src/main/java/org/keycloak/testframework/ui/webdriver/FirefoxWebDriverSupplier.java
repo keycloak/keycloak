@@ -15,6 +15,12 @@ public class FirefoxWebDriverSupplier extends AbstractWebDriverSupplier {
     public WebDriver getWebDriver() {
         FirefoxOptions options = new FirefoxOptions();
         setCommonCapabilities(options);
+
+        String geckoBinary = resolveDriverBinary("GECKOWEBDRIVER");
+        if (geckoBinary != null) {
+            options.setBinary(geckoBinary);
+        }
+
         return new FirefoxDriver(options);
     }
 }

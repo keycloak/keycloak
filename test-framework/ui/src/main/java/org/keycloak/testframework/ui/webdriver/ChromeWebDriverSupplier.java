@@ -15,6 +15,12 @@ public class ChromeWebDriverSupplier extends AbstractWebDriverSupplier {
     public WebDriver getWebDriver() {
         ChromeOptions options = new ChromeOptions();
         setCommonCapabilities(options);
+
+        String chromeBinary = resolveDriverBinary("CHROMEWEBDRIVER", "ChromeWebDriver");
+        if (chromeBinary != null) {
+            options.setBinary(chromeBinary);
+        }
+
         return new ChromeDriver(options);
     }
 }
