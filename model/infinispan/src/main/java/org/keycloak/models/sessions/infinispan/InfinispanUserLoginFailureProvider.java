@@ -164,7 +164,7 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
             final int maxTemporaryLockouts = realm.getMaxTemporaryLockouts();
             cache.entrySet().stream()
                     .filter(SessionWrapperPredicate.create(realm.getId()))
-                    .<LoginFailureKey, LoginFailureEntity>forEach((c, entry) -> {
+                    .<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>>forEach((c, entry) -> {
                         var entity = entry.getValue().getEntity();
                         long lifespan = SessionTimeouts.getLoginFailuresLifespanMs(isPermanentLockout, maxTemporaryLockouts, maxDeltaTimeMillis, entity);
                         c.getAdvancedCache()
