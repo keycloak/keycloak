@@ -22,7 +22,7 @@ import {
 function simpleWorkflowStr(name: string): string {
   return `---
     name: ${name}
-    "on": user_logged_in
+    on: user-logged-in
     steps:
       - uses: set-user-attribute
         with:
