@@ -34,8 +34,6 @@ function complexWorkflowStr(name: string): string {
   return `
     name: ${name}
     on: user-logged-in
-    concurrency:
-      cancel-if-running: true
     if: "!has-role('realm-management/realm-admin')"
     steps:
       - uses: notify-user
