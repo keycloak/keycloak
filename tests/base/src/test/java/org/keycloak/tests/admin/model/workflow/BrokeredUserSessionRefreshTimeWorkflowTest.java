@@ -31,6 +31,7 @@ import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider;
+import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.workflow.conditions.IdentityProviderWorkflowConditionFactory;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -69,7 +70,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
-import static org.keycloak.models.workflow.ResourceOperationType.USER_LOGGED_IN;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_AUTHENTICATED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -132,7 +133,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest extends AbstractWorkflow
     public void testInvalidateWorkflowOnIdentityProviderRemoval() {
         String workflowId;
         try (Response response = consumerRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_ADDED.toString(), USER_LOGGED_IN.toString())
+                .onEvent(USER_ADDED.toString(), USER_AUTHENTICATED.toString())
                 .onCondition(IDP_CONDITION)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(DeleteUserStepProviderFactory.ID)
@@ -170,7 +171,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest extends AbstractWorkflow
     @Test
     public void tesRunStepOnFederatedUser() {
         consumerRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_ADDED.toString(), USER_LOGGED_IN.toString())
+                .onEvent(USER_ADDED.toString(), USER_AUTHENTICATED.toString())
                 .onCondition(IDP_CONDITION)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(DeleteUserStepProviderFactory.ID)
@@ -253,7 +254,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest extends AbstractWorkflow
 
             // alice should be associated with the workflow
             WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-            WorkflowStateProvider.ScheduledStep scheduledStep = stateProvider.getScheduledStep(workflow.getId(), alice.getId());
+            ScheduledStep scheduledStep = stateProvider.getScheduledStep(workflow.getId(), alice.getId());
             assertNotNull(scheduledStep, "A step should have been scheduled for the user " + alice.getUsername());
         });
 

@@ -24,7 +24,7 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ErrorPage extends AbstractPage {
+public class ErrorPage extends AbstractLoginPage {
 
     @FindBy(className = "instruction")
     private WebElement errorMessage;

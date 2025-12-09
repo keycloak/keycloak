@@ -19,7 +19,7 @@ package org.keycloak.keys.loader;
 
 import java.security.PublicKey;
 
-import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantConfig;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSInput;
@@ -29,6 +29,7 @@ import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
@@ -64,10 +65,7 @@ public class PublicKeyStorageManager {
         return keyStorage.getFirstPublicKey(modelKey, algAlgorithm, loader);
     }
 
-    public static KeyWrapper getIdentityProviderKeyWrapper(KeycloakSession session, RealmModel realm, OIDCIdentityProviderConfig idpConfig, JWSInput input) {
-        boolean keyIdSetInConfiguration = idpConfig.getPublicKeySignatureVerifierKeyId() != null
-          && ! idpConfig.getPublicKeySignatureVerifierKeyId().trim().isEmpty();
-
+    public static KeyWrapper getIdentityProviderKeyWrapper(KeycloakSession session, RealmModel realm, JWTAuthorizationGrantConfig idpConfig, JWSInput input) {
         String kid = input.getHeader().getKeyId();
         String alg = input.getHeader().getRawAlgorithm();
 
@@ -79,16 +77,17 @@ public class PublicKeyStorageManager {
             loader = new OIDCIdentityProviderPublicKeyLoader(session, idpConfig);
         } else {
             String pem = idpConfig.getPublicKeySignatureVerifier();
-
-            if (pem == null || pem.trim().isEmpty()) {
+            if (StringUtil.isNotBlank(pem) && pem.trim().startsWith("{")) {
+                loader = new OIDCIdentityProviderPublicKeyLoader(session, idpConfig);
+            } else if (StringUtil.isNotBlank(pem)) {
+                loader = new HardcodedPublicKeyLoader(
+                        StringUtil.isNotBlank(idpConfig.getPublicKeySignatureVerifierKeyId())
+                                ? idpConfig.getPublicKeySignatureVerifierKeyId().trim()
+                                : kid, pem, alg);
+            } else {
                 logger.warnf("No public key saved on identityProvider %s", idpConfig.getAlias());
                 return null;
             }
-
-            loader = new HardcodedPublicKeyLoader(
-              keyIdSetInConfiguration
-                ? idpConfig.getPublicKeySignatureVerifierKeyId().trim()
-                : kid, pem, alg);
         }
 
         return keyStorage.getPublicKey(modelKey, kid, alg, loader);

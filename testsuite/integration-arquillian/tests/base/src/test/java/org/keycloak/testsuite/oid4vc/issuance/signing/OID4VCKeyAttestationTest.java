@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyType;
@@ -44,7 +45,6 @@ import org.keycloak.protocol.oid4vc.issuance.keybinding.AttestationValidatorUtil
 import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.StaticAttestationKeyResolver;
-import org.keycloak.protocol.oid4vc.model.ISO18045ResistanceLevel;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.Proofs;
@@ -210,12 +210,12 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerEndpointTest {
             payload.setNonce(cNonce);
             payload.setAttestedKeys(List.of(proofJwk));
             payload.setKeyStorage(List.of(
-                    ISO18045ResistanceLevel.HIGH.getValue(),
-                    ISO18045ResistanceLevel.MODERATE.getValue()
+                    KeyAttestationResistanceLevels.HIGH,
+                    KeyAttestationResistanceLevels.MODERATE
             ));
             payload.setUserAuthentication(List.of(
-                    ISO18045ResistanceLevel.ENHANCED_BASIC.getValue(),
-                    ISO18045ResistanceLevel.BASIC.getValue()
+                    KeyAttestationResistanceLevels.ENHANCED_BASIC,
+                    KeyAttestationResistanceLevels.BASIC
             ));
 
             String attestationJwt = new JWSBuilder()
@@ -228,13 +228,13 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerEndpointTest {
             // Set attestation requirements
             KeyAttestationsRequired attestationRequirements = new KeyAttestationsRequired();
             attestationRequirements.setKeyStorage(List.of(
-                    ISO18045ResistanceLevel.HIGH,
-                    ISO18045ResistanceLevel.MODERATE,
-                    ISO18045ResistanceLevel.ENHANCED_BASIC
+                    KeyAttestationResistanceLevels.HIGH,
+                    KeyAttestationResistanceLevels.MODERATE,
+                    KeyAttestationResistanceLevels.ENHANCED_BASIC
             ));
             attestationRequirements.setUserAuthentication(List.of(
-                    ISO18045ResistanceLevel.BASIC,
-                    ISO18045ResistanceLevel.ENHANCED_BASIC
+                    KeyAttestationResistanceLevels.BASIC,
+                    KeyAttestationResistanceLevels.ENHANCED_BASIC
             ));
 
             vcIssuanceContext.getCredentialConfig()
@@ -433,8 +433,8 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerEndpointTest {
             payload.setIat((long) TIME_PROVIDER.currentTimeSeconds());
             payload.setNonce(cNonce);
             payload.setAttestedKeys(List.of(proofJwk1, proofJwk2));
-            payload.setKeyStorage(List.of(ISO18045ResistanceLevel.HIGH.getValue()));
-            payload.setUserAuthentication(List.of(ISO18045ResistanceLevel.HIGH.getValue()));
+            payload.setKeyStorage(List.of(KeyAttestationResistanceLevels.HIGH));
+            payload.setUserAuthentication(List.of(KeyAttestationResistanceLevels.HIGH));
 
             String attestationJwt = new JWSBuilder()
                     .type(AttestationValidatorUtil.ATTESTATION_JWT_TYP)
@@ -486,8 +486,8 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerEndpointTest {
             payload.setNonce(cNonce);
             payload.setIat((long) TIME_PROVIDER.currentTimeSeconds());
             payload.setAttestedKeys(List.of(proofJwk));
-            payload.setKeyStorage(List.of(ISO18045ResistanceLevel.HIGH.getValue()));
-            payload.setUserAuthentication(List.of(ISO18045ResistanceLevel.HIGH.getValue()));
+            payload.setKeyStorage(List.of(KeyAttestationResistanceLevels.HIGH));
+            payload.setUserAuthentication(List.of(KeyAttestationResistanceLevels.HIGH));
 
             String attestationJwt = new JWSBuilder()
                     .type(AttestationValidatorUtil.ATTESTATION_JWT_TYP)
@@ -587,8 +587,9 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerEndpointTest {
             validator.validateProof(context);
             fail("Expected VCIssuerException for missing attested_keys");
         } catch (VCIssuerException e) {
-            assertTrue("Expected error about missing keys but got: " + e.getMessage(),
-                    e.getMessage().contains("attested_keys"));
+            assertEquals("Expected error about missing keys but got: " + e.getMessage(),
+                         "key_storage is required but was missing.",
+                         e.getMessage());
         } catch (Exception e) {
             fail("Unexpected exception: " + e.getMessage());
         }

@@ -40,19 +40,7 @@ public class KeyBindingJWT extends JwsToken {
         super(jwsString);
     }
 
-    public KeyBindingJWT(ObjectNode payload, SignatureSignerContext signer) {
-        this(new JWSHeader(), payload, signer);
-    }
-
-    public KeyBindingJWT(ObjectNode payload) {
-        this(new JWSHeader(), payload, null);
-    }
-
-    public KeyBindingJWT(JWSHeader jwsHeader, ObjectNode payload) {
-        this(jwsHeader, payload, null);
-    }
-
-    public KeyBindingJWT(JWSHeader jwsHeader, ObjectNode payload, SignatureSignerContext signer) {
+    protected KeyBindingJWT(JWSHeader jwsHeader, ObjectNode payload, SignatureSignerContext signer) {
         super(jwsHeader, payload);
         getJwsHeader().setType(OID4VCConstants.KEYBINDING_JWT_TYP);
         Optional.ofNullable(signer).ifPresent(this::sign);
@@ -67,6 +55,8 @@ public class KeyBindingJWT extends JwsToken {
         protected JWSHeader jwsHeader;
 
         protected ObjectNode payload;
+
+        private SignatureSignerContext signerContext;
 
         public Builder() {
             this.jwsHeader = new JWSHeader();
@@ -151,12 +141,13 @@ public class KeyBindingJWT extends JwsToken {
             return this;
         }
 
-        public KeyBindingJWT build() {
-            return new KeyBindingJWT(jwsHeader, payload);
+        public Builder withSignerContext(SignatureSignerContext signatureSignerContext) {
+            this.signerContext = signatureSignerContext;
+            return this;
         }
 
-        public KeyBindingJWT build(SignatureSignerContext signer) {
-            return new KeyBindingJWT(jwsHeader, payload, signer);
+        public KeyBindingJWT build() {
+            return new KeyBindingJWT(jwsHeader, payload, signerContext);
         }
     }
 }

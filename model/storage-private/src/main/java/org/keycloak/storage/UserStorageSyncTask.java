@@ -38,8 +38,18 @@ final class UserStorageSyncTask implements ScheduledTask {
     @Override
     public void run(KeycloakSession session) {
         RealmModel realm = session.realms().getRealm(realmId);
+
         session.getContext().setRealm(realm);
-        runWithResult(session);
+
+        UserStorageProviderModel provider = getStorageModel(session);
+
+        if (isSyncPeriod(provider)) {
+            runWithResult(session);
+            return;
+        }
+
+        logger.debugf("Ignored LDAP %s users-sync with storage provider %s due small time since last sync in realm %s", //
+                syncMode, provider.getName(), realmId);
     }
 
     @Override
@@ -49,19 +59,10 @@ final class UserStorageSyncTask implements ScheduledTask {
 
     SynchronizationResult runWithResult(KeycloakSession session) {
         try {
-            UserStorageProviderModel provider = getStorageModel(session);
-
-            if (isSyncPeriod(provider)) {
-                return switch (syncMode) {
-                    case FULL -> runFullSync(session);
-                    case CHANGED -> runIncrementalSync(session);
-                };
-            }
-
-            logger.debugf("Ignored LDAP %s users-sync with storage provider %s due small time since last sync in realm %s", //
-                    syncMode, provider.getName(), realmId);
-
-            return SynchronizationResult.ignored();
+            return switch (syncMode) {
+                case FULL -> runFullSync(session);
+                case CHANGED -> runIncrementalSync(session);
+            };
         } catch (Throwable t) {
             logger.errorf(t, "Error occurred during %s users-sync in realm %s and user provider %s",  syncMode, realmId, providerId);
         }

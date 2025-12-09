@@ -34,6 +34,8 @@ describe("Attack Detection", () => {
       disabled: false,
       lastIPFailure: "n/a",
       lastFailure: 0,
+      numTemporaryLockouts: 0,
+      failedLoginNotBefore: 0,
     });
   });
 

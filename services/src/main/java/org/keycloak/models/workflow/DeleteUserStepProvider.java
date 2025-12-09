@@ -20,6 +20,7 @@ package org.keycloak.models.workflow;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.storage.UserStoragePrivateUtil;
@@ -53,19 +54,30 @@ public class DeleteUserStepProvider implements WorkflowStepProvider {
             return;
         }
 
+        UserManager userManager = new UserManager(session);
         if (!user.isFederated() || stepModel.get(PROPAGATE_TO_SP, false)) {
           log.debugv("Deleting user {0} ({1})", user.getUsername(), user.getId());
-          session.users().removeUser(realm, user);
+          userManager.removeUser(realm, user);
           return;
         }
 
         // delete the local user only
-        UserStoragePrivateUtil.userLocalStorage(session).removeUser(realm, user);
+        userManager.removeUser(realm, user, UserStoragePrivateUtil.userLocalStorage(session));
         log.debugv("Deleting federated user {0} ({1}) from local storage only", user.getUsername(), user.getId());
         UserCache userCache = UserStorageUtil.userCache(session);
         // if cache is enabled, evict the user from cache
         if (userCache != null) {
             userCache.evict(realm, user);
         }
+    }
+
+    @Override
+    public String getNotificationMessage() {
+        return "accountDeleteNotificationBody";
+    }
+
+    @Override
+    public String getNotificationSubject() {
+        return "accountDeleteNotificationSubject";
     }
 }

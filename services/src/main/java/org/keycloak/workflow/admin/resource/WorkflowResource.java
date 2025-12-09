@@ -46,6 +46,7 @@ public class WorkflowResource {
      * Update the workflow configuration. The method does not update the workflow steps.
      */
     @PUT
+    @Consumes({YAMLMediaTypes.APPLICATION_JACKSON_YAML, MediaType.APPLICATION_JSON})
     public void update(WorkflowRepresentation rep) {
         try {
             provider.updateWorkflow(workflow, rep);
@@ -55,7 +56,7 @@ public class WorkflowResource {
     }
 
     @GET
-    @Produces({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
+    @Produces({YAMLMediaTypes.APPLICATION_JACKSON_YAML, MediaType.APPLICATION_JSON})
     public WorkflowRepresentation toRepresentation(
             @Parameter(description = "Indicates whether the workflow id should be included in the representation or not - defaults to true") @QueryParam("includeId") Boolean includeId
     ) {
@@ -76,9 +77,8 @@ public class WorkflowResource {
      *                 an integer followed by 'ms' representing milliseconds from now, or an ISO-8601 date string.
      */
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
     @Path("activate/{type}/{resourceId}")
-    public void activate(@PathParam("type") ResourceType type, @PathParam("resourceId") String resourceId, String notBefore) {
+    public void activate(@PathParam("type") ResourceType type, @PathParam("resourceId") String resourceId, @QueryParam("notBefore") String notBefore) {
         Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
 
         if (resource == null) {
@@ -90,6 +90,17 @@ public class WorkflowResource {
         }
 
         provider.activate(workflow, type, resourceId);
+    }
+
+    @POST
+    @Path("activate-all")
+    public void activateAll(@QueryParam("notBefore") String notBefore) {
+
+        if (notBefore != null) {
+            workflow.setNotBefore(notBefore);
+        }
+
+        provider.activateForAllEligibleResources(workflow);
     }
 
     /**

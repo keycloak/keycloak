@@ -380,6 +380,14 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_MAX_EXP, String.valueOf(maxExp));
     }
 
+    public boolean isLogoutConfirmationEnabled() {
+        return Boolean.parseBoolean(getAttribute(OIDCConfigAttributes.LOGOUT_CONFIRMATION_ENABLED, "false"));
+    }
+
+    public void setLogoutConfirmationEnabled(boolean enabled) {
+        setAttribute(OIDCConfigAttributes.LOGOUT_CONFIRMATION_ENABLED, String.valueOf(enabled));
+    }
+
     public String getBackchannelLogoutUrl() {
         return getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL);
     }

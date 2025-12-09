@@ -531,7 +531,7 @@
                 <docker.database.image>${mssql.container}</docker.database.image>
                 <docker.database.port>1433</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
-                <docker.database.postStart>/opt/mssql-tools18/bin/sqlcmd -e -U sa -P ${keycloak.connectionsJpa.password} -No -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database}</docker.database.postStart>
+                <docker.database.postStart>/opt/mssql-tools18/bin/sqlcmd -e -U sa -P ${keycloak.connectionsJpa.password} -No -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database};\ ALTER\ DATABASE\ ${keycloak.connectionsJpa.database}\ SET\ READ_COMMITTED_SNAPSHOT\ ON</docker.database.postStart>
                 <docker.database.cmd>/bin/sh -c /opt/mssql/bin/sqlservr</docker.database.cmd>
                 <docker.database.wait-for-log-regex>Recovery is complete. This is an informational message only. No user action is required.</docker.database.wait-for-log-regex>
                 <keycloak.storage.connections.vendor>mssql</keycloak.storage.connections.vendor>

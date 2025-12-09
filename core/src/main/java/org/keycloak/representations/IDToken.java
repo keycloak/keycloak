@@ -17,7 +17,11 @@
 
 package org.keycloak.representations;
 
+import java.util.Map;
+import java.util.Optional;
+
 import org.keycloak.TokenCategory;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -127,7 +131,7 @@ public class IDToken extends JsonWebToken {
     protected Boolean phoneNumberVerified;
 
     @JsonProperty(ADDRESS)
-    protected AddressClaimSet address;
+    protected Map<String, Object> address;
 
     @JsonProperty(UPDATED_AT)
     protected Long updatedAt;
@@ -328,12 +332,28 @@ public class IDToken extends JsonWebToken {
         this.phoneNumberVerified = phoneNumberVerified;
     }
 
-    public AddressClaimSet getAddress() {
+    @JsonProperty("address")
+    public Map<String, Object> getAddressClaimsMap() {
         return address;
     }
 
-    public void setAddress(AddressClaimSet address) {
+    @JsonIgnore
+    public AddressClaimSet getAddress() {
+        return Optional.ofNullable(address).map(a -> {
+                           return JsonSerialization.mapper.convertValue(a, AddressClaimSet.class);
+                       })
+                       .orElse(null);
+    }
+
+    public void setAddress(Map<String, Object> address) {
         this.address = address;
+    }
+
+    @JsonIgnore
+    public void setAddress(AddressClaimSet address) {
+        this.address = Optional.ofNullable(address)
+                               .map(a -> JsonSerialization.mapper.convertValue(a, Map.class))
+                               .orElse(null);
     }
 
     public Long getUpdatedAt() {

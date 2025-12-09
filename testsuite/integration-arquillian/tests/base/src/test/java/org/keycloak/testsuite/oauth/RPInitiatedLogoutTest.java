@@ -162,6 +162,35 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void logoutRedirectWithLogoutConfirmationEnabled() throws Exception {
+        try (ClientAttributeUpdater ignore = ClientAttributeUpdater.forClient(adminClient, "test", "test-app")
+                     .setAttribute(OIDCConfigAttributes.LOGOUT_CONFIRMATION_ENABLED, "true")
+                     .update()) {
+            AccessTokenResponse tokenResponse = loginUser();
+            String sessionId = tokenResponse.getSessionState();
+
+            String redirectUri = APP_REDIRECT_URI + "?logout";
+
+            String idTokenString = tokenResponse.getIdToken();
+
+            oauth.logoutForm().postLogoutRedirectUri(redirectUri).idTokenHint(idTokenString).open();
+
+            // Logout should be processed and session terminated
+            events.expectLogout(sessionId).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
+            MatcherAssert.assertThat(false, is(isSessionActive(sessionId)));
+
+            // With logout confirmation enabled, an info page should be shown instead of an immediate redirect
+            infoPage.assertCurrent();
+            Assert.assertEquals("You are logged out", infoPage.getInfo());
+
+            // The info page should contain a link back to application (redirectUri). Use the link to finish.
+            infoPage.clickBackToApplicationLink();
+            WaitUtils.waitForPageToLoad();
+            assertCurrentUrlEquals(redirectUri);
+        }
+    }
+
+    @Test
     public void postLogoutRedirect() {
         AccessTokenResponse tokenResponse = loginUser();
         String sessionId = tokenResponse.getSessionState();

@@ -18,6 +18,7 @@ import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider;
+import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.workflow.conditions.RoleWorkflowConditionFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -94,15 +95,10 @@ public class RoleWorkflowConditionTest extends AbstractWorkflowTest {
                                 .build()
                 ).build()).close();
 
-
-        runOnServer.run((RunOnServer) session -> {
-            // check the same users are now scheduled to run the second step.
-            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
-            List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
-            assertThat(registeredWorkflows, hasSize(1));
-            // activate the workflow for all eligible users
-            provider.activateForAllEligibleResources(registeredWorkflows.get(0));
-        });
+        List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
+        assertThat(workflows, hasSize(1));
+        // activate the workflow for all eligible users
+        managedRealm.admin().workflows().workflow(workflows.get(0).getId()).activateAll();
 
         runOnServer.run((RunOnServer) session -> {
             // check the same users are now scheduled to run the second step.
@@ -112,7 +108,7 @@ public class RoleWorkflowConditionTest extends AbstractWorkflowTest {
             Workflow workflow = registeredWorkflows.get(0);
             // check workflow was correctly assigned to the users
             WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-            List<WorkflowStateProvider.ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow);
+            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
             assertThat(scheduledSteps, hasSize(10));
         });
     }

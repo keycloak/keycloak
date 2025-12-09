@@ -29,6 +29,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.workflow.DeleteUserStepProviderFactory;
 import org.keycloak.models.workflow.ResourceOperationType;
+import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
+import org.keycloak.models.workflow.Workflow;
+import org.keycloak.models.workflow.WorkflowProvider;
+import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -36,14 +40,9 @@ import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.oauth.OAuthClient;
-import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
@@ -62,24 +61,18 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.keycloak.models.workflow.DeleteUserStepProvider.PROPAGATE_TO_SP;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+
 /**
  */
 @KeycloakIntegrationTest(config = DeleteUserWorkflowServerConf.class)
 public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
-
-    @InjectRunOnServer(permittedPackages = "org.keycloak.tests", realmRef = "consumer")
-    RunOnServerClient runOnServer;
-
-    @InjectRealm(ref = "consumer", lifecycle = LifeCycle.METHOD)
-    ManagedRealm consumerRealm;
-
-    @InjectOAuthClient(ref = "consumer", realmRef = "consumer")
-    OAuthClient consumerRealmOAuth;
 
     @InjectWebDriver
     ManagedWebDriver driver;
@@ -113,15 +106,15 @@ public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
             builder = builder.withConfig(PROPAGATE_TO_SP, propagateToSp);
         }
 
-        consumerRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(ResourceOperationType.USER_AUTHENTICATED.toString())
                 .withSteps(builder.build()).build()).close();
 
         String componentId = addDummyFederationProvider();
-        String userId = addFederatedUser(componentId, USER_NAME, USER_PASSWORD);
+        addFederatedUser(componentId, USER_NAME, USER_PASSWORD);
 
         // Authenticate using federated user
-        consumerRealmOAuth.openLoginForm();
+        oauth.openLoginForm();
         loginPage.fillLogin(USER_NAME, USER_PASSWORD);
         loginPage.submit();
         assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
@@ -160,6 +153,95 @@ public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
         });
     }
 
+    static Stream<Arguments> deleteUserRemovesAllScheduledStepsTestProvider() {
+        return Stream.of(
+                Arguments.of(false),
+                Arguments.of(true)
+        );
+    }
+
+    @ParameterizedTest
+    @DisplayName("DeleteUserStep should trigger UserRemovedEvent to remove all scheduled steps for the user")
+    @MethodSource("deleteUserRemovesAllScheduledStepsTestProvider")
+    public void testDeleteUserRemovesAllScheduledSteps(boolean federated) {
+        // create a couple of workflows that will activate for the test user
+        // the first one will run the delete user step before the second one runs its first step
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("workflow1")
+                .onEvent(ResourceOperationType.USER_AUTHENTICATED.toString())
+                .withSteps(
+                        WorkflowStepRepresentation.create()
+                                .of(DeleteUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(1))
+                                .build()
+                ).build()).close();
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("workflow2")
+                .onEvent(ResourceOperationType.USER_AUTHENTICATED.toString())
+                .withSteps(
+                        WorkflowStepRepresentation.create()
+                                .of(SetUserAttributeStepProviderFactory.ID)
+                                .withConfig("attribute", "attr1")
+                                .after(Duration.ofDays(5))
+                                .build()
+                ).build()).close();
+
+        // add a test user and activate the workflows by logging in
+        String userId;
+        if (federated) {
+            String componentId = addDummyFederationProvider();
+            userId = addFederatedUser(componentId, USER_NAME, USER_PASSWORD);
+        } else {
+            try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+                    .username(USER_NAME).password(USER_PASSWORD).firstName("Federated").lastName("User").email(USER_NAME + "@example.com").build())) {
+                userId = ApiUtil.getCreatedId(response);
+            }
+        }
+
+        oauth.openLoginForm();
+        loginPage.fillLogin(USER_NAME, USER_PASSWORD);
+        loginPage.submit();
+        assertTrue(driver.driver().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+
+        // check that we have two scheduled steps for the user
+        runOnServer.run((RunOnServer) session -> {
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+
+            List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
+            assertEquals(2, registeredWorkflows.size());
+
+            WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
+            List<WorkflowStateProvider.ScheduledStep> steps = stateProvider.getScheduledStepsByResource(userId).toList();
+            assertThat(steps, hasSize(2));
+        });
+
+        // now run the scheduled steps after 2 days - this should delete the user and remove all scheduled steps
+        runScheduledSteps(Duration.ofDays(2));
+        runOnServer.run((RunOnServer) session -> {
+            // ensure user is deleted
+            RealmModel realm = session.getContext().getRealm();
+            if (federated) {
+                // assert federated user was removed locally
+                UserModel user = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, USER_NAME);
+                assertNull(user);
+
+                // cleanup federated user
+                DummyUserFederationProviderFactory providerFactory = (DummyUserFederationProviderFactory) session.getKeycloakSessionFactory()
+                        .getProviderFactory(UserStorageProvider.class, DummyUserFederationProviderFactory.PROVIDER_NAME);
+                ComponentModel model = realm.getStorageProviders(UserStorageProvider.class).findFirst().orElse(null);
+                assertNotNull(model);
+                DummyUserFederationProvider provider = providerFactory.create(session, model);
+                UserModel federatedUser = provider.getUserByUsername(realm, USER_NAME);
+                provider.removeUser(realm, federatedUser);
+            } else {
+                UserModel user = session.users().getUserById(realm, userId);
+                assertNull(user);
+            }
+
+            WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
+            List<WorkflowStateProvider.ScheduledStep> steps = stateProvider.getScheduledStepsByResource(userId).toList();
+            assertThat(steps, hasSize(0));
+        });
+    }
+
     private String addFederatedUser(String componentId, String username, String password) {
         UserRepresentation fedUser = new UserRepresentation();
         fedUser.setUsername(username);
@@ -172,7 +254,7 @@ public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
         fedUser.setLastName("User");
         fedUser.setEnabled(true);
         fedUser.setFederationLink(componentId);
-        Response createResponse = consumerRealm.admin().users().create(fedUser);
+        Response createResponse = managedRealm.admin().users().create(fedUser);
         assertEquals(201, createResponse.getStatus());
         return ApiUtil.getCreatedId(createResponse);
     }
@@ -184,7 +266,7 @@ public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
         dummyFederationProvider.setName(DummyUserFederationProviderFactory.PROVIDER_NAME);
         dummyFederationProvider.setProviderId(DummyUserFederationProviderFactory.PROVIDER_NAME);
         dummyFederationProvider.setProviderType(UserStorageProvider.class.getName());
-        try (Response addResponse = consumerRealm.admin().components().add(dummyFederationProvider)) {
+        try (Response addResponse = managedRealm.admin().components().add(dummyFederationProvider)) {
             assertEquals(201, addResponse.getStatus());
         }
         return componentId;

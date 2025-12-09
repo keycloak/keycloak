@@ -32,7 +32,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
-import static org.keycloak.models.workflow.ResourceOperationType.USER_LOGGED_IN;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_AUTHENTICATED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -106,7 +106,7 @@ public class GroupMembershipJoinWorkflowTest extends AbstractWorkflowTest {
 
         String workflowId;
         try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_ADDED.toString(), USER_LOGGED_IN.toString())
+                .onEvent(USER_ADDED.toString(), USER_AUTHENTICATED.toString())
                 .onCondition(GROUP_CONDITION)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -163,15 +163,10 @@ public class GroupMembershipJoinWorkflowTest extends AbstractWorkflowTest {
                                 .build()
                 ).build()).close();
 
-
-        runOnServer.run((RunOnServer) session -> {
-            // check the same users are now scheduled to run the second step.
-            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
-            List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
-            assertThat(registeredWorkflows, hasSize(1));
-            // activate the workflow for all eligible users
-            provider.activateForAllEligibleResources(registeredWorkflows.get(0));
-        });
+        List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
+        assertThat(workflows, hasSize(1));
+        // activate the workflow for all eligible users
+        managedRealm.admin().workflows().workflow(workflows.get(0).getId()).activateAll();
 
         runOnServer.run((RunOnServer) session -> {
             // check the same users are now scheduled to run the second step.
@@ -181,7 +176,7 @@ public class GroupMembershipJoinWorkflowTest extends AbstractWorkflowTest {
             Workflow workflow = registeredWorkflows.get(0);
             // check workflow was correctly assigned to the users
             WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-            List<WorkflowStateProvider.ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow);
+            List<WorkflowStateProvider.ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
             assertThat(scheduledSteps, hasSize(10));
         });
     }

@@ -20,6 +20,8 @@ package org.keycloak.protocol.oid4vc.model;
 import java.util.List;
 import java.util.Objects;
 
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -34,11 +36,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class KeyAttestationsRequired {
 
     @JsonProperty("key_storage")
-    private List<ISO18045ResistanceLevel> keyStorage;
+    private List<String> keyStorage;
 
     @JsonProperty("user_authentication")
-    private List<ISO18045ResistanceLevel> userAuthentication;
-    
+    private List<String> userAuthentication;
+
     /**
      * Default constructor for Jackson deserialization
      */
@@ -46,20 +48,30 @@ public class KeyAttestationsRequired {
         // Default constructor for Jackson deserialization
     }
 
-    public List<ISO18045ResistanceLevel> getKeyStorage() {
+    public static KeyAttestationsRequired parse(CredentialScopeModel credentialScope) {
+        KeyAttestationsRequired keyAttestationsRequired = null;
+        if (credentialScope.isKeyAttestationRequired()) {
+            keyAttestationsRequired = new KeyAttestationsRequired();
+            keyAttestationsRequired.setKeyStorage(credentialScope.getRequiredKeyAttestationKeyStorage());
+            keyAttestationsRequired.setUserAuthentication(credentialScope.getRequiredKeyAttestationUserAuthentication());
+        }
+        return keyAttestationsRequired;
+    }
+
+    public List<String> getKeyStorage() {
         return keyStorage;
     }
 
-    public KeyAttestationsRequired setKeyStorage(List<ISO18045ResistanceLevel> keyStorage) {
+    public KeyAttestationsRequired setKeyStorage(List<String> keyStorage) {
         this.keyStorage = keyStorage;
         return this;
     }
 
-    public List<ISO18045ResistanceLevel> getUserAuthentication() {
+    public List<String> getUserAuthentication() {
         return userAuthentication;
     }
 
-    public KeyAttestationsRequired setUserAuthentication(List<ISO18045ResistanceLevel> userAuthentication) {
+    public KeyAttestationsRequired setUserAuthentication(List<String> userAuthentication) {
         this.userAuthentication = userAuthentication;
         return this;
     }

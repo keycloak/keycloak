@@ -132,8 +132,43 @@ public class SyncFederationTest extends AbstractAuthTest {
         });
     }
 
+    @Test
+    public void testForceManualSync() {
+        // Enable timer for SyncDummyUserFederationProvider
+        testingClient.server().run(session -> {
+            RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+            UserStorageProviderModel model = new UserStorageProviderModel();
 
-    private static final UserStorageProviderModel findDummyProviderModel(RealmModel realm) {
+            model.setProviderId(DummyUserFederationProviderFactory.PROVIDER_NAME);
+            model.setPriority(1);
+            model.setName("test-sync-dummy");
+            model.setFullSyncPeriod(1);
+            model.setLastSync(0);
+
+            appRealm.addComponentModel(model);
+        });
+
+        testingClient.server().run(session -> {
+            RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+            UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm);
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+
+            sleep(dummyModel.getFullSyncPeriod() * 2L);
+            session.getContext().setRealm(appRealm);
+            SynchronizationResult result = UserStoragePrivateUtil.runFullSync(sessionFactory, dummyModel);
+            Assert.assertFalse(result.isIgnored());
+        });
+
+        // remove dummyProvider
+        testingClient.server().run(session -> {
+            RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+            session.getContext().setRealm(appRealm);
+            UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm);
+            appRealm.removeComponent(dummyModel);
+        });
+    }
+
+    private static UserStorageProviderModel findDummyProviderModel(RealmModel realm) {
         return realm.getComponentsStream()
                 .filter(component -> Objects.equals(component.getName(), "test-sync-dummy"))
                 .map(UserStorageProviderModel::new)

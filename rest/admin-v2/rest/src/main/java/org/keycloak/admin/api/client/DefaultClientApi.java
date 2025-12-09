@@ -9,7 +9,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.http.HttpResponse;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -19,7 +18,7 @@ import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.DefaultClientService;
 import org.keycloak.services.resources.admin.ClientResource;
-import org.keycloak.services.resources.admin.ClientsResource;
+import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.util.ObjectMapperResolver;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -33,45 +32,40 @@ public class DefaultClientApi implements ClientApi {
     private final RealmModel realm;
     private final ClientModel client;
     private final ClientService clientService;
-    private HttpResponse response;
 
     private final ClientResource clientResource;
-    private final ClientsResource clientsResource;
     private final String clientId;
     private final ObjectMapper objectMapper;
 
     private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
 
-    public DefaultClientApi(KeycloakSession session, ClientsResource clientsResource, ClientResource clientResource, String clientId) {
+    public DefaultClientApi(KeycloakSession session, RealmAdminResource realmAdminResource, ClientResource clientResource, String clientId) {
         this.session = session;
-        this.realm = Objects.requireNonNull(session.getContext().getRealm());
-        this.client = Objects.requireNonNull(session.getContext().getClient());
-        this.clientService = new DefaultClientService(session);
-        this.response = session.getContext().getHttpResponse();
-        this.clientsResource = clientsResource;
         this.clientResource = clientResource;
         this.clientId = clientId;
+
+        this.realm = Objects.requireNonNull(session.getContext().getRealm());
+        this.client = Objects.requireNonNull(session.getContext().getClient());
+        this.clientService = new DefaultClientService(session, realmAdminResource, clientResource);
+
         this.objectMapper = MAPPER;
     }
 
     @Override
     public ClientRepresentation getClient() {
-        return clientService.getClient(clientResource, realm, client.getClientId(), null)
+        return clientService.getClient(realm, client.getClientId(), null)
                 .orElseThrow(() -> new NotFoundException("Cannot find the specified client"));
     }
 
     @Override
-    public ClientRepresentation createOrUpdateClient(ClientRepresentation client) {
+    public Response createOrUpdateClient(ClientRepresentation client) {
         try {
             if (!Objects.equals(clientId, client.getClientId())) {
                 throw new WebApplicationException("cliendId in payload does not match the clientId in the path", Response.Status.BAD_REQUEST);
             }
-            validateUnknownFields(client, response);
-            var result = clientService.createOrUpdate(clientsResource, clientResource, realm, client, true);
-            if (result.created()) {
-                response.setStatus(Response.Status.CREATED.getStatusCode());
-            }
-            return result.representation();
+            validateUnknownFields(client);
+            var result = clientService.createOrUpdate(realm, client, true);
+            return Response.status(result.created() ? Response.Status.CREATED : Response.Status.OK).entity(result.representation()).build();
         } catch (ServiceException e) {
             throw new WebApplicationException(e.getMessage(), e.getSuggestedResponseStatus().orElse(Response.Status.BAD_REQUEST));
         }
@@ -91,8 +85,8 @@ public class DefaultClientApi implements ClientApi {
             final ObjectReader objectReader = objectMapper.readerForUpdating(client);
             ClientRepresentation updated = objectReader.readValue(patch);
 
-            validateUnknownFields(updated, response);
-            return clientService.createOrUpdate(clientsResource, clientResource, realm, updated, true).representation();
+            validateUnknownFields(updated);
+            return clientService.createOrUpdate(realm, updated, true).representation();
         } catch (IllegalArgumentException e) {
             throw new WebApplicationException("Unsupported media type", Response.Status.UNSUPPORTED_MEDIA_TYPE);
         } catch (JsonProcessingException e) {
@@ -110,7 +104,7 @@ public class DefaultClientApi implements ClientApi {
         clientResource.deleteClient();
     }
 
-    static void validateUnknownFields(ClientRepresentation rep, HttpResponse response) {
+    static void validateUnknownFields(ClientRepresentation rep) {
         if (!rep.getAdditionalFields().isEmpty()) {
             throw new WebApplicationException("Payload contains unknown fields: " + rep.getAdditionalFields().keySet(), Response.Status.BAD_REQUEST);
         }

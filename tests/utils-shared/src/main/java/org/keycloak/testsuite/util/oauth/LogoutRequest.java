@@ -8,11 +8,21 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class LogoutRequest extends AbstractHttpPostRequest<LogoutRequest, LogoutResponse> {
 
-    private final String refreshToken;
+    private String refreshToken;
+    private String idTokenHint;
 
-    LogoutRequest(String refreshToken, AbstractOAuthClient<?> client) {
+    LogoutRequest(AbstractOAuthClient<?> client) {
         super(client);
+    }
+
+    public LogoutRequest refreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
+        return this;
+    }
+
+    public LogoutRequest idTokenHint(String idTokenHint) {
+        this.idTokenHint = idTokenHint;
+        return this;
     }
 
     @Override
@@ -21,7 +31,12 @@ public class LogoutRequest extends AbstractHttpPostRequest<LogoutRequest, Logout
     }
 
     protected void initRequest() {
-        parameter(OAuth2Constants.REFRESH_TOKEN, refreshToken);
+        if (refreshToken != null) {
+            parameter(OAuth2Constants.REFRESH_TOKEN, refreshToken);
+        }
+        if (idTokenHint != null) {
+            parameter(OAuth2Constants.ID_TOKEN_HINT, idTokenHint);
+        }
     }
 
     @Override

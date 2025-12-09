@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
@@ -211,6 +212,49 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         String jwt = getIdentityProvider().encodeToken(token, newKeys);
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Invalid signature", response, events.poll());
+    }
+
+    @Test
+    public void testValidateSignatureFixedKey() {
+        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.FALSE.toString());
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, "");
+            rep.getConfig().put(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER,
+                    PemUtils.encodeKey(identityProvider.getKeys().getKeyWrapper().getPublicKey()));
+        });
+
+        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER));
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", response);
+    }
+
+    @Test
+    public void testValidateSignatureFixedKeyAndKeyId() {
+        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.FALSE.toString());
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, "");
+            rep.getConfig().put(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER,
+                    PemUtils.encodeKey(identityProvider.getKeys().getKeyWrapper().getPublicKey()));
+            rep.getConfig().put(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER_KEY_ID,
+                    identityProvider.getKeys().getKeyWrapper().getKid());
+        });
+
+        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER));
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", response);
+    }
+
+    @Test
+    public void testValidateSignatureFixedKeyUsingJwks() {
+        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.FALSE.toString());
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, "");
+            rep.getConfig().put(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER, identityProvider.getKeys().getJwksString());
+        });
+
+        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER));
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", response);
     }
 
     @Test

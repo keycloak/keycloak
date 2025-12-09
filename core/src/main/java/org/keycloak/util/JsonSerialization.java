@@ -102,6 +102,10 @@ public class JsonSerialization {
         return mapper.readValue(bytes, type);
     }
 
+    public static <T> T readValue(byte[] bytes, TypeReference<T> type) throws IOException {
+        return mapper.readValue(bytes, type);
+    }
+
     public static <T> T readValue(String string, TypeReference<T> type) throws IOException {
         return mapper.readValue(string, type);
     }

@@ -8,16 +8,18 @@ import org.keycloak.common.util.MultivaluedHashMap;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CANCEL_IF_RUNNING;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CANCEL_IN_PROGRESS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONCURRENCY;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_IF;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON_EVENT;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RESTART_IN_PROGRESS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STATE;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STEPS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
@@ -25,6 +27,7 @@ import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WI
 
 @JsonPropertyOrder({"id", CONFIG_NAME, CONFIG_USES, CONFIG_ENABLED, CONFIG_ON_EVENT, CONFIG_CONCURRENCY, CONFIG_IF, CONFIG_STEPS, CONFIG_STATE})
 @JsonIgnoreProperties(CONFIG_WITH)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public final class WorkflowRepresentation extends AbstractWorkflowComponentRepresentation {
 
     public static Builder withName(String name) {
@@ -106,11 +109,13 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
     }
 
     public WorkflowConcurrencyRepresentation getConcurrency() {
+        String cancelInProgress = getConfigValue(CONFIG_CANCEL_IN_PROGRESS, String.class);
+        String restartInProgress = getConfigValue(CONFIG_RESTART_IN_PROGRESS, String.class);
         if (this.concurrency == null) {
-            Boolean cancelIfRunning = getConfigValue(CONFIG_CANCEL_IF_RUNNING, Boolean.class);
-            if (cancelIfRunning != null) {
+            if (cancelInProgress != null || restartInProgress != null) {
                 this.concurrency = new WorkflowConcurrencyRepresentation();
-                this.concurrency.setCancelIfRunning(cancelIfRunning);
+                this.concurrency.setCancelInProgress(cancelInProgress);
+                this.concurrency.setRestartInProgress(restartInProgress);
             }
         }
         return this.concurrency;
@@ -119,13 +124,19 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
     public void setConcurrency(WorkflowConcurrencyRepresentation concurrency) {
         this.concurrency = concurrency;
         if (concurrency != null) {
-            setConfigValue(CONFIG_CANCEL_IF_RUNNING, concurrency.isCancelIfRunning());
+            setConfigValue(CONFIG_CANCEL_IN_PROGRESS, concurrency.getCancelInProgress());
+            setConfigValue(CONFIG_RESTART_IN_PROGRESS, concurrency.getRestartInProgress());
         }
     }
 
     @JsonIgnore
-    public boolean isCancelIfRunning() {
-        return concurrency != null && Boolean.TRUE.equals(concurrency.isCancelIfRunning());
+    public String getCancelInProgress() {
+        return concurrency != null ? concurrency.getCancelInProgress() : null;
+    }
+
+    @JsonIgnore
+    public String getRestartInProgress() {
+        return concurrency != null ? concurrency.getRestartInProgress() : null;
     }
 
     @Override
@@ -137,7 +148,6 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
             return false;
         }
         WorkflowRepresentation that = (WorkflowRepresentation) obj;
-        // TODO: include state in comparison?
         return Objects.equals(getConfig(), that.getConfig()) && Objects.equals(getSteps(), that.getSteps());
     }
 
@@ -164,16 +174,26 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
         }
 
         public Builder concurrency() {
-            representation.setConcurrency(new WorkflowConcurrencyRepresentation());
+            if (representation.getConcurrency() == null) {
+                representation.setConcurrency(new WorkflowConcurrencyRepresentation());
+            }
             return this;
         }
 
         // move this to its own builder if we expand the capabilities of the concurrency settings.
-        public Builder cancelIfRunning() {
+        public Builder cancelInProgress(String cancelInProgress) {
             if (representation.getConcurrency() == null) {
                 representation.setConcurrency(new WorkflowConcurrencyRepresentation());
             }
-            representation.getConcurrency().setCancelIfRunning(true);
+            representation.getConcurrency().setCancelInProgress(cancelInProgress);
+            return this;
+        }
+
+        public Builder restartInProgress(String restartInProgress) {
+            if (representation.getConcurrency() == null) {
+                representation.setConcurrency(new WorkflowConcurrencyRepresentation());
+            }
+            representation.getConcurrency().setRestartInProgress(restartInProgress);
             return this;
         }
 

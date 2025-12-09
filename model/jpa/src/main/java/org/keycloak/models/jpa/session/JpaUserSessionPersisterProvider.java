@@ -262,7 +262,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         if (realm.isRememberMe()) {
             UserSessionExpirationLogic.expireRegularSessions(sessionFactory, realm, currentTime, expiration, true, expirationBatch);
         } else {
-            UserSessionExpirationLogic.deleteInvalidSessions(sessionFactory, realm);
+            UserSessionExpirationLogic.deleteInvalidSessions(sessionFactory, realm, expirationBatch);
         }
     }
 

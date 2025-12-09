@@ -40,7 +40,7 @@ import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
-import static org.keycloak.models.workflow.ResourceOperationType.USER_LOGGED_IN;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_AUTHENTICATED;
 import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailByRecipient;
 import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailsByRecipient;
 import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.verifyEmailContent;
@@ -59,11 +59,12 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
     @InjectMailServer
     private MailServer mailServer;
 
+
     @Test
     public void testDisabledUserAfterInactivityPeriod() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_ADDED.toString(), USER_LOGGED_IN.toString())
-                .concurrency().cancelIfRunning() // this setting enables restarting the workflow
+                .onEvent(USER_ADDED.toString(), USER_AUTHENTICATED.toString())
+                .concurrency().restartInProgress("true") // this setting enables restarting the workflow
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -137,21 +138,21 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
     @Test
     public void testMultipleWorkflows() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_ADDED.toString(), USER_LOGGED_IN.toString())
+                .onEvent(USER_ADDED.toString(), USER_AUTHENTICATED.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
-                                .withConfig("custom_subject_key", "notifier1_subject")
-                                .withConfig("custom_message", "notifier1_message")
+                                .withConfig("subject", "notifier1_subject")
+                                .withConfig("message", "notifier1_message")
                                 .build())
                 .build()).close();
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow_2")
-                .onEvent(USER_ADDED.toString(), USER_LOGGED_IN.toString())
+                .onEvent(USER_ADDED.toString(), USER_AUTHENTICATED.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(10))
-                                .withConfig("custom_subject_key", "notifier2_subject")
-                                .withConfig("custom_message", "notifier2_message")
+                                .withConfig("subject", "notifier2_subject")
+                                .withConfig("message", "notifier2_message")
                                 .build())
                 .build()).close();
 

@@ -100,7 +100,6 @@ import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
-import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
@@ -165,6 +164,16 @@ public class OID4VCIssuerEndpoint {
     public static final String AUTHORIZATION_DETAILS_CLAIMS_PREFIX = "AUTHORIZATION_DETAILS_CLAIMS_";
 
     private Cors cors;
+
+    /**
+     * Cached authentication result to prevent DPoP proof reuse.
+     * <p>
+     * This cache ensures that when authentication is performed multiple times during
+     * a single request processing (e.g., when issuing multiple credentials), the same
+     * authentication result is reused instead of re-authenticating, which would allow
+     * the same DPoP proof to be used multiple times.
+     */
+    private AuthenticationManager.AuthResult cachedAuthResult;
 
     private static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
     private static final int DEFAULT_CODE_LIFESPAN_S = 30;
@@ -339,18 +348,18 @@ public class OID4VCIssuerEndpoint {
     /**
      * Creates a Credential Offer Uri that can be pre-authorized and hence bound to a specific client/user id.
      * <p>
-     * Credential Offer Validity Matrix for the supported request parameters "pre_authorized", "client_id", "user_id" combinations.
+     * Credential Offer Validity Matrix for the supported request parameters "pre_authorized", "client_id", "username" combinations.
      * </p>
      * +----------+-----------+---------+---------+-----------------------------------------------------+
-     * | pre-auth | clientId  | userId  | Valid   | Notes                                               |
+     * | pre-auth | clientId  | username  | Valid   | Notes                                               |
      * +----------+-----------+---------+---------+-----------------------------------------------------+
      * | no       | no        | no      | yes     | Generic offer; any logged-in user may redeem.       |
      * | no       | no        | yes     | yes     | Offer restricted to a specific user.                |
      * | no       | yes       | no      | yes     | Bound to client; user determined at login.          |
      * | no       | yes       | yes     | yes     | Bound to both client and user.                      |
      * +----------+-----------+---------+---------+-----------------------------------------------------+
-     * | yes      | no        | no      | no      | Pre-auth requires a user subject; missing userId.   |
-     * | yes      | yes       | no      | no      | Same as above; userId required.                     |
+     * | yes      | no        | no      | no      | Pre-auth requires a user subject; missing username.   |
+     * | yes      | yes       | no      | no      | Same as above; username required.                     |
      * | yes      | no        | yes     | yes     | Pre-auth for a specific user; client unconstrained. |
      * | yes      | yes       | yes     | yes     | Fully constrained: user + client.                   |
      * +----------+-----------+---------+---------+-----------------------------------------------------+
@@ -358,7 +367,7 @@ public class OID4VCIssuerEndpoint {
      * @param credConfigId  A valid credential configuration id
      * @param preAuthorized A flag whether the offer should be pre-authorized (requires targetUser)
      * @param appClientId   The client id that the offer is authorized for
-     * @param appUserId     The user id that the offer is authorized for
+     * @param appUsername   The username that the offer is authorized for
      * @param type          The response type, which can be 'uri' or 'qr-code'
      * @param width         The width of the QR code image
      * @param height        The height of the QR code image
@@ -371,7 +380,7 @@ public class OID4VCIssuerEndpoint {
             @QueryParam("credential_configuration_id") String credConfigId,
             @QueryParam("pre_authorized") @DefaultValue("true") boolean preAuthorized,
             @QueryParam("client_id") String appClientId,
-            @QueryParam("user_id") String appUserId,
+            @QueryParam("username") String appUsername,
             @QueryParam("type") @DefaultValue("uri") OfferUriType type,
             @QueryParam("width") @DefaultValue("200") int width,
             @QueryParam("height") @DefaultValue("200") int height
@@ -405,10 +414,21 @@ public class OID4VCIssuerEndpoint {
             throw new CorsErrorResponseException(cors,
                     INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
         }
-        if (appUserId != null && session.users().getUserByUsername(realmModel, appUserId) == null) {
-            var errorMessage = "No such user id: " + appUserId;
-            throw new CorsErrorResponseException(cors,
-                    INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
+
+        String userId = null;
+        if (appUsername != null) {
+            UserModel user = session.users().getUserByUsername(realmModel, appUsername);
+            if (user == null) {
+                var errorMessage = "Not found user with username: " + appUsername;
+                throw new CorsErrorResponseException(cors,
+                        INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
+            }
+            if (!user.isEnabled()) {
+                var errorMessage = "User '" + appUsername + "' disabled";
+                throw new CorsErrorResponseException(cors,
+                        INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
+            }
+            userId = user.getId();
         }
 
         if (preAuthorized) {
@@ -416,7 +436,7 @@ public class OID4VCIssuerEndpoint {
                 appClientId = clientModel.getClientId();
                 LOGGER.warnf("Using fallback client id for credential offer: %s", appClientId);
             }
-            if (appUserId == null) {
+            if (appUsername == null) {
                 var errorMessage = "Pre-Authorized credential offer requires a target user";
                 throw new CorsErrorResponseException(cors,
                         INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
@@ -441,7 +461,7 @@ public class OID4VCIssuerEndpoint {
                 .setCredentialConfigurationIds(List.of(credConfigId));
 
         int expiration = timeProvider.currentTimeSeconds() + preAuthorizedCodeLifeSpan;
-        CredentialOfferState offerState = new CredentialOfferState(credOffer, appClientId, appUserId, expiration);
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, appClientId, userId, expiration);
 
         if (preAuthorized) {
             String code = "urn:oid4vci:code:" + SecretGenerator.getInstance().randomString(64);
@@ -567,7 +587,9 @@ public class OID4VCIssuerEndpoint {
         String vcIssuanceFlow = clientSession.getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
 
         if (vcIssuanceFlow == null || !vcIssuanceFlow.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
-            AccessToken accessToken = bearerTokenAuthenticator.authenticate().token();
+            // Use getAuthResult() instead of bearerTokenAuthenticator.authenticate() directly
+            // This ensures we benefit from the cachedAuthResult caching that prevents DPoP proof reuse
+            AccessToken accessToken = getAuthResult().token();
             if (Arrays.stream(accessToken.getScope().split(" "))
                     .noneMatch(tokenScope -> tokenScope.equals(requestedCredential.getScope()))) {
                 LOGGER.debugf("Scope check failure: required scope = %s, " +
@@ -712,7 +734,7 @@ public class OID4VCIssuerEndpoint {
             //
             UserSessionModel userSession = authResult.session();
             UserModel userModel = userSession.getUser();
-            if (!userModel.getUsername().equals(offerState.getUserId())) {
+            if (!userModel.getId().equals(offerState.getUserId())) {
                 var errorMessage = "Unexpected login user: " + userModel.getUsername();
                 LOGGER.errorf(errorMessage + " != %s", offerState.getUserId());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
@@ -768,8 +790,14 @@ public class OID4VCIssuerEndpoint {
         } else {
             // Issue credentials for each proof
             Proofs originalProofs = credentialRequestVO.getProofs();
+            // Determine the proof type from the original proofs
+            String proofType = originalProofs != null ? originalProofs.getProofType() : null;
+
             for (String currentProof : allProofs) {
-                credentialRequestVO.setProofs(new Proofs().setJwt(List.of(currentProof)));
+                Proofs proofForIteration = new Proofs();
+                proofForIteration.setProofByType(proofType, currentProof);
+                // Creating credential with keybinding to the current proof
+                credentialRequestVO.setProofs(proofForIteration);
                 Object theCredential = getCredential(authResult, supportedCredential, credentialRequestVO);
                 responseVO.addCredential(theCredential);
             }
@@ -830,7 +858,8 @@ public class OID4VCIssuerEndpoint {
             return credentialRequest;
         } catch (JsonProcessingException e) {
             String errorMessage = "Failed to parse JSON request: " + e.getMessage();
-            LOGGER.debug(errorMessage);
+            LOGGER.errorf(e, "JSON parsing failed. Request payload length: %d", 
+                    requestPayload != null ? requestPayload.length() : 0);
             throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
     }
@@ -964,6 +993,8 @@ public class OID4VCIssuerEndpoint {
             credentialRequest.setProofs(proofsArray);
             credentialRequest.setProof(null);
         }
+
+        validateProofTypes(credentialRequest.getProofs());
     }
 
     private String selectKeyManagementAlg(CredentialResponseEncryptionMetadata metadata, JWK jwk) {
@@ -993,20 +1024,32 @@ public class OID4VCIssuerEndpoint {
     }
 
     private List<String> getAllProofs(CredentialRequest credentialRequestVO) {
-        List<String> allProofs = new ArrayList<>();
-
         Proofs proofs = credentialRequestVO.getProofs();
         if (proofs == null) {
-            return allProofs; // No proofs provided
+            return new ArrayList<>(); // No proofs provided
         }
 
-        if (proofs.getJwt() == null || proofs.getJwt().isEmpty()) {
+        // Validation already happened in normalizeProofFields, so we can safely extract proofs
+        return proofs.getAllProofs();
+    }
+
+    private void validateProofTypes(Proofs proofs) {
+        if (proofs == null) {
+            return;
+        }
+
+        boolean hasJwtProofs = hasProofEntries(proofs.getJwt());
+        boolean hasAttestationProofs = hasProofEntries(proofs.getAttestation());
+
+        if (hasJwtProofs && hasAttestationProofs) {
+            LOGGER.debug("The 'proofs' object must not contain multiple proof types.");
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF,
-                    "The 'proofs' object must contain exactly one proof type with non-empty array."));
+                    "The 'proofs' object must not contain multiple proof types."));
         }
+    }
 
-        allProofs.addAll(proofs.getJwt());
-        return allProofs;
+    private boolean hasProofEntries(List<String> proofs) {
+        return proofs != null && !proofs.isEmpty();
     }
 
     /**
@@ -1165,6 +1208,10 @@ public class OID4VCIssuerEndpoint {
     }
 
     private AuthenticationManager.AuthResult getAuthResult() {
+        if (cachedAuthResult != null) {
+            return cachedAuthResult;
+        }
+
         AuthenticationManager.AuthResult authResult = bearerTokenAuthenticator.authenticate();
         if (authResult == null) {
             throw new CorsErrorResponseException(
@@ -1175,7 +1222,7 @@ public class OID4VCIssuerEndpoint {
         }
 
         // Validate DPoP nonce if present in the DPoP proof
-        DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
+        DPoP dPoP = (DPoP) session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE);
         if (dPoP != null) {
             Object nonceClaim = Optional.ofNullable(dPoP.getOtherClaims())
                     .map(m -> m.get("nonce"))
@@ -1201,16 +1248,8 @@ public class OID4VCIssuerEndpoint {
             }
         }
 
-        return authResult;
-    }
-
-    // get the auth result from the authentication manager
-    private AuthenticationManager.AuthResult getAuthResult(WebApplicationException errorResponse) {
-        AuthenticationManager.AuthResult authResult = bearerTokenAuthenticator.authenticate();
-        if (authResult == null) {
-            throw errorResponse;
-        }
-        return authResult;
+        cachedAuthResult = authResult;
+        return cachedAuthResult;
     }
 
     /**
@@ -1245,7 +1284,7 @@ public class OID4VCIssuerEndpoint {
                 .filter(Objects::nonNull)
                 .toList();
 
-        VCIssuanceContext vcIssuanceContext = getVCToSign(protocolMappers, credentialConfig, authResult, credentialRequestVO);
+        VCIssuanceContext vcIssuanceContext = getVCToSign(protocolMappers, credentialConfig, authResult, credentialRequestVO, credentialScopeModel);
 
         // Enforce key binding prior to signing if necessary
         enforceKeyBindingIfProofProvided(vcIssuanceContext);
@@ -1299,7 +1338,8 @@ public class OID4VCIssuerEndpoint {
 
     // builds the unsigned credential by applying all protocol mappers.
     private VCIssuanceContext getVCToSign(List<OID4VCMapper> protocolMappers, SupportedCredentialConfiguration credentialConfig,
-                                          AuthenticationManager.AuthResult authResult, CredentialRequest credentialRequestVO) {
+                                          AuthenticationManager.AuthResult authResult, CredentialRequest credentialRequestVO,
+                                          CredentialScopeModel credentialScopeModel) {
 
         // Compute issuance date and apply correlation-mitigation according to realm configuration
         Instant issuance = Instant.ofEpochMilli(timeProvider.currentTimeMillis());
@@ -1307,7 +1347,7 @@ public class OID4VCIssuerEndpoint {
         Instant normalizedIssuance = timeClaimNormalizer.normalize(issuance);
 
         // Compute expiration date from client scope configuration and normalize it
-        CredentialScopeModel clientScopeModel = getClientScopeModel(credentialConfig);
+        CredentialScopeModel clientScopeModel = credentialScopeModel;
         Integer expiryInSeconds = clientScopeModel.getExpiryInSeconds();
         Instant expiration = normalizedIssuance.plusSeconds(expiryInSeconds);
         Instant normalizedExpiration = timeClaimNormalizer.normalize(expiration);
@@ -1354,9 +1394,9 @@ public class OID4VCIssuerEndpoint {
             return;
         }
 
-        // Validate each JWT proof if present
-        if (proofs.getJwt() != null && !proofs.getJwt().isEmpty()) {
-            validateProofs(vcIssuanceContext, ProofType.JWT);
+        // Validate each proof type that is present
+        for (String proofType : proofs.getPresentProofTypes()) {
+            validateProofs(vcIssuanceContext, proofType);
         }
     }
 

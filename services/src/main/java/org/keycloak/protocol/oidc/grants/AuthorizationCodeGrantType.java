@@ -244,6 +244,9 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             }
         }
 
+        // Call hook for post-processing authorization details (e.g., creating state objects)
+        afterAuthorizationDetailsProcessed(userSession, clientSessionCtx, authorizationDetailsResponse);
+
         return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, s -> {return new TokenResponseContext(formParams, parseResult, clientSessionCtx, s);});
     }
 
