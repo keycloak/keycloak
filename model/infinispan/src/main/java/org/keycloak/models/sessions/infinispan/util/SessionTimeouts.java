@@ -205,10 +205,14 @@ public class SessionTimeouts {
      * @return
      */
     public static long getLoginFailuresLifespanMs(RealmModel realm, ClientModel client, LoginFailureEntity loginFailureEntity) {
+        return getLoginFailuresLifespanMs(realm.isPermanentLockout(), realm.getMaxTemporaryLockouts(), realm.getMaxDeltaTimeSeconds() * 1000L, loginFailureEntity);
+    }
+
+    public static long getLoginFailuresLifespanMs(boolean isPermanentLockout, int maxTemporaryLockouts, long maxDeltaTimeMillis, LoginFailureEntity loginFailureEntity) {
         if (loginFailureEntity.getLastFailure() == 0) {
             // If login failure has been reset, expire the entry.
             return 0;
-        } else if (realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0) {
+        } else if (isPermanentLockout && maxTemporaryLockouts == 0) {
             // If mode is permanent lockout only, the "failure reset time" cannot be configured and login failures should never expire.
             return IMMORTAL_FLAG;
         } else {
@@ -216,7 +220,7 @@ public class SessionTimeouts {
             // If the time between login failures is greater than the failure reset time,
             // the brute force detector will reset the failure counter.
             // So we can safely evict the login failure entry from the cache after this time.
-            return Math.max(0, realm.getMaxDeltaTimeSeconds() * 1000L - (Time.currentTimeMillis() - loginFailureEntity.getLastFailure()));
+            return Math.max(0, maxDeltaTimeMillis - (Time.currentTimeMillis() - loginFailureEntity.getLastFailure()));
         }
     }
 
