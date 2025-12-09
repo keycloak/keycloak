@@ -451,7 +451,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      * and the credentials supported by the clients available in the session.
      */
     public static Map<String, SupportedCredentialConfiguration> getSupportedCredentials(KeycloakSession keycloakSession) {
-        List<String> globalSupportedSigningAlgorithms = getSupportedSignatureAlgorithms(keycloakSession);
+        List<String> globalSupportedSigningAlgorithms = getSupportedAsymmetricSignatureAlgorithms(keycloakSession);
 
         RealmModel realm = keycloakSession.getContext().getRealm();
         Map<String, SupportedCredentialConfiguration> supportedCredentialConfigurations =
@@ -471,7 +471,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     public static SupportedCredentialConfiguration toSupportedCredentialConfiguration(KeycloakSession keycloakSession,
                                                                                       CredentialScopeModel credentialModel) {
-        List<String> globalSupportedSigningAlgorithms = getSupportedSignatureAlgorithms(keycloakSession);
+        List<String> globalSupportedSigningAlgorithms = getSupportedAsymmetricSignatureAlgorithms(keycloakSession);
         return SupportedCredentialConfiguration.parse(keycloakSession,
                 credentialModel,
                 globalSupportedSigningAlgorithms);
@@ -499,18 +499,6 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      */
     public static String getCredentialsEndpoint(KeycloakContext context) {
         return getIssuer(context) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" + OID4VCIssuerEndpoint.CREDENTIAL_PATH;
-    }
-
-    public static List<String> getSupportedSignatureAlgorithms(KeycloakSession session) {
-        RealmModel realm = session.getContext().getRealm();
-        KeyManager keyManager = session.keys();
-
-        return keyManager.getKeysStream(realm)
-                .filter(key -> KeyUse.SIG.equals(key.getUse()))
-                .map(KeyWrapper::getAlgorithm)
-                .filter(algorithm -> algorithm != null && !algorithm.isEmpty())
-                .distinct()
-                .collect(Collectors.toList());
     }
 
     /**

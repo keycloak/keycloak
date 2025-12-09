@@ -566,9 +566,16 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                 assertEquals(expectedProofTypesSupported,
                         ProofTypesSupported.fromJsonString(proofTypesSupportedString));
 
-                List<String> expectedSigningAlgs = OID4VCIssuerWellKnownProvider.getSupportedSignatureAlgorithms(session);
+                List<String> expectedSigningAlgs = OID4VCIssuerWellKnownProvider.getSupportedAsymmetricSignatureAlgorithms(session);
                 MatcherAssert.assertThat(signingAlgsSupported,
                         Matchers.containsInAnyOrder(expectedSigningAlgs.toArray()));
+                
+                // Assert that all returned algorithms are asymmetric
+                for (String algorithm : signingAlgsSupported) {
+                    SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm);
+                    assertNotNull("SignatureProvider should exist for algorithm: " + algorithm, signatureProvider);
+                    assertTrue("Algorithm " + algorithm + " should be asymmetric", signatureProvider.isAsymmetricAlgorithm());
+                }
             })));
         } catch (Throwable e) {
             throw new RuntimeException(e);
