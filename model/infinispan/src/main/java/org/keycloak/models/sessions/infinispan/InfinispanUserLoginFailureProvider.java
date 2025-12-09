@@ -41,6 +41,7 @@ import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
+import org.infinispan.util.function.SerializableBiFunction;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
