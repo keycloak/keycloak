@@ -169,7 +169,7 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
                         long lifespan = SessionTimeouts.getLoginFailuresLifespanMs(isPermanentLockout, maxTemporaryLockouts, maxDeltaTimeMillis, entity);
                         c.getAdvancedCache()
                                 .withFlags(Flag.ZERO_LOCK_ACQUISITION_TIMEOUT,Flag.FAIL_SILENTLY, Flag.IGNORE_RETURN_VALUES)
-                                .computeIfPresent(entry.getKey(), (key, value) -> value, lifespan, TimeUnit.MILLISECONDS);
+                                .computeIfPresent(entry.getKey(), (SerializableBiFunction<? super LoginFailureKey, ? super SessionEntityWrapper<LoginFailureEntity>, ? extends SessionEntityWrapper<LoginFailureEntity>>) (key, value) -> value, lifespan, TimeUnit.MILLISECONDS);
                     });
         }
     }
