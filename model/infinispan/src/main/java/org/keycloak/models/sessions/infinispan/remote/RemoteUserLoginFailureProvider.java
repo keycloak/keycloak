@@ -22,7 +22,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserLoginFailureProvider;
@@ -48,11 +47,9 @@ public class RemoteUserLoginFailureProvider implements UserLoginFailureProvider 
     private static final Logger log = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     private final LoginFailureChangeLogTransaction transaction;
-    private final KeycloakSession session;
 
-    public RemoteUserLoginFailureProvider(LoginFailureChangeLogTransaction transaction, KeycloakSession session) {
+    public RemoteUserLoginFailureProvider(LoginFailureChangeLogTransaction transaction) {
         this.transaction = Objects.requireNonNull(transaction);
-        this.session = session;
     }
 
     @Override
