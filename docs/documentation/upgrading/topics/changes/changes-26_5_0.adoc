@@ -99,11 +99,13 @@ The `log-console-color` previously defaulted to `false`, but it will now instead
 
 You may still explicitly disable color support by setting the option to `false`.
 
-=== Some message keys no longer support HTML entities
+=== Message keys no longer support HTML or HTML entities in the login theme
 
-The following message keys in translations no longer support HTML entities: `backToLogin`, `backToApplication`, `proceedWithAction`.
+Message keys in translations no longer support HTML or HTML entities for the login theme.
+The same is true for error messages generated in the backend.
+For the Legacy Login Theme, HTML and HTML entities are still partially supported for backward compatibility.
 
-The default themes have already been updated. If you used them in your translations, please update your translation to use the UTF-8 equivalent.
+The default login themes have already been updated. If you used them in your translations, please update your translation to use the UTF-8 equivalent if you used HTML entities, and replace HTML with plain text.
 
 === Permissions of the database user for PostgreSQL
 
