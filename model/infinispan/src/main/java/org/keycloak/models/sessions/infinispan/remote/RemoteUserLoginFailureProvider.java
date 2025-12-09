@@ -18,9 +18,9 @@ package org.keycloak.models.sessions.infinispan.remote;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -29,6 +29,7 @@ import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.query.LoginFailureQueries;
+import org.keycloak.models.sessions.infinispan.query.QueryHelper;
 import org.keycloak.models.sessions.infinispan.remote.transaction.LoginFailureChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 

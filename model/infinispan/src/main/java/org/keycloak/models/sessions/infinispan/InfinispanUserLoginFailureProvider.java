@@ -20,8 +20,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.infinispan.context.Flag;
-
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
@@ -42,6 +40,7 @@ import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 import org.infinispan.Cache;
+import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
