@@ -348,3 +348,42 @@ test("should save Deflate Compression setting", async ({ page }) => {
     "false",
   );
 });
+
+test("should save Attestation Trust settings (Trusted Keys and IDs)", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed();
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const trustedKeyIdsInput = page.getByTestId("trusted-key-ids");
+  const trustedKeysInput = page.getByTestId("trusted-keys");
+
+  const testKeyIds = "kid-1, kid-2, kid-3";
+  const testTrustedKeysJson =
+    '[{"kty":"RSA","kid":"external-key","n":"...","e":"AQAB"}]';
+
+  await expect(trustedKeyIdsInput).toBeVisible();
+  await expect(trustedKeysInput).toBeVisible();
+
+  await trustedKeyIdsInput.fill(testKeyIds);
+  await trustedKeysInput.fill(testTrustedKeysJson);
+
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["oid4vc.attestation.trusted_key_ids"]).toBe(
+    testKeyIds,
+  );
+  expect(realmData?.attributes?.["oid4vc.attestation.trusted_keys"]).toBe(
+    testTrustedKeysJson,
+  );
+});

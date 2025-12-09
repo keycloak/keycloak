@@ -19,6 +19,7 @@ import {
   Switch,
   Text,
   TextInput,
+  TextArea,
   TextVariants,
 } from "@patternfly/react-core";
 import { useState } from "react";
@@ -774,6 +775,63 @@ export const RealmSettingsTokensTab = ({
             }}
             data-testid="batch-issuance-size"
           />
+
+          <Text
+            className="kc-override-action-tokens-subtitle"
+            component={TextVariants.h1}
+          >
+            {t("attestationTrust")}
+          </Text>
+          <FormGroup
+            label={t("trustedKeyIds")}
+            fieldId="trustedKeyIds"
+            labelIcon={
+              <HelpItem
+                helpText={t("trustedKeyIdsHelp")}
+                fieldLabelId="trustedKeyIds"
+              />
+            }
+          >
+            <TextInput
+              id="trustedKeyIds"
+              data-testid="trusted-key-ids"
+              {...register(
+                convertAttributeNameToForm(
+                  "attributes.oid4vc.attestation.trusted_key_ids",
+                ),
+              )}
+            />
+          </FormGroup>
+          <FormGroup
+            label={t("trustedKeys")}
+            fieldId="trustedKeys"
+            labelIcon={
+              <HelpItem
+                helpText={t("trustedKeysHelp")}
+                fieldLabelId="trustedKeys"
+              />
+            }
+          >
+            <Controller
+              name={convertAttributeNameToForm(
+                "attributes.oid4vc.attestation.trusted_keys",
+              )}
+              control={control}
+              defaultValue={
+                realm.attributes?.["oid4vc.attestation.trusted_keys"]
+              }
+              render={({ field }) => (
+                <TextArea
+                  id="trustedKeys"
+                  data-testid="trusted-keys"
+                  value={field.value}
+                  onChange={(_event, value) => field.onChange(value)}
+                  resizeOrientation="vertical"
+                />
+              )}
+            />
+          </FormGroup>
+
           <Text
             className="kc-override-action-tokens-subtitle"
             component={TextVariants.h1}
