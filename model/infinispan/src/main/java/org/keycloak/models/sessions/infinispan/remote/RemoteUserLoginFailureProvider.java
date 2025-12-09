@@ -96,26 +96,24 @@ public class RemoteUserLoginFailureProvider implements UserLoginFailureProvider 
         if (!realm.isBruteForceProtected()) {
             removeAllUserLoginFailures(realm);
         } else {
+            final long maxDeltaTimeMillis = realm.getMaxDeltaTimeSeconds() * 1000L;
+            final boolean isPermanentLockout = realm.isPermanentLockout();
+            final int maxTemporaryLockouts = realm.getMaxTemporaryLockouts();
             Query<LoginFailureEntity> query = LoginFailureQueries.searchByRealmId(cache, realm.getId());
             CompletionStages.performConcurrently(
-                    query,
+                    QueryHelper.streamAll(query, 20, Function.identity()),
                     20,
                     Schedulers.from(new WithinThreadExecutor()),
-                    entry -> updateLifetimeOfCacheEntry(new LoginFailureKey(entry.getRealmId(), entry.getUserId()), entry, realm, cache), Collectors.counting());
+                    entry -> updateLifetimeOfCacheEntry(entry, cache, isPermanentLockout, maxTemporaryLockouts, maxDeltaTimeMillis));
         }
     }
 
-    private static CompletableFuture<LoginFailureEntity> updateLifetimeOfCacheEntry(LoginFailureKey key, LoginFailureEntity value, RealmModel realm, RemoteCache<LoginFailureKey, LoginFailureEntity> cache) {
-        long lifespanMs = SessionTimeouts.getLoginFailuresLifespanMs(realm, null, value);
-        long maxIdleMs = SessionTimeouts.getLoginFailuresMaxIdleMs(realm, null, value);
-        return cache.computeIfPresentAsync(key,
+    private static CompletionStage<?> updateLifetimeOfCacheEntry(LoginFailureEntity entry, RemoteCache<LoginFailureKey, LoginFailureEntity> cache, boolean isPermanentLockout, int maxTemporaryLockouts, long maxDeltaTimeMillis) {
+        long lifespan = SessionTimeouts.getLoginFailuresLifespanMs(isPermanentLockout, maxTemporaryLockouts, maxDeltaTimeMillis, entry);
+        return cache.computeIfPresentAsync(new LoginFailureKey(entry.getRealmId(), entry.getUserId()),
                 // Keep the original value - this should only update the lifespan and idle time
                 (loginFailureKey, loginFailureEntitySessionEntityWrapper) -> loginFailureEntitySessionEntityWrapper,
-                lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
-    }
-
-    private static CompletableFuture<LoginFailureEntity> removeKeyFromCache(RemoteCache<LoginFailureKey, LoginFailureEntity> cache, LoginFailureKey key) {
-        return cache.removeAsync(key);
+                lifespan, TimeUnit.MILLISECONDS);
     }
 
     @Override
