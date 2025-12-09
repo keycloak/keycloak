@@ -118,6 +118,7 @@ public class RetryAndBackOffTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             var realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             var loginFailures = session.loginFailures().getUserLoginFailure(realm, userId);
             loginFailures.incrementFailures();
         });
@@ -138,6 +139,7 @@ public class RetryAndBackOffTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             var realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             session.loginFailures().removeUserLoginFailure(realm, userId);
         });
 
@@ -160,6 +162,7 @@ public class RetryAndBackOffTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             var realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             var loginFailures = session.loginFailures().getUserLoginFailure(realm, userId);
             loginFailures.incrementFailures();
         });
