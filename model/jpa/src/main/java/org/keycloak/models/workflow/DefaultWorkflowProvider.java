@@ -246,12 +246,12 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
             EventBasedWorkflow provider = new EventBasedWorkflow(session, getWorkflowComponent(workflow.getId()));
 
             try {
-                DefaultWorkflowExecutionContext context = new DefaultWorkflowExecutionContext(session, workflow, event);
-
                 if (!provider.supports(event.getResourceType())) {
                     // Prevents loading of scheduled steps when this resource type is not supported for the workflow
                     return;
                 }
+
+                DefaultWorkflowExecutionContext context = new DefaultWorkflowExecutionContext(session, workflow, event);
 
                 if (scheduledSteps[0] == null) {
                     // Lazily loading the current steps for this resource
