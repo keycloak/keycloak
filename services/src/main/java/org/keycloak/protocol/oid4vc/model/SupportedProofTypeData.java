@@ -58,6 +58,15 @@ public class SupportedProofTypeData {
         return this;
     }
 
+    /**
+     * Returns the key attestations required.
+     * According to the spec:
+     * - If the Credential Issuer does not require a key attestation, this parameter MUST NOT be present (should be null).
+     * - If both key_storage and user_authentication parameters are absent, the key_attestations_required parameter
+     * may be empty (both fields null), indicating a key attestation is needed without additional constraints.
+     *
+     * @return KeyAttestationsRequired object, or null if attestation is not required
+     */
     public KeyAttestationsRequired getKeyAttestationsRequired() {
         return keyAttestationsRequired;
     }
