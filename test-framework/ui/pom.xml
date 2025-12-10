@@ -32,8 +32,8 @@
     <description>UI extension for Keycloak Test Framework</description>
 
     <properties>
-        <selenium.version>4.25.0</selenium.version>
-        <selenium.html.unit.version>4.25.0</selenium.html.unit.version>
+        <selenium.version>4.39.0</selenium.version>
+        <selenium.html.unit.version>4.39.0</selenium.html.unit.version>
     </properties>
 
     <dependencies>
