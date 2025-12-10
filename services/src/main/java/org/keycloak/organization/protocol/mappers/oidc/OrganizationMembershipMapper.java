@@ -162,11 +162,13 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
             Map<String, Object> claims = new HashMap<>();
 
-            if (isAddOrganizationId(model)) {
-                claims.put(OAuth2Constants.ORGANIZATION_ID, o.getId());
-            }
+            // Add organization attributes first
             if (isAddOrganizationAttributes(model)) {
                 claims.putAll(o.getAttributes());
+            }
+            // Add organization ID last so it overrides any custom "id" attribute
+            if (isAddOrganizationId(model)) {
+                claims.put(OAuth2Constants.ORGANIZATION_ID, o.getId());
             }
 
             value.put(o.getAlias(), claims);

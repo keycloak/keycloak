@@ -79,8 +79,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Before
     public void onBefore() {
-        setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, null);
         setMapperConfig(ProtocolMapperUtils.MULTIVALUED, null);
+        setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, null);
     }
 
     @Test
@@ -982,6 +982,41 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
         List<String> organization = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organization, containsInAnyOrder("orga", "orgb"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testOrganizationAttributeNamedIdIsOverriddenByOrganizationId() throws Exception {
+        // When an organization has a custom attribute called "id", the organization ID should override it in tokens
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+        addMember(organization);
+        
+        // Add a custom attribute named "id" to the organization
+        orgRep.singleAttribute("id", "custom-id-value");
+        
+        try (Response response = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        
+        // Verify that organization ID overrides custom "id" attribute in tokens
+        setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ID, Boolean.TRUE.toString());
+        setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ATTRIBUTES, Boolean.TRUE.toString());
+
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid organization");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+        assertThat(response.getScope(), containsString("organization"));
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        
+        Map<String, Map<String, String>> organizations = (Map<String, Map<String, String>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.keySet(), hasItem(organizationName));
+        Map<String, String> orgClaims = organizations.get(organizationName);
+        
+        // The "id" attribute should contain the organization ID, not the custom value
+        assertThat(orgClaims.get("id"), equalTo(orgRep.getId()));
+        assertThat(orgClaims.get("id"), not(equalTo("custom-id-value")));
     }
 
     private AccessTokenResponse assertSuccessfulCodeGrant() {
