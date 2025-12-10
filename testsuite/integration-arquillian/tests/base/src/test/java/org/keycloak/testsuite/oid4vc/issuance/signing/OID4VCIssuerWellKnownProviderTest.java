@@ -60,6 +60,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
+import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -536,9 +537,20 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                 Matchers.containsInAnyOrder(credentialDefinitionTypes.toArray()));
 
         List<String> signingAlgsSupported = new ArrayList<>(supportedConfig.getCredentialSigningAlgValuesSupported());
-        String proofTypesSupportedString = supportedConfig.getProofTypesSupported().toJsonString();
+        ProofTypesSupported proofTypesSupported = supportedConfig.getProofTypesSupported();
+        String proofTypesSupportedString = proofTypesSupported.toJsonString();
 
-        KeyAttestationsRequired expectedKeyAttestationsRequired = null;
+        MatcherAssert.assertThat(proofTypesSupported.getSupportedProofTypes().keySet(),
+                Matchers.containsInAnyOrder(ProofType.JWT, ProofType.ATTESTATION));
+
+        List<String> expectedProofSigningAlgs = List.of(
+                Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
+                Algorithm.RS256, Algorithm.RS384, Algorithm.RS512,
+                Algorithm.ES256, Algorithm.ES384, Algorithm.ES512,
+                Algorithm.EdDSA
+        );
+
+        KeyAttestationsRequired expectedKeyAttestationsRequired;
         if (Boolean.parseBoolean(clientScope.getAttributes().get(CredentialScopeModel.KEY_ATTESTATION_REQUIRED))) {
             expectedKeyAttestationsRequired = new KeyAttestationsRequired();
             expectedKeyAttestationsRequired.setKeyStorage(
@@ -551,31 +563,38 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                                                .get(CredentialScopeModel.KEY_ATTESTATION_REQUIRED_USER_AUTH))
                         .map(s -> Arrays.asList(s.split(",")))
                         .orElse(null));
+        } else {
+            expectedKeyAttestationsRequired = null;
         }
         String expectedKeyAttestationsRequiredString = toJsonString(expectedKeyAttestationsRequired);
 
+        proofTypesSupported.getSupportedProofTypes().values()
+                .forEach(proofTypeData -> {
+                    assertEquals(expectedKeyAttestationsRequired, proofTypeData.getKeyAttestationsRequired());
+                    MatcherAssert.assertThat(proofTypeData.getSigningAlgorithmsSupported(),
+                            Matchers.containsInAnyOrder(expectedProofSigningAlgs.toArray()));
+                });
+
         try {
             withCausePropagation(() -> testingClient.server(TEST_REALM_NAME).run((session -> {
-                KeyAttestationsRequired keyAttestationsRequired = //
-                    Optional.ofNullable(expectedKeyAttestationsRequiredString)
-                            .map(s -> fromJsonString(s, KeyAttestationsRequired.class))
-                            .orElse(null);
-                ProofTypesSupported expectedProofTypesSupported = ProofTypesSupported.parse(session,
-                                                                                            keyAttestationsRequired,
-                                                                                            List.of(Algorithm.RS256));
-                assertEquals(expectedProofTypesSupported,
-                        ProofTypesSupported.fromJsonString(proofTypesSupportedString));
+                ProofTypesSupported actualProofTypesSupported = ProofTypesSupported.fromJsonString(proofTypesSupportedString);
+                List<String> actualProofSigningAlgs = actualProofTypesSupported
+                        .getSupportedProofTypes()
+                        .get(ProofType.JWT)
+                        .getSigningAlgorithmsSupported();
 
-                List<String> expectedSigningAlgs = OID4VCIssuerWellKnownProvider.getSupportedAsymmetricSignatureAlgorithms(session);
+                KeyAttestationsRequired keyAttestationsRequired = //
+                        Optional.ofNullable(expectedKeyAttestationsRequiredString)
+                                .map(s -> fromJsonString(s, KeyAttestationsRequired.class))
+                                .orElse(null);
+
+                ProofTypesSupported expectedProofTypesSupported = ProofTypesSupported.parse(
+                        session, keyAttestationsRequired, actualProofSigningAlgs);
+                assertEquals(expectedProofTypesSupported, actualProofTypesSupported);
+
+                List<String> expectedSigningAlgs = List.of(Algorithm.RS256);
                 MatcherAssert.assertThat(signingAlgsSupported,
                         Matchers.containsInAnyOrder(expectedSigningAlgs.toArray()));
-                
-                // Assert that all returned algorithms are asymmetric
-                for (String algorithm : signingAlgsSupported) {
-                    SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm);
-                    assertNotNull("SignatureProvider should exist for algorithm: " + algorithm, signatureProvider);
-                    assertTrue("Algorithm " + algorithm + " should be asymmetric", signatureProvider.isAsymmetricAlgorithm());
-                }
             })));
         } catch (Throwable e) {
             throw new RuntimeException(e);
