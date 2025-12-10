@@ -162,6 +162,14 @@ See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to 
 For each expired user session there is a new user event `USER_SESSION_DELETED` fired.
 As part of this change, the process now deletes rows from the table in small batches, instead of issuing a delete statements that affects the whole table. This should allow for better response times when there are a lot of sessions in the table.
 
+=== Organization custom attribute named 'id' behavior change
+
+Organizations can have custom attributes named `id`. When both organization attributes and organization ID are included in tokens via the organization membership mapper configuration,
+the organization ID will override any custom `id` attribute value. Previously, the organization ID was added first and could be overridden by custom attributes.
+This ensures that the `id` field in the organization claims always contains the actual organization ID.
+
+If you have a custom organization attribute named `id` and rely on its value in tokens, you should rename the attribute to avoid it being overridden by the organization ID.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
