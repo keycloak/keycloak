@@ -103,42 +103,6 @@
                     </div>
                     <div class="pf-v5-c-form__group">
                       <div class="pf-v5-c-form__group-label">
-                        <label class="pf-v5-c-form__label" for="firstName">
-                          <span class="pf-v5-c-form__label-text">First name</span>
-                        </label>
-                      </div>
-                      <div class="pf-v5-c-form__group-control">
-                        <span class="pf-v5-c-form-control">
-                          <input id="firstName" type="text" name="firstName" autocomplete="given-name">
-                        </span>
-                      </div>
-                    </div>
-                    <div class="pf-v5-c-form__group">
-                      <div class="pf-v5-c-form__group-label">
-                        <label class="pf-v5-c-form__label" for="lastName">
-                          <span class="pf-v5-c-form__label-text">Last name</span>
-                        </label>
-                      </div>
-                      <div class="pf-v5-c-form__group-control">
-                        <span class="pf-v5-c-form-control">
-                          <input id="lastName" type="text" name="lastName" autocomplete="family-name">
-                        </span>
-                      </div>
-                    </div>
-                    <div class="pf-v5-c-form__group">
-                      <div class="pf-v5-c-form__group-label">
-                        <label class="pf-v5-c-form__label" for="email">
-                          <span class="pf-v5-c-form__label-text">Email</span>
-                        </label>
-                      </div>
-                      <div class="pf-v5-c-form__group-control">
-                        <span class="pf-v5-c-form-control">
-                          <input id="email" type="email" name="email" autocomplete="email">
-                        </span>
-                      </div>
-                    </div>
-                    <div class="pf-v5-c-form__group">
-                      <div class="pf-v5-c-form__group-label">
                         <label class="pf-v5-c-form__label" for="password">
                           <span class="pf-v5-c-form__label-text">Password</span>&nbsp;<span class="pf-v5-c-form__label-required" aria-hidden="true">&#42;</span>
                         </label>
@@ -158,6 +122,42 @@
                       <div class="pf-v5-c-form__group-control">
                         <span class="pf-v5-c-form-control pf-m-required">
                           <input id="password-confirmation" type="password" name="passwordConfirmation" autocomplete="new-password" required>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="pf-v5-c-form__group">
+                      <div class="pf-v5-c-form__group-label">
+                        <label class="pf-v5-c-form__label" for="email">
+                          <span class="pf-v5-c-form__label-text">Email</span>
+                        </label>
+                      </div>
+                      <div class="pf-v5-c-form__group-control">
+                        <span class="pf-v5-c-form-control">
+                          <input id="email" type="email" name="email" autocomplete="email">
+                        </span>
+                      </div>
+                    </div>
+                    <div class="pf-v5-c-form__group">
+                      <div class="pf-v5-c-form__group-label">
+                        <label class="pf-v5-c-form__label" for="firstName">
+                          <span class="pf-v5-c-form__label-text">First name</span>
+                        </label>
+                      </div>
+                      <div class="pf-v5-c-form__group-control">
+                        <span class="pf-v5-c-form-control">
+                          <input id="firstName" type="text" name="firstName" autocomplete="given-name">
+                        </span>
+                      </div>
+                    </div>
+                    <div class="pf-v5-c-form__group">
+                      <div class="pf-v5-c-form__group-label">
+                        <label class="pf-v5-c-form__label" for="lastName">
+                          <span class="pf-v5-c-form__label-text">Last name</span>
+                        </label>
+                      </div>
+                      <div class="pf-v5-c-form__group-control">
+                        <span class="pf-v5-c-form-control">
+                          <input id="lastName" type="text" name="lastName" autocomplete="family-name">
                         </span>
                       </div>
                     </div>
