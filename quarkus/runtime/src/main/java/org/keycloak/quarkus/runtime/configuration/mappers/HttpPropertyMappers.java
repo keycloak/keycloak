@@ -192,7 +192,7 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
     }
 
     private static boolean isHttpEnabled(String value) {
-        if (Environment.isDevMode() || Environment.isNonServerMode()) {
+        if (Environment.isDevMode() || org.keycloak.common.util.Environment.isNonServerMode()) {
             return true;
         }
         return Boolean.parseBoolean(value);
