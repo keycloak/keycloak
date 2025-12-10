@@ -81,6 +81,12 @@ If you are running on PostgreSQL as a database for {project_name}, ensure that t
 This is used during upgrades of {project_name} to determine an estimated number of rows in a table.
 If {project_name} does not have permissions to access these tables, it will log a warning and proceed with the less efficient `+SELECT COUNT(*) ...+` operation during the upgrade to determine the number of rows in tables affected by schema changes.
 
+=== Expiration of login failures from the embedded caches
+
+Previous entries in the `loginFailures` cache never expired, and entries accumulated as users entered wrong credentials, increasing the memory consumption.
+
+Starting with this release, entries will expire based on the "`Failure reset time`" configured in the "`Brute force detection`" for the modes "`Lockout temporarily`" and "`Lockout permanently after temporary lockout`". For "`Lockout permanently`", entries will not expire as before, as this mode does not have a "`Failure reset time`".
+
 === Not recommended to use org.keycloak.credential.UserCredentialManager directly in your extensions
 
 If you have user storage extension and you reference the class `org.keycloak.credential.UserCredentialManager` from your providers, it is recommended to avoid using this class directly as it might be
