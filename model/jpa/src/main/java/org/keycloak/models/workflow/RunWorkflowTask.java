@@ -13,16 +13,24 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
 
     private static final Logger log = Logger.getLogger(RunWorkflowTask.class);
 
-    private final DefaultWorkflowExecutionContext context;
+    private final String executionId;
+    private final String resourceId;
+    private final Workflow workflow;
+    private final WorkflowStep currentStep;
+    private final WorkflowEvent event;
 
     RunWorkflowTask(DefaultWorkflowExecutionContext context) {
         super(context.getSession());
-        this.context = context;
+        this.executionId = context.getExecutionId();
+        this.resourceId = context.getResourceId();
+        this.workflow = context.getWorkflow();
+        this.currentStep = context.getCurrentStep();
+        this.event = context.getEvent();
     }
 
     @Override
     public void run(KeycloakSession session) {
-        DefaultWorkflowProvider provider = (DefaultWorkflowProvider) session.getProvider(WorkflowProvider.class);
+        DefaultWorkflowExecutionContext context = new DefaultWorkflowExecutionContext(session, workflow, event, currentStep == null ? null : currentStep.getId(), executionId, resourceId);
         String executionId = context.getExecutionId();
         String resourceId = context.getResourceId();
         Workflow workflow = context.getWorkflow();
@@ -30,7 +38,7 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
 
         if (currentStep != null) {
             // we are resuming from a scheduled step - run it and then continue with the rest of the workflow
-            runWorkflowStep(session, provider, context);
+            runWorkflowStep(context);
         }
 
         List<WorkflowStep> stepsToRun = workflow.getSteps()
@@ -47,13 +55,13 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
             } else {
                 // Otherwise, run the step right away
                 context.setCurrentStep(step);
-                runWorkflowStep(session, provider, context);
+
+                runWorkflowStep(context);
+
+                if (context.isRestarted()) {
+                    return;
+                }
             }
-        }
-        if (context.isRestarted()) {
-            // last step was a restart, so we restart the workflow from the beginning
-            context.restart();
-            return;
         }
 
         // not recurring, remove the state record
@@ -61,13 +69,13 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
         stateProvider.remove(executionId);
     }
 
-    private void runWorkflowStep(KeycloakSession session, DefaultWorkflowProvider provider, DefaultWorkflowExecutionContext context) {
+    private void runWorkflowStep(DefaultWorkflowExecutionContext context) {
         String executionId = context.getExecutionId();
         WorkflowStep step = context.getCurrentStep();
         String resourceId = context.getResourceId();
         log.debugf("Running step %s on resource %s (execution id: %s)", step.getProviderId(), resourceId, executionId);
         try {
-            getStepProvider(session, step).run(context);
+            getStepProvider(context.getSession(), step).run(context);
             log.debugf("Step %s completed successfully (execution id: %s)", step.getProviderId(), executionId);
         } catch(WorkflowExecutionException e) {
             StringBuilder sb = new StringBuilder();

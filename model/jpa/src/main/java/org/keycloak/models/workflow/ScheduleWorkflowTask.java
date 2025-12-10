@@ -10,11 +10,17 @@ final class ScheduleWorkflowTask extends WorkflowTransactionalTask {
 
     private static final Logger log = Logger.getLogger(ScheduleWorkflowTask.class);
 
-    private final DefaultWorkflowExecutionContext workflowContext;
+    private final String executionId;
+    private final String resourceId;
+    private final Workflow workflow;
+    private final WorkflowEvent event;
 
     ScheduleWorkflowTask(DefaultWorkflowExecutionContext context) {
         super(context.getSession());
-        this.workflowContext = context;
+        this.executionId = context.getExecutionId();
+        this.resourceId = context.getResourceId();
+        this.workflow = context.getWorkflow();
+        this.event = context.getEvent();
     }
 
     @Override
@@ -27,7 +33,7 @@ final class ScheduleWorkflowTask extends WorkflowTransactionalTask {
             return;
         }
 
-
+        DefaultWorkflowExecutionContext workflowContext = new DefaultWorkflowExecutionContext(session, workflow, event, null, executionId, resourceId);
         Workflow workflow = workflowContext.getWorkflow();
         WorkflowEvent event = workflowContext.getEvent();
         WorkflowStep firstStep = workflow.getSteps().findFirst().orElseThrow(() -> new WorkflowInvalidStateException("No steps found for workflow " + workflow.getName()));
@@ -46,7 +52,6 @@ final class ScheduleWorkflowTask extends WorkflowTransactionalTask {
 
     @Override
     public String toString() {
-        WorkflowEvent event = workflowContext.getEvent();
         return "eventType=" + event.getOperation() +
                 ",resourceType=" + event.getResourceType() +
                 ",resourceId=" + event.getResourceId();
