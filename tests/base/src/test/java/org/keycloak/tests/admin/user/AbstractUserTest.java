@@ -22,6 +22,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -210,7 +211,10 @@ public class AbstractUserTest {
         try (Response response = managedRealm.admin().users().delete(id)) {
             assertEquals(204, response.getStatus());
         }
-        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.userResourcePath(id), ResourceType.USER);
+        AdminEventRepresentation event = adminEvents.poll();
+        AdminEventAssertion.assertEvent(event, OperationType.DELETE, AdminEventPaths.userResourcePath(id), ResourceType.USER);
+        Assertions.assertNotNull(event.getRepresentation());
+        Assertions.assertTrue(event.getRepresentation().contains(id));
     }
 
     protected void addFederatedIdentity(String keycloakUserId, String identityProviderAlias1,
