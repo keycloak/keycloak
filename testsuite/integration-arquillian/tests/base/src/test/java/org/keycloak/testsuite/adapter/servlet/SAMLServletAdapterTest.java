@@ -2018,16 +2018,17 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
                 .username(admin).password(adminPassword).clientId(Constants.ADMIN_CLI_CLIENT_ID)
                 .resteasyClient(AdminClientUtil.createResteasyClient()).build();
                 CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build()) {
-            HttpUriRequest req = RequestBuilder.post()
-                    .setUri(loginPage.getAuthRoot() + "/admin/realms/" + SAMLSERVLETDEMO + "/users/" + userId + "/impersonation")
-                    .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + client.tokenManager().getAccessTokenString())
+            Map<String, Object> response = adminClient.realm(SAMLSERVLETDEMO).users().get(userId).impersonate();
+            
+            Assert.assertNotNull(response);
+            String redirect = (String) response.get("redirect");
+            Assert.assertNotNull(redirect);
+            
+            HttpUriRequest req = RequestBuilder.get()
+                    .setUri(redirect)
                     .build();
             HttpResponse res = httpClient.execute(req);
             Assert.assertEquals(Response.Status.OK.getStatusCode(), res.getStatusLine().getStatusCode());
-            String resBody = EntityUtils.toString(res.getEntity());
-
-            Assert.assertNotNull(resBody);
-            Assert.assertTrue(resBody.contains("redirect"));
 
             // return cookies not expired in the store as selenium cookies
             final Date now = new Date();

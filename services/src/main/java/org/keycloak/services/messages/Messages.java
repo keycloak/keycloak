@@ -347,4 +347,7 @@ public class Messages {
     public static final String CONFIRM_ORGANIZATION_MEMBERSHIP = "organization.confirm-membership";
     public static final String CONFIRM_ORGANIZATION_MEMBERSHIP_TITLE = "organization.confirm-membership.title";
     public static final String REGISTER_ORGANIZATION_MEMBER = "organization.member.register.title";
+
+    // Impersonation
+    public static final String IMPERSONATE_ERROR = "impersonateError";
 }

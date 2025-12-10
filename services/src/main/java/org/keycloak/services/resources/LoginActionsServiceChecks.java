@@ -159,6 +159,9 @@ public class LoginActionsServiceChecks {
      */
     public static <T extends JsonWebToken & SingleUseObjectKeyModel> void checkIsUserValid(T token, ActionTokenContext<T> context, EventBuilder event) throws VerificationException {
         try {
+            if (!context.getHandler().checkIsUserValid(token, context)) {
+                return;
+            }
             checkIsUserValid(context.getSession(), context.getRealm(), token.getUserId(), context.getAuthenticationSession()::setAuthenticatedUser, event);
         } catch (ExplainedVerificationException ex) {
             throw new ExplainedTokenVerificationException(token, ex);
