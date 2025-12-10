@@ -292,7 +292,7 @@ public class PropertyMapper<T> {
         // fall back to the transformer when no mapper is explicitly specified in .mapFrom()
         var theMapper = parentValue && parentMapper != null ? this.parentMapper : this.mapper;
         // since our mapping logic assumes fully resolved values, we cannot reliably map if Expressions are disabled
-        if (Expressions.isEnabled() && theMapper != null && (!name.equals(getFrom()) || parentValue)) {
+        if (Expressions.isEnabled() && theMapper != null && (name.equals(getTo()) || parentValue)) {
             mappedValue = theMapper.map(getNamedProperty().orElse(null), value, context);
             mapped = true;
         }

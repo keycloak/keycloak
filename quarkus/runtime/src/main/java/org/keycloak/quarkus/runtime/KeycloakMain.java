@@ -42,8 +42,8 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
 
+import static org.keycloak.common.util.Environment.isNonServerMode;
 import static org.keycloak.quarkus.runtime.Environment.getKeycloakModeFromProfile;
-import static org.keycloak.quarkus.runtime.Environment.isNonServerMode;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 
 /**
