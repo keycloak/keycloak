@@ -181,6 +181,20 @@ It is still triggered in this {project_name} version, but will be removed in a f
 Fine-Grained Admin Permissions (FGAP) v1 is now deprecated. This version no longer receives enhancements and improvements  and will be removed in future
 release. Please migrate to FGAP v2 to ensure continued support.
 
+=== Tracing options `tracing-service-name` and `tracing-resource-attributes`
+
+The `tracing-service-name` and `tracing-resource-attributes` options are now deprecated in favor of the new centralized telemetry options `telemetry-service-name` and `telemetry-resource-attributes`.
+The service name and resource attributes are not directly related to the OpenTelemetry Tracing itself, but to the whole OpenTelemetry settings.
+
+The deprecated options will continue to work, but the new telemetry options take precedence.
+
+Migration path:
+[source]
+----
+tracing-service-name --> telemetry-service-name
+tracing-resource-attributes --> telemetry-resource-attributes
+----
+
 // ------------------------ Removed features ------------------------ //
 == Removed features
 
