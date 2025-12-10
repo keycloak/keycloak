@@ -94,12 +94,6 @@
             </dependencies>
         </profile>
         <profile>
-            <id>jpa-performance</id>
-            <modules>
-                <module>jpa-performance</module>
-            </modules>
-        </profile>
-        <profile>
             <id>sssd</id>
             <modules>
                 <module>sssd</module>
