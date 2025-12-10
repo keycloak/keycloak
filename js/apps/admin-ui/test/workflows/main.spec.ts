@@ -22,18 +22,18 @@ import {
 function simpleWorkflowStr(name: string): string {
   return `---
     name: ${name}
-    on: user-logged-in
+    on: user_authenticated
     steps:
-      - uses: set-user-attribute
+      - uses: notify-user
         with:
-          test: value
+          message: Welcome to the Gold Membership program!
    `;
 }
 
 function complexWorkflowStr(name: string): string {
   return `
     name: ${name}
-    on: user-logged-in
+    on: user_authenticated
     if: "!has-role('realm-management/realm-admin')"
     steps:
       - uses: notify-user
