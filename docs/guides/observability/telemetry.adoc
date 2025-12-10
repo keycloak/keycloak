@@ -51,7 +51,7 @@ You can change the protocol via CLI as follows:
 
 == Traces
 
-{project_name} has already supported OpenTelemetry Tracing for some time, and you can find more information in the https://www.keycloak.org/observability/tracing[Root cause analysis with tracing guide].
+See the https://www.keycloak.org/observability/tracing[Root cause analysis with tracing guide].
 
 You can override the global OpenTelemetry settings via the Tracing options if you want to export traces to a different OpenTelemetry collector.
 
