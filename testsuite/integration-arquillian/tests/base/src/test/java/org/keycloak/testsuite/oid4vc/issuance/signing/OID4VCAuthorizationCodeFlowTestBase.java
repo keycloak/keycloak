@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 import jakarta.ws.rs.core.HttpHeaders;
 
@@ -114,8 +115,32 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         return ctx;
     }
 
+    // Test for the whole authorization_code flow with the credentialRequest using credential_configuration_id
     @Test
-    public void testCompleteFlowWithClaimsValidationAuthorizationCode() throws Exception {
+    public void testCompleteFlowWithClaimsValidationAuthorizationCode_credentialRequestWithConfigurationId() throws Exception {
+        BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
+            CredentialRequest credentialRequest = new CredentialRequest();
+            credentialRequest.setCredentialConfigurationId(credentialConfigurationId);
+            return credentialRequest;
+        };
+
+        testCompleteFlowWithClaimsValidationAuthorizationCode(credRequestSupplier);
+    }
+
+    // Test for the whole authorization_code flow with the credentialRequest using credential_identifier
+    @Test
+    public void testCompleteFlowWithClaimsValidationAuthorizationCode_credentialRequestWithCredentialIdentifier() throws Exception {
+        BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
+            CredentialRequest credentialRequest = new CredentialRequest();
+            credentialRequest.setCredentialIdentifier(credentialIdentifier);
+            return credentialRequest;
+        };
+
+        testCompleteFlowWithClaimsValidationAuthorizationCode(credRequestSupplier);
+    }
+
+
+    private void testCompleteFlowWithClaimsValidationAuthorizationCode(BiFunction<String, String, CredentialRequest> credentialRequestSupplier) throws Exception {
         Oid4vcTestContext ctx = prepareOid4vcTestContext(null);
 
         // Perform authorization code flow to get authorization code
@@ -179,13 +204,18 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         String credentialConfigurationId = authDetailResponse.getCredentialConfigurationId();
         assertNotNull("Credential configuration id should not be null", credentialConfigurationId);
 
+        List<String> credentialIdentifiers = authDetailResponse.getCredentialIdentifiers();
+        assertNotNull("Credential identifiers should not be null", credentialIdentifiers);
+        assertEquals("Credential identifiers expected to have 1 item. It had " + credentialIdentifiers.size() + " with value " + credentialIdentifiers,
+                1, credentialIdentifiers.size());
+        String credentialIdentifier = credentialIdentifiers.get(0);
+
         // Request the actual credential using the identifier
         HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
         postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + tokenResponse.getToken());
         postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
-        CredentialRequest credentialRequest = new CredentialRequest();
-        credentialRequest.setCredentialConfigurationId(credentialConfigurationId);
+        CredentialRequest credentialRequest = credentialRequestSupplier.apply(credentialConfigurationId, credentialIdentifier);
 
         String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
         postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));
