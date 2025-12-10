@@ -55,6 +55,12 @@ import org.jboss.logging.Logger;
  */
 public class LDAPEmbeddedServer {
 
+    static {
+        if (System.getProperty("java.util.logging.manager") == null) {
+            System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
+        }
+    }
+
     private static final Logger log = Logger.getLogger(LDAPEmbeddedServer.class);
     private static final int PAGE_SIZE = 30;
 
