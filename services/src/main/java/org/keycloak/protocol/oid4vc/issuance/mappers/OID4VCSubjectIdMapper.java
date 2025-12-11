@@ -34,7 +34,7 @@ import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUB;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 import static org.keycloak.OID4VCConstants.USER_ATTRIBUTE_NAME_DID;
 
 /**
@@ -70,7 +70,7 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         var mapperModel = new ProtocolMapperModel();
         mapperModel.setName(name);
         Map<String, String> configMap = new HashMap<>();
-        configMap.put(CLAIM_NAME, CLAIM_NAME_SUB);
+        configMap.put(CLAIM_NAME, CLAIM_NAME_SUBJECT_ID);
         configMap.put(USER_ATTRIBUTE_KEY, USER_ATTRIBUTE_NAME_DID);
         mapperModel.setConfig(configMap);
         mapperModel.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);

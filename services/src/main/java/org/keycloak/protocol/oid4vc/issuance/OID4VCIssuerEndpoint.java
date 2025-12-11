@@ -1373,7 +1373,7 @@ public class OID4VCIssuerEndpoint {
         validateRequestedClaimsArePresent(credClaims, authResult.session(), credentialConfig.getScope());
 
         // Include all available claims
-        credClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
+        credClaims.forEach(vc.getCredentialSubject()::setClaims);
 
         protocolMappers
                 .forEach(mapper -> mapper.setClaimsForCredential(vc, authResult.session()));
@@ -1381,8 +1381,8 @@ public class OID4VCIssuerEndpoint {
         LOGGER.debugf("The credential to sign is: %s", vc);
 
         // Build format-specific credential
-        CredentialBody credentialBody = this.findCredentialBuilder(credentialConfig)
-                .buildCredentialBody(vc, credentialConfig.getCredentialBuildConfig());
+        CredentialBuilder credentialBuilder = findCredentialBuilder(credentialConfig);
+        CredentialBody credentialBody = credentialBuilder.buildCredentialBody(vc, credentialConfig.getCredentialBuildConfig());
 
         return new VCIssuanceContext()
                 .setAuthResult(authResult)

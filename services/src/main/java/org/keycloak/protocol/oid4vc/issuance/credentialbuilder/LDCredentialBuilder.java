@@ -17,9 +17,14 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
+import java.util.Optional;
+
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
+import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 
 
 /**
@@ -29,6 +34,8 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
 public class LDCredentialBuilder implements CredentialBuilder {
+
+    private static final String ID_CLAIM_KEY = "id";
 
     public LDCredentialBuilder() {
     }
@@ -46,6 +53,14 @@ public class LDCredentialBuilder implements CredentialBuilder {
         // The default credential format is basically this format,
         // so not much is to be done.
         verifiableCredential.setIssuer(credentialBuildConfig.getCredentialIssuer());
+
+        // Map the subject id claim to 'id'
+        // We can't use claim name 'id' directly because it clashes with vc_id
+        CredentialSubject subject = verifiableCredential.getCredentialSubject();
+        Optional.ofNullable(subject.getClaims().remove(CLAIM_NAME_SUBJECT_ID)).ifPresent(id -> {
+            subject.getClaims().put(ID_CLAIM_KEY, id);
+        });
+
         return new LDCredentialBody(verifiableCredential);
     }
 }
