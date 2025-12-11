@@ -6,6 +6,12 @@ The acr claim can be requested in the `claims` or `acr_values` parameter sent in
 
 Mapping can be also specified at the client level in case that particular client needs to use different values than realm. However, a best practice is to stick to realm mappings.
 
+.ACR to LoA mapping
 image:images/realm-oidc-map-acr-to-loa.png[alt="ACR to LoA mapping"]
 
 For further details see  <<_step-up-flow,Step-up Authentication>> and  https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[the official OIDC specification].
+
+If the feature for <<_step-up-authentication-saml,Step-up authentication for SAML>> is enabled, the ACR to LoA mapping is a table with three values. The new URI column is the URI that will map the SAML authentication context class reference to the numeric LoA. This new column is necessary if you want to use step-up authentication with the SAML protocol.
+
+.ACR/URI to LoA mapping
+image:images/realm-oidc-map-acr-uri-to-loa.png[alt="ACR/URI to LoA mapping"]
