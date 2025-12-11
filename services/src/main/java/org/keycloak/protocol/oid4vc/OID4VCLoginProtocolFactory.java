@@ -18,9 +18,11 @@
 package org.keycloak.protocol.oid4vc;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.Config;
+import org.keycloak.VCFormat;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -53,7 +55,6 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BIN
 import static org.keycloak.models.oid4vci.CredentialScopeModel.EXPIRY_IN_SECONDS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.EXPIRY_IN_SECONDS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.FORMAT;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.FORMAT_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.HASH_ALGORITHM;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.HASH_ALGORITHM_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.INCLUDE_IN_METADATA;
@@ -120,18 +121,20 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     public void createDefaultClientScopes(RealmModel newRealm, boolean addScopesToExistingClients) {
         LOGGER.debugf("Create default scopes for realm %s", newRealm.getName());
 
-        ClientScopeModel naturalPersonScope = KeycloakModelUtils.getClientScopeByName(newRealm, "natural_person");
-        if (naturalPersonScope == null) {
-            LOGGER.debug("Add natural person scope");
-            naturalPersonScope = newRealm.addClientScope(String.format("%s_%s", OID4VC_PROTOCOL, "natural_person"));
-            naturalPersonScope.setDescription("OID4VCI Scope, that adds properties required for a natural person.");
-            naturalPersonScope.setProtocol(OID4VC_PROTOCOL);
-            naturalPersonScope.addProtocolMapper(builtins.get(SUBJECT_ID_MAPPER));
-            naturalPersonScope.addProtocolMapper(builtins.get(EMAIL_MAPPER));
-            naturalPersonScope.addProtocolMapper(builtins.get(FIRST_NAME_MAPPER));
-            naturalPersonScope.addProtocolMapper(builtins.get(LAST_NAME_MAPPER));
-            addClientScopeDefaults(naturalPersonScope);
-            newRealm.addDefaultClientScope(naturalPersonScope, true);
+        for (String scopeName : List.of("natural_person_jwt", "natural_person_sd", "natural_person_ld")) {
+            ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(newRealm, scopeName);
+            if (clientScope == null) {
+                LOGGER.debug("Add natural person scope");
+                clientScope = newRealm.addClientScope(String.format("%s_%s", OID4VC_PROTOCOL, scopeName));
+                clientScope.setDescription("OID4VCI Scope, that adds properties required for a natural person.");
+                clientScope.setProtocol(OID4VC_PROTOCOL);
+                clientScope.addProtocolMapper(builtins.get(SUBJECT_ID_MAPPER));
+                clientScope.addProtocolMapper(builtins.get(EMAIL_MAPPER));
+                clientScope.addProtocolMapper(builtins.get(FIRST_NAME_MAPPER));
+                clientScope.addProtocolMapper(builtins.get(LAST_NAME_MAPPER));
+                addClientScopeDefaults(clientScope);
+                newRealm.addDefaultClientScope(clientScope, true);
+            }
         }
     }
 
@@ -142,6 +145,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     @Override
     public void addClientScopeDefaults(ClientScopeRepresentation clientScope) {
+        String scopeName = clientScope.getName();
 
         // Note, there is no sensible default for the Issuer's DID unless we generate a did:key:* from the signing key
         // Leaving vc.issuer_did undefined results in the realm's url being used as the value for the Issuer's ID (iss), which is fine.
@@ -149,18 +153,23 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
         clientScope.getAttributes().putIfAbsent(INCLUDE_IN_TOKEN_SCOPE, "true");
         clientScope.getAttributes().putIfAbsent(INCLUDE_IN_METADATA, "true");
-        clientScope.getAttributes().computeIfAbsent(CONFIGURATION_ID, k -> clientScope.getName());
-        clientScope.getAttributes().computeIfAbsent(CREDENTIAL_IDENTIFIER, k -> clientScope.getName());
-        clientScope.getAttributes().computeIfAbsent(TYPES, k -> clientScope.getName());
-        clientScope.getAttributes().computeIfAbsent(CONTEXTS, k -> clientScope.getName());
-        clientScope.getAttributes().computeIfAbsent(VCT, k -> clientScope.getName());
-        clientScope.getAttributes().computeIfAbsent(FORMAT, k -> FORMAT_DEFAULT);
+        clientScope.getAttributes().computeIfAbsent(CONFIGURATION_ID, k -> scopeName);
+        clientScope.getAttributes().computeIfAbsent(CREDENTIAL_IDENTIFIER, k -> scopeName);
+        clientScope.getAttributes().computeIfAbsent(TYPES, k -> scopeName);
+        clientScope.getAttributes().computeIfAbsent(CONTEXTS, k -> scopeName);
+        clientScope.getAttributes().computeIfAbsent(VCT, k -> scopeName);
         clientScope.getAttributes().computeIfAbsent(CRYPTOGRAPHIC_BINDING_METHODS, k -> CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
-        clientScope.getAttributes().computeIfAbsent(SD_JWT_NUMBER_OF_DECOYS, k -> String.valueOf(SD_JWT_DECOYS_DEFAULT));
-        clientScope.getAttributes().computeIfAbsent(SD_JWT_VISIBLE_CLAIMS, k -> SD_JWT_VISIBLE_CLAIMS_DEFAULT);
         clientScope.getAttributes().computeIfAbsent(HASH_ALGORITHM, k -> HASH_ALGORITHM_DEFAULT);
         clientScope.getAttributes().computeIfAbsent(TOKEN_JWS_TYPE, k -> TOKEN_TYPE_DEFAULT);
         clientScope.getAttributes().computeIfAbsent(EXPIRY_IN_SECONDS, k -> String.valueOf(EXPIRY_IN_SECONDS_DEFAULT));
+
+        clientScope.getAttributes().computeIfAbsent(FORMAT, k -> VCFormat.fromScopeName(scopeName).getValue());
+        VCFormat format = VCFormat.fromValue(clientScope.getAttributes().get(FORMAT));
+
+        if (format == VCFormat.SD_JWT_VC) {
+            clientScope.getAttributes().computeIfAbsent(SD_JWT_NUMBER_OF_DECOYS, k -> String.valueOf(SD_JWT_DECOYS_DEFAULT));
+            clientScope.getAttributes().computeIfAbsent(SD_JWT_VISIBLE_CLAIMS, k -> SD_JWT_VISIBLE_CLAIMS_DEFAULT);
+        }
     }
 
     @Override
