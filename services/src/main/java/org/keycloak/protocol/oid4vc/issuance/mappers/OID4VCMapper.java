@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
+import org.keycloak.VCFormat;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
@@ -33,7 +34,6 @@ import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 
@@ -117,10 +117,10 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     }
 
     protected List<String> getAttributePrefix() {
-        return switch (Optional.ofNullable(format).orElse("")) {
-            case Format.JWT_VC, Format.LDP_VC -> List.of(CREDENTIAL_SUBJECT);
-            default -> Collections.emptyList();
-        };
+        if (VCFormat.SD_JWT_VC.getValue().equals(format))
+            return Collections.emptyList();
+        else
+            return List.of(CREDENTIAL_SUBJECT);
     }
 
     @Override
