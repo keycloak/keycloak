@@ -17,12 +17,12 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Allows adding user attributes to the credential subject
