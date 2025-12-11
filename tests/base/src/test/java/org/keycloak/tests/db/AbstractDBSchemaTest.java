@@ -1,6 +1,5 @@
 package org.keycloak.tests.db;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
@@ -9,6 +8,8 @@ import org.keycloak.testframework.database.TestDatabase;
 import org.keycloak.testframework.injection.Extensions;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.RoleConfigBuilder;
+
+import org.junit.jupiter.api.Test;
 
 @KeycloakIntegrationTest
 public abstract class AbstractDBSchemaTest {

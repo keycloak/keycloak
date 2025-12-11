@@ -17,12 +17,13 @@
 
 package org.keycloak.testsuite.oauth;
 
+import java.net.URI;
+
 import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.protocol.oauth2.OAuth2WellKnownProviderFactory;
 import org.keycloak.services.resources.ServerMetadataResource;
 import org.keycloak.testsuite.oidc.AbstractWellKnownProviderTest;
-
-import java.net.URI;
 
 public class RFC8414CompliantOAuth2WellKnownProviderTest extends AbstractWellKnownProviderTest {
 

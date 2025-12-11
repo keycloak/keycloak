@@ -16,6 +16,10 @@
  */
 package org.keycloak.testsuite.broker;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.keys.KeyProvider;
@@ -27,10 +31,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;

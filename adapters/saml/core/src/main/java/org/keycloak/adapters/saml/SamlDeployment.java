@@ -17,15 +17,16 @@
 
 package org.keycloak.adapters.saml;
 
-import org.keycloak.common.enums.SslRequired;
-import org.keycloak.saml.SignatureAlgorithm;
-
+import java.net.URI;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.util.Set;
-import org.apache.http.client.HttpClient;
+
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.rotation.KeyLocator;
-import java.net.URI;
+import org.keycloak.saml.SignatureAlgorithm;
+
+import org.apache.http.client.HttpClient;
 
 /**
  * Represents SAML deployment configuration.

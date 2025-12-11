@@ -1,9 +1,9 @@
 package org.freedesktop.dbus.connections.config;
 
+import java.util.OptionalLong;
+
 import org.freedesktop.dbus.connections.SASL;
 import org.freedesktop.dbus.connections.SASL.SaslMode;
-
-import java.util.OptionalLong;
 
 /**
  * Bean contains configuration for SASL authentication.

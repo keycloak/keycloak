@@ -1,16 +1,11 @@
 package org.keycloak.tests.client.authentication.external;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthenticator;
 import org.keycloak.broker.spiffe.SpiffeConstants;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderConfig;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -25,6 +20,11 @@ import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 @KeycloakIntegrationTest(config = SpiffeClientAuthTest.SpiffeServerConfig.class)
 @TestMethodOrder(MethodOrderer.MethodName.class)
@@ -66,7 +66,7 @@ public class SpiffeClientAuthTest extends AbstractBaseClientAuthTest {
     @Test
     public void testInvalidTrustDomain() {
         realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
-            rep.getConfig().put(IdentityProviderModel.ISSUER, "spiffe://different-domain");
+            rep.getConfig().put(SpiffeIdentityProviderConfig.TRUST_DOMAIN_KEY, "spiffe://different-domain");
         });
 
         JsonWebToken jwt = createDefaultToken();
@@ -135,7 +135,7 @@ public class SpiffeClientAuthTest extends AbstractBaseClientAuthTest {
                     IdentityProviderBuilder.create()
                             .providerId(SpiffeIdentityProviderFactory.PROVIDER_ID)
                             .alias(IDP_ALIAS)
-                            .setAttribute(IdentityProviderModel.ISSUER, TRUST_DOMAIN)
+                            .setAttribute(SpiffeIdentityProviderConfig.TRUST_DOMAIN_KEY, TRUST_DOMAIN)
                             .setAttribute(SpiffeIdentityProviderConfig.BUNDLE_ENDPOINT_KEY, BUNDLE_ENDPOINT)
                             .build());
 

@@ -22,7 +22,6 @@ import java.security.cert.X509Certificate;
 
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
@@ -31,6 +30,8 @@ import org.keycloak.events.Errors;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 

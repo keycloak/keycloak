@@ -17,17 +17,17 @@
 package org.keycloak.broker.provider;
 
 
-import org.keycloak.models.Constants;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.sessions.AuthenticationSessionModel;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * <p>Represents all identity information obtained from an {@link org.keycloak.broker.provider.IdentityProvider} after a

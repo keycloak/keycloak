@@ -1,13 +1,12 @@
 package org.freedesktop.dbus.spi.transport;
 
+import java.util.ServiceLoader;
+import javax.xml.transform.TransformerConfigurationException;
+
 import org.freedesktop.dbus.connections.BusAddress;
 import org.freedesktop.dbus.connections.config.TransportConfig;
 import org.freedesktop.dbus.connections.transports.AbstractTransport;
 import org.freedesktop.dbus.exceptions.TransportConfigurationException;
-
-import java.util.ServiceLoader;
-
-import javax.xml.transform.TransformerConfigurationException;
 
 /**
  * Interface used by {@link ServiceLoader} to provide a transport used by DBus.

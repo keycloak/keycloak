@@ -20,13 +20,15 @@
 package org.keycloak.testsuite.oauth.tokenexchange;
 
 import jakarta.ws.rs.core.Response;
-import org.junit.Test;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.junit.Test;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 

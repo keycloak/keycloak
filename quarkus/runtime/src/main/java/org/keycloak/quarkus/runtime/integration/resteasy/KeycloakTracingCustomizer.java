@@ -17,23 +17,26 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.enterprise.inject.spi.CDI;
+
+import org.keycloak.common.Version;
+
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
-import jakarta.enterprise.inject.spi.CDI;
+import io.opentelemetry.semconv.incubating.CodeIncubatingAttributes;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.resteasy.reactive.common.model.ResourceClass;
 import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
 import org.jboss.resteasy.reactive.server.model.HandlerChainCustomizer;
 import org.jboss.resteasy.reactive.server.model.ServerResourceMethod;
 import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
-import org.keycloak.common.Version;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public final class KeycloakTracingCustomizer implements HandlerChainCustomizer {
 
@@ -57,8 +60,9 @@ public final class KeycloakTracingCustomizer implements HandlerChainCustomizer {
             Tracer myTracer = openTelemetry.getTracer(this.getClass().getName(), Version.VERSION);
             SpanBuilder spanBuilder = myTracer.spanBuilder(spanName);
             spanBuilder.setParent(Context.current().with(Span.current()));
-            spanBuilder.setAttribute("code.function", methodName);
-            spanBuilder.setAttribute("code.namespace", className);
+            // for semconv >= 1.32 use CODE_FUNCTION_NAME instead
+            spanBuilder.setAttribute(CodeIncubatingAttributes.CODE_FUNCTION, methodName);
+            spanBuilder.setAttribute(CodeIncubatingAttributes.CODE_NAMESPACE, className);
             Span span = spanBuilder.startSpan();
             requestContext.setProperty("span", span);
             requestContext.setProperty("scope", span.makeCurrent());

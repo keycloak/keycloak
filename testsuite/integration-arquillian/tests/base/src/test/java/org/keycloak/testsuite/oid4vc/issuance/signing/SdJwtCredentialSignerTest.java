@@ -17,8 +17,16 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Test;
+import java.security.PublicKey;
+import java.security.cert.CertificateEncodingException;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import java.util.StringJoiner;
+import java.util.UUID;
+
+import org.keycloak.OID4VCConstants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -27,6 +35,7 @@ import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.ServerECDSASignatureVerifierContext;
 import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.LDCredentialBody;
@@ -38,19 +47,21 @@ import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.util.JsonSerialization;
 
-import java.security.PublicKey;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.StringJoiner;
-import java.util.UUID;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.junit.Test;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
+import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -196,13 +207,76 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
                                 List.of()));
     }
 
+    @Test
+    public void testSdJwtCredentialContainsX5cHeader() {
+        getTestingClient()
+                .server(TEST_REALM_NAME)
+                .run(session -> {
+                    String signingKeyId = getKeyIdFromSession(session);
+                    CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
+                            .setCredentialIssuer(TEST_DID.toString())
+                            .setCredentialType("https://credentials.example.com/test-credential")
+                            .setTokenJwsType("example+sd-jwt")
+                            .setHashAlgorithm(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
+                            .setNumberOfDecoys(0)
+                            .setSdJwtVisibleClaims(List.of())
+                            .setSigningKeyId(signingKeyId)
+                            .setSigningAlgorithm(Algorithm.RS256);
+
+                    SdJwtCredentialSigner sdJwtCredentialSigner = new SdJwtCredentialSigner(session);
+
+                    VerifiableCredential testCredential = getTestCredential(Map.of());
+                    SdJwtCredentialBody sdJwtCredentialBody = new SdJwtCredentialBuilder()
+                            .buildCredentialBody(testCredential, credentialBuildConfig);
+
+                    String sdJwt = sdJwtCredentialSigner.signCredential(sdJwtCredentialBody, credentialBuildConfig);
+
+                    String[] splittedSdToken = sdJwt.split(SDJWT_DELIMITER);
+                    String[] splittedToken = splittedSdToken[0].split("\\.");
+
+                    String jwt = new StringJoiner(".")
+                            .add(splittedToken[0])
+                            .add(splittedToken[1])
+                            .add(splittedToken[2])
+                            .toString();
+
+                    KeyWrapper keyWrapper = getKeyFromSession(session);
+                    SignatureVerifierContext verifierContext = new AsymmetricSignatureVerifierContext(keyWrapper);
+
+                    TokenVerifier<JsonWebToken> verifier = TokenVerifier
+                            .create(jwt, JsonWebToken.class)
+                            .verifierContext(verifierContext);
+                    verifier.publicKey((PublicKey) keyWrapper.getPublicKey());
+
+                    try {
+                        verifier.verify();
+
+                        JWSHeader header = verifier.getHeader();
+                        assertNotNull("x5c header should be present in SD-JWT credential", header.getX5c());
+                        assertFalse("x5c header should contain at least one certificate", header.getX5c().isEmpty());
+
+                        if (keyWrapper.getCertificate() != null) {
+                            try {
+                                String expectedCert = Base64.getEncoder().encodeToString(keyWrapper.getCertificate().getEncoded());
+                                assertEquals("First certificate in x5c should match the signing key certificate",
+                                        expectedCert, header.getX5c().get(0));
+                            } catch (CertificateEncodingException e) {
+                                fail("Failed to encode certificate for comparison: " + e.getMessage());
+                            }
+                        }
+                    } catch (VerificationException e) {
+                        fail("The credential should successfully be verified: " + e.getMessage());
+                    }
+                });
+    }
+
     public static void testSignSDJwtCredential(KeycloakSession session, String signingKeyId, String overrideKeyId, String
             algorithm, Map<String, Object> claims, int decoys, List<String> visibleClaims) {
         CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
                 .setCredentialIssuer(TEST_DID.toString())
                 .setCredentialType("https://credentials.example.com/test-credential")
                 .setTokenJwsType("example+sd-jwt")
-                .setHashAlgorithm("sha-256")
+                .setHashAlgorithm(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
                 .setNumberOfDecoys(decoys)
                 .setSdJwtVisibleClaims(visibleClaims)
                 .setSigningKeyId(signingKeyId)
@@ -234,7 +308,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
         }
         // the sd-jwt is dot-concatenated header.payload.signature~disclosure1~___~disclosureN
         // we first split the disclosuers
-        String[] splittedSdToken = sdJwt.split("~");
+        String[] splittedSdToken = sdJwt.split(SDJWT_DELIMITER);
         // and then split the actual token part
         String[] splittedToken = splittedSdToken[0].split("\\.");
 
@@ -260,13 +334,15 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
 
             assertEquals("The issuer should be set in the token.", TEST_DID.toString(), theToken.getIssuer());
             assertEquals("The type should be included", "https://credentials.example.com/test-credential", theToken.getOtherClaims().get("vct"));
-            List<String> sds = (List<String>) theToken.getOtherClaims().get("_sd");
+            List<String> sds = (List<String>) theToken.getOtherClaims().get(CLAIM_NAME_SD);
             if (sds != null && !sds.isEmpty()) {
-                assertEquals("The algorithm should be included", "sha-256", theToken.getOtherClaims().get("_sd_alg"));
+                assertEquals("The algorithm should be included", OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM, theToken.getOtherClaims().get(CLAIM_NAME_SD_HASH_ALGORITHM));
             }
             List<String> disclosed = Arrays.asList(splittedSdToken).subList(1, splittedSdToken.length);
             int numSds = sds != null ? sds.size() : 0;
-            assertEquals("All undisclosed claims and decoys should be provided.", disclosed.size() + decoys, numSds);
+            assertEquals("All undisclosed claims and decoys should be provided.",
+                         disclosed.size() + (decoys == 0 ? decoys + SdJwt.DEFAULT_NUMBER_OF_DECOYS : decoys),
+                         numSds);
             verifyDisclosures(sds, disclosed);
 
             visibleClaims
@@ -317,7 +393,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
         private String createHash(String salt, String key, Object value) {
             try {
                 return SdJwtUtils.encodeNoPad(
-                        HashUtils.hash("sha-256",
+                        HashUtils.hash(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM,
                                 SdJwtUtils.encodeNoPad(
                                         SdJwtUtils.printJsonArray(List.of(salt, key, value).toArray()).getBytes()).getBytes()));
             } catch (JsonProcessingException e) {

@@ -17,7 +17,8 @@
 
 package org.keycloak.tests.admin.client;
 
-import org.junit.jupiter.api.Test;
+import java.util.List;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -32,10 +33,10 @@ import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 
-import java.util.List;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -63,7 +64,7 @@ public class SessionTest {
 
     @Test
     public void testGetAppSessionCount() {
-        ClientResource accountClient = ApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ClientResource accountClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         int sessionCount = accountClient.getApplicationSessionCount().get("count");
         assertEquals(0, sessionCount);
 
@@ -82,7 +83,7 @@ public class SessionTest {
 
     @Test
     public void testGetUserSessions() {
-        ClientResource account = ApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ClientResource account = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
 
         oauth.openLoginForm();
         loginPage.fillLogin(user.getUsername(), user.getPassword());
@@ -116,7 +117,7 @@ public class SessionTest {
         loginPage.fillLogin(user.getUsername(), user.getPassword());
         loginPage.submit();
 
-        ClientResource account = ApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ClientResource account = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         List<UserSessionRepresentation> sessions = account.getUserSessions(0, 5);
         assertEquals(1, sessions.size());
 

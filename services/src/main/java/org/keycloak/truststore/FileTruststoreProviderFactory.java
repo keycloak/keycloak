@@ -17,15 +17,6 @@
 
 package org.keycloak.truststore;
 
-import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.common.enums.HostnameVerificationPolicy;
-import org.keycloak.common.util.KeystoreUtil;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderConfigurationBuilder;
-
 import java.io.File;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
@@ -46,8 +37,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.security.auth.x500.X500Principal;
+
+import org.keycloak.Config;
+import org.keycloak.common.enums.HostnameVerificationPolicy;
+import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

@@ -17,24 +17,19 @@
 
 package org.keycloak.testsuite.organization.mapper;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.util.SamlStreams.assertionsUnencrypted;
-import static org.keycloak.testsuite.util.SamlStreams.attributeStatements;
-
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.UriBuilder;
-import org.junit.Assert;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType.ASTChoiceType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
+import org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
@@ -45,6 +40,14 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.util.SamlStreams.assertionsUnencrypted;
+import static org.keycloak.testsuite.util.SamlStreams.attributeStatements;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class OrganizationSAMLProtocolMapperTest extends AbstractOrganizationTest {
 

@@ -17,12 +17,14 @@ public enum OptionCategory {
     PROXY("Proxy", 90, ConfigSupportLevel.SUPPORTED),
     VAULT("Vault", 100, ConfigSupportLevel.SUPPORTED),
     LOGGING("Logging", 110, ConfigSupportLevel.SUPPORTED),
-    TRACING("Tracing", 111, ConfigSupportLevel.SUPPORTED),
-    EVENTS("Events", 112, ConfigSupportLevel.SUPPORTED),
+    TELEMETRY("Telemetry (OpenTelemetry)", 112, ConfigSupportLevel.SUPPORTED),
+    TRACING("Tracing", 113, ConfigSupportLevel.SUPPORTED),
+    EVENTS("Events", 114, ConfigSupportLevel.SUPPORTED),
     TRUSTSTORE("Truststore", 115, ConfigSupportLevel.SUPPORTED),
     SECURITY("Security", 120, ConfigSupportLevel.SUPPORTED),
     EXPORT("Export", 130, ConfigSupportLevel.SUPPORTED),
     IMPORT("Import", 140, ConfigSupportLevel.SUPPORTED),
+    OPENAPI("OpenAPI configuration", 150, ConfigSupportLevel.SUPPORTED),
     BOOTSTRAP_ADMIN("Bootstrap Admin", 998, ConfigSupportLevel.SUPPORTED),
     GENERAL("General", 999, ConfigSupportLevel.SUPPORTED);
 

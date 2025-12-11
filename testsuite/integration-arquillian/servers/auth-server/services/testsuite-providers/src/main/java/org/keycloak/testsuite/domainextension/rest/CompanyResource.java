@@ -17,10 +17,7 @@
 
 package org.keycloak.testsuite.domainextension.rest;
 
-import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.testsuite.domainextension.CompanyRepresentation;
-import org.keycloak.testsuite.domainextension.spi.ExampleService;
+import java.util.List;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -31,7 +28,12 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.testsuite.domainextension.CompanyRepresentation;
+import org.keycloak.testsuite.domainextension.spi.ExampleService;
+
+import org.jboss.resteasy.reactive.NoCache;
 
 public class CompanyResource {
 

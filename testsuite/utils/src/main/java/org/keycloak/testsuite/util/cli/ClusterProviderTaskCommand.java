@@ -17,13 +17,13 @@
 
 package org.keycloak.testsuite.util.cli;
 
-import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.models.KeycloakSession;
-
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
+import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

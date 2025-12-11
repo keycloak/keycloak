@@ -24,7 +24,6 @@ import java.util.Optional;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
@@ -39,6 +38,7 @@ import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>

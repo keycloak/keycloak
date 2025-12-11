@@ -1,10 +1,10 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import java.util.List;
+
 import org.keycloak.config.TruststoreOptions;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-
-import java.util.List;
 
 public class TruststorePropertyMappers implements PropertyMapperGrouping {
 

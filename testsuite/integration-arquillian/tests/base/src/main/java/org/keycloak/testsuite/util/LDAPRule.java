@@ -17,14 +17,6 @@
 
 package org.keycloak.testsuite.util;
 
-import org.jboss.logging.Logger;
-import org.junit.Assume;
-import org.junit.runners.model.Statement;
-import org.junit.runner.Description;
-import org.junit.rules.ExternalResource;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.util.ldap.LDAPEmbeddedServer;
-
 import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -33,6 +25,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Map;
 import java.util.Properties;
+
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.util.ldap.LDAPEmbeddedServer;
+
+import org.jboss.logging.Logger;
+import org.junit.Assume;
+import org.junit.rules.ExternalResource;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 
 import static org.keycloak.testsuite.utils.io.IOUtil.PROJECT_BUILD_DIRECTORY;
 

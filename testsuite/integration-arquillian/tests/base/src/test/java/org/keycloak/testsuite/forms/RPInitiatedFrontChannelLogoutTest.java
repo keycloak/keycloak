@@ -16,8 +16,6 @@
  */
 package org.keycloak.testsuite.forms;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.BrowserSecurityHeaders;
@@ -30,6 +28,9 @@ import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  *

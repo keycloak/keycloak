@@ -1,11 +1,10 @@
 package org.keycloak.testsuite.broker;
 
+import java.util.Map;
+
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-
-import java.util.Map;
-
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;

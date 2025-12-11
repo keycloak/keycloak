@@ -1,9 +1,10 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
+import java.io.IOException;
+
 import org.keycloak.OAuth2Constants;
 
-import java.io.IOException;
+import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class JWTAuthorizationGrantRequest extends AbstractHttpPostRequest<JWTAuthorizationGrantRequest, AccessTokenResponse> {
 

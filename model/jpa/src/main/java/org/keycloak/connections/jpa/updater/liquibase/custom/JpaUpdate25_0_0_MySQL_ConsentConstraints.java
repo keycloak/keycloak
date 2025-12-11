@@ -79,5 +79,3 @@ public class JpaUpdate25_0_0_MySQL_ConsentConstraints extends CustomKeycloakTask
     }
 
 }
-
-

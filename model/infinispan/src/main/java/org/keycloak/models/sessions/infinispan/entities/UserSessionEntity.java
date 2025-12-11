@@ -23,11 +23,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.infinispan.protostream.annotations.ProtoFactory;
-import org.infinispan.protostream.annotations.ProtoField;
-import org.infinispan.protostream.annotations.ProtoReserved;
-import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.OfflineUserSessionModel;
@@ -35,6 +30,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoReserved;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

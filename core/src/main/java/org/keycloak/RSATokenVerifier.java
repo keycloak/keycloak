@@ -17,11 +17,11 @@
 
 package org.keycloak;
 
+import java.security.PublicKey;
+
 import org.keycloak.common.VerificationException;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.representations.AccessToken;
-
-import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

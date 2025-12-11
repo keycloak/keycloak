@@ -31,6 +31,7 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+
 import org.keycloak.utils.StringUtil;
 
 @Table(name="ORG")

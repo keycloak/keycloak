@@ -1,8 +1,22 @@
 package org.freedesktop.dbus.connections.impl;
 
-import static org.freedesktop.dbus.utils.CommonRegexPattern.DBUS_IFACE_PATTERN;
-import static org.freedesktop.dbus.utils.CommonRegexPattern.IFACE_PATTERN;
-import static org.freedesktop.dbus.utils.CommonRegexPattern.PROXY_SPLIT_PATTERN;
+import java.io.IOException;
+import java.lang.reflect.Proxy;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import org.freedesktop.dbus.DBusMatchRule;
 import org.freedesktop.dbus.RemoteInvocationHandler;
@@ -27,23 +41,9 @@ import org.freedesktop.dbus.utils.AddressBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Queue;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
+import static org.freedesktop.dbus.utils.CommonRegexPattern.DBUS_IFACE_PATTERN;
+import static org.freedesktop.dbus.utils.CommonRegexPattern.IFACE_PATTERN;
+import static org.freedesktop.dbus.utils.CommonRegexPattern.PROXY_SPLIT_PATTERN;
 
 /**
  * Handles a connection to DBus.

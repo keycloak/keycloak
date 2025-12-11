@@ -17,9 +17,6 @@
 
 package org.keycloak.testsuite.client;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientInitialAccessResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
@@ -33,6 +30,10 @@ import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 

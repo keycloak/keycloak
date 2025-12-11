@@ -17,9 +17,10 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
-import org.jboss.logging.Logger;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>

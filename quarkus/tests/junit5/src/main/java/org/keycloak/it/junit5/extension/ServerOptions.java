@@ -17,16 +17,17 @@
 
 package org.keycloak.it.junit5.extension;
 
-import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+
 import org.keycloak.quarkus.runtime.cli.command.Export;
 import org.keycloak.quarkus.runtime.cli.command.Import;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
+
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 final class ServerOptions extends ArrayList<String> {
 

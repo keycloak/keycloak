@@ -17,6 +17,9 @@
 
 package org.keycloak.services.resteasy;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.models.KeycloakSession;
@@ -34,9 +37,6 @@ import org.keycloak.services.resources.ThemeResource;
 import org.keycloak.services.resources.WelcomeResource;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.util.ObjectMapperResolver;
-
-import java.util.HashSet;
-import java.util.Set;
 
 public class ResteasyKeycloakApplication extends KeycloakApplication {
 

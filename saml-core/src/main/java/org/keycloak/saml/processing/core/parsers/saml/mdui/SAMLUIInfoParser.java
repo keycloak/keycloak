@@ -1,8 +1,9 @@
 package org.keycloak.saml.processing.core.parsers.saml.mdui;
 
-import static org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames.ATTR_LANG;
-import static org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames.ATTR_WIDTH;
-import static org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames.ATTR_HEIGHT;
+import java.net.URI;
+import java.net.URISyntaxException;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
 
 import org.keycloak.dom.saml.v2.mdui.KeywordsType;
 import org.keycloak.dom.saml.v2.mdui.LogoType;
@@ -14,10 +15,9 @@ import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.AbstractStaxSamlMetadataParser;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames;
 
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.StartElement;
-import java.net.URI;
-import java.net.URISyntaxException;
+import static org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames.ATTR_HEIGHT;
+import static org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames.ATTR_LANG;
+import static org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames.ATTR_WIDTH;
 
 public class SAMLUIInfoParser extends AbstractStaxSamlMetadataParser<UIInfoType> {
 

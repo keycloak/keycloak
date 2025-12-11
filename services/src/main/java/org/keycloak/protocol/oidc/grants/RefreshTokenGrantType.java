@@ -20,8 +20,6 @@ package org.keycloak.protocol.oidc.grants;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
-
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
@@ -36,6 +34,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
 import org.keycloak.services.clientpolicy.context.TokenRefreshResponseContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
+
+import org.jboss.logging.Logger;
 
 /**
  * OAuth 2.0 Refresh Token Grant

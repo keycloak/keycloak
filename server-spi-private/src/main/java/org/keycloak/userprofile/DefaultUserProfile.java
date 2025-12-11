@@ -19,11 +19,6 @@
 
 package org.keycloak.userprofile;
 
-import static org.keycloak.models.UserModel.DISABLED_REASON;
-import static org.keycloak.models.UserModel.IS_TEMP_ADMIN_ATTR_NAME;
-import static org.keycloak.userprofile.UserProfileUtil.createUserProfileMetadata;
-import static org.keycloak.userprofile.UserProfileUtil.isRootAttribute;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,6 +43,11 @@ import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.utils.StringUtil;
+
+import static org.keycloak.models.UserModel.DISABLED_REASON;
+import static org.keycloak.models.UserModel.IS_TEMP_ADMIN_ATTR_NAME;
+import static org.keycloak.userprofile.UserProfileUtil.createUserProfileMetadata;
+import static org.keycloak.userprofile.UserProfileUtil.isRootAttribute;
 
 /**
  * <p>The default implementation for {@link UserProfile}. Should be reused as much as possible by the different implementations

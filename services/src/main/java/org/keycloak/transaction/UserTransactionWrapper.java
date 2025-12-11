@@ -16,10 +16,10 @@
  */
 package org.keycloak.transaction;
 
-import org.keycloak.models.KeycloakTransaction;
-
 import jakarta.transaction.Status;
 import jakarta.transaction.UserTransaction;
+
+import org.keycloak.models.KeycloakTransaction;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -2,11 +2,16 @@ package org.keycloak.testframework.oauth;
 
 public class OAuthIdentityProviderConfigBuilder {
 
-    private boolean spiffe;
+    private Mode mode = Mode.DEFAULT;
     private boolean jwkUse = true;
 
     public OAuthIdentityProviderConfigBuilder spiffe() {
-        spiffe = true;
+        mode = Mode.SPIFFE;
+        return this;
+    }
+
+    public OAuthIdentityProviderConfigBuilder kubernetes() {
+        mode = Mode.KUBERNETES;
         return this;
     }
 
@@ -16,10 +21,16 @@ public class OAuthIdentityProviderConfigBuilder {
     }
 
     public OAuthIdentityProviderConfiguration build() {
-        return new OAuthIdentityProviderConfiguration(spiffe, jwkUse);
+        return new OAuthIdentityProviderConfiguration(mode, jwkUse);
     }
 
-    public record OAuthIdentityProviderConfiguration(boolean spiffe, boolean jwkUse) {
+    public record OAuthIdentityProviderConfiguration(Mode mode, boolean jwkUse) {
+    }
+
+    public enum Mode {
+        DEFAULT,
+        SPIFFE,
+        KUBERNETES
     }
 
 }

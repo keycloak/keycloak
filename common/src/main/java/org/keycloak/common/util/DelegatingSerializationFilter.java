@@ -17,8 +17,6 @@
  */
 package org.keycloak.common.util;
 
-import org.jboss.logging.Logger;
-
 import java.io.ObjectInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -26,6 +24,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.jboss.logging.Logger;
 
 public class DelegatingSerializationFilter {
     private static final Logger LOG = Logger.getLogger(DelegatingSerializationFilter.class.getName());

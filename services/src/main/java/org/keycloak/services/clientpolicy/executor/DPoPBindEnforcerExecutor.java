@@ -17,12 +17,13 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import org.jboss.logging.Logger;
+import jakarta.ws.rs.core.MultivaluedMap;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
-import org.keycloak.common.VerificationException;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.VerificationException;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -41,8 +42,7 @@ import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.util.DPoPUtil;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import jakarta.ws.rs.core.MultivaluedMap;
+import org.jboss.logging.Logger;
 
 public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DPoPBindEnforcerExecutor.Configuration> {
 

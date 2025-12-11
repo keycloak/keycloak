@@ -1,36 +1,37 @@
 package org.keycloak.representations.workflows;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
+import org.keycloak.common.util.MultivaluedHashMap;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CANCEL_IN_PROGRESS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONCURRENCY;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_IF;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON_EVENT;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RESTART_IN_PROGRESS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STATE;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STEPS;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import org.keycloak.common.util.MultivaluedHashMap;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 
 @JsonPropertyOrder({"id", CONFIG_NAME, CONFIG_USES, CONFIG_ENABLED, CONFIG_ON_EVENT, CONFIG_CONCURRENCY, CONFIG_IF, CONFIG_STEPS, CONFIG_STATE})
 @JsonIgnoreProperties(CONFIG_WITH)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public final class WorkflowRepresentation extends AbstractWorkflowComponentRepresentation {
 
-    public static Builder create() {
-        return new Builder().of(WorkflowConstants.DEFAULT_WORKFLOW);
+    public static Builder withName(String name) {
+        return new Builder().withName(name);
     }
 
     private List<WorkflowStepRepresentation> steps;
@@ -41,11 +42,12 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
     private WorkflowConcurrencyRepresentation concurrency;
 
     public WorkflowRepresentation() {
-        super(null, null, null);
+        super(null, null);
     }
 
-    public WorkflowRepresentation(String id, String workflow, MultivaluedHashMap<String, String> config, List<WorkflowStepRepresentation> steps) {
-        super(id, workflow, config);
+    public WorkflowRepresentation(String id, String name, MultivaluedHashMap<String, String> config, List<WorkflowStepRepresentation> steps) {
+        super(id, config);
+        setName(name);
         this.steps = steps;
     }
 
@@ -107,16 +109,34 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
     }
 
     public WorkflowConcurrencyRepresentation getConcurrency() {
-        return concurrency;
+        String cancelInProgress = getConfigValue(CONFIG_CANCEL_IN_PROGRESS, String.class);
+        String restartInProgress = getConfigValue(CONFIG_RESTART_IN_PROGRESS, String.class);
+        if (this.concurrency == null) {
+            if (cancelInProgress != null || restartInProgress != null) {
+                this.concurrency = new WorkflowConcurrencyRepresentation();
+                this.concurrency.setCancelInProgress(cancelInProgress);
+                this.concurrency.setRestartInProgress(restartInProgress);
+            }
+        }
+        return this.concurrency;
     }
 
     public void setConcurrency(WorkflowConcurrencyRepresentation concurrency) {
         this.concurrency = concurrency;
+        if (concurrency != null) {
+            setConfigValue(CONFIG_CANCEL_IN_PROGRESS, concurrency.getCancelInProgress());
+            setConfigValue(CONFIG_RESTART_IN_PROGRESS, concurrency.getRestartInProgress());
+        }
     }
 
     @JsonIgnore
-    public boolean isCancelIfRunning() {
-        return concurrency != null && Boolean.TRUE.equals(concurrency.isCancelIfRunning());
+    public String getCancelInProgress() {
+        return concurrency != null ? concurrency.getCancelInProgress() : null;
+    }
+
+    @JsonIgnore
+    public String getRestartInProgress() {
+        return concurrency != null ? concurrency.getRestartInProgress() : null;
     }
 
     @Override
@@ -128,36 +148,24 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
             return false;
         }
         WorkflowRepresentation that = (WorkflowRepresentation) obj;
-        // TODO: include state in comparison?
-        return Objects.equals(getUses(), that.getUses()) && Objects.equals(getConfig(), that.getConfig())
-            && Objects.equals(getSteps(), that.getSteps());
+        return Objects.equals(getConfig(), that.getConfig()) && Objects.equals(getSteps(), that.getSteps());
     }
 
     public static class Builder {
 
-        private final Map<WorkflowRepresentation, List<WorkflowStepRepresentation>> steps = new HashMap<>();
-        private List<Builder> builders = new ArrayList<>();
         private WorkflowRepresentation representation;
 
         private Builder() {
-        }
-
-        private Builder(WorkflowRepresentation representation, List<Builder> builders) {
-            this.representation = representation;
-            this.builders = builders;
-        }
-
-        public Builder of(String providerId) {
-            WorkflowRepresentation representation = new WorkflowRepresentation();
-            representation.setUses(providerId);
-            Builder builder = new Builder(representation, builders);
-            builders.add(builder);
-            return builder;
+            this.representation = new WorkflowRepresentation();
         }
 
         public Builder onEvent(String operation) {
             representation.addConfigValue(CONFIG_ON_EVENT, operation);
             return this;
+        }
+
+        public Builder onEvent(String... operation) {
+            return onEvent(String.join(" or ", operation).toUpperCase());
         }
 
         public Builder onCondition(String condition) {
@@ -166,21 +174,31 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
         }
 
         public Builder concurrency() {
-            representation.setConcurrency(new WorkflowConcurrencyRepresentation());
+            if (representation.getConcurrency() == null) {
+                representation.setConcurrency(new WorkflowConcurrencyRepresentation());
+            }
             return this;
         }
 
         // move this to its own builder if we expand the capabilities of the concurrency settings.
-        public Builder cancelIfRunning() {
+        public Builder cancelInProgress(String cancelInProgress) {
             if (representation.getConcurrency() == null) {
                 representation.setConcurrency(new WorkflowConcurrencyRepresentation());
             }
-            representation.getConcurrency().setCancelIfRunning(true);
+            representation.getConcurrency().setCancelInProgress(cancelInProgress);
+            return this;
+        }
+
+        public Builder restartInProgress(String restartInProgress) {
+            if (representation.getConcurrency() == null) {
+                representation.setConcurrency(new WorkflowConcurrencyRepresentation());
+            }
+            representation.getConcurrency().setRestartInProgress(restartInProgress);
             return this;
         }
 
         public Builder withSteps(WorkflowStepRepresentation... steps) {
-            this.steps.computeIfAbsent(representation, (k) -> new ArrayList<>()).addAll(Arrays.asList(steps));
+            representation.setSteps(Arrays.asList(steps));
             return this;
         }
 
@@ -194,28 +212,13 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
             return this;
         }
 
-        public Builder name(String name) {
+        public Builder withName(String name) {
             representation.setName(name);
             return this;
         }
 
-        public WorkflowSetRepresentation build() {
-            List<WorkflowRepresentation> workflows = new ArrayList<>();
-
-            for (Builder builder : builders) {
-                if (builder.steps.isEmpty()) {
-                    continue;
-                }
-                for (Entry<WorkflowRepresentation, List<WorkflowStepRepresentation>> entry : builder.steps.entrySet()) {
-                    WorkflowRepresentation workflow = entry.getKey();
-
-                    workflow.setSteps(entry.getValue());
-
-                    workflows.add(workflow);
-                }
-            }
-
-            return new WorkflowSetRepresentation(workflows);
+        public WorkflowRepresentation build() {
+            return representation;
         }
     }
 }

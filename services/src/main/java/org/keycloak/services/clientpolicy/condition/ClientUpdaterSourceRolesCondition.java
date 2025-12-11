@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -43,6 +42,8 @@ import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisteredContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
+
+import org.jboss.logging.Logger;
 
 
 /**

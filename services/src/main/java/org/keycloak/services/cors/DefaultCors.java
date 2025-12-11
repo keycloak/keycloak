@@ -20,19 +20,22 @@ package org.keycloak.services.cors;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 
-import org.jboss.logging.Logger;
-import org.keycloak.http.HttpRequest;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.representations.AccessToken;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -45,17 +48,20 @@ public class DefaultCors implements Cors {
     private final HttpResponse response;
     private final KeycloakSession session;
     private ResponseBuilder builder;
+    private final String allowedHeaders;
     private Set<String> allowedOrigins;
     private Set<String> allowedMethods;
     private Set<String> exposedHeaders;
 
     private boolean preflight;
     private boolean auth;
+    private boolean failOnInvalidOrigin;
 
-    DefaultCors(KeycloakSession session) {
+    DefaultCors(KeycloakSession session, String allowedHeaders) {
         this.session = session;
         this.request = session.getContext().getHttpRequest();
         this.response = session.getContext().getHttpResponse();
+        this.allowedHeaders = allowedHeaders;
     }
 
     @Override
@@ -73,6 +79,12 @@ public class DefaultCors implements Cors {
     @Override
     public Cors auth() {
         auth = true;
+        return this;
+    }
+
+    @Override
+    public Cors failOnInvalidOrigin() {
+        failOnInvalidOrigin = true;
         return this;
     }
 
@@ -102,6 +114,24 @@ public class DefaultCors implements Cors {
     public Cors allowedOrigins(String... allowedOrigins) {
         if (allowedOrigins != null && allowedOrigins.length > 0) {
             this.allowedOrigins = new HashSet<>(Arrays.asList(allowedOrigins));
+        }
+        return this;
+    }
+
+    @Override
+    public Cors allowedOrigins(List<String> allowedOrigins) {
+        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
+            this.allowedOrigins = new HashSet<>(allowedOrigins);
+        }
+        return this;
+    }
+
+    @Override
+    public Cors addAllowedOrigins(List<String> allowedOrigins) {
+        if (this.allowedOrigins == null) {
+            this.allowedOrigins = new HashSet<>(allowedOrigins);
+        } else {
+            this.allowedOrigins.addAll(allowedOrigins);
         }
         return this;
     }
@@ -144,6 +174,11 @@ public class DefaultCors implements Cors {
             if (!origin.equals(requestOrigin) && logger.isDebugEnabled()) {
                 logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, allowedOrigins);
             }
+
+            if (failOnInvalidOrigin) {
+                throw new ForbiddenException("Invalid origin");
+            }
+
             return;
         }
 
@@ -165,9 +200,9 @@ public class DefaultCors implements Cors {
 
         if (preflight) {
             if (auth) {
-                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
+                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", allowedHeaders, AUTHORIZATION_HEADER));
             } else {
-                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
+                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, allowedHeaders);
             }
         }
 

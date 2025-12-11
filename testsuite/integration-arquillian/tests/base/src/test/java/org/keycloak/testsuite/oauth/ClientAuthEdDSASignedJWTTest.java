@@ -17,9 +17,10 @@
 
 package org.keycloak.testsuite.oauth;
 
-import org.junit.Test;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.testsuite.util.KeyUtils;
+
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>

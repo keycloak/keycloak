@@ -23,9 +23,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Supplier;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -33,6 +30,10 @@ import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.TokenUtil;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 /**
  * Helper client for account REST API

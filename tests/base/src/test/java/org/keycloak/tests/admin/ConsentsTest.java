@@ -17,9 +17,9 @@
 
 package org.keycloak.tests.admin;
 
-import org.jboss.logging.Logger;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -41,6 +41,7 @@ import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.EventMatchers;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -58,20 +59,22 @@ import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ConsentPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import java.util.List;
-import java.util.Map;
+import org.hamcrest.MatcherAssert;
+import org.jboss.logging.Logger;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By;
+
+import static org.keycloak.tests.utils.admin.AdminApiUtil.findClientByClientId;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.tests.utils.admin.ApiUtil.findClientByClientId;
-
-import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -110,7 +113,7 @@ public class ConsentsTest {
     Events userRealmEvents;
 
     @InjectWebDriver
-    WebDriver driver;
+    ManagedWebDriver driver;
 
     @InjectPage
     LoginPage loginPage;
@@ -146,11 +149,10 @@ public class ConsentsTest {
         loginPage.fillLogin(userFromProviderRealm.getUsername(), userFromProviderRealm.getPassword());
         loginPage.submit();
 
-        consentPage.waitForPage();
         consentPage.assertCurrent();
         consentPage.confirm();
 
-        assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
 
         UsersResource consumerUsers = consumerRealm.admin().users();
         Assertions.assertTrue(consumerUsers.count() > 0, "There must be at least one user");
@@ -228,12 +230,12 @@ public class ConsentsTest {
         // navigate to account console and login
         providerRealmOAuth.openLoginForm();
 
-        loginPage.waitForPage();
+        loginPage.assertCurrent();
         LOGGER.debug("Logging in");
         loginPage.fillLogin(userFromProviderRealm.getUsername(), userFromProviderRealm.getPassword());
         loginPage.submit();
 
-        consentPage.waitForPage();
+        consentPage.assertCurrent();
         LOGGER.debug("Grant consent for offline_access");
         consentPage.assertCurrent();
         consentPage.confirm();
@@ -275,7 +277,7 @@ public class ConsentsTest {
         consentPage.cancel();
 
         // check an error page after cancelling the consent
-        assertTrue(driver.getPageSource().contains("Happy days"));
+        assertTrue(driver.page().getPageSource().contains("Happy days"));
         assertTrue(driver.getCurrentUrl().contains("error=access_denied"));
 
         providerRealmOAuth.openLoginForm();
@@ -285,7 +287,7 @@ public class ConsentsTest {
 
         // successful login
         assertFalse(driver.getCurrentUrl().contains("error"));
-        assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
     }
 
     @Test
@@ -294,7 +296,7 @@ public class ConsentsTest {
         AccessTokenResponse accessTokenResponse = userRealmOAuth.doAccessTokenRequest(response.getCode());
 
         Assertions.assertNotNull(userRealmOAuth.parseLoginResponse().getCode());
-        assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
 
         EventRepresentation loginEvent = userRealmEvents.poll();
         Assertions.assertNotNull(loginEvent);
@@ -302,8 +304,7 @@ public class ConsentsTest {
         Assertions.assertEquals(EventType.LOGIN.toString(), loginEvent.getType());
         loginEvent.getDetails().forEach((key, value) -> {
             switch (key) {
-                case Details.CODE_ID ->
-                        Assertions.assertTrue(isUUID(value));
+                case Details.CODE_ID -> MatcherAssert.assertThat(value, EventMatchers.isCodeId());
                 case Details.USERNAME -> Assertions.assertEquals(userFromUserRealm.getUsername(), value);
                 case Details.CONSENT -> Assertions.assertEquals(Details.CONSENT_VALUE_NO_CONSENT_REQUIRED, value);
                 case Details.REDIRECT_URI -> Assertions.assertEquals("http://127.0.0.1:8500/callback/oauth", value);
@@ -367,7 +368,7 @@ public class ConsentsTest {
         consentPage.confirm();
 
         // successful login
-        assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
         AccountHelper.logout(providerRealm.admin(), userFromProviderRealm.getUsername());
     }
 

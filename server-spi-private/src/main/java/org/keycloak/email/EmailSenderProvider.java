@@ -17,10 +17,10 @@
 
 package org.keycloak.email;
 
+import java.util.Map;
+
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
-
-import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

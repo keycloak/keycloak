@@ -4,11 +4,12 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.BiFunction;
 
+import org.keycloak.marshalling.Marshalling;
+import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.keycloak.marshalling.Marshalling;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
 /**
  * Performs an entity replacement in Infinispan, using its versions instead of equality.

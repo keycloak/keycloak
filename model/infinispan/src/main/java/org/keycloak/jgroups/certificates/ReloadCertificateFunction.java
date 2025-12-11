@@ -19,11 +19,12 @@ package org.keycloak.jgroups.certificates;
 
 import java.util.function.Function;
 
+import org.keycloak.marshalling.Marshalling;
+
 import org.infinispan.factories.GlobalComponentRegistry;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.keycloak.marshalling.Marshalling;
 
 /**
  * Reloads the JGroups certificate

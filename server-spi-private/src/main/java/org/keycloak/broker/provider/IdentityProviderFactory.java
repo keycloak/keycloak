@@ -16,15 +16,15 @@
  */
 package org.keycloak.broker.provider;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author Pedro Igor

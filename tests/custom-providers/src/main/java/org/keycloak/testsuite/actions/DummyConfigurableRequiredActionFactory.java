@@ -17,6 +17,10 @@
 
 package org.keycloak.testsuite.actions;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -26,10 +30,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
 
 public class DummyConfigurableRequiredActionFactory implements RequiredActionFactory {
 

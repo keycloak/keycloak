@@ -16,10 +16,21 @@
  */
 package org.keycloak.testsuite.migration;
 
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.xml.security.encryption.XMLCipher;
-import org.hamcrest.Matchers;
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -84,20 +95,19 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.theme.DefaultThemeSelectorProvider;
 import org.keycloak.util.TokenUtil;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.xml.security.encryption.XMLCipher;
+import org.hamcrest.Matchers;
+
+import static org.keycloak.migration.migrators.MigrateTo24_0_0.REALM_USER_PROFILE_ENABLED;
+import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
+import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
+import static org.keycloak.models.AccountRoles.VIEW_GROUPS;
+import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
+import static org.keycloak.testsuite.Assert.assertNames;
+import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
 
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -117,14 +127,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.migration.migrators.MigrateTo24_0_0.REALM_USER_PROFILE_ENABLED;
-import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
-import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
-import static org.keycloak.models.AccountRoles.VIEW_GROUPS;
-import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
-import static org.keycloak.testsuite.Assert.assertNames;
-import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
-import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

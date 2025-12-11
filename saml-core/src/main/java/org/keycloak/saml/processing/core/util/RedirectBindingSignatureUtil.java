@@ -22,10 +22,12 @@ import java.security.KeyManagementException;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
-import org.jboss.logging.Logger;
+
 import org.keycloak.common.VerificationException;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.SignatureAlgorithm;
+
+import org.jboss.logging.Logger;
 
 /**
  *

@@ -18,6 +18,9 @@
 package org.keycloak.storage.ldap.mappers.membership;
 
 
+import java.util.List;
+import java.util.Set;
+
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -29,9 +32,6 @@ import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.utils.StreamsUtil;
-
-import java.util.List;
-import java.util.Set;
 
 /**
  * Strategy for how to retrieve LDAP roles of user

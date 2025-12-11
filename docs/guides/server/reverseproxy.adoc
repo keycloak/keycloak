@@ -29,7 +29,7 @@ You only need to proxy port `8443` (or `8080`) even when you use different host 
 {project_name} will parse the reverse proxy headers based on the `proxy-headers` option which accepts several values:
 
 * By default if the option is not specified, no reverse proxy headers are parsed. This should be used when no proxy is in use or with https passthrough.
-* `forwarded` enables parsing of the `Forwarded` header as per https://www.rfc-editor.org/rfc/rfc7239.html[RFC7239].
+* `forwarded` enables parsing of the `Forwarded` header as per https://www.rfc-editor.org/rfc/rfc7239.html[RFC 7239].
 * `xforwarded` enables parsing of non-standard `X-Forwarded-*` headers, such as `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-Port`.
 
 NOTE: If you are using a reverse proxy for anything other than https passthrough and do not set the `proxy-headers` option, then by default you will see 403 Forbidden responses to requests via the proxy that perform origin checking.
@@ -124,7 +124,7 @@ The following table shows the recommended paths to expose.
 |/.well-known/
 |/.well-known/
 |Yes
-|This path is needed to resolve Authorization Server Metadata and other information via RFC8414.
+|This path is needed to resolve Authorization Server Metadata and other information via RFC 8414.
 
 |/metrics
 |-
@@ -141,7 +141,7 @@ The following table shows the recommended paths to expose.
 We assume you run {project_name} on the root path `/` on your reverse proxy/gateway's public API.
 If not, prefix the path with your desired one.
 
-NOTE: If you configured a `http-relative-path` on the server, proceed as follows to use discovery wih RFC8414: Configure a reverse proxy to map the `/.well-known/` path without the prefix to the path with the prefix on the server.
+NOTE: If you configured a `http-relative-path` on the server, proceed as follows to use discovery wih RFC 8414: Configure a reverse proxy to map the `/.well-known/` path without the prefix to the path with the prefix on the server.
 
 == Trusted Proxies
 

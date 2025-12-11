@@ -22,19 +22,14 @@ import org.keycloak.jose.jws.crypto.HashUtils;
 
 /**
  * Handles hash production for a decoy entry from the given salt.
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
- * 
+ *
  */
-public abstract class DecoyEntry {
-    private final SdJwtSalt salt;
+public abstract class DecoyEntry extends DisclosureSpec.DisclosureData {
 
     protected DecoyEntry(SdJwtSalt salt) {
-        this.salt = Objects.requireNonNull(salt, "DecoyEntry always requires a non null salt");
-    }
-
-    public SdJwtSalt getSalt() {
-        return salt;
+        super(Objects.requireNonNull(salt, "DecoyEntry always requires a non null salt"));
     }
 
     public String getDisclosureDigest(String hashAlg) {

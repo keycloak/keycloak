@@ -1,5 +1,7 @@
 package org.keycloak.config;
 
+import static org.keycloak.config.WildcardOptionsUtil.getWildcardNamedKey;
+
 public class TransactionOptions {
 
     public static final Option<Boolean> TRANSACTION_XA_ENABLED_DATASOURCE = new OptionBuilder<>("transaction-xa-enabled-<datasource>", Boolean.class)
@@ -21,7 +23,6 @@ public class TransactionOptions {
         if ("<default>".equals(namedProperty)) {
             return TRANSACTION_XA_ENABLED.getKey();
         }
-        var key = TRANSACTION_XA_ENABLED_DATASOURCE.getKey();
-        return key.substring(0, key.indexOf("<")).concat(namedProperty);
+        return getWildcardNamedKey(TRANSACTION_XA_ENABLED_DATASOURCE.getKey(), namedProperty);
     }
 }

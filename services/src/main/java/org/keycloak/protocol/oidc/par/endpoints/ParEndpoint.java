@@ -17,14 +17,27 @@
 
 package org.keycloak.protocol.oidc.par.endpoints;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
-import org.keycloak.events.Details;
-import org.keycloak.http.HttpRequest;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.headers.SecurityHeadersProvider;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -40,20 +53,7 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.utils.ProfileHelper;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-
 import static org.keycloak.protocol.oidc.OIDCLoginProtocol.REQUEST_URI_PARAM;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * Pushed Authorization Request endpoint

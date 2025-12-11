@@ -17,16 +17,12 @@
 
 package org.keycloak.connections.httpclient;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.entity.EntityBuilder;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.AbstractResponseHandler;
-import org.apache.http.impl.client.BasicResponseHandler;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.jboss.logging.Logger;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import org.keycloak.Config;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
@@ -36,14 +32,18 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.truststore.TruststoreProvider;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.KeyStore;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.entity.EntityBuilder;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.impl.client.AbstractResponseHandler;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.StringUtil.isBlank;
 
@@ -243,10 +243,59 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                             throw new RuntimeException("Failed to load keystore", e);
                         }
                     }
+
+                    // Configure retry behavior
+                    configureRetries(builder);
+
                     httpClient = builder.build();
                 }
             }
         }
+    }
+
+    /**
+     * Configures retry behavior for the HTTP client builder.
+     * Applies server-wide retry configuration if enabled.
+     *
+     * @param builder The HTTP client builder to configure
+     */
+    private void configureRetries(HttpClientBuilder builder) {
+        int maxRetries = config.getInt("max-retries", 0);
+        if (maxRetries <= 0) {
+            return; // Retries disabled
+        }
+        // Always enable request-sent retries for common requests (e.g., GET, POST)
+        long initialBackoffMillis = config.getLong("initial-backoff-millis", 1000L);
+        String backoffMultiplierStr = config.get("backoff-multiplier", "2.0");
+        double backoffMultiplier = Double.parseDouble(backoffMultiplierStr);
+        boolean useJitter = config.getBoolean("use-jitter", true);
+        String jitterFactorStr = config.get("jitter-factor", "0.5");
+        double jitterFactor = Double.parseDouble(jitterFactorStr);
+
+        builder.getApacheHttpClientBuilder().setRetryHandler(
+                new org.apache.http.impl.client.DefaultHttpRequestRetryHandler(maxRetries, true) {
+                    @Override
+                    public boolean retryRequest(IOException exception, int executionCount,
+                            org.apache.http.protocol.HttpContext context) {
+                        boolean shouldRetry = super.retryRequest(exception, executionCount, context);
+                        if (shouldRetry) {
+                            try {
+                                long baseDelay = initialBackoffMillis *
+                                        (long)Math.pow(backoffMultiplier, executionCount - 1);
+                                long delay = baseDelay;
+                                if (useJitter) {
+                                    double jitter = 1.0 - jitterFactor +
+                                            (Math.random() * jitterFactor * 2.0);
+                                    delay = (long)(baseDelay * jitter);
+                                }
+                                Thread.sleep(delay);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                        }
+                        return shouldRetry;
+                    }
+                });
     }
 
     protected HttpClientBuilder newHttpClientBuilder() {
@@ -341,6 +390,39 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 .type("long")
                 .helpText("Maximum size of a response consumed by the client (to prevent denial of service)")
                 .defaultValue(HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE)
+                .add()
+                .property()
+                .name("max-retries")
+                .type("int")
+                .helpText("Maximum number of retry attempts for all outgoing HTTP requests. Set to 0 to disable retries (default).")
+                .defaultValue(0)
+                .add()
+                .property()
+                .name("initial-backoff-millis")
+                .type("long")
+                .helpText("Initial backoff time in milliseconds before the first retry attempt.")
+                .defaultValue(1000L)
+                .add()
+                .property()
+                .name("backoff-multiplier")
+                .type("string")
+                .helpText(
+                        "Multiplier for exponential backoff between retry attempts. For example, with an initial backoff of 1000ms and a multiplier of 2.0, the retry delays would be: 1000ms, 2000ms, 4000ms, etc.")
+                .defaultValue("2.0")
+                .add()
+                .property()
+                .name("use-jitter")
+                .type("boolean")
+                .helpText(
+                        "Whether to apply jitter to backoff times to prevent synchronized retry storms when multiple clients are retrying at the same time.")
+                .defaultValue(true)
+                .add()
+                .property()
+                .name("jitter-factor")
+                .type("string")
+                .helpText(
+                        "Jitter factor to apply to backoff times. A value of 0.5 means the actual backoff time will be between 50% and 150% of the calculated exponential backoff time.")
+                .defaultValue("0.5")
                 .add()
                 .build();
     }

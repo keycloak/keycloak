@@ -1,16 +1,16 @@
 package org.keycloak.testsuite.authentication;
 
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.saml.ArtifactResolver;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.saml.ArtifactResolver;
 
 import static org.keycloak.testsuite.authentication.CustomTestingSamlArtifactResolverFactory.TYPE_CODE;
 

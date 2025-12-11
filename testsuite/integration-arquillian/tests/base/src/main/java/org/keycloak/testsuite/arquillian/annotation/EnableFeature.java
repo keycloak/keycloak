@@ -1,11 +1,11 @@
 package org.keycloak.testsuite.arquillian.annotation;
 
-import org.keycloak.common.Profile;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+
+import org.keycloak.common.Profile;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 

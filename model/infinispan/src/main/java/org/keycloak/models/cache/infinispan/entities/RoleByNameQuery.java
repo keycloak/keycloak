@@ -16,9 +16,9 @@
  */
 package org.keycloak.models.cache.infinispan.entities;
 
-import org.keycloak.models.RealmModel;
-
 import java.util.Set;
+
+import org.keycloak.models.RealmModel;
 
 /**
  * @author Alexander Schwartz

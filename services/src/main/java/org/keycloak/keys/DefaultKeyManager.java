@@ -17,17 +17,6 @@
 
 package org.keycloak.keys;
 
-import org.jboss.logging.Logger;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.models.KeyManager;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ProviderFactory;
-
-import javax.crypto.SecretKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.util.Comparator;
@@ -39,6 +28,18 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.crypto.SecretKey;
+
+import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.models.KeyManager;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.provider.ProviderFactory;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

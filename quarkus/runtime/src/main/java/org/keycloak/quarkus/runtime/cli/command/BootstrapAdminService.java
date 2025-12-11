@@ -17,8 +17,6 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import java.util.EnumSet;
-
 import org.keycloak.common.util.IoUtils;
 import org.keycloak.config.BootstrapAdminOptions;
 import org.keycloak.config.OptionCategory;
@@ -109,8 +107,8 @@ public class BootstrapAdminService extends AbstractNonServerCommand {
     }
 
     @Override
-    protected EnumSet<OptionCategory> excludedCategories() {
-        return EnumSet.of(OptionCategory.IMPORT, OptionCategory.EXPORT, OptionCategory.BOOTSTRAP_ADMIN);
+    public boolean isHiddenCategory(OptionCategory category) {
+        return category == OptionCategory.BOOTSTRAP_ADMIN || super.isHiddenCategory(category);
     }
 
 }

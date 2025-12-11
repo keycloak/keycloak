@@ -1,13 +1,14 @@
 package org.keycloak.crypto.fips.test;
 
+import org.keycloak.KeyPairVerifierTest;
+import org.keycloak.common.util.Environment;
+
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.fips.FipsUnapprovedOperationError;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.KeyPairVerifierTest;
-import org.keycloak.common.util.Environment;
 
 /**
  * Test with fips1402 security provider and bouncycastle-fips

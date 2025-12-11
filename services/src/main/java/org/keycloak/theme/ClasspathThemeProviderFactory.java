@@ -17,14 +17,14 @@
 
 package org.keycloak.theme;
 
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

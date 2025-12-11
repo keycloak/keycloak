@@ -3,16 +3,17 @@ package org.keycloak.testsuite.cluster;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
-import org.awaitility.Awaitility;
-import org.infinispan.factories.GlobalComponentRegistry;
-import org.infinispan.manager.EmbeddedCacheManager;
-import org.junit.Assume;
-import org.junit.Test;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.jgroups.certificates.CertificateReloadManager;
 import org.keycloak.jgroups.certificates.DatabaseJGroupsCertificateProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
+
+import org.awaitility.Awaitility;
+import org.infinispan.factories.GlobalComponentRegistry;
+import org.infinispan.manager.EmbeddedCacheManager;
+import org.junit.Assume;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -209,5 +210,3 @@ public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
     }
 
 }
-
-

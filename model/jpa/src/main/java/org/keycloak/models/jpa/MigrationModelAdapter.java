@@ -17,14 +17,15 @@
 
 package org.keycloak.models.jpa;
 
-import org.keycloak.common.util.Time;
-import org.keycloak.migration.MigrationModel;
-import org.keycloak.models.jpa.entities.MigrationModelEntity;
+import java.security.SecureRandom;
+import java.util.List;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
-import java.security.SecureRandom;
-import java.util.List;
+
+import org.keycloak.common.util.Time;
+import org.keycloak.migration.MigrationModel;
+import org.keycloak.models.jpa.entities.MigrationModelEntity;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

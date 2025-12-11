@@ -17,6 +17,10 @@
 
 package org.keycloak.saml;
 
+import java.net.URI;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
@@ -39,11 +43,8 @@ import org.keycloak.saml.processing.core.saml.v2.holders.IssuerInfoHolder;
 import org.keycloak.saml.processing.core.saml.v2.holders.SPInfoHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.StatementUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.w3c.dom.Document;
 
-import java.net.URI;
-import java.util.LinkedList;
-import java.util.List;
+import org.w3c.dom.Document;
 
 import static org.keycloak.saml.common.util.StringUtil.isNotNull;
 

@@ -17,11 +17,11 @@
 
 package org.keycloak.operator.crds.v2alpha1.realmimport;
 
+import java.util.Objects;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.sundr.builder.annotations.Buildable;
-
-import java.util.Objects;
 
 /**
  * @author Scott Tustison

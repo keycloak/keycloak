@@ -17,15 +17,16 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.SynchronizationResultRepresentation;
 import org.keycloak.storage.user.SynchronizationResult;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.Assert;
 
 /**
  * Common LDAP asserts

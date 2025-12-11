@@ -17,15 +17,16 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
-import org.infinispan.protostream.annotations.ProtoField;
-import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.keycloak.marshalling.Marshalling;
-import org.keycloak.sessions.AuthenticationSessionModel;
-
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.keycloak.marshalling.Marshalling;
+import org.keycloak.sessions.AuthenticationSessionModel;
+
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

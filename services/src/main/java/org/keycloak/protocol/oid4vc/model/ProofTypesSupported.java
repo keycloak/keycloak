@@ -16,18 +16,19 @@
  */
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
-import org.keycloak.util.JsonSerialization;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-proof-types
@@ -40,11 +41,11 @@ public class ProofTypesSupported {
     protected Map<String, SupportedProofTypeData> supportedProofTypes = new HashMap<>();
 
     public static ProofTypesSupported parse(KeycloakSession keycloakSession,
+                                            KeyAttestationsRequired keyAttestationsRequired,
                                             List<String> globalSupportedSigningAlgorithms) {
         ProofTypesSupported proofTypesSupported = new ProofTypesSupported();
         keycloakSession.getAllProviders(ProofValidator.class).forEach(proofValidator -> {
             String type = proofValidator.getProofType();
-            KeyAttestationsRequired keyAttestationsRequired = new KeyAttestationsRequired();
             SupportedProofTypeData supportedProofTypeData = new SupportedProofTypeData(globalSupportedSigningAlgorithms,
                     keyAttestationsRequired);
             proofTypesSupported.getSupportedProofTypes().put(type, supportedProofTypeData);
@@ -77,6 +78,11 @@ public class ProofTypesSupported {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return toJsonString();
     }
 
     @Override

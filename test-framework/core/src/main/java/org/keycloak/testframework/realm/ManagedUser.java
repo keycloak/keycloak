@@ -1,10 +1,10 @@
 package org.keycloak.testframework.realm;
 
+import java.util.Optional;
+
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import java.util.Optional;
 
 public class ManagedUser {
 

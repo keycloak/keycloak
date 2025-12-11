@@ -1,8 +1,5 @@
 package org.keycloak.testsuite.actions;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -11,6 +8,10 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Test;
 
 public class AppInitiatedRegistrationTest extends AbstractTestRealmKeycloakTest {
 

@@ -16,6 +16,28 @@
 
 package org.keycloak.credential;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import jakarta.annotation.Nonnull;
+
+import org.keycloak.authentication.authenticators.browser.WebAuthnMetadataService;
+import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
+import org.keycloak.common.util.Time;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.WebAuthnPolicy;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.models.credential.dto.WebAuthnCredentialData;
+import org.keycloak.models.credential.dto.WebAuthnCredentialPresentationData;
+import org.keycloak.util.JsonSerialization;
+
 import com.webauthn4j.WebAuthnAuthenticationManager;
 import com.webauthn4j.authenticator.Authenticator;
 import com.webauthn4j.authenticator.AuthenticatorImpl;
@@ -33,27 +55,7 @@ import com.webauthn4j.util.AssertUtil;
 import com.webauthn4j.util.exception.WebAuthnException;
 import com.webauthn4j.verifier.OriginVerifierImpl;
 import com.webauthn4j.verifier.exception.BadOriginException;
-import jakarta.annotation.Nonnull;
 import org.jboss.logging.Logger;
-import org.keycloak.authentication.authenticators.browser.WebAuthnMetadataService;
-import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
-import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.WebAuthnPolicy;
-import org.keycloak.models.credential.WebAuthnCredentialModel;
-import org.keycloak.models.credential.dto.WebAuthnCredentialData;
-import org.keycloak.models.credential.dto.WebAuthnCredentialPresentationData;
-import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Credential provider for WebAuthn 2-factor credential of the user
@@ -124,7 +126,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         WebAuthnCredentialModelInput webAuthnModel = (WebAuthnCredentialModelInput) input;
 
         String aaguid = webAuthnModel.getAttestedCredentialData().getAaguid().toString();
-        String credentialId = Base64.encodeBytes(webAuthnModel.getAttestedCredentialData().getCredentialId());
+        String credentialId = Base64.getEncoder().encodeToString(webAuthnModel.getAttestedCredentialData().getCredentialId());
         String credentialPublicKey = credentialPublicKeyConverter.convertToDatabaseColumn(webAuthnModel.getAttestedCredentialData().getCOSEKey());
         long counter = webAuthnModel.getCount();
         String attestationStatementFormat = webAuthnModel.getAttestationStatementFormat();
@@ -164,8 +166,8 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
         byte[] credentialId = null;
         try {
-            credentialId = Base64.decode(credData.getCredentialId());
-        } catch (IOException ioe) {
+            credentialId = Base64.getDecoder().decode(credData.getCredentialId());
+        } catch (IllegalArgumentException ex) {
             // NOP
         }
 

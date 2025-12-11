@@ -16,6 +16,14 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.writers;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamWriter;
+
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.BaseIDAbstractType;
 import org.keycloak.dom.saml.v2.assertion.EncryptedElementType;
@@ -25,7 +33,9 @@ import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.metadata.LocalizedNameType;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.KeyInfoType;
+import org.keycloak.saml.SamlProtocolExtensionsAwareBuilder;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
@@ -35,21 +45,11 @@ import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.StaxWriterUtil;
 
-import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamWriter;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
-import org.keycloak.saml.SamlProtocolExtensionsAwareBuilder;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
-
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 /**
  * Base Class for the Stax writers for SAML

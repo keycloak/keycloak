@@ -1,13 +1,14 @@
 package org.keycloak.testsuite.util.oauth;
 
-import jakarta.ws.rs.core.UriBuilder;
-import org.keycloak.util.JsonSerialization;
-
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+
+import jakarta.ws.rs.core.UriBuilder;
+
+import org.keycloak.util.JsonSerialization;
 
 public abstract class AbstractUrlBuilder {
 

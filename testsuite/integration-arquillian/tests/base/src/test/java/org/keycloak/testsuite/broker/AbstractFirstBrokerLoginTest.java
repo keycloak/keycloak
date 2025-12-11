@@ -5,12 +5,6 @@ import java.util.List;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 
-import com.google.common.collect.ImmutableMap;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -42,16 +36,19 @@ import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailServerConfiguration;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.userprofile.UserProfileContext;
+
+import com.google.common.collect.ImmutableMap;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.junit.Rule;
+import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.PageFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.assertHardCodedSessionNote;
@@ -62,6 +59,11 @@ import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test of various scenarios related to first broker login.

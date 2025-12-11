@@ -17,10 +17,10 @@
 
 package org.keycloak.config;
 
-import io.quarkus.opentelemetry.runtime.config.build.SamplerType;
-
 import java.util.Arrays;
 import java.util.List;
+
+import io.quarkus.opentelemetry.runtime.config.build.SamplerType;
 
 public class TracingOptions {
 
@@ -33,7 +33,7 @@ public class TracingOptions {
 
     public static final Option<String> TRACING_ENDPOINT = new OptionBuilder<>("tracing-endpoint", String.class)
             .category(OptionCategory.TRACING)
-            .description("OpenTelemetry endpoint to connect to.")
+            .description("OpenTelemetry endpoint to connect to for traces. If not given, the value is inherited from the '%s' option.".formatted(TelemetryOptions.TELEMETRY_ENDPOINT.getKey()))
             .defaultValue("http://localhost:4317")
             .build();
 
@@ -44,19 +44,32 @@ public class TracingOptions {
             .buildTime(true)
             .build();
 
+    /**
+     * @deprecated use the {@link TelemetryOptions#TELEMETRY_SERVICE_NAME}
+     */
+    @Deprecated
     public static final Option<String> TRACING_SERVICE_NAME = new OptionBuilder<>("tracing-service-name", String.class)
             .category(OptionCategory.TRACING)
-            .description("OpenTelemetry service name. Takes precedence over 'service.name' defined in the 'tracing-resource-attributes' property.")
+            .deprecated()
+            .deprecatedMetadata(DeprecatedMetadata.deprecateOption("Service name is not directly related to Tracing and you should use the Telemetry option which takes precedence.", TelemetryOptions.TELEMETRY_SERVICE_NAME.getKey()))
+            .description("OpenTelemetry service name. Takes precedence over 'service.name' defined in the 'tracing-resource-attributes' property. If not given, the value is inherited from the '%s' option.".formatted(TelemetryOptions.TELEMETRY_SERVICE_NAME.getKey()))
             .defaultValue("keycloak")
             .build();
 
+    /**
+     * @deprecated use the {@link TelemetryOptions#TELEMETRY_RESOURCE_ATTRIBUTES}
+     */
+    @Deprecated
     public static final Option<List<String>> TRACING_RESOURCE_ATTRIBUTES = OptionBuilder.listOptionBuilder("tracing-resource-attributes", String.class)
             .category(OptionCategory.TRACING)
-            .description("OpenTelemetry resource attributes present in the exported trace to characterize the telemetry producer. Values in format 'key1=val1,key2=val2'. For more information, check the Tracing guide.")
+            .deprecated()
+            .deprecatedMetadata(DeprecatedMetadata.deprecateOption("Resource attributes are not directly related to Tracing and you should use the Telemetry option which takes precedence.", TelemetryOptions.TELEMETRY_RESOURCE_ATTRIBUTES.getKey()))
+            .description("OpenTelemetry resource attributes present in the exported trace to characterize the telemetry producer. Values in format 'key1=val1,key2=val2'. If not given, the value is inherited from the '%s' option. For more information, check the Tracing guide.".formatted(TelemetryOptions.TELEMETRY_RESOURCE_ATTRIBUTES.getKey()))
             .build();
+
     public static final Option<String> TRACING_PROTOCOL = new OptionBuilder<>("tracing-protocol", String.class)
             .category(OptionCategory.TRACING)
-            .description("OpenTelemetry protocol used for the telemetry data.")
+            .description("OpenTelemetry protocol used for the telemetry data. If not given, the value is inherited from the '%s' option.".formatted(TelemetryOptions.TELEMETRY_PROTOCOL.getKey()))
             .defaultValue("grpc")
             .expectedValues("grpc", "http/protobuf")
             .build();
@@ -90,6 +103,17 @@ public class TracingOptions {
             .category(OptionCategory.TRACING)
             .description("Enables the OpenTelemetry tracing for embedded Infinispan.")
             .defaultValue(true)
+            .build();
+
+    public static final Option<String> TRACING_HEADER = new OptionBuilder<>("tracing-header-<header>", String.class)
+            .category(OptionCategory.TRACING)
+            .description("OpenTelemetry header that will be part of the exporter request (mainly useful for providing Authorization header). Check the documentation on how to set environment variables for headers containing special characters or custom case-sensitive headers.")
+            .build();
+
+    public static final Option<List<String>> TRACING_HEADERS = OptionBuilder.listOptionBuilder("tracing-headers", String.class)
+            .category(OptionCategory.TRACING)
+            .hidden()
+            .description("Hidden option for OpenTelemetry headers that will be part of the exporter request. Values in format 'key1=val1,key2=val2'. Overrides the 'tracing-header-<header>' options.")
             .build();
 
 }

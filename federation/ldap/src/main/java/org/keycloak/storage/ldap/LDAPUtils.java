@@ -32,10 +32,8 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
 import javax.naming.directory.SearchControls;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -55,6 +53,8 @@ import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
+
+import org.jboss.logging.Logger;
 
 /**
  * Allow to directly call some operations against LDAPIdentityStore.

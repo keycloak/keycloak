@@ -19,7 +19,11 @@ package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 
-import static org.junit.Assert.*;
+import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * SD-JWT-specific authorization details flow tests.
@@ -55,6 +59,6 @@ public class OID4VCSdJwtAuthorizationDetailsFlowTest extends OID4VCAuthorization
 
         // Verify it looks like an SD-JWT (contains dots and ~)
         assertTrue("SD-JWT should contain dots", sdJwtString.contains("."));
-        assertTrue("SD-JWT should contain tilde", sdJwtString.contains("~"));
+        assertTrue("SD-JWT should contain tilde", sdJwtString.contains(SDJWT_DELIMITER));
     }
 }

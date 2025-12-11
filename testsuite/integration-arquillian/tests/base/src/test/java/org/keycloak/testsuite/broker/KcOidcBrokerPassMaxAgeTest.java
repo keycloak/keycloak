@@ -1,7 +1,7 @@
 package org.keycloak.testsuite.broker;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import java.util.Map;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.models.IdentityProviderModel;
@@ -10,7 +10,8 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.broker.oidc.TestKeycloakOidcIdentityProviderFactory;
 
-import java.util.Map;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;

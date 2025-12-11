@@ -20,6 +20,8 @@ package org.keycloak.protocol.oid4vc.model;
 import java.util.Collections;
 import java.util.Set;
 
+import static org.keycloak.OID4VCConstants.SD_JWT_VC_FORMAT;
+
 /**
  * Enum of supported credential formats
  *
@@ -40,7 +42,7 @@ public class Format {
     /**
      * SD-JWT-Credentials {@see https://drafts.oauth.net/oauth-sd-jwt-vc/draft-ietf-oauth-sd-jwt-vc.html}
      */
-    public static final String SD_JWT_VC = "dc+sd-jwt";
+    public static final String SD_JWT_VC = SD_JWT_VC_FORMAT;
 
-    public static final Set<String> SUPPORTED_FORMATS = Collections.unmodifiableSet(Set.of(JWT_VC, LDP_VC, SD_JWT_VC));
+    public static final Set<String> SUPPORTED_FORMATS = Collections.unmodifiableSet(Set.of(JWT_VC, LDP_VC, SD_JWT_VC_FORMAT));
 }

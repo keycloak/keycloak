@@ -1,12 +1,13 @@
 package org.keycloak.tests.db;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 @KeycloakIntegrationTest
 public class DbTest {

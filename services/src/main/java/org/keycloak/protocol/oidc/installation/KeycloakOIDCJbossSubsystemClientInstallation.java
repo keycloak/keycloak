@@ -17,6 +17,12 @@
 
 package org.keycloak.protocol.oidc.installation;
 
+import java.net.URI;
+import java.util.Map;
+
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.Config;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -24,11 +30,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.net.URI;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -135,4 +136,3 @@ public class KeycloakOIDCJbossSubsystemClientInstallation implements ClientInsta
         return MediaType.APPLICATION_XML;
     }
 }
-

@@ -18,26 +18,26 @@ import java.security.cert.CollectionCertStoreParameters;
 import java.security.spec.ECParameterSpec;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
 import javax.net.ssl.SSLSocketFactory;
 
-import org.bouncycastle.jce.ECNamedCurveTable;
-import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
-import org.bouncycastle.jce.spec.ECNamedCurveSpec;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.jboss.logging.Logger;
-import org.keycloak.common.crypto.CryptoProvider;
-import org.keycloak.common.crypto.CryptoConstants;
-import org.keycloak.common.crypto.ECDSACryptoProvider;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
+import org.keycloak.common.crypto.CryptoConstants;
+import org.keycloak.common.crypto.CryptoProvider;
+import org.keycloak.common.crypto.ECDSACryptoProvider;
 import org.keycloak.common.crypto.PemUtilsProvider;
 import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.crypto.JavaAlgorithm;
+
+import org.bouncycastle.jce.ECNamedCurveTable;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
+import org.bouncycastle.jce.spec.ECNamedCurveSpec;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

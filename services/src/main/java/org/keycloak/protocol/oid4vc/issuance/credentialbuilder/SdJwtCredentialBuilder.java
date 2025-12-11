@@ -17,17 +17,23 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.IntStream;
+
+import org.keycloak.OID4VCConstants;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.sdjwt.DisclosureSpec;
+import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
+import org.keycloak.util.JsonSerialization;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.IntStream;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class SdJwtCredentialBuilder implements CredentialBuilder {
 
@@ -43,10 +49,9 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
     }
 
     @Override
-    public SdJwtCredentialBody buildCredentialBody(
-            VerifiableCredential verifiableCredential,
-            CredentialBuildConfig credentialBuildConfig
-    ) throws CredentialBuilderException {
+    public SdJwtCredentialBody buildCredentialBody(VerifiableCredential verifiableCredential,
+                                                   CredentialBuildConfig credentialBuildConfig)
+        throws CredentialBuilderException {
         // Retrieve claims
         CredentialSubject credentialSubject = verifiableCredential.getCredentialSubject();
         Map<String, Object> claimSet = credentialSubject.getClaims();
@@ -75,7 +80,16 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
         claimSet.put(ISSUER_CLAIM, credentialBuildConfig.getCredentialIssuer());
         claimSet.put(VERIFIABLE_CREDENTIAL_TYPE_CLAIM, credentialBuildConfig.getCredentialType());
 
-        // jti, nbf, iat and exp are all optional. So need to be set by a protocol mapper if needed.
+        // Set exp claim from verifiable credential expiration date
+        // expiry is optional, but should be set if available to comply with HAIP
+        // see: https://openid.github.io/OpenID4VC-HAIP/openid4vc-high-assurance-interoperability-profile-wg-draft.html#section-6.1
+        // Only set if not already set by a protocol mapper
+        if (!claimSet.containsKey(OID4VCConstants.CLAIM_NAME_EXP)) {
+            Optional.ofNullable(verifiableCredential.getExpirationDate())
+                    .ifPresent(d -> claimSet.put(OID4VCConstants.CLAIM_NAME_EXP, d.getEpochSecond()));
+        }
+
+        // jti, nbf, and iat are all optional. So need to be set by a protocol mapper if needed.
         // see: https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-03.html#name-registered-jwt-claims
 
         // Add the configured number of decoys
@@ -84,11 +98,15 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
                     .forEach(i -> disclosureSpecBuilder.withDecoyClaim(SdJwtUtils.randomSalt()));
         }
 
-        var sdJwtBuilder = SdJwt.builder()
-                .withDisclosureSpec(disclosureSpecBuilder.build())
-                .withHashAlgorithm(credentialBuildConfig.getHashAlgorithm())
-                .withJwsType(credentialBuildConfig.getTokenJwsType());
+        ObjectNode claimsNode = JsonSerialization.mapper.convertValue(claimSet, ObjectNode.class);
+        IssuerSignedJWT issuerSignedJWT = IssuerSignedJWT.builder()
+                                                         .withClaims(claimsNode,
+                                                                     disclosureSpecBuilder.build())
+                                                         .withHashAlg(credentialBuildConfig.getHashAlgorithm())
+                                                         .withJwsType(credentialBuildConfig.getTokenJwsType())
+                                                         .build();
+        SdJwt.Builder sdJwtBuilder = SdJwt.builder();
 
-        return new SdJwtCredentialBody(sdJwtBuilder, claimSet);
+        return new SdJwtCredentialBody(sdJwtBuilder, issuerSignedJWT);
     }
 }

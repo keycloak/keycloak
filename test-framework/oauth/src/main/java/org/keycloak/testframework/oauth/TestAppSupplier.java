@@ -1,10 +1,11 @@
 package org.keycloak.testframework.oauth;
 
-import com.sun.net.httpserver.HttpServer;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.oauth.annotations.InjectTestApp;
+
+import com.sun.net.httpserver.HttpServer;
 
 public class TestAppSupplier implements Supplier<TestApp, InjectTestApp> {
 

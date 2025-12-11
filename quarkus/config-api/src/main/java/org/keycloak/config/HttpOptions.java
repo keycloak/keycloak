@@ -18,7 +18,7 @@ public class HttpOptions {
 
     public static final Option<String> HTTP_HOST = new OptionBuilder<>("http-host", String.class)
             .category(OptionCategory.HTTP)
-            .description("The HTTP Host.")
+            .description("The HTTP Host. By default, Keycloak binds to all network addresses (0.0.0.0), which means the server may be accessible from other machines on your network. For local development, you can restrict access to localhost only by setting this to 127.0.0.1.")
             .defaultValue("0.0.0.0")
             .build();
 
@@ -118,13 +118,6 @@ public class HttpOptions {
                     "If '" + SecurityOptions.FIPS_MODE.getKey() + "' is set to '" + FipsMode.STRICT + "' and no value is set, it defaults to 'BCFKS'.")
             .build();
 
-    public static final Option<Boolean> HTTP_SERVER_ENABLED = new OptionBuilder<>("http-server-enabled", Boolean.class)
-            .category(OptionCategory.HTTP)
-            .hidden()
-            .description("Enables or disables the HTTP/s and Socket serving.")
-            .defaultValue(Boolean.TRUE)
-            .build();
-
     public static final Option<Integer> HTTP_MAX_QUEUED_REQUESTS = new OptionBuilder<>("http-max-queued-requests", Integer.class)
             .category(OptionCategory.HTTP)
             .description("Maximum number of queued HTTP requests. " +
@@ -150,4 +143,12 @@ public class HttpOptions {
             .description("Service level objectives for HTTP server requests. Use this instead of the default histogram, or use it in combination to add additional buckets. " +
                     "Specify a list of comma-separated values defined in milliseconds. Example with buckets from 5ms to 10s: 5,10,25,50,250,500,1000,2500,5000,10000")
             .build();
+
+    public static final Option<Boolean> HTTP_ACCEPT_NON_NORMALIZED_PATHS = new OptionBuilder<>("http-accept-non-normalized-paths", Boolean.class)
+            .category(OptionCategory.HTTP)
+            .description("If the server should accept paths that are not normalized according to RFC3986 or that contain a double slash ('//'). While accepting those requests might be relevant for legacy applications, it is recommended to disable it to allow for more concise URL filtering.")
+            .deprecated()
+            .defaultValue(Boolean.FALSE)
+            .build();
+
 }

@@ -1,22 +1,24 @@
 package org.keycloak.testsuite.broker;
 
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 
-import java.util.List;
-import java.util.Map;
-
 import static java.util.Locale.ENGLISH;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
+
 import static org.keycloak.OAuth2Constants.UI_LOCALES_PARAM;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KcOidcBrokerUiLocalesEnabledTest extends AbstractBrokerTest {
 

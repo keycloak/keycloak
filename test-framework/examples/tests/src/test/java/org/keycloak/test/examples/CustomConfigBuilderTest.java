@@ -1,7 +1,7 @@
 package org.keycloak.test.examples;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.util.LinkedList;
+
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -17,7 +17,8 @@ import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 
-import java.util.LinkedList;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 @KeycloakIntegrationTest
 public class CustomConfigBuilderTest {

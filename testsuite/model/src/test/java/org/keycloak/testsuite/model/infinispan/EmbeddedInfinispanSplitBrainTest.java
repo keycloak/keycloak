@@ -1,19 +1,10 @@
 package org.keycloak.testsuite.model.infinispan;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
-
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.Assume;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TestRule;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.Constants;
@@ -22,6 +13,17 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
+
+import org.junit.Assume;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
+
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
   Tests to ensure that Keycloak correctly handles various split-brain scenarios when an Embedded Infinispan instance

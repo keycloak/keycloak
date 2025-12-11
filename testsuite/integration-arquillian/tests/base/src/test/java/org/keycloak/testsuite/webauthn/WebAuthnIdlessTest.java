@@ -16,47 +16,60 @@
  */
 package org.keycloak.testsuite.webauthn;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.logging.Logger;
-import org.junit.Rule;
-import org.junit.Test;
-import org.keycloak.WebAuthnConstants;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.authentication.authenticators.browser.*;
-import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
-import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
-import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
-import org.keycloak.models.Constants;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.credential.WebAuthnCredentialModel;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.AbstractAdminTest;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.pages.*;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
-import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
-import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
-import org.openqa.selenium.firefox.FirefoxDriver;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.keycloak.WebAuthnConstants;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
+import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
+import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
+import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
+import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AbstractAdminTest;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
+import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
+import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.logging.Logger;
+import org.junit.Rule;
+import org.junit.Test;
+import org.openqa.selenium.firefox.FirefoxDriver;
+
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.testsuite.webauthn.utils.PropertyRequirement.NO;
 import static org.keycloak.testsuite.webauthn.utils.PropertyRequirement.YES;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions.Protocol;
 import static org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions.Transport;
 

@@ -1,12 +1,12 @@
 package org.freedesktop.dbus.annotations;
 
-import org.freedesktop.dbus.types.Variant;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import org.freedesktop.dbus.types.Variant;
 
 /**
  * Appends information about properties in the interface. The annotated properties are added to the introspection data.

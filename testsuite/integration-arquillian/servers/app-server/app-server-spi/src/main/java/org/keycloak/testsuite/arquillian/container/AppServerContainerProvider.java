@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.arquillian.container;
 
 import java.util.List;
+
 import org.jboss.shrinkwrap.descriptor.spi.node.Node;
 
 /**

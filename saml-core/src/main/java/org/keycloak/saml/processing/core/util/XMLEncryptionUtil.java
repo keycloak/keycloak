@@ -16,13 +16,14 @@
  */
 package org.keycloak.saml.processing.core.util;
 
-import org.apache.xml.security.algorithms.JCEMapper;
-import org.apache.xml.security.encryption.EncryptedData;
-import org.apache.xml.security.encryption.EncryptedKey;
-import org.apache.xml.security.encryption.XMLCipher;
-import org.apache.xml.security.encryption.XMLEncryptionException;
-import org.apache.xml.security.exceptions.XMLSecurityException;
-import org.apache.xml.security.utils.EncryptionConstants;
+import java.security.Key;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.List;
+import javax.crypto.SecretKey;
+import javax.xml.XMLConstants;
+import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.namespace.QName;
 
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
@@ -30,19 +31,17 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StringUtil;
 
+import org.apache.xml.security.algorithms.JCEMapper;
+import org.apache.xml.security.encryption.EncryptedData;
+import org.apache.xml.security.encryption.EncryptedKey;
+import org.apache.xml.security.encryption.XMLCipher;
+import org.apache.xml.security.encryption.XMLEncryptionException;
+import org.apache.xml.security.exceptions.XMLSecurityException;
+import org.apache.xml.security.utils.EncryptionConstants;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import javax.crypto.SecretKey;
-import javax.xml.namespace.QName;
-import java.security.Key;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.util.List;
-import javax.xml.XMLConstants;
-import javax.xml.crypto.dsig.XMLSignature;
 
 /**
  * Utility for XML Encryption <b>Note: </b> This utility is currently using Apache XML Security library API. JSR-106 is

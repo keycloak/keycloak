@@ -17,15 +17,15 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

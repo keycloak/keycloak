@@ -19,7 +19,6 @@
 
 package org.keycloak.authentication.authenticators.conditional;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -30,6 +29,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
+
+import org.jboss.logging.Logger;
 
 /**
  * Conditional authenticator to check if specified client-scope is present in the authentication request

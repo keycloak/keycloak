@@ -1,13 +1,14 @@
 package org.keycloak.testsuite.forms;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
-import org.junit.Test;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.authentication.authenticators.access.AllowAccessAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.access.DenyAccessAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalRoleAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.conditional.ConditionalUserAttributeValueFactory;
 import org.keycloak.authentication.authenticators.directgrant.ValidatePassword;
 import org.keycloak.authentication.authenticators.directgrant.ValidateUsername;
 import org.keycloak.events.Details;
@@ -15,21 +16,22 @@ import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.authentication.authenticators.conditional.ConditionalUserAttributeValueFactory;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.forms.BrowserFlowTest.revertFlows;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.keycloak.testsuite.forms.BrowserFlowTest.revertFlows;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>

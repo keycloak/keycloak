@@ -17,14 +17,15 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import java.util.function.Supplier;
+
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.common.Version;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.util.CacheControlUtil;
-
-import jakarta.ws.rs.core.CacheControl;
-import jakarta.ws.rs.core.Response;
-import java.util.function.Supplier;
 
 public class IframeUtil {
 

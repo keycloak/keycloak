@@ -17,20 +17,6 @@
 
 package org.keycloak.protocol.oid4vc.issuance;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.jboss.logging.Logger;
-import org.keycloak.models.ClientSessionContext;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
-import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
-import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
-import org.keycloak.protocol.oid4vc.model.Claim;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,18 +24,44 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.keycloak.OAuthErrorException;
+import org.keycloak.common.util.Time;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
+import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.Claim;
+import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
+import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
 import static org.keycloak.models.Constants.AUTHORIZATION_DETAILS_RESPONSE;
 
 public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetailsProcessor {
     private static final Logger logger = Logger.getLogger(OID4VCAuthorizationDetailsProcessor.class);
     private final KeycloakSession session;
 
-    public static final String OPENID_CREDENTIAL_TYPE = "openid_credential";
-
     public OID4VCAuthorizationDetailsProcessor(KeycloakSession session) {
         this.session = session;
+    }
+
+    @Override
+    public boolean isSupported() {
+        return session.getContext().getRealm().isVerifiableCredentialsEnabled();
     }
 
     @Override
@@ -76,7 +88,72 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             throw getInvalidRequestException("no valid authorization details found");
         }
 
+        // For authorization code flow, create CredentialOfferState if credential identifiers are present
+        // This allows credential requests with credential_identifier to find the associated offer state
+        createOfferStateForAuthorizationCodeFlow(userSession, clientSessionCtx, authDetailsResponse);
+
         return authDetailsResponse;
+    }
+
+    /**
+     * Creates CredentialOfferState for authorization code flow when credential identifiers are generated.
+     * This is only done for authorization code flow (not pre-authorized flow which already has an offer state).
+     * Processes all OID4VC authorization details to support multiple credential requests.
+     */
+    private void createOfferStateForAuthorizationCodeFlow(UserSessionModel userSession, ClientSessionContext clientSessionCtx,
+                                                          List<AuthorizationDetailsResponse> authDetailsResponse) {
+        AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
+        ClientModel client = clientSession != null ? clientSession.getClient() : null;
+        UserModel user = userSession != null ? userSession.getUser() : null;
+
+        if (client == null || user == null) {
+            return;
+        }
+
+        // Skip if we're in pre-authorized code flow (it already has an offer state that will be updated)
+        // Pre-authorized flow sets VC_ISSUANCE_FLOW note on the client session
+        String vcIssuanceFlow = clientSession.getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
+        if (vcIssuanceFlow != null && vcIssuanceFlow.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
+            logger.debugf("Skipping offer state creation for pre-authorized code flow (offer state already exists and will be updated)");
+            return;
+        }
+
+        CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+
+        // Process all OID4VC authorization details to create offer states for each credential
+        for (AuthorizationDetailsResponse authDetail : authDetailsResponse) {
+            if (authDetail instanceof OID4VCAuthorizationDetailsResponse oid4vcDetail) {
+                if (oid4vcDetail.getCredentialIdentifiers() != null && !oid4vcDetail.getCredentialIdentifiers().isEmpty()) {
+                    for (String credentialId : oid4vcDetail.getCredentialIdentifiers()) {
+                        // Check if offer state already exists
+                        CredentialOfferStorage.CredentialOfferState existingState = offerStorage.findOfferStateByCredentialId(session, credentialId);
+
+                        if (existingState == null) {
+                            // Create a new offer state for authorization code flow
+                            CredentialsOffer credOffer = new CredentialsOffer()
+                                    .setCredentialIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
+                                    .setCredentialConfigurationIds(List.of(oid4vcDetail.getCredentialConfigurationId()));
+
+                            // Use a reasonable expiration time (e.g., 1 hour)
+                            int expiration = Time.currentTime() + 3600;
+                            CredentialOfferStorage.CredentialOfferState offerState = new CredentialOfferStorage.CredentialOfferState(
+                                    credOffer, client.getClientId(), user.getId(), expiration);
+                            offerState.setAuthorizationDetails(oid4vcDetail);
+
+                            offerStorage.putOfferState(session, offerState);
+                            logger.debugf("Created credential offer state for authorization code flow: [cid=%s, uid=%s, credConfigId=%s, credId=%s]",
+                                    client.getClientId(), offerState.getUserId(), oid4vcDetail.getCredentialConfigurationId(), credentialId);
+                        } else {
+                            // Update existing offer state with new authorization details (e.g., if same credential identifier is reused)
+                            existingState.setAuthorizationDetails(oid4vcDetail);
+                            offerStorage.replaceOfferState(session, existingState);
+                            logger.debugf("Updated existing credential offer state for authorization code flow: [cid=%s, uid=%s, credConfigId=%s, credId=%s]",
+                                    client.getClientId(), existingState.getUserId(), oid4vcDetail.getCredentialConfigurationId(), credentialId);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private List<AuthorizationDetail> parseAuthorizationDetails(String authorizationDetailsParam) {
@@ -108,9 +185,9 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         List<ClaimsDescription> claims = detail.getClaims();
 
         // Validate type first
-        if (!OPENID_CREDENTIAL_TYPE.equals(type)) {
+        if (!OPENID_CREDENTIAL.equals(type)) {
             logger.warnf("Invalid authorization_details type: %s", type);
-            throw getInvalidRequestException("type: " + type + ", expected=" + OPENID_CREDENTIAL_TYPE);
+            throw getInvalidRequestException("type: " + type + ", expected=" + OPENID_CREDENTIAL);
         }
 
         // If authorization_servers is present, locations must be set to issuer identifier
@@ -216,18 +293,9 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         }
 
         OID4VCAuthorizationDetailsResponse responseDetail = new OID4VCAuthorizationDetailsResponse();
-        responseDetail.setType(OPENID_CREDENTIAL_TYPE);
+        responseDetail.setType(OPENID_CREDENTIAL);
         responseDetail.setCredentialConfigurationId(credentialConfigurationId);
         responseDetail.setCredentialIdentifiers(credentialIdentifiers);
-
-        // Store credential identifier mapping in client session for later use during credential issuance
-        AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
-        for (String credentialIdentifier : credentialIdentifiers) {
-            // Store the mapping between credential identifier and configuration ID in client session
-            String mappingKey = OID4VCIssuerEndpoint.CREDENTIAL_IDENTIFIER_PREFIX + credentialIdentifier;
-            clientSession.setNote(mappingKey, credentialConfigurationId);
-            logger.debugf("Stored credential identifier mapping: %s -> %s", credentialIdentifier, credentialConfigurationId);
-        }
 
         // Store claims in user session for later use during credential issuance
         if (detail.getClaims() != null) {
@@ -283,17 +351,11 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             }
 
             String credentialIdentifier = UUID.randomUUID().toString();
-
-            // Store the mapping between credential identifier and configuration ID in client session
-            // This will be used later when processing credential requests
-            String mappingKey = OID4VCIssuerEndpoint.CREDENTIAL_IDENTIFIER_PREFIX + credentialIdentifier;
-            clientSession.setNote(mappingKey, credentialConfigurationId);
-
             logger.debugf("Generated credential identifier '%s' for configuration '%s'",
                     credentialIdentifier, credentialConfigurationId);
 
             OID4VCAuthorizationDetailsResponse authDetail = new OID4VCAuthorizationDetailsResponse();
-            authDetail.setType(OPENID_CREDENTIAL_TYPE);
+            authDetail.setType(OPENID_CREDENTIAL);
             authDetail.setCredentialConfigurationId(credentialConfigurationId);
             authDetail.setCredentialIdentifiers(List.of(credentialIdentifier));
 
@@ -334,6 +396,24 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
     public List<AuthorizationDetailsResponse> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
         return generateAuthorizationDetailsFromCredentialOffer(clientSession);
+    }
+
+    @Override
+    public List<AuthorizationDetailsResponse> processStoredAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx, String storedAuthDetails) throws OAuthErrorException {
+        if (storedAuthDetails == null) {
+            return null;
+        }
+
+        logger.debugf("Processing stored authorization_details from authorization request: %s", storedAuthDetails);
+
+        try {
+            return process(userSession, clientSessionCtx, storedAuthDetails);
+        } catch (RuntimeException e) {
+            logger.warnf(e, "Error when processing stored authorization_details, cannot fulfill OID4VC requirement");
+            // According to OID4VC spec, if authorization_details was used in authorization request,
+            // it is required to be returned in token response. If it cannot be processed, return invalid_request error
+            throw new OAuthErrorException(OAuthErrorException.INVALID_REQUEST, "authorization_details was used in authorization request but cannot be processed for token response: " + e.getMessage());
+        }
     }
 
     @Override

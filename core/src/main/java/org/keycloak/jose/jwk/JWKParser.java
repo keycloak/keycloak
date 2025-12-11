@@ -25,11 +25,12 @@ import java.security.spec.ECPoint;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -81,6 +82,8 @@ public class JWKParser {
             return createECPublicKey(normalizedJwkNode);
         } else if (KeyType.OKP.equals(keyType)) {
             return JWKBuilder.EdEC_UTILS.createOKPPublicKey(jwk);
+        } else if (KeyType.AKP.equals(keyType)) {
+            return createAPKPublicKey(normalizedJwkNode);
         } else {
             throw new RuntimeException("Unsupported keyType " + keyType);
         }
@@ -142,8 +145,15 @@ public class JWKParser {
         }
     }
 
+    private static PublicKey createAPKPublicKey(JsonNode jwk) {
+        String algorithm = jwk.path(JWK.ALGORITHM).asText();
+        String publicKey = jwk.path(AKPPublicJWK.PUB).asText();
+        return AKPUtils.fromEncodedPub(publicKey, algorithm);
+    }
+
     public boolean isKeyTypeSupported(String keyType) {
         return (RSAPublicJWK.RSA.equals(keyType) || ECPublicJWK.EC.equals(keyType)
-                || (JWKBuilder.EdEC_UTILS.isEdECSupported() && OKPPublicJWK.OKP.equals(keyType)));
+                || (JWKBuilder.EdEC_UTILS.isEdECSupported() && OKPPublicJWK.OKP.equals(keyType)))
+                || KeyType.AKP.equals(keyType);
     }
 }

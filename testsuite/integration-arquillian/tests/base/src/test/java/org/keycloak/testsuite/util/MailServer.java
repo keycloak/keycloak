@@ -17,17 +17,18 @@
 
 package org.keycloak.testsuite.util;
 
-import com.icegreen.greenmail.util.GreenMail;
-import com.icegreen.greenmail.util.ServerSetup;
-import org.jboss.logging.Logger;
+import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.net.SocketException;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMessage.RecipientType;
 import jakarta.mail.internet.MimeMultipart;
-import java.io.IOException;
-import java.lang.Thread.UncaughtExceptionHandler;
-import java.net.SocketException;
+
+import com.icegreen.greenmail.util.GreenMail;
+import com.icegreen.greenmail.util.ServerSetup;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.testsuite.util.MailServerConfiguration.HOST;
 import static org.keycloak.testsuite.util.MailServerConfiguration.PORT;

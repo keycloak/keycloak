@@ -17,22 +17,6 @@
 
 package org.keycloak.exportimport.dir;
 
-import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.connections.jpa.support.EntityManagers;
-import org.keycloak.exportimport.AbstractFileBasedImportProvider;
-import org.keycloak.exportimport.Strategy;
-import org.keycloak.exportimport.util.ExportImportSessionTask;
-import org.keycloak.exportimport.util.ImportUtils;
-import org.keycloak.exportimport.util.ExportImportSessionTask.Mode;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.platform.Platform;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.utils.KeycloakSessionUtil;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,7 +25,23 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.keycloak.Config;
+import org.keycloak.connections.jpa.support.EntityManagers;
+import org.keycloak.exportimport.AbstractFileBasedImportProvider;
+import org.keycloak.exportimport.Strategy;
+import org.keycloak.exportimport.util.ExportImportSessionTask;
+import org.keycloak.exportimport.util.ExportImportSessionTask.Mode;
+import org.keycloak.exportimport.util.ImportUtils;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.platform.Platform;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.storage.datastore.DefaultExportImportManager;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.KeycloakSessionUtil;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

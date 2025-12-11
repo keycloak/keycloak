@@ -18,10 +18,14 @@
 package org.keycloak.testsuite.client;
 
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.commons.lang.StringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
+
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.client.registration.Auth;
@@ -44,18 +48,16 @@ import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.UserInfoClientUtil;
+import org.keycloak.testsuite.util.UserManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
-import org.keycloak.testsuite.util.UserInfoClientUtil;
-import org.keycloak.testsuite.util.UserManager;
 
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.List;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.commons.lang.StringUtils;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;

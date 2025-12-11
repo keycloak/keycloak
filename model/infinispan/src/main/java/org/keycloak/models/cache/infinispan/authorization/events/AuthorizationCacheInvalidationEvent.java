@@ -16,9 +16,9 @@
  */
 package org.keycloak.models.cache.infinispan.authorization.events;
 
-import org.keycloak.models.cache.infinispan.authorization.StoreFactoryCacheManager;
-
 import java.util.Set;
+
+import org.keycloak.models.cache.infinispan.authorization.StoreFactoryCacheManager;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

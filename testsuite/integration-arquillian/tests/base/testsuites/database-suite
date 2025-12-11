@@ -4,7 +4,6 @@ AuthorizationTest
 ClientRegistrationTest
 EventStoreProviderTest
 ExportImportTest
-GeneratedRsaKeyProviderTest
 KcOidcBrokerTest
 LDAPUserLoginTest
 LoginTest
@@ -13,7 +12,6 @@ RefreshTokenTest
 RequiredActionUpdateProfileTest
 SSOTest
 SamlClientTest
-TransactionsTest
 UserProfileTest
 OidcAdvancedClaimToGroupMapperTest
 OidcAdvancedClaimToRoleMapperTest

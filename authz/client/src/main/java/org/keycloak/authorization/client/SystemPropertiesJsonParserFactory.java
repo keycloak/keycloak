@@ -21,12 +21,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.common.util.SystemEnvProperties;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.io.IOContext;
 import com.fasterxml.jackson.core.util.JsonParserDelegate;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
-import org.keycloak.common.util.StringPropertyReplacer;
-import org.keycloak.common.util.SystemEnvProperties;
 
 /**
  * Provides replacing of system properties for parsed values

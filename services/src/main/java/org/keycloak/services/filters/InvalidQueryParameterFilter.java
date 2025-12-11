@@ -1,16 +1,17 @@
 package org.keycloak.services.filters;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.PreMatching;
 import jakarta.ws.rs.ext.Provider;
-import org.jboss.logging.Logger;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 @Provider
 @PreMatching

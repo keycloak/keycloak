@@ -16,19 +16,19 @@
  */
 package org.keycloak.models.sessions.infinispan;
 
-import org.infinispan.commons.api.BasicCache;
-import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
-import org.infinispan.context.Flag;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import org.infinispan.Cache;
-import org.jboss.logging.Logger;
 import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
 import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
+
+import org.infinispan.Cache;
+import org.infinispan.commons.api.BasicCache;
+import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
+import org.infinispan.context.Flag;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -17,13 +17,14 @@
 
 package org.keycloak.theme;
 
-import org.jboss.logging.Logger;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ThemeManager;
 
-import java.util.concurrent.ConcurrentHashMap;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

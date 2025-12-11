@@ -7,14 +7,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.utils.StringUtil;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.keycloak.models.ClientSecretConstants.CLIENT_ROTATED_SECRET;
 import static org.keycloak.models.ClientSecretConstants.CLIENT_ROTATED_SECRET_CREATION_TIME;

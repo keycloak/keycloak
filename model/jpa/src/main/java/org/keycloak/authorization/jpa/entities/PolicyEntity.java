@@ -18,7 +18,10 @@
 
 package org.keycloak.authorization.jpa.entities;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
@@ -38,13 +41,13 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.Logic;
+
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Nationalized;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
-import org.keycloak.representations.idm.authorization.DecisionStrategy;
-import org.keycloak.representations.idm.authorization.Logic;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -65,7 +68,7 @@ import org.keycloak.representations.idm.authorization.Logic;
                 @NamedQuery(name="findPolicyIdByResourceType", query="select p from PolicyEntity p inner join p.config c inner join fetch p.associatedPolicies a where p.resourceServer.id = :serverId and KEY(c) = 'defaultResourceType' and c like :type"),
                 @NamedQuery(name="findPolicyIdByDependentPolices", query="select p.id from PolicyEntity p inner join p.associatedPolicies ap where p.resourceServer.id = :serverId and (ap.resourceServer.id = :serverId and ap.id = :policyId)"),
                 @NamedQuery(name="deletePolicyByResourceServer", query="delete from PolicyEntity p where p.resourceServer.id = :serverId"),
-                @NamedQuery(name="findDependentPolicyByResourceTypeAndConfig", query="select p.id from PolicyEntity p inner join p.scopes s inner join p.config c inner join p.associatedPolicies ap inner join ap.config ac where p.resourceServer.id = :serverId and (s.name in ('" + AdminPermissionsSchema.VIEW + "', '" + AdminPermissionsSchema.VIEW_MEMBERS + "')) and ap.resourceServer.id = :serverId and ap.type = :associatedPolicyType and (KEY(c) = 'defaultResourceType' and c like :resourceType) and (KEY(ac) = :configKey and ac like :configValue)")
+                @NamedQuery(name="findDependentPolicyByResourceTypeAndConfig", query="select p.id from PolicyEntity p inner join p.scopes s inner join p.config c inner join p.associatedPolicies ap inner join ap.config ac where p.resourceServer.id = :serverId and (s.name = :scopeName) and ap.resourceServer.id = :serverId and ap.type = :associatedPolicyType and (KEY(c) = 'defaultResourceType' and c like :resourceType) and (KEY(ac) = :configKey and ac like :configValue)")
         }
 )
 

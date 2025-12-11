@@ -1,8 +1,18 @@
 package org.keycloak.testsuite.util;
 
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.Base64;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.ComponentResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
@@ -13,16 +23,6 @@ import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
-
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>.
@@ -85,12 +85,12 @@ public class RealmManager {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
-        rep.setPrivateKey(Base64.encodeBytes(keyPair.getPrivate().getEncoded()));
-        rep.setPublicKey(Base64.encodeBytes(keyPair.getPublic().getEncoded()));
+        rep.setPrivateKey(Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded()));
+        rep.setPublicKey(Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
         X509Certificate certificate;
         try {
             certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, rep.getId());
-            rep.setCertificate(Base64.encodeBytes(certificate.getEncoded()));
+            rep.setCertificate(Base64.getEncoder().encodeToString(certificate.getEncoded()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

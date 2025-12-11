@@ -17,20 +17,20 @@
 
 package org.keycloak.storage.ldap.mappers;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import javax.naming.AuthenticationException;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.user.SynchronizationResult;
-
-import javax.naming.AuthenticationException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import org.keycloak.models.RoleModel;
 import org.keycloak.utils.KeycloakSessionUtil;
 
 /**

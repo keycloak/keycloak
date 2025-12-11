@@ -16,15 +16,16 @@
  */
 package org.keycloak.it.cli.dist;
 
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.RawDistOnly;
+
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import io.restassured.RestAssured;
 import io.restassured.config.RedirectConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.RawDistOnly;
 
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.is;

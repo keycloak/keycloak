@@ -67,4 +67,3 @@ public class ImportRealmFromRepresentationEvent implements ProviderEvent {
         return realmModel;
     }
 }
-

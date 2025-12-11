@@ -134,86 +134,13 @@ Transaction:
 
 Feature:
 
+--feature-<name> <enabled|disabled|vX(X is version)>
+                     Enable/Disable specific feature <feature>. It takes precedence over the
+                       'features', and 'features-disabled' options. Possible values are: 'enabled',
+                       'disabled', or specific version (lowercase) that will be enabled (f.e. 'v2')
 --features <feature> Enables a set of one or more features. Possible values are: <...>.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: <...>.
-
-HTTP Access log:
-
---http-access-log-enabled <true|false>
-                     If HTTP access logging is enabled. By default this will log records in
-                       console. Default: false.
---http-access-log-exclude <PARAM>
-                     A regular expression that can be used to exclude some paths from logging. For
-                       instance, '/realms/my-realm/.*' will exclude all subsequent endpoints for
-                       realm 'my-realm' from the log. Available only when HTTP Access log is
-                       enabled.
---http-access-log-pattern <PARAM>
-                     The HTTP access log pattern. You can use the available named formats, or use
-                       custom format described in Quarkus documentation. Possible values are:
-                       common, combined, long, or a custom one. Default: common. Available only
-                       when HTTP Access log is enabled.
-
-Management:
-
---http-management-health-enabled <true|false>
-                     If health endpoints should be exposed on the management interface. If false,
-                       health endpoints will be exposed on the main interface. Default: true.
-                       Available only when health is enabled.
---http-management-port <port>
-                     Port of the management interface. Relevant only when something is exposed on
-                       the management interface - see the guide for details. Default: 9000.
---http-management-relative-path <path>
-                     Set the path relative to '/' for serving resources from management interface.
-                       The path must start with a '/'. If not given, the value is inherited from
-                       HTTP options. Relevant only when something is exposed on the management
-                       interface - see the guide for details. Default: /.
---http-management-scheme <scheme>
-                     Configures the management interface scheme. If 'inherited', the management
-                       interface will inherit the HTTPS settings of the main interface. If 'http',
-                       the management interface will be accessible via HTTP - it will not inherit
-                       HTTPS settings and cannot be configured for HTTPS. Possible values are:
-                       http, inherited. Default: inherited.
---https-management-certificate-file <file>
-                     The file path to a server certificate or certificate chain in PEM format for
-                       the management server. If not given, the value is inherited from HTTP
-                       options. Relevant only when something is exposed on the management interface
-                       - see the guide for details. Available only when http-management-scheme is
-                       inherited.
---https-management-certificate-key-file <file>
-                     The file path to a private key in PEM format for the management server. If not
-                       given, the value is inherited from HTTP options. Relevant only when
-                       something is exposed on the management interface - see the guide for
-                       details. Available only when http-management-scheme is inherited.
---https-management-certificates-reload-period <reload period>
-                     Interval on which to reload key store, trust store, and certificate files
-                       referenced by https-management-* options for the management server. May be
-                       an ISO 8601 duration value, an integer number of seconds, or an integer
-                       followed by one of [ms, h, m, s, d]. Must be greater than 30 seconds. Use -1
-                       to disable. If not given, the value is inherited from HTTP options. Relevant
-                       only when something is exposed on the management interface - see the guide
-                       for details. Default: 1h. Available only when http-management-scheme is
-                       inherited.
---https-management-client-auth <auth>
-                     Configures the management interface to require/request client authentication.
-                       If not given, the value is inherited from HTTP options. Relevant only when
-                       something is exposed on the management interface - see the guide for
-                       details. Possible values are: none, request, required. Default: none.
---https-management-key-store-file <file>
-                     The key store which holds the certificate information instead of specifying
-                       separate files for the management server. If not given, the value is
-                       inherited from HTTP options. Relevant only when something is exposed on the
-                       management interface - see the guide for details. Available only when
-                       http-management-scheme is inherited.
---https-management-key-store-password <password>
-                     The password of the key store file for the management server. If not given,
-                       the value is inherited from HTTP options. Relevant only when something is
-                       exposed on the management interface - see the guide for details. Default:
-                       password. Available only when http-management-scheme is inherited.
---legacy-observability-interface <true|false>
-                     DEPRECATED. If metrics/health endpoints should be exposed on the main HTTP
-                       server (not recommended). If set to true, the management interface is
-                       disabled. Default: false.
 
 Vault:
 
@@ -382,6 +309,26 @@ Logging:
                      Set the Syslog type used to format the sent message. Possible values are:
                        rfc5424, rfc3164. Default: rfc5424. Available only when Syslog is activated.
 
+Telemetry (OpenTelemetry):
+
+--telemetry-endpoint <url>
+                     OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
+                       Available only when any of available OpenTelemetry components (Traces) is
+                       turned on.
+--telemetry-protocol <protocol>
+                     OpenTelemetry protocol used for the communication between server and
+                       OpenTelemetry collector. Possible values are: grpc, http/protobuf. Default:
+                       grpc. Available only when any of available OpenTelemetry components (Traces)
+                       is turned on.
+--telemetry-resource-attributes <attributes>
+                     OpenTelemetry resource attributes characterize the telemetry producer. Values
+                       in format 'key1=val1,key2=val2'. Available only when any of available
+                       OpenTelemetry components (Traces) is turned on.
+--telemetry-service-name <name>
+                     OpenTelemetry service name. Takes precedence over 'service.name' defined in
+                       the 'telemetry-resource-attributes' property. Default: keycloak. Available
+                       only when any of available OpenTelemetry components (Traces) is turned on.
+
 Tracing:
 
 --tracing-compression <method>
@@ -392,8 +339,14 @@ Tracing:
                      Enables the OpenTelemetry tracing. Default: false. Available only when
                        'opentelemetry' feature is enabled.
 --tracing-endpoint <url>
-                     OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
-                       Available only when Tracing is enabled.
+                     OpenTelemetry endpoint to connect to for traces. If not given, the value is
+                       inherited from the 'telemetry-endpoint' option. Default: http://localhost:
+                       4317. Available only when Tracing is enabled.
+--tracing-header-<header> <value>
+                     OpenTelemetry header that will be part of the exporter request (mainly useful
+                       for providing Authorization header). Check the documentation on how to set
+                       environment variables for headers containing special characters or custom
+                       case-sensitive headers. Available only when Tracing is enabled.
 --tracing-infinispan-enabled <true|false>
                      Enables the OpenTelemetry tracing for embedded Infinispan. Default: true.
                        Available only when tracing and embedded Infinispan is enabled.
@@ -401,13 +354,18 @@ Tracing:
                      Enables the OpenTelemetry JDBC tracing. Default: true. Available only when
                        Tracing is enabled.
 --tracing-protocol <protocol>
-                     OpenTelemetry protocol used for the telemetry data. Possible values are: grpc,
+                     OpenTelemetry protocol used for the telemetry data. If not given, the value is
+                       inherited from the 'telemetry-protocol' option. Possible values are: grpc,
                        http/protobuf. Default: grpc. Available only when Tracing is enabled.
 --tracing-resource-attributes <attributes>
-                     OpenTelemetry resource attributes present in the exported trace to
+                     DEPRECATED. OpenTelemetry resource attributes present in the exported trace to
                        characterize the telemetry producer. Values in format 'key1=val1,key2=val2'.
-                       For more information, check the Tracing guide. Available only when Tracing
-                       is enabled.
+                       If not given, the value is inherited from the
+                       'telemetry-resource-attributes' option. For more information, check the
+                       Tracing guide. Available only when Tracing is enabled. Resource attributes
+                       are not directly related to Tracing and you should use the Telemetry option
+                       which takes precedence. Use the following option instead:
+                       telemetry-resource-attributes.
 --tracing-sampler-ratio <ratio>
                      OpenTelemetry sampler ratio. Probability that a span will be sampled. Expected
                        double value in interval [0,1]. Default: 1.0. Available only when Tracing is
@@ -418,9 +376,12 @@ Tracing:
                        parentbased_traceidratio. Default: traceidratio. Available only when Tracing
                        is enabled.
 --tracing-service-name <name>
-                     OpenTelemetry service name. Takes precedence over 'service.name' defined in
-                       the 'tracing-resource-attributes' property. Default: keycloak. Available
-                       only when Tracing is enabled.
+                     DEPRECATED. OpenTelemetry service name. Takes precedence over 'service.name'
+                       defined in the 'tracing-resource-attributes' property. If not given, the
+                       value is inherited from the 'telemetry-service-name' option. Default:
+                       keycloak. Available only when Tracing is enabled. Service name is not
+                       directly related to Tracing and you should use the Telemetry option which
+                       takes precedence. Use the following option instead: telemetry-service-name.
 
 Events:
 
@@ -459,6 +420,17 @@ Export:
 --users-per-file <number>
                      Set the number of users per file. It is used only if 'users' is set to
                        'different_files'. Default: 50.
+
+OpenAPI configuration:
+
+--openapi-enabled <true|false>
+                     If the server should expose OpenAPI Endpoint. If enabled, OpenAPI is available
+                       at '/openapi'. Default: false. Available only when OpenAPI feature is
+                       enabled.
+--openapi-ui-enabled <true|false>
+                     If the server should expose OpenApi-UI Endpoint. If enabled, OpenAPI UI is
+                       available at '/openapi/ui'. Default: false. Available only when OpenAPI
+                       Endpoint is enabled.
 
 Bootstrap Admin:
 

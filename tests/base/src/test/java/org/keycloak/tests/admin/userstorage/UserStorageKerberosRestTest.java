@@ -1,7 +1,7 @@
 package org.keycloak.tests.admin.userstorage;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.util.List;
+
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.admin.OperationType;
@@ -14,7 +14,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
-import java.util.List;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 @KeycloakIntegrationTest
 public class UserStorageKerberosRestTest extends AbstractUserStorageRestTest {

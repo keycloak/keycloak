@@ -125,7 +125,7 @@ This cache is needed for the Brute Force Protection feature to work in a multi-n
 Action tokens are used for scenarios when a user needs to confirm an action asynchronously, for example in the emails sent by the forgot password flow.
 The `actionTokens` distributed cache is used to track metadata about action tokens.
 
-TIP: You can see the applied Infinispan configuration in the logs by configuring `--log-level=info,org.keycloak.connections.infinispan:debug`.
+TIP: You can see the applied Infinispan configuration in the logs by configuring `--log-level=info,org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory:debug`.
 
 === Volatile user sessions
 
@@ -175,6 +175,8 @@ The configuration file is relative to the `conf/` directory.
 === Modifying cache configuration defaults
 
 {project_name} automatically creates all required caches with the expected configurations. You can add additional caches or override the default cache configurations in `conf/cache-ispn.xml` or in your own file provided via `--cache-config-file`.
+
+To see the applied Infinispan configuration in the logs, configure `--log-level=info,org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory:debug`.
 
 [WARNING]
 ====

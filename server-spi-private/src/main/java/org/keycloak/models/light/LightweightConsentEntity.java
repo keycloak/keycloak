@@ -16,6 +16,10 @@
  */
 package org.keycloak.models.light;
 
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -23,9 +27,6 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
 
 /**
  *

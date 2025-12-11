@@ -16,6 +16,14 @@
  */
 package org.keycloak.testsuite.util;
 
+import java.net.URI;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
+import jakarta.ws.rs.core.Response.Status;
+
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.page.AbstractPage;
@@ -23,29 +31,26 @@ import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClient.DoNotFollowRedirectStep;
 import org.keycloak.testsuite.util.SamlClient.ResultExtractor;
 import org.keycloak.testsuite.util.SamlClient.Step;
-import java.net.URI;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.function.Consumer;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.keycloak.testsuite.util.saml.CreateArtifactMessageStepBuilder;
 import org.keycloak.testsuite.util.saml.CreateAuthnRequestStepBuilder;
 import org.keycloak.testsuite.util.saml.CreateLogoutRequestStepBuilder;
 import org.keycloak.testsuite.util.saml.HandleArtifactStepBuilder;
 import org.keycloak.testsuite.util.saml.IdPInitiatedLoginBuilder;
 import org.keycloak.testsuite.util.saml.LoginBuilder;
-import org.keycloak.testsuite.util.saml.UpdateProfileBuilder;
 import org.keycloak.testsuite.util.saml.ModifySamlResponseStepBuilder;
 import org.keycloak.testsuite.util.saml.RequiredConsentBuilder;
-import java.util.function.Function;
-import jakarta.ws.rs.core.Response.Status;
+import org.keycloak.testsuite.util.saml.UpdateProfileBuilder;
+
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.hamcrest.Matcher;
 import org.w3c.dom.Document;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+
 import static org.keycloak.testsuite.util.saml.SamlDocumentStepBuilder.saml2Object2String;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.notNullValue;
 
 /**
  *

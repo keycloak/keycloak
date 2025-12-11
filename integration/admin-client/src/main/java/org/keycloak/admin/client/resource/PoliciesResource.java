@@ -16,10 +16,7 @@
  */
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
-import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
-import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
-import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import java.util.List;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -30,7 +27,11 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
+
+import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
+import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
+import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

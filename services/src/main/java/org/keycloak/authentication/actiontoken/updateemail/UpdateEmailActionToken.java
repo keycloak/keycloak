@@ -17,8 +17,9 @@
 
 package org.keycloak.authentication.actiontoken.updateemail;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.authentication.actiontoken.DefaultActionToken;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class UpdateEmailActionToken extends DefaultActionToken {
 

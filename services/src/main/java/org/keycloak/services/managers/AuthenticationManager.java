@@ -16,14 +16,33 @@
  */
 package org.keycloak.services.managers;
 
-import org.jboss.logging.Logger;
+import java.net.URI;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
+
+import org.keycloak.OAuth2Constants;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
-import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.cookie.CookieProvider;
-import org.keycloak.cookie.CookieType;
-import org.keycloak.http.HttpRequest;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.TokenVerifier.TokenTypeCheck;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -35,6 +54,7 @@ import org.keycloak.authentication.RequiredActionContextResult;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
@@ -42,6 +62,8 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.events.Details;
@@ -49,18 +71,19 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jws.crypto.HashUtils;
-import org.keycloak.models.KeycloakContext;
-import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.DefaultActionTokenKey;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
@@ -97,30 +120,9 @@ import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel.Action;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
-
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.NewCookie;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.utils.RoleResolveUtil;
-import java.net.URI;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2DeviceVerificationFlow;
@@ -913,11 +915,11 @@ public class AuthenticationManager {
 
         AuthResult authResult = verifyIdentityToken(session, realm, session.getContext().getUri(), session.getContext().getConnection(), checkActive, false, null, true, tokenString,
                 session.getContext().getRequestHeaders(), verifier -> verifier.withChecks(VALIDATE_IDENTITY_COOKIE));
-        if (authResult == null || authResult.getSession() == null) {
+        if (authResult == null || authResult.session() == null) {
             expireIdentityCookie(session);
             return null;
         }
-        authResult.getSession().setLastSessionRefresh(Time.currentTime());
+        authResult.session().setLastSessionRefresh(Time.currentTime());
         return authResult;
     }
 
@@ -942,7 +944,7 @@ public class AuthenticationManager {
         if (!compareSessionIdWithSessionCookie(session, userSession.getId())) {
             AuthResult result = authenticateIdentityCookie(session, realm, false);
             if (result != null) {
-                UserSessionModel oldSession = result.getSession();
+                UserSessionModel oldSession = result.session();
                 if (oldSession != null && !oldSession.getId().equals(userSession.getId())) {
                     logger.debugv("Removing old user session: session: {0}", oldSession.getId());
                     session.sessions().removeUserSession(realm, oldSession);
@@ -1653,31 +1655,35 @@ public class AuthenticationManager {
         SUCCESS, ACCOUNT_TEMPORARILY_DISABLED, ACCOUNT_DISABLED, ACTIONS_REQUIRED, INVALID_USER, INVALID_CREDENTIALS, MISSING_PASSWORD, MISSING_TOTP, FAILED
     }
 
-    public static class AuthResult {
-        private final UserModel user;
-        private final UserSessionModel session;
-        private final AccessToken token;
-        private final ClientModel client;
-
-        public AuthResult(UserModel user, UserSessionModel session, AccessToken token, ClientModel client) {
-            this.user = user;
-            this.session = session;
-            this.token = token;
-            this.client = client;
-        }
-
+    public record AuthResult(UserModel user, UserSessionModel session, AccessToken token, ClientModel client) {
+        /**
+         * @deprecated use {@link #session()} instead.
+         */
+        @Deprecated(since = "26.5", forRemoval = true)
         public UserSessionModel getSession() {
             return session;
         }
 
+        /**
+         * @deprecated use {@link #user()} instead.
+         */
+        @Deprecated(since = "26.5", forRemoval = true)
         public UserModel getUser() {
             return user;
         }
 
+        /**
+         * @deprecated use {@link #token()} instead.
+         */
+        @Deprecated(since = "26.5", forRemoval = true)
         public AccessToken getToken() {
             return token;
         }
 
+        /**
+         * @deprecated use {@link #client()} instead.
+         */
+        @Deprecated(since = "26.5", forRemoval = true)
         public ClientModel getClient() {
             return client;
         }

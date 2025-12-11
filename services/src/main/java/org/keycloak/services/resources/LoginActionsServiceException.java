@@ -16,8 +16,9 @@
  */
 package org.keycloak.services.resources;
 
-import org.keycloak.common.VerificationException;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.common.VerificationException;
 
 /**
  *

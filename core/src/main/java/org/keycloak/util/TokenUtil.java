@@ -17,6 +17,9 @@
 
 package org.keycloak.util;
 
+import java.io.IOException;
+import java.security.Key;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEConstants;
@@ -29,9 +32,6 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
-
-import java.io.IOException;
-import java.security.Key;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -1,8 +1,5 @@
 package org.keycloak.representations.workflows;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
@@ -10,8 +7,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.junit.Test;
 import org.keycloak.util.JsonSerialization;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class WorkflowDefinitionTest {
 
@@ -20,30 +21,26 @@ public class WorkflowDefinitionTest {
         WorkflowRepresentation expected = new WorkflowRepresentation();
 
         expected.setId("workflow-id");
-        expected.setUses("my-provider");
         expected.setName("my-name");
         expected.setOn("event");
         expected.setConditions("condition-1(v1) AND (condition-2(key1:v1) OR condition-3(key2:v2,v3))");
         expected.setSteps(null);
         expected.setEnabled(true);
 
-        expected.setConcurrency(new WorkflowConcurrencyRepresentation(true));
+        expected.setConcurrency(new WorkflowConcurrencyRepresentation("true", "user-role-removed(admin)"));
 
         expected.setSteps(Arrays.asList(
                 WorkflowStepRepresentation.create()
                         .of("step-1")
-                        .id("1")
                         .withConfig("key1", "v1")
                         .after(Duration.ofSeconds(10))
                         .build(),
                 WorkflowStepRepresentation.create()
                         .of("step-2")
-                        .id("2")
                         .withConfig("key1", "v1", "v2")
                         .build(),
                 WorkflowStepRepresentation.create()
                         .of("step-1")
-                        .id("3")
                         .withConfig("key1", "v1")
                         .build()));
 
@@ -52,7 +49,6 @@ public class WorkflowDefinitionTest {
         WorkflowRepresentation actual = JsonSerialization.readValue(json, WorkflowRepresentation.class);
 
         assertEquals(expected.getId(), actual.getId());
-        assertEquals(expected.getUses(), actual.getUses());
         assertNotNull(actual.getOn());
         assertEquals(expected.getOn(), actual.getOn());
         assertEquals(expected.getConcurrency(), actual.getConcurrency());

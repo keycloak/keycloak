@@ -113,24 +113,6 @@ public class SdJwtUtils {
         return (ArrayNode) jsonNode;
     }
 
-    public static long readTimeClaim(JsonNode payload, String claimName) throws VerificationException {
-        JsonNode claim = payload.get(claimName);
-        if (claim == null || !claim.isNumber()) {
-            throw new VerificationException("Missing or invalid '" + claimName + "' claim");
-        }
-
-        return claim.asLong();
-    }
-
-    public static String readClaim(JsonNode payload, String claimName) throws VerificationException {
-        JsonNode claim = payload.get(claimName);
-        if (claim == null) {
-            throw new VerificationException("Missing '" + claimName + "' claim");
-        }
-
-        return claim.textValue();
-    }
-
     public static JsonNode deepClone(JsonNode node) {
         try {
             byte[] serializedNode = mapper.writeValueAsBytes(node);

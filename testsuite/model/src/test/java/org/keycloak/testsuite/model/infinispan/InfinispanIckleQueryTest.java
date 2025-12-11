@@ -29,14 +29,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.api.query.Query;
-import org.infinispan.commons.util.concurrent.CompletionStages;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TestRule;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
@@ -59,6 +51,15 @@ import org.keycloak.models.sessions.infinispan.query.UserSessionQueries;
 import org.keycloak.models.sessions.infinispan.remote.RemoteUserLoginFailureProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
+
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.api.query.Query;
+import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
 
 @RequireProvider(UserLoginFailureProvider.class)
 @RequireProvider(UserSessionProvider.class)

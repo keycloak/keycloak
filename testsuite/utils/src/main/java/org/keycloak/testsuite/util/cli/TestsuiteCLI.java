@@ -17,11 +17,6 @@
 
 package org.keycloak.testsuite.util.cli;
 
-import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.testsuite.KeycloakServer;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -30,6 +25,12 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.testsuite.KeycloakServer;
+
+import org.jboss.logging.Logger;
 
 /**
  * See Testsuite.md (section how to create many users and offline sessions)

@@ -1,12 +1,14 @@
 package org.keycloak.cache;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-
 import java.util.List;
 import java.util.Map;
+
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderQuery;
+import org.keycloak.models.KeycloakSession;
+
+import com.github.benmanes.caffeine.cache.Cache;
 
 public class DefaultAlternativeLookupProvider implements AlternativeLookupProvider {
 
@@ -29,7 +31,7 @@ public class DefaultAlternativeLookupProvider implements AlternativeLookupProvid
             }
         }
 
-        IdentityProviderModel idp = session.identityProviders().getAllStream()
+        IdentityProviderModel idp = session.identityProviders().getAllStream(IdentityProviderQuery.any())
                 .filter(i -> issuerUrl.equals(i.getConfig().get(IdentityProviderModel.ISSUER)))
                 .findFirst().orElse(null);
         if (idp != null && idp.getAlias() != null) {

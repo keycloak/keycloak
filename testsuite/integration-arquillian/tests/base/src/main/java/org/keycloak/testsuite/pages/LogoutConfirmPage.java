@@ -19,6 +19,7 @@
 package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.util.UIUtils;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;

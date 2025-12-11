@@ -17,12 +17,12 @@
 
 package org.keycloak.storage.ldap.idm.store.ldap;
 
-import org.keycloak.models.KeycloakSession;
-
+import java.util.Hashtable;
 import javax.naming.NamingException;
 import javax.naming.ldap.Control;
 import javax.naming.ldap.InitialLdapContext;
-import java.util.Hashtable;
+
+import org.keycloak.models.KeycloakSession;
 
 /**
  * A {@link InitialLdapContext} that binds instances of this class with the {@link KeycloakSession} so that any resource

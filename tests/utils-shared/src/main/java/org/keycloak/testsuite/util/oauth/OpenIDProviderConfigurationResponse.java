@@ -1,9 +1,10 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
+import java.io.IOException;
+
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 
-import java.io.IOException;
+import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class OpenIDProviderConfigurationResponse extends AbstractHttpResponse {
 

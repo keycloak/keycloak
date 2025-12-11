@@ -19,13 +19,14 @@ package org.keycloak.quarkus.runtime.services.health;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.smallrye.health.api.AsyncHealthCheck;
-import io.smallrye.mutiny.Uni;
-import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+
+import io.smallrye.health.api.AsyncHealthCheck;
+import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.health.HealthCheckResponse;
 
 import static org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck.DATE_FORMATTER;
 import static org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck.FAILING_SINCE;

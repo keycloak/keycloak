@@ -16,35 +16,17 @@
  */
 package org.keycloak.testsuite.actions;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
-
-import jakarta.mail.Address;
-import jakarta.mail.Message;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import jakarta.mail.Address;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response.Status;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.updateemail.UpdateEmailActionToken;
@@ -70,6 +52,26 @@ import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractRequiredActionUpdateEmailTest {
 
@@ -115,7 +117,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		assertEquals("test-user@localhost", user.getEmail());
 		assertTrue(user.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
         assertNotEquals(newEmail, user.getEmail());
-        assertFalse(user.isEmailVerified());
+        assertTrue(user.isEmailVerified());
         Map<String, List<String>> attributes = user.getAttributes();
         assertNotNull(attributes.get(UserModel.EMAIL_PENDING));
         assertEquals(1, attributes.get(UserModel.EMAIL_PENDING).size());
@@ -652,5 +654,54 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
         errorPage.assertCurrent();
         assertEquals("This email verification has been cancelled by an administrator.", errorPage.getError());
+    }
+
+    @Test
+    public void testUpdateEmailVerificationResendTooFast() throws Exception {
+        UserRepresentation testUser = testRealm().users().search("test-user@localhost").get(0);
+        
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        updateEmailPage.assertCurrent();
+        updateEmailPage.changeEmail("newemail@localhost");
+        
+        // First email should be sent
+        assertEquals(1, greenMail.getReceivedMessages().length);
+        assertThat("Should show pending verification message",
+                driver.getPageSource(), containsString("A confirmation email has been sent to newemail@localhost."));
+
+        // Logout and login again to get back to update email page for resend
+        testRealm().users().get(testUser.getId()).logout();
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        updateEmailPage.assertCurrent();
+
+        // Try to resend immediately - should be blocked by cooldown
+        updateEmailPage.changeEmail("newemail@localhost");
+        assertThat("Should show cooldown error message", 
+                driver.getPageSource(), containsString("You must wait"));
+        assertEquals("Email should not be sent again due to cooldown", 1, greenMail.getReceivedMessages().length);
+        
+        // Check that email field is pre-filled with the pending email after cooldown error
+        assertEquals("Email field should be pre-filled with pending email during cooldown", 
+                "newemail@localhost", updateEmailPage.getEmail());
+
+        try {
+            // Move time forward beyond cooldown period (default 30 seconds)
+            setTimeOffset(40);
+            
+            // Logout and login again to retry after cooldown
+            testRealm().users().get(testUser.getId()).logout();
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+            updateEmailPage.assertCurrent();
+            
+            // Now resend should work
+            updateEmailPage.changeEmail("newemail@localhost");
+            assertEquals("Second email should be sent after cooldown expires", 2, greenMail.getReceivedMessages().length);
+        } finally {
+            setTimeOffset(0);
+        }
     }
 }

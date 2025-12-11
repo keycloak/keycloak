@@ -1,12 +1,12 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import io.smallrye.config.ConfigSourceInterceptorContext;
+import java.util.List;
 
 import org.keycloak.config.TransactionOptions;
 
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
+import io.smallrye.config.ConfigSourceInterceptorContext;
 
-import java.util.List;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public class TransactionPropertyMappers implements PropertyMapperGrouping {
 

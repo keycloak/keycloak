@@ -18,11 +18,12 @@
 
 package org.keycloak.services.x509;
 
-import org.jboss.logging.Logger;
+import java.security.cert.X509Certificate;
+
 import org.keycloak.common.util.PemException;
 import org.keycloak.common.util.PemUtils;
 
-import java.security.cert.X509Certificate;
+import org.jboss.logging.Logger;
 
 /**
  * The provider allows to extract X.509 client certificate forwarded

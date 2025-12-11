@@ -17,8 +17,8 @@
 
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import io.smallrye.config.ConfigSourceInterceptorContext;
-import io.smallrye.config.ConfigValue;
+import java.util.List;
+
 import org.keycloak.config.ExportOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
@@ -29,12 +29,13 @@ import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.Export;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
+import io.smallrye.config.ConfigSourceInterceptorContext;
+import io.smallrye.config.ConfigValue;
+
 import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isBlank;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-
-import java.util.List;
 
 public final class ExportPropertyMappers implements PropertyMapperGrouping {
     private static final String EXPORTER_PROPERTY = "kc.spi-export--exporter";

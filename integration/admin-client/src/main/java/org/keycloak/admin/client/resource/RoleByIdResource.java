@@ -17,7 +17,8 @@
 
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.RoleRepresentation;
+import java.util.List;
+import java.util.Set;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -29,8 +30,8 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-import java.util.List;
-import java.util.Set;
+
+import org.keycloak.representations.idm.RoleRepresentation;
 
 /**
  * Sometimes its easier to just interact with roles by their ID instead of container/role-name

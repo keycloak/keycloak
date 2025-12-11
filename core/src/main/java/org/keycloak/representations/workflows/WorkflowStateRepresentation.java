@@ -1,10 +1,11 @@
 package org.keycloak.representations.workflows;
 
-import static java.util.Optional.ofNullable;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ERROR;
-
 import java.util.Collections;
 import java.util.List;
+
+import static java.util.Optional.ofNullable;
+
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ERROR;
 
 public class WorkflowStateRepresentation {
 

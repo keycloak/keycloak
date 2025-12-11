@@ -17,8 +17,9 @@
 
 package org.keycloak.testsuite.policy;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.io.File;
+import java.util.List;
+
 import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -32,8 +33,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.util.RealmBuilder;
 
-import java.io.File;
-import java.util.List;
+import org.junit.Assert;
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;

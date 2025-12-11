@@ -19,10 +19,11 @@ package org.keycloak.models.cache.infinispan.events;
 
 import java.util.Set;
 
-import org.infinispan.protostream.annotations.ProtoFactory;
-import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.cache.infinispan.UserCacheManager;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

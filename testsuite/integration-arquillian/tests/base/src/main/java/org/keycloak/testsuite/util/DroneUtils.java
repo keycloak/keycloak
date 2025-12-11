@@ -17,17 +17,19 @@
 
 package org.keycloak.testsuite.util;
 
-import org.jboss.arquillian.graphene.context.GrapheneContext;
-import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.testsuite.page.AbstractPage;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
-import org.openqa.selenium.WebDriver;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+
+import org.keycloak.testsuite.page.AbstractPage;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import org.jboss.arquillian.graphene.context.GrapheneContext;
+import org.jboss.arquillian.graphene.page.Page;
+import org.openqa.selenium.WebDriver;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>

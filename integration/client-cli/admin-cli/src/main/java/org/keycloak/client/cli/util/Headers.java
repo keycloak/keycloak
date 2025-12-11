@@ -16,11 +16,11 @@
  */
 package org.keycloak.client.cli.util;
 
-import org.apache.http.entity.ContentType;
-
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Optional;
+
+import org.apache.http.entity.ContentType;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

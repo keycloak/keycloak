@@ -17,14 +17,14 @@
 
 package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.sundr.builder.annotations.Buildable;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")

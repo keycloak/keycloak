@@ -16,6 +16,12 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
+import jakarta.ws.rs.ForbiddenException;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
@@ -42,12 +48,6 @@ import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-
-import jakarta.ws.rs.ForbiddenException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

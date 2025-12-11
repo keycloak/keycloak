@@ -19,7 +19,9 @@ package org.keycloak.authentication.actiontoken.updateemail;
 
 import java.util.List;
 import java.util.Objects;
+
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;

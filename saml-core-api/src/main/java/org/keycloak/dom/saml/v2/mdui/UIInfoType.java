@@ -1,11 +1,11 @@
 package org.keycloak.dom.saml.v2.mdui;
 
-import org.keycloak.dom.saml.v2.metadata.LocalizedNameType;
-import org.keycloak.dom.saml.v2.metadata.LocalizedURIType;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.keycloak.dom.saml.v2.metadata.LocalizedNameType;
+import org.keycloak.dom.saml.v2.metadata.LocalizedURIType;
 
 /**
  * *

@@ -17,17 +17,17 @@
 
 package org.keycloak.authentication;
 
-import org.keycloak.http.HttpRequest;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
-
-import jakarta.ws.rs.core.UriInfo;
 
 /**
  * Interface that encapsulates the current state of the current form being executed

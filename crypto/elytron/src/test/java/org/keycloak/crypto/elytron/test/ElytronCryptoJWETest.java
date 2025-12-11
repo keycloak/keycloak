@@ -19,9 +19,10 @@ package org.keycloak.crypto.elytron.test;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.junit.Test;
 import org.keycloak.jose.JWETest;
 import org.keycloak.jose.jwe.JWEConstants;
+
+import org.junit.Test;
 
 public class ElytronCryptoJWETest extends JWETest {
 

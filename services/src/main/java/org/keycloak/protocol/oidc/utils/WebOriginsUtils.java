@@ -17,12 +17,12 @@
 
 package org.keycloak.protocol.oidc.utils;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Created by st on 22.09.15.

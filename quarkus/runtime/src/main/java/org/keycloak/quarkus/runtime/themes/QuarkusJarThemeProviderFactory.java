@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.themes;
 
 import java.util.List;
+
 import org.keycloak.Config;
 import org.keycloak.theme.JarThemeProviderFactory;
 

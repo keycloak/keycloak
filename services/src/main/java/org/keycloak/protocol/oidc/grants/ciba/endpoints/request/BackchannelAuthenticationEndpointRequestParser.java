@@ -18,14 +18,15 @@
 
 package org.keycloak.protocol.oidc.grants.ciba.endpoints.request;
 
-import org.jboss.logging.Logger;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>

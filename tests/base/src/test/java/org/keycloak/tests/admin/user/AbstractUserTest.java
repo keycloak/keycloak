@@ -1,38 +1,5 @@
 package org.keycloak.tests.admin.user;
 
-import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.credential.CredentialModel;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.utils.StripSecretsUtils;
-import org.keycloak.representations.idm.*;
-import org.keycloak.representations.userprofile.config.UPAttribute;
-import org.keycloak.representations.userprofile.config.UPAttributePermissions;
-import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectAdminEvents;
-import org.keycloak.testframework.annotations.InjectRealm;
-import org.keycloak.testframework.events.AdminEventAssertion;
-import org.keycloak.testframework.events.AdminEvents;
-import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.tests.utils.runonserver.RunHelpers;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.page.LoginPage;
-import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.admin.ApiUtil;
-import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
-import org.keycloak.util.JsonSerialization;
-import org.openqa.selenium.WebDriver;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -45,6 +12,46 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.events.AdminEvents;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminEventPaths;
+import org.keycloak.tests.utils.runonserver.RunHelpers;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
+import org.keycloak.util.JsonSerialization;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -60,7 +67,7 @@ public class AbstractUserTest {
     AdminEvents adminEvents;
 
     @InjectWebDriver
-    WebDriver driver;
+    ManagedWebDriver driver;
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
@@ -204,7 +211,10 @@ public class AbstractUserTest {
         try (Response response = managedRealm.admin().users().delete(id)) {
             assertEquals(204, response.getStatus());
         }
-        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.userResourcePath(id), ResourceType.USER);
+        AdminEventRepresentation event = adminEvents.poll();
+        AdminEventAssertion.assertEvent(event, OperationType.DELETE, AdminEventPaths.userResourcePath(id), ResourceType.USER);
+        Assertions.assertNotNull(event.getRepresentation());
+        Assertions.assertTrue(event.getRepresentation().contains(id));
     }
 
     protected void addFederatedIdentity(String keycloakUserId, String identityProviderAlias1,

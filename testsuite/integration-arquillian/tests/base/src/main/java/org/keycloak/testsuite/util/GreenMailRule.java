@@ -17,16 +17,18 @@
 
 package org.keycloak.testsuite.util;
 
-import com.icegreen.greenmail.util.GreenMail;
-import com.icegreen.greenmail.util.ServerSetup;
-import org.junit.rules.ExternalResource;
-import org.keycloak.models.RealmModel;
-
-import jakarta.mail.internet.MimeMessage;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
+
+import jakarta.mail.internet.MimeMessage;
+
+import org.keycloak.models.RealmModel;
+
+import com.icegreen.greenmail.util.GreenMail;
+import com.icegreen.greenmail.util.ServerSetup;
+import org.junit.rules.ExternalResource;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

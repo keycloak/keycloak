@@ -1,13 +1,13 @@
 package org.freedesktop.dbus.connections;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.freedesktop.dbus.messages.ExportedObject;
 import org.freedesktop.dbus.utils.LoggingHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 public class FallbackContainer {
 

@@ -16,9 +16,15 @@
  */
 package org.keycloak.operator.controllers;
 
-import java.util.Optional;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.Utils;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
@@ -29,11 +35,6 @@ import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 

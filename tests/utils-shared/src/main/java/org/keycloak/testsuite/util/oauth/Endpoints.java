@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.util.oauth;
 
 import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;

@@ -17,16 +17,6 @@
 
 package org.keycloak.models.jpa;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.jpa.entities.RoleAttributeEntity;
-import org.keycloak.models.jpa.entities.RoleEntity;
-import org.keycloak.models.utils.KeycloakModelUtils;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,6 +25,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.jpa.entities.RoleAttributeEntity;
+import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

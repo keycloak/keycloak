@@ -74,4 +74,3 @@ public class PartialImportRealmFromRepresentationEvent implements ProviderEvent 
         return realm;
     }
 }
-

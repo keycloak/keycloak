@@ -17,10 +17,11 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import org.junit.Test;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.mappers.FeaturePropertyMappers;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertThrows;
 

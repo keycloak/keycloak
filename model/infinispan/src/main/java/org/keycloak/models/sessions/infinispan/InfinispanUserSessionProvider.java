@@ -34,11 +34,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import org.infinispan.Cache;
-import org.infinispan.commons.api.AsyncCache;
-import org.infinispan.commons.util.concurrent.CompletionStages;
-import org.infinispan.stream.CacheCollectors;
-import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
@@ -75,9 +70,14 @@ import org.keycloak.models.sessions.infinispan.stream.Mappers;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
-import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.utils.StreamsUtil;
+
+import org.infinispan.Cache;
+import org.infinispan.commons.api.AsyncCache;
+import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.infinispan.stream.CacheCollectors;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
@@ -103,15 +103,12 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
     protected final PersisterLastSessionRefreshStore persisterLastSessionRefreshStore;
 
-    protected final InfinispanKeyGenerator keyGenerator;
-
     protected final SessionFunction<UserSessionEntity> offlineSessionCacheEntryLifespanAdjuster;
 
     protected final SessionFunction<AuthenticatedClientSessionEntity> offlineClientSessionCacheEntryLifespanAdjuster;
 
     public InfinispanUserSessionProvider(KeycloakSession session,
                                          PersisterLastSessionRefreshStore persisterLastSessionRefreshStore,
-                                         InfinispanKeyGenerator keyGenerator,
                                          InfinispanChangelogBasedTransaction<String, UserSessionEntity> sessionTx,
                                          InfinispanChangelogBasedTransaction<String, UserSessionEntity> offlineSessionTx,
                                          InfinispanChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionTx,
@@ -128,7 +125,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 
         this.persisterLastSessionRefreshStore = persisterLastSessionRefreshStore;
-        this.keyGenerator = keyGenerator;
         this.offlineSessionCacheEntryLifespanAdjuster = offlineSessionCacheEntryLifespanAdjuster;
         this.offlineClientSessionCacheEntryLifespanAdjuster = offlineClientSessionCacheEntryLifespanAdjuster;
 
@@ -182,7 +178,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
     public UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress,
                                               String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId, UserSessionModel.SessionPersistenceState persistenceState) {
         if (id == null) {
-            id = keyGenerator.generateKeyString(session, sessionTx.getCache());
+            id = sessionTx.generateKey();
         }
 
         UserSessionEntity entity = UserSessionEntity.create(id, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
@@ -543,20 +539,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         }
     }
 
-    public void removeAllExpired() {
-        // Rely on expiration of cache entries provided by infinispan. Just expire entries from persister is needed
-        // TODO: Avoid iteration over all realms here (Details in the KEYCLOAK-16802)
-        UserSessionPersisterProvider provider = session.getProvider(UserSessionPersisterProvider.class);
-        session.realms().getRealmsStream().forEach(provider::removeExpired);
-
-    }
-
-    @Override
-    public void removeExpired(RealmModel realm) {
-        // Rely on expiration of cache entries provided by infinispan. Nothing needed here besides calling persister
-        session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
-    }
-
     @Override
     public void removeUserSessions(RealmModel realm) {
         // Don't send message to all DCs, just to all cluster nodes in current DC. The remoteCache will notify client listeners for removed userSessions.
@@ -911,6 +893,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         entity.setRealmId(realmId);
         entity.setClientId(clientId);
         entity.setUserSessionId(clientSession.getUserSession().getId());
+        entity.setUserId(clientSession.getUserSession().getId());
 
         entity.setAction(clientSession.getAction());
         entity.setAuthMethod(clientSession.getProtocol());

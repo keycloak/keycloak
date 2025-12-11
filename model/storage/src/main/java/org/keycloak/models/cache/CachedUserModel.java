@@ -16,9 +16,9 @@
  */
 package org.keycloak.models.cache;
 
-import org.keycloak.models.UserModel;
-
 import java.util.concurrent.ConcurrentMap;
+
+import org.keycloak.models.UserModel;
 
 /**
  * Cached users will implement this interface

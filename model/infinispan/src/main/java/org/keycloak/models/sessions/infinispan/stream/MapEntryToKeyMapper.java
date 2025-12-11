@@ -21,9 +21,10 @@ import java.lang.invoke.SerializedLambda;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.keycloak.marshalling.Marshalling;
+
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.keycloak.marshalling.Marshalling;
 
 /**
  * A {@link Function} to extract the key from a {@link Map.Entry}.

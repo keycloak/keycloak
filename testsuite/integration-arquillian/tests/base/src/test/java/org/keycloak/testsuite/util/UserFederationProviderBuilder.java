@@ -17,10 +17,10 @@
 
 package org.keycloak.testsuite.util;
 
-import org.keycloak.representations.idm.UserFederationProviderRepresentation;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

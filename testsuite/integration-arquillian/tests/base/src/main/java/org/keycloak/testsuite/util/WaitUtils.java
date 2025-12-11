@@ -16,10 +16,19 @@
  */
 package org.keycloak.testsuite.util;
 
-import org.jboss.arquillian.graphene.wait.ElementBuilder;
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.AbstractPage;
+
+import org.jboss.arquillian.graphene.wait.ElementBuilder;
 import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
@@ -29,18 +38,11 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 import static org.openqa.selenium.support.ui.ExpectedConditions.javaScriptThrowsNoExceptions;
 import static org.openqa.selenium.support.ui.ExpectedConditions.not;
 import static org.openqa.selenium.support.ui.ExpectedConditions.urlToBe;

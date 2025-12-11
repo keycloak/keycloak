@@ -28,7 +28,7 @@ import javax.xml.crypto.dsig.keyinfo.KeyName;
 import javax.xml.crypto.dsig.keyinfo.X509Data;
 import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
-import org.jboss.logging.Logger;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -41,6 +41,8 @@ import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.saml.processing.core.saml.v2.util.SAMLMetadataUtil;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
+
+import org.jboss.logging.Logger;
 import org.w3c.dom.Element;
 
 /**

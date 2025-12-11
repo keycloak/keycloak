@@ -18,9 +18,10 @@
 
 package org.keycloak.testsuite.pages.x509;
 
-import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import org.jboss.arquillian.test.api.ArquillianResource;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 

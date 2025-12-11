@@ -22,9 +22,10 @@ import java.lang.invoke.MethodHandles;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+
+import org.jboss.logging.Logger;
 
 /**
  * Abstract class that is meant to be extended by implementations of {@link VaultProviderFactory} that want to offer support

@@ -16,16 +16,6 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
-
-import org.keycloak.client.admin.cli.CmdStdinContext;
-import org.keycloak.client.cli.common.AttributeOperation;
-import org.keycloak.client.cli.common.BaseGlobalOptionsCmd;
-import org.keycloak.client.cli.util.AccessibleBufferOutputStream;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -36,6 +26,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.keycloak.client.admin.cli.CmdStdinContext;
+import org.keycloak.client.cli.common.AttributeOperation;
+import org.keycloak.client.cli.common.BaseGlobalOptionsCmd;
+import org.keycloak.client.cli.util.AccessibleBufferOutputStream;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+
+import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
 import static org.keycloak.client.cli.common.AttributeOperation.Type.SET;
 import static org.keycloak.client.cli.util.IoUtil.copyStream;
 import static org.keycloak.client.cli.util.IoUtil.printErr;
@@ -43,7 +43,6 @@ import static org.keycloak.client.cli.util.OsUtil.OS_ARCH;
 import static org.keycloak.client.cli.util.OsUtil.PROMPT;
 import static org.keycloak.client.cli.util.OutputUtil.MAPPER;
 import static org.keycloak.client.cli.util.ParseUtil.parseKeyVal;
-import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

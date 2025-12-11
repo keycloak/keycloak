@@ -17,12 +17,13 @@
 
 package org.keycloak.jose;
 
-import org.junit.Test;
+import java.io.IOException;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
+import org.junit.Test;
 
 import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.assertArrayEquals;

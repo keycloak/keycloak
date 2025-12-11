@@ -19,6 +19,7 @@ package org.keycloak.storage.clientscope;
 
 import java.util.Collections;
 import java.util.List;
+
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;

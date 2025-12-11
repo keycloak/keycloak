@@ -17,7 +17,9 @@
 
 package org.keycloak.models.workflow;
 
-import static org.keycloak.models.workflow.ResourceOperationType.toOperationType;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.BiFunction;
 
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
@@ -26,9 +28,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderEvent;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.function.BiFunction;
+import static org.keycloak.models.workflow.ResourceOperationType.toOperationType;
 
 public enum ResourceType {
 
@@ -59,7 +59,7 @@ public enum ResourceType {
                 && this.supportedAdminOperationTypes.contains(event.getOperationType())) {
 
             ResourceOperationType resourceOperationType = toOperationType(event.getOperationType());
-            if (resourceOperationType != null) {
+            if (resourceOperationType != null && event.getResourceId() != null) {
                 return new WorkflowEvent(this, resourceOperationType, event.getResourceId(), event);
             }
         }

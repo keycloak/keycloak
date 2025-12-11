@@ -16,23 +16,24 @@
  */
 package org.keycloak.testsuite.oauth;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import java.util.List;
+
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import java.util.List;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.openqa.selenium.By;
 
-import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
-import org.openqa.selenium.By;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:slawomir@dabek.name">Slawomir Dabek</a>

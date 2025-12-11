@@ -28,11 +28,12 @@ import java.util.stream.Collectors;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.RealmRepresentation;
-import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAppServerQualifiers;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
+
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAppServerQualifiers;
 
 /**
  *

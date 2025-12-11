@@ -17,7 +17,9 @@
 
 package org.keycloak.tests.admin.client;
 
-import org.junit.jupiter.api.Test;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -30,10 +32,9 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 
-import java.util.List;
-import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -84,7 +85,7 @@ public class ClientScopeEvaluateTest {
 
     @Test
     public void testGenerateAccessTokenWithoutBasicScope() {
-        String basicScopeId = ApiUtil.findClientScopeByName(managedRealm.admin(),"basic").toRepresentation().getId();
+        String basicScopeId = AdminApiUtil.findClientScopeByName(managedRealm.admin(),"basic").toRepresentation().getId();
         managedClient.admin().removeDefaultClientScope(basicScopeId);
 
         AccessToken accessToken = managedClient.admin().clientScopesEvaluate().generateAccessToken("openid", managedUser.getId(), null);
@@ -96,7 +97,7 @@ public class ClientScopeEvaluateTest {
 
     @Test
     public void testGenerateAccessTokenWithOptionalScope() {
-        String emailScopeId = ApiUtil.findClientScopeByName(managedRealm.admin(),"email").toRepresentation().getId();
+        String emailScopeId = AdminApiUtil.findClientScopeByName(managedRealm.admin(),"email").toRepresentation().getId();
         managedClient.admin().removeDefaultClientScope(emailScopeId);
         managedClient.admin().addOptionalClientScope(emailScopeId);
 

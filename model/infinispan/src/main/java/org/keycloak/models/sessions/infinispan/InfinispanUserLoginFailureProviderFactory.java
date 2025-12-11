@@ -18,7 +18,6 @@ package org.keycloak.models.sessions.infinispan;
 
 import java.util.Set;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -44,6 +43,8 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 

@@ -18,10 +18,6 @@
 
 package org.keycloak.authorization.permission;
 
-import org.keycloak.authorization.model.Resource;
-import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.Scope;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,6 +26,10 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 
 /**
  * Represents a permission for a given resource.

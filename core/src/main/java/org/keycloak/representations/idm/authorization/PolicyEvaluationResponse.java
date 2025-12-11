@@ -18,11 +18,11 @@
 
 package org.keycloak.representations.idm.authorization;
 
-import org.keycloak.representations.AccessToken;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.keycloak.representations.AccessToken;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

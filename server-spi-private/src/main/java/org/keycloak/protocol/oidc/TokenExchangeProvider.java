@@ -17,9 +17,9 @@
  */
 package org.keycloak.protocol.oidc;
 
-import org.keycloak.provider.Provider;
-
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.provider.Provider;
 
 /**
  * Provides token exchange mechanism for supported tokens

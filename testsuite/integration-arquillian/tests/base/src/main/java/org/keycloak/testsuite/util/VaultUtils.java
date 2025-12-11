@@ -17,13 +17,13 @@
 
 package org.keycloak.testsuite.util;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableContainer;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author mhajas

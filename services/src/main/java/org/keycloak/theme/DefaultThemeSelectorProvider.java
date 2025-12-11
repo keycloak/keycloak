@@ -56,4 +56,3 @@ public class DefaultThemeSelectorProvider implements ThemeSelectorProvider {
     }
 
 }
-

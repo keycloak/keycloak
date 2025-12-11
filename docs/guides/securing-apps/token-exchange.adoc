@@ -54,6 +54,9 @@ _subject token_ and exchange it for another token _requested token_.
 . The _requested token_ is returned to `requester-client`. This token can now be sent to the `target-client`.
 . The `target-client` can fulfill the request and return the response to the `requester-client`. The `requester-client` can then follow and return the response to the request from step 2.
 
+.Token Exchange Example Flow
+image::token-exchange-example-flow.dio.svg[Token Exchange Example Flow]
+
 Many other use-cases exist for token exchange, but the preceding example is the most typical.
 
 ==== Example token exchange request
@@ -165,6 +168,8 @@ roles of the clients requested by the `audience`, the client scope will be filte
 NOTE: The `audience` parameter can be used to filter the audiences that are coming from the used client scopes. However, this parameter will not add more audiences. When the audience parameter is omitted,
 no filtering occurs. As a result, the `audience` parameter is effectively used for "downscoping" the token to make sure that it contains only the requested audiences. However, the `scope` parameter is used
 to add optional client scopes and hence it can be used for "upscoping" and adding more scopes.
+
+NOTE: By default, token exchange can be used to request extra scopes and audiences that are not present in the initial `subject_token`. If, for security reasons, you want to ensure that scopes are limited to the ones already granted to the `subject_token`, the `downscope-assertion-grant-enforcer` policy executor can be applied to the client. This executor enforces that only downscoping is allowed for token exchange. See link:{adminguide_link}#_downscoping[Downscoping] and link:{adminguide_link}#_client_policies[Client Policies] chapters in the {adminguide_name} for more information.
 
 ==== Examples
 
@@ -308,9 +313,9 @@ While the preceding sections fully detail standard and legacy token exchange, th
 [cols="3*", options="header"]
 |===
 |Capability |Standard token exchange V2 |Legacy token exchange V1
-s|Internal-internal token exchange | Supported. Implemented as per rfc8693 | Preview support. Loose implementation of rfc8693. It is recommended to use V2 instead
+s|Internal-internal token exchange | Supported. Implemented as per RFC 8693 | Preview support. Loose implementation of RFC 8693. It is recommended to use V2 instead
 s|Allowed `subject_token_type`     | Access token type only   | Access token type only for internal-internal, JWT for external-internal scenarios
-s|Allowed `requested_token_type`   | Access token (default), Refresh token, ID token | Access token, Refresh token (default), SAML2 assertion
+s|Allowed `requested_token_type`   | Access token (default), Refresh token, ID token | Access token, Refresh token (default), SAML 2.0 assertion
 s|Behavior of `scope` parameter   | Aligned with other grants. Scope parameter means requesting optional scopes of the client, which sent the token exchange request  | Scope parameter based on the scopes of
 the "target" client specified by audience parameter. Downscoping support only
 s|Behavior of `audience` parameter   | Support for more values as per the specification. It can be used to narrow down the available audiences and keep only the requested audiences. Effectively downscoping the token per
@@ -319,8 +324,8 @@ s|Public clients  | Not available. Downscoping implemented by V1 can be replaced
 s|Consents        | Allowed for clients with `Consent required` as long as the user is already granted consent | Not allowed for clients with *Consent required*
 s|Authorization  | Verification that the requester client must be in the audience of the `subject_token`. Integration with client policies. No Fine-grained admin permissions | Based on fine-grained admin permissions version 1
 s|Revocation chain | Not available for access tokens. Available for refresh tokens   | Not available for access nor refresh tokens
-s|Delegation per rfc8693|Not supported yet|Not supported
-s|Resource parameter per rfc8693|Not supported yet|Not supported
+s|Delegation per RFC 8693|Not supported yet|Not supported
+s|Resource parameter per RFC 8693|Not supported yet|Not supported
 s|Federated token exchange | Not implemented yet | Implemented as a preview
 s|Subject impersonation (including direct naked impersonation)   | Not implemented yet | Implemented as a preview
 |===
@@ -669,6 +674,8 @@ new access token.
 These types of changes required a configured identity provider in the Admin Console.
 
 NOTE:  SAML identity providers are not supported at this time.  Twitter tokens cannot be exchanged either.
+
+WARNING: External to internal Token Exchange will be replaced by <<_standard-token-exchange,Standard Token Exchange V2>> and <@links.securingapps id="jwt-authorization-grant" />. Following the idea presented in the current draft specification link:https://datatracker.ietf.org/doc/html/draft-ietf-oauth-identity-chaining-06[OAuth Identity and Authorization Chaining Across Domains], the final access token will be obtained performing two requests: a standard token exchange in the external identity server to get a valid JWT assertion; a JWT Authorization Grant to finally request an access token in the internal {project_name} realm. The JWT Authorization grant can be eventually used directly to exchange your external tokens as long as they are JWT tokens, which conforms to all the requirements specified for the JWT Authorization Grant.
 
 ==== Granting permission for the exchange
 

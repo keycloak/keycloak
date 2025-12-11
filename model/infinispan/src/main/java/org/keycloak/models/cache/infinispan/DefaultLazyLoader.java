@@ -16,12 +16,12 @@
  */
 package org.keycloak.models.cache.infinispan;
 
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.runWithoutAuthorization;
-
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.keycloak.models.KeycloakSession;
+
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.runWithoutAuthorization;
 
 /**
  * Default implementation of {@link DefaultLazyLoader} that only fetches data once. This implementation is thread-safe

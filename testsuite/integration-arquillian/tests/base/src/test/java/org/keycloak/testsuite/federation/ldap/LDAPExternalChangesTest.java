@@ -17,12 +17,8 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import java.util.List;
+
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -32,7 +28,12 @@ import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import java.util.List;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.arquillian.containers;
 
+import java.util.logging.Logger;
+
 import org.jboss.arquillian.container.impl.client.ContainerDeploymentContextHandler;
 import org.jboss.arquillian.container.impl.client.container.ContainerLifecycleController;
 import org.jboss.arquillian.container.impl.client.container.DeploymentExceptionHandler;
@@ -24,8 +26,6 @@ import org.jboss.arquillian.container.impl.context.ContainerContextImpl;
 import org.jboss.arquillian.container.impl.context.DeploymentContextImpl;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.core.spi.LoadableExtension;
-
-import java.util.logging.Logger;
 
 /**
  * Enables multiple container adapters on classpath.

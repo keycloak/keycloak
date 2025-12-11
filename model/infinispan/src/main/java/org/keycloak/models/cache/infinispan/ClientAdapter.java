@@ -17,15 +17,6 @@
 
 package org.keycloak.models.cache.infinispan;
 
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.CachedObject;
-import org.keycloak.models.cache.infinispan.entities.CachedClient;
-import org.keycloak.models.utils.RoleUtils;
-
 import java.security.MessageDigest;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,6 +25,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.cache.CachedObject;
+import org.keycloak.models.cache.infinispan.entities.CachedClient;
+import org.keycloak.models.utils.RoleUtils;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

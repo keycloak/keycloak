@@ -1,15 +1,15 @@
 package org.keycloak.testsuite.authentication;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class SetUserAttributeAuthenticator implements Authenticator {
     @Override

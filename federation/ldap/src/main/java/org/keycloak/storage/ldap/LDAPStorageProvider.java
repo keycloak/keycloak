@@ -33,14 +33,12 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.naming.AuthenticationException;
 import javax.naming.CommunicationException;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 import javax.naming.directory.SearchControls;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialAuthentication;
@@ -66,15 +64,15 @@ import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CachedUserModel;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
-import org.keycloak.models.cache.UserCache;
 import org.keycloak.storage.DatastoreProvider;
-import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -102,9 +100,10 @@ import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.userprofile.UserProfileUtil;
-
 import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -1,10 +1,10 @@
 package org.keycloak.testframework.realm;
 
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.representations.idm.ClientRepresentation;
-
 import java.util.LinkedList;
 import java.util.List;
+
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.representations.idm.ClientRepresentation;
 
 public class ManagedClientCleanup {
 

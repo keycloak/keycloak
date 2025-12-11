@@ -17,10 +17,10 @@
 
 package org.keycloak.client.admin.cli.operations;
 
-import org.keycloak.client.cli.util.HttpUtil;
-
 import java.util.List;
 import java.util.function.Supplier;
+
+import org.keycloak.client.cli.util.HttpUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;

@@ -17,6 +17,9 @@
 
 package org.keycloak.protocol.saml.mappers;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -25,9 +28,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Mappings UserModel property (the property name of a getter method) to an AttributeStatement.

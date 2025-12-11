@@ -1,12 +1,12 @@
 package org.keycloak.testsuite.cli;
 
+import java.io.InputStream;
+import java.util.List;
+
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.cli.exec.AbstractExec;
 import org.keycloak.testsuite.cli.exec.AbstractExecBuilder;
-
-import java.io.InputStream;
-import java.util.List;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

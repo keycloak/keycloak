@@ -19,7 +19,7 @@ package org.keycloak.services.securityprofile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import org.jboss.logging.Logger;
+
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -32,6 +32,8 @@ import org.keycloak.services.clientpolicy.ClientPoliciesUtil;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.FileUtils;
+
+import org.jboss.logging.Logger;
 
 /**
  * The default implementation for the security profile. It reads the configuration

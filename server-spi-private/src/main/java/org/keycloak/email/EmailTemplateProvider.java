@@ -17,15 +17,15 @@
 
 package org.keycloak.email;
 
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.events.Event;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.sessions.AuthenticationSessionModel;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

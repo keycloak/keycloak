@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import java.util.Collections;
 import java.util.List;
+
 import org.keycloak.storage.ReadOnlyException;
 
 /**

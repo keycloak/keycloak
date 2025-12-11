@@ -17,8 +17,10 @@
 
 package org.keycloak.storage.ldap.idm.model;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
@@ -32,9 +34,8 @@ import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

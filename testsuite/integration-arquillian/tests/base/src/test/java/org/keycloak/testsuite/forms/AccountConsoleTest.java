@@ -2,9 +2,6 @@ package org.keycloak.testsuite.forms;
 
 import java.net.URISyntaxException;
 
-import org.apache.http.client.utils.URIBuilder;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Test;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
@@ -12,6 +9,10 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.WaitUtils;
+
+import org.apache.http.client.utils.URIBuilder;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Test;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 

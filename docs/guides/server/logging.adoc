@@ -158,14 +158,12 @@ In order to see the `org.keycloak.events:trace`, the `trace` level must be set f
 [[mdc]]
 == Adding context for log messages
 
-<@features.techpreview feature="log-mdc"/>
-
 You can enable additional context information for each log line like the current realm and client that is executing the request.
 
 Use the option `log-mdc-enabled` to enable it.
 
 .Example configuration
-<@kc.start parameters="--features=log-mdc --log-mdc-enabled=true"/>
+<@kc.start parameters="--log-mdc-enabled=true"/>
 
 .Example output
 ----
@@ -286,6 +284,9 @@ Predefined named patterns:
 You can even specify your own pattern with your required data to be logged, such as:
 
 <@kc.start parameters="--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'"/>
+
+WARNING: HTTP Access logs may contain sensitive HTTP headers like `Authorization`, `Cookie`, or external API keys references.
+Be careful with using the `long` pattern or printing the headers by the custom format - you should use it only for development purposes.
 
 Consult the https://quarkus.io/guides/http-reference#configuring-http-access-logs[Quarkus documentation] for the full list of variables that can be used.
 

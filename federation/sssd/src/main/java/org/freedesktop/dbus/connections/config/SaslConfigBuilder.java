@@ -1,9 +1,9 @@
 package org.freedesktop.dbus.connections.config;
 
-import org.freedesktop.dbus.connections.transports.TransportBuilder.SaslAuthMode;
-
 import java.util.OptionalLong;
 import java.util.function.Supplier;
+
+import org.freedesktop.dbus.connections.transports.TransportBuilder.SaslAuthMode;
 
 /**
  * Configuration used to setup a sasl authentication.

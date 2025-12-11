@@ -16,8 +16,9 @@
  */
 package org.keycloak.testsuite.auth.page;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.util.UIUtils;
+
+import org.jboss.arquillian.graphene.page.Page;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;

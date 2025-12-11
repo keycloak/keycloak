@@ -16,17 +16,14 @@
  */
 package org.keycloak.testsuite.broker;
 
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
 import java.io.Closeable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
+
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
@@ -48,6 +45,12 @@ import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
 import org.w3c.dom.Document;
 
 /**

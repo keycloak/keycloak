@@ -16,16 +16,16 @@
  */
 package org.keycloak.client.cli.common;
 
+import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.URL;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.client.cli.util.AuthUtil;
 import org.keycloak.representations.AccessTokenResponse;
-
-import java.io.File;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.URL;
 
 import static org.keycloak.client.cli.util.AuthUtil.getAuthTokens;
 import static org.keycloak.client.cli.util.AuthUtil.getAuthTokensByJWT;

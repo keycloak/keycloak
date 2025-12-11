@@ -28,8 +28,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
@@ -37,6 +35,9 @@ import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.cluster.infinispan.LockEntry;
 import org.keycloak.cluster.infinispan.TaskCallback;
 import org.keycloak.common.util.Retry;
+
+import org.infinispan.client.hotrod.RemoteCache;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.cluster.infinispan.InfinispanClusterProvider.TASK_KEY_PREFIX;
 import static org.keycloak.cluster.infinispan.remote.RemoteInfinispanClusterProviderFactory.putIfAbsentWithRetries;

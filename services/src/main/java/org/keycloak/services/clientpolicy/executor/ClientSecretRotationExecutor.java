@@ -3,8 +3,6 @@ package org.keycloak.services.clientpolicy.executor;
 import java.text.SimpleDateFormat;
 import java.util.Objects;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSecretConstants;
@@ -17,6 +15,9 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.ClientSecretRotationContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory.DEFAULT_SECRET_EXPIRATION_PERIOD;
 import static org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory.DEFAULT_SECRET_REMAINING_ROTATION_PERIOD;

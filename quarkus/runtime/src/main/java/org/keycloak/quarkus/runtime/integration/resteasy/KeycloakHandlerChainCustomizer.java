@@ -17,18 +17,19 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
-import static jakarta.ws.rs.HttpMethod.PATCH;
-import static jakarta.ws.rs.HttpMethod.POST;
-import static jakarta.ws.rs.HttpMethod.PUT;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
 import org.jboss.resteasy.reactive.common.model.ResourceClass;
 import org.jboss.resteasy.reactive.server.handlers.FormBodyHandler;
 import org.jboss.resteasy.reactive.server.model.HandlerChainCustomizer;
 import org.jboss.resteasy.reactive.server.model.ServerResourceMethod;
 import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
+
+import static jakarta.ws.rs.HttpMethod.PATCH;
+import static jakarta.ws.rs.HttpMethod.POST;
+import static jakarta.ws.rs.HttpMethod.PUT;
 
 public final class KeycloakHandlerChainCustomizer implements HandlerChainCustomizer {
 

@@ -17,11 +17,8 @@
 
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.ManagementPermissionReference;
-import org.keycloak.representations.idm.ManagementPermissionRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import java.util.List;
+import java.util.Set;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -33,8 +30,12 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-import java.util.List;
-import java.util.Set;
+
+import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.ManagementPermissionReference;
+import org.keycloak.representations.idm.ManagementPermissionRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br

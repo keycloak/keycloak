@@ -17,6 +17,8 @@
 
 package org.keycloak.authentication;
 
+import java.util.List;
+
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -27,8 +29,6 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.validate.ValidationError;
-
-import java.util.List;
 
 /**
  * Factory interface for {@link RequiredActionProvider RequiredActionProvider's}.

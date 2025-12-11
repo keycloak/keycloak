@@ -35,11 +35,12 @@ import java.util.function.Supplier;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.Picocli;
+
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.ConfigValue.ConfigValueBuilder;
 import io.smallrye.config.PropertiesConfigSource;
-import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.cli.Picocli;
 
 /**
  * A {@link org.eclipse.microprofile.config.spi.ConfigSource} based on the configuration properties persisted into the server
@@ -114,7 +115,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     private static InputStream loadPersistedConfig() {
-        Path homePath = Environment.getHomePath();
+        Path homePath = Environment.getHomePath().orElse(null);
 
         if (homePath == null) {
             return null;
@@ -172,7 +173,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     public void saveDryRunProperties() throws FileNotFoundException, IOException {
-        Path path = Environment.getHomePath().resolve("lib").resolve("dryRun.properties");
+        Path path = Environment.getHomePath().orElseThrow().resolve("lib").resolve("dryRun.properties");
         var properties = Picocli.getNonPersistedBuildTimeOptions();
         try (FileOutputStream fos = new FileOutputStream(path.toFile())) {
             properties.store(fos, null);
@@ -180,7 +181,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     public void useDryRunProperties() {
-        Path path = Environment.getHomePath().resolve("lib").resolve("dryRun.properties");
+        Path path = Environment.getHomePath().orElseThrow().resolve("lib").resolve("dryRun.properties");
         if (Files.exists(path)) {
             Properties properties = new Properties();
             try (FileInputStream fis = new FileInputStream(path.toFile())) {

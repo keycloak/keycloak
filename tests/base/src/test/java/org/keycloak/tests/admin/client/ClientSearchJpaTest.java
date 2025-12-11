@@ -19,9 +19,11 @@ package org.keycloak.tests.admin.client;
 
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.utils.matchers.Matchers;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 

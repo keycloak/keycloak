@@ -4,8 +4,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.openqa.selenium.Cookie;
 
-import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  *

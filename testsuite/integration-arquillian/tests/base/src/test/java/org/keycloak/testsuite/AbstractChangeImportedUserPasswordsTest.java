@@ -18,13 +18,15 @@ package org.keycloak.testsuite;
 
 import java.util.List;
 import java.util.Map;
-import org.junit.Before;
+
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
+
+import org.junit.Before;
 
 /**
  * <p>Abstract class that re-generates all imported user passwords with a random one.

@@ -1,5 +1,16 @@
 package org.keycloak.http.simple;
 
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collection;
+
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.StreamUtil;
+import org.keycloak.connections.httpclient.HttpClientProvider;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -22,16 +33,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.common.util.StreamUtil;
-import org.keycloak.connections.httpclient.HttpClientProvider;
-
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collection;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.startsWith;

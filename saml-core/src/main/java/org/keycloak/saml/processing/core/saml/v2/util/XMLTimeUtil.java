@@ -16,21 +16,21 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.util;
 
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.util.SecurityActions;
-import org.keycloak.saml.common.util.SystemPropertiesUtil;
-import org.keycloak.common.util.Time;
-
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeConstants;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
+
+import org.keycloak.common.util.Time;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.util.SecurityActions;
+import org.keycloak.saml.common.util.SystemPropertiesUtil;
 
 /**
  * Util class dealing with xml based time

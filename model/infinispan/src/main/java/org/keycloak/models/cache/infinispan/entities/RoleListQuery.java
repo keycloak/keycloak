@@ -1,9 +1,9 @@
 package org.keycloak.models.cache.infinispan.entities;
 
-import org.keycloak.models.RealmModel;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import org.keycloak.models.RealmModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

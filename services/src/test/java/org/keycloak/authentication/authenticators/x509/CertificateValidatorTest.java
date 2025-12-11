@@ -1,19 +1,20 @@
 package org.keycloak.authentication.authenticators.x509;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.rule.CryptoInitRule;
-
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.cert.X509Certificate;
 import java.util.Date;
+
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.rule.CryptoInitRule;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ALL;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ANY;

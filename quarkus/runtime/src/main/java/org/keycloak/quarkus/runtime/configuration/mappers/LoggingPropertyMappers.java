@@ -1,13 +1,5 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
-import static org.keycloak.config.LoggingOptions.LOG_CONSOLE_ENABLED;
-import static org.keycloak.config.LoggingOptions.LOG_FILE_ENABLED;
-import static org.keycloak.config.LoggingOptions.LOG_SYSLOG_ENABLED;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.isSet;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-
 import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -23,7 +15,6 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.jboss.logmanager.LogContext;
 import org.keycloak.common.Profile;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
@@ -34,6 +25,15 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.quarkus.runtime.configuration.MemorySizeConverter;
 import io.smallrye.config.ConfigSourceInterceptorContext;
+import org.jboss.logmanager.LogContext;
+
+import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
+import static org.keycloak.config.LoggingOptions.LOG_CONSOLE_ENABLED;
+import static org.keycloak.config.LoggingOptions.LOG_FILE_ENABLED;
+import static org.keycloak.config.LoggingOptions.LOG_SYSLOG_ENABLED;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.isSet;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public final class LoggingPropertyMappers implements PropertyMapperGrouping {
 

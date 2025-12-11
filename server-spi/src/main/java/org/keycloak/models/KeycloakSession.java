@@ -17,16 +17,16 @@
 
 package org.keycloak.models;
 
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 import org.keycloak.provider.Provider;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.vault.VaultTranscriber;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

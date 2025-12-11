@@ -1,9 +1,9 @@
 package org.freedesktop.dbus.connections.transports;
 
-import org.freedesktop.dbus.connections.BusAddress;
-
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
+
+import org.freedesktop.dbus.connections.BusAddress;
 
 /**
  * Interface which should be implemented by {@link BusAddress} subclasses which use

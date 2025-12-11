@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 import java.io.InputStream;
+
 import org.keycloak.adapters.saml.SamlConfigResolver;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.config.parsers.DeploymentBuilder;

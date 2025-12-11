@@ -1,12 +1,14 @@
 package org.keycloak.tests.admin.realm;
 
 import jakarta.ws.rs.BadRequestException;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.utils.Assert;
+
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.fail;
 

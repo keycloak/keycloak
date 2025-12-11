@@ -1,7 +1,5 @@
 package org.keycloak.workflow.admin.resource;
 
-import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
-
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -11,29 +9,34 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.models.ModelException;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.Workflow;
-import org.keycloak.models.workflow.WorkflowsManager;
+import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.services.ErrorResponse;
 
+import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+
 public class WorkflowResource {
 
-    private final WorkflowsManager manager;
+    private final WorkflowProvider provider;
     private final Workflow workflow;
 
-    public WorkflowResource(WorkflowsManager manager, Workflow workflow) {
-        this.manager = manager;
+    public WorkflowResource(WorkflowProvider provider, Workflow workflow) {
+        this.provider = provider;
         this.workflow = workflow;
     }
 
     @DELETE
     public void delete() {
         try {
-            manager.removeWorkflow(workflow.getId());
+            provider.removeWorkflow(workflow);
         } catch (ModelException me) {
             throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
         }
@@ -43,33 +46,40 @@ public class WorkflowResource {
      * Update the workflow configuration. The method does not update the workflow steps.
      */
     @PUT
+    @Consumes({YAMLMediaTypes.APPLICATION_JACKSON_YAML, MediaType.APPLICATION_JSON})
     public void update(WorkflowRepresentation rep) {
         try {
-            manager.updateWorkflow(workflow, rep);
+            provider.updateWorkflow(workflow, rep);
         } catch (ModelException me) {
             throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
     @GET
-    @Produces(APPLICATION_JSON)
-    public WorkflowRepresentation toRepresentation() {
-        return manager.toRepresentation(workflow);
+    @Produces({YAMLMediaTypes.APPLICATION_JACKSON_YAML, MediaType.APPLICATION_JSON})
+    public WorkflowRepresentation toRepresentation(
+            @Parameter(description = "Indicates whether the workflow id should be included in the representation or not - defaults to true") @QueryParam("includeId") Boolean includeId
+    ) {
+        WorkflowRepresentation rep = provider.toRepresentation(workflow);
+        if (Boolean.FALSE.equals(includeId)) {
+            rep.setId(null);
+        }
+        return rep;
     }
 
     /**
-     * Bind the workflow to the resource.
+     * Activate the workflow for the resource.
      *
      * @param type the resource type
      * @param resourceId the resource id
-     * @param notBefore optional notBefore time in milliseconds to schedule the first workflow step,
-     *                  it overrides the first workflow step time configuration (after).
+     * @param notBefore optional value representing the time to schedule the first workflow step, overriding the first
+     *                 step time configuration (after). The value is either an integer representing the seconds from now,
+     *                 an integer followed by 'ms' representing milliseconds from now, or an ISO-8601 date string.
      */
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("bind/{type}/{resourceId}")
-    public void bind(@PathParam("type") ResourceType type, @PathParam("resourceId") String resourceId, Long notBefore) {
-        Object resource = manager.resolveResource(type, resourceId);
+    @Path("activate/{type}/{resourceId}")
+    public void activate(@PathParam("type") ResourceType type, @PathParam("resourceId") String resourceId, @QueryParam("notBefore") String notBefore) {
+        Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
 
         if (resource == null) {
             throw new BadRequestException("Resource with id " + resourceId + " not found");
@@ -79,7 +89,37 @@ public class WorkflowResource {
             workflow.setNotBefore(notBefore);
         }
 
-        manager.bind(workflow, type, resourceId);
+        provider.activate(workflow, type, resourceId);
+    }
+
+    @POST
+    @Path("activate-all")
+    public void activateAll(@QueryParam("notBefore") String notBefore) {
+
+        if (notBefore != null) {
+            workflow.setNotBefore(notBefore);
+        }
+
+        provider.activateForAllEligibleResources(workflow);
+    }
+
+    /**
+     * Deactivate the workflow for the resource.
+     *
+     * @param type the resource type
+     * @param resourceId the resource id
+     */
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("deactivate/{type}/{resourceId}")
+    public void deactivate(@PathParam("type") ResourceType type, @PathParam("resourceId") String resourceId) {
+        Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
+
+        if (resource == null) {
+            throw new BadRequestException("Resource with id " + resourceId + " not found");
+        }
+
+        provider.deactivate(workflow, resourceId);
     }
 
 }

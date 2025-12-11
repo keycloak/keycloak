@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.page;
 
+import java.time.Duration;
+
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.logging.Logger;
 import org.openqa.selenium.By;
@@ -27,16 +29,15 @@ import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.time.Duration;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 import static org.keycloak.testsuite.util.UIUtils.doesElementClassContain;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
 import static org.keycloak.testsuite.util.WaitUtils.PAGELOAD_TIMEOUT_MILLIS;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  *

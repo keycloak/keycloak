@@ -16,11 +16,17 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.writers;
 
+import java.net.URI;
+import java.util.List;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamWriter;
+
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResponseType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
@@ -32,13 +38,8 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.common.util.StringUtil;
-import org.w3c.dom.Element;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamWriter;
-import java.net.URI;
-import java.util.List;
-import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
+import org.w3c.dom.Element;
 
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 

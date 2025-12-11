@@ -17,18 +17,17 @@
 
 package org.keycloak.storage.ldap;
 
-import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
+import javax.naming.directory.SearchControls;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.storage.UserStorageProvider;
 
-import javax.naming.directory.SearchControls;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
+import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

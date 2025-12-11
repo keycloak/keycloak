@@ -17,10 +17,11 @@
 
 package org.keycloak.crypto.def.test.sdjwt;
 
-import org.junit.Assume;
-import org.junit.Before;
 import org.keycloak.common.util.Environment;
 import org.keycloak.sdjwt.consumer.JwtVcMetadataTrustedSdJwtIssuerTest;
+
+import org.junit.Assume;
+import org.junit.Before;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>

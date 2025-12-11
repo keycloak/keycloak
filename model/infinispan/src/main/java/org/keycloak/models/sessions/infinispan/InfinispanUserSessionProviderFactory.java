@@ -24,12 +24,10 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.infinispan.Cache;
-import org.infinispan.affinity.KeyGenerator;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.MultiSiteUtils;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.ClientModel;
@@ -39,6 +37,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
+import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.sessions.infinispan.changes.CacheHolder;
 import org.keycloak.models.sessions.infinispan.changes.ClientSessionPersistentChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
@@ -54,8 +53,10 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.AbstractUserSessionClusterListener;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
+import org.keycloak.models.sessions.infinispan.expiration.ExpirationTask;
+import org.keycloak.models.sessions.infinispan.expiration.ExpirationTaskFactory;
+import org.keycloak.models.sessions.infinispan.listeners.EmbeddedUserSessionExpirationListener;
 import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionProvider;
-import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
@@ -65,6 +66,8 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
@@ -86,23 +89,28 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private static final boolean DEFAULT_USE_CACHES = true;
     public static final String CONFIG_USE_BATCHES = "useBatches";
     private static final boolean DEFAULT_USE_BATCHES = false;
+    public static final String CONFIG_EXPIRATION_PERIOD = "sessionExpirationPeriod";
+    private static final int DEFAULT_EXPIRATION_PERIOD_SECONDS = 180;
+    private static final int MIN_EXPIRATION_PERIOD_SECONDS = 60; // anything below 60s may be too frequent.
 
     private CacheHolder<String, UserSessionEntity> sessionCacheHolder;
     private CacheHolder<String, UserSessionEntity> offlineSessionCacheHolder;
     private CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionCacheHolder;
     private CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineClientSessionCacheHolder;
+    private EmbeddedUserSessionExpirationListener expirationListener;
+    private ExpirationTask expirationTask;
 
     private long offlineSessionCacheEntryLifespanOverride;
 
     private long offlineClientSessionCacheEntryLifespanOverride;
 
     private PersisterLastSessionRefreshStore persisterLastSessionRefreshStore;
-    private InfinispanKeyGenerator keyGenerator;
     ArrayBlockingQueue<PersistentUpdate> asyncQueuePersistentUpdate;
     private PersistentSessionsWorker persistentSessionsWorker;
     private int maxBatchSize;
     private boolean useCaches;
     private boolean useBatches;
+    private int expirationPeriodSeconds;
 
     @Override
     public UserSessionProvider create(KeycloakSession session) {
@@ -110,7 +118,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             var tx = createPersistentTransaction(session);
             return new PersistentUserSessionProvider(
                     session,
-                    keyGenerator,
                     tx.userTx,
                     tx.clientTx
             );
@@ -119,7 +126,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         return new InfinispanUserSessionProvider(
                 session,
                 persisterLastSessionRefreshStore,
-                keyGenerator,
                 tx.sessionTx,
                 tx.offlineSessionTx,
                 tx.clientSessionTx,
@@ -148,23 +154,16 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         if (useBatches) {
             asyncQueuePersistentUpdate = new ArrayBlockingQueue<>(1000);
         }
+        expirationPeriodSeconds = getExpirationPeriodSeconds(config);
     }
 
     @Override
     public void postInit(final KeycloakSessionFactory factory) {
         factory.register(event -> {
             if (event instanceof PostMigrationEvent) {
-                if (!useCaches) {
-                    keyGenerator = new InfinispanKeyGenerator() {
-                        @Override
-                        protected <K> K generateKey(KeycloakSession session, Cache<K, ?> cache, KeyGenerator<K> keyGenerator) {
-                            return keyGenerator.getKey();
-                        }
-                    };
-                } else {
+                if (useCaches) {
                     KeycloakModelUtils.runJobInTransaction(factory, (KeycloakSession session) -> {
 
-                        keyGenerator = new InfinispanKeyGenerator();
                         if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
                             initializePersisterLastSessionRefreshStore(factory);
                         }
@@ -199,25 +198,35 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         if (MultiSiteUtils.isPersistentSessionsEnabled()) {
             if (useCaches) {
                 try (var session = factory.create()) {
-                    sessionCacheHolder = InfinispanChangesUtils.createWithCache(session, USER_SESSION_CACHE_NAME, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs);
+                    sessionCacheHolder = InfinispanChangesUtils.createWithCache(session, USER_SESSION_CACHE_NAME, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs, SecretGenerator.SECURE_ID_GENERATOR);
                     offlineSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_USER_SESSION_CACHE_NAME, SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
                     clientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
                     offlineClientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getOfflineClientSessionLifespanMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
                 }
             } else {
-                sessionCacheHolder = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs);
+                sessionCacheHolder = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs, SecretGenerator.SECURE_ID_GENERATOR);
                 offlineSessionCacheHolder = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
                 clientSessionCacheHolder = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
                 offlineClientSessionCacheHolder = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getOfflineClientSessionLifespanMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
             }
         } else {
             try (var session = factory.create()) {
-                sessionCacheHolder = InfinispanChangesUtils.createWithCache(session, USER_SESSION_CACHE_NAME, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs);
+                sessionCacheHolder = InfinispanChangesUtils.createWithCache(session, USER_SESSION_CACHE_NAME, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs, SecretGenerator.SECURE_ID_GENERATOR);
                 offlineSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_USER_SESSION_CACHE_NAME, this::deriveOfflineSessionCacheEntryLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
                 clientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
                 offlineClientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_CLIENT_SESSION_CACHE_NAME, this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
+                var blockingManager = session.getProvider(InfinispanConnectionProvider.class).getBlockingManager();
+                expirationListener = new EmbeddedUserSessionExpirationListener(session.getKeycloakSessionFactory(), blockingManager);
             }
+            // Only add the event listener to session caches
+            // The expired events for offline sessions will be triggered by JpaUserSessionPersisterProvider
+            sessionCacheHolder.cache().addListener(expirationListener);
         }
+        // we need the expiration task running because of offline sessions
+        try (var session = factory.create()) {
+            expirationTask = ExpirationTaskFactory.create(session, expirationPeriodSeconds);
+        }
+        expirationTask.start();
     }
 
     public void initializePersisterLastSessionRefreshStore(final KeycloakSessionFactory sessionFactory) {
@@ -304,6 +313,14 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         if (persistentSessionsWorker != null) {
             persistentSessionsWorker.stop();
         }
+        if (expirationListener != null) {
+            sessionCacheHolder.cache().removeListener(expirationListener);
+            expirationListener = null;
+        }
+        if (expirationTask != null) {
+            expirationTask.stop();
+            expirationTask = null;
+        }
     }
 
     @Override
@@ -329,6 +346,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         info.put(CONFIG_MAX_BATCH_SIZE, Integer.toString(maxBatchSize));
         info.put(CONFIG_USE_CACHES, Boolean.toString(useCaches));
         info.put(CONFIG_USE_BATCHES, Boolean.toString(useBatches));
+        info.put(CONFIG_EXPIRATION_PERIOD, Integer.toString(expirationPeriodSeconds));
         return info;
     }
 
@@ -368,12 +386,39 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 .helpText("Enable or disable caches. Enabled by default unless the external feature to use only external remote caches is used")
                 .add();
 
+        builder.property()
+                .name(CONFIG_EXPIRATION_PERIOD)
+                .type("int")
+                .helpText("Sets the expiration task run period, to remove the expired session.")
+                .add();
+
         return builder.build();
     }
 
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
         return Set.of(InfinispanConnectionProvider.class, InfinispanTransactionProvider.class);
+    }
+
+    public ExpirationTask getExpirationTask() {
+        return expirationTask;
+    }
+
+    /**
+     * @param outTimeUnit The {@link TimeUnit} of the return value.
+     * @return The configured expiration task period, in the {@code outTimeUnit}.
+     */
+    public static long getExpirationPeriod(TimeUnit outTimeUnit) {
+        return outTimeUnit.convert(getExpirationPeriodSeconds(Config.scope(UserSessionSpi.NAME, InfinispanUtils.EMBEDDED_PROVIDER_ID)), TimeUnit.SECONDS);
+    }
+
+    private static int getExpirationPeriodSeconds(Config.Scope config) {
+        int period = config.getInt(CONFIG_EXPIRATION_PERIOD, DEFAULT_EXPIRATION_PERIOD_SECONDS);
+        if (period < MIN_EXPIRATION_PERIOD_SECONDS) {
+            log.warnf("Invalid user session expiration task period of %d seconds. Setting it to %d seconds", period, MIN_EXPIRATION_PERIOD_SECONDS);
+            return MIN_EXPIRATION_PERIOD_SECONDS;
+        }
+        return period;
     }
 
     private VolatileTransactions createVolatileTransaction(KeycloakSession session) {
@@ -416,4 +461,3 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private record PersistentTransaction(UserSessionPersistentChangelogBasedTransaction userTx, ClientSessionPersistentChangelogBasedTransaction clientTx) {}
 
 }
-

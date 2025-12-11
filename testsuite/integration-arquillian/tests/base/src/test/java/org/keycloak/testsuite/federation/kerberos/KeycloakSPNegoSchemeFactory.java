@@ -17,6 +17,12 @@
 
 package org.keycloak.testsuite.federation.kerberos;
 
+import java.security.PrivilegedExceptionAction;
+import javax.security.auth.Subject;
+
+import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
+
 import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.Credentials;
 import org.apache.http.impl.auth.SPNegoScheme;
@@ -28,12 +34,6 @@ import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
-import org.keycloak.federation.kerberos.CommonKerberosConfig;
-import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
-
-import javax.security.auth.Subject;
-
-import java.security.PrivilegedExceptionAction;
 
 /**
  * Usable for testing only. Username and password are shared for the whole factory

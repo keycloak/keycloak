@@ -1,12 +1,5 @@
 package org.freedesktop.dbus.connections;
 
-import org.freedesktop.dbus.connections.config.ReceivingServiceConfig;
-import org.freedesktop.dbus.connections.config.ReceivingServiceConfigBuilder;
-import org.freedesktop.dbus.exceptions.IllegalThreadPoolStateException;
-import org.freedesktop.dbus.utils.NameableThreadFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -14,6 +7,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import org.freedesktop.dbus.connections.config.ReceivingServiceConfig;
+import org.freedesktop.dbus.connections.config.ReceivingServiceConfigBuilder;
+import org.freedesktop.dbus.exceptions.IllegalThreadPoolStateException;
+import org.freedesktop.dbus.utils.NameableThreadFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Service providing threads for every type of message expected to be received by DBus.

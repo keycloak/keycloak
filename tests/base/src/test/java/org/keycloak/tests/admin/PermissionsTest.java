@@ -17,12 +17,14 @@
 
 package org.keycloak.tests.admin;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
-import org.hamcrest.Matchers;
-import org.jgroups.util.UUID;
-import org.junit.Assert;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -51,17 +53,17 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RoleConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
+import org.hamcrest.Matchers;
+import org.jgroups.util.UUID;
+import org.junit.Assert;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 

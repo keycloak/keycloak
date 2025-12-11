@@ -17,13 +17,13 @@
 
 package org.keycloak.theme;
 
-import freemarker.template.TemplateMethodModelEx;
-import freemarker.template.TemplateModelException;
-import org.owasp.html.Encoding;
-
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import freemarker.template.TemplateMethodModelEx;
+import freemarker.template.TemplateModelException;
+import org.owasp.html.Encoding;
 
 /**
  * Allows sanitizing of html that uses Freemarker ?no_esc.  This way, html

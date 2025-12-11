@@ -2,9 +2,7 @@ package org.keycloak.testsuite.broker;
 
 import java.io.Closeable;
 import java.io.IOException;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.Test;
+
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
@@ -12,6 +10,10 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.KeyUtils;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.Test;
 
 public final class KcSamlBrokerArtifactBindingTest extends AbstractInitializedBaseBrokerTest {
 

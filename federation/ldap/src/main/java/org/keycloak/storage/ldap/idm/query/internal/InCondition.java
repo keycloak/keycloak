@@ -43,4 +43,3 @@ class InCondition extends NamedParameterCondition {
         filter.append("))");
     }
 }
-

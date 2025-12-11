@@ -1,11 +1,13 @@
 package org.keycloak.device;
 
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import jakarta.ws.rs.core.HttpHeaders;
-import org.jboss.logging.Logger;
+
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.account.DeviceRepresentation;
+
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import org.jboss.logging.Logger;
 import ua_parser.Client;
 
 public class DeviceRepresentationProviderImpl implements DeviceRepresentationProvider {

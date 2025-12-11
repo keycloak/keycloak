@@ -1,12 +1,12 @@
 package org.freedesktop.dbus.messages;
 
-import org.freedesktop.dbus.FileDescriptor;
-import org.freedesktop.dbus.exceptions.DBusException;
-import org.freedesktop.dbus.types.UInt32;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+
+import org.freedesktop.dbus.FileDescriptor;
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.types.UInt32;
 
 public abstract class MethodBase extends Message {
 

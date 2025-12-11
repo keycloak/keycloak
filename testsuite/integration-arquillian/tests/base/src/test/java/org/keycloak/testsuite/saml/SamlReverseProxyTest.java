@@ -16,6 +16,21 @@
  */
 package org.keycloak.testsuite.saml;
 
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+
+import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.saml.SAML2LogoutRequestBuilder;
+import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
+import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.util.ReverseProxy;
+import org.keycloak.testsuite.util.SamlClient;
+
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -24,24 +39,12 @@ import org.apache.http.util.EntityUtils;
 import org.hamcrest.Matcher;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.saml.SAML2LogoutRequestBuilder;
-import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
-import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.testsuite.util.ReverseProxy;
-import org.keycloak.testsuite.util.SamlClient;
 import org.w3c.dom.Document;
 
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 
 /**
  * SAML tests using a {@code frontendUrl} that points to a reverse proxy. The SAML request destination should be validated

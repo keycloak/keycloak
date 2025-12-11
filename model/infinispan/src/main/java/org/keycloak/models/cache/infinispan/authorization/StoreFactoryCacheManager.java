@@ -16,8 +16,9 @@
  */
 package org.keycloak.models.cache.infinispan.authorization;
 
-import org.infinispan.Cache;
-import org.jboss.logging.Logger;
+import java.util.Objects;
+import java.util.Set;
+
 import org.keycloak.models.cache.infinispan.CacheManager;
 import org.keycloak.models.cache.infinispan.authorization.events.AuthorizationCacheInvalidationEvent;
 import org.keycloak.models.cache.infinispan.authorization.stream.InResourcePredicate;
@@ -26,8 +27,8 @@ import org.keycloak.models.cache.infinispan.authorization.stream.InScopePredicat
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 
-import java.util.Objects;
-import java.util.Set;
+import org.infinispan.Cache;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

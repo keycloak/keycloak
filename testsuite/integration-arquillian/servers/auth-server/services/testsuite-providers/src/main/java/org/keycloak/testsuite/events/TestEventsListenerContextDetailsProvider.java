@@ -18,6 +18,7 @@ package org.keycloak.testsuite.events;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import org.keycloak.events.Event;
 import org.keycloak.models.KeycloakSession;
 

@@ -17,13 +17,13 @@
 
 package org.keycloak.keys;
 
+import java.util.List;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.List;
 
 /**
  * @author <a href="mailto:f.b.rissi@gmail.com">Filipe Bojikian Rissi</a>

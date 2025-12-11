@@ -17,11 +17,14 @@
 
 package org.keycloak.models.cache.infinispan;
 
-import org.infinispan.Cache;
-import org.jboss.logging.Logger;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiFunction;
+
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
+import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.models.cache.infinispan.events.RealmCacheInvalidationEvent;
 import org.keycloak.models.cache.infinispan.stream.GroupListPredicate;
 import org.keycloak.models.cache.infinispan.stream.HasRolePredicate;
@@ -29,10 +32,8 @@ import org.keycloak.models.cache.infinispan.stream.InClientPredicate;
 import org.keycloak.models.cache.infinispan.stream.InGroupPredicate;
 import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
 
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.BiFunction;
+import org.infinispan.Cache;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

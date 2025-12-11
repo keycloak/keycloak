@@ -16,7 +16,17 @@
  */
 package org.keycloak.authentication.authenticators.client;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
@@ -28,14 +38,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ServicesLogger;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static org.keycloak.models.TokenManager.DEFAULT_VALIDATOR;
 
@@ -54,6 +56,18 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
         try {
+            ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
+            JsonWebToken jwt = clientAssertionState.getToken();
+
+            // Ignore for client assertions signed by third-parties
+            if (!Objects.equals(jwt.getIssuer(), jwt.getSubject())) {
+                return;
+            }
+
+            if (clientAssertionState.getClient() == null) {
+                clientAssertionState.setClient(context.getRealm().getClientByClientId(jwt.getSubject()));
+            }
+
             JWTClientValidator validator = new JWTClientValidator(context, this::verifySignature, getId());
             if (!validator.validate()) return;
 
@@ -167,7 +181,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public String getDisplayType() {
-        return "Signed Jwt with Client Secret";
+        return "Signed JWT with Client Secret";
     }
 
     @Override

@@ -20,12 +20,7 @@ package org.keycloak.services.securityprofile;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
@@ -35,6 +30,13 @@ import org.keycloak.securityprofile.SecurityProfileProviderFactory;
 import org.keycloak.services.resteasy.ResteasyKeycloakSession;
 import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 import org.keycloak.utils.ScopeUtil;
+
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 /**
  *

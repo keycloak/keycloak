@@ -180,5 +180,3 @@ public class Constants {
         static final String CONNECTION_TTL = "connectionTtl";
     }
 }
-
-

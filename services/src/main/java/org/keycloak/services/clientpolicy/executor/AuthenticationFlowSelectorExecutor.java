@@ -17,7 +17,6 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -25,6 +24,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:ggrazian@redhat.com">Giuseppe Graziano</a>

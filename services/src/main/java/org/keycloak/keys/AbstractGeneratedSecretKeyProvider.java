@@ -17,6 +17,9 @@
 
 package org.keycloak.keys;
 
+import java.util.stream.Stream;
+import javax.crypto.SecretKey;
+
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.component.ComponentModel;
@@ -24,9 +27,6 @@ import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
-
-import javax.crypto.SecretKey;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

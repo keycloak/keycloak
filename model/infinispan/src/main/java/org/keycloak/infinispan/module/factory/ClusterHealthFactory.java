@@ -17,11 +17,12 @@
 
 package org.keycloak.infinispan.module.factory;
 
+import org.keycloak.infinispan.health.ClusterHealth;
+import org.keycloak.infinispan.health.impl.JdbcPingClusterHealthImpl;
+
 import org.infinispan.factories.AbstractComponentFactory;
 import org.infinispan.factories.AutoInstantiableFactory;
 import org.infinispan.factories.annotations.DefaultFactoryFor;
-import org.keycloak.infinispan.health.ClusterHealth;
-import org.keycloak.infinispan.health.impl.JdbcPingClusterHealthImpl;
 
 @DefaultFactoryFor(classes = ClusterHealth.class)
 public class ClusterHealthFactory extends AbstractComponentFactory implements AutoInstantiableFactory {

@@ -28,7 +28,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.function.Predicate;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.ClientModel;
@@ -48,6 +47,7 @@ import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory.UriType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 
 public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorProvider<SecureRedirectUrisEnforcerExecutor.Configuration> {
 

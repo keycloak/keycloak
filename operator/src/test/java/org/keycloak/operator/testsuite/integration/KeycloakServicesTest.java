@@ -17,18 +17,18 @@
 
 package org.keycloak.operator.testsuite.integration;
 
-import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
-import io.quarkus.logging.Log;
-import io.quarkus.test.junit.QuarkusTest;
+import java.time.Duration;
+import java.util.Map;
 
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Test;
 import org.keycloak.operator.controllers.KeycloakDiscoveryServiceDependentResource;
 import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
-import java.time.Duration;
-import java.util.Map;
+import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
+import io.quarkus.logging.Log;
+import io.quarkus.test.junit.QuarkusTest;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;

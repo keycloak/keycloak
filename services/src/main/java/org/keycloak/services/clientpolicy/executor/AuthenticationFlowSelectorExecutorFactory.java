@@ -17,13 +17,13 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * @author <a href="mailto:ggrazian@redhat.com">Giuseppe Graziano</a>

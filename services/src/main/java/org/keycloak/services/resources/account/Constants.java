@@ -16,11 +16,11 @@
  */
 package org.keycloak.services.resources.account;
 
-import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

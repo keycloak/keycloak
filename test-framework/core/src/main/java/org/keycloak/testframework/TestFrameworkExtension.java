@@ -1,10 +1,10 @@
 package org.keycloak.testframework;
 
-import org.keycloak.testframework.injection.Supplier;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import org.keycloak.testframework.injection.Supplier;
 
 public interface TestFrameworkExtension {
 

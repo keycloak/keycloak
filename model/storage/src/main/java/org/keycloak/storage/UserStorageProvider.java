@@ -93,4 +93,3 @@ public interface UserStorageProvider extends Provider {
         UNSYNCED
     }
 }
-

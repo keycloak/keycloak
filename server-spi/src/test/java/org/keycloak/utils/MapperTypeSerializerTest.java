@@ -22,11 +22,12 @@ package org.keycloak.utils;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.MultivaluedMap;
 import org.keycloak.models.utils.MapperTypeSerializer;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

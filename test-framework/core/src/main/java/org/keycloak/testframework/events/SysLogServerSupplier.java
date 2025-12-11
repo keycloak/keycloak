@@ -1,5 +1,7 @@
 package org.keycloak.testframework.events;
 
+import java.io.IOException;
+
 import org.keycloak.testframework.annotations.InjectSysLogServer;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -8,8 +10,6 @@ import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierOrder;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfigInterceptor;
-
-import java.io.IOException;
 
 public class SysLogServerSupplier implements Supplier<SysLogServer, InjectSysLogServer>, KeycloakServerConfigInterceptor<SysLogServer, InjectSysLogServer> {
 

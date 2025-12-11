@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
@@ -38,6 +37,8 @@ import org.keycloak.models.sessions.infinispan.entities.ClientSessionKey;
 import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.remote.transaction.ClientSessionChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
+
+import org.infinispan.client.hotrod.RemoteCache;
 
 /**
  * An {@link Updater} implementation that keeps track of {@link AuthenticatedClientSessionModel} changes.

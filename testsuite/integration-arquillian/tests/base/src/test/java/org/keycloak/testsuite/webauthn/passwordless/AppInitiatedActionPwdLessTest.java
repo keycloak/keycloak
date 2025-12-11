@@ -17,11 +17,12 @@
 
 package org.keycloak.testsuite.webauthn.passwordless;
 
-import org.junit.Before;
 import org.keycloak.testsuite.util.BrowserDriverUtil;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.AppInitiatedActionWebAuthnTest;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
+
+import org.junit.Before;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>

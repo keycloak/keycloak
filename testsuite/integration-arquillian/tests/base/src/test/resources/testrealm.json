@@ -405,6 +405,7 @@
       "clientId": "named-test-app",
       "name": "My Named Test App",
       "enabled": true,
+      "directAccessGrantsEnabled": true,
       "baseUrl": "http://localhost:8180/namedapp/base",
       "redirectUris": [
         "http://localhost:8180/namedapp/base/*",

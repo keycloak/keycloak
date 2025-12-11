@@ -1,12 +1,13 @@
 package org.keycloak.testsuite.cli.registration;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.io.IOException;
+
 import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.testsuite.cli.KcRegExec;
 import org.keycloak.testsuite.util.TempFileResource;
 
-import java.io.IOException;
+import org.junit.Assert;
+import org.junit.Test;
 
 import static org.keycloak.client.cli.util.OsUtil.EOL;
 import static org.keycloak.client.registration.cli.KcRegMain.CMD;

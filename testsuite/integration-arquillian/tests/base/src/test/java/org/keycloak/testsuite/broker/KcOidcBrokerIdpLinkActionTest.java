@@ -25,11 +25,7 @@ import java.util.Collections;
 import java.util.List;
 
 import jakarta.ws.rs.core.Response;
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.broker.provider.IdpLinkAction;
@@ -52,8 +48,15 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.utils.BrokerUtil;
 
-import static org.hamcrest.Matchers.is;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+
+import static org.hamcrest.Matchers.is;
 
 /**
  * Test for client-initiated-account linking of the custom application

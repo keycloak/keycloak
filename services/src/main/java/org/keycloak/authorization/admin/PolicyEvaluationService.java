@@ -39,19 +39,13 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.representation.PolicyEvaluationResponseBuilder;
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.ResourceWrapper;
@@ -86,6 +80,13 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.sessions.AuthenticationSessionModel;
+
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -150,7 +151,7 @@ public class PolicyEvaluationService {
         EvaluationDecisionCollector decision = new EvaluationDecisionCollector(authorization, resourceServer, request);
 
         if (permissions.isEmpty()) {
-            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(authorization.getRealm())) {
+            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(authorization.getRealm(), resourceServer.getId())) {
                 return decision;
             }
             return authorization.evaluators().from(evaluationContext, resourceServer, request).evaluate(decision);

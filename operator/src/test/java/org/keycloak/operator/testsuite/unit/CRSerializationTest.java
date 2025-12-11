@@ -21,12 +21,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
-import io.fabric8.kubernetes.client.utils.Serialization;
-import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
@@ -39,6 +35,13 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.update.UpdateStrategy;
+
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.SecretKeySelector;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
+import io.fabric8.kubernetes.client.utils.Serialization;
+import org.hamcrest.CoreMatchers;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
@@ -211,6 +214,12 @@ public class CRSerializationTest {
         assertThat(attributes.size(), is(2));
         assertThat(attributes, hasEntry("service.namespace", "keycloak-namespace"));
         assertThat(attributes, hasEntry("service.name", "custom-service-name"));
+
+        var additionalOptions = keycloak.getSpec().getAdditionalOptions().stream().collect(Collectors.toMap(ValueOrSecret::getName, e -> e));
+        assertNotNull(additionalOptions);
+        assertThat(additionalOptions.isEmpty(), is(false));
+        assertThat(additionalOptions, hasEntry("tracing-header-Authorization", new ValueOrSecret("tracing-header-Authorization", new SecretKeySelector("tracing-secret", "token", false))));
+        assertThat(additionalOptions, hasEntry("tracing-header-X-Org-Id", new ValueOrSecret("tracing-header-X-Org-Id", "my-org-id")));
     }
 
     @Test
@@ -328,5 +337,11 @@ public class CRSerializationTest {
             fail();
         }
     }
-
+    @Test
+    public void testNoAutoMountServiceAccountToken() {
+        var keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr-without-automount.yml"), Keycloak.class);
+        var keycloakSpec = keycloak.getSpec();
+        assertNotNull(keycloakSpec);
+        assertFalse(keycloakSpec.getAutomountServiceAccountToken());
+    }
 }

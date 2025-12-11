@@ -1,7 +1,8 @@
 package org.keycloak.testsuite.cluster;
 
-import org.apache.commons.lang.RandomStringUtils;
-import org.junit.Before;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.ComponentResource;
 import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -10,8 +11,8 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.Response;
+import org.apache.commons.lang.RandomStringUtils;
+import org.junit.Before;
 
 import static org.junit.Assert.assertNull;
 

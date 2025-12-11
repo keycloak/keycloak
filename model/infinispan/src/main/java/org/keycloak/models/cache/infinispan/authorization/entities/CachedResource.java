@@ -18,14 +18,6 @@
 
 package org.keycloak.models.cache.infinispan.authorization.entities;
 
-import org.keycloak.authorization.model.Resource;
-import org.keycloak.authorization.model.Scope;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
-import org.keycloak.models.cache.infinispan.LazyLoader;
-import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -33,6 +25,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.Scope;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
+import org.keycloak.models.cache.infinispan.LazyLoader;
+import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

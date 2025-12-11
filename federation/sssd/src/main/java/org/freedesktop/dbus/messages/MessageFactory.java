@@ -1,5 +1,7 @@
 package org.freedesktop.dbus.messages;
 
+import java.util.List;
+
 import org.freedesktop.dbus.FileDescriptor;
 import org.freedesktop.dbus.errors.Error;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -7,8 +9,6 @@ import org.freedesktop.dbus.exceptions.MessageTypeException;
 import org.freedesktop.dbus.utils.Hexdump;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public final class MessageFactory {
 

@@ -17,7 +17,6 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
@@ -25,6 +24,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRefreshResponseContext;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>

@@ -17,9 +17,16 @@
 
 package org.keycloak.tests.admin.authentication;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import jakarta.ws.rs.NotFoundException;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Assertions;
+
 import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
 import org.keycloak.authentication.forms.RegistrationRecaptcha;
 import org.keycloak.authentication.forms.RegistrationRecaptchaEnterprise;
@@ -29,13 +36,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.KerberosUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -82,13 +84,13 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         List<Map<String, Object>> result = authMgmtResource.getClientAuthenticatorProviders();
 
         List<Map<String, Object>> expected = new LinkedList<>();
-        addClientAuthenticatorProviderInfo(expected, "client-jwt", "Signed Jwt",
+        addClientAuthenticatorProviderInfo(expected, "client-jwt", "Signed JWT",
                 "Validates client based on signed JWT issued by client and signed with the Client private key", false);
         addClientAuthenticatorProviderInfo(expected, "client-secret", "Client Id and Secret", "Validates client based on 'client_id' and " +
                 "'client_secret' sent either in request parameters or in 'Authorization: Basic' header", true);
         addClientAuthenticatorProviderInfo(expected, "client-x509", "X509 Certificate",
                 "Validates client based on a X509 Certificate", false);
-        addClientAuthenticatorProviderInfo(expected, "client-secret-jwt", "Signed Jwt with Client Secret",
+        addClientAuthenticatorProviderInfo(expected, "client-secret-jwt", "Signed JWT with Client Secret",
                 "Validates client based on signed JWT issued by client and signed with the Client Secret", true);
 
         compareProviders(expected, result);

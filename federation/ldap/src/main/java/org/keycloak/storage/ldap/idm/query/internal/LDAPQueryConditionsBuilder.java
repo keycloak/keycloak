@@ -18,6 +18,7 @@
 package org.keycloak.storage.ldap.idm.query.internal;
 
 import java.util.Arrays;
+
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.Sort;

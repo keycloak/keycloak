@@ -16,17 +16,6 @@
  */
 package org.keycloak.protocol.oidc.rar.parsers;
 
-import org.jboss.logging.Logger;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
-import org.keycloak.rar.AuthorizationRequestContext;
-import org.keycloak.protocol.oidc.rar.model.IntermediaryScopeRepresentation;
-import org.keycloak.rar.AuthorizationDetails;
-import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
-import org.keycloak.rar.AuthorizationRequestSource;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -36,6 +25,18 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
+import org.keycloak.protocol.oidc.rar.model.IntermediaryScopeRepresentation;
+import org.keycloak.rar.AuthorizationDetails;
+import org.keycloak.rar.AuthorizationRequestContext;
+import org.keycloak.rar.AuthorizationRequestSource;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.representations.AuthorizationDetailsJSONRepresentation.DYNAMIC_SCOPE_RAR_TYPE;
 import static org.keycloak.representations.AuthorizationDetailsJSONRepresentation.STATIC_SCOPE_RAR_TYPE;

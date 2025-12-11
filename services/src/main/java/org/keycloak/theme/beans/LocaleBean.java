@@ -17,16 +17,16 @@
 
 package org.keycloak.theme.beans;
 
-import org.keycloak.models.RealmModel;
-
-import jakarta.ws.rs.core.UriBuilder;
-
 import java.text.Bidi;
 import java.text.Collator;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
+import jakarta.ws.rs.core.UriBuilder;
+
+import org.keycloak.models.RealmModel;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

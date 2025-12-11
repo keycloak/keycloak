@@ -17,9 +17,6 @@
 
 package org.keycloak.ipatuura_user_spi;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.jboss.logging.Logger;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,11 +25,13 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
-import org.keycloak.models.KeycloakSession;
-
 import org.keycloak.ipatuura_user_spi.schemas.SCIMSearchRequest;
 import org.keycloak.ipatuura_user_spi.schemas.SCIMUser;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.logging.Logger;
 
 public class Ipatuura {
     private static final Logger logger = Logger.getLogger(Ipatuura.class);

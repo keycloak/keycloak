@@ -17,11 +17,12 @@
 
 package org.keycloak.jose.jwk;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.security.NoSuchAlgorithmException;
+
 import org.keycloak.common.util.PemUtils;
 
-import java.security.NoSuchAlgorithmException;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

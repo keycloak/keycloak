@@ -17,6 +17,11 @@
 
 package org.keycloak.client.registration.cli.commands;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.registration.cli.CmdStdinContext;
 import org.keycloak.client.registration.cli.EndpointType;
@@ -24,11 +29,6 @@ import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;

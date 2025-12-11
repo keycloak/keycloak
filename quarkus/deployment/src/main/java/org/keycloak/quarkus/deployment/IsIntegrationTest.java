@@ -1,9 +1,9 @@
 package org.keycloak.quarkus.deployment;
 
+import org.keycloak.quarkus.runtime.Environment;
+
 import io.quarkus.deployment.IsTest;
 import io.quarkus.runtime.LaunchMode;
-
-import org.keycloak.quarkus.runtime.Environment;
 
 public class IsIntegrationTest extends IsTest {
 

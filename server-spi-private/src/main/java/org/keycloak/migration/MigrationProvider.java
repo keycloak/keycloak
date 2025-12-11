@@ -17,14 +17,14 @@
 
 package org.keycloak.migration;
 
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * Various common utils needed for migration from older version to newer

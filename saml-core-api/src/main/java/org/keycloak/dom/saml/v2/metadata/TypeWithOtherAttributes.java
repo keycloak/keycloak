@@ -16,10 +16,10 @@
  */
 package org.keycloak.dom.saml.v2.metadata;
 
-import javax.xml.namespace.QName;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import javax.xml.namespace.QName;
 
 /**
  * Abstract base class for types that can have extra attributes

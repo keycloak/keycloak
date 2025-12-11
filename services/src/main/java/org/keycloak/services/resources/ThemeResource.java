@@ -16,35 +16,6 @@
  */
 package org.keycloak.services.resources;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.HeaderParam;
-import jakarta.ws.rs.OPTIONS;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
-import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
-import org.keycloak.common.Version;
-import org.keycloak.common.util.MimeTypeUtil;
-import org.keycloak.encoding.ResourceEncodingHelper;
-import org.keycloak.encoding.ResourceEncodingProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.cors.Cors;
-import org.keycloak.services.util.CacheControlUtil;
-import org.keycloak.services.util.LocaleUtil;
-import org.keycloak.theme.Theme;
-
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.ext.Provider;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,6 +29,36 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.ext.Provider;
+
+import org.keycloak.common.Profile;
+import org.keycloak.common.Version;
+import org.keycloak.common.util.MimeTypeUtil;
+import org.keycloak.encoding.ResourceEncodingHelper;
+import org.keycloak.encoding.ResourceEncodingProvider;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.cors.Cors;
+import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.services.util.LocaleUtil;
+import org.keycloak.theme.Theme;
+
+import org.jboss.logging.Logger;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;

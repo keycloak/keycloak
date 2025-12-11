@@ -1,14 +1,14 @@
 package org.keycloak.saml.processing.core.parsers.saml.metadata;
 
+import java.net.URI;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
+
 import org.keycloak.dom.saml.v2.metadata.LocalizedNameType;
 import org.keycloak.dom.saml.v2.metadata.LocalizedURIType;
 import org.keycloak.dom.saml.v2.metadata.OrganizationType;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
-
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.StartElement;
-import java.net.URI;
 
 import static org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames.ATTR_LANG;
 import static org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames.ORGANIZATION;

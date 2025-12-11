@@ -17,6 +17,8 @@
 
 package org.keycloak.jose.jwe;
 
+import java.io.IOException;
+
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.jose.JOSE;
 import org.keycloak.jose.JOSEHeader;
@@ -24,8 +26,6 @@ import org.keycloak.jose.jwe.JWEHeader.JWEHeaderBuilder;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

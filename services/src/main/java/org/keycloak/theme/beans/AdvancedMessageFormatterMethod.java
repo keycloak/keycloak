@@ -17,13 +17,13 @@
 
 package org.keycloak.theme.beans;
 
-import freemarker.template.TemplateMethodModelEx;
-import freemarker.template.TemplateModelException;
-
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
+
+import freemarker.template.TemplateMethodModelEx;
+import freemarker.template.TemplateModelException;
 
 /**
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>

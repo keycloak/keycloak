@@ -17,6 +17,10 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -24,10 +28,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * Mappings UserModel.attribute to an ID Token claim.  Token claim name can be a full qualified nested object name,

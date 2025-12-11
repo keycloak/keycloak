@@ -19,10 +19,11 @@
 
 package org.keycloak.deployment;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+
+import org.jboss.logging.Logger;
 
 /**
  * Allows to CRUD for configurations (like Authenticator configs). Those are typically saved in the store (realm), but can be also

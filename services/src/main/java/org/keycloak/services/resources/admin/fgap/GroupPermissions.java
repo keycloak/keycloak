@@ -16,6 +16,18 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import jakarta.ws.rs.ForbiddenException;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -28,18 +40,6 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.GroupModel;
 import org.keycloak.representations.idm.authorization.Permission;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import jakarta.ws.rs.ForbiddenException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

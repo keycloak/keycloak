@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.InternalServerErrorException;
@@ -43,6 +44,7 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.DPoPUtil;
 
 import static jakarta.ws.rs.core.HttpHeaders.WWW_AUTHENTICATE;
+
 import static org.keycloak.OAuth2Constants.ALGS_ATTRIBUTE;
 import static org.keycloak.services.util.DPoPUtil.DPOP_SCHEME;
 

@@ -18,13 +18,13 @@
 
 package org.keycloak.authorization.permission.evaluator;
 
+import java.util.Collection;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
-
-import java.util.Collection;
 
 /**
  * A factory for the different {@link PermissionEvaluator} implementations.

@@ -17,97 +17,6 @@
 
 package org.keycloak.protocol.oid4vc.issuance;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.WriterException;
-import com.google.zxing.client.j2se.MatrixToImageWriter;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.qrcode.QRCodeWriter;
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
-import org.apache.commons.io.IOUtils;
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.constants.Oid4VciConstants;
-import org.keycloak.events.Errors;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.jose.JOSEHeader;
-import org.keycloak.jose.jwe.JWE;
-import org.keycloak.jose.jwe.JWEException;
-import org.keycloak.jose.jwe.JWEHeader;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKParser;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.KeyManager;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
-import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
-import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
-import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderFactory;
-import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
-import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
-import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
-import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
-import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
-import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
-import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
-import org.keycloak.protocol.oid4vc.model.CredentialRequest;
-import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
-import org.keycloak.protocol.oid4vc.model.CredentialResponse;
-import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
-import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
-import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
-import org.keycloak.services.ErrorResponseException;
-import org.keycloak.protocol.oid4vc.model.ErrorResponse;
-import org.keycloak.protocol.oid4vc.model.ErrorType;
-import org.keycloak.protocol.oid4vc.model.Format;
-import org.keycloak.protocol.oid4vc.model.NonceResponse;
-import org.keycloak.protocol.oid4vc.model.OfferUriType;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
-import org.keycloak.protocol.oid4vc.model.ProofType;
-import org.keycloak.protocol.oid4vc.model.Proofs;
-import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
-import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
-import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
-import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
-import org.keycloak.protocol.oidc.utils.OAuth2Code;
-import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.saml.processing.api.util.DeflateUtil;
-import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.services.cors.Cors;
-import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.util.DPoPUtil;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.utils.MediaType;
-import org.keycloak.representations.dpop.DPoP;
-import org.keycloak.common.VerificationException;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -122,6 +31,114 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OID4VCConstants;
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.jose.JOSEHeader;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKParser;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.KeyManager;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderFactory;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage.CredentialOfferState;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
+import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
+import org.keycloak.protocol.oid4vc.model.AttestationProof;
+import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
+import org.keycloak.protocol.oid4vc.model.CredentialRequest;
+import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
+import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
+import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
+import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.ErrorResponse;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
+import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.JwtProof;
+import org.keycloak.protocol.oid4vc.model.NonceResponse;
+import org.keycloak.protocol.oid4vc.model.OfferUriType;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
+import org.keycloak.protocol.oid4vc.model.Proofs;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.dpop.DPoP;
+import org.keycloak.saml.processing.api.util.DeflateUtil;
+import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.cors.Cors;
+import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.util.DPoPUtil;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.MediaType;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpOptions;
+import org.apache.http.client.methods.HttpPost;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
+import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
+import static org.keycloak.events.EventType.INTROSPECT_TOKEN_ERROR;
+import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST;
+import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_REQUEST;
+import static org.keycloak.protocol.oid4vc.model.ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION;
+import static org.keycloak.protocol.oid4vc.model.ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER;
 
 /**
  * Provides the (REST-)endpoints required for the OID4VCI protocol.
@@ -142,18 +159,22 @@ public class OID4VCIssuerEndpoint {
     public static final String CREDENTIAL_CONFIGURATION_IDS_NOTE = "CREDENTIAL_CONFIGURATION_IDS";
 
     /**
-     * Prefix for session note keys that store the mapping between credential identifiers and configuration IDs.
-     * This is used to store mappings generated during authorization details processing.
-     */
-    public static final String CREDENTIAL_IDENTIFIER_PREFIX = "credential_identifier_";
-
-    /**
      * Prefix for session note keys that store authorization details claims.
      * This is used to store claims from authorization details for later use during credential issuance.
      */
     public static final String AUTHORIZATION_DETAILS_CLAIMS_PREFIX = "AUTHORIZATION_DETAILS_CLAIMS_";
 
     private Cors cors;
+
+    /**
+     * Cached authentication result to prevent DPoP proof reuse.
+     * <p>
+     * This cache ensures that when authentication is performed multiple times during
+     * a single request processing (e.g., when issuing multiple credentials), the same
+     * authentication result is reused instead of re-authenticating, which would allow
+     * the same DPoP proof to be used multiple times.
+     */
+    private AuthenticationManager.AuthResult cachedAuthResult;
 
     private static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
     private static final int DEFAULT_CODE_LIFESPAN_S = 30;
@@ -162,8 +183,8 @@ public class OID4VCIssuerEndpoint {
     public static final String NONCE_PATH = "nonce";
     public static final String CREDENTIAL_PATH = "credential";
     public static final String CREDENTIAL_OFFER_PATH = "credential-offer/";
-    public static final String RESPONSE_TYPE_IMG_PNG = Oid4VciConstants.RESPONSE_TYPE_IMG_PNG;
-    public static final String CREDENTIAL_OFFER_URI_CODE_SCOPE = Oid4VciConstants.CREDENTIAL_OFFER_URI_CODE_SCOPE;
+    public static final String RESPONSE_TYPE_IMG_PNG = OID4VCConstants.RESPONSE_TYPE_IMG_PNG;
+    public static final String CREDENTIAL_OFFER_URI_CODE_SCOPE = OID4VCConstants.CREDENTIAL_OFFER_URI_CODE_SCOPE;
     private final KeycloakSession session;
     private final AppAuthManager.BearerTokenAuthenticator bearerTokenAuthenticator;
     private final TimeProvider timeProvider;
@@ -172,7 +193,7 @@ public class OID4VCIssuerEndpoint {
     private final int preAuthorizedCodeLifeSpan;
 
     // constant for the OID4VCI enabled attribute key
-    private static final String OID4VCI_ENABLED_ATTRIBUTE_KEY = "oid4vci.enabled";
+    public static final String OID4VCI_ENABLED_ATTRIBUTE_KEY = "oid4vci.enabled";
 
     /**
      * Credential builders are responsible for initiating the production of
@@ -298,87 +319,194 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
-     * Provides the URI to the OID4VCI compliant credentials offer
+     * Handles CORS preflight requests for credential offer URI endpoint.
+     * Preflight requests return CORS headers for all origins (standard CORS behavior).
+     * The actual request will validate origins against client configuration.
+     */
+    @OPTIONS
+    @Path("credential-offer-uri")
+    public Response getCredentialOfferURIPreflight() {
+        configureCors(true);
+        cors.preflight();
+        return cors.add(Response.ok());
+    }
+
+    /**
+     * Creates a Credential Offer Uri that is bound to the calling user.
+     */
+    public Response getCredentialOfferURI(String credConfigId) {
+        UserSessionModel userSession = getAuthenticatedClientSession().getUserSession();
+        return getCredentialOfferURI(credConfigId, true, userSession.getLoginUsername());
+    }
+
+    /**
+     * Creates a Credential Offer Uri that is bound to a specific user.
+     */
+    public Response getCredentialOfferURI(String credConfigId, boolean preAuthorized, String targetUser) {
+        return getCredentialOfferURI(credConfigId, preAuthorized, null, targetUser, OfferUriType.URI, 0, 0);
+    }
+
+    /**
+     * Creates a Credential Offer Uri that can be pre-authorized and hence bound to a specific client/user id.
+     * <p>
+     * Credential Offer Validity Matrix for the supported request parameters "pre_authorized", "client_id", "username" combinations.
+     * </p>
+     * +----------+-----------+---------+---------+-----------------------------------------------------+
+     * | pre-auth | clientId  | username  | Valid   | Notes                                               |
+     * +----------+-----------+---------+---------+-----------------------------------------------------+
+     * | no       | no        | no      | yes     | Generic offer; any logged-in user may redeem.       |
+     * | no       | no        | yes     | yes     | Offer restricted to a specific user.                |
+     * | no       | yes       | no      | yes     | Bound to client; user determined at login.          |
+     * | no       | yes       | yes     | yes     | Bound to both client and user.                      |
+     * +----------+-----------+---------+---------+-----------------------------------------------------+
+     * | yes      | no        | no      | no      | Pre-auth requires a user subject; missing username.   |
+     * | yes      | yes       | no      | no      | Same as above; username required.                     |
+     * | yes      | no        | yes     | yes     | Pre-auth for a specific user; client unconstrained. |
+     * | yes      | yes       | yes     | yes     | Fully constrained: user + client.                   |
+     * +----------+-----------+---------+---------+-----------------------------------------------------+
+     *
+     * @param credConfigId  A valid credential configuration id
+     * @param preAuthorized A flag whether the offer should be pre-authorized (requires targetUser)
+     * @param appClientId   The client id that the offer is authorized for
+     * @param appUsername   The username that the offer is authorized for
+     * @param type          The response type, which can be 'uri' or 'qr-code'
+     * @param width         The width of the QR code image
+     * @param height        The height of the QR code image
+     * @see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-offer-endpoint
      */
     @GET
     @Produces({MediaType.APPLICATION_JSON, RESPONSE_TYPE_IMG_PNG})
     @Path("credential-offer-uri")
-    public Response getCredentialOfferURI(@QueryParam("credential_configuration_id") String vcId, @QueryParam("type") @DefaultValue("uri") OfferUriType type, @QueryParam("width") @DefaultValue("200") int width, @QueryParam("height") @DefaultValue("200") int height) {
+    public Response getCredentialOfferURI(
+            @QueryParam("credential_configuration_id") String credConfigId,
+            @QueryParam("pre_authorized") @DefaultValue("true") boolean preAuthorized,
+            @QueryParam("client_id") String appClientId,
+            @QueryParam("username") String appUsername,
+            @QueryParam("type") @DefaultValue("uri") OfferUriType type,
+            @QueryParam("width") @DefaultValue("200") int width,
+            @QueryParam("height") @DefaultValue("200") int height
+    ) {
+        configureCors(true);
 
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
+        UserModel userModel = clientSession.getUserSession().getUser();
+        ClientModel clientModel = clientSession.getClient();
+        RealmModel realmModel = clientModel.getRealm();
 
-        // Initialize CORS configuration and validate if the client is enabled for OID4VCI
-        cors = Cors.builder()
-                .auth()
-                .allowedMethods("GET")
-                .auth()
-                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
-
+        cors.allowedOrigins(session, clientModel);
         checkClientEnabled();
 
-        Map<String, SupportedCredentialConfiguration> credentialsMap = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
-        LOGGER.debugf("Get an offer for %s", vcId);
-        if (!credentialsMap.containsKey(vcId)) {
-            LOGGER.debugf("No credential with id %s exists.", vcId);
-            LOGGER.debugf("Supported credentials are %s.", credentialsMap);
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
+        // Check required role to create a credential offer
+        //
+        boolean hasCredentialOfferRole = userModel.getRoleMappingsStream()
+                .anyMatch(rm -> rm.getName().equals(CREDENTIAL_OFFER_CREATE.getName()));
+        if (!hasCredentialOfferRole) {
+            var errorMessage = "Credential offer creation requires role: " + CREDENTIAL_OFFER_CREATE.getName();
+            throw new CorsErrorResponseException(cors,
+                    INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.FORBIDDEN);
         }
-        SupportedCredentialConfiguration supportedCredentialConfiguration = credentialsMap.get(vcId);
 
-        // calculate the expiration of the preAuthorizedCode. The sessionCode will also expire at that time.
-        int expiration = timeProvider.currentTimeSeconds() + preAuthorizedCodeLifeSpan;
-        String preAuthorizedCode = generateAuthorizationCodeForClientSession(expiration, clientSession);
+        LOGGER.debugf("Get an offer for %s", credConfigId);
 
-        CredentialsOffer theOffer = new CredentialsOffer()
+        // Check whether given client/user ids actually exist
+        //
+        if (appClientId != null && session.clients().getClientByClientId(realmModel, appClientId) == null) {
+            var errorMessage = "No such client id: " + appClientId;
+            throw new CorsErrorResponseException(cors,
+                    INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
+        }
+
+        String userId = null;
+        if (appUsername != null) {
+            UserModel user = session.users().getUserByUsername(realmModel, appUsername);
+            if (user == null) {
+                var errorMessage = "Not found user with username: " + appUsername;
+                throw new CorsErrorResponseException(cors,
+                        INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
+            }
+            if (!user.isEnabled()) {
+                var errorMessage = "User '" + appUsername + "' disabled";
+                throw new CorsErrorResponseException(cors,
+                        INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
+            }
+            userId = user.getId();
+        }
+
+        if (preAuthorized) {
+            if (appClientId == null) {
+                appClientId = clientModel.getClientId();
+                LOGGER.warnf("Using fallback client id for credential offer: %s", appClientId);
+            }
+            if (appUsername == null) {
+                var errorMessage = "Pre-Authorized credential offer requires a target user";
+                throw new CorsErrorResponseException(cors,
+                        INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
+            }
+        }
+
+        // Check whether the credential configuration exists in available client scopes
+        //
+        List<String> availableInClientScopes = session.clientScopes()
+                .getClientScopesByProtocol(realmModel, OID4VC_PROTOCOL)
+                .map(it -> it.getAttribute(CredentialScopeModel.CONFIGURATION_ID))
+                .toList();
+        if (!availableInClientScopes.contains(credConfigId)) {
+            var errorMessage = "Invalid credential configuration id: " + credConfigId;
+            LOGGER.debugf("%s not found in supported credential config ids: %s", credConfigId, availableInClientScopes);
+            throw new CorsErrorResponseException(cors,
+                    INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
+        }
+
+        CredentialsOffer credOffer = new CredentialsOffer()
                 .setCredentialIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
-                .setCredentialConfigurationIds(List.of(supportedCredentialConfiguration.getId()))
-                .setGrants(
-                        new PreAuthorizedGrant()
-                                .setPreAuthorizedCode(
-                                        new PreAuthorizedCode()
-                                                .setPreAuthorizedCode(preAuthorizedCode)));
+                .setCredentialConfigurationIds(List.of(credConfigId));
 
-        String sessionCode = generateCodeForSession(expiration, clientSession);
-        try {
-            clientSession.setNote(sessionCode, JsonSerialization.mapper.writeValueAsString(theOffer));
+        int expiration = timeProvider.currentTimeSeconds() + preAuthorizedCodeLifeSpan;
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, appClientId, userId, expiration);
 
-            // Store the credential configuration IDs in a predictable location for token processing
-            // This allows the authorization details processor to easily retrieve the configuration IDs
-            // without having to search through all session notes or parse the full credential offer
-            String credentialConfigIdsJson = JsonSerialization.mapper.writeValueAsString(theOffer.getCredentialConfigurationIds());
-            clientSession.setNote(CREDENTIAL_CONFIGURATION_IDS_NOTE, credentialConfigIdsJson);
-            LOGGER.debugf("Stored credential configuration IDs for token processing: %s", credentialConfigIdsJson);
-        } catch (JsonProcessingException e) {
-            LOGGER.errorf("Could not convert the offer POJO to JSON: %s", e.getMessage());
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
+        if (preAuthorized) {
+            String code = "urn:oid4vci:code:" + SecretGenerator.getInstance().randomString(64);
+            credOffer.setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(
+                    new PreAuthorizedCode().setPreAuthorizedCode(code)));
         }
+
+        CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+        offerStorage.putOfferState(session, offerState);
+
+        LOGGER.debugf("Stored credential offer state: [ids=%s, cid=%s, uid=%s, nonce=%s]",
+                credOffer.getCredentialConfigurationIds(), offerState.getClientId(), offerState.getUserId(), offerState.getNonce());
+
+        // Store the credential configuration IDs in a predictable location for token processing
+        // This allows the authorization details processor to easily retrieve the configuration IDs
+        // without having to search through all session notes or parse the full credential offer
+        String credentialConfigIdsJson = JsonSerialization.valueAsString(credOffer.getCredentialConfigurationIds());
+        clientSession.setNote(CREDENTIAL_CONFIGURATION_IDS_NOTE, credentialConfigIdsJson);
+        LOGGER.debugf("Stored credential configuration IDs for token processing: %s", credentialConfigIdsJson);
 
         return switch (type) {
-            case URI -> getOfferUriAsUri(sessionCode);
-            case QR_CODE -> getOfferUriAsQr(sessionCode, width, height);
+            case URI -> getOfferUriAsUri(offerState.getNonce());
+            case QR_CODE -> getOfferUriAsQr(offerState.getNonce(), width, height);
         };
-
     }
 
-    private Response getOfferUriAsUri(String sessionCode) {
+    private Response getOfferUriAsUri(String nonce) {
         CredentialOfferURI credentialOfferURI = new CredentialOfferURI()
                 .setIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" + CREDENTIAL_OFFER_PATH)
-                .setNonce(sessionCode);
+                .setNonce(nonce);
 
-        return Response.ok()
+        return cors.add(Response.ok()
                 .type(MediaType.APPLICATION_JSON)
-                .entity(credentialOfferURI)
-                .build();
+                .entity(credentialOfferURI));
     }
 
-    private Response getOfferUriAsQr(String sessionCode, int width, int height) {
+    private Response getOfferUriAsQr(String nonce, int width, int height) {
         QRCodeWriter qrCodeWriter = new QRCodeWriter();
-        String encodedOfferUri = URLEncoder.encode(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" + CREDENTIAL_OFFER_PATH + sessionCode, StandardCharsets.UTF_8);
+        String encodedOfferUri = URLEncoder.encode(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" + CREDENTIAL_OFFER_PATH + nonce, StandardCharsets.UTF_8);
         try {
             BitMatrix bitMatrix = qrCodeWriter.encode("openid-credential-offer://?credential_offer_uri=" + encodedOfferUri, BarcodeFormat.QR_CODE, width, height);
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             MatrixToImageWriter.writeToStream(bitMatrix, "png", bos);
-            return Response.ok().type(RESPONSE_TYPE_IMG_PNG).entity(bos.toByteArray()).build();
+            return cors.add(Response.ok().type(RESPONSE_TYPE_IMG_PNG).entity(bos.toByteArray()));
         } catch (WriterException | IOException e) {
             LOGGER.warnf("Was not able to create a qr code of dimension %s:%s.", width, height, e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Was not able to generate qr.").build();
@@ -386,22 +514,73 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
+     * Configures basic CORS for error responses before authentication
+     */
+    private void configureCors(boolean authenticated) {
+        cors = Cors.builder()
+                .allowedMethods(HttpGet.METHOD_NAME, HttpOptions.METHOD_NAME)
+                .allowAllOrigins()
+                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS, HttpHeaders.CONTENT_TYPE);
+        if (authenticated) {
+            cors = cors.auth();
+        }
+    }
+
+    /**
+     * Handles CORS preflight requests for credential offer endpoint
+     */
+    @OPTIONS
+    @Path(CREDENTIAL_OFFER_PATH + "{sessionCode}")
+    public Response getCredentialOfferPreflight(@PathParam("sessionCode") String sessionCode) {
+        configureCors(false);
+        cors.preflight();
+        return cors.add(Response.ok());
+    }
+
+    /**
      * Provides an OID4VCI compliant credential offer
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path(CREDENTIAL_OFFER_PATH + "{sessionCode}")
-    public Response getCredentialOffer(@PathParam("sessionCode") String sessionCode) {
-        if (sessionCode == null) {
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
+    @Path(CREDENTIAL_OFFER_PATH + "{nonce}")
+    public Response getCredentialOffer(@PathParam("nonce") String nonce) {
+        configureCors(false);
+
+        if (nonce == null) {
+            var errorMessage = "No credential offer nonce";
+            throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_OFFER_REQUEST, errorMessage));
         }
 
-        CredentialsOffer credentialsOffer = getOfferFromSessionCode(sessionCode);
-        LOGGER.debugf("Responding with offer: %s", credentialsOffer);
+        RealmModel realm = session.getContext().getRealm();
 
-        return Response.ok()
-                .entity(credentialsOffer)
-                .build();
+        EventBuilder eventBuilder = new EventBuilder(realm, session, session.getContext().getConnection());
+
+        // Retrieve the associated credential offer state
+        //
+        CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+        CredentialOfferState offerState = offerStorage.findOfferStateByNonce(session, nonce);
+        if (offerState == null) {
+            var errorMessage = "No credential offer state for nonce: " + nonce;
+            eventBuilder.event(INTROSPECT_TOKEN_ERROR).detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
+            throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_OFFER_REQUEST, errorMessage));
+        }
+
+        // We treat the credential offer URI as an unprotected capability URL and rely solely on the later authorization step
+        // i.e. an authenticated client/user session is not required nor checked against the offer state
+
+        CredentialsOffer credOffer = offerState.getCredentialsOffer();
+        LOGGER.debugf("Found credential offer state: [ids=%s, cid=%s, uid=%s, nonce=%s]",
+                credOffer.getCredentialConfigurationIds(), offerState.getClientId(), offerState.getUserId(), offerState.getNonce());
+
+        if (offerState.isExpired()) {
+            var errorMessage = "Credential offer already expired";
+            eventBuilder.event(INTROSPECT_TOKEN_ERROR).detail(Details.REASON, errorMessage).error(Errors.EXPIRED_CODE);
+            throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_OFFER_REQUEST, errorMessage));
+        }
+
+        LOGGER.debugf("Responding with offer: %s", JsonSerialization.valueAsString(credOffer));
+
+        return cors.add(Response.ok().entity(credOffer));
     }
 
     private void checkScope(CredentialScopeModel requestedCredential) {
@@ -409,7 +588,9 @@ public class OID4VCIssuerEndpoint {
         String vcIssuanceFlow = clientSession.getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
 
         if (vcIssuanceFlow == null || !vcIssuanceFlow.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
-            AccessToken accessToken = bearerTokenAuthenticator.authenticate().getToken();
+            // Use getAuthResult() instead of bearerTokenAuthenticator.authenticate() directly
+            // This ensures we benefit from the cachedAuthResult caching that prevents DPoP proof reuse
+            AccessToken accessToken = getAuthResult().token();
             if (Arrays.stream(accessToken.getScope().split(" "))
                     .noneMatch(tokenScope -> tokenScope.equals(requestedCredential.getScope()))) {
                 LOGGER.debugf("Scope check failure: required scope = %s, " +
@@ -442,10 +623,10 @@ public class OID4VCIssuerEndpoint {
         if (requestPayload == null || requestPayload.trim().isEmpty()) {
             String errorMessage = "Request payload is null or empty.";
             LOGGER.debug(errorMessage);
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+            throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
 
-        cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+        cors = Cors.builder().auth().allowedMethods(HttpPost.METHOD_NAME).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         CredentialIssuer issuerMetadata = (CredentialIssuer) new OID4VCIssuerWellKnownProvider(session).getConfig();
 
@@ -506,75 +687,85 @@ public class OID4VCIssuerEndpoint {
         // Both credential_configuration_id and credential_identifier are optional.
         // If the credential_configuration_id is present, credential_identifier can't be present.
         // But this implementation will tolerate the presence of both, waiting for clarity in specifications.
-        // This implementation will privilege the presence of the credential_configuration_id.
-        String requestedCredentialConfigurationId = credentialRequestVO.getCredentialConfigurationId();
-        String requestedCredentialIdentifier = credentialRequestVO.getCredentialIdentifier();
+        // This implementation will privilege the presence of credential_identifier.
+
+        String credentialIdentifier = credentialRequestVO.getCredentialIdentifier();
+        String credentialConfigurationId = credentialRequestVO.getCredentialConfigurationId();
 
         // Check if at least one of both is available.
-        if (requestedCredentialConfigurationId == null && requestedCredentialIdentifier == null) {
+        if (credentialIdentifier == null && credentialConfigurationId == null) {
             LOGGER.debugf("Missing both credential_configuration_id and credential_identifier. At least one must be specified.");
             throw new BadRequestException(getErrorResponse(ErrorType.MISSING_CREDENTIAL_IDENTIFIER_AND_CONFIGURATION_ID));
         }
 
         CredentialScopeModel requestedCredential;
 
-        // If credential_identifier is provided, retrieve the mapping from client session
-        if (credentialRequestVO.getCredentialIdentifier() != null) {
-            String mappingKey = CREDENTIAL_IDENTIFIER_PREFIX + credentialRequestVO.getCredentialIdentifier();
+        // When the CredentialRequest contains a credential identifier the caller must have gone through the
+        // CredentialOffer process or otherwise have set up a valid CredentialOfferState
 
-            // First try to get the client session and look for the mapping there
-            UserSessionModel userSession = authResult.getSession();
-            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(authResult.getClient().getId());
-            String mappedCredentialConfigurationId = null;
+        if (credentialIdentifier != null) {
 
-            if (clientSession != null) {
-                mappedCredentialConfigurationId = clientSession.getNote(mappingKey);
-                if (mappedCredentialConfigurationId != null) {
-                    LOGGER.debugf("Found credential configuration ID mapping in client session for identifier %s: %s",
-                            credentialRequestVO.getCredentialIdentifier(), mappedCredentialConfigurationId);
-                }
+            // Retrieve the associated credential offer state
+            //
+            CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+            CredentialOfferState offerState = offerStorage.findOfferStateByCredentialId(session, credentialIdentifier);
+            if (offerState == null) {
+                var errorMessage = "No credential offer state for credential id: " + credentialIdentifier;
+                throw new BadRequestException(getErrorResponse(UNKNOWN_CREDENTIAL_IDENTIFIER, errorMessage));
             }
 
-            if (mappedCredentialConfigurationId != null) {
-                // Use the mapped credential configuration ID to find the credential scope
-                Map<String, SupportedCredentialConfiguration> supportedCredentials = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
-                if (supportedCredentials.containsKey(mappedCredentialConfigurationId)) {
-                    SupportedCredentialConfiguration config = supportedCredentials.get(mappedCredentialConfigurationId);
-                    ClientModel client = session.getContext().getClient();
-                    Map<String, ClientScopeModel> clientScopes = client.getClientScopes(false);
-                    ClientScopeModel clientScope = clientScopes.get(config.getScope());
-
-                    if (clientScope != null) {
-                        requestedCredential = new CredentialScopeModel(clientScope);
-                        LOGGER.debugf("Successfully mapped credential identifier %s to configuration %s",
-                                credentialRequestVO.getCredentialIdentifier(), mappedCredentialConfigurationId);
-                    } else {
-                        LOGGER.errorf("Client scope not found for mapped credential configuration: %s", config.getScope());
-                        throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION));
-                    }
-                } else {
-                    LOGGER.errorf("Mapped credential configuration not found: %s", mappedCredentialConfigurationId);
-                    throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION));
-                }
-            } else {
-                // No mapping found, try to use credential_identifier as a direct scope name
-                LOGGER.debugf("No mapping found for credential identifier %s, trying direct scope lookup",
-                        credentialRequestVO.getCredentialIdentifier());
-                try {
-                    requestedCredential = credentialRequestVO.findCredentialScope(session).orElseThrow(() -> {
-                        LOGGER.errorf("Credential scope not found for identifier: %s", credentialRequestVO.getCredentialIdentifier());
-                        return new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER));
-                    });
-                } catch (Exception e) {
-                    LOGGER.errorf(e, "Failed to find credential scope for identifier: %s", credentialRequestVO.getCredentialIdentifier());
-                    throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER));
-                }
+            // Get the credential_configuration_id from AuthorizationDetails
+            //
+            OID4VCAuthorizationDetailsResponse authDetails = offerState.getAuthorizationDetails();
+            String credConfigId = authDetails.getCredentialConfigurationId();
+            if (credConfigId == null) {
+                var errorMessage = "No credential_configuration_id in AuthorizationDetails";
+                throw new BadRequestException(getErrorResponse(UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
             }
-        } else if (credentialRequestVO.getCredentialConfigurationId() != null) {
+
+            // Find the credential configuration in the Issuer's metadata
+            //
+            SupportedCredentialConfiguration credConfig = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session).get(credConfigId);
+            if (credConfig == null) {
+                var errorMessage = "Mapped credential configuration not found: " + credConfigId;
+                throw new BadRequestException(getErrorResponse(UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
+            }
+
+            // Verify the user login session
+            //
+            UserSessionModel userSession = authResult.session();
+            UserModel userModel = userSession.getUser();
+            if (!userModel.getId().equals(offerState.getUserId())) {
+                var errorMessage = "Unexpected login user: " + userModel.getUsername();
+                LOGGER.errorf(errorMessage + " != %s", offerState.getUserId());
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+            }
+
+            // Verify the login client
+            //
+            ClientModel clientModel = session.getContext().getClient();
+            if (offerState.getClientId() != null && !clientModel.getClientId().equals(offerState.getClientId())) {
+                var errorMessage = "Unexpected login client: " + clientModel.getClientId();
+                LOGGER.errorf(errorMessage + " != %s", offerState.getClientId());
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+            }
+
+            // Find the configured scope in the login client
+            //
+            ClientScopeModel clientScope = clientModel.getClientScopes(false).get(credConfig.getScope());
+            if (clientScope == null) {
+                var errorMessage = String.format("Client scope not found: %s", credConfig.getScope());
+                throw new BadRequestException(getErrorResponse(UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
+            }
+
+            requestedCredential = new CredentialScopeModel(clientScope);
+            LOGGER.debugf("Successfully mapped credential identifier %s to scope %s", credentialIdentifier, clientScope.getName());
+
+        } else if (credentialConfigurationId != null) {
             // Use credential_configuration_id for direct lookup
             requestedCredential = credentialRequestVO.findCredentialScope(session).orElseThrow(() -> {
-                LOGGER.errorf("Credential scope not found for configuration ID: %s", credentialRequestVO.getCredentialConfigurationId());
-                return new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION));
+                var errorMessage = "Credential scope not found for configuration id: " + credentialConfigurationId;
+                return new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
             });
         } else {
             // Neither provided - this should not happen due to earlier validation
@@ -600,8 +791,14 @@ public class OID4VCIssuerEndpoint {
         } else {
             // Issue credentials for each proof
             Proofs originalProofs = credentialRequestVO.getProofs();
+            // Determine the proof type from the original proofs
+            String proofType = originalProofs != null ? originalProofs.getProofType() : null;
+
             for (String currentProof : allProofs) {
-                credentialRequestVO.setProofs(new Proofs().setJwt(List.of(currentProof)));
+                Proofs proofForIteration = new Proofs();
+                proofForIteration.setProofByType(proofType, currentProof);
+                // Creating credential with keybinding to the current proof
+                credentialRequestVO.setProofs(proofForIteration);
                 Object theCredential = getCredential(authResult, supportedCredential, credentialRequestVO);
                 responseVO.addCredential(theCredential);
             }
@@ -657,11 +854,14 @@ public class OID4VCIssuerEndpoint {
         }
 
         try {
-            return JsonSerialization.mapper.readValue(requestPayload, CredentialRequest.class);
+            CredentialRequest credentialRequest = JsonSerialization.mapper.readValue(requestPayload, CredentialRequest.class);
+            normalizeProofFields(credentialRequest);
+            return credentialRequest;
         } catch (JsonProcessingException e) {
             String errorMessage = "Failed to parse JSON request: " + e.getMessage();
-            LOGGER.debug(errorMessage);
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+            LOGGER.errorf(e, "JSON parsing failed. Request payload length: %d", 
+                    requestPayload != null ? requestPayload.length() : 0);
+            throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
     }
 
@@ -737,7 +937,9 @@ public class OID4VCIssuerEndpoint {
 
         // Parse decrypted content to CredentialRequest
         try {
-            return JsonSerialization.mapper.readValue(content, CredentialRequest.class);
+            CredentialRequest credentialRequest = JsonSerialization.mapper.readValue(content, CredentialRequest.class);
+            normalizeProofFields(credentialRequest);
+            return credentialRequest;
         } catch (JsonProcessingException e) {
             throw new JWEException("Failed to parse decrypted JWE payload: " + e.getMessage());
         }
@@ -762,6 +964,55 @@ public class OID4VCIssuerEndpoint {
             }
         }
         throw new JWEException("Unsupported compression algorithm");
+    }
+
+    /**
+     * Normalizes legacy 'proof' field into 'proofs' and validates mutual exclusivity.
+     * <p>
+     * If a single 'proof' is present and 'proofs' is absent, converts it into a
+     * single-element JWT list under 'proofs' for backward compatibility.
+     * If both are present, throws a BadRequestException.
+     */
+    private void normalizeProofFields(CredentialRequest credentialRequest) {
+        if (credentialRequest == null) {
+            return;
+        }
+
+        if (credentialRequest.getProof() != null && credentialRequest.getProofs() != null) {
+            String message = "Both 'proof' and 'proofs' must not be present at the same time";
+            LOGGER.debug(message);
+            throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_REQUEST, message));
+        }
+
+        if (credentialRequest.getProof() != null) {
+            LOGGER.debugf("Converting single 'proof' field to 'proofs' array for backward compatibility");
+            Object singleProof = credentialRequest.getProof();
+            Proofs proofsArray = new Proofs();
+
+            // Handle AttestationProof
+            if (singleProof instanceof AttestationProof attestationProof) {
+                String attestationValue = attestationProof.getAttestation();
+                if (attestationValue != null) {
+                    proofsArray.setAttestation(List.of(attestationValue));
+                }
+            }
+            // Handle JwtProof
+            else if (singleProof instanceof JwtProof jwtProof) {
+                String jwtValue = jwtProof.getJwt();
+                if (jwtValue != null) {
+                    proofsArray.setJwt(List.of(jwtValue));
+                }
+            } else {
+                String message = "Unsupported proof type: " + (singleProof != null ? singleProof.getClass().getName() : "null");
+                LOGGER.debug(message);
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, message));
+            }
+
+            credentialRequest.setProofs(proofsArray);
+            credentialRequest.setProof(null);
+        }
+
+        validateProofTypes(credentialRequest.getProofs());
     }
 
     private String selectKeyManagementAlg(CredentialResponseEncryptionMetadata metadata, JWK jwk) {
@@ -791,20 +1042,32 @@ public class OID4VCIssuerEndpoint {
     }
 
     private List<String> getAllProofs(CredentialRequest credentialRequestVO) {
-        List<String> allProofs = new ArrayList<>();
-
         Proofs proofs = credentialRequestVO.getProofs();
         if (proofs == null) {
-            return allProofs; // No proofs provided
+            return new ArrayList<>(); // No proofs provided
         }
 
-        if (proofs.getJwt() == null || proofs.getJwt().isEmpty()) {
+        // Validation already happened in normalizeProofFields, so we can safely extract proofs
+        return proofs.getAllProofs();
+    }
+
+    private void validateProofTypes(Proofs proofs) {
+        if (proofs == null) {
+            return;
+        }
+
+        boolean hasJwtProofs = hasProofEntries(proofs.getJwt());
+        boolean hasAttestationProofs = hasProofEntries(proofs.getAttestation());
+
+        if (hasJwtProofs && hasAttestationProofs) {
+            LOGGER.debug("The 'proofs' object must not contain multiple proof types.");
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF,
-                    "The 'proofs' object must contain exactly one proof type with non-empty array."));
+                    "The 'proofs' object must not contain multiple proof types."));
         }
+    }
 
-        allProofs.addAll(proofs.getJwt());
-        return allProofs;
+    private boolean hasProofEntries(List<String> proofs) {
+        return proofs != null && !proofs.isEmpty();
     }
 
     /**
@@ -947,25 +1210,37 @@ public class OID4VCIssuerEndpoint {
 
     private AuthenticatedClientSessionModel getAuthenticatedClientSession() {
         AuthenticationManager.AuthResult authResult = getAuthResult();
-        UserSessionModel userSessionModel = authResult.getSession();
+        UserSessionModel userSessionModel = authResult.session();
 
         AuthenticatedClientSessionModel clientSession = userSessionModel.
                 getAuthenticatedClientSessionByClient(
-                        authResult.getClient().getId());
+                        authResult.client().getId());
         if (clientSession == null) {
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
+            throw new CorsErrorResponseException(
+                    cors,
+                    ErrorType.INVALID_TOKEN.toString(),
+                    "Invalid or missing token",
+                    Response.Status.BAD_REQUEST);
         }
         return clientSession;
     }
 
     private AuthenticationManager.AuthResult getAuthResult() {
+        if (cachedAuthResult != null) {
+            return cachedAuthResult;
+        }
+
         AuthenticationManager.AuthResult authResult = bearerTokenAuthenticator.authenticate();
         if (authResult == null) {
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
+            throw new CorsErrorResponseException(
+                    cors,
+                    ErrorType.INVALID_TOKEN.toString(),
+                    "Invalid or missing token",
+                    Response.Status.BAD_REQUEST);
         }
 
         // Validate DPoP nonce if present in the DPoP proof
-        DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
+        DPoP dPoP = (DPoP) session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE);
         if (dPoP != null) {
             Object nonceClaim = Optional.ofNullable(dPoP.getOtherClaims())
                     .map(m -> m.get("nonce"))
@@ -982,21 +1257,17 @@ public class OID4VCIssuerEndpoint {
                     );
                 } catch (VerificationException e) {
                     LOGGER.debugf("DPoP nonce validation failed: %s", e.getMessage());
-                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
+                    throw new CorsErrorResponseException(
+                            cors,
+                            ErrorType.INVALID_TOKEN.toString(),
+                            "Invalid or missing token",
+                            Response.Status.BAD_REQUEST);
                 }
             }
         }
 
-        return authResult;
-    }
-
-    // get the auth result from the authentication manager
-    private AuthenticationManager.AuthResult getAuthResult(WebApplicationException errorResponse) {
-        AuthenticationManager.AuthResult authResult = bearerTokenAuthenticator.authenticate();
-        if (authResult == null) {
-            throw errorResponse;
-        }
-        return authResult;
+        cachedAuthResult = authResult;
+        return cachedAuthResult;
     }
 
     /**
@@ -1031,7 +1302,7 @@ public class OID4VCIssuerEndpoint {
                 .filter(Objects::nonNull)
                 .toList();
 
-        VCIssuanceContext vcIssuanceContext = getVCToSign(protocolMappers, credentialConfig, authResult, credentialRequestVO);
+        VCIssuanceContext vcIssuanceContext = getVCToSign(protocolMappers, credentialConfig, authResult, credentialRequestVO, credentialScopeModel);
 
         // Enforce key binding prior to signing if necessary
         enforceKeyBindingIfProofProvided(vcIssuanceContext);
@@ -1069,39 +1340,6 @@ public class OID4VCIssuerEndpoint {
         return new CredentialScopeModel(clientScopeModel);
     }
 
-    private String generateCodeForSession(int expiration, AuthenticatedClientSessionModel clientSession) {
-        String codeId = SecretGenerator.getInstance().randomString();
-        String nonce = SecretGenerator.getInstance().randomString();
-        OAuth2Code oAuth2Code = new OAuth2Code(codeId, expiration, nonce, CREDENTIAL_OFFER_URI_CODE_SCOPE, null, null, null, null,
-                clientSession.getUserSession().getId());
-
-        return OAuth2CodeParser.persistCode(session, clientSession, oAuth2Code);
-    }
-
-    private CredentialsOffer getOfferFromSessionCode(String sessionCode) {
-        EventBuilder eventBuilder = new EventBuilder(session.getContext().getRealm(), session,
-                session.getContext().getConnection());
-        OAuth2CodeParser.ParseResult result = OAuth2CodeParser.parseCode(session, sessionCode,
-                session.getContext().getRealm(),
-                eventBuilder);
-        if (result.isExpiredCode() || result.isIllegalCode() || !result.getCodeData().getScope().equals(CREDENTIAL_OFFER_URI_CODE_SCOPE)) {
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
-        }
-        try {
-            String offer = result.getClientSession().getNote(sessionCode);
-            return JsonSerialization.mapper.readValue(offer, CredentialsOffer.class);
-        } catch (JsonProcessingException e) {
-            LOGGER.errorf("Could not convert JSON to POJO: %s", e);
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
-        } finally {
-            result.getClientSession().removeNote(sessionCode);
-        }
-    }
-
-    private String generateAuthorizationCodeForClientSession(int expiration, AuthenticatedClientSessionModel clientSessionModel) {
-        return PreAuthorizedCodeGrantType.getPreAuthorizedCode(session, clientSessionModel, expiration);
-    }
-
     private Response getErrorResponse(ErrorType errorType) {
         return getErrorResponse(errorType, null);
     }
@@ -1118,24 +1356,38 @@ public class OID4VCIssuerEndpoint {
 
     // builds the unsigned credential by applying all protocol mappers.
     private VCIssuanceContext getVCToSign(List<OID4VCMapper> protocolMappers, SupportedCredentialConfiguration credentialConfig,
-                                          AuthenticationManager.AuthResult authResult, CredentialRequest credentialRequestVO) {
+                                          AuthenticationManager.AuthResult authResult, CredentialRequest credentialRequestVO,
+                                          CredentialScopeModel credentialScopeModel) {
+
+        // Compute issuance date and apply correlation-mitigation according to realm configuration
+        Instant issuance = Instant.ofEpochMilli(timeProvider.currentTimeMillis());
+        TimeClaimNormalizer timeClaimNormalizer = new TimeClaimNormalizer(session);
+        Instant normalizedIssuance = timeClaimNormalizer.normalize(issuance);
+
+        // Compute expiration date from client scope configuration and normalize it
+        CredentialScopeModel clientScopeModel = credentialScopeModel;
+        Integer expiryInSeconds = clientScopeModel.getExpiryInSeconds();
+        Instant expiration = normalizedIssuance.plusSeconds(expiryInSeconds);
+        Instant normalizedExpiration = timeClaimNormalizer.normalize(expiration);
+
         // set the required claims
         VerifiableCredential vc = new VerifiableCredential()
-                .setIssuanceDate(Instant.ofEpochMilli(timeProvider.currentTimeMillis()))
+                .setIssuanceDate(normalizedIssuance)
+                .setExpirationDate(normalizedExpiration)
                 .setType(List.of(credentialConfig.getScope()));
 
         Map<String, Object> subjectClaims = new HashMap<>();
         protocolMappers
-                .forEach(mapper -> mapper.setClaimsForSubject(subjectClaims, authResult.getSession()));
+                .forEach(mapper -> mapper.setClaimsForSubject(subjectClaims, authResult.session()));
 
         // Validate that requested claims from authorization_details are present
-        validateRequestedClaimsArePresent(subjectClaims, authResult.getSession(), credentialConfig.getScope());
+        validateRequestedClaimsArePresent(subjectClaims, authResult.session(), credentialConfig.getScope());
 
         // Include all available claims
         subjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
 
         protocolMappers
-                .forEach(mapper -> mapper.setClaimsForCredential(vc, authResult.getSession()));
+                .forEach(mapper -> mapper.setClaimsForCredential(vc, authResult.session()));
 
         LOGGER.debugf("The credential to sign is: %s", vc);
 
@@ -1160,9 +1412,9 @@ public class OID4VCIssuerEndpoint {
             return;
         }
 
-        // Validate each JWT proof if present
-        if (proofs.getJwt() != null && !proofs.getJwt().isEmpty()) {
-            validateProofs(vcIssuanceContext, ProofType.JWT);
+        // Validate each proof type that is present
+        for (String proofType : proofs.getPresentProofTypes()) {
+            validateProofs(vcIssuanceContext, proofType);
         }
     }
 
@@ -1254,12 +1506,12 @@ public class OID4VCIssuerEndpoint {
             String errorMessage = e.getMessage();
             if (errorMessage.contains("Mandatory claim not found:")) {
                 LOGGER.errorf("Mandatory claim missing during claims filtering for scope %s: %s", scope, errorMessage);
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST,
+                throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_REQUEST,
                         "Credential issuance failed: " + errorMessage +
                                 ". The requested mandatory claim is not available in the user profile."));
             } else {
                 LOGGER.errorf("Claims filtering error for scope %s: %s", scope, errorMessage);
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST,
+                throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_REQUEST,
                         "Credential issuance failed: " + errorMessage));
             }
         } catch (BadRequestException e) {

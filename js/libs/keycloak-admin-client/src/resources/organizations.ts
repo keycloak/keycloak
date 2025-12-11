@@ -1,6 +1,7 @@
 import type { KeycloakAdminClient } from "../client.js";
 import IdentityProviderRepresentation from "../defs/identityProviderRepresentation.js";
 import type OrganizationRepresentation from "../defs/organizationRepresentation.js";
+import type OrganizationInvitationRepresentation from "../defs/organizationInvitationRepresentation.js";
 import UserRepresentation from "../defs/userRepresentation.js";
 import Resource from "./resource.js";
 
@@ -17,6 +18,15 @@ export interface OrganizationQuery extends PaginatedQuery {
 interface MemberQuery extends PaginatedQuery {
   orgId: string; //Id of the organization to get the members of
   membershipType?: string;
+}
+
+interface InvitationQuery extends PaginatedQuery {
+  orgId: string; //Id of the organization to get the invitations of
+  status?: string; //Filter by invitation status
+  email?: string; //Filter by email
+  search?: string; //Search across email, firstName, and lastName
+  firstName?: string; //Filter by first name
+  lastName?: string; //Filter by last name
 }
 
 export class Organizations extends Resource<{ realm?: string }> {
@@ -143,4 +153,41 @@ export class Organizations extends Resource<{ realm?: string }> {
       urlParamKeys: ["orgId", "alias"],
     },
   );
+
+  // Organization Invitations Management
+  public listInvitations = this.makeRequest<
+    InvitationQuery,
+    OrganizationInvitationRepresentation[]
+  >({
+    method: "GET",
+    path: "/{orgId}/invitations",
+    urlParamKeys: ["orgId"],
+  });
+
+  public findInvitation = this.makeRequest<
+    { orgId: string; invitationId: string },
+    OrganizationInvitationRepresentation
+  >({
+    method: "GET",
+    path: "/{orgId}/invitations/{invitationId}",
+    urlParamKeys: ["orgId", "invitationId"],
+  });
+
+  public resendInvitation = this.makeRequest<
+    { orgId: string; invitationId: string },
+    void
+  >({
+    method: "POST",
+    path: "/{orgId}/invitations/{invitationId}/resend",
+    urlParamKeys: ["orgId", "invitationId"],
+  });
+
+  public deleteInvitation = this.makeRequest<
+    { orgId: string; invitationId: string },
+    void
+  >({
+    method: "DELETE",
+    path: "/{orgId}/invitations/{invitationId}",
+    urlParamKeys: ["orgId", "invitationId"],
+  });
 }

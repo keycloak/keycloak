@@ -1,12 +1,13 @@
 package org.keycloak.broker.provider.util;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.io.IOException;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ClientData;
 
-import java.io.IOException;
+import org.junit.Assert;
+import org.junit.Test;
 
 
 public class IdentityBrokerStateTest {

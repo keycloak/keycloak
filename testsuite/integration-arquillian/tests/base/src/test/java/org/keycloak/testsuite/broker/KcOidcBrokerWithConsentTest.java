@@ -1,18 +1,20 @@
 package org.keycloak.testsuite.broker;
 
-import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.removeBrokerExpiredSessions;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
+
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.removeBrokerExpiredSessions;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.junit.Assert.assertEquals;
 
 public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTest {
 

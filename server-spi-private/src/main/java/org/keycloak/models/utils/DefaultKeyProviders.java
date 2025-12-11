@@ -17,14 +17,14 @@
 
 package org.keycloak.models.utils;
 
+import java.util.Objects;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.RealmModel;
-
-import java.util.Objects;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

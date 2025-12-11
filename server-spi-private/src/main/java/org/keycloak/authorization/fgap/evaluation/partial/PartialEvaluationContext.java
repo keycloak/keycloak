@@ -17,15 +17,16 @@
 
 package org.keycloak.authorization.fgap.evaluation.partial;
 
-import static java.util.function.Predicate.not;
-
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Path;
+
 import org.keycloak.representations.idm.authorization.ResourceType;
+
+import static java.util.function.Predicate.not;
 
 /**
  * An {@link PartialEvaluationContext} instance provides access to contextual information when building a query for realm

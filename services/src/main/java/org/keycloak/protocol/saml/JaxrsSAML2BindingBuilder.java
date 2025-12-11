@@ -17,6 +17,14 @@
 
 package org.keycloak.protocol.saml;
 
+import java.io.IOException;
+import java.net.URI;
+
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.saml.profile.util.Soap;
@@ -24,14 +32,8 @@ import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.w3c.dom.Document;
 
-import jakarta.ws.rs.core.CacheControl;
-import jakarta.ws.rs.core.MultivaluedHashMap;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import java.io.IOException;
-import java.net.URI;
+import org.w3c.dom.Document;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

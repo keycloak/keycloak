@@ -16,9 +16,6 @@
  */
 package org.keycloak.quarkus.runtime.configuration;
 
-import static java.util.Collections.emptySet;
-import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -29,6 +26,10 @@ import org.keycloak.common.Profile;
 import org.keycloak.config.HealthOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.database.Database;
+
+import static java.util.Collections.emptySet;
+
+import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
 
 /**
  * Ignore particular artifacts based on build configuration

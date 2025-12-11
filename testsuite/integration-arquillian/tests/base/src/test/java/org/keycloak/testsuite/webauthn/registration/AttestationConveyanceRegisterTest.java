@@ -17,29 +17,31 @@
 
 package org.keycloak.testsuite.webauthn.registration;
 
-import com.webauthn4j.data.AttestationConveyancePreference;
-import com.webauthn4j.data.attestation.statement.NoneAttestationStatement;
-import com.webauthn4j.data.attestation.statement.PackedAttestationStatement;
-import org.junit.Test;
+import java.io.IOException;
+
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnDataWrapper;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
+
+import com.webauthn4j.data.AttestationConveyancePreference;
+import com.webauthn4j.data.attestation.statement.NoneAttestationStatement;
+import com.webauthn4j.data.attestation.statement.PackedAttestationStatement;
+import org.junit.Test;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.virtualauthenticator.Credential;
 
-import java.io.IOException;
+import static org.keycloak.models.Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.models.Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
-import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>

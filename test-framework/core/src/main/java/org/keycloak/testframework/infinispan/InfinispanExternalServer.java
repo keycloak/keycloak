@@ -2,10 +2,11 @@ package org.keycloak.testframework.infinispan;
 
 import java.util.Map;
 
-import org.infinispan.server.test.core.InfinispanContainer;
-import org.jboss.logging.Logger;
 import org.keycloak.testframework.logging.JBossLogConsumer;
 import org.keycloak.testframework.util.ContainerImages;
+
+import org.infinispan.server.test.core.InfinispanContainer;
+import org.jboss.logging.Logger;
 
 public class InfinispanExternalServer extends InfinispanContainer implements InfinispanServer {
 

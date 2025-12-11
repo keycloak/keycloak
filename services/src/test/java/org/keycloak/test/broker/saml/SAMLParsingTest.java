@@ -17,11 +17,12 @@
 
 package org.keycloak.test.broker.saml;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * This was failing on IBM JDK

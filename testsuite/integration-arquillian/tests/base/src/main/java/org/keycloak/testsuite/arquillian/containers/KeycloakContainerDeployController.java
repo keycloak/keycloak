@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.arquillian.containers;
 
 import java.util.List;
+
 import org.jboss.arquillian.container.impl.client.container.ContainerDeployController;
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;

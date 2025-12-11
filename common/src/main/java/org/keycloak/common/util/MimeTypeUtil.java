@@ -17,8 +17,9 @@
 
 package org.keycloak.common.util;
 
-import jakarta.activation.MimetypesFileTypeMap;
 import java.io.File;
+
+import jakarta.activation.MimetypesFileTypeMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

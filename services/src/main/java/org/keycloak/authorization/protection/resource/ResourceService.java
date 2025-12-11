@@ -31,7 +31,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.authorization.admin.ResourceSetService;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Resource;
@@ -41,6 +40,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.services.ErrorResponseException;
+
+import org.jboss.resteasy.reactive.NoCache;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

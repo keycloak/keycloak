@@ -17,15 +17,10 @@
 
 package org.keycloak.testsuite;
 
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.utils.tls.TLSUtils;
-
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -34,6 +29,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
 
 
 /**

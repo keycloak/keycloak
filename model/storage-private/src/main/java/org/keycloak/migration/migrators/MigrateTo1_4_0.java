@@ -17,13 +17,19 @@
 
 package org.keycloak.migration.migrators;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.StorageProviderRealmModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.StorageProviderRealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -32,12 +38,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageUtil;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

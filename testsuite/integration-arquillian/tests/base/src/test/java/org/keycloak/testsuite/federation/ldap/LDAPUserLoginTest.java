@@ -18,23 +18,22 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.FixMethodOrder;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExternalResource;
-import org.junit.runners.MethodSorters;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
@@ -42,14 +41,15 @@ import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPRule.LDAPConnectionParameters;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-
-import java.util.Objects;
-import org.junit.Assume;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assume;
+import org.junit.FixMethodOrder;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExternalResource;
+import org.junit.runners.MethodSorters;
 
 /**
  * Test user logins utilizing various LDAP authentication methods and different LDAP connection encryption mechanisms.

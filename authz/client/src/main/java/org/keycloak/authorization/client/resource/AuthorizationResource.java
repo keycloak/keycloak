@@ -32,6 +32,7 @@ import org.keycloak.authorization.client.util.TokenCallable;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.Permission;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 
 /**

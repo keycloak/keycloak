@@ -1,10 +1,11 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
+import java.io.IOException;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.util.TokenUtil;
 
-import java.io.IOException;
+import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class RefreshRequest extends AbstractHttpPostRequest<RefreshRequest, AccessTokenResponse> {
 

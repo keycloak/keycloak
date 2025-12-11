@@ -17,8 +17,8 @@
 
 package org.keycloak.social.microsoft;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.jboss.logging.Logger;
+import java.util.Optional;
+
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -29,7 +29,8 @@ import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.validation.Validation;
 
-import java.util.Optional;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.logging.Logger;
 
 /**
  *

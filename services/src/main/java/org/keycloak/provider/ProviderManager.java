@@ -16,10 +16,6 @@
  */
 package org.keycloak.provider;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +23,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.services.DefaultKeycloakSessionFactory;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

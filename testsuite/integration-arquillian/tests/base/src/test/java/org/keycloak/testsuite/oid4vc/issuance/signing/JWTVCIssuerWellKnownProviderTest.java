@@ -16,11 +16,16 @@
  */
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
-import org.junit.Test;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.protocol.oid4vc.issuance.JWTVCIssuerWellKnownProviderFactory;
@@ -31,14 +36,11 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.List;
-import java.util.Map;
+import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 
 /**

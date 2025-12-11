@@ -16,9 +16,10 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
+import jakarta.ws.rs.ForbiddenException;
+
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.AdminRoles;
-import jakarta.ws.rs.ForbiddenException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

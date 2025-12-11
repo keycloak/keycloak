@@ -20,13 +20,14 @@ package org.keycloak.jose.jwe;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
+import org.keycloak.jose.JOSEHeader;
+import org.keycloak.jose.jwk.ECPublicJWK;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.keycloak.jose.JOSEHeader;
-import org.keycloak.jose.jwk.ECPublicJWK;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -17,11 +17,6 @@
 
 package org.keycloak.storage;
 
-import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
-import static org.keycloak.storage.managers.UserStorageSyncManager.notifyToRefreshPeriodicSync;
-import static org.keycloak.utils.StreamsUtil.distinctByKey;
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +30,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.opentelemetry.api.trace.StatusCode;
-import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.reflections.Types;
@@ -59,6 +52,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
@@ -84,6 +78,13 @@ import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
+
+import io.opentelemetry.api.trace.StatusCode;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
+import static org.keycloak.utils.StreamsUtil.distinctByKey;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -994,7 +995,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
         localStorage().preRemove(realm, component);
         if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, component);
-        notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(component), true);
+        StoreSyncEvent.fire(session, realm, component, true);
     }
 
     @Override
@@ -1022,7 +1023,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
             @Override
             protected void commitImpl() {
-                notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(model), false);
+                StoreSyncEvent.fire(session, realm, model, false);
             }
 
             @Override
@@ -1044,7 +1045,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         UserStorageProviderModel actual= new UserStorageProviderModel(newModel);
 
         if (isSyncSettingsUpdated(previous, actual)) {
-            notifyToRefreshPeriodicSync(session, realm, actual, false);
+            StoreSyncEvent.fire(session, realm, actual, false);
         }
     }
 
@@ -1076,6 +1077,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         }
 
         return Collections.emptyList();
+    }
+
+    @Override
+    public UserCredentialManager getUserCredentialManager(UserModel user) {
+        return new org.keycloak.credential.UserCredentialManager(session, session.getContext().getRealm(), user);
     }
 
     private boolean isReadOnlyOrganizationMember(UserModel delegate) {
@@ -1140,9 +1146,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     private UserModel tryResolveFederatedUser(RealmModel realm, Function<UserLookupProvider, UserModel> loader) {
-        return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class, loader)
-                .findFirst()
-                .orElse(null);
+        return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class, provider -> {
+            try {
+                return loader.apply(provider);
+            } catch (StorageUnavailableException e) {
+                logger.warnf(e, "User storage provider %s is unavailable. " +
+                             "Continuing with other providers for graceful degradation.",
+                             provider.getClass().getSimpleName());
+                return null;
+            }
+        })
+        .findFirst()
+        .orElse(null);
     }
 
     private boolean isSyncSettingsUpdated(UserStorageProviderModel previous, UserStorageProviderModel actual) {

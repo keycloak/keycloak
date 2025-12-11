@@ -16,6 +16,11 @@
  */
 package org.keycloak.client.cli.util;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.security.KeyPair;
+
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.common.util.KeystoreUtil;
@@ -27,12 +32,8 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.security.KeyPair;
-
 import static java.lang.System.currentTimeMillis;
+
 import static org.keycloak.client.cli.util.ConfigUtil.checkServerInfo;
 import static org.keycloak.client.cli.util.ConfigUtil.saveMergeConfig;
 import static org.keycloak.client.cli.util.HttpUtil.APPLICATION_FORM_URL_ENCODED;

@@ -49,4 +49,3 @@ public @interface EnableVault {
 
     PROVIDER_ID providerId() default PROVIDER_ID.PLAINTEXT;
 }
-

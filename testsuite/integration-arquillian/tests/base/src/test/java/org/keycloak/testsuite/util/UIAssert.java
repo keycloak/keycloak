@@ -19,11 +19,12 @@ package org.keycloak.testsuite.util;
 
 import org.openqa.selenium.WebElement;
 
-import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.UIUtils.ARIA_INVALID_ATTR_NAME;
 import static org.keycloak.testsuite.util.UIUtils.isElementDisabled;
 import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
 import static org.keycloak.testsuite.util.UIUtils.isInputElementValid;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>

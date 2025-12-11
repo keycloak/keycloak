@@ -3,12 +3,9 @@ import { ExpandableSection } from "@patternfly/react-core";
 import { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import {
-  SelectControl,
-  TextAreaControl,
-  TextControl,
-} from "@keycloak/keycloak-ui-shared";
+import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
+import { JwksSettings } from "./JwksSettings";
 
 import "./discovery-settings.css";
 
@@ -27,13 +24,17 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
     control,
     name: "config.validateSignature",
   });
-  const useJwks = useWatch({
-    control,
-    name: "config.useJwksUrl",
-  });
   const isPkceEnabled = useWatch({
     control,
     name: "config.pkceEnabled",
+  });
+  const jwtAuthorizationGrantEnabled = useWatch({
+    control,
+    name: "config.jwtAuthorizationGrantEnabled",
+  });
+  const supportsClientAssertions = useWatch({
+    control,
+    name: "config.supportsClientAssertions",
   });
 
   return (
@@ -89,37 +90,14 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
           <DefaultSwitchControl
             name="config.validateSignature"
             label={t("validateSignature")}
+            labelIcon={t("validateSignatureHelp")}
             isDisabled={readOnly}
             stringify
           />
-          {validateSignature === "true" && (
-            <>
-              <DefaultSwitchControl
-                name="config.useJwksUrl"
-                label={t("useJwksUrl")}
-                isDisabled={readOnly}
-                stringify
-              />
-              {useJwks === "true" ? (
-                <TextAreaControl
-                  name="config.jwksUrl"
-                  label={t("jwksUrl")}
-                  readOnly={readOnly}
-                />
-              ) : (
-                <>
-                  <TextAreaControl
-                    name="config.publicKeySignatureVerifier"
-                    label={t("validatingPublicKey")}
-                  />
-                  <TextControl
-                    name="config.publicKeySignatureVerifierKeyId"
-                    label={t("validatingPublicKeyId")}
-                    readOnly={readOnly}
-                  />
-                </>
-              )}
-            </>
+          {(validateSignature === "true" ||
+            jwtAuthorizationGrantEnabled === "true" ||
+            supportsClientAssertions == "true") && (
+            <JwksSettings readOnly={readOnly} />
           )}
         </>
       )}

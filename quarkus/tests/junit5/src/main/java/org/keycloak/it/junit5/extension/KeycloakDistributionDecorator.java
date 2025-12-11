@@ -20,6 +20,7 @@ package org.keycloak.it.junit5.extension;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.keycloak.it.utils.KeycloakDistribution;
 
 public class KeycloakDistributionDecorator implements KeycloakDistribution {

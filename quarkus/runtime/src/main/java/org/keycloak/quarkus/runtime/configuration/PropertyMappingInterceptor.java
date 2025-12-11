@@ -16,9 +16,6 @@
  */
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.keycloak.quarkus.runtime.Environment.isRebuild;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
@@ -26,17 +23,21 @@ import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import org.apache.commons.collections4.IteratorUtils;
+import jakarta.annotation.Priority;
+
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
 import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Priorities;
-import jakarta.annotation.Priority;
-import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
+import org.apache.commons.collections4.IteratorUtils;
+
+import static org.keycloak.quarkus.runtime.Environment.isRebuild;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 /**
  * <p>This interceptor is responsible for mapping Keycloak properties to their corresponding properties in Quarkus.

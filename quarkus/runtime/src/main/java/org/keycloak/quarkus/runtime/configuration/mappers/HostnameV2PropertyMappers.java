@@ -1,7 +1,5 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -12,12 +10,14 @@ import java.util.stream.Stream;
 import org.keycloak.common.Profile;
 import org.keycloak.config.HostnameV2Options;
 import org.keycloak.config.HttpOptions;
+import org.keycloak.config.ProxyOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
-import org.keycloak.config.ProxyOptions;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.SecureContextResolver;
+
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public final class HostnameV2PropertyMappers implements PropertyMapperGrouping {
 

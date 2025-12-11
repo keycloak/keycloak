@@ -17,6 +17,17 @@
 
 package org.keycloak.http.simple;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,6 +41,7 @@ import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
@@ -38,17 +50,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
-import org.keycloak.common.util.Base64;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -149,7 +150,7 @@ public class SimpleHttpRequest {
 
     public SimpleHttpRequest authBasic(final String username, final String password) {
         final String basicCredentials = String.format("%s:%s", username, password);
-        header("Authorization", "Basic " + Base64.encodeBytes(basicCredentials.getBytes()));
+        header("Authorization", "Basic " + Base64.getEncoder().encodeToString(basicCredentials.getBytes()));
         return this;
     }
 
@@ -182,11 +183,15 @@ public class SimpleHttpRequest {
     }
 
     public String asString() throws IOException {
-        return asResponse().asString();
+        try (SimpleHttpResponse response = makeRequest()) {
+            return response.asString();
+        }
     }
 
     public int asStatus() throws IOException {
-        return asResponse().getStatus();
+        try (SimpleHttpResponse response = asResponse()) {
+            return response.getStatus();
+        }
     }
 
     public SimpleHttpResponse asResponse() throws IOException {
@@ -201,6 +206,7 @@ public class SimpleHttpRequest {
             case PUT -> new HttpPut(appendParameterToUrl(url));
             case PATCH -> new HttpPatch(appendParameterToUrl(url));
             case POST -> new HttpPost(url);
+            case OPTIONS -> new HttpOptions(url);
         };
     }
 

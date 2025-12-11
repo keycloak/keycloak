@@ -1,7 +1,5 @@
 package org.keycloak.testframework.oauth;
 
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
@@ -12,8 +10,11 @@ import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
-import org.openqa.selenium.WebDriver;
+
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthClient> {
 
@@ -23,7 +24,7 @@ public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthCli
 
         KeycloakUrls keycloakUrls = instanceContext.getDependency(KeycloakUrls.class);
         CloseableHttpClient httpClient = (CloseableHttpClient) instanceContext.getDependency(HttpClient.class);
-        WebDriver webDriver = instanceContext.getDependency(WebDriver.class);
+        ManagedWebDriver webDriver = instanceContext.getDependency(ManagedWebDriver.class);
         TestApp testApp = instanceContext.getDependency(TestApp.class);
 
         ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class, annotation.realmRef());
@@ -42,7 +43,7 @@ public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthCli
         String clientId = testAppClient.getClientId();
         String clientSecret = testAppClient.getSecret();
 
-        ApiUtil.handleCreatedResponse(realm.admin().clients().create(testAppClient));
+        ApiUtil.getCreatedId(realm.admin().clients().create(testAppClient));
 
         OAuthClient oAuthClient = new OAuthClient(keycloakUrls.getBase(), httpClient, webDriver);
         oAuthClient.config().realm(realm.getName()).client(clientId, clientSecret).redirectUri(redirectUri);

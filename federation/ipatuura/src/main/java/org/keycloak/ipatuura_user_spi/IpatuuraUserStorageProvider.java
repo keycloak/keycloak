@@ -17,34 +17,6 @@
 
 package org.keycloak.ipatuura_user_spi;
 
-import org.jboss.logging.Logger;
-
-import org.keycloak.component.ComponentModel;
-import org.keycloak.credential.CredentialAuthentication;
-import org.keycloak.credential.CredentialInput;
-import org.keycloak.credential.CredentialInputValidator;
-import org.keycloak.credential.UserCredentialManager;
-import org.keycloak.http.simple.SimpleHttpResponse;
-import org.keycloak.models.CredentialValidationOutput;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.credential.PasswordCredentialModel;
-import org.keycloak.storage.StorageId;
-import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.UserStoragePrivateUtil;
-import org.keycloak.storage.user.ImportedUserValidation;
-import org.keycloak.storage.user.UserLookupProvider;
-import org.keycloak.storage.user.UserRegistrationProvider;
-
-import org.keycloak.ipatuura_user_spi.authenticator.IpatuuraAuthenticator;
-import org.keycloak.ipatuura_user_spi.schemas.SCIMError;
-import org.keycloak.ipatuura_user_spi.schemas.SCIMUser;
-
-import org.keycloak.storage.user.UserQueryProvider;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,7 +26,32 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialAuthentication;
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.UserCredentialManager;
+import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.ipatuura_user_spi.authenticator.IpatuuraAuthenticator;
+import org.keycloak.ipatuura_user_spi.schemas.SCIMError;
+import org.keycloak.ipatuura_user_spi.schemas.SCIMUser;
+import org.keycloak.models.CredentialValidationOutput;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.storage.StorageId;
+import org.keycloak.storage.UserStoragePrivateUtil;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.user.ImportedUserValidation;
+import org.keycloak.storage.user.UserLookupProvider;
+import org.keycloak.storage.user.UserQueryProvider;
+import org.keycloak.storage.user.UserRegistrationProvider;
+
 import org.apache.http.HttpStatus;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:jstephen@redhat.com">Justin Stephenson</a>

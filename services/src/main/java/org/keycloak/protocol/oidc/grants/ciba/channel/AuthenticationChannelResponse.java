@@ -19,11 +19,11 @@
 
 package org.keycloak.protocol.oidc.grants.ciba.channel;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

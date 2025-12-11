@@ -17,15 +17,15 @@
 
 package org.keycloak.tests.admin.realm;
 
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-
-import java.util.List;
-import java.util.Map;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

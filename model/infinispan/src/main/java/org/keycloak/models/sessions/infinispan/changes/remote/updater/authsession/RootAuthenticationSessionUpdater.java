@@ -16,6 +16,14 @@
  */
 package org.keycloak.models.sessions.infinispan.changes.remote.updater.authsession;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Consumer;
+
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
@@ -31,14 +39,6 @@ import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessio
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Consumer;
 
 public class RootAuthenticationSessionUpdater extends BaseUpdater<String, RootAuthenticationSessionEntity> implements RootAuthenticationSessionModel {
 

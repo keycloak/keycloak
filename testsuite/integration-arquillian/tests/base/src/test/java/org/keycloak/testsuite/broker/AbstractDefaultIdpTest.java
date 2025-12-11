@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -33,14 +32,17 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.UIUtils;
+
+import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 /**
  * Test for scenarios where "Identity Provider Authenticator" is set with "default identity provider" directly redirecting to provider realm

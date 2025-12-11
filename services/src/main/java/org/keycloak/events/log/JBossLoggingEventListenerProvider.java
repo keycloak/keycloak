@@ -17,7 +17,12 @@
 
 package org.keycloak.events.log;
 
-import org.jboss.logging.Logger;
+import java.util.Map;
+
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
@@ -28,10 +33,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
 
-import jakarta.ws.rs.core.Cookie;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.UriInfo;
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

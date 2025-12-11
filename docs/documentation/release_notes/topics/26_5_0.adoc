@@ -1,7 +1,101 @@
 // Release notes should contain only headline-worthy new features,
 // assuming that people who migrate will read the upgrading guide anyway.
 
-= Preview of enhanced HTTP performance
+////
+
+// TODO
+This release features new capabilities focused on ... The highlights of this release are:
+
+// TODO
+// ...
+
+Read on to learn more about each new feature. If you are upgrading from a previous release, https://www.keycloak.org/docs/latest/upgrading/index.html[review also the changes listed in the upgrading guide].
+
+////
+
+= Security and Standards
+
+== Logout confirmation page
+
+The client logout configuration now includes an option to show a logout confirmation page. When enabled, users will see a "`You are logged out`" confirmation page upon successful logout.
+
+== CORS enhancements
+// https://github.com/keycloak/keycloak/pull/43767
+// https://github.com/keycloak/keycloak/issues/8863
+
+For the OpenID Connect Dynamic Client Registration, you can now specify which CORS headers are allowed via the client registration access policies.
+
+For the overall CORS configuration, you can now allow environment specific headers to be allowed using the SPI option `+spi-cors--default--allowed-headers+`.
+
+== Hiding OpenID Connect scopes from the discovery endpoint
+// https://github.com/keycloak/keycloak/issues/10388
+
+Previously, all scopes of an OpenID Connect client were advertised in the discovery endpoint.
+
+In some situation you might want to avoid it, as the calling client, for example, an MCP server might not support it, or you might want to hide some scopes for preventing their discovery via public APIs.
+
+You can now prevent this by disabling *Include in OpenID Provider Metadata*.
+
+== JWT Authorization Grant new feature
+
+{project_name} 26.5 introduces a new feature called JWT Authorization Grant, which adds support for https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523] to use external signed JWT assertions to request OAuth 2.0 access tokens.
+
+To accept signed JWT assertions, a trust relationship must be established between the external provider and {project_name}. This trust relationship can be configured through an identity provider in a dedicated section of the OpenID Connect v1.0 identity provider, or through the new JWT Authorization Grant identity provider.
+
+JWT Authorization Grant is recommended as an alternative to link:{securing_apps_base_link}/token-exchange#_external-token-to-internal-token-exchange[External to internal token exchange V1].
+This feature is in preview, and additional details are available in the link:{securing_apps_base_link}/jwt-authorization-grant[dedicated documentation].
+
+= Administration
+
+////
+// TODO
+= Federated client authentication (preview)
+////
+
+== Organization invitation management
+
+Organization administrators can now manage organization invitations through both the Admin Console and REST API:
+
+* View all sent invitations with their current status (Pending, Expired)
+* Resend pending invitations to recipients
+* Delete invitation records from the system
+* Filter invitations by status for easier management
+
+All invitations are now persistently stored in the database, providing better tracking and management capabilities.
+
+The invitation management features are available in the *Invitations* tab when managing an organization in the Admin Console, and through the Organizations REST API endpoints under `+/admin/realms/{realm}/orgs/{orgId}/invitations+`.
+
+== New event `USER_SESSION_DELETED`
+
+For each expired user session there is a new user event `USER_SESSION_DELETED` fired.
+This event is published approximately 3-10 minutes after the session has expired depending on job scheduling and load on the system.
+By default, this event is not persisted.
+
+As part of this change, the process now deletes rows from the table in small batches, instead of issuing a delete statements that affects the whole table.
+This should allow for better response times when there are a lot of sessions in the table.
+
+= Configuring and Running
+
+== Containers for PowerPC 64-bit Little Endian architecture
+
+The containers for both the {project_name} and its operator are not available as well for the PowerPC 64-bit Little Endian (ppc64le) architecture. This is in addition to the existing amd64 and arm64.
+
+We expect this to allow users to optimize their usage of open hardware and power consumption.
+
+== Session cache affinity
+
+Authentication, user, and client sessions are now created on the respective {project_name} node and avoid extra remote calls to neighbors when reading or writing them to the embedded caches.
+
+When you have sticky sessions enabled in your loadbalancer, you will benefit from this feature automatically, and you should see reduced response times when authenticating users.
+
+== PostgreSQL version updates
+
+The latest major release of PostgreSQL 18 is now supported.
+As PostgreSQL 13 is end-of-life it is now longer supported.
+
+We also updated the docs on how to use a TLS certificate for the JDBC-connection when connecting to a PostgreSQL database.
+
+== Enhanced HTTP performance (preview)
 
 You can now enable a more efficient way to handle JSON data in the HTTP layer.
 This change increases throughput by ~5%, stabilizes response times, and reduces system resource usage.
@@ -15,8 +109,42 @@ endif::[]
 
 For more details, see the https://www.keycloak.org/server/configuration-production[Configuring Keycloak for production] guide.
 
-= Breaking Fix for Windows in Loopback Hostname Verification
+== Enable/disable features via a single option
 
-This release introduces a breaking change for Windows users: setups that previously relied on custom machine names or non-standard hostnames for loopback (e.g., `127.0.0.1` resolving to a custom name) may require updates to their trusted domain configuration. Only `localhost` and `*.localhost` are now recognized for loopback verification.
+You can now enable or disable individual features using the `feature-<name>` option (like `feature-spiffe=enabled`).
 
-Keycloak now consistently normalizes loopback addresses to `localhost` for domain verification across all platforms. This change ensures predictable behavior for trusted domain checks, regardless of the underlying OS.
+This provides a more fine-grained way to manage features and eliminates the need to maintain long lists of enabled or disabled features.
+
+The `feature-<name>` option takes precedence over both `features` and `features-disabled`.
+
+For more details, see the https://www.keycloak.org/server/features[Enabling and disabling features] guide.
+
+= Observability
+
+== Export traces with custom request headers
+
+It is now possible to set request headers for exporting traces via Open Telemetry Protocol (OTLP).
+It is mainly useful for providing tokens in the request.
+
+You can specify these headers via the `tracing-header-<header>` wildcard option, accepting any custom header name.
+
+For more details, see the  link:{tracingguide_link}[{tracingguide_name}] guide.
+
+== MDC Logging feature (supported)
+
+The `log-mdc:v1` feature has been promoted from a preview feature to a supported feature.
+
+MDC enables Keycloak to enrich log entries with contextual information such as realm, client, user ID and IP address, significantly improving debugging and observability.
+
+For more details, see the https://www.keycloak.org/server/logging#_adding_context_for_log_messages[Adding context for log messages] guide.
+
+== New centralized telemetry options
+
+{project_name} now provides centralized telemetry configuration options that can be shared across all telemetry (OpenTelemetry) components - traces, with future support planned for logs and metrics.
+Individual components can override these global settings when needed.
+
+New options: `telemetry-endpoint`, `telemetry-protocol`, `telemetry-service-name`, and `telemetry-resource-attributes`.
+
+*Deprecation:* The `tracing-service-name` and `tracing-resource-attributes` options are now deprecated in favor of `telemetry-service-name` and `telemetry-resource-attributes`.
+
+For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.

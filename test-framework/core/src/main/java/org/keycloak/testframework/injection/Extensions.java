@@ -1,9 +1,5 @@
 package org.keycloak.testframework.injection;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.keycloak.testframework.TestFrameworkExtension;
-import org.keycloak.testframework.config.Config;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -12,6 +8,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
+
+import org.keycloak.testframework.TestFrameworkExtension;
+import org.keycloak.testframework.config.Config;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 public class Extensions {
 

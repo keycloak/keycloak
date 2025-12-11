@@ -22,14 +22,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
@@ -38,6 +37,8 @@ import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>

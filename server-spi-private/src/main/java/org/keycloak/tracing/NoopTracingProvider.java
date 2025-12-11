@@ -17,13 +17,13 @@
 
 package org.keycloak.tracing;
 
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.TracerProvider;
-
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * Return this provider when {@link org.keycloak.common.Profile.Feature#OPENTELEMETRY} is disabled

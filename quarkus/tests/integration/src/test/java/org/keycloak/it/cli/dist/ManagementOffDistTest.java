@@ -16,13 +16,14 @@
  */
 package org.keycloak.it.cli.dist;
 
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
-import org.junit.jupiter.api.Test;
+import java.io.IOException;
+
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 
-import java.io.IOException;
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
+import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.when;
 import static org.junit.jupiter.api.Assertions.assertThrows;

@@ -16,14 +16,15 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
-import static org.keycloak.testsuite.util.UIUtils.clickLink;
-import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
-
 import org.keycloak.models.UserModel;
 import org.keycloak.testsuite.pages.LogoutSessionsPage;
+
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 public class UpdateEmailPage extends LogoutSessionsPage {
 

@@ -1,6 +1,5 @@
 package org.keycloak.testframework.server;
 
-import org.jboss.logging.Logger;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.database.TestDatabase;
@@ -14,6 +13,8 @@ import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierHelpers;
 import org.keycloak.testframework.injection.SupplierOrder;
+
+import org.jboss.logging.Logger;
 
 public abstract class AbstractKeycloakServerSupplier implements Supplier<KeycloakServer, KeycloakIntegrationTest> {
 

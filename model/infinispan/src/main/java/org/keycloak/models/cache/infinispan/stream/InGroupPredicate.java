@@ -17,14 +17,15 @@
 
 package org.keycloak.models.cache.infinispan.stream;
 
-import org.infinispan.protostream.annotations.ProtoField;
-import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.keycloak.models.cache.infinispan.entities.GroupNameQuery;
-import org.keycloak.models.cache.infinispan.entities.Revisioned;
-import org.keycloak.marshalling.Marshalling;
-
 import java.util.Map;
 import java.util.function.Predicate;
+
+import org.keycloak.marshalling.Marshalling;
+import org.keycloak.models.cache.infinispan.entities.GroupNameQuery;
+import org.keycloak.models.cache.infinispan.entities.Revisioned;
+
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 @ProtoTypeId(Marshalling.IN_GROUP_PREDICATE)
 public class InGroupPredicate implements Predicate<Map.Entry<String, Revisioned>> {

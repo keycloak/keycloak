@@ -17,16 +17,17 @@
 
 package org.keycloak.migration.migrators;
 
-import static java.util.Comparator.comparing;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jboss.logging.Logger;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+
+import org.jboss.logging.Logger;
+
+import static java.util.Comparator.comparing;
 
 /**
  * @author <a href="mailto:wadahiro@gmail.com">Hiroyuki Wada</a>

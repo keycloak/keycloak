@@ -1,9 +1,9 @@
 package org.keycloak.testframework.injection;
 
-import org.jboss.logging.Logger;
-
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.jboss.logging.Logger;
 
 @SuppressWarnings("rawtypes")
 class RegistryLogger {

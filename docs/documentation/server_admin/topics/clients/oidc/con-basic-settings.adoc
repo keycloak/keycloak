@@ -128,3 +128,6 @@ There will be also one item on the consent screen about this client itself.
 Specifies whether a session ID Claim is included in the Logout Token when the *Backchannel Logout URL* is used.
 
 *Backchannel logout revoke offline sessions*:: Specifies whether a revoke_offline_access event is included in the Logout Token when the Backchannel Logout URL is used. {project_name} will revoke offline sessions when receiving a Logout Token with this event.
+
+[[_logout-confirmation]]
+*Logout confirmation*:: When enabled, {project_name} displays a confirmation page to the user after a successful logout that reads “You are logged out”. This setting primarily affects browser-based logouts, including xref:_oidc-logout[OIDC Logout] initiated by the client (RP-Initiated Logout). If a `post_logout_redirect_uri` is provided and validated for this client, the confirmation page includes a link (or button) to continue to that URL instead of redirecting automatically.

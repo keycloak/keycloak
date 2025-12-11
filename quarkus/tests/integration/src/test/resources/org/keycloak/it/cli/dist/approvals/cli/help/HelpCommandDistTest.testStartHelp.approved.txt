@@ -230,6 +230,10 @@ Transaction:
 
 Feature:
 
+--feature-<name> <enabled|disabled|vX(X is version)>
+                     Enable/Disable specific feature <feature>. It takes precedence over the
+                       'features', and 'features-disabled' options. Possible values are: 'enabled',
+                       'disabled', or specific version (lowercase) that will be enabled (f.e. 'v2')
 --features <feature> Enables a set of one or more features. Possible values are: <...>.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: <...>.
@@ -263,11 +267,19 @@ Hostname v2:
 
 HTTP(S):
 
+--http-accept-non-normalized-paths <true|false>
+                     DEPRECATED. If the server should accept paths that are not normalized
+                       according to RFC3986 or that contain a double slash ('//'). While accepting
+                       those requests might be relevant for legacy applications, it is recommended
+                       to disable it to allow for more concise URL filtering. Default: false.
 --http-enabled <true|false>
                      Enables the HTTP listener. Enabled by default in development mode. Typically
                        not enabled in production unless the server is fronted by a TLS termination
                        proxy. Default: false.
---http-host <host>   The HTTP Host. Default: 0.0.0.0.
+--http-host <host>   The HTTP Host. By default, Keycloak binds to all network addresses (0.0.0.0),
+                       which means the server may be accessible from other machines on your
+                       network. For local development, you can restrict access to localhost only by
+                       setting this to 127.0.0.1. Default: 0.0.0.0.
 --http-max-queued-requests <requests>
                      Maximum number of queued HTTP requests. Use this to shed load in an overload
                        situation. Excess requests will return a "503 Server not Available" response.
@@ -458,6 +470,10 @@ Logging:
                      The log level of a category. Takes precedence over the 'log-level' option.
                        Possible values are (case insensitive): off, fatal, error, warn, info,
                        debug, trace, all.
+--log-mdc-enabled <true|false>
+                     Indicates whether to add information about the realm and other information to
+                       the mapped diagnostic context. All elements will be prefixed with 'kc.'
+                       Default: false. Available only when log-mdc preview feature is enabled.
 
 Tracing:
 

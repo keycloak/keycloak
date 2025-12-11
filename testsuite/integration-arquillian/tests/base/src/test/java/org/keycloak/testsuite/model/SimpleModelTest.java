@@ -17,8 +17,9 @@
 
 package org.keycloak.testsuite.model;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.List;
+
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -28,8 +29,8 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 
-import java.util.List;
-import org.keycloak.models.Constants;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

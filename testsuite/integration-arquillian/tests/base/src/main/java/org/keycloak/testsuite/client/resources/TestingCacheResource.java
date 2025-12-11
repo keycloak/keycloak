@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import org.keycloak.utils.MediaType;
+import java.util.Set;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -25,7 +25,8 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import java.util.Set;
+
+import org.keycloak.utils.MediaType;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

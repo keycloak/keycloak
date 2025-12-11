@@ -18,8 +18,9 @@
 package org.keycloak.testsuite.util;
 
 import java.util.HashMap;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import java.util.Map;
+
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -17,6 +17,7 @@
 package org.keycloak.saml.processing.core.saml.v2.common;
 
 import org.keycloak.dom.saml.v2.SAML2Object;
+
 import org.w3c.dom.Document;
 
 /**

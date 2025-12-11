@@ -16,14 +16,14 @@
  */
 package org.keycloak.protocol.oid4vc.model;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 
 /**
  * Represents an authorization_details object in the Token Request as per OID4VCI.

@@ -1,6 +1,7 @@
 package org.keycloak.testframework.ui.page;
 
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -30,12 +31,8 @@ public class WelcomePage extends AbstractPage {
     @FindBy(css = ".pf-v5-c-button")
     private WebElement openAdminConsoleLink;
 
-    public WelcomePage(WebDriver driver) {
+    public WelcomePage(ManagedWebDriver driver) {
         super(driver);
-    }
-
-    public void navigateTo() {
-        driver.get("http://localhost:8080");
     }
 
     public void fillRegistration(String username, String password) {

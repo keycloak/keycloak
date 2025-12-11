@@ -1,11 +1,5 @@
 package org.keycloak.tests.admin.model.workflow;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -13,42 +7,38 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.resource.WorkflowsResource;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.workflow.EventBasedWorkflowProviderFactory;
 import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.RestartWorkflowStepProviderFactory;
-import org.keycloak.models.workflow.WorkflowsManager;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
+import org.keycloak.models.workflow.Workflow;
+import org.keycloak.models.workflow.WorkflowProvider;
+import org.keycloak.models.workflow.WorkflowStateProvider;
+import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.workflow.conditions.UserAttributeWorkflowConditionFactory;
-import org.keycloak.representations.workflows.WorkflowSetRepresentation;
-import org.keycloak.representations.workflows.WorkflowStepRepresentation;
-import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
-import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 
-@KeycloakIntegrationTest(config = WorkflowsServerConfig.class)
-public class UserAttributeWorkflowConditionTest {
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-    private static final String REALM_NAME = "default";
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-    @InjectRunOnServer(permittedPackages = "org.keycloak.tests")
-    RunOnServerClient runOnServer;
-
-    @InjectRealm(lifecycle = LifeCycle.METHOD)
-    ManagedRealm managedRealm;
+@KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
+public class UserAttributeWorkflowConditionTest extends AbstractWorkflowTest {
 
     @BeforeEach
     public void onBefore() {
@@ -87,6 +77,37 @@ public class UserAttributeWorkflowConditionTest {
         assertUserAttribute("user-4", true, values);
     }
 
+    @Test
+    public void testActivateWorkflowForEligibleResources() {
+        // create some users with attributes
+        for (int i = 0; i < 10; i++) {
+            try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create().username("user-with-attr-" + i)
+                    .attribute("key", "value").build())) {
+                assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            }
+
+        }
+
+        createWorkflow(Map.of("key", List.of("value")));
+
+        List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
+        assertThat(workflows, hasSize(1));
+        // activate the workflow for all eligible users
+        managedRealm.admin().workflows().workflow(workflows.get(0).getId()).activateAll();
+
+        runOnServer.run((RunOnServer) session -> {
+            // check the same users are now scheduled to run the second step.
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
+            assertThat(registeredWorkflows, hasSize(1));
+            Workflow workflow = registeredWorkflows.get(0);
+            // check workflow was correctly assigned to the users
+            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
+            assertThat(scheduledSteps, hasSize(10));
+        });
+    }
+
     private void assertUserAttribute(String username, boolean shouldExist, String... values) {
         assertUserAttribute(username, shouldExist, Map.of("attribute", List.of(values)));
     }
@@ -101,17 +122,12 @@ public class UserAttributeWorkflowConditionTest {
                 .email(username + "@example.com")
                 .attributes(attributes)
                 .build()).close();
+
+        // set offset to 6 days - notify step should run now
+        runScheduledSteps(Duration.ofDays(6));
+
         runOnServer.run((session -> {
-            RealmModel realm = configureSessionContext(session);
-
-            try {
-                // set offset to 7 days - notify step should run now
-                Time.setOffset(Math.toIntExact(Duration.ofDays(6).toSeconds()));
-                new WorkflowsManager(session).runScheduledSteps();
-            } finally {
-                Time.setOffset(0);
-            }
-
+            RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserByUsername(realm, username);
             assertNotNull(user);
 
@@ -137,9 +153,7 @@ public class UserAttributeWorkflowConditionTest {
                 .reduce((a, b) -> a + " AND " + b)
                 .orElse(null);
 
-        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
-                .of(EventBasedWorkflowProviderFactory.ID)
-                .name(EventBasedWorkflowProviderFactory.ID)
+        WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
                 .onEvent(ResourceOperationType.USER_ADDED.name())
                 .onCondition(attributeCondition)
                 .withSteps(
@@ -155,14 +169,8 @@ public class UserAttributeWorkflowConditionTest {
 
         WorkflowsResource workflows = managedRealm.admin().workflows();
 
-        try (Response response = workflows.create(expectedWorkflows)) {
+        try (Response response = workflows.create(expectedWorkflow)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
         }
-    }
-
-    private static RealmModel configureSessionContext(KeycloakSession session) {
-        RealmModel realm = session.realms().getRealmByName(REALM_NAME);
-        session.getContext().setRealm(realm);
-        return realm;
     }
 }

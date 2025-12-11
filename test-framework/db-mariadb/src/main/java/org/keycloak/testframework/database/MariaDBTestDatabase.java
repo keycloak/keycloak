@@ -1,7 +1,8 @@
 package org.keycloak.testframework.database;
 
-import org.jboss.logging.Logger;
 import org.keycloak.testframework.util.ContainerImages;
+
+import org.jboss.logging.Logger;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MariaDBContainer;
 import org.testcontainers.utility.DockerImageName;

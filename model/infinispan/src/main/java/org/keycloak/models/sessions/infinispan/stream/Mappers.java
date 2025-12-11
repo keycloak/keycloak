@@ -17,16 +17,16 @@
 
 package org.keycloak.models.sessions.infinispan.stream;
 
-import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
-import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
+
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
+import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
+import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
+import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -17,11 +17,11 @@
 
 package org.keycloak.storage.ldap.mappers;
 
+import java.util.Comparator;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.ldap.LDAPConfig;
-
-import java.util.Comparator;
 
 /**
  * TODO: Possibly add "priority" instead of hardcoding behaviour

@@ -1,12 +1,12 @@
 package org.keycloak.testsuite.updaters;
 
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.representations.idm.RealmRepresentation;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * Updater for realm attributes. See {@link ServerResourceUpdater} for further details.

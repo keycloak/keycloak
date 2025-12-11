@@ -17,12 +17,12 @@
 
 package org.keycloak.email.freemarker.beans;
 
-import org.keycloak.events.Event;
-
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import org.keycloak.events.Event;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

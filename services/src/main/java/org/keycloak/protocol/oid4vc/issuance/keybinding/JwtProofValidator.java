@@ -17,8 +17,15 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.jboss.logging.Logger;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jwk.JWK;
@@ -39,14 +46,8 @@ import org.keycloak.protocol.oid4vc.model.SupportedProofTypeData;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.jboss.logging.Logger;
 
 /**
  * Validates the conformance and authenticity of presented JWT proofs.

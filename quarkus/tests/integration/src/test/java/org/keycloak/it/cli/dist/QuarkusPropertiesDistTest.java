@@ -17,6 +17,18 @@
 
 package org.keycloak.it.cli.dist;
 
+import java.util.Optional;
+import java.util.function.Consumer;
+
+import org.keycloak.it.junit5.extension.BeforeStartDistribution;
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.DryRun;
+import org.keycloak.it.junit5.extension.KeepServerAlive;
+import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.WithEnvVars;
+import org.keycloak.it.utils.KeycloakDistribution;
+
 import io.quarkus.test.junit.main.Launch;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.Disabled;
@@ -28,17 +40,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
-import org.keycloak.it.junit5.extension.BeforeStartDistribution;
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
-import org.keycloak.it.junit5.extension.KeepServerAlive;
-import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.junit5.extension.WithEnvVars;
-import org.keycloak.it.utils.KeycloakDistribution;
-
-import java.util.Optional;
-import java.util.function.Consumer;
 
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
@@ -203,7 +204,7 @@ public class QuarkusPropertiesDistTest {
     @Order(13)
     void testHttpCertsPathTransformer(CLIResult cliResult) {
         cliResult.assertExitCode(1);
-        cliResult.assertMessage("Failed to load 'https-trust-store' or 'https-key-' material: NoSuchFileException");
+        cliResult.assertMessage("Failed to load 'https-*' material: NoSuchFileException");
     }
 
     @Test
@@ -215,7 +216,7 @@ public class QuarkusPropertiesDistTest {
     @Order(14)
     void testHttpCertsPathTransformerOnWindows(CLIResult cliResult) {
         cliResult.assertExitCode(1);
-        cliResult.assertMessage("ERROR: Failed to load 'https-trust-store' or 'https-key-' material: NoSuchFileException C:");
+        cliResult.assertMessage("ERROR: Failed to load 'https-*' material: NoSuchFileException C:");
     }
 
     public static class AddConsoleHandlerFromQuarkusProps implements Consumer<KeycloakDistribution> {

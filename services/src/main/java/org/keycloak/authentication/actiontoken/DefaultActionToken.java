@@ -17,20 +17,22 @@
 
 package org.keycloak.authentication.actiontoken;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.TokenVerifier.Predicate;
-import org.keycloak.common.VerificationException;
-import org.keycloak.models.SingleUseObjectValueModel;
-import org.keycloak.models.DefaultActionTokenKey;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.services.Urls;
-
-import jakarta.ws.rs.core.UriInfo;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import jakarta.ws.rs.core.UriInfo;
+
+import org.keycloak.TokenVerifier.Predicate;
+import org.keycloak.common.VerificationException;
+import org.keycloak.models.DefaultActionTokenKey;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectValueModel;
+import org.keycloak.services.Urls;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Part of action token that is intended to be used e.g. in link sent in password-reset email.
@@ -155,17 +157,22 @@ public class DefaultActionToken extends DefaultActionTokenKey implements SingleU
      */
     public String serialize(KeycloakSession session, RealmModel realm, UriInfo uri) {
         String issuerUri = getIssuer(realm, uri);
+        String id = getId();
+
+        if (id == null) {
+            id = UUID.randomUUID().toString();
+        }
 
         this
           .issuedNow()
-          .id(UUID.randomUUID().toString())
+          .id(id)
           .issuer(issuerUri)
           .audience(issuerUri);
 
         return session.tokens().encode(this);
     }
 
-    private static String getIssuer(RealmModel realm, UriInfo uri) {
+    private String getIssuer(RealmModel realm, UriInfo uri) {
         return Urls.realmIssuer(uri.getBaseUri(), realm.getName());
     }
 

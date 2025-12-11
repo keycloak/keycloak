@@ -27,14 +27,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import javax.net.ssl.SSLContext;
 
-import org.infinispan.client.hotrod.configuration.AuthenticationConfigurationBuilder;
-import org.infinispan.client.hotrod.configuration.ClientIntelligence;
-import org.infinispan.client.hotrod.configuration.Configuration;
-import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
-import org.infinispan.client.hotrod.configuration.ExhaustedAction;
-import org.infinispan.client.hotrod.impl.ConfigurationProperties;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -49,11 +43,18 @@ import org.keycloak.spi.infinispan.CacheRemoteConfigProvider;
 import org.keycloak.spi.infinispan.CacheRemoteConfigProviderFactory;
 import org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator;
 
-import javax.net.ssl.SSLContext;
+import org.infinispan.client.hotrod.configuration.AuthenticationConfigurationBuilder;
+import org.infinispan.client.hotrod.configuration.ClientIntelligence;
+import org.infinispan.client.hotrod.configuration.Configuration;
+import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
+import org.infinispan.client.hotrod.configuration.ExhaustedAction;
+import org.infinispan.client.hotrod.impl.ConfigurationProperties;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.skipSessionsCacheIfRequired;
 import static org.keycloak.spi.infinispan.impl.Util.copyFromOption;
+
 import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRAM_SHA_512;
 
 /**

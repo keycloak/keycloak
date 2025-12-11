@@ -1,10 +1,10 @@
 package org.keycloak.testsuite.util;
 
-import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
-import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
+import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>

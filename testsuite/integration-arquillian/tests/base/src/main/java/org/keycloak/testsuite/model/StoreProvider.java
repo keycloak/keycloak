@@ -17,12 +17,12 @@
 
 package org.keycloak.testsuite.model;
 
-import org.keycloak.utils.StringUtil;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>

@@ -17,19 +17,20 @@
 
 package org.keycloak.adapters.cloned;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-
 import java.io.IOException;
 import java.io.InputStream;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
+
+import org.keycloak.adapters.saml.descriptor.parsers.SamlDescriptorIDPKeysExtractor;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.saml.common.exceptions.ParsingException;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.util.EntityUtils;
-import org.keycloak.adapters.saml.descriptor.parsers.SamlDescriptorIDPKeysExtractor;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.saml.common.exceptions.ParsingException;
 
 /**
  * @author <a href="mailto:hmlnarik@redhat.com">Hynek Mlnařík</a>

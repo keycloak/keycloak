@@ -1,5 +1,7 @@
 package org.keycloak.testsuite.arquillian;
 
+import java.net.URL;
+
 import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.UndertowMessages;
@@ -8,8 +10,6 @@ import io.undertow.server.handlers.resource.ResourceChangeListener;
 import io.undertow.server.handlers.resource.ResourceManager;
 import io.undertow.server.handlers.resource.URLResource;
 import org.jboss.logging.Logger;
-
-import java.net.URL;
 
 public class TestClassProvider {
 

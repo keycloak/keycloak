@@ -16,6 +16,14 @@
  */
 package org.keycloak.testsuite.saml;
 
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -34,25 +42,19 @@ import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.keycloak.testsuite.util.SamlStreams.assertionsUnencrypted;
+import static org.keycloak.testsuite.util.SamlStreams.attributeStatements;
+import static org.keycloak.testsuite.util.SamlStreams.attributesUnecrypted;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
-import static org.keycloak.testsuite.util.SamlStreams.assertionsUnencrypted;
-import static org.keycloak.testsuite.util.SamlStreams.attributesUnecrypted;
-import static org.keycloak.testsuite.util.SamlStreams.attributeStatements;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 /**
  *

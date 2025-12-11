@@ -23,6 +23,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+
 import org.keycloak.representations.idm.ClientTypesRepresentation;
 
 /**

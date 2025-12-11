@@ -1,5 +1,16 @@
 package org.freedesktop.dbus.connections.transports;
 
+import java.io.IOException;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.freedesktop.dbus.connections.AbstractConnection;
 import org.freedesktop.dbus.connections.BusAddress;
 import org.freedesktop.dbus.connections.SASL;
@@ -11,17 +22,6 @@ import org.freedesktop.dbus.exceptions.TransportRegistrationException;
 import org.freedesktop.dbus.spi.transport.ITransportProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.nio.file.attribute.PosixFilePermission;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Builder to create transports of different types.

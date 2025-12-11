@@ -18,28 +18,23 @@
  */
 package org.keycloak.testsuite.user.profile;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.token.TokenManager;
-import org.keycloak.admin.ui.rest.model.UIRealmRepresentation;
 import org.keycloak.admin.ui.rest.model.UIRealmInfo;
+import org.keycloak.admin.ui.rest.model.UIRealmRepresentation;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AccountRoles;
@@ -62,10 +57,19 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
 
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
  *

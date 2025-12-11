@@ -16,16 +16,17 @@
  */
 package org.keycloak.broker.oidc;
 
-import static org.keycloak.common.util.UriUtils.checkUrl;
-
+import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantConfig;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 
+import static org.keycloak.common.util.UriUtils.checkUrl;
+
 /**
  * @author Pedro Igor
  */
-public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
+public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig implements JWTAuthorizationGrantConfig {
 
     public static final String JWKS_URL = "jwksUrl";
 
@@ -43,19 +44,10 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         super();
     }
 
-    public String getPrompt() {
-        return getConfig().get("prompt");
-    }
     public void setPrompt(String prompt) {
         getConfig().put("prompt", prompt);
     }
 
-    public String getIssuer() {
-        return getConfig().get(ISSUER);
-    }
-    public void setIssuer(String issuer) {
-        getConfig().put(ISSUER, issuer);
-    }
     public String getLogoutUrl() {
         return getConfig().get("logoutUrl");
     }
@@ -68,7 +60,7 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
     }
 
     public void setSendClientOnLogout(boolean value) {
-        getConfig().put("sendClientIdOnLogout", Boolean.valueOf(value).toString());
+        getConfig().put("sendClientIdOnLogout", String.valueOf(value));
     }
 
     public boolean isSendIdTokenOnLogout() {
@@ -76,27 +68,11 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
     }
 
     public void setSendIdTokenOnLogout(boolean value) {
-        getConfig().put("sendIdTokenOnLogout", Boolean.valueOf(value).toString());
-    }
-
-    public String getPublicKeySignatureVerifier() {
-        return getConfig().get("publicKeySignatureVerifier");
-    }
-
-    public void setPublicKeySignatureVerifier(String signingCertificate) {
-        getConfig().put("publicKeySignatureVerifier", signingCertificate);
-    }
-
-    public String getPublicKeySignatureVerifierKeyId() {
-        return getConfig().get("publicKeySignatureVerifierKeyId");
-    }
-
-    public void setPublicKeySignatureVerifierKeyId(String publicKeySignatureVerifierKeyId) {
-        getConfig().put("publicKeySignatureVerifierKeyId", publicKeySignatureVerifierKeyId);
+        getConfig().put("sendIdTokenOnLogout", String.valueOf(value));
     }
 
     public boolean isValidateSignature() {
-        return Boolean.valueOf(getConfig().get("validateSignature"));
+        return Boolean.parseBoolean(getConfig().get("validateSignature"));
     }
 
     public void setValidateSignature(boolean validateSignature) {
@@ -111,24 +87,8 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         return Boolean.parseBoolean(getConfig().get(IS_ACCESS_TOKEN_JWT));
     }
 
-    public boolean isUseJwksUrl() {
-        return Boolean.valueOf(getConfig().get(USE_JWKS_URL));
-    }
-
-    public void setUseJwksUrl(boolean useJwksUrl) {
-        getConfig().put(USE_JWKS_URL, String.valueOf(useJwksUrl));
-    }
-
-    public String getJwksUrl() {
-        return getConfig().get(JWKS_URL);
-    }
-
-    public void setJwksUrl(String jwksUrl) {
-        getConfig().put(JWKS_URL, jwksUrl);
-    }
-
     public boolean isBackchannelSupported() {
-        return Boolean.valueOf(getConfig().get("backchannelSupported"));
+        return Boolean.parseBoolean(getConfig().get("backchannelSupported"));
     }
 
     public void setBackchannelSupported(boolean backchannel) {
@@ -185,6 +145,10 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         return Boolean.parseBoolean(getConfig().get(SUPPORTS_CLIENT_ASSERTIONS));
     }
 
+    public void setSupportsClientAssertions(boolean supportsClientAssertions) {
+        getConfig().put(SUPPORTS_CLIENT_ASSERTIONS, String.valueOf(supportsClientAssertions));
+    }
+
     public boolean isSupportsClientAssertionReuse() {
         return Boolean.parseBoolean(getConfig().get(SUPPORTS_CLIENT_ASSERTION_REUSE));
     }
@@ -195,5 +159,18 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         SslRequired sslRequired = realm.getSslRequired();
         checkUrl(sslRequired, getJwksUrl(), "jwks_url");
         checkUrl(sslRequired, getLogoutUrl(), "logout_url");
+
+        if (isValidateSignature() || isJWTAuthorizationGrantEnabled() || isSupportsClientAssertions()) {
+            String optionText = isValidateSignature() ? "Validate signatures" :
+                    (isJWTAuthorizationGrantEnabled() ? "JWT Authorization Grant" : "Supports client assertions");
+
+            if (isUseJwksUrl()) {
+                if (getJwksUrl() == null) {
+                    throw new IllegalArgumentException(String.format("JWKS URL is required when '%s' enabled and 'Use JWKS URL' enabled", optionText));
+                }
+            } else if (getPublicKeySignatureVerifier() == null) {
+                throw new IllegalArgumentException(String.format("The 'Validating public key' is required when '%s' enabled and 'Use JWKS URL' disabled", optionText));
+            }
+        }
     }
 }

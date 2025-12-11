@@ -17,9 +17,9 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
-import org.keycloak.jose.jwk.JWK;
-
 import java.util.Map;
+
+import org.keycloak.jose.jwk.JWK;
 
 /**
  * Interface for resolving attestation public keys by kid for JWT attestation validation.

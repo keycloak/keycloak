@@ -17,11 +17,11 @@
 
 package org.keycloak.client.registration.cli;
 
-import org.keycloak.client.cli.util.HttpUtil;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.keycloak.client.cli.util.HttpUtil;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

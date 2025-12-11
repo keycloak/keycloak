@@ -3,6 +3,7 @@ package org.keycloak.testframework.realm;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -32,7 +33,7 @@ public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
             if (Status.CONFLICT.equals(Status.fromStatusCode(response.getStatus()))) {
                 throw new IllegalStateException("User already exist with username: " + userRepresentation.getUsername());
             }
-            String uuid = ApiUtil.handleCreatedResponse(response);
+            String uuid = ApiUtil.getCreatedId(response);
 
             instanceContext.addNote(USER_UUID_KEY, uuid);
 

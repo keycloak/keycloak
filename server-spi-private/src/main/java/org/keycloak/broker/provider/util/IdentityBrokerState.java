@@ -17,14 +17,14 @@
 
 package org.keycloak.broker.provider.util;
 
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.common.util.Base64Url;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.regex.Pattern;
+
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
 
 /**
  * Encapsulates parsing logic related to state passed to identity provider in "state" (or RelayState) parameter

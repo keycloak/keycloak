@@ -16,13 +16,13 @@
  */
 package org.keycloak.storage.client;
 
+import java.util.Collections;
+import java.util.Map;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.storage.StorageId;
-
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * Helper base class for ClientModel implementations for ClientStorageProvider implementations.

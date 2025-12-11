@@ -5,9 +5,11 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-import org.jboss.logging.Logger;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.logging.JBossLogConsumer;
+
+import org.jboss.logging.Logger;
+import org.testcontainers.containers.Container;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 public abstract class AbstractContainerTestDatabase implements TestDatabase {
@@ -41,8 +43,14 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
             List<String> postStartCommand = getPostStartCommand();
             if (postStartCommand != null) {
                 getLogger().tracev("Running post start command: {0}", String.join(" ", postStartCommand));
-                String result = container.execInContainer(postStartCommand.toArray(new String[0])).getStdout();
-                getLogger().tracev(result);
+                Container.ExecResult execResult = container.execInContainer(postStartCommand.toArray(new String[0]));
+                String stdout = execResult.getStdout();
+                String stderr = execResult.getStderr();
+                getLogger().tracev(stdout);
+                getLogger().tracev(stderr);
+                if (execResult.getExitCode() != 0) {
+                    throw new RuntimeException("Post start command failed with exit code: " + execResult.getExitCode() + ". stdout: " + stdout + ". stderr: " + stderr);
+                }
             }
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
@@ -82,7 +90,7 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
     }
 
     public String getDatabase() {
-;        return config.getDatabase() == null ? "keycloak" : config.getDatabase();
+        return config.getDatabase() == null ? "keycloak" : config.getDatabase();
     }
 
     public String getUsername() {

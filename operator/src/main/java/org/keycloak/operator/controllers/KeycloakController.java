@@ -16,11 +16,33 @@
  */
 package org.keycloak.operator.controllers;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+import jakarta.inject.Inject;
+
+import org.keycloak.common.util.CollectionUtil;
+import org.keycloak.operator.Config;
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.ContextUtils;
+import org.keycloak.operator.Utils;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.update.UpdateLogicFactory;
+
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ContainerState;
 import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodStatus;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.readiness.Readiness;
@@ -36,24 +58,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.quarkus.logging.Log;
-import jakarta.inject.Inject;
-import org.keycloak.common.util.CollectionUtil;
-import org.keycloak.operator.Config;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.ContextUtils;
-import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
-import org.keycloak.operator.update.UpdateLogicFactory;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 @Workflow(
     explicitInvocation = true,
@@ -87,6 +91,8 @@ public class KeycloakController implements Reconciler<Keycloak> {
 
     @Inject
     KeycloakUpdateJobDependentResource updateJobDependentResource;
+
+    KeycloakDeploymentDependentResource keycloakDeploymentDependentResource = new KeycloakDeploymentDependentResource();
 
     @Override
     public List<EventSource<?, Keycloak>> prepareEventSources(EventSourceContext<Keycloak> context) {
@@ -137,7 +143,7 @@ public class KeycloakController implements Reconciler<Keycloak> {
         ContextUtils.storeWatchedResources(context, watchedResources);
         ContextUtils.storeDistConfigurator(context, distConfigurator);
         ContextUtils.storeCurrentStatefulSet(context, existingDeployment);
-        ContextUtils.storeDesiredStatefulSet(context, new KeycloakDeploymentDependentResource().desired(kc, context));
+        ContextUtils.storeDesiredStatefulSet(context, keycloakDeploymentDependentResource.initialDesired(kc, context));
 
         var updateLogic = updateLogicFactory.create(kc, context);
         var updateLogicControl = updateLogic.decideUpdate();
@@ -226,6 +232,11 @@ public class KeycloakController implements Reconciler<Keycloak> {
         } else if (isRolling(existingDeployment)) {
             status.addRollingUpdateMessage("Rolling out deployment update");
         }
+
+        watchedResources.getMissing(existingDeployment, ConfigMap.class)
+                .ifPresent(m -> status.addWarningMessage("The following ConfigMaps are missing: " + m));
+        watchedResources.getMissing(existingDeployment, Secret.class)
+                .ifPresent(m -> status.addWarningMessage("The following Secrets are missing: " + m));
 
         distConfigurator.validateOptions(keycloakCR, status);
 

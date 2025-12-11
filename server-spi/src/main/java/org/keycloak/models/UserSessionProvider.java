@@ -161,17 +161,26 @@ public interface UserSessionProvider extends Provider {
 
     /**
      * Remove expired user sessions and client sessions in all the realms
+     *
+     * @deprecated to be removed without replacement. The providers are responsible for purging the expired entries
+     * themselves.
      */
-    void removeAllExpired();
+    @Deprecated(since = "26.5", forRemoval = true)
+    default void removeAllExpired() {
+    }
 
     /**
-     * Removes expired user sessions owned by this realm from this provider.
-     * If this `UserSessionProvider` uses `UserSessionPersister`, the removal of the expired
-     * {@link UserSessionModel user sessions} is also propagated to relevant `UserSessionPersister`.
+     * Removes expired user sessions owned by this realm from this provider. If this `UserSessionProvider` uses
+     * `UserSessionPersister`, the removal of the expired {@link UserSessionModel user sessions} is also propagated to
+     * relevant `UserSessionPersister`.
      *
      * @param realm {@link RealmModel} Realm where all the expired user sessions to be removed from.
+     * @deprecated to be removed without replacement. The providers are responsible for purging the expired entries
+     * themselves.
      */
-    void removeExpired(RealmModel realm);
+    @Deprecated(since = "26.5", forRemoval = true)
+    default void removeExpired(RealmModel realm) {
+    }
 
     /**
      * Removes all user sessions (regular and offline) from the specified realm.

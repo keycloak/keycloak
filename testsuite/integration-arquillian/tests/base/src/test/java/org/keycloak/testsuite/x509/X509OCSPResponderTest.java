@@ -18,34 +18,35 @@
 
 package org.keycloak.testsuite.x509;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.testsuite.util.HtmlUnitBrowser;
+import org.keycloak.testsuite.util.MutualTLSUtils;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import io.undertow.Undertow;
+import io.undertow.server.handlers.BlockingHandler;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
-import org.keycloak.testsuite.util.MutualTLSUtils;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.openqa.selenium.WebDriver;
 
-import jakarta.ws.rs.core.Response;
-
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 
-import io.undertow.Undertow;
-import io.undertow.server.handlers.BlockingHandler;
-
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.keycloak.testsuite.util.HtmlUnitBrowser;
-import org.openqa.selenium.WebDriver;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Verifies Certificate revocation using OCSP responder.

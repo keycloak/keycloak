@@ -59,3 +59,5 @@ js/libs/ui-shared/                          ci ci-webauthn
 *.tsx                                       codeql-typescript
 
 testsuite::database-suite                   ci-store
+
+rest/admin-v2/                              admin-v2

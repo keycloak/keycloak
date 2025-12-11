@@ -1,8 +1,9 @@
 package org.keycloak.test.examples;
 
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
 @KeycloakIntegrationTest
 public class InjectIntoAbstractFieldsTest extends AbstractTest {

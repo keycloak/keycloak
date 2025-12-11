@@ -20,8 +20,8 @@ package org.keycloak.jose.jwe.alg;
 import java.security.Key;
 
 import org.keycloak.jose.jwe.JWEHeader;
-import org.keycloak.jose.jwe.JWEKeyStorage;
 import org.keycloak.jose.jwe.JWEHeader.JWEHeaderBuilder;
+import org.keycloak.jose.jwe.JWEKeyStorage;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 
 /**

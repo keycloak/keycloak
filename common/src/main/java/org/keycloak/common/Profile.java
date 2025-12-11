@@ -17,13 +17,6 @@
 
 package org.keycloak.common;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.Profile.Feature.Type;
-import org.keycloak.common.profile.ProfileConfigResolver;
-import org.keycloak.common.profile.ProfileConfigResolver.FeatureConfig;
-import org.keycloak.common.profile.ProfileException;
-import org.keycloak.common.util.KerberosJdkProvider;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -37,6 +30,14 @@ import java.util.TreeSet;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.common.Profile.Feature.Type;
+import org.keycloak.common.profile.ProfileConfigResolver;
+import org.keycloak.common.profile.ProfileConfigResolver.FeatureConfig;
+import org.keycloak.common.profile.ProfileException;
+import org.keycloak.common.util.KerberosJdkProvider;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -53,11 +54,13 @@ public class Profile {
 
         ACCOUNT_V3("Account Console version 3", Type.DEFAULT, 3, Feature.ACCOUNT_API),
 
-        ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW, 1),
+        ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.DEPRECATED, 1),
 
         ADMIN_FINE_GRAINED_AUTHZ_V2("Fine-Grained Admin Permissions version 2", Type.DEFAULT, 2, Feature.AUTHORIZATION),
 
         ADMIN_API("Admin API", Type.DEFAULT),
+
+        CLIENT_ADMIN_API_V2("Client Admin API v2", Type.EXPERIMENTAL, 2, Feature.ADMIN_API),
 
         ADMIN_V2("New Admin Console", Type.DEFAULT, 2, Feature.ADMIN_API),
 
@@ -77,7 +80,7 @@ public class Profile {
         TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
         TOKEN_EXCHANGE_EXTERNAL_INTERNAL_V2("External to Internal Token Exchange version 2", Type.EXPERIMENTAL, 2),
 
-        JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.EXPERIMENTAL),
+        JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.PREVIEW),
 
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
@@ -97,7 +100,7 @@ public class Profile {
 
         SPIFFE("SPIFFE trust relationship provider", Type.PREVIEW),
 
-        KUBERNETES_SERVICE_ACCOUNTS("Kubernetes service accounts trust relationship provider", Type.EXPERIMENTAL),
+        KUBERNETES_SERVICE_ACCOUNTS("Kubernetes service accounts trust relationship provider", Type.PREVIEW),
 
         // Check if kerberos is available in underlying JVM and auto-detect if feature should be enabled or disabled by default based on that
         KERBEROS("Kerberos", Type.DEFAULT, 1, () -> KerberosJdkProvider.getProvider().isKerberosAvailable()),
@@ -126,7 +129,7 @@ public class Profile {
 
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
-        OPENTELEMETRY("OpenTelemetry Tracing", Type.DEFAULT),
+        OPENTELEMETRY("OpenTelemetry support", Type.DEFAULT),
 
         DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),
 
@@ -144,13 +147,15 @@ public class Profile {
         ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
         ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.PREVIEW, 2),
 
-        WORKFLOWS("Workflows", Type.EXPERIMENTAL),
+        WORKFLOWS("Workflows", Type.DEFAULT),
 
-        LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.PREVIEW),
+        LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.DEFAULT),
 
         DB_TIDB("TiDB database type", Type.EXPERIMENTAL),
 
         HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.PREVIEW),
+
+        OPENAPI("OpenAPI specification served at runtime", Type.EXPERIMENTAL, CLIENT_ADMIN_API_V2),
 
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
@@ -255,11 +260,36 @@ public class Profile {
 
         public enum Type {
             // in priority order
+
+            /**
+             * Fully supported and enabled by default.
+             */
             DEFAULT("Default"),
+
+            /**
+             * Fully supported and disabled by default.
+             */
             DISABLED_BY_DEFAULT("Disabled by default"),
+
+            /**
+             * Fully supported and will be removed in a future major release.
+             */
             DEPRECATED("Deprecated"),
+
+            /**
+             * Not supported for production yet and not enabled by default.
+             * Usually with documentation and feature complete. Soon to be graduated to supported.
+             */
             PREVIEW("Preview"),
-            PREVIEW_DISABLED_BY_DEFAULT("Preview disabled by default"), // Preview features, which are not automatically enabled even with enabled preview profile (Needs to be enabled explicitly)
+
+            /**
+             * Preview features, which are not automatically enabled even with enabled preview profile (Needs to be enabled explicitly).
+             * This is no longer used and not explained in the current docs.
+             *
+             * @deprecated forRemoval, since 26.5
+             */
+            PREVIEW_DISABLED_BY_DEFAULT("Preview disabled by default"),
+
             EXPERIMENTAL("Experimental");
 
             private final String label;

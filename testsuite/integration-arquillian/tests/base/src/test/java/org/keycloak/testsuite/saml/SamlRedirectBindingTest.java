@@ -17,25 +17,29 @@
 package org.keycloak.testsuite.saml;
 
 import java.io.IOException;
+
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
-import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
-import org.keycloak.testsuite.util.SamlClient;
-import org.keycloak.testsuite.util.SamlClient.Binding;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.junit.Test;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.testsuite.util.SamlClient;
+import org.keycloak.testsuite.util.SamlClient.Binding;
+import org.keycloak.testsuite.util.SamlClientBuilder;
+
+import org.apache.http.client.methods.HttpUriRequest;
+import org.junit.Test;
+
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_NAME;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.SAML_ASSERTION_CONSUMER_URL_SALES_POST;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.SAML_CLIENT_ID_SALES_POST;
 import static org.keycloak.testsuite.util.Matchers.isSamlStatusResponse;
-import org.keycloak.testsuite.util.SamlClientBuilder;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 /**
  *

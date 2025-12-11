@@ -1,13 +1,13 @@
 package org.keycloak.authentication.authenticators.conditional;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.keycloak.Config.Scope;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.Arrays;
-import java.util.List;
 
 public class ConditionalRoleAuthenticatorFactory implements ConditionalAuthenticatorFactory {
     public static final String PROVIDER_ID = "conditional-user-role";

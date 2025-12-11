@@ -16,6 +16,8 @@
  */
 package org.keycloak.authentication.actiontoken;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.common.VerificationException;
 import org.keycloak.events.EventBuilder;
@@ -24,7 +26,6 @@ import org.keycloak.provider.Provider;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import jakarta.ws.rs.core.Response;
 
 /**
  *  Handler of the action token.

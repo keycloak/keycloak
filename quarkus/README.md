@@ -52,11 +52,7 @@ As an alternative, you can build the distribution artifacts directly without a r
 ## Running in Keycloak development mode
 When you start Keycloak in production mode, the HTTP port is disabled by default, and you need to provide the key material to configure HTTPS, a hostname and other configuration suitable for production. 
 
-For development purposes, you can run the server in development mode instead using `start-dev`:
-
-    java -jar server/target/lib/quarkus-run.jar start-dev
-
-This spins up Keycloak using a development database (h2-file) and with insecure HTTP enabled.
+For development purposes, you can run the server in development mode instead using `start-dev`.
 
 ### Running from your IDE
 Alternatively, you can run the server in development mode from your IDE. For that, run the `org.keycloak.Keycloak` main class in the `tests/junit5` directory.
@@ -70,22 +66,24 @@ Set the `kc.home.dir` environment variable for keeping state between startups:
     
     -Dkc.home.dir=.kc 
 
-## Contributing
-Please make sure to read our [Contribution Guidelines](../CONTRIBUTING.md) before contributing.
+### Running from the command line
 
 To run the server in Quarkus' development mode, invoke the following command:
 
-    ../mvnw -f server/pom.xml compile quarkus:dev -Dquarkus.args="start-dev"
+    ../mvnw -f server/pom.xml compile quarkus:dev -Dkc.config.built=true -Dquarkus.args="start-dev"
 
 You will be able to attach your debugger to port `5005`.
 
 For debugging the build steps right after start, you can suspend the JVM by running:
 
-    ../mvnw -f server/pom.xml -Dsuspend=true compile quarkus:dev -Dquarkus.args="start-dev"
+    ../mvnw -f server/pom.xml -Dsuspend=true compile quarkus:dev -Dkc.config.built=true -Dquarkus.args="start-dev"
 
 When running using `quarkus:dev` you are able to do live coding whenever you change / add code in the `server` module, for example when creating a new custom provider.
 
 There are currently limitations when running in development mode that block us to use all capabilities the Quarkus development mode has to offer. For instance, hot-reload of transient dependencies from keycloak (e.g.: keycloak-* dependencies) do not work. Expect more improvements in this area, and feel free to reach out if you want to help, using our [discussions](https://github.com/keycloak/keycloak/discussions/categories/keycloak-x-quarkus-distribution) or the development mailing list.
+
+## Contributing
+Please make sure to read our [Contribution Guidelines](../CONTRIBUTING.md) before contributing.
 
 ## Running tests
 Keycloaks Quarkus distribution module uses a new testsuite more integrated into the quarkus platform.

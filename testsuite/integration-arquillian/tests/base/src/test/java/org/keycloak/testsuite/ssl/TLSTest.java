@@ -1,10 +1,5 @@
 package org.keycloak.testsuite.ssl;
 
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
-
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -12,6 +7,12 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
+
+import org.junit.Assume;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 
 /**
  * This test checks if TLS can be explicitly switched off.

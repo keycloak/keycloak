@@ -18,12 +18,6 @@
 
 package org.keycloak.models.oid4vci;
 
-import org.keycloak.constants.Oid4VciConstants;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -31,7 +25,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static org.keycloak.constants.Oid4VciConstants.OID4VC_PROTOCOL;
+import org.keycloak.constants.OID4VCIConstants;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+
+import static org.keycloak.OID4VCConstants.SD_JWT_VC_FORMAT;
+import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 
 /**
  * This class acts as delegate for a {@link ClientScopeModel} implementation and adds additional functionality for
@@ -44,10 +45,10 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public static final String SD_JWT_VISIBLE_CLAIMS_DEFAULT = "id,iat,nbf,exp,jti";
     public static final int SD_JWT_DECOYS_DEFAULT = 10;
-    public static final String FORMAT_DEFAULT = "dc+sd-jwt";
+    public static final String FORMAT_DEFAULT = SD_JWT_VC_FORMAT;
     public static final String HASH_ALGORITHM_DEFAULT = "SHA-256";
     public static final String TOKEN_TYPE_DEFAULT = "JWS";
-    public static final int EXPIRY_IN_SECONDS_DEFAULT = 31536000;
+    public static final int EXPIRY_IN_SECONDS_DEFAULT = 31536000; // 1 year
     public static final String CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT = "jwk";
 
     /**
@@ -113,10 +114,29 @@ public class CredentialScopeModel implements ClientScopeModel {
     public static final String TOKEN_JWS_TYPE = "vc.credential_build_config.token_jws_type";
 
     /**
-     * this configuration property can be used to enforce specific claims to be included in the metadata, if they
-     * would normally not and vice versa
+     * this configuration property can be used to enforce specific claims to be included in the metadata, if they would
+     * normally not and vice versa
      */
     public static final String INCLUDE_IN_METADATA = "vc.include_in_metadata";
+
+    /**
+     * OPTIONAL. Object that describes the requirement for key attestations as described in Appendix D, which the
+     * Credential Issuer expects the Wallet to send within the proof(s) of the Credential Request. If the Credential
+     * Issuer does not require a key attestation, this parameter MUST NOT be present in the metadata. If both
+     * key_storage and user_authentication parameters are absent, the key_attestations_required parameter may be empty,
+     * indicating a key attestation is needed without additional constraints.
+     */
+    public static final String KEY_ATTESTATION_REQUIRED = "vc.key_attestations_required";
+
+    /**
+     * OPTIONAL. A non-empty array defining values specified in Appendix D.2 accepted by the Credential Issuer.
+     */
+    public static final String KEY_ATTESTATION_REQUIRED_KEY_STORAGE = "vc.key_attestations_required.key_storage";
+
+    /**
+     * OPTIONAL. A non-empty array defining values specified in Appendix D.2 accepted by the Credential Issuer.
+     */
+    public static final String KEY_ATTESTATION_REQUIRED_USER_AUTH = "vc.key_attestations_required.user_authentication";
 
 
     /**
@@ -306,6 +326,46 @@ public class CredentialScopeModel implements ClientScopeModel {
         clientScope.setAttribute(VC_DISPLAY, vcDisplay);
     }
 
+    public boolean isKeyAttestationRequired() {
+        return Optional.ofNullable(clientScope.getAttribute(KEY_ATTESTATION_REQUIRED))
+                       .map(Boolean::parseBoolean)
+                       .orElse(false);
+    }
+
+    public void setKeyAttestationRequired(boolean keyAttestationRequired) {
+        clientScope.setAttribute(KEY_ATTESTATION_REQUIRED, String.valueOf(keyAttestationRequired));
+    }
+
+    public List<String> getRequiredKeyAttestationKeyStorage() {
+        return Optional.ofNullable(clientScope.getAttribute(KEY_ATTESTATION_REQUIRED_KEY_STORAGE))
+                       .map(s -> Arrays.asList(s.split(",")))
+                       // it is important to return null here instead of an empty list:
+                       // If both key_storage and user_authentication parameters are absent, the
+                       // key_attestations_required parameter may be empty, indicating a key attestation is needed
+                       // without additional constraints. Meaning we must not add empty objects to the metadata endpoint
+                       .orElse(null);
+    }
+
+    public void setRequiredKeyAttestationKeyStorage(List<String> keyStorage) {
+        clientScope.setAttribute(KEY_ATTESTATION_REQUIRED_KEY_STORAGE,
+                                 Optional.ofNullable(keyStorage).map(list -> String.join(",")).orElse(null));
+    }
+
+    public List<String> getRequiredKeyAttestationUserAuthentication() {
+        return Optional.ofNullable(clientScope.getAttribute(KEY_ATTESTATION_REQUIRED_USER_AUTH))
+                       .map(s -> Arrays.asList(s.split(",")))
+                       // it is important to return null here instead of an empty list:
+                       // If both key_storage and user_authentication parameters are absent, the
+                       // key_attestations_required parameter may be empty, indicating a key attestation is needed
+                       // without additional constraints. Meaning we must not add empty objects to the metadata endpoint
+                       .orElse(null);
+    }
+
+    public void getRequiredKeyAttestationUserAuthentication(List<String> userAuthentication) {
+        clientScope.setAttribute(KEY_ATTESTATION_REQUIRED_USER_AUTH,
+                                 Optional.ofNullable(userAuthentication).map(list -> String.join(",")).orElse(null));
+    }
+
     @Override
     public String getId() {
         return clientScope.getId();
@@ -423,7 +483,7 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public Stream<Oid4vcProtocolMapperModel> getOid4vcProtocolMappersStream() {
         return clientScope.getProtocolMappersStream().filter(pm -> {
-            return Oid4VciConstants.OID4VC_PROTOCOL.equals(pm.getProtocol());
+            return OID4VCIConstants.OID4VC_PROTOCOL.equals(pm.getProtocol());
         }).map(Oid4vcProtocolMapperModel::new);
     }
 

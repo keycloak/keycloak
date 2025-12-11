@@ -1,5 +1,39 @@
 package org.keycloak.tests.admin.model.workflow;
 
+import java.time.Duration;
+import java.util.List;
+
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.WorkflowsResource;
+import org.keycloak.models.workflow.DisableUserStepProviderFactory;
+import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
+import org.keycloak.models.workflow.ResourceOperationType;
+import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
+import org.keycloak.models.workflow.Workflow;
+import org.keycloak.models.workflow.WorkflowProvider;
+import org.keycloak.models.workflow.WorkflowStateProvider;
+import org.keycloak.models.workflow.conditions.GroupMembershipWorkflowConditionFactory;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
+import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowStateRepresentation;
+import org.keycloak.representations.workflows.WorkflowStepRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.GroupConfigBuilder;
+import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
+import org.keycloak.testframework.util.ApiUtil;
+
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_AUTHENTICATED;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
@@ -9,51 +43,8 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.time.Duration;
-import java.util.List;
-
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
-import org.junit.jupiter.api.Test;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.admin.client.resource.WorkflowsResource;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.workflow.EventBasedWorkflowProviderFactory;
-import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
-import org.keycloak.models.workflow.UserSessionRefreshTimeWorkflowProviderFactory;
-import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
-import org.keycloak.models.workflow.conditions.GroupMembershipWorkflowConditionFactory;
-import org.keycloak.models.workflow.ResourceOperationType;
-import org.keycloak.models.workflow.WorkflowsManager;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.workflows.WorkflowSetRepresentation;
-import org.keycloak.representations.workflows.WorkflowStateRepresentation;
-import org.keycloak.representations.workflows.WorkflowStepRepresentation;
-import org.keycloak.representations.workflows.WorkflowRepresentation;
-import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
-import org.keycloak.testframework.annotations.InjectRealm;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.realm.GroupConfigBuilder;
-import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.testframework.util.ApiUtil;
-
-@KeycloakIntegrationTest(config = WorkflowsServerConfig.class)
-public class GroupMembershipJoinWorkflowTest {
-
-    private static final String REALM_NAME = "default";
-
-    @InjectRunOnServer(permittedPackages = "org.keycloak.tests")
-    RunOnServerClient runOnServer;
-
-    @InjectRealm(lifecycle = LifeCycle.METHOD)
-    ManagedRealm managedRealm;
+@KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
+public class GroupMembershipJoinWorkflowTest extends AbstractWorkflowTest {
 
     private static final String GROUP_NAME = "generic-group";
     private static final String GROUP_CONDITION = GroupMembershipWorkflowConditionFactory.ID + "(" + GROUP_NAME + ")";
@@ -70,9 +61,7 @@ public class GroupMembershipJoinWorkflowTest {
             groupId = ApiUtil.getCreatedId(response);
         }
 
-        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
-                .of(EventBasedWorkflowProviderFactory.ID)
-                .name(EventBasedWorkflowProviderFactory.ID)
+        WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
                 .onEvent(ResourceOperationType.USER_GROUP_MEMBERSHIP_ADDED.name())
                 .onCondition(GROUP_CONDITION)
                 .withSteps(
@@ -85,7 +74,7 @@ public class GroupMembershipJoinWorkflowTest {
 
         WorkflowsResource workflows = managedRealm.admin().workflows();
 
-        try (Response response = workflows.create(expectedWorkflows)) {
+        try (Response response = workflows.create(expectedWorkflow)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
         }
 
@@ -100,18 +89,8 @@ public class GroupMembershipJoinWorkflowTest {
 
         userResource.joinGroup(groupId);
 
-        runOnServer.run((session -> {
-            configureSessionContext(session);
-            WorkflowsManager manager = new WorkflowsManager(session);
-
-            try {
-                // set offset to 7 days - notify step should run now
-                Time.setOffset(Math.toIntExact(Duration.ofDays(6).toSeconds()));
-                manager.runScheduledSteps();
-            } finally {
-                Time.setOffset(0);
-            }
-        }));
+        // set offset to 6 days - notify step should run now
+        runScheduledSteps(Duration.ofDays(6));
 
         UserRepresentation rep = userResource.toRepresentation();
         assertNotNull(rep.getAttributes().get("attribute"));
@@ -120,27 +99,27 @@ public class GroupMembershipJoinWorkflowTest {
     @Test
     public void testRemoveAssociatedGroup() {
         String groupId;
-
         try (Response response = managedRealm.admin().groups().add(GroupConfigBuilder.create()
                 .name("generic-group").build())) {
             groupId = ApiUtil.getCreatedId(response);
         }
 
-        managedRealm.admin().workflows().create(WorkflowRepresentation.create()
-                .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .name(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
+        String workflowId;
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(USER_ADDED.toString(), USER_AUTHENTICATED.toString())
                 .onCondition(GROUP_CONDITION)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(1))
-                                .build()
-                ).build()).close();
+                                .build())
+                .build())) {
+            workflowId = ApiUtil.getCreatedId(response);
+        }
 
         List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
         assertThat(workflows, hasSize(1));
 
-        WorkflowRepresentation workflowRep = managedRealm.admin().workflows().workflow(workflows.get(0).getId()).toRepresentation();
+        WorkflowRepresentation workflowRep = managedRealm.admin().workflows().workflow(workflowId).toRepresentation();
         assertThat(workflowRep.getConfig().getFirst("enabled"), nullValue());
 
         // remove group
@@ -149,17 +128,56 @@ public class GroupMembershipJoinWorkflowTest {
         // create new user - it will trigger an activation event and therefore should disable the workflow
         managedRealm.admin().users().create(UserConfigBuilder.create().username("test").build()).close();
 
-        // check the workflow is disabled
-        workflowRep = managedRealm.admin().workflows().workflow(workflows.get(0).getId()).toRepresentation();
-        assertThat(workflowRep.getEnabled(), allOf(notNullValue(), is(false)));
-        WorkflowStateRepresentation status = workflowRep.getState();
-        assertThat(status, notNullValue());
-        assertThat(status.getErrors(), hasSize(1));
-        assertThat(status.getErrors().get(0), containsString("Group with name %s does not exist.".formatted("generic-group")));
+        Awaitility.await()
+                .timeout(Duration.ofSeconds(30))
+                .pollInterval(Duration.ofSeconds(1))
+                .untilAsserted(() -> {
+                    var rep = managedRealm.admin().workflows().workflow(workflowId).toRepresentation();
+                    assertThat(rep.getEnabled(), allOf(notNullValue(), is(false)));
+                    WorkflowStateRepresentation status = rep.getState();
+                    assertThat(status, notNullValue());
+                    assertThat(status.getErrors(), hasSize(1));
+                    assertThat(status.getErrors().get(0), containsString("Group with name %s does not exist.".formatted("generic-group")));
+                });
     }
 
-    private static void configureSessionContext(KeycloakSession session) {
-        RealmModel realm = session.realms().getRealmByName(REALM_NAME);
-        session.getContext().setRealm(realm);
+    @Test
+    public void testActivateWorkflowForEligibleResources() {
+        managedRealm.admin().groups().add(GroupConfigBuilder.create().name("groupA").build()).close();
+
+        // create some users associated with a group membership
+        for (int i = 0; i < 10; i++) {
+            managedRealm.admin().users().create(UserConfigBuilder.create().username("group-member-" + i)
+                    .groups("groupA").build()).close();
+        }
+
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("groupA-membership-workflow")
+                .onEvent(ResourceOperationType.USER_GROUP_MEMBERSHIP_ADDED.name())
+                .onCondition(GroupMembershipWorkflowConditionFactory.ID + "(groupA)")
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build()
+                ).build()).close();
+
+        List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
+        assertThat(workflows, hasSize(1));
+        // activate the workflow for all eligible users
+        managedRealm.admin().workflows().workflow(workflows.get(0).getId()).activateAll();
+
+        runOnServer.run((RunOnServer) session -> {
+            // check the same users are now scheduled to run the second step.
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
+            assertThat(registeredWorkflows, hasSize(1));
+            Workflow workflow = registeredWorkflows.get(0);
+            // check workflow was correctly assigned to the users
+            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+            List<WorkflowStateProvider.ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
+            assertThat(scheduledSteps, hasSize(10));
+        });
     }
 }

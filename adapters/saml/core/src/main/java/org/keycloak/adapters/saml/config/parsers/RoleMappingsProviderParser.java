@@ -18,7 +18,6 @@
 package org.keycloak.adapters.saml.config.parsers;
 
 import java.util.Properties;
-
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.events.StartElement;
 

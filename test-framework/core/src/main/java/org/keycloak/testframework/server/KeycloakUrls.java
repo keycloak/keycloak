@@ -1,10 +1,10 @@
 package org.keycloak.testframework.server;
 
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-
 import java.net.MalformedURLException;
 import java.net.URL;
+
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
 public class KeycloakUrls {
 

@@ -1,7 +1,5 @@
 package org.keycloak.testsuite.saml;
 
-import org.apache.http.util.EntityUtils;
-import org.junit.Test;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
@@ -20,20 +18,24 @@ import org.keycloak.testsuite.util.ArtifactResolutionService;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.saml.CreateArtifactMessageStepBuilder;
+
+import org.apache.http.util.EntityUtils;
+import org.junit.Test;
 import org.w3c.dom.Document;
 
+import static org.keycloak.testsuite.util.Matchers.bodyHC;
+import static org.keycloak.testsuite.util.Matchers.isSamlStatusResponse;
+import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
+import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
+import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.util.Matchers.bodyHC;
-import static org.keycloak.testsuite.util.Matchers.isSamlStatusResponse;
-import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
-import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
-import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
 
 public class ArtifactBindingWithResolutionServiceTest extends AbstractSamlTest {
 

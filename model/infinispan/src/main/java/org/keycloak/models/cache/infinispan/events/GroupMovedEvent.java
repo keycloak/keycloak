@@ -20,12 +20,13 @@ package org.keycloak.models.cache.infinispan.events;
 import java.util.Objects;
 import java.util.Set;
 
-import org.infinispan.protostream.annotations.ProtoFactory;
-import org.infinispan.protostream.annotations.ProtoField;
-import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

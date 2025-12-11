@@ -17,32 +17,37 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.List;
+import java.util.Optional;
+
 import jakarta.ws.rs.core.Response;
-import org.jboss.logging.Logger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
-import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.protocol.oidc.utils.OAuth2Code;
-import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.services.util.DefaultClientSessionContext;
+import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
-import java.util.List;
-import java.util.UUID;
+import org.jboss.logging.Logger;
 
-import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
+import static org.keycloak.services.util.DefaultClientSessionContext.fromClientSessionAndScopeParameter;
 
 public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
@@ -61,70 +66,118 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         if (code == null) {
             // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-token-request
             String errorMessage = "Missing parameter: " + PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM;
-            event.detail(Details.REASON, errorMessage);
-            event.error(Errors.INVALID_CODE);
+            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
-        OAuth2CodeParser.ParseResult result = OAuth2CodeParser.parseCode(session, code, realm, event);
-        if (result.isIllegalCode()) {
-            event.error(Errors.INVALID_CODE);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Code not valid",
-                    Response.Status.BAD_REQUEST);
+
+        var offerStorage = session.getProvider(CredentialOfferStorage.class);
+        var offerState = offerStorage.findOfferStateByCode(session, code);
+        if (offerState == null) {
+            var errorMessage = "No credential offer state for code: " + code;
+            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    errorMessage, Response.Status.BAD_REQUEST);
         }
-        if (result.isExpiredCode()) {
+
+        if (offerState.isExpired()) {
             event.error(Errors.EXPIRED_CODE);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Code is expired",
-                    Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
+                    "Code is expired", Response.Status.BAD_REQUEST);
         }
-        AuthenticatedClientSessionModel clientSession = result.getClientSession();
-        ClientSessionContext sessionContext = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession,
-                OAuth2Constants.SCOPE_OPENID, session);
+        var credOffer = offerState.getCredentialsOffer();
+
+        var appUserId = offerState.getUserId();
+        var userModel = session.users().getUserById(realm, appUserId);
+        if (userModel == null) {
+            var errorMessage = "No user with ID: " + appUserId;
+            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+        if (!userModel.isEnabled()) {
+            var errorMessage = "User '" + userModel.getUsername() + "' disabled";
+            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+
+        var appClientId = offerState.getClientId();
+        ClientModel clientModel = realm.getClientByClientId(appClientId);
+        if (clientModel == null) {
+            var errorMessage = "No client model for: " + appClientId;
+            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+
+        UserSessionModel userSession = session.sessions().createUserSession(null, realm, userModel, userModel.getUsername(),
+                null, "pre-authorized-code", false, null,
+                null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+
+        AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, clientModel, userSession);
+        String credentialConfigurationIds = JsonSerialization.valueAsString(credOffer.getCredentialConfigurationIds());
+        clientSession.setNote(OID4VCIssuerEndpoint.CREDENTIAL_CONFIGURATION_IDS_NOTE, credentialConfigurationIds);
+        clientSession.setNote(OIDCLoginProtocol.ISSUER, credOffer.getCredentialIssuer());
         clientSession.setNote(VC_ISSUANCE_FLOW, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE);
+
+        ClientSessionContext sessionContext = fromClientSessionAndScopeParameter(clientSession, OAuth2Constants.SCOPE_OPENID, session);
         sessionContext.setAttribute(Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE);
 
         // set the client as retrieved from the pre-authorized session
-        session.getContext().setClient(result.getClientSession().getClient());
+        session.getContext().setClient(clientModel);
+
+        // Process authorization_details using provider discovery
+        List<AuthorizationDetailsResponse> authorizationDetailsResponses = processAuthorizationDetails(userSession, sessionContext);
+        LOGGER.infof("Initial authorization_details processing result: %s", authorizationDetailsResponses);
+
+        // If no authorization_details were processed from the request, try to generate them from credential offer
+        if (authorizationDetailsResponses == null || authorizationDetailsResponses.isEmpty()) {
+            authorizationDetailsResponses = handleMissingAuthorizationDetails(userSession, sessionContext);
+        }
+
+        authorizationDetailsResponses = Optional.ofNullable(authorizationDetailsResponses).orElse(List.of());
+        if (authorizationDetailsResponses.size() != 1) {
+            boolean emptyAuthDetails = authorizationDetailsResponses.isEmpty();
+            String errorMessage = (emptyAuthDetails ? "No" : "Multiple") + " authorization details";
+            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+
+        // Add authorization_details to the OfferState and otherClaims
+        var authDetails = (OID4VCAuthorizationDetailsResponse) authorizationDetailsResponses.get(0);
+        offerState.setAuthorizationDetails(authDetails);
+        offerStorage.replaceOfferState(session, offerState);
 
         AccessToken accessToken = tokenManager.createClientAccessToken(session,
                 clientSession.getRealm(),
                 clientSession.getClient(),
-                clientSession.getUserSession().getUser(),
-                clientSession.getUserSession(),
+                userSession.getUser(),
+                userSession,
                 sessionContext);
 
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(
+        accessToken.setOtherClaims(AUTHORIZATION_DETAILS, authorizationDetailsResponses);
+
+        AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(
                 clientSession.getRealm(),
                 clientSession.getClient(),
                 event,
                 session,
-                clientSession.getUserSession(),
+                userSession,
                 sessionContext).accessToken(accessToken);
-
-        // Process authorization_details using provider discovery
-        List<AuthorizationDetailsResponse> authorizationDetailsResponse = processAuthorizationDetails(clientSession.getUserSession(), sessionContext);
-        LOGGER.infof("Initial authorization_details processing result: %s", authorizationDetailsResponse);
-
-        // If no authorization_details were processed from the request, try to generate them from credential offer
-        if (authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty()) {
-            authorizationDetailsResponse = handleMissingAuthorizationDetails(clientSession.getUserSession(), sessionContext);
-        }
 
         AccessTokenResponse tokenResponse;
         try {
             tokenResponse = responseBuilder.build();
+            tokenResponse.setOtherClaims(AUTHORIZATION_DETAILS, authorizationDetailsResponses);
         } catch (RuntimeException re) {
-            if ("cannot get encryption KEK".equals(re.getMessage())) {
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                        "cannot get encryption KEK", Response.Status.BAD_REQUEST);
+            String errorMessage = "Cannot get encryption KEK";
+            if (errorMessage.equals(re.getMessage())) {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, errorMessage, Response.Status.BAD_REQUEST);
             } else {
                 throw re;
             }
-        }
-
-        // If authorization_details is present, add it to otherClaims
-        if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
-            tokenResponse.setOtherClaims(AUTHORIZATION_DETAILS_PARAM, authorizationDetailsResponse);
         }
 
         event.success();
@@ -134,21 +187,5 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
     @Override
     public EventType getEventType() {
         return EventType.CODE_TO_TOKEN;
-    }
-
-    /**
-     * Create a pre-authorized Code for the given client session.
-     *
-     * @param session                    - keycloak session to be used
-     * @param authenticatedClientSession - client session to be persisted
-     * @param expirationTime             - expiration time of the code, the code should be short-lived
-     * @return the pre-authorized code
-     */
-    public static String getPreAuthorizedCode(KeycloakSession session, AuthenticatedClientSessionModel authenticatedClientSession, int expirationTime) {
-        String codeId = UUID.randomUUID().toString();
-        String nonce = SecretGenerator.getInstance().randomString();
-        OAuth2Code oAuth2Code = new OAuth2Code(codeId, expirationTime, nonce, null, null, null, null, null,
-                authenticatedClientSession.getUserSession().getId());
-        return OAuth2CodeParser.persistCode(session, authenticatedClientSession, oAuth2Code);
     }
 }

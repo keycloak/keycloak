@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
-import org.jboss.logging.Logger;
+
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.credential.CredentialModel;
@@ -35,6 +35,8 @@ import org.keycloak.credential.CredentialTypeMetadataContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.models.Constants.NO_LOA;
 

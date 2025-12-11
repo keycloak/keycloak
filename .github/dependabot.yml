@@ -2,22 +2,29 @@ version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
-    open-pull-requests-limit: 999
-    rebase-strategy: disabled
     schedule:
-      interval: daily
-      time: "00:00"
+      interval: weekly
+      day: "sunday"
+      time: "03:00"
       timezone: Etc/GMT
+    open-pull-requests-limit: 10 # It's wise to keep this low even with grouping
+    rebase-strategy: disabled
     labels:
       - area/dependencies
       - area/ci
+    groups:
+      actions-dependencies: # This name will be used in the PR title
+        patterns:
+          - "*"
+
   - package-ecosystem: npm
     directory: js
     schedule:
-      interval: daily
-      time: "00:00"
+      interval: weekly
+      day: "thursday"
+      time: "03:00"
       timezone: Etc/GMT
-    open-pull-requests-limit: 999
+    open-pull-requests-limit: 10 # It's wise to keep this low even with grouping
     rebase-strategy: disabled
     labels:
       - area/dependencies
@@ -35,3 +42,7 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "react-router-dom"
         update-types: ["version-update:semver-major"]
+    groups:
+      npm-dependencies: # This name will be used in the PR title
+        patterns:
+          - "*"

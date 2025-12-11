@@ -17,6 +17,10 @@
 
 package org.keycloak.broker.oidc.mappers;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -24,10 +28,6 @@ import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import static org.keycloak.utils.RegexUtils.valueMatchesRegex;
 

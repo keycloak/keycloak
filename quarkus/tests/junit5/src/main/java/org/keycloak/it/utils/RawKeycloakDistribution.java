@@ -55,16 +55,6 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import io.quarkus.deployment.util.FileUtil;
-import io.quarkus.fs.util.ZipUtils;
-
-import io.restassured.RestAssured;
-import org.awaitility.Awaitility;
-import org.jboss.logging.Logger;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.exporter.ZipExporter;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.keycloak.common.Version;
 import org.keycloak.it.TestProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -72,6 +62,16 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+
+import io.quarkus.deployment.util.FileUtil;
+import io.quarkus.fs.util.ZipUtils;
+import io.restassured.RestAssured;
+import org.awaitility.Awaitility;
+import org.jboss.logging.Logger;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 
 import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE;
 import static org.keycloak.quarkus.runtime.Environment.isWindows;
@@ -334,7 +334,11 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private void waitForReadiness(String scheme, int port) throws MalformedURLException {
-        URL contextRoot = new URL(scheme + "://localhost:" + port + ("/" + relativePath + "/realms/master/").replace("//", "/"));
+        var myRelativePath = relativePath;
+        if (!myRelativePath.endsWith("/")) {
+            myRelativePath += "/";
+        }
+        URL contextRoot = new URL(scheme + "://localhost:" + port + myRelativePath + "realms/master/");
         HttpURLConnection connection = null;
         long startTime = System.currentTimeMillis();
         Exception ex = null;

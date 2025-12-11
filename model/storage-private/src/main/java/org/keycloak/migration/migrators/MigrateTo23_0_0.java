@@ -21,13 +21,14 @@ package org.keycloak.migration.migrators;
 
 import java.util.Optional;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.userprofile.UserProfileProvider;
+
+import org.jboss.logging.Logger;
 
 public class MigrateTo23_0_0 extends RealmMigration {
 

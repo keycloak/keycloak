@@ -31,7 +31,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authorization.UserManagedPermissionUtil;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
@@ -80,6 +79,8 @@ import org.keycloak.models.cache.infinispan.entities.NonExistentItem;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.storage.StorageId;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -1045,13 +1046,13 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, String configValue) {
-            return getPolicyStoreDelegate().findDependentPolicies(resourceServer, resourceType, associatedPolicyType, configKey, configValue);
+        public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String groupResourceType, String associatedPolicyType, String configKey, String configValue) {
+            return getPolicyStoreDelegate().findDependentPolicies(resourceServer, resourceType, groupResourceType, associatedPolicyType, configKey, configValue);
         }
 
         @Override
-        public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, List<String> configValue) {
-            return getPolicyStoreDelegate().findDependentPolicies(resourceServer, resourceType, associatedPolicyType, configKey, configValue);
+        public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String groupResourceType, String associatedPolicyType, String configKey, List<String> configValue) {
+            return getPolicyStoreDelegate().findDependentPolicies(resourceServer, resourceType, groupResourceType, associatedPolicyType, configKey, configValue);
         }
 
         private <R extends Policy, Q extends PolicyQuery> List<R> cacheQuery(String cacheKey, Class<Q> queryType, Supplier<List<R>> resultSupplier, BiFunction<Long, List<R>, Q> querySupplier, ResourceServer resourceServer) {

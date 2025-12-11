@@ -16,11 +16,14 @@
  */
 package org.keycloak.testsuite.forms;
 
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import jakarta.mail.internet.MimeMessage;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.authenticators.browser.CookieAuthenticatorFactory;
 import org.keycloak.authentication.forms.RegistrationPassword;
@@ -50,27 +53,25 @@ import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.UIUtils;
+import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import jakarta.mail.internet.MimeMessage;
-import jakarta.ws.rs.core.Response;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

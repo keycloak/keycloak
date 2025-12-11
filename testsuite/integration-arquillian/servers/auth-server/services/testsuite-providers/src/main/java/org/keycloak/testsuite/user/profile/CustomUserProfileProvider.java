@@ -1,13 +1,13 @@
 package org.keycloak.testsuite.user.profile;
 
+import java.util.Map;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
-
-import java.util.Map;
 
 public class CustomUserProfileProvider extends DeclarativeUserProfileProvider {
 

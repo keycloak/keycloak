@@ -3,16 +3,17 @@ package org.keycloak.crypto.fips.test;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.Environment;
+import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.rule.CryptoInitRule;
+
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.hamcrest.Matchers;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.Environment;
-import org.keycloak.common.util.KeystoreUtil;
-import org.keycloak.rule.CryptoInitRule;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 

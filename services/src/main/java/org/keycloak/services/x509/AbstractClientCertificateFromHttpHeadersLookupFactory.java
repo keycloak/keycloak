@@ -18,9 +18,10 @@
 
 package org.keycloak.services.x509;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSessionFactory;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>

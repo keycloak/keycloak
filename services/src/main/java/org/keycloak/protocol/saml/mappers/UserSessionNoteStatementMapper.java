@@ -17,15 +17,15 @@
 
 package org.keycloak.protocol.saml.mappers;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Maps a user session note to a SAML attribute

@@ -20,11 +20,6 @@ package org.keycloak.testsuite.model.infinispan;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.infinispan.client.hotrod.exceptions.HotRodClientException;
-import org.junit.Assume;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TestRule;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -38,9 +33,16 @@ import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
+import org.junit.Assume;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
+
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
+
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 
 @RequireProvider(UserLoginFailureProvider.class)
 @RequireProvider(UserProvider.class)
@@ -95,6 +97,7 @@ public class RetryAndBackOffTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             var realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             var loginFailures = session.loginFailures().addUserLoginFailure(realm, userId);
             loginFailures.incrementFailures();
         });
@@ -106,6 +109,7 @@ public class RetryAndBackOffTest extends KeycloakModelTest {
     public void testRetryWithReplace() {
         inComittedTransaction(session -> {
             var realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             var loginFailures = session.loginFailures().addUserLoginFailure(realm, userId);
             loginFailures.incrementFailures();
         });
@@ -114,6 +118,7 @@ public class RetryAndBackOffTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             var realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             var loginFailures = session.loginFailures().getUserLoginFailure(realm, userId);
             loginFailures.incrementFailures();
         });
@@ -125,6 +130,7 @@ public class RetryAndBackOffTest extends KeycloakModelTest {
     public void testRetryWithRemove() {
         inComittedTransaction(session -> {
             var realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             var loginFailures = session.loginFailures().addUserLoginFailure(realm, userId);
             loginFailures.incrementFailures();
         });
@@ -133,6 +139,7 @@ public class RetryAndBackOffTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             var realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             session.loginFailures().removeUserLoginFailure(realm, userId);
         });
 
@@ -144,6 +151,7 @@ public class RetryAndBackOffTest extends KeycloakModelTest {
         // compute is implemented with get() and replace()
         inComittedTransaction(session -> {
             var realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             var loginFailures = session.loginFailures().addUserLoginFailure(realm, userId);
             loginFailures.incrementFailures();
         });
@@ -154,6 +162,7 @@ public class RetryAndBackOffTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             var realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             var loginFailures = session.loginFailures().getUserLoginFailure(realm, userId);
             loginFailures.incrementFailures();
         });
@@ -170,6 +179,7 @@ public class RetryAndBackOffTest extends KeycloakModelTest {
             var ce = assertThrows(CompletionException.class,
                     () -> inComittedTransaction(session -> {
                         var realm = session.realms().getRealm(realmId);
+                        session.getContext().setRealm(realm);
                         session.loginFailures().addUserLoginFailure(realm, userId);
                     }));
             assertTrue(String.valueOf(ce.getCause()), ce.getCause() instanceof HotRodClientException);

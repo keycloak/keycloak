@@ -16,6 +16,42 @@
  */
 package org.keycloak.operator.controllers;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.keycloak.operator.Config;
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.ContextUtils;
+import org.keycloak.operator.Utils;
+import org.keycloak.operator.crds.v2alpha1.CRDUtils;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
+import org.keycloak.operator.update.impl.RecreateOnImageChangeUpdateLogic;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -37,41 +73,6 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.quarkus.logging.Log;
-import org.keycloak.operator.Config;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.ContextUtils;
-import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.CRDUtils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
-import org.keycloak.operator.update.impl.RecreateOnImageChangeUpdateLogic;
-
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.keycloak.operator.Utils.addResources;
 import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
@@ -127,14 +128,13 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         this.useServiceCaCrt = useServiceCaCrt;
     }
 
-    @Override
-    public StatefulSet desired(Keycloak primary, Context<Keycloak> context) {
+    public StatefulSet initialDesired(Keycloak primary, Context<Keycloak> context) {
         Config operatorConfig = ContextUtils.getOperatorConfig(context);
         WatchedResources watchedResources = ContextUtils.getWatchedResources(context);
 
         StatefulSet baseDeployment = createBaseDeployment(primary, context, operatorConfig);
-        TreeSet<String> allSecrets = new TreeSet<>();
-        TreeSet<String> allConfigMaps = new TreeSet<>();
+        WatchedResources.Watched allSecrets = new WatchedResources.Watched();
+        WatchedResources.Watched allConfigMaps = new WatchedResources.Watched();
         if (isTlsConfigured(primary)) {
             configureTLS(primary, baseDeployment, allSecrets);
         }
@@ -145,16 +145,12 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         Optional.ofNullable(primary.getSpec().getCacheSpec())
                 .ifPresent(c -> configureCache(baseDeployment, kcContainer, c, allConfigMaps));
 
-        if (!allSecrets.isEmpty()) {
-            watchedResources.annotateDeployment(new ArrayList<>(allSecrets), Secret.class, baseDeployment, context.getClient());
-        }
-
-        if (!allConfigMaps.isEmpty()) {
-            watchedResources.annotateDeployment(new ArrayList<>(allConfigMaps), ConfigMap.class, baseDeployment, context.getClient());
-        }
+        watchedResources.annotateDeployment(allSecrets, Secret.class, baseDeployment, context);
+        watchedResources.annotateDeployment(allConfigMaps, ConfigMap.class, baseDeployment, context);
 
         // default to the new revision - will be overriden to the old one if needed
         UpdateSpec.getRevision(primary).ifPresent(rev -> addUpdateRevisionAnnotation(rev, baseDeployment));
+        addUpdateHashAnnotation(KeycloakUpdateJobDependentResource.keycloakHash(primary), baseDeployment);
 
         var existingDeployment = ContextUtils.getCurrentStatefulSet(context).orElse(null);
 
@@ -169,6 +165,13 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
 
         baseDeployment.getSpec().setServiceName(serviceName);
+        return baseDeployment;
+    }
+
+    @Override
+    public StatefulSet desired(Keycloak primary, Context<Keycloak> context) {
+        StatefulSet baseDeployment = ContextUtils.getDesiredStatefulSet(context);
+        var existingDeployment = ContextUtils.getCurrentStatefulSet(context).orElse(null);
 
         var updateType = ContextUtils.getUpdateType(context);
 
@@ -186,11 +189,11 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         return switch (updateType.get()) {
             case ROLLING -> handleRollingUpdate(baseDeployment);
-            case RECREATE -> handleRecreateUpdate(existingDeployment, baseDeployment, kcContainer);
+            case RECREATE -> handleRecreateUpdate(existingDeployment, baseDeployment, CRDUtils.firstContainerOf(baseDeployment).orElseThrow());
         };
     }
 
-    private void configureCache(StatefulSet deployment, Container kcContainer, CacheSpec spec, TreeSet<String> allConfigMaps) {
+    private void configureCache(StatefulSet deployment, Container kcContainer, CacheSpec spec, WatchedResources.Watched allConfigMaps) {
         Optional.ofNullable(spec.getConfigMapFile()).ifPresent(configFile -> {
             if (configFile.getName() == null || configFile.getKey() == null) {
                 throw new IllegalStateException("Cache file ConfigMap requires both a name and a key");
@@ -211,11 +214,11 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
             deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
             kcContainer.getVolumeMounts().add(0, volumeMount);
-            allConfigMaps.add(configFile.getName());
+            allConfigMaps.add(configFile.getName(), configFile.getOptional());
         });
     }
 
-    private void addTruststores(Keycloak keycloakCR, StatefulSet deployment, Container kcContainer, TreeSet<String> allSecrets, TreeSet<String> allConfigMaps) {
+    private void addTruststores(Keycloak keycloakCR, StatefulSet deployment, Container kcContainer, WatchedResources.Watched allSecrets, WatchedResources.Watched allConfigMaps) {
         for (Truststore truststore : keycloakCR.getSpec().getTruststores().values()) {
             // for now we'll assume only secrets, later we can support configmaps
             TruststoreSource source = truststore.getSecret();
@@ -236,7 +239,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
                 deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
                 kcContainer.getVolumeMounts().add(0, volumeMount);
-                allSecrets.add(secretName);
+                allSecrets.add(secretName, source.getOptional());
             } else {
                 source = truststore.getConfigMap();
                 if (source != null) {
@@ -256,13 +259,13 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
                     deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
                     kcContainer.getVolumeMounts().add(0, volumeMount);
-                    allConfigMaps.add(name);
+                    allConfigMaps.add(name, source.getOptional());
                 }
             }
         }
     }
 
-    void configureTLS(Keycloak keycloakCR, StatefulSet deployment, TreeSet<String> allSecrets) {
+    void configureTLS(Keycloak keycloakCR, StatefulSet deployment, WatchedResources.Watched allSecrets) {
         var kcContainer = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         var volume = new VolumeBuilder()
@@ -280,7 +283,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
         kcContainer.getVolumeMounts().add(0, volumeMount);
-        allSecrets.add(keycloakCR.getSpec().getHttpSpec().getTlsSecret());
+        allSecrets.add(keycloakCR.getSpec().getHttpSpec().getTlsSecret(), null);
     }
 
     private boolean hasExpectedMatchLabels(StatefulSet statefulSet, Keycloak keycloak) {
@@ -332,6 +335,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         if (!specBuilder.hasDnsPolicy()) {
             specBuilder.withDnsPolicy("ClusterFirst");
         }
+        boolean automount = !Boolean.FALSE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken());
+        specBuilder.withAutomountServiceAccountToken(automount);
         handleScheduling(keycloakCR, schedulingLabels, specBuilder);
 
         // there isn't currently an editOrNewFirstContainer, so we need to do this manually
@@ -454,7 +459,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
     }
 
-    private void addEnvVars(StatefulSet baseDeployment, Keycloak keycloakCR, TreeSet<String> allSecrets, Context<Keycloak> context) {
+    private void addEnvVars(StatefulSet baseDeployment, Keycloak keycloakCR, WatchedResources.Watched allSecrets, Context<Keycloak> context) {
         var distConfigurator = ContextUtils.getDistConfigurator(context);
         var firstClasssEnvVars = distConfigurator.configureDistOptions(keycloakCR);
 
@@ -468,14 +473,17 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(unsupportedEnv.stream(), firstClasssEnvVars.stream()), Stream.concat(additionalEnvVars.stream(), env))
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
 
-        String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
 
-        if (useServiceCaCrt) {
-            truststores += "," + SERVICE_CA_CRT;
+        if (!Boolean.FALSE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken())) {
+            String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
+
+            if (useServiceCaCrt) {
+                truststores += "," + SERVICE_CA_CRT;
+            }
+
+            // include the kube CA if the user is not controlling KC_TRUSTSTORE_PATHS via the unsupported or the additional
+            varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
         }
-
-        // include the kube CA if the user is not controlling KC_TRUSTSTORE_PATHS via the unsupported or the additional
-        varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
 
         setTracingEnvVars(keycloakCR, varMap);
 
@@ -484,11 +492,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         // watch the secrets used by secret key - we don't currently expect configmaps or watch the initial-admin
         TreeSet<String> serverConfigSecretsNames = envVars.stream().map(EnvVar::getValueFrom).filter(Objects::nonNull)
-                .map(EnvVarSource::getSecretKeyRef).filter(Objects::nonNull).map(SecretKeySelector::getName).collect(Collectors.toCollection(TreeSet::new));
+                .map(EnvVarSource::getSecretKeyRef).filter(Objects::nonNull).peek(s -> allSecrets.add(s.getName(), s.getOptional())).map(SecretKeySelector::getName).collect(Collectors.toCollection(TreeSet::new));
 
         Log.debugf("Found config secrets names: %s", serverConfigSecretsNames);
-
-        allSecrets.addAll(serverConfigSecretsNames);
     }
 
     private static void setTracingEnvVars(Keycloak keycloakCR, Map<String, EnvVar> varMap) {
@@ -629,8 +635,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         } else {
             Log.debug("Performing a recreate update - scaling down the stateful set");
 
-            // keep the old revision and image, mark as migrating, and scale down
-            CRDUtils.getRevision(actual).ifPresent(rev -> addUpdateRevisionAnnotation(rev, desired));
+            // keep the old revision, image, and hash, then mark as migrating, and scale down
+            addOrRemoveAnnotation(CRDUtils.getRevision(actual).orElse(null), Constants.KEYCLOAK_UPDATE_REVISION_ANNOTATION, desired);
+            addOrRemoveAnnotation(CRDUtils.getUpdateHash(actual).orElse(null), Constants.KEYCLOAK_UPDATE_HASH_ANNOTATION, desired);
             desired.getMetadata().getAnnotations().put(Constants.KEYCLOAK_MIGRATING_ANNOTATION, Boolean.TRUE.toString());
             desired.getSpec().setReplicas(0);
             var currentImage = RecreateOnImageChangeUpdateLogic.extractImage(actual);
@@ -641,6 +648,14 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     private static void addUpdateRevisionAnnotation(String revision, StatefulSet toUpdate) {
         toUpdate.getMetadata().getAnnotations().put(Constants.KEYCLOAK_UPDATE_REVISION_ANNOTATION, revision);
+    }
+
+    private static void addUpdateHashAnnotation(String hash, StatefulSet toUpdate) {
+        toUpdate.getMetadata().getAnnotations().put(Constants.KEYCLOAK_UPDATE_HASH_ANNOTATION, hash);
+    }
+
+    private static void addOrRemoveAnnotation(String value, String annotation, StatefulSet toUpdate) {
+        toUpdate.getMetadata().getAnnotations().compute(annotation, (k, v) -> value);
     }
 
     record ManagementEndpoint(String relativePath, String protocol, int port, String portName) {}

@@ -17,10 +17,11 @@
 
 package org.keycloak.models.sessions.infinispan.remote.transaction;
 
-import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.models.sessions.infinispan.changes.remote.remover.ConditionalRemover;
 import org.keycloak.models.sessions.infinispan.changes.remote.remover.EmptyConditionalRemover;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
+
+import org.infinispan.client.hotrod.RemoteCache;
 
 /**
  * Syntactic sugar for

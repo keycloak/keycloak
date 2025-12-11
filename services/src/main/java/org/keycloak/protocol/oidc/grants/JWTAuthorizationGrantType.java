@@ -16,13 +16,13 @@
  */
 
 package org.keycloak.protocol.oidc.grants;
+
 import jakarta.ws.rs.core.Response;
-import org.jboss.logging.Logger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
-import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.cache.AlternativeLookupProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -33,12 +33,13 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.JWTAuthorizationGrantContext;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -47,30 +48,23 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
-    private static final Logger logger = Logger.getLogger(JWTAuthorizationGrantType.class);
-
     @Override
     public Response process(Context context) {
         setContext(context);
 
         String assertion = formParams.getFirst(OAuth2Constants.ASSERTION);
-        String expectedAudience = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
-        JWTAuthorizationGrantValidationContext authorizationGrantContext = new JWTAuthorizationGrantValidationContext(assertion, client, expectedAudience);
 
         try {
+
+            JWTAuthorizationGrantValidator authorizationGrantContext = JWTAuthorizationGrantValidator.createValidator(
+                    context.getSession(), client, assertion, formParams.getFirst(OAuth2Constants.SCOPE));
+            event.detail(Details.IDENTITY_PROVIDER_ISSUER, authorizationGrantContext.getIssuer());
+            event.detail(Details.IDENTITY_PROVIDER_USER_ID, authorizationGrantContext.getSubject());
 
             //client must be confidential
             authorizationGrantContext.validateClient();
 
-            //validate assertion claim (grant_type already validated to select the grant type)
-            authorizationGrantContext.validateAssertionParameters();
-
-            //validate token is JWT and is valid (the signature is validated by the idp)
-            authorizationGrantContext.validateJWTFormat();
-            authorizationGrantContext.validateTokenActive();
-
             //mandatory claims
-            authorizationGrantContext.validateAudience();
             authorizationGrantContext.validateIssuer();
             authorizationGrantContext.validateSubject();
 
@@ -81,15 +75,25 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             if (identityProviderModel == null) {
                 throw new RuntimeException("No Identity Provider for provided issuer");
             }
+            event.detail(Details.IDENTITY_PROVIDER, identityProviderModel.getAlias());
 
             if(!OIDCAdvancedConfigWrapper.fromClientModel(context.getClient()).getJWTAuthorizationGrantAllowedIdentityProviders().contains(identityProviderModel.getAlias())) {
                 throw new RuntimeException("Identity Provider is not allowed for the client");
             }
 
-            UserAuthenticationIdentityProvider<?> identityProvider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel.getAlias());
-            if (!(identityProvider instanceof JWTAuthorizationGrantProvider jwtAuthorizationGrantProvider)) {
+            JWTAuthorizationGrantProvider jwtAuthorizationGrantProvider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel, JWTAuthorizationGrantProvider.class);
+            if (jwtAuthorizationGrantProvider == null) {
                 throw new RuntimeException("Identity Provider is not configured for JWT Authorization Grant");
             }
+
+            // assign the provider and perform validations associated to the jwt grant provider
+            authorizationGrantContext.validateTokenActive(jwtAuthorizationGrantProvider.getAllowedClockSkew(), jwtAuthorizationGrantProvider.getMaxAllowedExpiration(), jwtAuthorizationGrantProvider.isAssertionReuseAllowed());
+
+            // assign the signature alg and validate
+            authorizationGrantContext.validateSignatureAlgorithm(jwtAuthorizationGrantProvider.getAssertionSignatureAlg());
+
+            // Validate audience
+            authorizationGrantContext.validateTokenAudience(jwtAuthorizationGrantProvider.getAllowedAudienceForJWTGrant(), false);
 
             //validate the JWT assertion and get the brokered identity from the idp
             BrokeredIdentityContext brokeredIdentityContext = jwtAuthorizationGrantProvider.validateAuthorizationGrantAssertion(authorizationGrantContext);
@@ -103,20 +107,35 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             if (user == null) {
                 throw new RuntimeException("User not found");
             }
+            event.user(user);
+            event.detail(Details.USERNAME, user.getUsername());
 
-            String scopeParam = formParams.getFirst(OAuth2Constants.SCOPE);
-            //TODO: scopes processing
+            String scopeParam = getRequestedScopes();
 
-            UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteHost(), "authorization-grant", false, null, null);
+            try {
+                session.clientPolicy().triggerOnEvent(new JWTAuthorizationGrantContext(authorizationGrantContext, identityProviderModel));
+            } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+                event.error(cpe.getError());
+                throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+            }
+
             RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
             AuthenticationSessionModel authSession = createSessionModel(rootAuthSession, user, client, scopeParam);
-            ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, userSession, authSession);
+            UserSessionModel userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, user, user.getUsername(),
+                    clientConnection.getRemoteHost(), "authorization-grant", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
+            event.session(userSession);
+            ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, userSession,
+                    authSession, authorizationGrantContext.getRestrictedScopes(), false);
             return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, null);
-        }
-        catch (Exception e) {
+        } catch (CorsErrorResponseException e) {
+            throw e;
+        } catch (Exception e) {
             event.detail(Details.REASON, e.getMessage());
             event.error(Errors.INVALID_REQUEST);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, e.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -127,6 +146,11 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
         return authSession;
+    }
+
+    @Override
+    protected boolean useRefreshToken() {
+        return false; // jwt auth grant never generates the refresh token
     }
 
     @Override

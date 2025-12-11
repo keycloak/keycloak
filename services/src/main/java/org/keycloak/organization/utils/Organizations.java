@@ -17,18 +17,15 @@
 
 package org.keycloak.organization.utils;
 
-import static java.util.Optional.of;
-import static java.util.Optional.ofNullable;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
@@ -51,6 +48,9 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.sessions.AuthenticationSessionModel;
+
+import static java.util.Optional.of;
+import static java.util.Optional.ofNullable;
 
 public class Organizations {
 

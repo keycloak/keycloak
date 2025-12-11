@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.storage.database.jpa;
 
 import java.util.function.Supplier;
+
 import jakarta.persistence.EntityManagerFactory;
 
 public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnectionProviderFactory {

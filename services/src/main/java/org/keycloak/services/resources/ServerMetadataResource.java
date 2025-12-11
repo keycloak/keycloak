@@ -27,11 +27,14 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.ext.Provider;
-import org.jboss.logging.Logger;
+
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProviderFactory;
 import org.keycloak.protocol.oauth2.OAuth2WellKnownProviderFactory;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProviderFactory;
 import org.keycloak.services.cors.Cors;
+
+import org.jboss.logging.Logger;
+
 import static org.keycloak.utils.MediaType.APPLICATION_JWT;
 
 

@@ -17,13 +17,13 @@
 
 package org.keycloak.testsuite.webauthn.pages;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.WebElement;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.WebElement;
 
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
@@ -44,6 +44,11 @@ public class SigningInPage extends AbstractLoggedInPage {
     @Override
     public String getParentPageId() {
         return ACCOUNT_SECURITY_ID;
+    }
+
+    @Override
+    public String getTranslatedPageTitle() {
+        return "Signing in";
     }
 
     public CredentialType getCredentialType(String type) {
@@ -149,6 +154,10 @@ public class SigningInPage extends AbstractLoggedInPage {
 
         public String getHelpText() {
             return getTextFromElement(getItemElementByTestId(HELP));
+        }
+
+        public void navigateToUsingSidebar() {
+            SigningInPage.this.navigateToUsingSidebar();
         }
     }
 

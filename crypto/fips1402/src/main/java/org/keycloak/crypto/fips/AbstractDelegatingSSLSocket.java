@@ -28,7 +28,6 @@ import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.function.BiFunction;
-
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
@@ -315,4 +314,3 @@ abstract class AbstractDelegatingSSLSocket extends SSLSocket {
         return delegate;
     }
 }
-

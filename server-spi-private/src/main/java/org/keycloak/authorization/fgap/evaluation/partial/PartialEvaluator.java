@@ -17,8 +17,6 @@
 
 package org.keycloak.authorization.fgap.evaluation.partial;
 
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.isSkipEvaluation;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +28,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Policy;
@@ -44,6 +43,8 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ResourceType;
+
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.isSkipEvaluation;
 
 public final class PartialEvaluator {
 
@@ -65,12 +66,12 @@ public final class PartialEvaluator {
         }
 
         // collect the result from the partial evaluation so that the filters can be applied
-        PartialEvaluationContext context = runEvaluation(session, adminUser, resourceType, storage, builder, queryBuilder, path);
+        PartialEvaluationContext context = runEvaluation(session, adminUser, resourceType, null, storage, builder, queryBuilder, path);
 
         return buildPredicates(context);
     }
 
-    private PartialEvaluationContext runEvaluation(KeycloakSession session, UserModel adminUser, ResourceType resourceType, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
+    private PartialEvaluationContext runEvaluation(KeycloakSession session, UserModel adminUser, ResourceType resourceType, ResourceType groupResourceType, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
         Map<String, Map<String, PartialEvaluationContext>> cache = session.getAttributeOrDefault(PARTIAL_EVALUATION_CONTEXT_CACHE, Map.of());
 
         if (cache.getOrDefault(adminUser.getId(), Map.of()).containsKey(resourceType.getType())) {
@@ -87,7 +88,7 @@ public final class PartialEvaluator {
         List<PartialEvaluationPolicyProvider> policyProviders = getPartialEvaluationPolicyProviders(session);
 
         for (PartialEvaluationPolicyProvider policyProvider : policyProviders) {
-            policyProvider.getPermissions(session, resourceType, adminUser).forEach(permission -> {
+            policyProvider.getPermissions(session, resourceType, groupResourceType, adminUser).forEach(permission -> {
                 Set<String> ids = permission.getResourceNames();
                 Set<Policy> policies = permission.getAssociatedPolicies();
 
@@ -198,7 +199,7 @@ public final class PartialEvaluator {
                 return context;
             }
 
-            PartialEvaluationContext evaluateGroups = runEvaluation(session, adminUser, groupResourceType, storage, builder, queryBuilder, path);
+            PartialEvaluationContext evaluateGroups = runEvaluation(session, adminUser, groupResourceType, groupResourceType, storage, builder, queryBuilder, path);
             context.setAllowedGroups(evaluateGroups.getAllowedResources());
             context.setDeniedGroups(evaluateGroups.getDeniedResources());
         }

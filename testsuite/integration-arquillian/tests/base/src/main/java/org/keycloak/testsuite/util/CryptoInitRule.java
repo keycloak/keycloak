@@ -1,8 +1,9 @@
 package org.keycloak.testsuite.util;
 
-import org.junit.rules.ExternalResource;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
+
+import org.junit.rules.ExternalResource;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

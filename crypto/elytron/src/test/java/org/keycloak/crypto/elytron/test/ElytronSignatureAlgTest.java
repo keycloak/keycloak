@@ -15,8 +15,9 @@ import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.PSSParameterSpec;
 
-import org.junit.Test;
 import org.keycloak.crypto.KeyWrapper;
+
+import org.junit.Test;
 
 public class ElytronSignatureAlgTest {
 

@@ -19,8 +19,6 @@
 
 package org.keycloak.testsuite.validation;
 
-import static org.keycloak.validate.ValidatorConfig.configFromMap;
-
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
@@ -29,14 +27,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.userprofile.validator.MultiValueValidator;
 import org.keycloak.validate.AbstractSimpleValidator;
+import org.keycloak.validate.BuiltinValidators;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidationResult;
@@ -48,10 +45,13 @@ import org.keycloak.validate.validators.IntegerValidator;
 import org.keycloak.validate.validators.LengthValidator;
 import org.keycloak.validate.validators.OptionsValidator;
 import org.keycloak.validate.validators.PatternValidator;
-import org.keycloak.validate.BuiltinValidators;
 import org.keycloak.validate.validators.UriValidator;
 
 import com.google.common.collect.ImmutableMap;
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.keycloak.validate.ValidatorConfig.configFromMap;
 
 public class BuiltinValidatorsTest extends AbstractKeycloakTest {
 

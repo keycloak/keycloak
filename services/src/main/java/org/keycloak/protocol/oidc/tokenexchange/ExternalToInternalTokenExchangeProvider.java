@@ -19,7 +19,11 @@
 
 package org.keycloak.protocol.oidc.tokenexchange;
 
+import java.util.Arrays;
+import java.util.List;
+
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -31,9 +35,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.UserSessionManager;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Provider for external-internal token exchange

@@ -16,10 +16,10 @@
  */
 package org.keycloak.scripting;
 
+import javax.script.ScriptEngine;
+
 import org.keycloak.models.ScriptModel;
 import org.keycloak.provider.Provider;
-
-import javax.script.ScriptEngine;
 
 /**
  * A {@link Provider} than provides Scripting capabilities.

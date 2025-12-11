@@ -4,13 +4,13 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.injection.AbstractInterceptorHelper;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.Registry;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierHelpers;
 import org.keycloak.testframework.injection.SupplierOrder;
-import org.keycloak.testframework.injection.AbstractInterceptorHelper;
 import org.keycloak.testframework.server.KeycloakServer;
 
 public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {

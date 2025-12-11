@@ -16,7 +16,6 @@
  */
 package org.keycloak.models.jpa;
 
-import jakarta.persistence.criteria.JoinType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,19 +29,23 @@ import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.MapJoin;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import org.hibernate.Session;
-import org.jboss.logging.Logger;
+
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.broker.provider.util.IdentityProviderTypeUtil;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.models.IdentityProviderShowInAccountConsole;
 import org.keycloak.models.IdentityProviderStorageProvider;
-import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
@@ -50,6 +53,9 @@ import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.utils.StringUtil;
+
+import org.hibernate.Session;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.models.IdentityProviderModel.ALIAS;
 import static org.keycloak.models.IdentityProviderModel.ALIAS_NOT_IN;
@@ -218,16 +224,27 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
     }
 
     @Override
-    public Stream<IdentityProviderModel> getAllStream(Map<String, String> attrs, Integer first, Integer max) {
+    public Stream<IdentityProviderModel> getAllStream(IdentityProviderQuery query, Integer first, Integer max) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
-        CriteriaQuery<IdentityProviderEntity> query = builder.createQuery(IdentityProviderEntity.class);
-        Root<IdentityProviderEntity> idp = query.from(IdentityProviderEntity.class);
+        CriteriaQuery<IdentityProviderEntity> cq = builder.createQuery(IdentityProviderEntity.class);
+        Root<IdentityProviderEntity> idp = cq.from(IdentityProviderEntity.class);
 
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(builder.equal(idp.get("realmId"), getRealm().getId()));
 
-        if (attrs != null) {
-            for (Map.Entry<String, String> entry : attrs.entrySet()) {
+        List<String> includedProviderFactories = null;
+        if (query.getType() != null && query.getType() != IdentityProviderType.ANY) {
+            includedProviderFactories = IdentityProviderTypeUtil.listFactoriesByType(session, query.getType());
+        } else if (query.getCapability() != null) {
+            includedProviderFactories = IdentityProviderTypeUtil.listFactoriesByCapability(session, query.getCapability());
+        }
+
+        if (includedProviderFactories != null) {
+            predicates.add(builder.in(idp.get("providerId")).value(includedProviderFactories));
+        }
+
+        if (query.getOptions() != null) {
+            for (Map.Entry<String, String> entry : query.getOptions().entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
                 if (StringUtil.isBlank(key)) {
@@ -238,10 +255,11 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
                     case ENABLED:
                     case HIDE_ON_LOGIN:
                     case LINK_ONLY: {
+                        Path<Boolean> path = idp.get(key);
                         if (Boolean.parseBoolean(value)) {
-                            predicates.add(builder.isTrue(idp.get(key)));
+                            predicates.add(builder.isTrue(path));
                         } else {
-                            predicates.add(builder.isFalse(idp.get(key)));
+                            predicates.add(builder.or(builder.isNull(path), builder.equal(path, Boolean.FALSE)));
                         }
                         break;
                     }
@@ -290,8 +308,8 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
             }
         }
 
-        query.orderBy(builder.asc(idp.get(ALIAS)));
-        TypedQuery<IdentityProviderEntity> typedQuery = em.createQuery(query.select(idp).where(predicates.toArray(Predicate[]::new)));
+        cq.orderBy(builder.asc(idp.get(ALIAS)));
+        TypedQuery<IdentityProviderEntity> typedQuery = em.createQuery(cq.select(idp).where(predicates.toArray(Predicate[]::new)));
         return closing(paginateQuery(typedQuery, first, max).getResultStream()).map(this::toModel);
     }
 

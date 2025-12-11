@@ -1,12 +1,12 @@
 package org.keycloak.testframework.events;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class AdminEventsParser {
 

@@ -1,10 +1,10 @@
 package org.keycloak.testframework.config;
 
-import org.eclipse.microprofile.config.spi.ConfigSource;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import org.eclipse.microprofile.config.spi.ConfigSource;
 
 public class SuiteConfigSource implements ConfigSource {
 

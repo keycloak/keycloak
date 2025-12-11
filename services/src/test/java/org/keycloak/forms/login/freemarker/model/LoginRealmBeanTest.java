@@ -17,11 +17,12 @@
 
 package org.keycloak.forms.login.freemarker.model;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.lang.reflect.Proxy;
+
 import org.keycloak.models.RealmModel;
 
-import java.lang.reflect.Proxy;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class LoginRealmBeanTest {
 

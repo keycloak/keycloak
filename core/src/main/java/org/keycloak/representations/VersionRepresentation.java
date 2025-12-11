@@ -17,8 +17,9 @@
 
 package org.keycloak.representations;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.common.Version;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

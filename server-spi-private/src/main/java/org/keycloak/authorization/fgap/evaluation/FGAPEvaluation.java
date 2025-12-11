@@ -17,8 +17,6 @@
 
 package org.keycloak.authorization.fgap.evaluation;
 
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.SCHEMA;
-
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -32,6 +30,8 @@ import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.Realm;
+
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.SCHEMA;
 
 class FGAPEvaluation implements Evaluation {
 

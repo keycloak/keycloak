@@ -20,8 +20,6 @@ package org.keycloak.testsuite.oidc;
 import java.util.Arrays;
 import java.util.Collection;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
 import org.keycloak.events.Details;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
@@ -34,6 +32,9 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

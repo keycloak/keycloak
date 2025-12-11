@@ -1,5 +1,8 @@
 package org.keycloak.protocol.oidc.mappers;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
@@ -14,9 +17,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.LogoutToken;
-
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Set the 'sub' claim to pairwise .

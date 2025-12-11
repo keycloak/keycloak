@@ -23,13 +23,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
+import org.keycloak.models.sessions.infinispan.remote.transaction.SingleUseObjectTransaction;
+
 import org.infinispan.client.hotrod.Flag;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.jboss.logging.Logger;
-import org.keycloak.models.SingleUseObjectProvider;
-import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
-import org.keycloak.models.sessions.infinispan.remote.transaction.SingleUseObjectTransaction;
 
 public class RemoteInfinispanSingleUseObjectProvider implements SingleUseObjectProvider {
 

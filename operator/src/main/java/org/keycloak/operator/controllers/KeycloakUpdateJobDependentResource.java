@@ -17,6 +17,7 @@
 
 package org.keycloak.operator.controllers;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -25,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.ContextUtils;
@@ -36,6 +37,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 
 import io.fabric8.kubernetes.api.model.ContainerFluent;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
@@ -49,7 +51,6 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
-import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentResource<Job, Keycloak> {
@@ -116,10 +117,14 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     }
 
     private static ObjectMeta createMetadata(String name, Keycloak keycloak) {
+        var labels = new HashMap<String ,String>();
+        var optionalSpec = Optional.ofNullable(keycloak.getSpec().getUpdateSpec());
+        optionalSpec.map(UpdateSpec::getLabels).ifPresent(labels::putAll);
         var builder = new ObjectMetaBuilder();
         builder.withName(name)
                 .withNamespace(keycloak.getMetadata().getNamespace())
-                .withLabels(getLabels(keycloak))
+                .addToLabels(labels)
+                .addToLabels(getLabels(keycloak))
                 .withAnnotations(Map.of(KEYCLOAK_CR_HASH_ANNOTATION, keycloakHash(keycloak)));
         return builder.build();
     }
@@ -219,7 +224,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         return Stream.concat(updateArgs.stream(), currentArgs.stream().filter(arg -> !arg.equals("start"))).toList();
     }
 
-    static String keycloakHash(Keycloak keycloak) {
+    public static String keycloakHash(Keycloak keycloak) {
         return Utils.hash(
                 List.of(new KeycloakSpecBuilder(keycloak.getSpec()).withInstances(null).withLivenessProbeSpec(null)
                         .withStartupProbeSpec(null).withReadinessProbeSpec(null).withResourceRequirements(null)

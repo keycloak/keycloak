@@ -16,10 +16,10 @@
  */
 package org.keycloak.models.cache.infinispan.entities;
 
-import org.keycloak.models.RealmModel;
-
 import java.util.HashMap;
 import java.util.List;
+
+import org.keycloak.models.RealmModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

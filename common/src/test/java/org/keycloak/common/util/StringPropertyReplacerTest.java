@@ -19,7 +19,6 @@
 package org.keycloak.common.util;
 
 import java.security.NoSuchAlgorithmException;
-
 import java.util.Map;
 
 import org.junit.Assert;

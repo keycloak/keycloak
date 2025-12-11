@@ -16,12 +16,13 @@
  */
 package org.keycloak.sdjwt;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.IOException;
 
-import org.junit.Test;
 import org.keycloak.jose.jws.crypto.HashUtils;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>

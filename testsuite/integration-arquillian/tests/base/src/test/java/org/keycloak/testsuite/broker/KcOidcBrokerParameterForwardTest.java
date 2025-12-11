@@ -1,13 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -20,6 +12,15 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
+
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
+import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KcOidcBrokerParameterForwardTest extends AbstractBrokerTest {
 
@@ -50,11 +51,11 @@ public class KcOidcBrokerParameterForwardTest extends AbstractBrokerTest {
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
 
-        String claimsValue = "{\"userinfo\":{\"http://itsme.services/v2/claim/BENationalNumber\":null}}";
+        String claimsValue = "{\"userinfo\":{\"http://itsme.services/v2/claim/BENationalNumber\":null,\"spaced_value\":\"with space\"}}";
         String urlEncodedClaims = URLEncoder.encode(claimsValue, StandardCharsets.UTF_8);
         String forwardedEncodedParam = "forwarded_encoded";
         String forwardedEncodedParamValue = "encoded value";
-        String forwardedEncodedParamvalueEncoded = URLEncoder.encode(forwardedEncodedParamValue, StandardCharsets.UTF_8);
+        String forwardedEncodedParamValueEncoded = URLEncoder.encode(forwardedEncodedParamValue, StandardCharsets.UTF_8);
         String queryString = "&" + FORWARDED_PARAMETER + "=" + FORWARDED_PARAMETER_VALUE + "&" + PARAMETER_NOT_FORWARDED + "=" + "value"
                 + "&" + OAuth2Constants.ACR_VALUES + "=" + "phr"
                 + "&" + OIDCLoginProtocol.CLAIMS_PARAM + "=" + urlEncodedClaims
@@ -76,7 +77,7 @@ public class KcOidcBrokerParameterForwardTest extends AbstractBrokerTest {
         assertThat(OIDCLoginProtocol.CLAIMS_PARAM + "=" + urlEncodedClaims + " should be part of the url",
                 driver.getCurrentUrl(), containsString(OIDCLoginProtocol.CLAIMS_PARAM + "=" + urlEncodedClaims));
         assertThat(forwardedEncodedParam + "=" + forwardedEncodedParamValue +  "should be part of the url",
-                driver.getCurrentUrl(), containsString(forwardedEncodedParam + "=" + URLEncoder.encode(forwardedEncodedParamvalueEncoded, StandardCharsets.UTF_8)));
+                driver.getCurrentUrl(), containsString(forwardedEncodedParam + "=" + forwardedEncodedParamValueEncoded));
         assertThat("\"" + PARAMETER_NOT_SET + "\"" + " should NOT be part of the url",
                 driver.getCurrentUrl(), not(containsString(PARAMETER_NOT_SET)));
 

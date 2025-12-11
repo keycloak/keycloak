@@ -16,17 +16,33 @@
  */
 package org.keycloak.testsuite;
 
-import io.undertow.Undertow;
-import io.undertow.Undertow.Builder;
-import io.undertow.servlet.Servlets;
-import io.undertow.servlet.api.DefaultServletConfig;
-import io.undertow.servlet.api.DeploymentInfo;
-import io.undertow.servlet.api.FilterInfo;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.core.ResteasyDeploymentImpl;
-import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
-import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
-import org.jboss.resteasy.spi.ResteasyDeployment;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.KeyStore;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.Filter;
+
 import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
 import org.keycloak.authorization.policy.provider.PolicySpi;
@@ -55,35 +71,21 @@ import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resteasy.ResteasyKeycloakApplication;
 import org.keycloak.testsuite.util.cli.TestsuiteCLI;
 import org.keycloak.util.JsonSerialization;
+
+import io.undertow.Undertow;
+import io.undertow.Undertow.Builder;
+import io.undertow.servlet.Servlets;
+import io.undertow.servlet.api.DefaultServletConfig;
+import io.undertow.servlet.api.DeploymentInfo;
+import io.undertow.servlet.api.FilterInfo;
 import io.undertow.servlet.api.InstanceHandle;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.core.ResteasyDeploymentImpl;
+import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
+import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
+import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.xnio.Options;
 import org.xnio.SslClientAuthMode;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import jakarta.servlet.DispatcherType;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.KeyStore;
-import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.function.Function;
-import java.util.stream.Stream;
-import jakarta.servlet.Filter;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

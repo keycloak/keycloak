@@ -6,7 +6,6 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-
 import io.fabric8.generator.annotation.Default;
 import io.sundr.builder.annotations.Buildable;
 

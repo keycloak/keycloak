@@ -17,9 +17,6 @@
 
 package org.keycloak.common.util;
 
-import org.keycloak.common.constants.GenericConstants;
-import org.keycloak.common.crypto.CryptoIntegration;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -30,6 +27,9 @@ import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+
+import org.keycloak.common.constants.GenericConstants;
+import org.keycloak.common.crypto.CryptoIntegration;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -17,13 +17,13 @@
 
 package org.keycloak.theme;
 
-import org.keycloak.models.RealmModel;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Locale;
 import java.util.Properties;
+
+import org.keycloak.models.RealmModel;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -1,10 +1,10 @@
 package org.keycloak.testframework.realm;
 
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.representations.idm.RealmRepresentation;
-
 import java.util.LinkedList;
 import java.util.List;
+
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 public class ManagedRealmCleanup {
 

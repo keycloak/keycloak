@@ -17,9 +17,9 @@
 
 package org.keycloak.testsuite.webauthn.updaters;
 
-import org.keycloak.admin.client.resource.RealmResource;
-
 import java.util.List;
+
+import org.keycloak.admin.client.resource.RealmResource;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>

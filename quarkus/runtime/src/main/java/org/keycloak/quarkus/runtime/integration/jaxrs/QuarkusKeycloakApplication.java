@@ -17,6 +17,9 @@
 
 package org.keycloak.quarkus.runtime.integration.jaxrs;
 
+import jakarta.enterprise.event.Observes;
+import jakarta.ws.rs.ApplicationPath;
+
 import org.keycloak.config.BootstrapAdminOptions;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -34,8 +37,6 @@ import org.keycloak.utils.StringUtil;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import io.smallrye.common.annotation.Blocking;
-import jakarta.enterprise.event.Observes;
-import jakarta.ws.rs.ApplicationPath;
 
 @ApplicationPath("/")
 @Blocking

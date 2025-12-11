@@ -17,11 +17,12 @@
 
 package org.keycloak.testsuite.adapter.page;
 
-import org.jboss.arquillian.test.api.ArquillianResource;
+import java.net.URL;
+
 import org.keycloak.testsuite.arquillian.annotation.AppServerBrowserContext;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 
-import java.net.URL;
+import org.jboss.arquillian.test.api.ArquillianResource;
 
 /**
  *

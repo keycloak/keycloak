@@ -4,10 +4,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.WorkflowEvent;
 
-public class EventEvaluator extends ConditionEvaluator {
+public class EventEvaluator extends AbstractBooleanEvaluator {
+
+    private final WorkflowEvent event;
 
     public EventEvaluator(KeycloakSession session, WorkflowEvent event) {
-        super(session, event);
+        this.event = event;
     }
 
     @Override
@@ -15,6 +17,6 @@ public class EventEvaluator extends ConditionEvaluator {
         String name = ctx.Identifier().getText();
         ResourceOperationType operation = ResourceOperationType.valueOf(name.replace("-", "_").toUpperCase());
         String param = super.extractParameter(ctx.parameter());
-        return operation.test(super.event, param);
+        return operation.test(event, param);
     }
 }

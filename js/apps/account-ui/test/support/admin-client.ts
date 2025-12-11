@@ -3,7 +3,7 @@ import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/us
 import { ADMIN_PASSWORD, ADMIN_USERNAME, SERVER_URL } from "./common.ts";
 
 export const adminClient = new AdminClient({
-  baseUrl: SERVER_URL.toString(),
+  baseUrl: SERVER_URL,
 });
 
 await adminClient.auth({

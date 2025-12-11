@@ -17,7 +17,30 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+
 import jakarta.ws.rs.core.HttpHeaders;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
+import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialRequest;
+import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
@@ -25,32 +48,14 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
-import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
-import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
-import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
-import org.keycloak.protocol.oid4vc.model.CredentialRequest;
-import org.keycloak.protocol.oid4vc.model.CredentialResponse;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
-import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
-import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.util.JsonSerialization;
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.apache.http.entity.StringEntity;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Base class for authorization code flow tests with authorization details and claims validation.
@@ -60,14 +65,11 @@ import static org.junit.Assert.*;
  */
 public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEndpointTest {
 
-    public static final String OPENID_CREDENTIAL_TYPE = "openid_credential";
-
     /**
      * Test context for OID4VC tests
      */
     protected static class Oid4vcTestContext {
         public CredentialIssuer credentialIssuer;
-        public CredentialsOffer credentialsOffer;
         public OIDCConfigurationRepresentation openidConfig;
     }
 
@@ -89,11 +91,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     /**
      * Prepare OID4VC test context by fetching issuer metadata and credential offer
      */
-    protected Oid4vcTestContext prepareOid4vcTestContext(String token) throws Exception {
+    protected Oid4vcTestContext prepareOid4vcTestContext() throws Exception {
         Oid4vcTestContext ctx = new Oid4vcTestContext();
 
         // Get credential issuer metadata
-        HttpGet getCredentialIssuer = new HttpGet(getRealmPath(TEST_REALM_NAME) + "/.well-known/openid-credential-issuer");
+        HttpGet getCredentialIssuer = new HttpGet(getRealmMetadataPath(TEST_REALM_NAME));
         try (CloseableHttpResponse response = httpClient.execute(getCredentialIssuer)) {
             assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
             String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
@@ -111,9 +113,33 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         return ctx;
     }
 
+    // Test for the whole authorization_code flow with the credentialRequest using credential_configuration_id
     @Test
-    public void testCompleteFlowWithClaimsValidationAuthorizationCode() throws Exception {
-        Oid4vcTestContext ctx = prepareOid4vcTestContext(null);
+    public void testCompleteFlowWithClaimsValidationAuthorizationCode_credentialRequestWithConfigurationId() throws Exception {
+        BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
+            CredentialRequest credentialRequest = new CredentialRequest();
+            credentialRequest.setCredentialConfigurationId(credentialConfigurationId);
+            return credentialRequest;
+        };
+
+        testCompleteFlowWithClaimsValidationAuthorizationCode(credRequestSupplier);
+    }
+
+    // Test for the whole authorization_code flow with the credentialRequest using credential_identifier
+    @Test
+    public void testCompleteFlowWithClaimsValidationAuthorizationCode_credentialRequestWithCredentialIdentifier() throws Exception {
+        BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
+            CredentialRequest credentialRequest = new CredentialRequest();
+            credentialRequest.setCredentialIdentifier(credentialIdentifier);
+            return credentialRequest;
+        };
+
+        testCompleteFlowWithClaimsValidationAuthorizationCode(credRequestSupplier);
+    }
+
+
+    private void testCompleteFlowWithClaimsValidationAuthorizationCode(BiFunction<String, String, CredentialRequest> credentialRequestSupplier) throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
         // Perform authorization code flow to get authorization code
         oauth.client(client.getClientId());
@@ -129,7 +155,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Construct claim path based on credential format
         List<Object> claimPath;
         if ("sd_jwt_vc".equals(getCredentialFormat())) {
-            claimPath = Arrays.asList(getExpectedClaimPath());
+            claimPath = Collections.singletonList(getExpectedClaimPath());
         } else {
             claimPath = Arrays.asList("credentialSubject", getExpectedClaimPath());
         }
@@ -137,9 +163,9 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         claim.setMandatory(true);
 
         AuthorizationDetail authDetail = new AuthorizationDetail();
-        authDetail.setType(OPENID_CREDENTIAL_TYPE);
+        authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID));
-        authDetail.setClaims(Arrays.asList(claim));
+        authDetail.setClaims(List.of(claim));
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
         List<AuthorizationDetail> authDetails = List.of(authDetail);
@@ -153,7 +179,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         tokenParameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
         tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
         tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, "password"));
-        tokenParameters.add(new BasicNameValuePair("authorization_details", authDetailsJson));
+        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.AUTHORIZATION_DETAILS, authDetailsJson));
         UrlEncodedFormEntity tokenFormEntity = new UrlEncodedFormEntity(tokenParameters, StandardCharsets.UTF_8);
         postToken.setEntity(tokenFormEntity);
 
@@ -173,16 +199,21 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         assertNotNull("Credential identifiers should be present", authDetailResponse.getCredentialIdentifiers());
         assertEquals(1, authDetailResponse.getCredentialIdentifiers().size());
 
-        String credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
-        assertNotNull("Credential identifier should not be null", credentialIdentifier);
+        String credentialConfigurationId = authDetailResponse.getCredentialConfigurationId();
+        assertNotNull("Credential configuration id should not be null", credentialConfigurationId);
+
+        List<String> credentialIdentifiers = authDetailResponse.getCredentialIdentifiers();
+        assertNotNull("Credential identifiers should not be null", credentialIdentifiers);
+        assertEquals("Credential identifiers expected to have 1 item. It had " + credentialIdentifiers.size() + " with value " + credentialIdentifiers,
+                1, credentialIdentifiers.size());
+        String credentialIdentifier = credentialIdentifiers.get(0);
 
         // Request the actual credential using the identifier
         HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
         postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + tokenResponse.getToken());
         postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
-        CredentialRequest credentialRequest = new CredentialRequest();
-        credentialRequest.setCredentialIdentifier(credentialIdentifier);
+        CredentialRequest credentialRequest = credentialRequestSupplier.apply(credentialConfigurationId, credentialIdentifier);
 
         String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
         postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));
@@ -225,8 +256,9 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     protected List<OID4VCAuthorizationDetailsResponse> parseAuthorizationDetails(String responseBody) {
         try {
             // Parse the JSON response to extract authorization_details
-            Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, Map.class);
-            Object authDetailsObj = responseMap.get("authorization_details");
+            Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, new TypeReference<>() {
+            });
+            Object authDetailsObj = responseMap.get(OAuth2Constants.AUTHORIZATION_DETAILS);
 
             if (authDetailsObj == null) {
                 return Collections.emptyList();
@@ -234,7 +266,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
             // Convert to list of OID4VCAuthorizationDetailsResponse
             return JsonSerialization.readValue(JsonSerialization.writeValueAsString(authDetailsObj),
-                    new TypeReference<List<OID4VCAuthorizationDetailsResponse>>() {
+                    new TypeReference<>() {
                     });
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse authorization_details from response", e);

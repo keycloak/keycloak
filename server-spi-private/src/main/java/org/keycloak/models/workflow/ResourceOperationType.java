@@ -11,8 +11,10 @@ import org.keycloak.models.FederatedIdentityModel.FederatedIdentityCreatedEvent;
 import org.keycloak.models.FederatedIdentityModel.FederatedIdentityRemovedEvent;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.GroupMemberJoinEvent;
+import org.keycloak.models.GroupModel.GroupMemberLeaveEvent;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleModel.RoleGrantedEvent;
+import org.keycloak.models.RoleModel.RoleRevokedEvent;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderEvent;
 
@@ -21,7 +23,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.GROUP_PATH_SEPARATOR;
 public enum ResourceOperationType {
 
     USER_ADDED(List.of(OperationType.CREATE, EventType.REGISTER)),
-    USER_LOGGED_IN(List.of(EventType.LOGIN), userLoginPredicate()),
+    USER_AUTHENTICATED(List.of(EventType.LOGIN), userLoginPredicate()),
     USER_FEDERATED_IDENTITY_ADDED(List.of(FederatedIdentityCreatedEvent.class), fedIdentityPredicate()),
     USER_FEDERATED_IDENTITY_REMOVED(List.of(FederatedIdentityRemovedEvent.class), fedIdentityPredicate()),
     USER_GROUP_MEMBERSHIP_ADDED(List.of(GroupMemberJoinEvent.class), groupMembershipPredicate()),
@@ -70,7 +72,10 @@ public enum ResourceOperationType {
     }
 
     public String getResourceId(ProviderEvent event) {
-        if (event instanceof  GroupMemberJoinEvent gme) {
+        if (event instanceof GroupMemberJoinEvent gme) {
+            return gme.getUser().getId();
+        }
+        if (event instanceof GroupMemberLeaveEvent gme) {
             return gme.getUser().getId();
         }
         if (event instanceof FederatedIdentityModel.FederatedIdentityCreatedEvent fie) {
@@ -79,10 +84,10 @@ public enum ResourceOperationType {
         if (event instanceof FederatedIdentityModel.FederatedIdentityRemovedEvent fie) {
             return fie.getUser().getId();
         }
-        if (event instanceof RoleModel.RoleGrantedEvent rge) {
+        if (event instanceof RoleGrantedEvent rge) {
             return rge.getUser().getId();
         }
-        if (event instanceof RoleModel.RoleRevokedEvent rre) {
+        if (event instanceof RoleRevokedEvent rre) {
             return rre.getUser().getId();
         }
         return null;

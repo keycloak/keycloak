@@ -17,15 +17,17 @@
 
 package org.keycloak.tests.admin;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.BadRequestException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.resource.ClientInitialAccessResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
@@ -42,8 +44,9 @@ import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -153,8 +156,7 @@ public class InitialAccessTokenResourceTest {
         runOnServer.run(session -> {
             RealmModel realm = session.realms().getRealm(realmUuid);
 
-            session.sessions().removeExpired(realm);
-            session.authenticationSessions().removeExpired(realm);
+            session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
             session.realms().removeExpiredClientInitialAccess();
         });
     }

@@ -1,7 +1,9 @@
 package org.keycloak.testsuite.cli.admin;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.models.IdentityProviderModel;
@@ -10,9 +12,8 @@ import org.keycloak.testsuite.cli.KcAdmExec;
 import org.keycloak.testsuite.util.TempFileResource;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
+import org.junit.Assert;
+import org.junit.Test;
 
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 
@@ -55,7 +56,7 @@ public class KcAdmCreateTest extends AbstractAdmCliTest {
         }
 
         // If the sync mode is not present on creating the idp, it will never be stored automatically. However, the model will always report behaviour as "LEGACY", so no errors should occur.
-        Assert.assertEquals("LEGACY", realmResource.identityProviders().get("idpAlias").toRepresentation().getConfig().get(IdentityProviderModel.SYNC_MODE));
+        Assert.assertNull(realmResource.identityProviders().get("idpAlias").toRepresentation().getConfig().get(IdentityProviderModel.SYNC_MODE));
     }
 
     @Test

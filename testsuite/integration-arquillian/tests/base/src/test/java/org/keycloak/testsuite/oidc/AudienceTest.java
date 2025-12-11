@@ -17,8 +17,12 @@
 
 package org.keycloak.testsuite.oidc;
 
-import org.junit.Before;
-import org.junit.Test;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -36,10 +40,8 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import jakarta.ws.rs.core.Response;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Test for the 'aud' claim in tokens

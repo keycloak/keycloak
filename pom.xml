@@ -45,8 +45,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.27.0</quarkus.version>
-        <quarkus.build.version>3.27.0</quarkus.build.version>
+        <quarkus.version>3.27.1</quarkus.version>
+        <quarkus.build.version>3.27.1</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -92,6 +92,7 @@
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
         <infinispan.version>15.0.19.Final</infinispan.version>
+        <hibernate-validator.version>9.0.1.Final</hibernate-validator.version>
         <protostream.version>5.0.14.Final</protostream.version> <!-- For the annotation processor: keep in sync with the version shipped with Infinispan -->
         <protostream.plugin.version>${protostream.version}</protostream.plugin.version>
 
@@ -157,7 +158,7 @@
         <mysql.version>8.4</mysql.version>
         <mysql.container>mirror.gcr.io/mysql:${mysql.version}</mysql.container>
         <mysql-jdbc.version>8.3.0</mysql-jdbc.version>
-        <postgresql.version>17</postgresql.version>
+        <postgresql.version>18</postgresql.version>
         <postgresql.container>mirror.gcr.io/postgres:${postgresql.version}</postgresql.container>
         <aurora-postgresql.version>17.5</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.5.6</aws-jdbc-wrapper.version>
@@ -168,7 +169,7 @@
         <mssql.version>2022</mssql.version>
         <mssql.container>mcr.microsoft.com/mssql/server:${mssql.version}-latest</mssql.container>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
-        <mssql-jdbc.version>13.2.0.jre11</mssql-jdbc.version>
+        <mssql-jdbc.version>13.2.1.jre11</mssql-jdbc.version>
         <oracledb.version>23.5</oracledb.version>
         <oracledb.container>mirror.gcr.io/gvenzl/oracle-free:${oracledb.version}-slim-faststart</oracledb.container>
         <!-- this is the oracle driver version also used in the Quarkus BOM -->
@@ -227,6 +228,8 @@
 
         <!-- Used to test SAML Galleon feature-pack layers discovery -->
         <version.org.wildfly.glow>1.0.0.Alpha8</version.org.wildfly.glow>
+
+        <org.mapstruct.version>1.6.3</org.mapstruct.version>
 
         <!-- Galleon -->
         <galleon.fork.embedded>true</galleon.fork.embedded>
@@ -398,6 +401,11 @@
                 <groupId>org.glassfish.jaxb</groupId>
                 <artifactId>xsom</artifactId>
                 <version>${org.glassfish.jaxb.xsom.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct</artifactId>
+                <version>${org.mapstruct.version}</version>
             </dependency>
 
             <dependency>
@@ -590,6 +598,11 @@
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>${h2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate.validator</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>${hibernate-validator.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate.orm</groupId>
@@ -1129,6 +1142,16 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-admin-v2-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-admin-v2-rest</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-wildfly-modules</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
@@ -1526,6 +1549,10 @@
                     <configuration>
                         <java>
                             <removeUnusedImports />
+                            <forbidWildcardImports />
+                            <importOrder>
+                                <order>java|javax,jakarta,org.keycloak,,\#java|javax,\#jakarta,\#org.keycloak,\#</order>
+                            </importOrder>
                         </java>
                     </configuration>
                 </plugin>

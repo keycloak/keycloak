@@ -1,20 +1,5 @@
 package org.keycloak.authentication.authenticators.client;
 
-import org.jboss.logging.Logger;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.authentication.ClientAuthenticationFlowContext;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.services.x509.X509ClientCertificateLookup;
-
-import javax.security.auth.x500.X500Principal;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -26,6 +11,23 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.security.auth.x500.X500Principal;
+
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.services.x509.X509ClientCertificateLookup;
+
+import org.jboss.logging.Logger;
 
 public class X509ClientAuthenticator extends AbstractClientAuthenticator {
 

@@ -16,9 +16,6 @@
  */
 package org.keycloak.userprofile.validator;
 
-import static org.keycloak.validate.validators.ValidatorConfigValidator.MESSAGE_CONFIG_INVALID_NUMBER_VALUE;
-import static org.keycloak.validate.validators.ValidatorConfigValidator.MESSAGE_CONFIG_MISSING_VALUE;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -39,6 +36,9 @@ import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidationResult;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.ValidatorConfigValidator;
+
+import static org.keycloak.validate.validators.ValidatorConfigValidator.MESSAGE_CONFIG_INVALID_NUMBER_VALUE;
+import static org.keycloak.validate.validators.ValidatorConfigValidator.MESSAGE_CONFIG_MISSING_VALUE;
 
 public class MultiValueValidator implements SimpleValidator, ConfiguredProvider {
 

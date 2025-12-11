@@ -17,17 +17,18 @@
 
 package org.keycloak.testsuite.webauthn.utils;
 
-import com.webauthn4j.converter.util.CborConverter;
-import com.webauthn4j.converter.util.ObjectConverter;
-import com.webauthn4j.data.attestation.authenticator.COSEKey;
+import java.io.Serializable;
+
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.SubjectCredentialManager;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 
-import java.io.Serializable;
+import com.webauthn4j.converter.util.CborConverter;
+import com.webauthn4j.converter.util.ObjectConverter;
+import com.webauthn4j.data.attestation.authenticator.COSEKey;
 
 import static org.keycloak.models.credential.WebAuthnCredentialModel.createFromCredentialModel;
 

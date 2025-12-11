@@ -1,15 +1,16 @@
 package org.keycloak.testframework.server;
 
-import io.quarkus.maven.dependency.Dependency;
-import org.keycloak.Keycloak;
-import org.keycloak.common.Version;
-import org.keycloak.platform.Platform;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
+
+import org.keycloak.Keycloak;
+import org.keycloak.common.Version;
+import org.keycloak.platform.Platform;
+
+import io.quarkus.maven.dependency.Dependency;
 
 public class EmbeddedKeycloakServer implements KeycloakServer {
 

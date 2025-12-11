@@ -20,11 +20,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.marshalling.Marshalling;
+
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.keycloak.cluster.ClusterEvent;
-import org.keycloak.marshalling.Marshalling;
 
 /**
  *

@@ -1,9 +1,9 @@
 package org.keycloak.testframework.realm;
 
-import org.keycloak.representations.idm.RoleRepresentation;
-
 import java.util.List;
 import java.util.Map;
+
+import org.keycloak.representations.idm.RoleRepresentation;
 
 public class RoleConfigBuilder {
 

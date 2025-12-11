@@ -16,15 +16,16 @@
  */
 package org.keycloak.protocol.oid4vc.utils;
 
-import org.jboss.logging.Logger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.utils.StringUtil;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Objects;
+import org.jboss.logging.Logger;
 
 /**
  * Utility class for handling claims path pointers.

@@ -17,8 +17,6 @@
 
 package org.keycloak.operator.crds.v2alpha1.deployment;
 
-import org.keycloak.operator.Utils;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +25,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.keycloak.operator.Utils;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>

@@ -17,15 +17,6 @@
 
 package org.keycloak.protocol;
 
-import org.keycloak.models.ClientSessionContext;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
-import org.keycloak.services.util.DPoPUtil;
-
 import java.lang.reflect.Method;
 import java.util.AbstractMap;
 import java.util.Comparator;
@@ -34,6 +25,15 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+
+import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.services.util.DPoPUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

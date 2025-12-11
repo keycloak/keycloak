@@ -1,6 +1,5 @@
 package org.keycloak.testframework.infinispan;
 
-import org.jboss.logging.Logger;
 import org.keycloak.testframework.annotations.InjectInfinispanServer;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
@@ -8,6 +7,8 @@ import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierOrder;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfigInterceptor;
+
+import org.jboss.logging.Logger;
 
 public class InfinispanExternalServerSupplier implements Supplier<InfinispanServer, InjectInfinispanServer>, KeycloakServerConfigInterceptor<InfinispanServer, InjectInfinispanServer> {
 

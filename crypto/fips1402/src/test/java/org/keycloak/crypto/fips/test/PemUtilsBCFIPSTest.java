@@ -1,9 +1,10 @@
 package org.keycloak.crypto.fips.test;
 
-import org.junit.Assume;
-import org.junit.Before;
 import org.keycloak.common.util.Environment;
 import org.keycloak.util.PemUtilsTest;
+
+import org.junit.Assume;
+import org.junit.Before;
 
 public class PemUtilsBCFIPSTest extends PemUtilsTest {
 
@@ -13,4 +14,3 @@ public class PemUtilsBCFIPSTest extends PemUtilsTest {
         Assume.assumeTrue("Java is not in FIPS mode. Skipping the test.", Environment.isJavaInFipsMode());
     }
 }
-

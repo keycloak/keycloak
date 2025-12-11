@@ -18,6 +18,7 @@ package org.keycloak.jose.jwk;
 
 import java.security.Key;
 import java.security.PublicKey;
+
 import org.keycloak.crypto.KeyUse;
 
 /**

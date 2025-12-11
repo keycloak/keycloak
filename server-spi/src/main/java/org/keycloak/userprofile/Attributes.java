@@ -19,8 +19,6 @@
 
 package org.keycloak.userprofile;
 
-import static java.util.Optional.ofNullable;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +27,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.keycloak.validate.ValidationError;
+
+import static java.util.Optional.ofNullable;
 
 /**
  * <p>This interface wraps the attributes associated with a user profile. Different operations are provided to access and

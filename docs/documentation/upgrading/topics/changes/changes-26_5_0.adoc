@@ -1,6 +1,18 @@
 // ------------------------ Breaking changes ------------------------  //
 == Breaking changes
 
+= Loopback Hostname Verification on Windows
+
+Setups on Windows that previously relied on custom machine names or non-standard hostnames for loopback (for example, `127.0.0.1` resolving to a custom name) may require updates to their trusted domain configuration. Only `localhost` and `*.localhost` are now recognized for loopback verification.
+
+{project_name} now consistently normalizes loopback addresses to `localhost` for domain verification across all platforms. This change ensures predictable behavior for trusted domain checks, regardless of the underlying OS.
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
 === Method `UserProfile#toRepresentation(boolean)` added
 
 The `UserProfile` interface has a new method `toRepresentation(boolean)`. This method allows clients to specify whether to include
@@ -12,29 +24,43 @@ implement this interface, you will need to update your code to accommodate this 
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
-=== Corrected encoding when sending OpenID Connect client secrets when acting as a broker
-
-In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC6749.
-You are not affected if you configured {project_name} to send the credentials in the request body.
-
-This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
-
-To revert to the old behavior, change the client authentication to the deprecated option *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`).
-
 === Identity Provider refactoring
 
-The private SPI for identity providers have been refactored. This is to allow identity providers to support more use
+The private SPI for identity providers has been refactored. This is to allow identity providers to support more use
 -cases than federated user authentication.
 
 For anyone implementing a custom federated user authentication identity provider and are not extending one provided
 by Keycloak or `AbstractIdentityProvider` you need to update your implementation to implement
 the new `UserAuthenticationIdentityProvider` interface (all methods remain the same, they have just been moved).
 
+Additionally, both `IdentityProviderModel` and `IdentityProviderRepresentation` are now using Boolean values to allow
+configuration like `isHideOnLogin` to be null in order to not include these in Identity Provider types that do
+not need these configurations.
 
-// ------------------------ Notable changes ------------------------ //
-== Notable changes
+=== SPIFFE Identity Provider configuration changed
 
-Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+The SPIFFE Identity Provider preview feature now uses the `trustDomain` configuration instead of `issuer`. This change
+was done to make it more explicit that a `trustDomain` is configured and not the `iss` of the token, which is
+usually not set in SPIFFE JWT SVIDs.
+
+=== Running on Microsoft SQL Server now recommends READ_COMMITTED_SNAPSHOT
+
+On MS SQL Server, the default transaction isolation level is `READ_COMMITTED`, which can lead to deadlocks during high load. Therefore, the recommended isolation level for {project_name} is `READ_COMMITTED_SNAPSHOT`.
+
+Use the following statement to changes this for your database:
+
+[source,sql]
+----
+ALTER DATABASE [your-database-name] SET READ_COMMITTED_SNAPSHOT ON;
+----
+
+
+=== `session_state` and `sid` are no longer UUIDs
+
+In OpenID connect, there are several places where the protocol shares a `session_state` and a `sid`.
+The specifications define it as an opaque string.
+Previous versions of {project_name} used a UUID for it, while the current version now uses a random base64-encoded string.
+The length of the string was reduced from 36 characters to 24 characters, although it might increase in the future if additional randomness is required.
 
 === `log-console-color` will automatically enable if supported by the terminal
 
@@ -42,48 +68,136 @@ The `log-console-color` previously defaulted to `false`, but it will now instead
 
 You may still explicitly disable color support by setting the option to `false`.
 
-=== User sessions created with "Remember Me" are no longer valid if "Remember Me" is disabled for the realm
+=== Some message keys no longer support HTML entities
 
-When the "Remember Me" option is disabled in the realm settings, all user sessions previously created with the "Remember Me" flag are now considered invalid.
-Users will be required to log in again, and any associated refresh tokens will no longer be usable.
-User sessions created without selecting "Remember Me" are not affected.
+The following message keys in translations no longer support HTML entities: `backToLogin`, `backToApplication`, `proceedWithAction`.
 
-=== Correct encoding for OpenID Connect client credentials when acting as a broker
+The default themes have already been updated. If you used them in your translations, please update your translation to use the UTF-8 equivalent.
 
-In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC6749.
+=== Permissions of the database user for PostgreSQL
 
-This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
+If you are running on PostgreSQL as a database for {project_name}, ensure that the database user has `SELECT` permissions to the following tables to ensure an efficient upgrade: `pg_class`, `pg_namespace`.
 
-To revert to the old behavior, change the client authentication to *Client secret sent as HTTP Basic authentication without URL encoding (deprecated)* (`client_secret_basic_unencoded`).
+This is used during upgrades of {project_name} to determine an estimated number of rows in a table.
+If {project_name} does not have permissions to access these tables, it will log a warning and proceed with the less efficient `+SELECT COUNT(*) ...+` operation during the upgrade to determine the number of rows in tables affected by schema changes.
 
-=== Allowing realm administrators granted with the `realm-admin` role to assign admin roles
+=== Expiration of login failures from the embedded caches
 
-In previous versions, realm administrators granted with the `realm-admin` role were not able to grant admin roles for delegated realm administrators.
-This was only possible by granting the `admin` role to a master realm user, making this user a server admin.
+Previous entries in the `loginFailures` cache never expired, and entries accumulated as users entered wrong credentials, increasing the memory consumption.
 
-In this release, realm administrators with the `realm-admin` role can assign admin roles to users in their realm, allowing them to delegate administrative tasks without needing server admin privileges.
+Starting with this release, entries will expire based on the "`Failure reset time`" configured in the "`Brute force detection`" for the modes "`Lockout temporarily`" and "`Lockout permanently after temporary lockout`". For "`Lockout permanently`", entries will not expire as before, as this mode does not have a "`Failure reset time`".
 
-If you are using FGAP to delegate administration to users in a realm other than the master realm,
-make sure the users granted with the `realm-admin` role are expected to have this role to avoid privilege scalation.
+=== Not recommended to use org.keycloak.credential.UserCredentialManager directly in your extensions
 
-The documentation is also updated with additional information about the different types of realm administrators.
-For more information, see link:{adminguide_link}#_fine_grained_permissions[Delegating realm administration using permissions].
+If you have user storage extension and you reference the class `org.keycloak.credential.UserCredentialManager` from your providers, it is recommended to avoid using this class directly as it might be
+moved to the private modules in the future releases. The class may be typically used in the method `credentialManager()` of the implementations of `UserModel` interface. In that case,
+it is recommended to replace the code like this:
+
+[source,java]
+----
+@Override
+public SubjectCredentialManager credentialManager() {
+    return new UserCredentialManager(keycloakSession, realmModel, this);
+}
+----
+
+with the code similar to this:
+
+[source,java]
+----
+@Override
+public org.keycloak.models.UserCredentialManager credentialManager() {
+    return keycloakSession.users().getUserCredentialManager(this);
+}
+----
+
+=== OCSP request timeouts follow HTTP client configuration
+
+In previous versions, OCSP requests used hardcoded connection and socket timeouts of 10 seconds.
+In this release, OCSP requests inherit timeouts from the outgoing HTTP client configuration (SPI `connections-http-client`, provider `default`).
+
+- **Socket timeout property**: `socket-timeout-millis` (default: `5000`)
+- **Establish connection timeout property**: `establish-connection-timeout-millis` (default: not set / `-1`)
+
+If you relied on the previous 10-second behavior, explicitly set the HTTP client timeouts.
+
+=== Default authorization policies and resources are no longer auto-created
+
+When enabling authorization on a new client (creating a Resource Server), {project_name} no longer automatically creates a "`Default Resource`", a "`Default Policy`", and a "`Default Permission`".
+
+=== Deleting expired sessions from the database
+
+Previously, a single instance of {project_name} would check and remove expired entries using a cluster-aware scheduled task,
+with each node attempting to trigger this task every 15 minutes.
+This led to a situation that the more instances a cluster had, the more often this ran, although it would never run concurrently on two nodes at the same time.
+
+Starting from this version, removal is handled by all {project_name} instances, with each instance handling the expiration of sessions in different realms.
+Additionally, a new SPI option has been added to control the frequency of the internal deletion task: `--spi-user-sessions--infinispan--session-expiration-period` (value in seconds). By default, this runs every three minutes.
+If you now add more instances to a clusters, the expiration is still run at the same interval.
+
+Previously, {project_name} deleted sessions from the database only once the session idle time including the remember-me idle time had passed.
+
+With the new setup and persistent user sessions enabled, sessions are deleted more timely based on the realm settings on session lifetime and idle time, including the remember me settings. For this, the table `OFFLINE_USER_SESSION` now has a new column `REMEMBER_ME`, that is filled for new sessions and updated incrementally for existing sessions.
+The deletion is triggered currently three minutes after the session has expired to allow for clock skew between instances. Note that this interval can change in future release as we optimize this functionality.
+
+This adds new indexes on `OFFLINE_USER_SESSION` table to improve performance when retrieving or deleting client sessions.
+
+If those tables contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
+For each expired user session there is a new user event `USER_SESSION_DELETED` fired.
+As part of this change, the process now deletes rows from the table in small batches, instead of issuing a delete statements that affects the whole table. This should allow for better response times when there are a lot of sessions in the table.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
 The following sections provide details on deprecated features.
 
-=== Sending OpenID Connect client secret via basic authentication without URL encoding
+=== `AuthenticationManager.AuthResult` is now a record
 
-In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, you can choose to send the client secret as *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`). While this violates RFC6749, it can be used to keep the default behavior of earlier versions of {project_name}.
+The inner class `AuthenticationManager.AuthResult` in the `keycloak-services` module is now a record.
+The getter methods like `getSession()` have been deprecated in favor of the `session()` accessors.
 
-This behavior is deprecated and will be removed in a future version of Keycloak.
+=== Deprecation of methods for removing expired authentication sessions from `AuthenticationSessionProvider`
+
+The methods `removeAllExpired()` and `removeExpired(RealmModel realm)` are annotated with the `@Deprecated` annotation.
+They have been deprecated since {project_name} 19, as the built-in implementations now use their own internal cleanup mechanisms.
+If you are providing a custom implementation of this provider, implement an internal mechanism to delete expired sessions.
+
+=== Deprecation of methods for removing expired user sessions from `UserSessionProvider`
+
+The methods `removeAllExpired()` and `removeExpired(RealmModel realm)` are deprecated.
+A new internal cleanup mechanism has been implemented to automatically remove expired sessions from the database.
+If you are providing a custom implementation of this provider, implement an internal mechanism to delete expired sessions.
+
+=== Deprecation of cluster scheduled task `ClearExpiredUserSessions`
+
+As `AuthenticationSessionProvider` and `UserSessionProvider` now have an internal mechanism to delete expired entries, the scheduled task `ClearExpiredUserSessions` has been deprecated.
+It is still triggered in this {project_name} version, but will be removed in a future release.
+
+
+=== Fine-Grained Admin Permissions (FGAP) v1
+
+Fine-Grained Admin Permissions (FGAP) v1 is now deprecated. This version no longer receives enhancements and improvements  and will be removed in future
+release. Please migrate to FGAP v2 to ensure continued support.
+
+=== Tracing options `tracing-service-name` and `tracing-resource-attributes`
+
+The `tracing-service-name` and `tracing-resource-attributes` options are now deprecated in favor of the new centralized telemetry options `telemetry-service-name` and `telemetry-resource-attributes`.
+The service name and resource attributes are not directly related to the OpenTelemetry Tracing itself, but to the whole OpenTelemetry settings.
+
+The deprecated options will continue to work, but the new telemetry options take precedence.
+
+Migration path:
+[source]
+----
+tracing-service-name --> telemetry-service-name
+tracing-resource-attributes --> telemetry-resource-attributes
+----
 
 // ------------------------ Removed features ------------------------ //
 == Removed features
 
-The following features have been removed from this release.
+=== PostgreSQL 13 (end of life)
 
-=== <TODO>
-
+Version PostgreSQL is end-of-life since November 2025 and therefore no longer supported.

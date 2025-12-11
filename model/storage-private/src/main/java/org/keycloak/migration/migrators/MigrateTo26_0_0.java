@@ -59,4 +59,3 @@ public class MigrateTo26_0_0 extends RealmMigration {
         }
     }
 }
-

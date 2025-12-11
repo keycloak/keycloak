@@ -17,6 +17,15 @@
 
 package org.keycloak.it.cli.dist;
 
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.TestProvider;
+import org.keycloak.it.junit5.extension.WithEnvVars;
+import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
+import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import io.restassured.RestAssured;
@@ -26,14 +35,6 @@ import org.apache.http.HttpHeaders;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.junit5.extension.TestProvider;
-import org.keycloak.it.junit5.extension.WithEnvVars;
-import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
-import org.keycloak.it.utils.KeycloakDistribution;
-import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;

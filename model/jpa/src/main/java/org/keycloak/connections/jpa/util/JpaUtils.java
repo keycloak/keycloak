@@ -17,23 +17,6 @@
 
 package org.keycloak.connections.jpa.util;
 
-import jakarta.persistence.PersistenceUnitTransactionType;
-import jakarta.persistence.ValidationMode;
-import org.hibernate.dialect.Dialect;
-import org.hibernate.engine.jdbc.env.spi.IdentifierHelper;
-import org.hibernate.internal.SessionFactoryImpl;
-import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
-import org.hibernate.jpa.boot.spi.PersistenceXmlParser;
-import org.jboss.logging.Logger;
-import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
-import org.hibernate.jpa.boot.spi.Bootstrap;
-import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
-import org.keycloak.models.KeycloakSession;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -46,6 +29,24 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceUnitTransactionType;
+import jakarta.persistence.ValidationMode;
+
+import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
+import org.keycloak.models.KeycloakSession;
+
+import org.hibernate.dialect.Dialect;
+import org.hibernate.engine.jdbc.env.spi.IdentifierHelper;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.internal.SessionFactoryImpl;
+import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
+import org.hibernate.jpa.boot.spi.Bootstrap;
+import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
+import org.hibernate.jpa.boot.spi.PersistenceXmlParser;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

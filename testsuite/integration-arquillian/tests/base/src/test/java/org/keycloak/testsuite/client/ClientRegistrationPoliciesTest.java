@@ -25,8 +25,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.BadRequestException;
-import org.junit.After;
-import org.junit.Test;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -66,7 +66,8 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.util.JsonSerialization;
 
-import jakarta.ws.rs.core.Response;
+import org.junit.After;
+import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 

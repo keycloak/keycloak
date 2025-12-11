@@ -23,6 +23,10 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
+import org.keycloak.infinispan.health.ClusterHealth;
+import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
+import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2.HealthStatus;
+
 import org.infinispan.factories.annotations.Inject;
 import org.infinispan.factories.scopes.Scope;
 import org.infinispan.factories.scopes.Scopes;
@@ -30,9 +34,6 @@ import org.infinispan.remoting.transport.Transport;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.infinispan.util.concurrent.BlockingManager;
 import org.jboss.logging.Logger;
-import org.keycloak.infinispan.health.ClusterHealth;
-import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
-import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2.HealthStatus;
 
 /**
  * A {@link ClusterHealth} implementation that makes use of {@link KEYCLOAK_JDBC_PING2}.

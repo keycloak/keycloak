@@ -1,8 +1,8 @@
 package org.freedesktop.dbus;
 
-import org.freedesktop.dbus.exceptions.DBusException;
-
 import java.lang.reflect.Type;
+
+import org.freedesktop.dbus.exceptions.DBusException;
 
 public class TypeSignature {
     // CHECKSTYLE:OFF

@@ -17,6 +17,11 @@
 
 package org.keycloak.authentication.forms;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
@@ -38,10 +43,6 @@ import org.keycloak.policy.PolicyError;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

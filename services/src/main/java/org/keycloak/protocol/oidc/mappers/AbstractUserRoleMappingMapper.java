@@ -17,13 +17,6 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
-import static org.keycloak.utils.JsonUtils.splitClaimPath;
-
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.protocol.ProtocolMapperUtils;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.IDToken;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +25,13 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
+
+import static org.keycloak.utils.JsonUtils.splitClaimPath;
 
 /**
  * Base class for mapping of user role mappings to an ID and Access Token claim.

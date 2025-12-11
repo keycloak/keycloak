@@ -17,13 +17,6 @@
 
 package org.keycloak.testsuite.forms;
 
-import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.authentication.ClientAuthenticationFlowContext;
-import org.keycloak.authentication.authenticators.client.AbstractClientAuthenticator;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.provider.ProviderConfigProperty;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,13 +25,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.client.AbstractClientAuthenticator;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.provider.ProviderConfigProperty;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class PassThroughClientAuthenticator extends AbstractClientAuthenticator {
 
     public static final String PROVIDER_ID = "testsuite-client-passthrough";
+
     public static String clientId = "test-app";
+    public static String namedClientId = "named-test-app";
 
     // If this parameter is present in the HTTP request, the error will be thrown during authentication
     public static final String TEST_ERROR_PARAM = "test_error_param";

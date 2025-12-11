@@ -1,9 +1,10 @@
 package org.keycloak.email;
 
-import jakarta.mail.Transport;
-import org.keycloak.models.KeycloakSession;
-
 import java.util.Map;
+
+import jakarta.mail.Transport;
+
+import org.keycloak.models.KeycloakSession;
 
 public interface EmailAuthenticator {
 
@@ -15,5 +16,3 @@ public interface EmailAuthenticator {
         TOKEN
     }
 }
-
-

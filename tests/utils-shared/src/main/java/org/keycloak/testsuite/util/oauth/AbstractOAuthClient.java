@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
@@ -10,6 +9,8 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.testsuite.util.oauth.ciba.CibaClient;
 import org.keycloak.testsuite.util.oauth.device.DeviceClient;
+
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.openqa.selenium.WebDriver;
 
 public abstract class AbstractOAuthClient<T> {
@@ -149,12 +150,12 @@ public abstract class AbstractOAuthClient<T> {
         logoutForm().open();
     }
 
-    public LogoutRequest logoutRequest(String refreshToken) {
-        return new LogoutRequest(refreshToken, this);
+    public LogoutRequest logoutRequest() {
+        return new LogoutRequest(this);
     }
 
     public LogoutResponse doLogout(String refreshToken) {
-        return logoutRequest(refreshToken).send();
+        return logoutRequest().refreshToken(refreshToken).send();
     }
 
     public BackchannelLogoutRequest backchannelLogoutRequest(String logoutToken) {

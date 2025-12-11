@@ -17,11 +17,11 @@
 
 package org.keycloak.broker.provider;
 
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.util.JsonSerialization;
-
 import java.io.IOException;
 import java.util.List;
+
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

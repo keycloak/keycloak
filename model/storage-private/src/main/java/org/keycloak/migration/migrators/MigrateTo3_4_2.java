@@ -18,14 +18,14 @@
 package org.keycloak.migration.migrators;
 
 
+import java.util.stream.Collectors;
+
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
-
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>

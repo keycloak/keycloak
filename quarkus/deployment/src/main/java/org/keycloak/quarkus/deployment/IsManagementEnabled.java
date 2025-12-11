@@ -16,9 +16,9 @@
  */
 package org.keycloak.quarkus.deployment;
 
-import org.keycloak.quarkus.runtime.configuration.mappers.ManagementPropertyMappers;
-
 import java.util.function.BooleanSupplier;
+
+import org.keycloak.quarkus.runtime.configuration.mappers.ManagementPropertyMappers;
 
 public class IsManagementEnabled implements BooleanSupplier {
     @Override

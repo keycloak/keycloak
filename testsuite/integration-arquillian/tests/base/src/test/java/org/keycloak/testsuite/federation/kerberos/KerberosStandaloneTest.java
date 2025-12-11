@@ -17,23 +17,16 @@
 
 package org.keycloak.testsuite.federation.kerberos;
 
+import java.net.URI;
+import java.util.List;
+
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-import java.net.URI;
-import java.util.List;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.select.Elements;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.events.Details;
@@ -60,6 +53,16 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
 
 import static org.keycloak.userprofile.UserProfileUtil.USER_METADATA_GROUP;
 

@@ -17,10 +17,10 @@
 
 package org.keycloak.validation;
 
-import org.keycloak.models.KeycloakSession;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>

@@ -17,9 +17,10 @@
 
 package org.keycloak.testsuite.broker.util;
 
-import org.apache.http.client.HttpClient;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
+
+import org.apache.http.client.HttpClient;
 
 /**
  * This class provides additional builders used in tests to create instances of SimpleHttpTest with a default length response size set.

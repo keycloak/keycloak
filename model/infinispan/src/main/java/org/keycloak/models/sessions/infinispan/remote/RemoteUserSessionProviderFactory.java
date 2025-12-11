@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.util.concurrent.BlockingManager;
 import org.keycloak.Config;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -22,6 +20,7 @@ import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.UserS
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionKey;
 import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
+import org.keycloak.models.sessions.infinispan.listeners.RemoteUserSessionExpirationListener;
 import org.keycloak.models.sessions.infinispan.remote.transaction.ClientSessionChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.remote.transaction.RemoteChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.remote.transaction.UserSessionChangeLogTransaction;
@@ -34,6 +33,9 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.util.concurrent.BlockingManager;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
@@ -54,6 +56,7 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
     private volatile int batchSize = DEFAULT_BATCH_SIZE;
     private volatile int maxRetries = InfinispanUtils.DEFAULT_MAX_RETRIES;
     private volatile int backOffBaseTimeMillis = InfinispanUtils.DEFAULT_RETRIES_BASE_TIME_MILLIS;
+    private volatile RemoteUserSessionExpirationListener expirationListener;
 
     @Override
     public RemoteUserSessionProvider create(KeycloakSession session) {
@@ -80,6 +83,11 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
 
     @Override
     public void close() {
+        if (expirationListener != null) {
+            userSessionState.cache().removeClientListener(expirationListener);
+            offlineUserSessionState.cache().removeClientListener(expirationListener);
+        }
+        expirationListener = null;
         blockingManager = null;
         userSessionState = null;
         offlineUserSessionState = null;
@@ -131,7 +139,7 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
 
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
-        return Set.of(InfinispanTransactionProvider.class);
+        return Set.of(InfinispanTransactionProvider.class, InfinispanConnectionProvider.class);
     }
 
     private void onUserRemoved(UserModel.UserRemovedEvent event) {
@@ -149,6 +157,9 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
         clientSessionState = new SharedStateImpl<>(connections.getRemoteCache(CLIENT_SESSION_CACHE_NAME));
         offlineClientSessionState = new SharedStateImpl<>(connections.getRemoteCache(OFFLINE_CLIENT_SESSION_CACHE_NAME));
         blockingManager = connections.getBlockingManager();
+        expirationListener = new RemoteUserSessionExpirationListener(session.getKeycloakSessionFactory(), blockingManager, userSessionState.cache().getRemoteCacheContainer().getMarshaller());
+        userSessionState.cache().addClientListener(expirationListener);
+        offlineUserSessionState.cache().addClientListener(expirationListener);
     }
 
     private UserSessionTransaction createTransaction(KeycloakSession session) {

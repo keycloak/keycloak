@@ -1,12 +1,12 @@
 package org.keycloak.infinispan.module.factory;
 
+import java.util.Objects;
+
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
 import org.infinispan.telemetry.InfinispanSpan;
 import org.infinispan.telemetry.SafeAutoClosable;
-
-import java.util.Objects;
 
 public class OpenTelemetrySpan<T> implements InfinispanSpan<T> {
 

@@ -17,11 +17,11 @@
 
 package org.keycloak.services;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.sessions.AuthenticationSessionModel;
-
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

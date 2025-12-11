@@ -17,10 +17,11 @@
 
 package org.keycloak.models.sessions.infinispan.changes.remote.remover;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Updater;
 import org.keycloak.models.sessions.infinispan.remote.transaction.RemoteChangeLogTransaction;
+
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 
 /**
  * It handles conditional remove operations.

@@ -17,12 +17,12 @@
 
 package org.keycloak.authentication.forms;
 
-import static java.lang.String.format;
-
 import java.util.Arrays;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import static java.lang.String.format;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RecaptchaAssessmentResponse {

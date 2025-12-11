@@ -17,13 +17,13 @@
 
 package org.keycloak.protocol.oidc.representations;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -201,6 +201,9 @@ public class OIDCConfigurationRepresentation {
 
     @JsonProperty("authorization_response_iss_parameter_supported")
     private Boolean authorizationResponseIssParameterSupported;
+
+    @JsonProperty("authorization_details_types_supported")
+    private List<String> authorizationDetailsTypesSupported;
 
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
@@ -664,5 +667,13 @@ public class OIDCConfigurationRepresentation {
 
     public void setPromptValuesSupported(List<String> promptValuesSupported) {
         this.promptValuesSupported = promptValuesSupported;
+    }
+
+    public List<String> getAuthorizationDetailsTypesSupported() {
+        return authorizationDetailsTypesSupported;
+    }
+
+    public void setAuthorizationDetailsTypesSupported(List<String> authorizationDetailsTypesSupported) {
+        this.authorizationDetailsTypesSupported = authorizationDetailsTypesSupported;
     }
 }

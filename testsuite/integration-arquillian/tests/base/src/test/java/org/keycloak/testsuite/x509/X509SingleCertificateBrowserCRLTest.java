@@ -16,15 +16,16 @@
  */
 package org.keycloak.testsuite.x509;
 
+import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
+import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType;
+import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType;
+import org.keycloak.testsuite.util.HtmlUnitBrowser;
+
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
-import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType;
-import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType;
-import org.keycloak.testsuite.util.HtmlUnitBrowser;
 import org.openqa.selenium.WebDriver;
 
 /**

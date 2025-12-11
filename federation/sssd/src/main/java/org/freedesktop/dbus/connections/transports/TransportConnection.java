@@ -1,12 +1,12 @@
 package org.freedesktop.dbus.connections.transports;
 
-import org.freedesktop.dbus.spi.message.IMessageReader;
-import org.freedesktop.dbus.spi.message.IMessageWriter;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.freedesktop.dbus.spi.message.IMessageReader;
+import org.freedesktop.dbus.spi.message.IMessageWriter;
 
 /**
  * Represents one transport connection of any type.<br>

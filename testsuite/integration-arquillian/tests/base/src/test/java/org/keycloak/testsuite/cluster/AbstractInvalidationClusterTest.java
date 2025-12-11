@@ -1,23 +1,25 @@
 package org.keycloak.testsuite.cluster;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.arquillian.ContainerInfo;
+
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.junit.Test;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.ContainerInfo;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import static org.junit.Assert.assertFalse;
 import static org.keycloak.common.util.reflections.Reflections.resolveListType;
 import static org.keycloak.common.util.reflections.Reflections.setAccessible;
 import static org.keycloak.common.util.reflections.Reflections.unsetAccessible;
+
+import static org.junit.Assert.assertFalse;
 
 /**
  *

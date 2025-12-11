@@ -17,7 +17,8 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
@@ -28,8 +29,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ScopeType;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 
 @Command(name = "keycloak",
         header = {

@@ -16,9 +16,9 @@ export const KubernetesSettings = () => {
       />
 
       <TextControl
-        name="config.jwksUrl"
-        labelIcon={t("kubernetesJWKSURLHelp")}
-        label={t("kubernetesJWKSURL")}
+        name="config.issuer"
+        labelIcon={t("kubernetesIssuerUrlHelp")}
+        label={t("kubernetesIssuerUrl")}
       />
     </>
   );

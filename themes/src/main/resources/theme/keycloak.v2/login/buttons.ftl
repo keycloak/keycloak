@@ -9,12 +9,12 @@
 <#macro button label id="" name="" class=["kcButtonPrimaryClass"] extra...>
   <button class="<#list class as c>${properties[c]} </#list>" name="${name}" id="${id}"
           type="submit" <#list extra as attrName, attrVal>${attrName}="${attrVal}"</#list>>
-  ${kcSanitize(msg(label))?no_esc}
+  ${msg(label)}
   </button>
 </#macro>
 
 <#macro buttonLink href label id="" class=["kcButtonSecondaryClass"]>
-  <a id="${id}" href="${href}" class="<#list class as c>${properties[c]} </#list>">${kcSanitize(msg(label))?no_esc}</a>
+  <a id="${id}" href="${href}" class="<#list class as c>${properties[c]} </#list>">${msg(label)}</a>
 </#macro>
 
 <#macro loginButton>

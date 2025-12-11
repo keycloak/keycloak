@@ -17,9 +17,9 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-
 import java.util.Optional;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
 
 /**
  * Type of credential offer uri to be returned.

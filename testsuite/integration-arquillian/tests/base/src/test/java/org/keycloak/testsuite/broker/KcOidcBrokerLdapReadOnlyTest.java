@@ -1,15 +1,9 @@
 package org.keycloak.testsuite.broker;
 
-import static org.junit.Assert.assertEquals;
-import static org.keycloak.models.utils.ModelToRepresentation.toRepresentationWithoutConfig;
-
 import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.IdentityProviderSyncMode;
@@ -28,6 +22,15 @@ import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import static org.keycloak.models.utils.ModelToRepresentation.toRepresentationWithoutConfig;
+
+import static org.junit.Assert.assertEquals;
 
 public final class KcOidcBrokerLdapReadOnlyTest extends AbstractInitializedBaseBrokerTest {
 

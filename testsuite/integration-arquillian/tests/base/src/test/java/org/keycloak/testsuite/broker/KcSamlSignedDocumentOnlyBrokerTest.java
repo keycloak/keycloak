@@ -1,15 +1,18 @@
 package org.keycloak.testsuite.broker;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_SIGN_CERT;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_SIGN_KEY;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PRIVATE_KEY;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PUBLIC_KEY;
 
 public class KcSamlSignedDocumentOnlyBrokerTest extends AbstractBrokerTest {
 

@@ -16,7 +16,11 @@
  */
 package org.keycloak.testsuite.util.saml;
 
-import org.keycloak.testsuite.util.SamlClientBuilder;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.util.function.Consumer;
+import javax.xml.stream.XMLStreamWriter;
+
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResolveType;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResponseType;
@@ -34,10 +38,8 @@ import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLProtocolQName
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLRequestWriter;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
 import org.keycloak.testsuite.util.SamlClient.Step;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.function.Consumer;
-import javax.xml.stream.XMLStreamWriter;
+import org.keycloak.testsuite.util.SamlClientBuilder;
+
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.w3c.dom.Document;

@@ -17,9 +17,9 @@
 
 package org.keycloak.admin.client;
 
-import static org.keycloak.OAuth2Constants.PASSWORD;
-
 import jakarta.ws.rs.client.Client;
+
+import static org.keycloak.OAuth2Constants.PASSWORD;
 
 /**
  * Provides a {@link Keycloak} client builder with the ability to customize the underlying

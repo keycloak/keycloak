@@ -21,8 +21,9 @@ import java.math.BigInteger;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.ECDSACryptoProvider;
+
+import org.jboss.logging.Logger;
 import org.wildfly.security.asn1.DERDecoder;
 import org.wildfly.security.asn1.DEREncoder;
 

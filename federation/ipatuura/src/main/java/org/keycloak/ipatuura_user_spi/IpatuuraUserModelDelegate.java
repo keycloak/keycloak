@@ -17,15 +17,16 @@
 
 package org.keycloak.ipatuura_user_spi;
 
-import org.apache.http.HttpStatus;
-import org.jboss.logging.Logger;
+import java.io.IOException;
+import java.util.List;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
 
-import java.io.IOException;
-import java.util.List;
+import org.apache.http.HttpStatus;
+import org.jboss.logging.Logger;
 
 public class IpatuuraUserModelDelegate extends UserModelDelegate {
 

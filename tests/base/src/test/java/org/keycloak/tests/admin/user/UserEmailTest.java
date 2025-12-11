@@ -1,11 +1,20 @@
 package org.keycloak.tests.admin.user;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -41,21 +50,14 @@ import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.InfoPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
 import org.keycloak.testframework.ui.page.ProceedPage;
-import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.MailUtils;
-import org.openqa.selenium.By;
+import org.keycloak.tests.utils.admin.AdminEventPaths;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -187,7 +189,7 @@ public class UserEmailTest extends AbstractUserTest {
 
         String link = MailUtils.getPasswordResetEmailLink(body);
 
-        driver.navigate().to(link);
+        driver.open(link);
 
         proceedPage.assertCurrent();
         assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
@@ -200,7 +202,7 @@ public class UserEmailTest extends AbstractUserTest {
 
         assertEquals("Your account has been updated.", infoPage.getInfo());
 
-        driver.navigate().to(link);
+        driver.open(link);
 
         errorPage.assertCurrent();
     }
@@ -233,7 +235,7 @@ public class UserEmailTest extends AbstractUserTest {
 
         String link = MailUtils.getPasswordResetEmailLink(body);
 
-        driver.navigate().to(link);
+        driver.open(link);
 
         proceedPage.assertCurrent();
         assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
@@ -316,7 +318,7 @@ public class UserEmailTest extends AbstractUserTest {
         }
 
 
-        driver.navigate().to(link);
+        driver.open(link);
 
         proceedPage.assertCurrent();
         assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
@@ -327,7 +329,7 @@ public class UserEmailTest extends AbstractUserTest {
 
         assertEquals("Your account has been updated.", infoPage.getInfo());
 
-        driver.navigate().to(link);
+        driver.open(link);
 
         errorPage.assertCurrent();
     }
@@ -353,7 +355,7 @@ public class UserEmailTest extends AbstractUserTest {
         for (MimeMessage message : mailServer.getReceivedMessages()) {
             String link = MailUtils.getPasswordResetEmailLink(message);
 
-            driver.navigate().to(link);
+            driver.open(link);
 
             proceedPage.assertCurrent();
             assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
@@ -368,7 +370,7 @@ public class UserEmailTest extends AbstractUserTest {
 
         for (MimeMessage message : mailServer.getReceivedMessages()) {
             String link = MailUtils.getPasswordResetEmailLink(message);
-            driver.navigate().to(link);
+            driver.open(link);
             errorPage.assertCurrent();
         }
     }
@@ -396,7 +398,7 @@ public class UserEmailTest extends AbstractUserTest {
 
             String link = MailUtils.getPasswordResetEmailLink(message);
 
-            driver.navigate().to(link);
+            driver.open(link);
 
             proceedPage.assertCurrent();
             assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
@@ -411,7 +413,7 @@ public class UserEmailTest extends AbstractUserTest {
 
         for (MimeMessage message : mailServer.getReceivedMessages()) {
             String link = MailUtils.getPasswordResetEmailLink(message);
-            driver.navigate().to(link);
+            driver.open(link);
             errorPage.assertCurrent();
         }
     }
@@ -435,17 +437,17 @@ public class UserEmailTest extends AbstractUserTest {
 
         String link = MailUtils.getPasswordResetEmailLink(message);
 
-        driver.navigate().to(link);
+        driver.open(link);
 
         proceedPage.assertCurrent();
         assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
         proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
-        driver.manage().deleteAllCookies();
-        driver.navigate().to("about:blank");
+        driver.cookies().deleteAll();
+        driver.open("about:blank");
 
-        driver.navigate().to(link);
+        driver.open(link);
 
         proceedPage.assertCurrent();
         assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
@@ -485,7 +487,7 @@ public class UserEmailTest extends AbstractUserTest {
 
             timeOffSet.set(70);
 
-            driver.navigate().to(link);
+            driver.open(link);
 
             errorPage.assertCurrent();
             assertEquals("Action expired.", errorPage.getError());
@@ -531,7 +533,7 @@ public class UserEmailTest extends AbstractUserTest {
 
             String link = MailUtils.getPasswordResetEmailLink(message);
 
-            driver.navigate().to(link);
+            driver.open(link);
         }
 
         user.executeActionsEmail(actions);
@@ -543,7 +545,7 @@ public class UserEmailTest extends AbstractUserTest {
 
         String link = MailUtils.getPasswordResetEmailLink(message);
 
-        driver.navigate().to(link);
+        driver.open(link);
 
         proceedPage.assertCurrent();
         assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
@@ -554,7 +556,7 @@ public class UserEmailTest extends AbstractUserTest {
 
         assertEquals("Your account has been updated.", infoPage.getInfo());
 
-        driver.navigate().to(link);
+        driver.open(link);
 
         errorPage.assertCurrent();
     }
@@ -603,7 +605,7 @@ public class UserEmailTest extends AbstractUserTest {
 
         String link = MailUtils.getPasswordResetEmailLink(message);
 
-        driver.navigate().to(link);
+        driver.open(link);
 
         proceedPage.assertCurrent();
         assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
@@ -614,12 +616,12 @@ public class UserEmailTest extends AbstractUserTest {
 
         assertEquals("Your account has been updated.", driver.findElement(By.id("kc-page-title")).getText());
 
-        String pageSource = driver.getPageSource();
+        String pageSource = driver.page().getPageSource();
 
         // check to make sure the back link is set.
         Assertions.assertTrue(pageSource.contains("http://myclient.com/home.html"));
 
-        driver.navigate().to(link);
+        driver.open(link);
 
         errorPage.assertCurrent();
     }
@@ -685,7 +687,7 @@ public class UserEmailTest extends AbstractUserTest {
             throw new IOException(e);
         }
 
-        driver.navigate().to(link);
+        driver.open(link);
 
         proceedPage.assertCurrent();
         assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
@@ -696,12 +698,12 @@ public class UserEmailTest extends AbstractUserTest {
 
         assertEquals("Your account has been updated.", driver.findElement(By.id("kc-page-title")).getText());
 
-        String pageSource = driver.getPageSource();
+        String pageSource = driver.page().getPageSource();
 
         // check to make sure the back link is set.
         Assertions.assertTrue(pageSource.contains("http://myclient.com/home.html"));
 
-        driver.navigate().to(link);
+        driver.open(link);
 
         errorPage.assertCurrent();
     }
@@ -760,16 +762,16 @@ public class UserEmailTest extends AbstractUserTest {
 
         String link = MailUtils.getPasswordResetEmailLink(mailServer.getReceivedMessages()[0]);
 
-        driver.navigate().to(link);
+        driver.open(link);
 
         proceedPage.assertCurrent();
         assertThat(proceedPage.getInfo(), Matchers.containsString("Confirm validity of e-mail address"));
         proceedPage.clickProceedLink();
 
         Assertions.assertEquals("Your account has been updated.", infoPage.getInfo());
-        driver.navigate().to("about:blank");
+        driver.open("about:blank");
 
-        driver.navigate().to(link);
+        driver.open(link);
         infoPage.assertCurrent();
         assertEquals("Your email address has been verified already.", infoPage.getInfo());
     }
@@ -806,7 +808,7 @@ public class UserEmailTest extends AbstractUserTest {
 
         String link = MailUtils.getPasswordResetEmailLink(message);
 
-        driver.navigate().to(link);
+        driver.open(link);
 
         proceedPage.assertCurrent();
         assertThat(proceedPage.getInfo(), Matchers.containsString("Confirm validity of e-mail address"));
@@ -814,7 +816,7 @@ public class UserEmailTest extends AbstractUserTest {
 
         assertEquals("Your account has been updated.", infoPage.getInfo());
 
-        String pageSource = driver.getPageSource();
+        String pageSource = driver.page().getPageSource();
         Assertions.assertTrue(pageSource.contains(redirectUri));
     }
 
@@ -861,7 +863,7 @@ public class UserEmailTest extends AbstractUserTest {
             throw new IOException(e);
         }
 
-        driver.navigate().to(link);
+        driver.open(link);
 
         proceedPage.assertCurrent();
         assertThat(proceedPage.getInfo(), Matchers.containsString("Confirm validity of e-mail address"));
@@ -869,7 +871,7 @@ public class UserEmailTest extends AbstractUserTest {
 
         assertEquals("Your account has been updated.", infoPage.getInfo());
 
-        String pageSource = driver.getPageSource();
+        String pageSource = driver.page().getPageSource();
         Assertions.assertTrue(pageSource.contains(redirectUri));
     }
 

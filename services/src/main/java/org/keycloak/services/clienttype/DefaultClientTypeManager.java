@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.jboss.logging.Logger;
 import org.keycloak.client.clienttype.ClientType;
 import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.client.clienttype.ClientTypeManager;
@@ -36,6 +35,8 @@ import org.keycloak.representations.idm.ClientTypeRepresentation;
 import org.keycloak.representations.idm.ClientTypesRepresentation;
 import org.keycloak.services.clienttype.client.TypeAwareClientModelDelegate;
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

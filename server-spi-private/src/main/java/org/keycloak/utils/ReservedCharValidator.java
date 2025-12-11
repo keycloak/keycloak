@@ -16,12 +16,13 @@
  */
 package org.keycloak.utils;
 
-import jakarta.ws.rs.BadRequestException;
-import org.jboss.logging.Logger;
-
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import jakarta.ws.rs.BadRequestException;
+
+import org.jboss.logging.Logger;
 
 /**
  *

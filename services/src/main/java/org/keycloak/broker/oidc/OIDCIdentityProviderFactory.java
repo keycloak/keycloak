@@ -16,14 +16,14 @@
  */
 package org.keycloak.broker.oidc;
 
+import java.io.IOException;
+import java.util.Map;
+
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.util.Map;
 
 /**
  * @author Pedro Igor

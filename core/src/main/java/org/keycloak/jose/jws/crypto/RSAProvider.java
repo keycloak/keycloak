@@ -18,15 +18,15 @@
 package org.keycloak.jose.jws.crypto;
 
 
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.jose.jws.Algorithm;
-import org.keycloak.jose.jws.JWSInput;
-
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
+
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSInput;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

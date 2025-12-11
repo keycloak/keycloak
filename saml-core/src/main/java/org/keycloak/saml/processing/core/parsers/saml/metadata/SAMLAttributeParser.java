@@ -16,13 +16,13 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml.metadata;
 
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
+
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAttributeValueParser;
-
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.StartElement;
 
 /**
  * Parse the <conditions> in the saml assertion

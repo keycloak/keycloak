@@ -1,13 +1,14 @@
 package org.keycloak.protocol.docker.mapper;
 
 
-import org.junit.Test;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.protocol.TestAuthenticatedClientSessionModel;
 import org.keycloak.protocol.docker.DockerAuthV2Protocol;
 import org.keycloak.representations.docker.DockerAccess;
 import org.keycloak.representations.docker.DockerResponseToken;
+
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;

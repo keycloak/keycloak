@@ -1,10 +1,10 @@
 package org.keycloak.common.profile;
 
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
-
 import java.util.Properties;
 import java.util.function.UnaryOperator;
+
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 
 public class PropertiesProfileConfigResolver implements ProfileConfigResolver {
 

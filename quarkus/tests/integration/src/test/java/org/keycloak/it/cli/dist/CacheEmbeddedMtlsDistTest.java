@@ -21,13 +21,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.Option;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
+
+import org.junit.jupiter.api.Test;
 
 @DistributionTest
 public class CacheEmbeddedMtlsDistTest {

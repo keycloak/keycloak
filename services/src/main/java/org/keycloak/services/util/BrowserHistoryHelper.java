@@ -23,11 +23,12 @@ import java.util.regex.Pattern;
 
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.MediaType;
+
+import org.jboss.logging.Logger;
 
 /**
  * The point of this is to improve experience of browser history (back/forward/refresh buttons), but ensure there is no more redirects then necessary.

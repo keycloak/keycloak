@@ -17,10 +17,10 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
-import org.jboss.logging.Logger;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.jboss.logging.Logger;
 
 /**
  * Adding an in-JVM lock to prevent a best-effort concurrent executions for the same ID.

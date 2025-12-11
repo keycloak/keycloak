@@ -34,17 +34,18 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.jboss.logging.Logger;
+
+import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
-import org.keycloak.http.HttpRequest;
-import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.models.IdentityProviderShowInAccountConsole;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -63,6 +64,8 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.Theme;
 import org.keycloak.utils.BrokerUtil;
 import org.keycloak.utils.StreamsUtil;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.models.Constants.ACCOUNT_CONSOLE_CLIENT_ID;
 
@@ -151,7 +154,7 @@ public class LinkedAccountsResource {
                     IdentityProviderModel.ALIAS_NOT_IN, fedAliasesToExclude,
 					IdentityProviderModel.SHOW_IN_ACCOUNT_CONSOLE, IdentityProviderShowInAccountConsole.ALWAYS.name());
 
-            linkedAccounts = session.identityProviders().getAllStream(searchOptions, firstResult, maxResults)
+            linkedAccounts = session.identityProviders().getAllStream(IdentityProviderQuery.userAuthentication().with(searchOptions), firstResult, maxResults)
                     .map(idp -> this.toLinkedAccount(idp, null, null))
                     .toList();
         }
@@ -195,7 +198,7 @@ public class LinkedAccountsResource {
 
     @Deprecated
     public List<LinkedAccountRepresentation> getLinkedAccounts(KeycloakSession session, RealmModel realm, UserModel user) {
-        return session.identityProviders().getAllStream(Map.of(IdentityProviderModel.ENABLED, "true"), null, null)
+        return session.identityProviders().getAllStream(IdentityProviderQuery.userAuthentication().with(IdentityProviderModel.ENABLED, "true"), null, null)
                 .map(provider -> toLinkedAccountRepresentation(provider, session.users().getFederatedIdentitiesStream(realm, user)))
                 .filter(Objects::nonNull)
                 .sorted().toList();

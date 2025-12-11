@@ -31,6 +31,10 @@ while [ "$1" != "" ]; do
 		echo "  rel                 install latest release"
 		echo "  rel[=version]       install specific version"
 		echo ""
+		echo "Environment variables:"
+		echo "  KCW_PROVIDERS       comma separated list of providers to install"
+		echo "  KCW_CONFIGS         comma separated list of config files to install"
+		echo ""
 		echo "Examples:"
 		echo "   Start existing install:    kcw start-dev"
 		echo "   Install nightly and start: kcw nightly start-dev --cluster=none"
@@ -123,6 +127,20 @@ if [ "$INSTALL" != "" ]; then
 		
 		echo "Installed $VERSION"
 	fi
+fi
+
+if [ "$KCW_PROVIDERS" != "" ]; then
+    for PROVIDER in $(echo "$KCW_PROVIDERS" | tr "," "\n"); do
+      cp "$PROVIDER" $KC_DIR/providers/
+      echo "Installed provider: $PROVIDER"
+    done
+fi
+
+if [ "$KCW_CONFIGS" != "" ]; then
+    for CONFIG in $(echo "$KCW_CONFIGS" | tr "," "\n"); do
+      cp "$CONFIG" $KC_DIR/conf/
+      echo "Installed config file: $CONFIG"
+    done
 fi
 
 if [ "$ARGS" != "" ]; then

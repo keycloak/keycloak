@@ -17,8 +17,7 @@
 
 package org.keycloak.testsuite.rest.resource;
 
-import org.keycloak.exportimport.ExportImportManager;
-import org.keycloak.models.KeycloakSession;
+import java.nio.file.Files;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -28,7 +27,10 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.nio.file.Files;
+
+import org.keycloak.exportimport.ExportImportManager;
+import org.keycloak.exportimport.Strategy;
+import org.keycloak.models.KeycloakSession;
 
 import static org.keycloak.exportimport.ExportImportConfig.ACTION;
 import static org.keycloak.exportimport.ExportImportConfig.DEFAULT_USERS_PER_FILE;
@@ -38,7 +40,6 @@ import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
 import static org.keycloak.exportimport.ExportImportConfig.REALM_NAME;
 import static org.keycloak.exportimport.ExportImportConfig.STRATEGY;
 import static org.keycloak.exportimport.ExportImportConfig.USERS_PER_FILE;
-import org.keycloak.exportimport.Strategy;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

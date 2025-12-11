@@ -18,6 +18,7 @@
 package org.keycloak.models.jpa.session;
 
 import jakarta.persistence.EntityManager;
+
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;

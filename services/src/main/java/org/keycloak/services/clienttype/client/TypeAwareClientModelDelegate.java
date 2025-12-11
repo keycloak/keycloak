@@ -24,9 +24,9 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.keycloak.client.clienttype.ClientType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.delegate.ClientModelLazyDelegate;
-import org.keycloak.client.clienttype.ClientType;
 
 /**
  * Delegates to client-type and underlying delegate

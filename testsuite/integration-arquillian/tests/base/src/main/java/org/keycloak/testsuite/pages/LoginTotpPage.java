@@ -19,9 +19,10 @@ package org.keycloak.testsuite.pages;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.junit.Assert;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.util.UIUtils;
+
+import org.junit.Assert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;

@@ -16,11 +16,6 @@
  */
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import static java.util.Optional.ofNullable;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliFormat;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -40,6 +35,7 @@ import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
+import org.keycloak.config.WildcardOptionsUtil;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
@@ -55,6 +51,12 @@ import io.smallrye.config.ConfigValue;
 import io.smallrye.config.ConfigValue.ConfigValueBuilder;
 import io.smallrye.config.ExpressionConfigSourceInterceptor;
 import io.smallrye.config.Expressions;
+
+import static java.util.Optional.ofNullable;
+
+import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliFormat;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 public class PropertyMapper<T> {
 
@@ -310,8 +312,8 @@ public class PropertyMapper<T> {
             return configValue;
         }
 
-        // by unsetting the ordinal this will not be seen as directly modified by the user
-        return configValue.from().withName(name).withValue(mappedValue).withRawValue(value).withConfigSourceOrdinal(0).build();
+        // by unsetting the configsource name this will not be seen as directly modified by the user
+        return configValue.from().withName(name).withValue(mappedValue).withRawValue(value).withConfigSourceName(null).build();
     }
 
     private ConfigValue convertValue(ConfigValue configValue) {
@@ -534,11 +536,30 @@ public class PropertyMapper<T> {
             return this;
         }
 
+        /**
+         * Validates wildcard keys.
+         * You can validate whether an allowed key is provided as the wildcard key.
+         * <p>
+         * f.e. check whether existing feature is referenced
+         * <pre>
+         * kc.feature-<feature>:v1
+         * → (key, value) -> is key a feature? if not, fail
+         *
+         * @param validator validator with parameters (wildcardKey, value)
+         */
+        public Builder<T> wildcardKeysValidator(BiConsumer<String, String> validator) {
+            addValidator((mapper, configValue) -> {
+                var key = mapper.getNamedProperty().orElseThrow(() -> new PropertyException("Cannot determine wildcard key."));
+                validator.accept(key, configValue.getValue());
+            });
+            return this;
+        }
+
         public PropertyMapper<T> build() {
             if (paramLabel == null && Boolean.class.equals(option.getType())) {
                 paramLabel = Boolean.TRUE + "|" + Boolean.FALSE;
             }
-            if (option.getKey().contains(WildcardPropertyMapper.WILDCARD_FROM_START)) {
+            if (option.getKey().contains(WildcardOptionsUtil.WILDCARD_START)) {
                 return new WildcardPropertyMapper<>(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, wildcardKeysTransformer, wildcardMapFrom);
             }
             if (wildcardKeysTransformer != null || wildcardMapFrom != null) {

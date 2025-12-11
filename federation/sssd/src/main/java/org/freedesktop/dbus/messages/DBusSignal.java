@@ -1,6 +1,16 @@
 package org.freedesktop.dbus.messages;
 
-import static org.freedesktop.dbus.connections.AbstractConnection.OBJECT_REGEX_PATTERN;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.GenericDeclaration;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.freedesktop.dbus.DBusMatchRule;
 import org.freedesktop.dbus.Marshalling;
@@ -16,17 +26,7 @@ import org.freedesktop.dbus.utils.DBusNamingUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.invoke.MethodType;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.GenericDeclaration;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
+import static org.freedesktop.dbus.connections.AbstractConnection.OBJECT_REGEX_PATTERN;
 
 public class DBusSignal extends Message {
     private static final Logger                                                    LOGGER              =

@@ -18,15 +18,15 @@
 package org.keycloak.models;
 
 import java.util.Comparator;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
+
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.representations.idm.RealmRepresentation;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -472,7 +472,7 @@ public interface RealmModel extends RoleContainerModel {
      * Returns identity providers as a stream.
      *
      * @return Stream of {@link IdentityProviderModel}. Never returns {@code null}.
-     * @deprecated Use {@link IdentityProviderStorageProvider#getAllStream()} instead.
+     * @deprecated Use {@link IdentityProviderStorageProvider#getAllStream(IdentityProviderQuery)} instead.
      */
     @Deprecated
     Stream<IdentityProviderModel> getIdentityProvidersStream();

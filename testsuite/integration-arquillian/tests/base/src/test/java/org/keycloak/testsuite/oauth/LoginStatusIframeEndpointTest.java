@@ -17,7 +17,31 @@
 
 package org.keycloak.testsuite.oauth;
 
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.models.BrowserSecurityHeaders;
+import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ActionURIUtils;
+import org.keycloak.testsuite.runonserver.ServerVersion;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.NameValuePair;
@@ -32,29 +56,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.models.BrowserSecurityHeaders;
-import org.keycloak.models.Constants;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ErrorRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.ActionURIUtils;
-import org.keycloak.testsuite.runonserver.ServerVersion;
-import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.RealmBuilder;
-
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.core.Response;
-import org.keycloak.testsuite.util.oauth.PkceGenerator;
-
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

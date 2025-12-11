@@ -18,25 +18,25 @@ package org.keycloak.testsuite.federation;
 
 import java.io.File;
 import java.io.FileInputStream;
-import org.keycloak.Config;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.storage.UserStorageProviderFactory;
-import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.storage.user.ImportSynchronization;
-import org.keycloak.storage.user.SynchronizationResult;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+
+import org.keycloak.Config;
 import org.keycloak.common.util.EnvUtil;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.storage.UserStorageProviderFactory;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.user.ImportSynchronization;
+import org.keycloak.storage.user.SynchronizationResult;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

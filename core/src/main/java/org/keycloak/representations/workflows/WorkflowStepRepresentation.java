@@ -1,21 +1,30 @@
 package org.keycloak.representations.workflows;
 
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
-
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Objects;
 
+import org.keycloak.common.util.MultivaluedHashMap;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.keycloak.common.util.MultivaluedHashMap;
 
-@JsonPropertyOrder({"id", CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH})
-public final class WorkflowStepRepresentation extends AbstractWorkflowComponentRepresentation {
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULED_AT;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
+
+@JsonPropertyOrder({CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH, CONFIG_SCHEDULED_AT})
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class WorkflowStepRepresentation extends AbstractWorkflowComponentRepresentation {
+
+    private final String uses;
+    private Long scheduledAt;
 
     public static Builder create() {
         return new Builder();
@@ -30,11 +39,27 @@ public final class WorkflowStepRepresentation extends AbstractWorkflowComponentR
     }
 
     public WorkflowStepRepresentation(String id, String uses, MultivaluedHashMap<String, String> config) {
-        super(id, uses, config);
+        this(id, uses, config, null);
+    }
+
+    public WorkflowStepRepresentation(String id, String uses, MultivaluedHashMap<String, String> config, Long scheduledAt) {
+        super(id, config);
+        this.uses = uses;
+        this.scheduledAt = scheduledAt;
+    }
+
+    @JsonIgnore
+    public String getId() {
+        return super.getId();
+    }
+
+    public String getUses() {
+        return this.uses;
     }
 
     @JsonSerialize(using = MultivaluedHashMapValueSerializer.class)
     @JsonDeserialize(using = MultivaluedHashMapValueDeserializer.class)
+    @JsonInclude(value=JsonInclude.Include.NON_EMPTY, content=JsonInclude.Include.NON_NULL)
     public MultivaluedHashMap<String, String> getConfig() {
         return super.getConfig();
     }
@@ -43,8 +68,8 @@ public final class WorkflowStepRepresentation extends AbstractWorkflowComponentR
         return getConfigValue(CONFIG_AFTER, String.class);
     }
 
-    public void setAfter(long ms) {
-        setConfig(CONFIG_AFTER, String.valueOf(ms));
+    public void setAfter(String after) {
+        setConfig(CONFIG_AFTER, after);
     }
 
     public String getPriority() {
@@ -53,6 +78,15 @@ public final class WorkflowStepRepresentation extends AbstractWorkflowComponentR
 
     public void setPriority(long ms) {
         setConfig(CONFIG_PRIORITY, String.valueOf(ms));
+    }
+
+    @JsonProperty(CONFIG_SCHEDULED_AT)
+    public Long getScheduledAt() {
+        return this.scheduledAt;
+    }
+
+    public void setScheduledAt(Long scheduledAt) {
+        this.scheduledAt = scheduledAt;
     }
 
     @Override
@@ -77,21 +111,11 @@ public final class WorkflowStepRepresentation extends AbstractWorkflowComponentR
         }
 
         public Builder after(Duration duration) {
-            step.setAfter(duration.toMillis());
-            return this;
+            return after(String.valueOf(duration.getSeconds()));
         }
 
-        public Builder id(String id) {
-            step.setId(id);
-            return this;
-        }
-
-        public Builder before(WorkflowStepRepresentation targetStep, Duration timeBeforeTarget) {
-            // Calculate absolute time: targetStep.after - timeBeforeTarget
-            String targetAfter = targetStep.getConfig().get(CONFIG_AFTER).get(0);
-            long targetTime = Long.parseLong(targetAfter);
-            long thisTime = targetTime - timeBeforeTarget.toMillis();
-            step.setAfter(thisTime);
+        public Builder after(String after) {
+            step.setAfter(after);
             return this;
         }
 

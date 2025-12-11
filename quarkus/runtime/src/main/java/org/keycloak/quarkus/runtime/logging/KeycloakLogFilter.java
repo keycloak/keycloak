@@ -17,15 +17,16 @@
 
 package org.keycloak.quarkus.runtime.logging;
 
-import io.quarkus.logging.LoggingFilter;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.common.util.MultiSiteUtils;
-
 import java.util.Objects;
 import java.util.logging.Filter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.regex.Pattern;
+
+import org.keycloak.common.util.MultiSiteUtils;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+
+import io.quarkus.logging.LoggingFilter;
 
 /**
  * @author Alexander Schwartz

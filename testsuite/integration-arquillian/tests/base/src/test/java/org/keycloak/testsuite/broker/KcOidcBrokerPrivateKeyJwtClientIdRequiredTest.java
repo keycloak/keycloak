@@ -16,7 +16,10 @@
  */
 package org.keycloak.testsuite.broker;
 
-import org.junit.Before;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
@@ -35,9 +38,7 @@ import org.keycloak.testsuite.util.ExecutionBuilder;
 import org.keycloak.testsuite.util.FlowBuilder;
 import org.keycloak.testsuite.util.KeyUtils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.junit.Before;
 
 import static org.keycloak.testsuite.AbstractAuthenticationTest.findFlowByAlias;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;

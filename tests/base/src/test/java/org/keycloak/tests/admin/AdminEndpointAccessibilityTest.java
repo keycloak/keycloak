@@ -1,9 +1,11 @@
 package org.keycloak.tests.admin;
 
+import java.util.List;
+import java.util.UUID;
+
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
@@ -18,10 +20,10 @@ import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testframework.util.ApiUtil;
 
-import java.util.List;
-import java.util.UUID;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;

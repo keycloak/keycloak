@@ -17,15 +17,16 @@
 
 package org.keycloak.testsuite.authz.admin;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.keycloak.common.Profile;
-import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.AbstractClientTest;
-import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
-
 import jakarta.ws.rs.ServerErrorException;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.common.Profile;
+import org.keycloak.testsuite.AbstractClientTest;
+import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;

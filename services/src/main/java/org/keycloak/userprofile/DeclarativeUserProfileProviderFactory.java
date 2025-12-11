@@ -72,6 +72,7 @@ import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.EmailValidator;
 
 import static java.util.Optional.ofNullable;
+
 import static org.keycloak.common.util.ObjectUtil.isBlank;
 import static org.keycloak.userprofile.DefaultAttributes.READ_ONLY_ATTRIBUTE_KEY;
 import static org.keycloak.userprofile.UserProfileContext.ACCOUNT;

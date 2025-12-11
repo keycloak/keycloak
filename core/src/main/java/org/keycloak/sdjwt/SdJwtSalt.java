@@ -16,11 +16,13 @@
  */
 package org.keycloak.sdjwt;
 
+import java.util.Objects;
+
 /**
  * Strong typing salt to avoid parameter mismatch.
- * 
+ *
  * Comparable to allow sorting in SD-JWT VC.
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class SdJwtSalt implements Comparable<SdJwtSalt> {
@@ -43,5 +45,20 @@ public class SdJwtSalt implements Comparable<SdJwtSalt> {
     @Override
     public int compareTo(SdJwtSalt o) {
         return salt.compareTo(o.salt);
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (!(o instanceof SdJwtSalt)) {
+            return false;
+        }
+
+        SdJwtSalt sdJwtSalt = (SdJwtSalt) o;
+        return Objects.equals(salt, sdJwtSalt.salt);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(salt);
     }
 }

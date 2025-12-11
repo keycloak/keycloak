@@ -17,16 +17,20 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.util.JsonSerialization;
-
 import java.util.Map;
 import java.util.Optional;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * Represents a CredentialRequest according to OID4VCI
@@ -35,6 +39,7 @@ import java.util.Optional;
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CredentialRequest {
 
     @JsonProperty("credential_configuration_id")
@@ -45,6 +50,24 @@ public class CredentialRequest {
 
     @JsonProperty("proofs")
     private Proofs proofs;
+
+    /**
+     * Deprecated: use {@link #proofs} instead.
+     * This field is kept only for backward compatibility with clients sending a single 'proof'.
+     * Can be either {@link JwtProof} or {@link AttestationProof} depending on the proof type.
+     */
+    @Deprecated
+    @JsonProperty("proof")
+    @JsonTypeInfo(
+            use = JsonTypeInfo.Id.NAME,
+            include = JsonTypeInfo.As.EXISTING_PROPERTY,
+            property = "proof_type"
+    )
+    @JsonSubTypes({
+            @JsonSubTypes.Type(value = JwtProof.class, name = "jwt"),
+            @JsonSubTypes.Type(value = AttestationProof.class, name = "attestation")
+    })
+    private Object proof;
 
     // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-format-identifier-3
     @JsonProperty("credential_definition")
@@ -77,6 +100,15 @@ public class CredentialRequest {
 
     public CredentialRequest setProofs(Proofs proofs) {
         this.proofs = proofs;
+        return this;
+    }
+
+    public Object getProof() {
+        return proof;
+    }
+
+    public CredentialRequest setProof(Object proof) {
+        this.proof = proof;
         return this;
     }
 

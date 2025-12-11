@@ -16,14 +16,14 @@
  */
 package org.keycloak.operator;
 
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 
 public final class Constants {
     public static final String CRDS_GROUP = "k8s.keycloak.org";
@@ -39,6 +39,7 @@ public final class Constants {
     public static final String KEYCLOAK_RECREATE_UPDATE_ANNOTATION = "operator.keycloak.org/recreate-update";
     public static final String KEYCLOAK_UPDATE_REASON_ANNOTATION = "operator.keycloak.org/update-reason";
     public static final String KEYCLOAK_UPDATE_REVISION_ANNOTATION = "operator.keycloak.org/update-revision";
+    public static final String KEYCLOAK_UPDATE_HASH_ANNOTATION = "operator.keycloak.org/update-hash";
     public static final String APP_LABEL = "app";
 
     public static final String DEFAULT_LABELS_AS_STRING = "app=keycloak,app.kubernetes.io/managed-by=keycloak-operator";

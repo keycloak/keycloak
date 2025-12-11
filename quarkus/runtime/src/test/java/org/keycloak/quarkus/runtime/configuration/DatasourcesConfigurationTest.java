@@ -1,5 +1,12 @@
 package org.keycloak.quarkus.runtime.configuration;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import org.keycloak.quarkus.runtime.Environment;
+
 import io.smallrye.config.Expressions;
 import io.smallrye.config.SmallRyeConfig;
 import org.h2.jdbcx.JdbcDataSource;
@@ -7,14 +14,8 @@ import org.hibernate.dialect.H2Dialect;
 import org.hibernate.dialect.MariaDBDialect;
 import org.hibernate.dialect.PostgreSQLDialect;
 import org.junit.Test;
-import org.keycloak.quarkus.runtime.Environment;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.xa.PGXADataSource;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -101,7 +102,6 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         assertConfig("db-dialect-store", H2Dialect.class.getName());
         // XA datasource is the default
         assertExternalConfig("quarkus.datasource.\"store\".jdbc.driver", JdbcDataSource.class.getName());
-        assertExternalConfig("quarkus.datasource.\"store\".jdbc.url", "jdbc:h2:file:" + Environment.getHomeDir() + "/data/h2-store/keycloakdb-store;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0");
         onAfter();
 
         ConfigArgsConfigSource.setCliArgs("--db-kind-store=dev-mem");
@@ -183,6 +183,14 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         assertExternalConfig(Map.of(
                 "quarkus.datasource.\"asdf\".jdbc.url", "jdbc:postgresql://myhost:5432/kcdb?foo=bar",
                 "quarkus.datasource.\"asdf\".db-kind", "postgresql"
+        ));
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--db-kind-asdf=dev-file", "--db-url-properties-asdf=;DB_CLOSE_ON_EXIT=true");
+        initConfig();
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.\"asdf\".jdbc.url", "jdbc:h2:file:" + Environment.getHomeDir().orElseThrow() + "/data/h2-asdf/keycloakdb-asdf;DB_CLOSE_ON_EXIT=true;NON_KEYWORDS=VALUE;DB_CLOSE_DELAY=0",
+                "quarkus.datasource.\"asdf\".db-kind", "h2"
         ));
         onAfter();
     }
@@ -276,7 +284,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void nestedDatasourceProperties() {
         initConfig();
-        assertExternalConfig("quarkus.datasource.foo", "jdbc:h2:file:" + Environment.getHomeDir() + "/data/keycloakdb");
+        assertExternalConfig("quarkus.datasource.foo", "jdbc:h2:file:" + Environment.getHomeDir().orElseThrow() + "/data/keycloakdb");
         assertExternalConfig("quarkus.datasource.bar", "foo-def-suffix");
 
         System.setProperty("kc.prop5", "val5");

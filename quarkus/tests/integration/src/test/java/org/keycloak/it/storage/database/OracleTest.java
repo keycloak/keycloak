@@ -17,14 +17,14 @@
 
 package org.keycloak.it.storage.database;
 
+import java.util.function.Consumer;
+
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.CLITest;
 import org.keycloak.it.junit5.extension.WithDatabase;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
-
-import java.util.function.Consumer;
 
 @CLITest
 @WithDatabase(alias = "oracle")

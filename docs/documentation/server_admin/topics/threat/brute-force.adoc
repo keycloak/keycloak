@@ -19,7 +19,7 @@ To enable this protection:
 . Click *Realm Settings* in the menu
 . Click the *Security Defenses* tab.
 . Click the *Brute Force Detection* tab.
-. Choose the *Brute Force Mode* which best fit to your requirements. 
+. Choose the *Brute Force Mode* which best fit to your requirements.
 +
 .Brute force detection
 image:images/brute-force.png[]
@@ -132,7 +132,7 @@ wait time will never reach the value you have set to `Max wait`.
 
 *Strategies to set Wait Time*
 
-{project_name} provides two strategies to calculate wait time: By multiples or Linear. By multiples is the first strategy introduced by {project_name}, so that is the default one. 
+{project_name} provides two strategies to calculate wait time: By multiples or Linear. By multiples is the first strategy introduced by {project_name}, so that is the default one.
 
 By multiples strategy, wait time is incremented when the number (or count) of failures are multiples of `Max Login Failure`. For instance, if you set `Max Login Failures` to `5` and a `Wait Increment` to `30` seconds, the effective time that an account is disabled after several failed authentication attempts will be:
 
@@ -151,7 +151,7 @@ By multiples strategy, wait time is incremented when the number (or count) of fa
 |**10** |**30** | 5 | **60**
 |===
 
-At the fifth failed attempt, the account is disabled for `30` seconds. After reaching the next multiple of `Max Login Failures`, in this case `10`, the time increases from `30` to `60` seconds. 
+At the fifth failed attempt, the account is disabled for `30` seconds. After reaching the next multiple of `Max Login Failures`, in this case `10`, the time increases from `30` to `60` seconds.
 
 The By multiple strategy uses the following formula to calculate wait time: _Wait Increment in Seconds_ * (`count` / _Max Login Failures_). The division is an integer division rounded down to a whole number.
 
@@ -177,7 +177,7 @@ At the fifth failed attempt, the account is disabled for `30` seconds. Each new 
 The linear strategy uses the following formula to calculate wait time: _Wait Increment in Seconds_ * (1 + `count` - _Max Login Failures_).
 
 ==== Lockout permanently after temporary lockout
-Mixed mode. Locks user temporarily for specified number of times and then locks user permanently. 
+Mixed mode. Locks user temporarily for specified number of times and then locks user permanently.
 
 .Lockout permanently after temporary lockout
 image:images/brute-force-mixed.png[]

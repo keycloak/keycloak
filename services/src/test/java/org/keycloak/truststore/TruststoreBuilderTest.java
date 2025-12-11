@@ -17,13 +17,13 @@
 
 package org.keycloak.truststore;
 
-import org.junit.Test;
-
 import java.io.File;
 import java.net.URL;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.Collections;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;

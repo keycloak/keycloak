@@ -17,12 +17,12 @@
 
 package org.keycloak.models;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.crypto.Algorithm;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.regex.Pattern;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.crypto.Algorithm;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

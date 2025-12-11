@@ -85,7 +85,7 @@ From 26.3 to 26.4 the support changed as follows:
 |Amazon Aurora PostgreSQL | Remained 15.x | 12.x -> 13.x
 |Microsoft SQLServer | Remained 2019 | 2012 -> 2014
 |===
-  
+
 === Usage of the `exact` request parameter when searching users by attributes
 
 If you are querying users by attributes through the User API where you want to fetch users that match a specific attribute key (regardless the value),
@@ -141,9 +141,9 @@ You can still add custom caches without setting this option.
 When upgrading an existing deployment, remove all default cache configurations from your existing `conf/cache-ispn.xml`
 and use the `+--cache-...+` options to make changes for example to the cache sizes.
 
-=== RFC8414 compliant lookup of metadata
+=== RFC 8414 compliant lookup of metadata
 
-{project_name} now exposes an RFC8414-compliant endpoint at the root URL level `/.well-known/` to allow clients to discover OAuth 2.0 Authorization Server Metadata and other well-known providers by the issuer URL.
+{project_name} now exposes an RFC 8414 compliant endpoint at the root URL level `/.well-known/` to allow clients to discover OAuth 2.0 Authorization Server Metadata and other well-known providers by the issuer URL.
 
 As an example, OAuth 2.0 Authorization Server Metadata information was exposed by this URL:
 

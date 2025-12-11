@@ -1,9 +1,10 @@
 package org.keycloak.testframework.remote.runonserver;
 
-import com.sun.net.httpserver.HttpServer;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
+
+import com.sun.net.httpserver.HttpServer;
 
 public class TestClassServerSupplier implements Supplier<TestClassServer, InjectTestClassServer> {
 

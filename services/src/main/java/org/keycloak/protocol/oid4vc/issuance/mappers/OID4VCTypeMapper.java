@@ -17,19 +17,19 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
-import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
-import org.keycloak.provider.ProviderConfigProperty;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.provider.ProviderConfigProperty;
 
 /**
  * Allows to add types to the credential subject

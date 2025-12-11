@@ -17,11 +17,9 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -31,7 +29,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
@@ -43,8 +40,11 @@ import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import java.util.Set;
-import java.util.stream.Collectors;
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -341,9 +341,7 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
             LDAPObject john = LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "johnrolemapper", "John", "RoleMapper", "johnrolemapper@email.org", null, "1234");
             LDAPTestUtils.updateLDAPPassword(ldapProvider, john, "Password1");
             LDAPTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ctx.getLdapModel(), LDAPGroupMapperMode.LDAP_ONLY);
-            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
-            SynchronizationResult syncResult = usersSyncManager.syncChangedUsers(session.getKeycloakSessionFactory(),
-                    appRealm.getId(), new UserStorageProviderModel(ctx.getLdapModel()));
+            SynchronizationResult syncResult = UserStoragePrivateUtil.runPeriodicSync(session.getKeycloakSessionFactory(), new UserStorageProviderModel(ctx.getLdapModel()));
             syncResult.getAdded();
         });
 
@@ -397,9 +395,7 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
                 roleMapper.addRoleMappingInLDAP("realmRole2", johnLdap);
             }
 
-            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
-            SynchronizationResult syncResult = usersSyncManager.syncChangedUsers(session.getKeycloakSessionFactory(),
-                    appRealm.getId(), new UserStorageProviderModel(ctx.getLdapModel()));
+            UserStoragePrivateUtil.runPeriodicSync(session.getKeycloakSessionFactory(), new UserStorageProviderModel(ctx.getLdapModel()));
         });
 
         testingClient.server().run(session -> {

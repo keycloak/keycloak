@@ -16,21 +16,9 @@
  */
 package org.keycloak.testsuite.account;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
-import static org.keycloak.testsuite.util.oauth.OAuthClient.APP_ROOT;
-
 import java.io.IOException;
 import java.util.List;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -41,6 +29,20 @@ import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
+import static org.keycloak.testsuite.util.oauth.OAuthClient.APP_ROOT;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

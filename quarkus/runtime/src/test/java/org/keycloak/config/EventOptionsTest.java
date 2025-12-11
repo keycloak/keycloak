@@ -17,11 +17,12 @@
 
 package org.keycloak.config;
 
-import org.junit.Test;
-import org.keycloak.events.EventType;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.keycloak.events.EventType;
+
+import org.junit.Test;
 
 import static org.junit.Assert.fail;
 

@@ -17,15 +17,15 @@
 
 package org.keycloak.models.utils;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * Delegation pattern.  Used to proxy UserModel implementations.

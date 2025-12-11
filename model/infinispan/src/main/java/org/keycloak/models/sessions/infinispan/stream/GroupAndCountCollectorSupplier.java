@@ -23,10 +23,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import org.keycloak.marshalling.Marshalling;
+
 import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.keycloak.marshalling.Marshalling;
 
 /**
  * A {@link Supplier} that returns a {@link Collector} to group and count elements.

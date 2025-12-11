@@ -16,16 +16,24 @@
  */
 package org.keycloak.services.resources.admin;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authorization.admin.AuthorizationService;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
@@ -52,22 +60,17 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.utils.SearchQueryUtils;
 import org.keycloak.validation.ValidationUtil;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.util.Map;
-import java.util.stream.Stream;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
 
 import static java.lang.Boolean.TRUE;
+
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
@@ -119,6 +122,20 @@ public class ClientsResource {
                                                  @QueryParam("q") String searchQuery,
                                                  @Parameter(description = "the first result") @QueryParam("first") Integer firstResult,
                                                  @Parameter(description = "the max results to return") @QueryParam("max") Integer maxResults) {
+        return ModelToRepresentation.filterValidRepresentations(
+                getClientModels(clientId, viewableOnly, search, searchQuery, firstResult, maxResults), c -> {
+                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(c, session);
+                    representation.setAccess(auth.clients().getAccess(c));
+                    return representation;
+                });
+    }
+
+    public Stream<ClientModel> getClientModels(String clientId,
+            boolean viewableOnly,
+            boolean search,
+            String searchQuery,
+            Integer firstResult,
+            Integer maxResults) {
         auth.clients().requireList();
 
         boolean canView = AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || auth.clients().canView();
@@ -152,21 +169,7 @@ public class ClientsResource {
             throw new ErrorResponseException(Errors.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
         }
 
-        Stream<ClientRepresentation> s = ModelToRepresentation.filterValidRepresentations(clientModels,
-                c -> {
-                    ClientRepresentation representation = null;
-                    if (canView || auth.clients().canView(c)) {
-                        representation = ModelToRepresentation.toRepresentation(c, session);
-                        representation.setAccess(auth.clients().getAccess(c));
-                    } else if (!viewableOnly && auth.clients().canView(c)) {
-                        representation = new ClientRepresentation();
-                        representation.setId(c.getId());
-                        representation.setClientId(c.getClientId());
-                        representation.setDescription(c.getDescription());
-                    }
-
-                    return representation;
-                });
+        Stream<ClientModel> s = clientModels.filter(m -> canView || auth.clients().canView(m));
 
         if (!canView) {
             s = paginatedStream(s, firstResult, maxResults);
@@ -196,6 +199,11 @@ public class ClientsResource {
         @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response createClient(final ClientRepresentation rep) {
+        var created = createClientModel(rep);
+        return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(created.getId()).build()).build();
+    }
+
+    public ClientModel createClientModel(final ClientRepresentation rep) {
         auth.clients().requireManage();
 
         try {
@@ -232,7 +240,7 @@ public class ClientsResource {
             session.getContext().setClient(clientModel);
             session.clientPolicy().triggerOnEvent(new AdminClientRegisteredContext(clientModel, auth.adminAuth()));
 
-            return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
+            return clientModel;
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
         } catch (ClientPolicyException cpe) {

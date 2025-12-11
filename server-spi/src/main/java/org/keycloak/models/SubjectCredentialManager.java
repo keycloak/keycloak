@@ -17,15 +17,18 @@
 
 package org.keycloak.models;
 
-import org.keycloak.credential.CredentialInput;
-import org.keycloak.credential.CredentialModel;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialModel;
+
 /**
  * Validates and manages the credentials of a known entity (for example, a user).
+ *
+ * NOTE: This class might be renamed to {@link org.keycloak.models.UserCredentialManager} in Keycloak 27. Please use the {@link org.keycloak.models.UserCredentialManager}
+ * already if you can
  */
 public interface SubjectCredentialManager {
 

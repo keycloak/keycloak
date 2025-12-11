@@ -21,10 +21,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.platform.PlatformProvider;
+
+import org.jboss.logging.Logger;
 
 public class TestPlatform implements PlatformProvider {
 

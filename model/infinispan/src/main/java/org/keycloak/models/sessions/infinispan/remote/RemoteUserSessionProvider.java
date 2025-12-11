@@ -31,12 +31,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.reactivex.rxjava3.core.Flowable;
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.util.concurrent.CompletionStages;
-import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -62,6 +59,11 @@ import org.keycloak.models.sessions.infinispan.remote.transaction.UserSessionCha
 import org.keycloak.models.sessions.infinispan.remote.transaction.UserSessionTransaction;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.utils.StreamsUtil;
+
+import io.reactivex.rxjava3.core.Flowable;
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
 
@@ -111,7 +113,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     @Override
     public UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId, UserSessionModel.SessionPersistenceState persistenceState) {
         if (id == null) {
-            id = KeycloakModelUtils.generateId();
+            id = SecretGenerator.SECURE_ID_GENERATOR.get();
         }
 
         var entity = RemoteUserSessionEntity.create(id, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
@@ -179,16 +181,6 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     @Override
     public void removeUserSessions(RealmModel realm, UserModel user) {
         transaction.removeAllSessionByUserId(realm.getId(), user.getId());
-    }
-
-    @Override
-    public void removeAllExpired() {
-        //rely on Infinispan expiration
-    }
-
-    @Override
-    public void removeExpired(RealmModel realm) {
-        //rely on Infinispan expiration
     }
 
     @Override
@@ -368,7 +360,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     private UserSessionUpdater initUserSessionFromQuery(UserSessionUpdater updater, RealmModel realm, UserModel user, boolean offline) {
         assert updater != null;
         assert realm != null;
-        if (updater.isDeleted()) {
+        if (updater.isInvalid()) {
             return null;
         }
         if (updater.isInitialized()) {
@@ -407,7 +399,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     }
 
     private AuthenticatedClientSessionModel initClientSessionUpdater(AuthenticatedClientSessionUpdater updater, UserSessionUpdater userSession) {
-        if (updater == null || updater.isDeleted()) {
+        if (updater == null || updater.isInvalid()) {
             return null;
         }
         var client = userSession.getRealm().getClientById(updater.getKey().clientId());
@@ -463,7 +455,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     private static <K, V, T extends BaseUpdater<K, V>> T checkExpiration(T updater) {
         var expiration = updater.computeExpiration();
         if (expiration.isExpired()) {
-            updater.markDeleted();
+            updater.markExpired();
             return null;
         }
         return updater;

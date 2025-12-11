@@ -18,12 +18,12 @@
 
 package org.keycloak.authorization.policy.evaluation;
 
+import java.util.Map;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.permission.ResourcePermission;
-
-import java.util.Map;
 
 /**
  * <p>A {@link PolicyEvaluator} evaluates authorization policies based on a given {@link ResourcePermission}, sending

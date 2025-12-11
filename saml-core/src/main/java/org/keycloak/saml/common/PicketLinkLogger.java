@@ -18,6 +18,14 @@
 package org.keycloak.saml.common;
 
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import javax.security.auth.login.LoginException;
+import javax.xml.crypto.dsig.XMLSignatureException;
+import javax.xml.stream.Location;
+
+import jakarta.xml.ws.WebServiceException;
+
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
@@ -28,14 +36,8 @@ import org.keycloak.saml.common.exceptions.fed.IssueInstantMissingException;
 import org.keycloak.saml.common.exceptions.fed.IssuerNotTrustedException;
 import org.keycloak.saml.common.exceptions.fed.SignatureValidationException;
 import org.keycloak.saml.common.exceptions.fed.WSTrustException;
-import org.w3c.dom.Element;
 
-import javax.security.auth.login.LoginException;
-import javax.xml.crypto.dsig.XMLSignatureException;
-import javax.xml.stream.Location;
-import jakarta.xml.ws.WebServiceException;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
+import org.w3c.dom.Element;
 
 /**
  * <p>This interface acts as a Log Facade for PicketLink, from which exceptions and messages should be created or

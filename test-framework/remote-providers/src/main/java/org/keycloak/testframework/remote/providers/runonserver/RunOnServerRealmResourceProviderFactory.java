@@ -1,11 +1,11 @@
 package org.keycloak.testframework.remote.providers.runonserver;
 
+import java.net.MalformedURLException;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
-
-import java.net.MalformedURLException;
 
 public class RunOnServerRealmResourceProviderFactory implements RealmResourceProviderFactory {
 

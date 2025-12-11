@@ -17,8 +17,6 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import org.junit.ClassRule;
-import org.junit.Test;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.RealmModel;
@@ -31,6 +29,9 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+
+import org.junit.ClassRule;
+import org.junit.Test;
 
 public class LDAPUserPropertiesMappingTest extends AbstractLDAPTest {
 
@@ -109,4 +110,3 @@ public class LDAPUserPropertiesMappingTest extends AbstractLDAPTest {
         });
     }
 }
-

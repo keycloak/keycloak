@@ -17,46 +17,6 @@
 
 package org.keycloak.models.utils;
 
-import static java.util.Optional.ofNullable;
-import static org.keycloak.models.UserModel.IS_TEMP_ADMIN_ATTR_NAME;
-import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
-
-import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.authentication.otp.OTPApplicationProvider;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
-import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.AuthorizationProviderFactory;
-import org.keycloak.authorization.model.PermissionTicket;
-import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.Resource;
-import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.Scope;
-import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
-import org.keycloak.authorization.store.PolicyStore;
-import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.common.Profile;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.Time;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.credential.CredentialMetadata;
-import org.keycloak.credential.CredentialModel;
-import org.keycloak.deployment.DeployedConfigurationsManager;
-import org.keycloak.events.Event;
-import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.events.admin.AuthDetails;
-import org.keycloak.models.*;
-import org.keycloak.models.credential.OTPCredentialModel;
-import org.keycloak.models.light.LightweightUserAdapter;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.account.CredentialMetadataRepresentation;
-import org.keycloak.representations.account.LocalizedMessage;
-import org.keycloak.representations.idm.*;
-import org.keycloak.representations.idm.authorization.*;
-import org.keycloak.storage.StorageId;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.utils.StringUtil;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -70,7 +30,113 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.Config;
+import org.keycloak.authentication.otp.OTPApplicationProvider;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.AuthorizationProviderFactory;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.broker.provider.util.IdentityProviderTypeUtil;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.Time;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialMetadata;
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.deployment.DeployedConfigurationsManager;
+import org.keycloak.events.Event;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.AuthDetails;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.CibaConfig;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderQuery;
+import org.keycloak.models.IdentityProviderType;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
+import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.ParConfig;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionConfigModel;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.WebAuthnPolicy;
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.light.LightweightUserAdapter;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.account.CredentialMetadataRepresentation;
+import org.keycloak.representations.account.LocalizedMessage;
+import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.AuthDetailsRepresentation;
+import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
+import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.ConfigPropertyRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionConfigRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserConsentRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.storage.StorageId;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
+
+import org.jboss.logging.Logger;
+
+import static java.util.Optional.ofNullable;
+
+import static org.keycloak.models.UserModel.IS_TEMP_ADMIN_ATTR_NAME;
 import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
+import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -561,8 +627,8 @@ public class ModelToRepresentation {
         }
 
         if (export) {
-            List<IdentityProviderRepresentation> identityProviders = session.identityProviders().getAllStream()
-                    .map(provider -> toRepresentation(realm, provider, export)).collect(Collectors.toList());
+            List<IdentityProviderRepresentation> identityProviders = session.identityProviders().getAllStream(IdentityProviderQuery.any())
+                    .map(provider -> toRepresentation(session, realm, provider, export)).collect(Collectors.toList());
             rep.setIdentityProviders(identityProviders);
             List<IdentityProviderMapperRepresentation> identityProviderMappers = session.identityProviders().getMappersStream()
                     .map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
@@ -873,11 +939,11 @@ public class ModelToRepresentation {
         return providerRep;
     }
 
-    public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {
-        return toRepresentation(realm, identityProviderModel, false);
+    public static IdentityProviderRepresentation toRepresentation(KeycloakSession session, RealmModel realm, IdentityProviderModel identityProviderModel) {
+        return toRepresentation(session, realm, identityProviderModel, false);
     }
 
-    public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel, boolean export) {
+    public static IdentityProviderRepresentation toRepresentation(KeycloakSession session, RealmModel realm, IdentityProviderModel identityProviderModel, boolean export) {
         IdentityProviderRepresentation providerRep = toBriefRepresentation(realm, identityProviderModel);
 
         providerRep.setLinkOnly(identityProviderModel.isLinkOnly());
@@ -888,11 +954,6 @@ public class ModelToRepresentation {
         Map<String, String> config = new HashMap<>(identityProviderModel.getConfig());
         providerRep.setConfig(config);
         providerRep.setAddReadTokenRoleOnCreate(identityProviderModel.isAddReadTokenRoleOnCreate());
-
-        String syncMode = config.get(IdentityProviderModel.SYNC_MODE);
-        if (syncMode == null) {
-            config.put(IdentityProviderModel.SYNC_MODE, "LEGACY");
-        }
 
         String firstBrokerLoginFlowId = identityProviderModel.getFirstBrokerLoginFlowId();
         if (firstBrokerLoginFlowId != null) {
@@ -916,6 +977,8 @@ public class ModelToRepresentation {
             providerRep.setOrganizationId(identityProviderModel.getOrganizationId());
         }
 
+        List<IdentityProviderType> identityProviderTypes = IdentityProviderTypeUtil.listTypesFromFactory(session, identityProviderModel.getProviderId());
+        providerRep.setTypes(identityProviderTypes.stream().map(Enum::toString).collect(Collectors.toList()));
         return providerRep;
     }
 

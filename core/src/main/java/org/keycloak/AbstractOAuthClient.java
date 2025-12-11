@@ -17,12 +17,12 @@
 
 package org.keycloak;
 
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.SecretGenerator;
-
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

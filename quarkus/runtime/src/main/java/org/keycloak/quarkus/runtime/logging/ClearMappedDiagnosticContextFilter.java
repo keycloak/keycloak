@@ -1,13 +1,14 @@
 package org.keycloak.quarkus.runtime.logging;
 
+import java.io.IOException;
+
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.ext.Provider;
-import org.keycloak.logging.MappedDiagnosticContextUtil;
 
-import java.io.IOException;
+import org.keycloak.logging.MappedDiagnosticContextUtil;
 
 /**
  * Response filter that clears custom properties from MDC.

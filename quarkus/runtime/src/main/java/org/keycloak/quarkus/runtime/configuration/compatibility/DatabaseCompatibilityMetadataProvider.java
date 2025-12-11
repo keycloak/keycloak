@@ -1,8 +1,5 @@
 package org.keycloak.quarkus.runtime.configuration.compatibility;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -12,6 +9,9 @@ import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.Option;
 
 import io.smallrye.config.ConfigValue;
+
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 
 public class DatabaseCompatibilityMetadataProvider implements CompatibilityMetadataProvider {
 

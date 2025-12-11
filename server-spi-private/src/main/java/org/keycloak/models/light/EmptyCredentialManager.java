@@ -16,11 +16,12 @@
  */
 package org.keycloak.models.light;
 
+import java.util.List;
+import java.util.stream.Stream;
+
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.SubjectCredentialManager;
-import java.util.List;
-import java.util.stream.Stream;
 
 /**
  *

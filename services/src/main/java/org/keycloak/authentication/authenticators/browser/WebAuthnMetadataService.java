@@ -5,9 +5,10 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.FileUtils;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
  * Provides metadata for WebAuthn credentials

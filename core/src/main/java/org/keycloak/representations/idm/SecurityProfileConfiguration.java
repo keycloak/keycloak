@@ -16,9 +16,10 @@
  */
 package org.keycloak.representations.idm;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
 
 /**
  * Default configuration for security profile. For the moment just a name and pointers

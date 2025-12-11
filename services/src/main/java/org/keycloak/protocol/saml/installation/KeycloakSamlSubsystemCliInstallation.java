@@ -17,7 +17,12 @@
 
 package org.keycloak.protocol.saml.installation;
 
-import static org.keycloak.protocol.util.ClientCliInstallationUtil.quote;
+import java.net.URI;
+
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.Config;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -26,12 +31,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlProtocol;
-
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.net.URI;
-import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.services.resources.RealmsResource;
+
+import static org.keycloak.protocol.util.ClientCliInstallationUtil.quote;
 
 public class KeycloakSamlSubsystemCliInstallation implements ClientInstallationProvider {
 

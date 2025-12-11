@@ -17,6 +17,19 @@
 
 package org.keycloak.protocol.oidc;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
@@ -38,6 +51,8 @@ import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorFactory;
 import org.keycloak.protocol.oidc.representations.MTLSEndpointAliases;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
@@ -53,19 +68,6 @@ import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.urls.UrlType;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.wellknown.WellKnownProvider;
-
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
-
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -167,7 +169,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         // Include client scopes can be disabled in the environments with thousands of client scopes to avoid potentially expensive iteration over client scopes
         if (includeClientScopes) {
             List<String> scopeNames = realm.getClientScopesStream()
-                    .filter(clientScope -> Objects.equals(OIDCLoginProtocol.LOGIN_PROTOCOL, clientScope.getProtocol()))
+                    .filter(clientScope -> Objects.equals(OIDCLoginProtocol.LOGIN_PROTOCOL, clientScope.getProtocol()) && clientScope.isIncludeInOpenIDProviderMetadata())
                     .map(ClientScopeModel::getName)
                     .collect(Collectors.toList());
             if (!scopeNames.contains(OAuth2Constants.SCOPE_OPENID)) {
@@ -214,6 +216,11 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setMtlsEndpointAliases(mtlsEndpointAliases);
 
         config.setAuthorizationResponseIssParameterSupported(true);
+
+        List<String> authorizationDetailsTypesSupported = getAuthorizationDetailsTypesSupported();
+        if (!authorizationDetailsTypesSupported.isEmpty()) {
+            config.setAuthorizationDetailsTypesSupported(authorizationDetailsTypesSupported);
+        }
 
         config = checkConfigOverride(config);
         return config;
@@ -321,6 +328,16 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         mtls_endpoints.setBackchannelAuthenticationEndpoint(config.getBackchannelAuthenticationEndpoint());
         mtls_endpoints.setPushedAuthorizationRequestEndpoint(config.getPushedAuthorizationRequestEndpoint());
         return mtls_endpoints;
+    }
+
+    private List<String> getAuthorizationDetailsTypesSupported() {
+        return session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
+                .map(AuthorizationDetailsProcessorFactory.class::cast)
+                .map(factory -> Map.entry(factory.getId(), factory.create(session)))
+                .filter(entry -> entry.getValue().isSupported())
+                .map(Map.Entry::getKey)
+                .toList();
     }
 
     private OIDCConfigurationRepresentation checkConfigOverride(OIDCConfigurationRepresentation config) {

@@ -18,22 +18,21 @@
 
 package org.keycloak.testsuite.authz.admin;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.List;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 
-import java.util.List;
+import org.junit.Assert;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -71,13 +70,8 @@ public class AuthorizationTest extends AbstractAuthorizationTest {
 
         clientResource.authorization().policies().role().create(policy);
 
-        List<ResourceRepresentation> defaultResources = clientResource.authorization().resources().resources();
-
-        assertEquals(1, defaultResources.size());
-
-        List<PolicyRepresentation> defaultPolicies = clientResource.authorization().policies().policies();
-
-        assertEquals(3, defaultPolicies.size());
+        List<PolicyRepresentation> policies = clientResource.authorization().policies().policies();
+        assertEquals(1, policies.size());
 
         enableAuthorizationServices(false);
         enableAuthorizationServices(true);
@@ -87,43 +81,13 @@ public class AuthorizationTest extends AbstractAuthorizationTest {
         assertEquals(PolicyEnforcerConfig.EnforcementMode.ENFORCING.name(), settings.getPolicyEnforcementMode().name());
         assertTrue(settings.isAllowRemoteResourceManagement());
         assertEquals(resourceServer.getId(), settings.getClientId());
-        defaultResources = clientResource.authorization().resources().resources();
 
-        assertEquals(1, defaultResources.size());
-
-        defaultPolicies = clientResource.authorization().policies().policies();
-
-        assertEquals(2, defaultPolicies.size());
+        policies = clientResource.authorization().policies().policies();
+        assertTrue(policies.isEmpty());
 
         serviceAccount = clientResource.getServiceAccountUser();
         Assert.assertNotNull(serviceAccount);
         serviceAccountRoles = realm.users().get(serviceAccount.getId()).roles().clientLevel(resourceServer.getId()).listEffective();
         Assert.assertTrue(serviceAccountRoles.stream().anyMatch(roleRepresentation -> "uma_protection".equals(roleRepresentation.getName())));
-    }
-
-    // KEYCLOAK-6321
-    @Test
-    public void testRemoveDefaultResourceWithAdminEventsEnabled() {
-        RealmResource realmResource = testRealmResource();
-        RealmRepresentation realmRepresentation = realmResource.toRepresentation();
-
-        realmRepresentation.setAdminEventsEnabled(true);
-
-        realmResource.update(realmRepresentation);
-
-        ClientResource clientResource = getClientResource();
-        ClientRepresentation resourceServer = getResourceServer();
-
-        ResourceServerRepresentation settings = clientResource.authorization().getSettings();
-
-        assertEquals(PolicyEnforcerConfig.EnforcementMode.ENFORCING.name(), settings.getPolicyEnforcementMode().name());
-        assertEquals(resourceServer.getId(), settings.getClientId());
-        List<ResourceRepresentation> defaultResources = clientResource.authorization().resources().resources();
-
-        assertEquals(1, defaultResources.size());
-
-        clientResource.authorization().resources().resource(defaultResources.get(0).getId()).remove();
-
-        assertTrue(clientResource.authorization().resources().resources().isEmpty());
     }
 }

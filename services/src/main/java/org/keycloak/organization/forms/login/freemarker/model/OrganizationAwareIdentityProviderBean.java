@@ -25,6 +25,7 @@ import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.util.Booleans;
 
 import static org.keycloak.models.IdentityProviderStorageProvider.FetchMode.ALL;
 import static org.keycloak.models.IdentityProviderStorageProvider.FetchMode.ORG_ONLY;
@@ -64,7 +65,7 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
             // we already have the organization, just fetch the organization's public enabled IDPs.
             if (this.organization != null) {
                 return organization.getIdentityProviders()
-                        .filter(idp -> idp.isEnabled() && !idp.isLinkOnly() && !idp.isHideOnLogin())
+                        .filter(idp -> idp.isEnabled() && Booleans.isFalse(idp.isLinkOnly()) && Booleans.isFalse(idp.isHideOnLogin()))
                         .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
                         .map(idp -> createIdentityProvider(super.realm, super.baseURI, idp))
                         .sorted(IDP_COMPARATOR_INSTANCE).toList();
@@ -103,6 +104,6 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
         if (organization != null && !Objects.equals(organization.getId(),idp.getOrganizationId())) {
             return false;
         }
-        return !idp.isHideOnLogin();
+        return Booleans.isFalse(idp.isHideOnLogin());
     }
 }

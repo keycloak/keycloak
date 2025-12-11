@@ -1,13 +1,13 @@
 package org.keycloak.testframework.admin;
 
+import javax.net.ssl.SSLContext;
+
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.https.ManagedCertificates;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.server.KeycloakServer;
-
-import javax.net.ssl.SSLContext;
 
 public class AdminClientFactorySupplier implements Supplier<AdminClientFactory, InjectAdminClientFactory> {
 

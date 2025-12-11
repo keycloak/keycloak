@@ -19,14 +19,15 @@ package org.keycloak.crypto.def;
 
 import java.security.Key;
 
-import org.bouncycastle.crypto.Wrapper;
-import org.bouncycastle.crypto.engines.AESWrapEngine;
-import org.bouncycastle.crypto.params.KeyParameter;
 import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwe.JWEHeader.JWEHeaderBuilder;
 import org.keycloak.jose.jwe.JWEKeyStorage;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
+
+import org.bouncycastle.crypto.Wrapper;
+import org.bouncycastle.crypto.engines.AESWrapEngine;
+import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

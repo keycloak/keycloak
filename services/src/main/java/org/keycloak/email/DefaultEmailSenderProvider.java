@@ -17,7 +17,27 @@
 
 package org.keycloak.email;
 
-import org.jboss.logging.Logger;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.Map;
+import java.util.Properties;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+
+import jakarta.mail.Address;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Multipart;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
+import jakarta.mail.internet.MimeUtility;
+
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
@@ -26,25 +46,7 @@ import org.keycloak.truststore.JSSETruststoreConfigurator;
 import org.keycloak.utils.EmailValidationUtil;
 import org.keycloak.utils.SMTPUtil;
 
-import jakarta.mail.Address;
-import jakarta.mail.MessagingException;
-import jakarta.mail.Multipart;
-import jakarta.mail.Session;
-import jakarta.mail.Message;
-import jakarta.mail.Transport;
-import jakarta.mail.internet.AddressException;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeBodyPart;
-import jakarta.mail.internet.MimeMultipart;
-import jakarta.mail.internet.MimeMessage;
-import jakarta.mail.internet.MimeUtility;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.Map;
-import java.util.Properties;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.StringUtil.isNotBlank;
 

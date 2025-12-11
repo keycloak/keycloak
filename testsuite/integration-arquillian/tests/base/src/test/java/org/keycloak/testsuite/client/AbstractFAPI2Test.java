@@ -17,6 +17,8 @@
  */
 package org.keycloak.testsuite.client;
 
+import java.util.Collections;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
@@ -34,13 +36,12 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 
-import java.util.Collections;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 
 /**
  * Test for the FAPI 2 specifications (still implementer's draft):

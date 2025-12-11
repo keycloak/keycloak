@@ -17,10 +17,6 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -37,6 +33,10 @@ import io.quarkus.runtime.Quarkus;
 import io.smallrye.config.ConfigValue;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
+
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
 
 @Command(name = "show-config",
         header = "Print out the current configuration.",
@@ -136,4 +136,10 @@ public final class ShowConfig extends AbstractCommand {
     public String getName() {
         return NAME;
     }
+
+    @Override
+    public boolean isHelpAll() {
+        return false;
+    }
+
 }

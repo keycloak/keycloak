@@ -18,10 +18,6 @@
 
 package org.keycloak.testsuite.broker;
 
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
@@ -30,8 +26,14 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginExpiredPage;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
+import org.junit.Test;
+
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests related to OIDC "state" parameter used in the OIDC AuthenticationResponse sent by the IDP to the SP endpoint

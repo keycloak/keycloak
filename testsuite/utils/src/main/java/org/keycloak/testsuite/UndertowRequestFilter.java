@@ -26,11 +26,12 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 
-import org.jboss.resteasy.core.ResteasyContext;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import org.jboss.resteasy.core.ResteasyContext;
 
 public class UndertowRequestFilter implements Filter {
 

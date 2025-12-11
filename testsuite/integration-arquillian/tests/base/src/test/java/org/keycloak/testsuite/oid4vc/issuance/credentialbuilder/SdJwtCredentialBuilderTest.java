@@ -17,8 +17,11 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.credentialbuilder;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import org.junit.Test;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder;
@@ -26,18 +29,19 @@ import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
+import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import org.junit.Test;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
+import static org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder.ISSUER_CLAIM;
+import static org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder.VERIFIABLE_CREDENTIAL_TYPE_CLAIM;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder.ISSUER_CLAIM;
-import static org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder.VERIFIABLE_CREDENTIAL_TYPE_CLAIM;
-import static org.keycloak.sdjwt.IssuerSignedJWT.CLAIM_NAME_SD_HASH_ALGORITHM;
-import static org.keycloak.sdjwt.IssuerSignedJWT.CLAIM_NAME_SELECTIVE_DISCLOSURE;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
@@ -93,7 +97,7 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
                 .setCredentialIssuer(issuerDid)
                 .setCredentialType("https://credentials.example.com/test-credential")
                 .setTokenJwsType("example+sd-jwt")
-                .setHashAlgorithm("sha-256")
+                .setHashAlgorithm(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
                 .setNumberOfDecoys(decoys)
                 .setSdJwtVisibleClaims(visibleClaims);
 
@@ -116,9 +120,9 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
 
         assertEquals("The JWS token type should be included",
                 credentialBuildConfig.getTokenJwsType(),
-                jwt.getHeader().getType());
+                jwt.getJwsHeader().getType());
 
-        ArrayNode sdArrayNode = (ArrayNode) jwt.getPayload().get(CLAIM_NAME_SELECTIVE_DISCLOSURE);
+        ArrayNode sdArrayNode = (ArrayNode) jwt.getPayload().get(CLAIM_NAME_SD);
         if (sdArrayNode != null) {
             assertEquals("The algorithm should be included",
                     credentialBuildConfig.getHashAlgorithm(),
@@ -127,7 +131,8 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
 
         List<String> disclosed = sdJwt.getDisclosures().values().stream().toList();
         assertEquals("All undisclosed claims and decoys should be provided.",
-                disclosed.size() + decoys, sdArrayNode == null ? 0 : sdArrayNode.size());
+                disclosed.size() + (decoys == 0 ? SdJwt.DEFAULT_NUMBER_OF_DECOYS : decoys),
+                     sdArrayNode == null ? 0 : sdArrayNode.size());
 
         visibleClaims.forEach(vc ->
                 assertTrue("The visible claims should be present within the token.",
@@ -135,14 +140,13 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
         );
 
         // Will check disclosure conformity
-        sdJwt.getSdJwtVerificationContext().verifyIssuance(
-                List.of(exampleVerifier()),
-                IssuerSignedJwtVerificationOpts.builder()
-                        .withValidateIssuedAtClaim(false)
-                        .withValidateNotBeforeClaim(false)
-                        .withValidateExpirationClaim(false)
-                        .build(),
-                null
-        );
+        sdJwt.getSdJwtVerificationContext()
+             .verifyIssuance(List.of(exampleVerifier()),
+                             IssuerSignedJwtVerificationOpts.builder()
+                                                            .withIatCheck(true)
+                                                            .withNbfCheck(true)
+                                                            .withExpCheck(true)
+                                                            .build(),
+                             null);
     }
 }

@@ -17,9 +17,9 @@
 
 package org.keycloak;
 
-import org.keycloak.common.util.SecretGenerator;
-
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.keycloak.common.util.SecretGenerator;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

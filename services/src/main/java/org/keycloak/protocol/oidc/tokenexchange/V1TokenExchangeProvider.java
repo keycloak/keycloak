@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.jboss.logging.Logger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
@@ -64,6 +64,8 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_CLIENT;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
@@ -123,9 +125,9 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid token", Response.Status.BAD_REQUEST);
             }
 
-            tokenUser = authResult.getUser();
-            tokenSession = authResult.getSession();
-            token = authResult.getToken();
+            tokenUser = authResult.user();
+            tokenSession = authResult.session();
+            token = authResult.token();
         }
 
         String requestedSubject = context.getFormParams().getFirst(OAuth2Constants.REQUESTED_SUBJECT);

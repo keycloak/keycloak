@@ -17,15 +17,15 @@
 
 package org.keycloak.quarkus.runtime.integration.cdi;
 
-import io.quarkus.arc.Unremovable;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Disposes;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler;
 import org.keycloak.utils.KeycloakSessionUtil;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.enterprise.inject.Disposes;
+import io.quarkus.arc.Unremovable;
 
 @ApplicationScoped
 @Unremovable

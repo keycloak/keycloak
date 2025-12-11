@@ -16,12 +16,13 @@
  */
 package org.keycloak.component;
 
+import java.util.function.Function;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
-import java.util.function.Function;
 
 /**
  *

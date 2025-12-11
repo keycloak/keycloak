@@ -17,15 +17,6 @@
 
 package org.keycloak.testsuite.util;
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.awaitility.core.ThrowingRunnable;
-import org.junit.Assert;
-import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
-import org.keycloak.testsuite.page.AbstractPage;
-import org.openqa.selenium.WebDriver;
-
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -34,12 +25,23 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 
-import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.assertTrue;
+import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
+import org.keycloak.testsuite.page.AbstractPage;
+
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.awaitility.core.ThrowingRunnable;
+import org.junit.Assert;
+import org.openqa.selenium.WebDriver;
+
+import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 import static org.keycloak.testsuite.util.URLUtils.currentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLUtils.currentUrlEquals;
 import static org.keycloak.testsuite.util.URLUtils.currentUrlStartsWith;
-import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
+
+import static org.awaitility.Awaitility.await;
+import static org.junit.Assert.assertTrue;
 
 /**
  *

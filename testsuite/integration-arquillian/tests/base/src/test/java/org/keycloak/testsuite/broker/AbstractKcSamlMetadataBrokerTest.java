@@ -16,11 +16,10 @@
  */
 package org.keycloak.testsuite.broker;
 
-import jakarta.ws.rs.core.Response;
 import java.util.List;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.Assert;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
@@ -37,6 +36,10 @@ import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.saml.SamlDocumentStepBuilder;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.Assert;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;

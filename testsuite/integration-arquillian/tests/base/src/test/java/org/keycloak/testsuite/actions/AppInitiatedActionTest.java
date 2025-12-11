@@ -17,9 +17,7 @@
 package org.keycloak.testsuite.actions;
 
 import java.io.IOException;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.models.UserModel;
@@ -33,9 +31,14 @@ import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest.SUCCESS;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest.SUCCESS;
 
 /**
  * @author <a href="mailto:wadahiro@gmail.com">Hiroyuki Wada</a>

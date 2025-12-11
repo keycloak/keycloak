@@ -1,9 +1,10 @@
 package org.keycloak.it.utils;
 
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.quarkus.runtime.Environment;
 import java.nio.file.Path;
 import java.util.List;
+
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.quarkus.runtime.Environment;
 
 public interface KeycloakDistribution {
 

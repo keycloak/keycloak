@@ -20,7 +20,6 @@ package org.keycloak.services.clientpolicy;
 import java.io.IOException;
 import java.util.List;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -30,6 +29,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>

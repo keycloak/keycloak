@@ -17,14 +17,14 @@
 
 package org.keycloak.services.managers;
 
+import jakarta.ws.rs.ForbiddenException;
+
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessToken;
-
-import jakarta.ws.rs.ForbiddenException;
 
 /**
 * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

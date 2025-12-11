@@ -17,13 +17,19 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
-import org.apache.commons.collections4.ListUtils;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
+
 import org.keycloak.Config;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
@@ -31,12 +37,9 @@ import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
+import org.apache.commons.collections4.ListUtils;
+
+import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
 
 /**
  * Base class for OID4VC Mappers, to provide common configuration and functionality for all of them
@@ -48,6 +51,31 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     public static final String CLAIM_NAME = "claim.name";
     public static final String USER_ATTRIBUTE_KEY = "userAttribute";
     private static final List<ProviderConfigProperty> OID4VC_CONFIG_PROPERTIES = new ArrayList<>();
+
+    static {
+        ProviderConfigProperty property;
+
+        // Add vc.mandatory property - indicates whether this claim is mandatory in the credential
+        property = new ProviderConfigProperty();
+        property.setName(Oid4vcProtocolMapperModel.MANDATORY);
+        property.setLabel("Mandatory Claim");
+        property.setHelpText("Indicates whether this claim must be present in the issued credential. " +
+                "This information is included in the credential metadata for wallet applications.");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue(false);
+        OID4VC_CONFIG_PROPERTIES.add(property);
+
+        // Add vc.display property - display information for wallet UIs
+        property = new ProviderConfigProperty();
+        property.setName(Oid4vcProtocolMapperModel.DISPLAY);
+        property.setLabel("Claim Display Information");
+        property.setHelpText("Display metadata for wallet applications to show user-friendly claim names. " +
+                "Provide display entries with name and locale for internationalization support.");
+        property.setType(ProviderConfigProperty.CLAIM_DISPLAY_TYPE);
+        property.setDefaultValue(null);
+        OID4VC_CONFIG_PROPERTIES.add(property);
+    }
+
     protected ProtocolMapperModel mapperModel;
     protected String format;
 
@@ -90,7 +118,7 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
 
     protected List<String> getAttributePrefix() {
         return switch (Optional.ofNullable(format).orElse("")) {
-            case Format.JWT_VC, Format.LDP_VC -> List.of(Oid4VciConstants.CREDENTIAL_SUBJECT);
+            case Format.JWT_VC, Format.LDP_VC -> List.of(CREDENTIAL_SUBJECT);
             default -> Collections.emptyList();
         };
     }

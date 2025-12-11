@@ -17,8 +17,9 @@
 
 package org.keycloak.broker.provider.mappersync;
 
-import org.jboss.logging.Logger;
 import org.keycloak.provider.ProviderEvent;
+
+import org.jboss.logging.Logger;
 
 /**
  * Interface for updating references in mapper configs, when references (like group path) change.

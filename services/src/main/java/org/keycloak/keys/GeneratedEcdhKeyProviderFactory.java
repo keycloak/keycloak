@@ -16,16 +16,17 @@
  */
 package org.keycloak.keys;
 
-import org.jboss.logging.Logger;
+import java.util.List;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
+import org.jboss.logging.Logger;
 
-import java.util.List;
+import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
 
 public class GeneratedEcdhKeyProviderFactory extends AbstractGeneratedEcKeyProviderFactory<KeyProvider> {
 

@@ -20,7 +20,6 @@ package org.keycloak.authorization.policy.provider.clientscope;
 import java.util.Set;
 import java.util.function.BiFunction;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Policy;
@@ -29,6 +28,8 @@ import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.authorization.ClientScopePolicyRepresentation;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>

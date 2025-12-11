@@ -17,11 +17,10 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SHORT_PREFIX;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,11 +30,13 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.smallrye.config.PropertiesConfigSource;
-
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+
+import io.smallrye.config.PropertiesConfigSource;
+
+import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SHORT_PREFIX;
 
 /**
  * <p>A configuration source for mapping configuration arguments to their corresponding properties so that they can be recognized
@@ -52,6 +53,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     private static final String CLI_ARGS = "kc.config.args";
     public static final String NAME = "CliConfigSource";
     private static final Pattern ARG_KEY_VALUE_SPLIT = Pattern.compile("=");
+    private static Set<String> duplicatedArgNames;
 
     protected ConfigArgsConfigSource() {
         super(parseArguments(), NAME, 600);
@@ -103,18 +105,27 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     }
 
     private static Map<String, String> parseArguments() {
-        Map<String, String> properties = new HashMap<>();
+        final Map<String, String> properties = new HashMap<>();
+        final Set<String> allPropertiesNames = new HashSet<>();
+        duplicatedArgNames = new HashSet<>();
 
-        parseConfigArgs(getAllCliArgs(), new BiConsumer<String, String>() {
-            @Override
-            public void accept(String key, String value) {
-                PropertyMappers.getKcKeyFromCliKey(key).ifPresent(s -> {
-                    properties.put(s, value);
-                });
+        parseConfigArgs(getAllCliArgs(), (key, value) -> {
+            if (!allPropertiesNames.add(key)) {
+                duplicatedArgNames.add(key);
             }
+            PropertyMappers.getKcKeyFromCliKey(key).ifPresent(s -> properties.put(s, value));
         }, ignored -> {});
 
         return properties;
+    }
+
+    public static Set<String> getDuplicatedArgNames() {
+        return Collections.unmodifiableSet(duplicatedArgNames);
+    }
+
+    public static void clearDuplicatedArgNames() {
+        // after handling these duplicates, clear the memory
+        duplicatedArgNames = Collections.emptySet();
     }
 
     public static void parseConfigArgs(List<String> args, BiConsumer<String, String> valueArgConsumer, Consumer<String> unaryConsumer) {

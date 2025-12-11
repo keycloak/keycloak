@@ -17,11 +17,12 @@
 
 package org.keycloak.services;
 
-import org.keycloak.representations.idm.ErrorRepresentation;
+import java.util.List;
 
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
+
+import org.keycloak.representations.idm.ErrorRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -17,7 +17,7 @@
 
 package org.keycloak.models;
 
-import java.util.List;
+import org.keycloak.common.util.Throwables;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -52,20 +52,6 @@ public class ModelException extends RuntimeException {
 
     @SafeVarargs
     public final boolean isCausedBy(Class<? extends Exception>... type) {
-        int limit = 3;
-        List<Class<? extends Exception>> types = List.of(type);
-        Throwable cause = getCause();
-
-        while (cause != null) {
-            if (limit-- == 0) {
-                break;
-            }
-            if (types.contains(cause.getClass())) {
-                return true;
-            }
-            cause = cause.getCause();
-        }
-
-        return false;
+        return Throwables.isCausedBy(this, type);
     }
 }

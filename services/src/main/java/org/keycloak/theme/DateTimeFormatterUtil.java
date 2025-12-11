@@ -17,12 +17,12 @@
 
 package org.keycloak.theme;
 
-import org.jboss.logging.Logger;
-
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Optional;
+
+import org.jboss.logging.Logger;
 
 /**
  * Util class for localized date and time representation

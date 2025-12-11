@@ -19,7 +19,6 @@ package org.keycloak.testsuite.model.parameters;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.google.common.collect.ImmutableSet;
 import org.keycloak.cluster.infinispan.InfinispanClusterProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
@@ -60,6 +59,8 @@ import org.keycloak.storage.configuration.ServerConfigurationStorageProviderSpi;
 import org.keycloak.testsuite.model.Config;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.timer.TimerProviderFactory;
+
+import com.google.common.collect.ImmutableSet;
 
 /**
  * @author hmlnarik

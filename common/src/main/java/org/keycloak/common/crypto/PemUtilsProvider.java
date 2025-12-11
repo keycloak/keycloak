@@ -18,7 +18,6 @@
 package org.keycloak.common.crypto;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.security.Key;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -26,8 +25,8 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.DerUtils;
 import org.keycloak.common.util.PemException;
@@ -129,9 +128,9 @@ public abstract class PemUtilsProvider {
     public byte[] pemToDer(String pem) {
         try {
             pem = removeBeginEnd(pem);
-            return Base64.decode(pem);
-        } catch (IOException ioe) {
-            throw new PemException(ioe);
+            return Base64.getDecoder().decode(pem);
+        } catch (IllegalArgumentException e) {
+            throw new PemException(e);
         }
     }
 

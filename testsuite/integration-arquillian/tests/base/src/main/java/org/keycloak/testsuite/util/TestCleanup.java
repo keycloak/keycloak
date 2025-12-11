@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.util;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import jakarta.ws.rs.NotFoundException;
 
@@ -25,9 +26,8 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
 import org.keycloak.testsuite.arquillian.TestContext;
-import com.google.common.collect.Streams;
 
-import java.util.concurrent.ConcurrentLinkedDeque;
+import com.google.common.collect.Streams;
 
 /**
  * Enlist resources to be cleaned after test method

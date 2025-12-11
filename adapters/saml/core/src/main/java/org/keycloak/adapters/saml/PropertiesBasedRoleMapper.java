@@ -24,8 +24,9 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
+
+import org.jboss.logging.Logger;
 
 /**
  * A {@link RoleMappingsProvider} implementation that uses a {@code properties} file to determine the mappings that should be applied

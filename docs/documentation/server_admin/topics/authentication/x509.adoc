@@ -114,7 +114,7 @@ Defines the method for extracting the user identity from a client certificate.
 Defines whether to use canonical format to determine a distinguished name. The official link:https://docs.oracle.com/javase/8/docs/api/javax/security/auth/x500/X500Principal.html#getName-java.lang.String-[Java API documentation] describes the format. This option affects the two User Identity Sources _Match SubjectDN using regular expression_ and _Match IssuerDN using regular expression_ only. Enable this option when you set up a new {project_name} instance. Disable this option to retain backward compatibility with existing {project_name} instances.
 
 *Enable Serial Number hexadecimal representation*::
-Represent the link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.1.2.2[serial number] as hexadecimal. The serial number with the sign bit set to 1 must be left padded with 00 octet. For example, a serial number with decimal value _161_, or _a1_ in hexadecimal representation is encoded as _00a1_, according to RFC5280. See link:https://datatracker.ietf.org/doc/html/rfc5280#appendix-B[RFC5280, appendix-B] for more details.
+Represent the link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.1.2.2[serial number] as hexadecimal. The serial number with the sign bit set to 1 must be left padded with 00 octet. For example, a serial number with decimal value _161_, or _a1_ in hexadecimal representation is encoded as _00a1_, according to RFC 5280. See link:https://datatracker.ietf.org/doc/html/rfc5280#appendix-B[RFC 5280, appendix-B] for more details.
 
 *A regular expression*::
 A regular expression to use as a filter for extracting the certificate identity. The expression must contain a single group.
@@ -135,7 +135,7 @@ Use CDP to check the certificate revocation status. Most PKI authorities include
 The path to a file containing a CRL list. The value must be a path to a valid file if the *CRL Checking Enabled* option is enabled.
 
 *CRL abort if non updated*::
-A CRL conforming to link:https://datatracker.ietf.org/doc/html/rfc5280#section-5.1.2.5[RFC5280] contains a next update field that indicates the date by which the next CRL will be issued. When that time is passed, the CRL is considered outdated and it should be refreshed. If this option is `true`, the authentication will fail if the CRL is outdated (recommended). If the option is set to `false`, the outdated CRL is still used to validate the user certificates.
+A CRL conforming to link:https://datatracker.ietf.org/doc/html/rfc5280#section-5.1.2.5[RFC 5280] contains a next update field that indicates the date by which the next CRL will be issued. When that time is passed, the CRL is considered outdated and it should be refreshed. If this option is `true`, the authentication will fail if the CRL is outdated (recommended). If the option is set to `false`, the outdated CRL is still used to validate the user certificates.
 
 *OCSP Checking Enabled*::
 Checks the certificate revocation status by using Online Certificate Status Protocol.
@@ -143,18 +143,20 @@ Checks the certificate revocation status by using Online Certificate Status Prot
 *OCSP Fail-Open Behavior*::
 By default the OCSP check must return a positive response in order to continue with a successful authentication. Sometimes however this check can be inconclusive: for example, the OCSP server could be unreachable, overloaded, or the client certificate may not contain an OCSP responder URI. When this setting is turned ON, authentication will be denied only if an explicit negative response is received by the OCSP responder and the certificate is definitely revoked. If a valid OCSP response is not available the authentication attempt will be accepted.
 
+NOTE: OCSP retry behavior is configured server-wide through the HTTP client provider. See <@links.server id="outgoinghttp"/> for details on configuring retry settings for all outgoing HTTP requests, including OCSP validation.
+
 *OCSP Responder URI*::
 Override the value of the OCSP responder URI in the certificate.
 
 *Validate Key Usage*::
 Verifies the certificate's KeyUsage extension bits are set. For example, "digitalSignature,KeyEncipherment" verifies if bits 0 and 2 in the KeyUsage extension are set.
-Leave this parameter empty to disable the Key Usage validation. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.3[RFC5280, Section-4.2.1.3] for more information. {project_name} raises an error when a key usage mismatch occurs.
+Leave this parameter empty to disable the Key Usage validation. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.3[RFC 5280, Section-4.2.1.3] for more information. {project_name} raises an error when a key usage mismatch occurs.
 
 *Validate Extended Key Usage*::
-Verifies one or more purposes defined in the Extended Key Usage extension. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.12[RFC5280, Section-4.2.1.12] for more information. Leave this parameter empty to disable the Extended Key Usage validation. {project_name} raises an error when flagged as critical by the issuing CA and a key usage extension mismatch occurs.
+Verifies one or more purposes defined in the Extended Key Usage extension. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.12[RFC 5280, Section-4.2.1.12] for more information. Leave this parameter empty to disable the Extended Key Usage validation. {project_name} raises an error when flagged as critical by the issuing CA and a key usage extension mismatch occurs.
 
 *Validate Certificate Policy*::
-Verifies one or more policy OIDs as defined in the Certificate Policy extension. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.4[RFC5280, Section-4.2.1.4]. Leave the parameter empty to disable the Certificate Policy validation. Multiple policies should be separated using a comma.
+Verifies one or more policy OIDs as defined in the Certificate Policy extension. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.4[RFC 5280, Section-4.2.1.4]. Leave the parameter empty to disable the Certificate Policy validation. Multiple policies should be separated using a comma.
 
 *Certificate Policy Validation Mode*::
 When more than one policy is specified in the `Validate Certificate Policy` setting, it decides whether the matching should check for all requested policies to be present, or one match is enough for a successful authentication. Default value is `All`, meaning that all requested policies should be present in the client certificate.

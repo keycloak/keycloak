@@ -17,19 +17,20 @@
 
 package org.keycloak.saml.processing.core.saml.v2.util;
 
+import java.io.StringWriter;
+import java.util.Optional;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.util.TransformerUtil;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.StringWriter;
-import java.util.Optional;
 
 /**
  * Utility class to manipulate SAML ArtifactResponse and embedded Response.

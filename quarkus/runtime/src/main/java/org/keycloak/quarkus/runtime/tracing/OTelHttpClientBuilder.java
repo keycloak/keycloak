@@ -17,8 +17,9 @@
 
 package org.keycloak.quarkus.runtime.tracing;
 
-import io.opentelemetry.instrumentation.apachehttpclient.v4_3.ApacheHttpClientTelemetry;
 import org.keycloak.connections.httpclient.HttpClientBuilder;
+
+import io.opentelemetry.instrumentation.apachehttpclient.v4_3.ApacheHttpClientTelemetry;
 
 /**
  * Get Apache HTTP client which is instrumented and used for tracing

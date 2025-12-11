@@ -17,11 +17,12 @@
 
 package org.keycloak.models.workflow;
 
+import java.util.Objects;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.util.Objects;
 
 /**
  * Represents the state of a resource within a time-based workflow.
@@ -42,9 +43,6 @@ public class WorkflowStateEntity {
 
     @Column(name = "RESOURCE_TYPE")
     private String resourceType; // do we want/need to store this?
-
-    @Column(name = "WORKFLOW_PROVIDER_ID")
-    private String workflowProviderId;
 
     @Column(name = "SCHEDULED_STEP_ID")
     private String scheduledStepId;
@@ -74,14 +72,6 @@ public class WorkflowStateEntity {
 
     public void setWorkflowId(String workflowId) {
         this.workflowId = workflowId;
-    }
-
-    public String getWorkflowProviderId() {
-        return workflowProviderId;
-    }
-
-    public void setWorkflowProviderId(String workflowProviderId) {
-        this.workflowProviderId = workflowProviderId;
     }
 
     public String getResourceType() {
@@ -121,4 +111,3 @@ public class WorkflowStateEntity {
         return Objects.hash(resourceId, workflowId);
     }
 }
-

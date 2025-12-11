@@ -48,4 +48,3 @@ public class CredentialSignerSpi implements Spi {
         return CredentialSignerFactory.class;
     }
 }
-

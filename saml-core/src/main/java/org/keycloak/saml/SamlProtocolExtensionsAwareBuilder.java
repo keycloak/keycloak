@@ -18,6 +18,7 @@
 package org.keycloak.saml;
 
 import javax.xml.stream.XMLStreamWriter;
+
 import org.keycloak.saml.common.exceptions.ProcessingException;
 
 /**

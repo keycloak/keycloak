@@ -1,7 +1,5 @@
 package org.keycloak.testframework.injection;
 
-import org.junit.jupiter.api.extension.ExtensionContext;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Comparator;
@@ -10,6 +8,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class Registry implements ExtensionContext.Store.CloseableResource {

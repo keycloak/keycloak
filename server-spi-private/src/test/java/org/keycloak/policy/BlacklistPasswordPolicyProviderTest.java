@@ -1,9 +1,9 @@
 package org.keycloak.policy;
 
+import java.nio.file.Paths;
+
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.nio.file.Paths;
 
 import static org.keycloak.policy.BlacklistPasswordPolicyProviderFactory.FileBasedPasswordBlacklist;
 

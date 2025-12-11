@@ -8,6 +8,11 @@ include::../../topics/templates/techpreview.adoc[]
 
 A SPIFFE identity provider supports authenticating clients with SPIFFE JWT SVIDs.
 
+Each client must have a unique subject identifier (SPIFFE ID) for each realm.
+
+SPIFFE JWT SVIDs can be re-used multiple times. As a security best practice, reduce the expiration time
+and make sure tokens can not be intercepted in communication between the client and Keycloak.
+
 .Procedure
 . Click *Identity Providers* in the menu.
 . From the `Add provider` list, select `SPIFFE`.

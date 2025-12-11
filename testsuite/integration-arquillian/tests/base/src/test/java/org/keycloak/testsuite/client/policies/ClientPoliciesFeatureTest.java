@@ -20,7 +20,6 @@ package org.keycloak.testsuite.client.policies;
 
 import java.util.Set;
 
-import org.junit.Test;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
@@ -33,8 +32,11 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 
-import static org.junit.Assert.fail;
+import org.junit.Test;
+
 import static org.keycloak.common.Profile.Feature.CLIENT_POLICIES;
+
+import static org.junit.Assert.fail;
 
 /**
  * This test class is for enabling and disabling client policies by feature mechanism.

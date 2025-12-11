@@ -24,6 +24,11 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
+
 import org.infinispan.commons.api.Lifecycle;
 import org.infinispan.factories.KnownComponentNames;
 import org.infinispan.factories.annotations.ComponentName;
@@ -41,10 +46,6 @@ import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
 import org.infinispan.remoting.transport.Address;
 import org.infinispan.util.concurrent.BlockingManager;
 import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 
 /**
  * Class to handle JGroups certificate reloading for encryption (mTLS).

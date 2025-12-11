@@ -1,5 +1,10 @@
 package org.keycloak.protocol.docker.installation;
 
+import java.net.URI;
+
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.Config;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -7,10 +12,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.docker.DockerAuthV2Protocol;
-
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.net.URI;
 
 public class DockerVariableOverrideInstallationProvider implements ClientInstallationProvider {
 

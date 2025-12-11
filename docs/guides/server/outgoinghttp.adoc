@@ -57,6 +57,42 @@ Specify proxy configurations for outgoing HTTP requests. For more details, see <
 *disable-trust-manager*::
 If an outgoing request requires HTTPS and this configuration option is set to true, you do not have to specify a truststore. This setting should be used only during development and *never in production* because it will disable verification of SSL certificates. Default: false.
 
+== Configuring retry behavior for outgoing HTTP requests
+IMPORTANT: Do not let outgoing retry duration exceed the caller’s timeout. Otherwise, the caller may time out and see an error while {project_name} continues retrying in the background.
+
+{project_name} can automatically retry failed outgoing HTTP requests. This is useful for handling transient network errors or temporary service unavailability. Retry behavior is disabled by default and must be explicitly enabled.
+
+The following are the retry configuration options:
+
+*max-retries*::
+Maximum number of retry attempts for failed HTTP requests. Set to 0 to disable retries. Default: 0.
+
+NOTE: Retries for requests that have already been sent (for common methods such as GET and POST) are always enabled. Use `max-retries` to control whether retries are performed.
+
+*initial-backoff-millis*::
+Initial backoff time in milliseconds before the first retry attempt. Default: 1000.
+
+*backoff-multiplier*::
+Multiplier for exponential backoff between retry attempts. For example, with an initial backoff of 1000ms and a multiplier of 2.0, the retry delays would be: 1000ms, 2000ms, 4000ms, etc. Default: 2.0.
+
+*use-jitter*::
+Whether to apply jitter to backoff times to prevent synchronized retry storms when multiple clients are retrying at the same time. Default: true.
+
+*jitter-factor*::
+Jitter factor to apply to backoff times. A value of 0.5 means the actual backoff time will be between 50% and 150% of the calculated exponential backoff time. Default: 0.5.
+
+.Example of enabling retry behavior
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-connections-http-client-default-max-retries=3 \
+  --spi-connections-http-client-default-initial-backoff-millis=1000 \
+  --spi-connections-http-client-default-backoff-multiplier=2.0
+----
+
+In this example, {project_name} will retry failed HTTP requests up to 3 times with exponential backoff starting at 1000ms and doubling with each retry attempt.
+
+NOTE: Retry behavior applies to all outgoing HTTP requests made by {project_name}, including OCSP validation, identity provider communication, and other external service calls.
+
 == Proxy mappings for outgoing HTTP requests
 To configure outgoing requests to use a proxy, you can use the following standard proxy environment variables to configure the proxy mappings: `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY`.
 

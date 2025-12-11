@@ -16,14 +16,14 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml.xmldsig;
 
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
+
 import org.keycloak.dom.xmlsec.w3.xmldsig.X509CertificateType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.X509DataType;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
-
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.StartElement;
 
 /**
  * Base Class for all Response Type parsing for SAML2

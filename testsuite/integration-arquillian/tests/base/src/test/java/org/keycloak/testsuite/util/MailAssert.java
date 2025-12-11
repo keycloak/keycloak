@@ -17,13 +17,14 @@
 
 package org.keycloak.testsuite.util;
 
-import org.jboss.logging.Logger;
+import java.io.IOException;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMessage.RecipientType;
 import jakarta.mail.internet.MimeMultipart;
-import java.io.IOException;
+
+import org.jboss.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

@@ -299,4 +299,11 @@ public interface OrganizationProvider extends Provider {
     default OrganizationModel getByAlias(String alias) {
         return getAllStream(Map.of(OrganizationModel.ALIAS, alias), 0, 1).findAny().orElse(null);
     }
+
+    /**
+     * Returns a {@link InvitationManager} for managing invitations
+     *
+     * @return the invitation manager
+     */
+    InvitationManager getInvitationManager();
 }

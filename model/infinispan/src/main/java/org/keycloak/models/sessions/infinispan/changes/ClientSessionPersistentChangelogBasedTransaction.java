@@ -17,8 +17,11 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
-import org.infinispan.Cache;
-import org.jboss.logging.Logger;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -30,10 +33,8 @@ import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessi
 import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
-import java.util.Collection;
-import java.util.Objects;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
+import org.infinispan.Cache;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 
@@ -136,7 +137,7 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         return authenticatedClientSessionEntitySessionEntityWrapper;
     }
 
-    public static AuthenticatedClientSessionEntity createAuthenticatedClientSessionInstance(String userSessionId, AuthenticatedClientSessionModel clientSession,
+    public static AuthenticatedClientSessionEntity createAuthenticatedClientSessionInstance(String userSessionId, String userId, AuthenticatedClientSessionModel clientSession,
                                                                                       String realmId, String clientId, boolean offline) {
 
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity();
@@ -151,12 +152,13 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         entity.setTimestamp(clientSession.getTimestamp());
         entity.setOffline(offline);
         entity.setUserSessionId(userSessionId);
+        entity.setUserId(userId);
 
         return entity;
     }
 
     private SessionEntityWrapper<AuthenticatedClientSessionEntity> importClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, AuthenticatedClientSessionModel persistentClientSession, EmbeddedClientSessionKey clientSessionId) {
-        AuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionInstance(userSession.getId(), persistentClientSession,
+        AuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionInstance(userSession.getId(), userSession.getUser().getId(), persistentClientSession,
                 realm.getId(), client.getId(), userSession.isOffline());
         boolean offline = userSession.isOffline();
 

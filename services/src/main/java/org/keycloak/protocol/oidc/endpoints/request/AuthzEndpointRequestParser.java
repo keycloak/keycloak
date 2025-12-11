@@ -17,7 +17,12 @@
 
 package org.keycloak.protocol.oidc.endpoints.request;
 
-import org.jboss.logging.Logger;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.constants.AdapterConstants;
@@ -28,11 +33,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCProviderConfig;
 import org.keycloak.services.ErrorResponseException;
 
-import jakarta.ws.rs.core.Response;
-
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import org.jboss.logging.Logger;
 
 /**
  * This endpoint parser supports, per default, up to

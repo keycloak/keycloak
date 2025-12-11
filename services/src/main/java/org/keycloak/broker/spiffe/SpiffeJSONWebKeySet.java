@@ -1,7 +1,8 @@
 package org.keycloak.broker.spiffe;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.jose.jwk.JSONWebKeySet;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SpiffeJSONWebKeySet extends JSONWebKeySet {
 
