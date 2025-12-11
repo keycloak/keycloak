@@ -70,7 +70,7 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
         Map<String, Object> claims = new LinkedHashMap<>(credentialSubject.getClaims());
 
         // Always add a new jti - this cannot and should not be mapped
-        claims.put(CLAIM_NAME_JTI, String.format("urn:uuid:%s", UUID.randomUUID()));
+        claims.put(CLAIM_NAME_JTI, UUID.randomUUID().toString());
 
         // Add inner (disclosed) claims id, iat
         Optional.ofNullable(vcId).ifPresent(it ->
