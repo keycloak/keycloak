@@ -26,7 +26,7 @@ async function createClientScope(
 async function createClientScopeAndSelectProtocolAndFormat(
   page: Page,
   testBed: Awaited<ReturnType<typeof createTestBed>>,
-  format?: "SD-JWT VC (dc+sd-jwt)" | "JWT VC (jwt_vc)",
+  format?: "SD-JWT VC (dc+sd-jwt)" | "JWT VC (jwt_vc_json)",
 ) {
   await createClientScope(page, testBed);
 
@@ -145,7 +145,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await createClientScopeAndSelectProtocolAndFormat(
       page,
       testBed,
-      "JWT VC (jwt_vc)",
+      "JWT VC (jwt_vc_json)",
     );
 
     await page
@@ -201,7 +201,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       page.getByTestId(OID4VCI_FIELDS.EXPIRY_IN_SECONDS),
     ).toHaveValue(TEST_VALUES.EXPIRY_SECONDS);
     await expect(page.locator("#kc-vc-format")).toContainText(
-      "JWT VC (jwt_vc)",
+      "JWT VC (jwt_vc_json)",
     );
     await expect(page.locator(OID4VCI_FIELDS.SIGNING_ALGORITHM)).toContainText(
       TEST_VALUES.SIGNING_ALG,
@@ -322,7 +322,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       page.getByRole("option", { name: "SD-JWT VC (dc+sd-jwt)" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("option", { name: "JWT VC (jwt_vc)" }),
+      page.getByRole("option", { name: "JWT VC (jwt_vc_json)" }),
     ).toBeVisible();
 
     await expect(
@@ -362,7 +362,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await createClientScopeAndSelectProtocolAndFormat(
       page,
       testBed,
-      "JWT VC (jwt_vc)",
+      "JWT VC (jwt_vc_json)",
     );
 
     await expect(page.getByTestId(OID4VCI_FIELDS.DISPLAY)).toBeVisible();
@@ -486,7 +486,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       page.getByTestId(OID4VCI_FIELDS.VERIFIABLE_CREDENTIAL_TYPE),
     ).toBeVisible();
 
-    await selectItem(page, "#kc-vc-format", "JWT VC (jwt_vc)");
+    await selectItem(page, "#kc-vc-format", "JWT VC (jwt_vc_json)");
 
     await page.waitForLoadState("domcontentloaded");
 
@@ -503,7 +503,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     ).toBeVisible();
     await expect(page.getByTestId(OID4VCI_FIELDS.VISIBLE_CLAIMS)).toBeVisible();
 
-    await selectItem(page, "#kc-vc-format", "JWT VC (jwt_vc)");
+    await selectItem(page, "#kc-vc-format", "JWT VC (jwt_vc_json)");
 
     await page.waitForLoadState("domcontentloaded");
 
@@ -529,7 +529,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await createClientScopeAndSelectProtocolAndFormat(
       page,
       testBed,
-      "JWT VC (jwt_vc)",
+      "JWT VC (jwt_vc_json)",
     );
 
     await expect(page.getByTestId(OID4VCI_FIELDS.TOKEN_JWS_TYPE)).toBeVisible();

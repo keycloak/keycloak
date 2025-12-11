@@ -47,6 +47,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels;
+import org.keycloak.VCFormat;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.common.Profile;
@@ -78,7 +79,6 @@ import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
@@ -135,7 +135,8 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	protected static final KeyWrapper RSA_KEY = getRsaKey();
 
-    protected static final String sdJwtTypeNaturalPersonScopeName = "oid4vc_natural_person";
+    protected static final String jwtTypeNaturalPersonScopeName = "oid4vc_natural_person_jwt";
+    protected static final String sdJwtTypeNaturalPersonScopeName = "oid4vc_natural_person_sd";
 
     protected static final String sdJwtTypeCredentialScopeName = "sd-jwt-credential";
 	protected static final String sdJwtTypeCredentialConfigurationIdName = "sd-jwt-credential-config-id";
@@ -721,7 +722,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 		keyAttestationsRequired.setKeyStorage(List.of(KeyAttestationResistanceLevels.HIGH,
 													  KeyAttestationResistanceLevels.MODERATE));
 		SupportedCredentialConfiguration config = new SupportedCredentialConfiguration()
-				.setFormat(Format.SD_JWT_VC)
+				.setFormat(VCFormat.SD_JWT_VC)
 				.setVct("https://credentials.example.com/test-credential")
 				.setCryptographicBindingMethodsSupported(List.of("jwk"))
 				.setProofTypesSupported(ProofTypesSupported.parse(session, keyAttestationsRequired, List.of("ES256")));

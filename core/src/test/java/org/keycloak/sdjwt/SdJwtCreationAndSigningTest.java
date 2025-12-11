@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.keycloak.OID4VCConstants;
+import org.keycloak.VCFormat;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.Time;
@@ -95,7 +96,7 @@ public abstract class SdJwtCreationAndSigningTest {
 
         // validate object content
         {
-            Assert.assertEquals(OID4VCConstants.SD_JWT_VC_FORMAT, sdJwt.getIssuerSignedJWT().getJwsHeader().getType());
+            Assert.assertEquals(VCFormat.SD_JWT_VC, sdJwt.getIssuerSignedJWT().getJwsHeader().getType());
             Assert.assertEquals(1,
                                 JsonSerialization.mapper.convertValue(sdJwt.getIssuerSignedJWT().getJwsHeader(),
                                                                       ObjectNode.class).size());
@@ -243,7 +244,7 @@ public abstract class SdJwtCreationAndSigningTest {
         // validate object content
         {
             Assert.assertEquals(Algorithm.ES256, sdJwt.getIssuerSignedJWT().getJwsHeader().getAlgorithm().name());
-            Assert.assertEquals(OID4VCConstants.SD_JWT_VC_FORMAT, sdJwt.getIssuerSignedJWT().getJwsHeader().getType());
+            Assert.assertEquals(VCFormat.SD_JWT_VC, sdJwt.getIssuerSignedJWT().getJwsHeader().getType());
             Assert.assertEquals(issuerKeyPair.getKid(), sdJwt.getIssuerSignedJWT().getJwsHeader().getKeyId());
             Assert.assertEquals(3,
                                 JsonSerialization.mapper.convertValue(sdJwt.getIssuerSignedJWT().getJwsHeader(),
