@@ -18,7 +18,6 @@ package org.keycloak.models.sessions.infinispan;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -33,15 +32,13 @@ import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.events.RemoveAllUserLoginFailuresEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
+import org.keycloak.models.sessions.infinispan.stream.LoginFailuresLifespanUpdate;
 import org.keycloak.models.sessions.infinispan.stream.Mappers;
 import org.keycloak.models.sessions.infinispan.stream.RemoveKeyConsumer;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
-import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 import org.infinispan.Cache;
-import org.infinispan.context.Flag;
-import org.infinispan.util.function.SerializableBiFunction;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
@@ -154,24 +151,20 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
 
     @Override
     public void updateWithLatestRealmSettings(RealmModel realm) {
-        Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> cache = loginFailuresTx.getCache();
-        if (!realm.isBruteForceProtected()) {
-            cache.entrySet().stream()
-                    .filter(SessionWrapperPredicate.create(realm.getId()))
-                    .forEach(RemoveKeyConsumer.getInstance());
+        var stream = loginFailuresTx.getCache()
+                .entrySet()
+                .stream()
+                .filter(SessionWrapperPredicate.create(realm.getId()));
+        if (realm.isBruteForceProtected()) {
+            var action = new LoginFailuresLifespanUpdate(
+                    realm.getMaxDeltaTimeSeconds() * 1000L,
+                    realm.getMaxTemporaryLockouts(),
+                    realm.isPermanentLockout()
+            );
+            stream.forEach(action);
         } else {
-            final long maxDeltaTimeMillis = realm.getMaxDeltaTimeSeconds() * 1000L;
-            final boolean isPermanentLockout = realm.isPermanentLockout();
-            final int maxTemporaryLockouts = realm.getMaxTemporaryLockouts();
-            cache.entrySet().stream()
-                    .filter(SessionWrapperPredicate.create(realm.getId()))
-                    .<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>>forEach((c, entry) -> {
-                        var entity = entry.getValue().getEntity();
-                        long lifespan = SessionTimeouts.getLoginFailuresLifespanMs(isPermanentLockout, maxTemporaryLockouts, maxDeltaTimeMillis, entity);
-                        c.getAdvancedCache()
-                                .withFlags(Flag.ZERO_LOCK_ACQUISITION_TIMEOUT,Flag.FAIL_SILENTLY, Flag.IGNORE_RETURN_VALUES)
-                                .computeIfPresent(entry.getKey(), (SerializableBiFunction<? super LoginFailureKey, ? super SessionEntityWrapper<LoginFailureEntity>, ? extends SessionEntityWrapper<LoginFailureEntity>>) (key, value) -> value, lifespan, TimeUnit.MILLISECONDS);
-                    });
+            stream.map(Mappers.loginFailureId())
+                    .forEach(RemoveKeyConsumer.getInstance());
         }
     }
 
