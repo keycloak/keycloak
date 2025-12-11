@@ -22,3 +22,5 @@ org.keycloak.models.workflow.SetUserAttributeStepProviderFactory
 org.keycloak.models.workflow.AddRequiredActionStepProviderFactory
 org.keycloak.models.workflow.GrantRoleStepProviderFactory
 org.keycloak.models.workflow.RevokeRoleStepProviderFactory
+org.keycloak.models.workflow.JoinGroupStepProviderFactory
+org.keycloak.models.workflow.LeaveGroupStepProviderFactory
