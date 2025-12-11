@@ -132,7 +132,7 @@ function RealmSettingsGeneralTabForm({
         JSON.parse(realm.attributes["acr.loa.map"]),
       ).flatMap(([acr, loa]) => ({ acr, loa }) as RealmLoAMappingType);
 
-      if (isStepUpAuthenticationSaml) {
+      if (isStepUpAuthenticationSaml && realm.attributes?.["acr.uri.map"]) {
         const acrUriMap = JSON.parse(realm.attributes["acr.uri.map"]);
         acrLoaMap.forEach((row) => (row.uri = acrUriMap?.[row?.acr]));
       }
