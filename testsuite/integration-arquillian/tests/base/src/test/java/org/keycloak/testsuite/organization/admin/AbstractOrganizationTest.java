@@ -22,6 +22,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
@@ -235,7 +236,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         if (firstTimeLogin) {
             waitForPage(driver, "update account information", false);
             updateAccountInformationPage.assertCurrent();
-            Assert.assertTrue("We must be on correct realm right now",
+            assertTrue("We must be on correct realm right now",
                     driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
             log.debug("Updating info on updateAccount page");
             assertFalse(driver.getPageSource().contains("kc.org"));
@@ -267,7 +268,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     protected UserRepresentation getUserRepresentation(String realm, String userEmail) {
         UsersResource users = adminClient.realm(realm).users();
         List<UserRepresentation> reps = users.searchByEmail(userEmail, true);
-        Assert.assertFalse(reps.isEmpty());
+        assertFalse(reps.isEmpty());
         Assert.assertEquals(1, reps.size());
         return reps.get(0);
     }
@@ -300,14 +301,16 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
         log.debug("Logging in");
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
-        Assert.assertTrue(loginPage.isRegisterLinkPresent());
+        assertTrue(loginPage.isUsernameInputPresent());
+        assertNull(loginPage.getUsernameInputError());
+        assertFalse(loginPage.isPasswordInputPresent());
+        assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        assertTrue(loginPage.isRegisterLinkPresent());
         if (idpAlias != null) {
             if (isVisible) {
-                Assert.assertTrue(loginPage.isSocialButtonPresent(idpAlias));
+                assertTrue(loginPage.isSocialButtonPresent(idpAlias));
             } else {
-                Assert.assertFalse(loginPage.isSocialButtonPresent(idpAlias));
+                assertFalse(loginPage.isSocialButtonPresent(idpAlias));
             }
         }
         loginPage.loginUsername(username);
