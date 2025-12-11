@@ -93,6 +93,7 @@ public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
         addHeader(BrowserSecurityHeaders.STRICT_TRANSPORT_SECURITY, headers);
         addHeader(BrowserSecurityHeaders.X_CONTENT_TYPE_OPTIONS, headers);
         addHeader(BrowserSecurityHeaders.REFERRER_POLICY, headers);
+        addHeader(BrowserSecurityHeaders.X_ROBOTS_TAG, headers);
     }
 
     private void addRestHeaders(MultivaluedMap<String, Object> headers) {
@@ -100,6 +101,7 @@ public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
         addHeader(BrowserSecurityHeaders.X_FRAME_OPTIONS, headers);
         addHeader(BrowserSecurityHeaders.X_CONTENT_TYPE_OPTIONS, headers);
         addHeader(BrowserSecurityHeaders.REFERRER_POLICY, headers);
+        addHeader(BrowserSecurityHeaders.X_ROBOTS_TAG, headers);
     }
 
     private void addHtmlHeaders(MultivaluedMap<String, Object> headers) {
