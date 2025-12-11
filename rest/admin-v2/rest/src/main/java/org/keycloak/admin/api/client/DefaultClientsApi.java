@@ -5,6 +5,9 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import jakarta.validation.Valid;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
@@ -39,11 +42,13 @@ public class DefaultClientsApi implements ClientsApi {
         this.clientsResource = realmAdminResource.getClients();
     }
 
+    @GET
     @Override
     public Stream<BaseClientRepresentation> getClients() {
         return clientService.getClients(realm, null, null, null);
     }
 
+    @POST
     @Override
     public Response createClient(@Valid BaseClientRepresentation client) {
         try {
@@ -57,6 +62,7 @@ public class DefaultClientsApi implements ClientsApi {
         }
     }
 
+    @Path("{id}")
     @Override
     public ClientApi client(@PathParam("id") String clientId) {
         var client = Optional.ofNullable(session.clients().getClientByClientId(realm, clientId));
