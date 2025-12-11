@@ -35,6 +35,7 @@
         <undertow-core.version>2.3.20.Final</undertow-core.version>
     </properties>
 
+
     <dependencyManagement>
         <dependencies>
             <dependency>
