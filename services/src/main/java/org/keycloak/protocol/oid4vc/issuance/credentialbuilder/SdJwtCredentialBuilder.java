@@ -42,6 +42,8 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_ISSUER;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_JTI;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUB;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VC_ID;
 
@@ -78,6 +80,10 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
         );
         Optional.ofNullable(issuanceDate).ifPresent(it ->
                 claims.put(CLAIM_NAME_IAT, it.getEpochSecond())
+        );
+        // Map subject id => sub
+        Optional.ofNullable(claims.remove(CLAIM_NAME_SUBJECT_ID)).ifPresent(it ->
+                claims.put(CLAIM_NAME_SUB, it)
         );
 
         // Put inner claims into the disclosure spec, except the one to be kept visible
