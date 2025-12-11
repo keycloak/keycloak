@@ -1,4 +1,4 @@
-package org.keycloak.tests.admin.model.workflow;
+package org.keycloak.tests.workflow;
 
 import java.time.Duration;
 

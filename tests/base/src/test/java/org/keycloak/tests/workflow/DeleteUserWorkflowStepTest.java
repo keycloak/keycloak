@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.admin.model.workflow;
+package org.keycloak.tests.workflow;
 
 import java.time.Duration;
 import java.util.List;
@@ -50,7 +50,7 @@ import org.keycloak.testframework.ui.page.ConsentPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.tests.admin.model.workflow.DeleteUserWorkflowStepTest.DeleteUserWorkflowServerConf;
+import org.keycloak.tests.workflow.DeleteUserWorkflowStepTest.DeleteUserWorkflowServerConf;
 import org.keycloak.testsuite.federation.DummyUserFederationProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 
