@@ -3,7 +3,8 @@
 [[_workflow_conditions_]]
 = Defining conditions
 
-The optional `if` setting allows you to define the conditions the target resource must meet in order for the workflow to be triggered.
+The optional `if` setting allows you to define the conditions, as expressions, that the target resource must meet in
+order for the workflow to be triggered. See <<_workflow_expression_language_>> for more details.
 
 Conditions provide fine-grained control over whether a workflow execution should be created.
 They allow you to inspect the context of the event and the state of the resource.

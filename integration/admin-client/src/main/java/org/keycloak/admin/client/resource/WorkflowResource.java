@@ -28,14 +28,6 @@ public interface WorkflowResource {
     @Produces(APPLICATION_JSON)
     WorkflowRepresentation toRepresentation();
 
-    @Path("activate-all")
-    @POST
-    void activateAll();
-
-    @Path("activate-all")
-    @POST
-    void activateAll(@QueryParam("notBefore") String notBefore);
-
     @Path("activate/{type}/{resourceId}")
     @POST
     void activate(@PathParam("type") String type, @PathParam("resourceId") String resourceId);
