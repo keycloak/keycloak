@@ -17,18 +17,17 @@
 
 package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
-import java.util.Optional;
 import java.util.Map;
+import java.util.Optional;
 
 import org.keycloak.operator.Constants;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-
-import io.sundr.builder.annotations.Buildable;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import io.sundr.builder.annotations.Buildable;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>

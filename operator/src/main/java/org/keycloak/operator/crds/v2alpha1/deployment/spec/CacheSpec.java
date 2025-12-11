@@ -17,10 +17,9 @@
 
 package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.sundr.builder.annotations.Buildable;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
