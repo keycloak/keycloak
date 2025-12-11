@@ -25,6 +25,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowScheduleRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.RoleConfigBuilder;
@@ -32,6 +33,7 @@ import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.util.ApiUtil;
 
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -84,7 +86,7 @@ public class RoleWorkflowConditionTest extends AbstractWorkflowTest {
         }
 
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("test-role-workflow")
-                .onEvent(ResourceOperationType.USER_ROLE_GRANTED.name())
+                .schedule(WorkflowScheduleRepresentation.create().after("1s").build())
                 .onCondition(RoleWorkflowConditionFactory.ID + "(testRole)")
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -97,20 +99,23 @@ public class RoleWorkflowConditionTest extends AbstractWorkflowTest {
 
         List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
         assertThat(workflows, hasSize(1));
-        // activate the workflow for all eligible users
-        managedRealm.admin().workflows().workflow(workflows.get(0).getId()).activateAll();
 
-        runOnServer.run((RunOnServer) session -> {
-            // check the same users are now scheduled to run the second step.
-            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
-            List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
-            assertThat(registeredWorkflows, hasSize(1));
-            Workflow workflow = registeredWorkflows.get(0);
-            // check workflow was correctly assigned to the users
-            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
-            assertThat(scheduledSteps, hasSize(10));
-        });
+        Awaitility.await()
+                .timeout(Duration.ofSeconds(15))
+                .pollInterval(Duration.ofSeconds(1))
+                .untilAsserted(() -> {
+                    runOnServer.run((RunOnServer) session -> {
+                        // check the same users are now scheduled to run the second step.
+                        WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+                        List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
+                        assertThat(registeredWorkflows, hasSize(1));
+                        Workflow workflow = registeredWorkflows.get(0);
+                        // check workflow was correctly assigned to the users
+                        WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+                        List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
+                        assertThat(scheduledSteps, hasSize(10));
+                    });
+                });
     }
 
     private void assertUserRoles(String username, boolean shouldExist, String... roles) {

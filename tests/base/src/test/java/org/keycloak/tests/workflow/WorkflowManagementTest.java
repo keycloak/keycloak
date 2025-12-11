@@ -55,6 +55,7 @@ import org.keycloak.models.workflow.conditions.RoleWorkflowConditionFactory;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowScheduleRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
@@ -77,6 +78,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.fasterxml.jackson.jakarta.rs.yaml.JacksonYAMLProvider;
 import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
+import org.awaitility.Awaitility;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -561,6 +563,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
 
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .onEvent(ResourceOperationType.USER_FEDERATED_IDENTITY_ADDED.name())
+                .schedule(WorkflowScheduleRepresentation.create().after("1s").build())
                 .onCondition(IdentityProviderWorkflowConditionFactory.ID + "(someidp)")
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -609,7 +612,6 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         // let's run the schedule steps for the new users so they transition to the next one.
         runScheduledSteps(Duration.ofDays(6));
 
-
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = session.getContext().getRealm();
             // check the same users are now scheduled to run the second step.
@@ -631,43 +633,46 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
 
         List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
         assertThat(workflows, hasSize(1));
-        // activate the workflow for all eligible users - i.e. only users from the same idp who are not yet assigned to the workflow.
-        managedRealm.admin().workflows().workflow(workflows.get(0).getId()).activateAll();
 
-        runOnServer.run((RunOnServer) session -> {
-            RealmModel realm = session.getContext().getRealm();
-            // check the same users are now scheduled to run the second step.
-            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
-            List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
-            assertEquals(1, registeredWorkflows.size());
-            Workflow workflow = registeredWorkflows.get(0);
-            // check workflow was correctly assigned to the old users, not affecting users already associated with the workflow.
-            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
-            assertEquals(13, scheduledSteps.size());
+        Awaitility.await()
+                .timeout(Duration.ofSeconds(15))
+                .pollInterval(Duration.ofSeconds(1))
+                .untilAsserted(() -> {
+                    runOnServer.run((RunOnServer) session -> {
+                        RealmModel realm = session.getContext().getRealm();
+                        // check the same users are now scheduled to run the second step.
+                        WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+                        List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
+                        assertEquals(1, registeredWorkflows.size());
+                        Workflow workflow = registeredWorkflows.get(0);
+                        // check workflow was correctly assigned to the old users, not affecting users already associated with the workflow.
+                        WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+                        List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
+                        assertEquals(13, scheduledSteps.size());
 
-            List<WorkflowStep> steps = workflow.getSteps().toList();
-            assertEquals(2, steps.size());
-            WorkflowStep notifyStep = steps.get(0);
-            List<ScheduledStep> scheduledToNotify = scheduledSteps.stream()
-                    .filter(step -> notifyStep.getId().equals(step.stepId())).toList();
-            assertEquals(10, scheduledToNotify.size());
-            scheduledToNotify.forEach(scheduledStep -> {
-                UserModel user = session.users().getUserById(realm, scheduledStep.resourceId());
-                assertNotNull(user);
-                assertTrue(user.getUsername().startsWith("idp-user-"));
-            });
+                        List<WorkflowStep> steps = workflow.getSteps().toList();
+                        assertEquals(2, steps.size());
+                        WorkflowStep notifyStep = steps.get(0);
+                        List<ScheduledStep> scheduledToNotify = scheduledSteps.stream()
+                                .filter(step -> notifyStep.getId().equals(step.stepId())).toList();
+                        assertEquals(10, scheduledToNotify.size());
+                        scheduledToNotify.forEach(scheduledStep -> {
+                            UserModel user = session.users().getUserById(realm, scheduledStep.resourceId());
+                            assertNotNull(user);
+                            assertTrue(user.getUsername().startsWith("idp-user-"));
+                        });
 
-            WorkflowStep disableStep = workflow.getSteps().toList().get(1);
-            List<ScheduledStep> scheduledToDisable = scheduledSteps.stream()
-                    .filter(step -> disableStep.getId().equals(step.stepId())).toList();
-            assertEquals(3, scheduledToDisable.size());
-            scheduledToDisable.forEach(scheduledStep -> {
-                UserModel user = session.users().getUserById(realm, scheduledStep.resourceId());
-                assertNotNull(user);
-                assertTrue(user.getUsername().startsWith("new-idp-user-"));
-            });
-        });
+                        WorkflowStep disableStep = workflow.getSteps().toList().get(1);
+                        List<ScheduledStep> scheduledToDisable = scheduledSteps.stream()
+                                .filter(step -> disableStep.getId().equals(step.stepId())).toList();
+                        assertEquals(3, scheduledToDisable.size());
+                        scheduledToDisable.forEach(scheduledStep -> {
+                            UserModel user = session.users().getUserById(realm, scheduledStep.resourceId());
+                            assertNotNull(user);
+                            assertTrue(user.getUsername().startsWith("new-idp-user-"));
+                        });
+                    });
+                });
     }
 
     @Test
