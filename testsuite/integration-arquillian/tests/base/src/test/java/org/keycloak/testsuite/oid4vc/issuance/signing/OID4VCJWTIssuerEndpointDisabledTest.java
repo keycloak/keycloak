@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 import jakarta.ws.rs.core.Response;
@@ -20,7 +19,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
-import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.namedClientId;
 
 import static org.junit.Assert.assertEquals;
 
@@ -51,13 +49,9 @@ public class OID4VCJWTIssuerEndpointDisabledTest extends OID4VCIssuerEndpointTes
         CryptoIntegration.init(this.getClass().getClassLoader());
         httpClient = HttpClientBuilder.create().build();
         client = testRealm().clients().findByClientId(clientId).get(0);
-        namedClient = testRealm().clients().findByClientId(namedClientId).get(0);
 
-        List.of(client, namedClient).forEach(client -> {
-            String clientId = client.getClientId();
-            // Enable OID4VCI for the client by default, but allow tests to override
-            setClientOid4vciEnabled(clientId, shouldEnableOid4vci());
-        });
+        // Enable OID4VCI for the client by default, but allow tests to override
+        setClientOid4vciEnabled(clientId, shouldEnableOid4vci());
     }
 
     /**
