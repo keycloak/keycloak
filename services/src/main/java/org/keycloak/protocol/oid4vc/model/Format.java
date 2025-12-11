@@ -17,8 +17,6 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import java.util.Collections;
-import java.util.Set;
 
 import static org.keycloak.OID4VCConstants.SD_JWT_VC_FORMAT;
 
@@ -44,5 +42,17 @@ public class Format {
      */
     public static final String SD_JWT_VC = SD_JWT_VC_FORMAT;
 
-    public static final Set<String> SUPPORTED_FORMATS = Collections.unmodifiableSet(Set.of(JWT_VC, LDP_VC, SD_JWT_VC_FORMAT));
+    // [TODO #44875] Proof Type null is not supported for format ldp_vc
+    // https://github.com/keycloak/keycloak/issues/44875
+    public static String[] SUPPORTED_FORMATS = new String[]{JWT_VC, SD_JWT_VC};
+
+    public static String getScopeSuffix(String value) {
+        switch (value) {
+            case JWT_VC: return "_jwt";
+            case LDP_VC: return "_ld";
+            case SD_JWT_VC: return "_sd";
+            default:
+                throw new IllegalStateException("Unexpected value: " + value);
+        }
+    }
 }
