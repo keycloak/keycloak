@@ -92,8 +92,8 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     String appUsername = "alice";
 
-    String credScopeName = jwtTypeCredentialScopeName;
-    String credConfigId = jwtTypeCredentialConfigurationIdName;
+    String credScopeName = jwtTypeNaturalPersonScopeName;
+    String credConfigId = jwtTypeNaturalPersonScopeName;
 
     class TestContext {
         boolean preAuthorized;
@@ -472,6 +472,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     private void verifyCredentialResponse(TestContext ctx, CredentialResponse credResponse) throws Exception {
 
+        String issuer = ctx.issuerMetadata.getCredentialIssuer();
         String scope = ctx.credentialConfiguration.getScope();
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull("The first credential in the array should not be null", credentialObj);
@@ -479,11 +480,11 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         String expUsername = ctx.appUser != null ? ctx.appUser : appUsername;
 
         JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialObj.getCredential(), JsonWebToken.class).getToken();
-        assertEquals("did:web:test.org", jsonWebToken.getIssuer());
+        assertEquals(issuer, jsonWebToken.getIssuer());
         Object vc = jsonWebToken.getOtherClaims().get("vc");
         VerifiableCredential credential = JsonSerialization.mapper.convertValue(vc, VerifiableCredential.class);
         assertEquals(List.of(scope), credential.getType());
-        assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
+        assertEquals(URI.create(issuer), credential.getIssuer());
         assertEquals(expUsername + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
     }
 

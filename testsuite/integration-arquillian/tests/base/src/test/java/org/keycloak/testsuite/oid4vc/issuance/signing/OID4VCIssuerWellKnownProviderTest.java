@@ -31,6 +31,7 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.VCFormat;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
@@ -876,6 +877,24 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         }
     }
 
+    @Test
+    public void verifyDefaultCredentialConfigurations() throws IOException {
+
+        getTestingClient()
+                .server(TEST_REALM_NAME)
+                .run(session -> {
+                    CredentialIssuer issuerMetadata = new OID4VCIssuerWellKnownProvider(session).getIssuerMetadata();
+                    Map<String, SupportedCredentialConfiguration> supported = issuerMetadata.getCredentialsSupported();
+                    String credType = "oid4vc_natural_person";
+                    for (String format : VCFormat.SUPPORTED_FORMATS) {
+                        String key = credType + VCFormat.getScopeSuffix(format);
+                        SupportedCredentialConfiguration credConfig = supported.get(key);
+                        assertNotNull("No " + key, credConfig);
+                        assertEquals(credConfig.getId(), credConfig.getScope());
+                        assertEquals(format, credConfig.getFormat());
+                    }
+                });
+    }
 
     private void testBatchSizeValidation(KeycloakTestingClient testingClient, String batchSize, boolean shouldBePresent, Integer expectedValue) {
         testingClient

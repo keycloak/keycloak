@@ -43,13 +43,18 @@ public interface VCFormat {
     // https://github.com/keycloak/keycloak/issues/44875
     String[] SUPPORTED_FORMATS = new String[]{JWT_VC, SD_JWT_VC};
 
+    static String getFromScope(String scope) {
+        String format = SD_JWT_VC; // default format
+        if (scope.toLowerCase().endsWith("_jwt")) format = JWT_VC;
+        else if (scope.toLowerCase().endsWith("_ld")) format = LDP_VC;
+        return format;
+    }
+
     static String getScopeSuffix(String value) {
-        switch (value) {
-            case JWT_VC: return "_jwt";
-            case LDP_VC: return "_ld";
-            case SD_JWT_VC: return "_sd";
-            default:
-                throw new IllegalStateException("Unexpected value: " + value);
-        }
+        String suffix = "";
+        if (JWT_VC.equals(value)) suffix = "_jwt";
+        else if (LDP_VC.equals(value)) suffix = "_ld";
+        else if (SD_JWT_VC.equals(value)) suffix = "_sd";
+        return suffix;
     }
 }
