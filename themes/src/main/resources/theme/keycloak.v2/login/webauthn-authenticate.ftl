@@ -6,7 +6,7 @@
     <#if section = "title">
      title
     <#elseif section = "header">
-        ${kcSanitize(msg("webauthn-login-title"))?no_esc}
+        ${msg("webauthn-login-title")}
     <#elseif section = "form">
         <div id="kc-form-webauthn" class="${properties.kcFormClass!}" >
             <form id="webauth" action="${url.loginAction}" method="post" hidden="hidden">
@@ -27,7 +27,7 @@
 
                     <#if shouldDisplayAuthenticators?? && shouldDisplayAuthenticators>
                         <#if authenticators.authenticators?size gt 1>
-                            <p class="${properties.kcSelectAuthListItemTitle!}">${kcSanitize(msg("webauthn-available-authenticators"))?no_esc}</p>
+                            <p class="${properties.kcSelectAuthListItemTitle!}">${msg("webauthn-available-authenticators")}</p>
                         </#if>
 
                         <ul class="${properties.kcSelectAuthListClass!}" role="list">
@@ -70,13 +70,13 @@
                                         <div class="${properties.kcSelectAuthListItemBodyClass!}">
                                             <div id="kc-webauthn-authenticator-label-${authenticator?index}"
                                                 class="${properties.kcSelectAuthListItemHeadingClass!}">
-                                                ${kcSanitize(msg('${authenticator.label}'))?no_esc}
+                                                ${authenticator.label}
                                             </div>
 
                                             <#if authenticator.transports?? && authenticator.transports.displayNameProperties?has_content>
                                                 <div id="kc-webauthn-authenticator-transport-${authenticator?index}">
                                                     <#list authenticator.transports.displayNameProperties as nameProperty>
-                                                        <span>${kcSanitize(msg('${nameProperty!}'))?no_esc}</span>
+                                                        <span>${msg(nameProperty)}</span>
                                                         <#if nameProperty?has_next>
                                                             <span>, </span>
                                                         </#if>
@@ -85,11 +85,12 @@
                                             </#if>
 
                                             <span id="kc-webauthn-authenticator-createdlabel-${authenticator?index}">
-                                                <i>${kcSanitize(msg('webauthn-createdAt-label'))?no_esc}</i>
+                                                <i>${msg('webauthn-createdAt-label')}</i>
                                             </span>
                                             <span id="kc-webauthn-authenticator-created-${authenticator?index}">
-                                                <i>${kcSanitize(authenticator.createdAt)?no_esc}</i>
+                                                <i>${authenticator.createdAt}</i>
                                             </span>
+                                        </div>
                                         </div>
                                         <div class="${properties.kcSelectAuthListItemFillClass!}"></div>
                                     </div>
@@ -104,19 +105,21 @@
             </@buttons.actionGroup>
         </div>
     <script type="module">
+        <#outputformat "JavaScript">
         import { authenticateByWebAuthn } from "${url.resourcesPath}/js/webauthnAuthenticate.js";
         const authButton = document.getElementById('authenticateWebAuthnButton');
         authButton.addEventListener("click", function() {
             const input = {
                 isUserIdentified : ${isUserIdentified},
-                challenge : '${challenge}',
-                userVerification : '${userVerification}',
-                rpId : '${rpId}',
+                challenge : ${challenge?c},
+                userVerification : ${userVerification?c},
+                rpId : ${rpId?c},
                 createTimeout : ${createTimeout?c},
-                errmsg : "${msg("webauthn-unsupported-browser-text")?no_esc}"
+                errmsg : ${msg("webauthn-unsupported-browser-text")?c}
             };
             authenticateByWebAuthn(input);
         }, { once: true });
+        </#outputformat>
     </script>
 
     <#elseif section = "info">

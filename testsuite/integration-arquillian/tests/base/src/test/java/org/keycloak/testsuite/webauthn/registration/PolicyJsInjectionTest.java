@@ -160,7 +160,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
             assertThat(authenticators, notNullValue());
             assertThat(authenticators.getItems(), not(Matchers.empty()));
 
-            assertThat(authenticators.getLabels().get(0), is("label`;window.prompt(\"another\");"));
+            assertThat(authenticators.getLabels().get(0), is(originalLabel));
         }
     }
 
