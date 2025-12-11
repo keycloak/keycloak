@@ -36,6 +36,7 @@ import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.workflow.conditions.expression.BooleanConditionParser;
 import org.keycloak.models.workflow.conditions.expression.EvaluatorUtils;
 import org.keycloak.models.workflow.conditions.expression.PredicateEvaluator;
+import org.keycloak.representations.workflows.WorkflowConstants;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
@@ -77,7 +78,9 @@ public class UserResourceTypeWorkflowProvider implements ResourceTypeSelector {
 
         query.select(userRoot.get("id")).where(predicates);
 
-        return em.createQuery(query).getResultList();
+        int batchSize = Integer.parseInt(workflow.getConfig().getFirstOrDefault(WorkflowConstants.CONFIG_SCHEDULE_BATCH_SIZE, "100"));
+
+        return em.createQuery(query).setMaxResults(batchSize).getResultList();
     }
 
     @Override
