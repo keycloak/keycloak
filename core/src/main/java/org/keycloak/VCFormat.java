@@ -15,34 +15,61 @@
  * limitations under the License.
  */
 
-package org.keycloak.protocol.oid4vc.model;
-
-import java.util.Collections;
-import java.util.Set;
-
-import static org.keycloak.OID4VCConstants.SD_JWT_VC_FORMAT;
+package org.keycloak;
 
 /**
  * Enum of supported credential formats
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public class Format {
-
+public enum VCFormat {
     /**
      * LD-Credentials {@see https://www.w3.org/TR/vc-data-model/}
      */
-    public static final String LDP_VC = "ldp_vc";
+    LDP_VC("ldp_vc"),
 
     /**
      * JWT-Credentials {@see https://identity.foundation/jwt-vc-presentation-profile/}
      */
-    public static final String JWT_VC = "jwt_vc";
+    JWT_VC("jwt_vc"),
 
     /**
      * SD-JWT-Credentials {@see https://drafts.oauth.net/oauth-sd-jwt-vc/draft-ietf-oauth-sd-jwt-vc.html}
      */
-    public static final String SD_JWT_VC = SD_JWT_VC_FORMAT;
+    SD_JWT_VC("dc+sd-jwt");
 
-    public static final Set<String> SUPPORTED_FORMATS = Collections.unmodifiableSet(Set.of(JWT_VC, LDP_VC, SD_JWT_VC_FORMAT));
+    private final String value;
+
+    VCFormat(String value) {
+        this.value = value;
+    }
+
+    public static VCFormat fromValue(String value) {
+        for (VCFormat f : values()) {
+            if (f.value.equals(value)) {
+                return f;
+            }
+        }
+        throw new IllegalArgumentException("Unknown VC format: " + value);
+    }
+
+    public static VCFormat fromScopeName(String name) {
+        if (name.endsWith("_jwt")) return JWT_VC;
+        if (name.endsWith("_ld")) return LDP_VC;
+        return SD_JWT_VC;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public String getSuffix() {
+        switch (this) {
+            case JWT_VC: return "_jwt";
+            case LDP_VC: return "_ld";
+            case SD_JWT_VC: return "_sd";
+            default:
+                throw new IllegalStateException("Unexpected value: " + this);
+        }
+    }
 }
