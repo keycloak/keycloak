@@ -3,7 +3,9 @@ package org.keycloak.admin.api;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 
 import org.keycloak.common.Profile;
@@ -13,24 +15,25 @@ import org.keycloak.services.resources.admin.AdminCorsPreflightService;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 
 @Provider
-@Path("admin/api")
+@Path("admin")
 public class AdminRootV2 {
 
     @Context
     protected KeycloakSession session;
 
-    @Path("v2")
-    public AdminApi adminApi() {
+    @Path("realms/{realmName}/api")
+    public AdminApi adminApi(@PathParam("realmName") String realmName) {
         checkApiEnabled();
-        return new DefaultAdminApi(session);
+        return new DefaultAdminApi(session, realmName);
     }
 
-    @Path("{any:.*}")
+    // TODO Fix preflights
+    @Path("realms/{realmName}/api/clients-api/{any:.*}")
     @OPTIONS
     @Operation(hidden = true)
-    public Object preFlight() {
+    public Response preFlight() {
         checkApiEnabled();
-        return new AdminCorsPreflightService();
+        return new AdminCorsPreflightService().preflight();
     }
 
     private void checkApiEnabled() {
