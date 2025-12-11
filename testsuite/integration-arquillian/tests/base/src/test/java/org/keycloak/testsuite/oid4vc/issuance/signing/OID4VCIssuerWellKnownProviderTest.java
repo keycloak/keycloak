@@ -31,6 +31,7 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.VCFormat;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
@@ -58,7 +59,6 @@ import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.JWTVCIssuerMetadata;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.ProofType;
@@ -431,7 +431,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                 .get(clientScope.getName());
 
         assertNotNull(supportedConfig);
-        assertEquals(Format.SD_JWT_VC, supportedConfig.getFormat());
+        assertEquals(VCFormat.SD_JWT_VC.getValue(), supportedConfig.getFormat());
         assertEquals(clientScope.getName(), supportedConfig.getScope());
         assertEquals(1, supportedConfig.getCredentialDefinition().getType().size());
         assertEquals(clientScope.getName(), supportedConfig.getCredentialDefinition().getType().get(0));
@@ -537,7 +537,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         assertEquals(credentialConfigurationId, supportedConfig.getId());
 
         String expectedFormat = Optional.ofNullable(clientScope.getAttributes().get(CredentialScopeModel.FORMAT))
-                .orElse(Format.SD_JWT_VC);
+                .orElse(VCFormat.SD_JWT_VC.getValue());
         assertEquals(expectedFormat, supportedConfig.getFormat());
 
         assertEquals(clientScope.getName(), supportedConfig.getScope());
@@ -755,7 +755,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                     assertEquals("The expected server should have been returned.", expectedAuthorizationServer, credentialIssuer.getAuthorizationServers().get(0));
                     assertTrue("The test-credential should be supported.", credentialIssuer.getCredentialsSupported().containsKey("test-credential"));
                     assertEquals("The test-credential should offer type VerifiableCredential", "VerifiableCredential", credentialIssuer.getCredentialsSupported().get("test-credential").getScope());
-                    assertEquals("The test-credential should be offered in the jwt-vc format.", Format.JWT_VC, credentialIssuer.getCredentialsSupported().get("test-credential").getFormat());
+                    assertEquals("The test-credential should be offered in the jwt-vc format.", VCFormat.JWT_VC, credentialIssuer.getCredentialsSupported().get("test-credential").getFormat());
                     assertNotNull("The test-credential can optionally provide a claims claim.",
                             credentialIssuer.getCredentialsSupported().get("test-credential").getCredentialMetadata() != null ?
                                     credentialIssuer.getCredentialsSupported().get("test-credential").getCredentialMetadata().getClaims() : null);
