@@ -82,7 +82,7 @@ public class OIDCClientModelMapper extends BaseClientModelMapper<OIDCClientRepre
 
     private Set<String> getServiceAccountRoles(ClientModel client) {
         if (client.isServiceAccountsEnabled()) {
-            return getSession().users().getServiceAccount(client)
+            return session.users().getServiceAccount(client)
                     .getRoleMappingsStream()
                     .map(RoleModel::getName)
                     .collect(Collectors.toSet());

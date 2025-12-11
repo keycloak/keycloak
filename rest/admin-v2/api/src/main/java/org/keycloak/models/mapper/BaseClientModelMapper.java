@@ -12,9 +12,11 @@ import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> extends AbstractRepModelMapper<BaseClientRepresentation, ClientModel> implements ClientModelMapper {
+public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> implements ClientModelMapper {
+    protected final KeycloakSession session;
+
     public BaseClientModelMapper(KeycloakSession session) {
-        super(session);
+        this.session = session;
     }
 
     @Override
@@ -57,7 +59,7 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
     }
 
     protected ClientModel createClientModel(BaseClientRepresentation rep) {
-        RealmModel realm = getSession().getContext().getRealm();
+        RealmModel realm = session.getContext().getRealm();
 
         // dummy add/remove to obtain a detached model
         var model = realm.addClient(rep.getClientId());
