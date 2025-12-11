@@ -149,13 +149,13 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     /**
      * Set the claims to credential, like f.e. the context
      */
-    public abstract void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                                UserSessionModel userSessionModel);
+    public abstract void setClaim(VerifiableCredential verifiableCredential,
+                                  UserSessionModel userSessionModel);
 
     /**
      * Set the claims to the credential subject.
      */
-    public abstract void setClaimsForSubject(Map<String, Object> claims,
-                                             UserSessionModel userSessionModel);
+    public abstract void setClaim(Map<String, Object> claims,
+                                  UserSessionModel userSessionModel);
 
 }

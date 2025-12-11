@@ -105,8 +105,8 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
                        .orElse(false);
     }
 
-    public void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                       UserSessionModel userSessionModel) {
+    public void setClaim(VerifiableCredential verifiableCredential,
+                         UserSessionModel userSessionModel) {
         // Set the value
         List<String> attributePath = getMetadataAttributePath();
         String propertyName = attributePath.get(attributePath.size() - 1);
@@ -141,7 +141,7 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
     }
 
     @Override
-    public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
+    public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
         // NoOp
     }
 

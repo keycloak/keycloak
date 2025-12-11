@@ -36,7 +36,7 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCSubjectIdMapper;
-import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCUserAttributeMapper;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCUserPropertyMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -89,10 +89,10 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 	@Override
 	public void init(Config.Scope config) {
 		builtins.put(SUBJECT_ID_MAPPER, OID4VCSubjectIdMapper.create("subject id", "id"));
-		builtins.put(USERNAME_MAPPER, OID4VCUserAttributeMapper.create(USERNAME_MAPPER, "username", "username", false));
-		builtins.put(EMAIL_MAPPER, OID4VCUserAttributeMapper.create(EMAIL_MAPPER, "email", "email", false));
-		builtins.put(FIRST_NAME_MAPPER, OID4VCUserAttributeMapper.create(FIRST_NAME_MAPPER, "firstName", "firstName", false));
-		builtins.put(LAST_NAME_MAPPER, OID4VCUserAttributeMapper.create(LAST_NAME_MAPPER, "lastName", "familyName", false));
+		builtins.put(USERNAME_MAPPER, OID4VCUserPropertyMapper.create(USERNAME_MAPPER, "username", "username", false));
+		builtins.put(EMAIL_MAPPER, OID4VCUserPropertyMapper.create(EMAIL_MAPPER, "email", "email", false));
+		builtins.put(FIRST_NAME_MAPPER, OID4VCUserPropertyMapper.create(FIRST_NAME_MAPPER, "firstName", "firstName", false));
+		builtins.put(LAST_NAME_MAPPER, OID4VCUserPropertyMapper.create(LAST_NAME_MAPPER, "lastName", "familyName", false));
 	}
 
 	@Override
