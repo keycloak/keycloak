@@ -17,13 +17,12 @@
 
 package org.keycloak.operator.testsuite.unit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.junit.jupiter.api.Test;
+import jakarta.inject.Inject;
+
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.WatchedResources;
 
@@ -31,7 +30,9 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 public class WatchedResourcesTest {

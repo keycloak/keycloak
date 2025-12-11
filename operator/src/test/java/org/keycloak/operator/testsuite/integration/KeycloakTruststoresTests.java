@@ -17,23 +17,24 @@
 
 package org.keycloak.operator.testsuite.integration;
 
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreBuilder;
+import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
+
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.quarkus.test.junit.QuarkusTest;
-
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreBuilder;
-import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
-import org.keycloak.operator.testsuite.utils.K8sUtils;
+
+import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 
 @QuarkusTest
 public class KeycloakTruststoresTests extends BaseOperatorTest {

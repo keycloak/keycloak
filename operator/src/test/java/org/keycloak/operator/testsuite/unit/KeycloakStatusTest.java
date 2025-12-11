@@ -17,14 +17,14 @@
 
 package org.keycloak.operator.testsuite.unit;
 
-import io.fabric8.kubernetes.client.utils.Serialization;
-
-import org.assertj.core.api.Condition;
-import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.testsuite.utils.CRAssert;
+
+import io.fabric8.kubernetes.client.utils.Serialization;
+import org.assertj.core.api.Condition;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

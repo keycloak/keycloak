@@ -105,7 +105,7 @@ jobs:
         uses: ./.github/actions/build-keycloak
 
       - name: Spotless
-        run: ./mvnw spotless:check
+        run: ./mvnw -Pdocs,distribution,operator spotless:check
 
       - name: Check for unstaged proto.lock files
         if: github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'release/')

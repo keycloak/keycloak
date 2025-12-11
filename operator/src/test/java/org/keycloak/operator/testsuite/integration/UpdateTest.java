@@ -17,15 +17,6 @@
 
 package org.keycloak.operator.testsuite.integration;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.operator.testsuite.utils.CRAssert.eventuallyRecreateUpdateStatus;
-import static org.keycloak.operator.testsuite.utils.CRAssert.eventuallyRollingUpdateStatus;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,14 +25,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.client.dsl.Gettable;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -54,9 +37,27 @@ import org.keycloak.operator.update.UpdateStrategy;
 import org.keycloak.operator.update.impl.AutoUpdateLogic;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
+import io.fabric8.kubernetes.client.dsl.Gettable;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+
+import static org.keycloak.operator.testsuite.utils.CRAssert.eventuallyRecreateUpdateStatus;
+import static org.keycloak.operator.testsuite.utils.CRAssert.eventuallyRollingUpdateStatus;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag(BaseOperatorTest.SLOW)
 @QuarkusTest
