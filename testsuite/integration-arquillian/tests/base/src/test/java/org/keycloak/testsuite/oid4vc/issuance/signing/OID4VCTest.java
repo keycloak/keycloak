@@ -516,7 +516,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 		protocolMapperRepresentation.setName(attributeName + "-mapper");
 		protocolMapperRepresentation.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
 		protocolMapperRepresentation.setId(UUID.randomUUID().toString());
-		protocolMapperRepresentation.setProtocolMapper("oid4vc-user-attribute-mapper");
+		protocolMapperRepresentation.setProtocolMapper("oid4vc-unmanaged-attribute-mapper");
 		protocolMapperRepresentation.setConfig(
 				Map.of(
 						"claim.name", subjectProperty,
