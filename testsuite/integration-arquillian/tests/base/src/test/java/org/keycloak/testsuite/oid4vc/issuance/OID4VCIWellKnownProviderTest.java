@@ -47,8 +47,7 @@ public class OID4VCIWellKnownProviderTest extends OID4VCTest {
         getTestingClient()
                 .server(TEST_REALM_NAME)
                 .run(session -> {
-                    OID4VCIssuerWellKnownProvider oid4VCIssuerWellKnownProvider = new OID4VCIssuerWellKnownProvider(session);
-                    CredentialIssuer credentialIssuer = oid4VCIssuerWellKnownProvider.getIssuerMetadata();
+                    CredentialIssuer credentialIssuer = new OID4VCIssuerWellKnownProvider(session).getIssuerMetadata();
                     assertEquals("Only one asymmetric encryption key is present in the realm.",
                             1,
                             credentialIssuer.getCredentialResponseEncryption()
@@ -62,7 +61,7 @@ public class OID4VCIWellKnownProviderTest extends OID4VCTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.setVerifiableCredentialsEnabled(true);
-        
+
         if (testRealm.getComponents() != null) {
             testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
                     getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100));
@@ -81,7 +80,7 @@ public class OID4VCIWellKnownProviderTest extends OID4VCTest {
         }
     }
 
-    public static ComponentExportRepresentation getAesKeyProvider(String algorithm, String keyName, String keyUse, String providerId) {
+    private ComponentExportRepresentation getAesKeyProvider(String algorithm, String keyName, String keyUse, String providerId) {
         // Generate a random AES key (default length: 256 bits)
         byte[] secret = SecretGenerator.getInstance().randomBytes(32); // 32 bytes = 256 bits
 
