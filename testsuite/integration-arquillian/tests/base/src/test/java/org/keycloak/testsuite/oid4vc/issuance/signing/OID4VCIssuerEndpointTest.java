@@ -153,9 +153,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerEndpointTest.class);
 
+    protected static ClientScopeRepresentation jwtTypeNaturalPersonClientScope;
     protected static ClientScopeRepresentation sdJwtTypeNaturalPersonClientScope;
-    protected static ClientScopeRepresentation sdJwtTypeCredentialClientScope;
+
     protected static ClientScopeRepresentation jwtTypeCredentialClientScope;
+    protected static ClientScopeRepresentation sdJwtTypeCredentialClientScope;
     protected static ClientScopeRepresentation minimalJwtTypeCredentialClientScope;
 
     protected CloseableHttpClient httpClient;
@@ -193,12 +195,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 session);
         SdJwtCredentialBuilder sdJwtCredentialBuilder = new SdJwtCredentialBuilder();
 
-        return prepareIssuerEndpoint(
-                session,
-                authenticator,
-                Map.of(jwtCredentialBuilder.getSupportedFormat(), jwtCredentialBuilder,
-                        sdJwtCredentialBuilder.getSupportedFormat(), sdJwtCredentialBuilder)
+        Map<String, CredentialBuilder> credentialBuilders = Map.of(
+                jwtCredentialBuilder.getSupportedFormat(), jwtCredentialBuilder,
+                sdJwtCredentialBuilder.getSupportedFormat(), sdJwtCredentialBuilder
         );
+        return prepareIssuerEndpoint(session, authenticator, credentialBuilders);
     }
 
     protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(
@@ -230,6 +231,14 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         sdJwtTypeNaturalPersonClientScope = requireExistingClientScope(sdJwtTypeNaturalPersonScopeName);
 
         // Register the optional client scopes
+        jwtTypeNaturalPersonClientScope = registerOptionalClientScope(jwtTypeNaturalPersonScopeName,
+                null,
+                jwtTypeNaturalPersonScopeName,
+                jwtTypeNaturalPersonScopeName,
+                jwtTypeNaturalPersonScopeName,
+                VCFormat.JWT_VC,
+                null,
+                Collections.emptyList());
         sdJwtTypeCredentialClientScope = registerOptionalClientScope(sdJwtTypeCredentialScopeName,
                 null,
                 sdJwtTypeCredentialConfigurationIdName,
@@ -238,6 +247,14 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 VCFormat.SD_JWT_VC,
                 null,
                 List.of(KeyAttestationResistanceLevels.HIGH, KeyAttestationResistanceLevels.MODERATE));
+        jwtTypeCredentialClientScope = registerOptionalClientScope(jwtTypeCredentialScopeName,
+                TEST_DID.toString(),
+                jwtTypeCredentialConfigurationIdName,
+                jwtTypeCredentialScopeName,
+                null,
+                VCFormat.JWT_VC,
+                TEST_CREDENTIAL_MAPPERS_FILE,
+                Collections.emptyList());
         jwtTypeCredentialClientScope = registerOptionalClientScope(jwtTypeCredentialScopeName,
                 TEST_DID.toString(),
                 jwtTypeCredentialConfigurationIdName,

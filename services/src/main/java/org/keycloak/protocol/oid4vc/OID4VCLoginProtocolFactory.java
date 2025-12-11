@@ -126,10 +126,10 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     public void createDefaultClientScopes(RealmModel newRealm, boolean addScopesToExistingClients) {
         LOGGER.debugf("Create default scopes for realm %s", newRealm.getName());
 
-        ClientScopeModel naturalPersonScope = KeycloakModelUtils.getClientScopeByName(newRealm, "natural_person");
+        ClientScopeModel naturalPersonScope = KeycloakModelUtils.getClientScopeByName(newRealm, "natural_person_sd");
         if (naturalPersonScope == null) {
             LOGGER.debug("Add natural person scope");
-            naturalPersonScope = newRealm.addClientScope(String.format("%s_%s", OID4VC_PROTOCOL, "natural_person"));
+            naturalPersonScope = newRealm.addClientScope(String.format("%s_%s", OID4VC_PROTOCOL, "natural_person_sd"));
             naturalPersonScope.setDescription("OID4VCI Scope, that adds properties required for a natural person.");
             naturalPersonScope.setProtocol(OID4VC_PROTOCOL);
             naturalPersonScope.addProtocolMapper(builtins.get(SUBJECT_ID_MAPPER));
