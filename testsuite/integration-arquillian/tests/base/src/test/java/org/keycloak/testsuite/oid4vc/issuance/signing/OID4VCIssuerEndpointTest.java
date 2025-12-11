@@ -153,9 +153,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerEndpointTest.class);
 
+    protected static ClientScopeRepresentation jwtTypeNaturalPersonClientScope;
     protected static ClientScopeRepresentation sdJwtTypeNaturalPersonClientScope;
-    protected static ClientScopeRepresentation sdJwtTypeCredentialClientScope;
+
     protected static ClientScopeRepresentation jwtTypeCredentialClientScope;
+    protected static ClientScopeRepresentation sdJwtTypeCredentialClientScope;
     protected static ClientScopeRepresentation minimalJwtTypeCredentialClientScope;
 
     protected CloseableHttpClient httpClient;
@@ -193,12 +195,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 session);
         SdJwtCredentialBuilder sdJwtCredentialBuilder = new SdJwtCredentialBuilder();
 
-        return prepareIssuerEndpoint(
-                session,
-                authenticator,
-                Map.of(jwtCredentialBuilder.getSupportedFormat(), jwtCredentialBuilder,
-                        sdJwtCredentialBuilder.getSupportedFormat(), sdJwtCredentialBuilder)
+        Map<String, CredentialBuilder> credentialBuilders = Map.of(
+                jwtCredentialBuilder.getSupportedFormat(), jwtCredentialBuilder,
+                sdJwtCredentialBuilder.getSupportedFormat(), sdJwtCredentialBuilder
         );
+        return prepareIssuerEndpoint(session, authenticator, credentialBuilders);
     }
 
     protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(
@@ -227,6 +228,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         testRealm().update(realmRep);
 
         // Lookup the pre-installed oid4vc_natural_person client scope
+        jwtTypeNaturalPersonClientScope = requireExistingClientScope(jwtTypeNaturalPersonScopeName);
         sdJwtTypeNaturalPersonClientScope = requireExistingClientScope(sdJwtTypeNaturalPersonScopeName);
 
         // Register the optional client scopes
@@ -258,6 +260,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             String clientId = client.getClientId();
 
             // Assign the registered optional client scopes to the client
+            assignOptionalClientScopeToClient(jwtTypeNaturalPersonClientScope.getId(), clientId);
             assignOptionalClientScopeToClient(sdJwtTypeNaturalPersonClientScope.getId(), clientId);
             assignOptionalClientScopeToClient(sdJwtTypeCredentialClientScope.getId(), clientId);
             assignOptionalClientScopeToClient(jwtTypeCredentialClientScope.getId(), clientId);
