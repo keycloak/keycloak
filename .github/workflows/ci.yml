@@ -105,7 +105,7 @@ jobs:
         uses: ./.github/actions/build-keycloak
 
       - name: Spotless
-        run: ./mvnw spotless:check
+        run: ./mvnw -Pdocs,distribution,operator spotless:check
 
       - name: Check for unstaged proto.lock files
         if: github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'release/')
@@ -747,7 +747,7 @@ jobs:
     timeout-minutes: 75
     strategy:
       matrix:
-        db: [postgres, mysql, oracle, mssql, mariadb, tidb]
+        db: [postgres, mysql, oracle, mssql, mariadb]
       fail-fast: false
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -914,7 +914,7 @@ jobs:
 
       - name: Run new Forms IT
         run: |
-          ./mvnw package -f tests/pom.xml -Dkc.test.browser=${{ matrix.browser }} -Dtest=FormsTestSuite
+          ./mvnw package -f tests/pom.xml -Dkc.test.browser=${{ matrix.browser }}-headless -Dtest=FormsTestSuite
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests

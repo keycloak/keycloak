@@ -17,10 +17,13 @@
 
 package org.keycloak.operator.testsuite.unit;
 
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.quarkus.test.junit.QuarkusTest;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakDistConfigurator;
@@ -31,18 +34,16 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.keycloak.common.util.ObjectUtil.isBlank;
 import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
 import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
 import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusDoesNotContainMessage;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @QuarkusTest
 public class KeycloakDistConfiguratorTest {

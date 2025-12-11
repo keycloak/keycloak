@@ -67,6 +67,7 @@ import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
 import static org.keycloak.services.clientpolicy.executor.FapiConstant.ALLOWED_ALGORITHMS;
@@ -78,7 +79,11 @@ import static org.keycloak.services.clientpolicy.executor.FapiConstant.ALLOWED_A
  */
 public class AttestationValidatorUtil {
 
+    private static final Logger LOGGER = Logger.getLogger(AttestationValidatorUtil.class);
+
     public static final String ATTESTATION_JWT_TYP = "key-attestation+jwt";
+    @Deprecated
+    public static final String LEGACY_ATTESTATION_JWT_TYP = "keyattestation+jwt";
     private static final String CACERTS_PATH = System.getProperty("javax.net.ssl.trustStore",
             System.getProperty("java.home") + "/lib/security/cacerts");
     private static final char[] DEFAULT_TRUSTSTORE_PASSWORD = System.getProperty(
@@ -291,8 +296,16 @@ public class AttestationValidatorUtil {
                     ". Allowed algorithms: " + ALLOWED_ALGORITHMS);
         }
 
-        if (!ATTESTATION_JWT_TYP.equals(header.getType())) {
-            throw new VCIssuerException("Invalid JWT typ: expected " + ATTESTATION_JWT_TYP);
+        String typ = Optional.ofNullable(header.getType())
+                .map(Object::toString)
+                .orElseThrow(() -> new VCIssuerException("Missing typ in JWS header"));
+
+        if (!ATTESTATION_JWT_TYP.equals(typ)) {
+            if (LEGACY_ATTESTATION_JWT_TYP.equals(typ)) {
+                LOGGER.debugf("Accepting deprecated attestation JWT typ '%s' for backward compatibility", typ);
+            } else {
+                throw new VCIssuerException("Invalid JWT typ: expected " + ATTESTATION_JWT_TYP);
+            }
         }
     }
 

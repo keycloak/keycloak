@@ -464,9 +464,9 @@ public final class KeycloakModelUtils {
             } catch (Throwable t) {
                 session.getTransactionManager().setRollbackOnly();
                 throw t;
-            } finally {
-                KeycloakSessionUtil.setKeycloakSession(existing);
             }
+        } finally {
+            KeycloakSessionUtil.setKeycloakSession(existing);
         }
         return result;
     }

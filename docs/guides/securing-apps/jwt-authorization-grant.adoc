@@ -7,8 +7,7 @@ title="JWT Authorization Grant"
 priority=130
 summary="Guide for the JWT Authorization Grant specification RFC 7521 / 7523.">
 
-// TODO: add tech preview when moved out experimental
-//< @ features.techpreview feature="jwt-authorization-grant"/>
+<@features.techpreview feature="jwt-authorization-grant"/>
 
 This guide defines how a JWT Bearer Token can be used in {project_name} as an authorization grant. This feature allows clients to send a JWT assertion to request an access token when the client wants to use an existing trust relationship without a direct user-approval step at the authorization server. The assertion is validated solely through the semantics of the JWT (its claims and signature). The trust relationship usually refers to another Identity Provider server (another OIDC server), and allows to obtain a cross-domain or cross-realm access token. In this sense, it is similar to the external to internal request in token exchange V1 (see <@links.securingapps id="token-exchange" anchor="_external-token-to-internal-token-exchange" /> for more information).
 

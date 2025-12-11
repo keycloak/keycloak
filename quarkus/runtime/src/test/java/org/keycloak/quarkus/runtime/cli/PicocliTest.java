@@ -47,6 +47,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.Help;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -1230,5 +1231,143 @@ public class PicocliTest extends AbstractConfigurationTest {
         nonRunningPicocli = pseudoLaunch("start-dev");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Wrong value for feature 'dpop': wrong. You can specify either 'enabled', 'disabled', or specific version (lowercase) that will be enabled"));
+    }
+
+    @Test
+    public void otelTracing() {
+        // tracing options
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--tracing-service-name=service");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.enabled").getValue(), is("true"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.traces.enabled").getValue(), is("true"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.service.name").getValue(), is("service"));
+        assertThat(nonRunningPicocli.getOutString(), containsString("The following used options or option values are DEPRECATED"));
+        assertThat(nonRunningPicocli.getOutString(), containsString("tracing-service-name: Service name is not directly related to Tracing and you should use the Telemetry option which takes precedence. Use telemetry-service-name"));
+        onAfter();
+
+        //  tracing enabled option + telemetry
+        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--telemetry-endpoint=http://endpoint:3232");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.enabled").getValue(), is("true"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.traces.enabled").getValue(), is("true"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.exporter.otlp.traces.endpoint").getValue(), is("http://endpoint:3232"));
+        onAfter();
+
+        // combined service name
+        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--telemetry-service-name=service123", "--tracing-service-name=service456");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.enabled").getValue(), is("true"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.traces.enabled").getValue(), is("true"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.service.name").getValue(), is("service123"));
+        onAfter();
+
+        // combined service name + disabled tracing
+        nonRunningPicocli = pseudoLaunch("start-dev", "--telemetry-service-name=service123", "--tracing-service-name=service456");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), anyOf(
+                containsString("Disabled option: '--tracing-service-name'. Available only when Tracing is enabled"),
+                containsString("Disabled option: '--telemetry-service-name'. Available only when any of available OpenTelemetry components (Traces) is turned on")
+        ));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.enabled").getValue(), is("false"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.traces.enabled").getValue(), is("false"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.service.name").getValue(), is(nullValue()));
+        onAfter();
+
+        // disabled tracing
+        nonRunningPicocli = pseudoLaunch("start-dev", "--telemetry-service-name=service123");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--telemetry-service-name'. Available only when any of available OpenTelemetry components (Traces) is turned on"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.enabled").getValue(), is("false"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.traces.enabled").getValue(), is("false"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.service.name").getValue(), is(nullValue()));
+        onAfter();
+
+        // combined resource attributes
+        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--telemetry-resource-attributes=otel1=val1", "--tracing-resource-attributes=tracing1=val2");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.enabled").getValue(), is("true"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.traces.enabled").getValue(), is("true"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.resource.attributes").getValue(), is("otel1=val1")); // Telemetry option takes precedence
+        assertThat(nonRunningPicocli.getOutString(), containsString("The following used options or option values are DEPRECATED"));
+        assertThat(nonRunningPicocli.getOutString(), containsString("tracing-resource-attributes: Resource attributes are not directly related to Tracing and you should use the Telemetry option which takes precedence. Use telemetry-resource-attributes."));
+        onAfter();
+
+        // combined resource attributes
+        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--telemetry-resource-attributes=otel1=val1", "--tracing-resource-attributes=tracing1=val2");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.enabled").getValue(), is("true"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.traces.enabled").getValue(), is("true"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.resource.attributes").getValue(), is("otel1=val1")); // Telemetry option takes precedence
+        assertThat(nonRunningPicocli.getOutString(), containsString("The following used options or option values are DEPRECATED"));
+        assertThat(nonRunningPicocli.getOutString(), containsString("tracing-resource-attributes: Resource attributes are not directly related to Tracing and you should use the Telemetry option which takes precedence. Use telemetry-resource-attributes."));
+        onAfter();
+
+        // wrong protocol
+        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--telemetry-protocol=wrong");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--telemetry-protocol': wrong. Expected values are: grpc, http/protobuf"));
+        onAfter();
+
+        // combined protocol
+        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--telemetry-protocol=grpc", "--tracing-protocol=http/protobuf");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.enabled").getValue(), is("true"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.exporter.otlp.protocol").getValue(), is("grpc"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.exporter.otlp.traces.protocol").getValue(), is("http/protobuf")); // Tracing options take precedence
+        onAfter();
+
+        // telemetry protocol
+        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--telemetry-protocol=http/protobuf");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.enabled").getValue(), is("true"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.exporter.otlp.protocol").getValue(), is("http/protobuf"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.exporter.otlp.traces.protocol").getValue(), is("http/protobuf"));
+        onAfter();
+
+        // parent + child protocol
+        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--tracing-protocol=http/protobuf", "--telemetry-protocol=grpc");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.enabled").getValue(), is("true"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.exporter.otlp.protocol").getValue(), is("grpc"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.exporter.otlp.traces.protocol").getValue(), is("http/protobuf"));
+        onAfter();
+
+        // wrong endpoint - telemetry option
+        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--telemetry-endpoint=not-url");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Specified Endpoint URL is invalid"));
+        onAfter();
+
+        // wrong endpoint - tracing option
+        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--tracing-endpoint=not-url");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Specified Endpoint URL is invalid"));
+        onAfter();
+
+        // combined endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--telemetry-endpoint=http://keycloak.org", "--tracing-endpoint=http://keycloak2.org");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.exporter.otlp.endpoint").getValue(), is("http://keycloak.org")); // Tracing option takes precedence
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.exporter.otlp.traces.endpoint").getValue(), is("http://keycloak2.org")); // Tracing option takes precedence
+        onAfter();
+
+        // telemetry endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--telemetry-endpoint=http://keycloak.org");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.exporter.otlp.traces.endpoint").getValue(), is("http://keycloak.org"));
+        onAfter();
+
+        // parent + child endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--telemetry-endpoint=http://keycloak-keycloak-keycloak.org:3455", "--tracing-endpoint=http://keycloak.org");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.exporter.otlp.endpoint").getValue(), is("http://keycloak-keycloak-keycloak.org:3455"));
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.exporter.otlp.traces.endpoint").getValue(), is("http://keycloak.org"));
+        onAfter();
+
+        // parent endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--telemetry-endpoint=http://keycloak-keycloak-keycloak.org:3455");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.exporter.otlp.endpoint").getValue(), is("http://keycloak-keycloak-keycloak.org:3455")); // value inherited
+        assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.exporter.otlp.traces.endpoint").getValue(), is("http://keycloak-keycloak-keycloak.org:3455")); // value inherited
     }
 }

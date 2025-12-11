@@ -530,6 +530,16 @@ class AdminClient {
 
     return users[0];
   }
+
+  async createWorkflowAsYaml(realm: string, yaml: string): Promise<void> {
+    await this.#login();
+    await this.#client.workflows.createAsYaml({ realm, yaml });
+  }
+
+  async deleteWorkflow(realm: string, id: string): Promise<void> {
+    await this.#login();
+    await this.#client.workflows.delById({ realm, id });
+  }
 }
 
 const adminClient = new AdminClient();
