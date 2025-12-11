@@ -101,8 +101,8 @@ You may still explicitly disable color support by setting the option to `false`.
 
 === Message keys no longer support HTML or HTML entities in the login theme
 
-Message keys in translations no longer support HTML or HTML entities for the login theme.
-The same is true for error messages generated in the backend.
+Message keys in translations and error messages generated in the backend no longer support HTML or HTML entities for the login theme.
+The only exception is the message key `termsText` which is used to display the terms and conditions for the respective required action that still allows for a limited set of HTML as before.
 For the Legacy Login Theme, HTML and HTML entities are still partially supported for backward compatibility.
 
 The default login themes have already been updated. If you used them in your translations, please update your translation to use the UTF-8 equivalent if you used HTML entities, and replace HTML with plain text.
