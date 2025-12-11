@@ -29,6 +29,7 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.BearerAuthFilter;
+import org.keycloak.admin.client.resource.WorkflowResource;
 import org.keycloak.admin.client.resource.WorkflowsResource;
 import org.keycloak.models.workflow.DeleteUserStepProviderFactory;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
@@ -475,6 +476,32 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         scheduledSteps = managedRealm.admin().workflows().getScheduledWorkflows(userAlice.getId());
         assertThat(scheduledSteps, empty());
 
+    }
+
+    @Test
+    public void testUpdateWorkflowNoIdInRepresentation() {
+        WorkflowRepresentation expectedWorkflows = WorkflowRepresentation.withName("test-workflow")
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build()
+                ).build();
+
+        WorkflowsResource workflows = managedRealm.admin().workflows();
+
+        String workflowId;
+        try (Response response = workflows.create(expectedWorkflows)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            workflowId = ApiUtil.getCreatedId(response);
+        }
+
+        WorkflowResource workflow = managedRealm.admin().workflows().workflow(workflowId);
+        WorkflowRepresentation rep = workflow.toRepresentation();
+        rep.setId(null);
+        rep.setConditions(RoleWorkflowConditionFactory.ID + "(realm-management/realm-admin)");
+        try (Response response = workflow.update(rep)) {
+            assertThat(response.getStatus(), is(Status.NO_CONTENT.getStatusCode()));
+        }
     }
 
     @Test
