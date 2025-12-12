@@ -22,7 +22,6 @@ import java.util.Set;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
-import org.keycloak.admin.api.client.ClientApi;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
@@ -50,6 +49,8 @@ import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.admin.api.AdminApiRootV2.CONTENT_TYPE_MERGE_PATCH;
+
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -59,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @KeycloakIntegrationTest(config = ClientApiV2Test.AdminV2Config.class)
 public class ClientApiV2Test {
 
-    public static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080/admin/api/v2";
+    public static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080/admin/api/clients/v2";
     private static ObjectMapper mapper;
 
     @InjectHttpClient
@@ -105,7 +106,7 @@ public class ClientApiV2Test {
     public void jsonMergePatchClient() throws Exception {
         HttpPatch request = new HttpPatch(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/account");
         setAuthHeader(request);
-        request.setHeader(HttpHeaders.CONTENT_TYPE, ClientApi.CONTENT_TYPE_MERGE_PATCH);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, CONTENT_TYPE_MERGE_PATCH);
 
         ClientRepresentation patch = new ClientRepresentation();
         patch.setDescription("I'm also a description");
@@ -446,6 +447,35 @@ public class ClientApiV2Test {
             assertEquals(200, response.getStatusLine().getStatusCode());
             ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
             assertThat(updated.getServiceAccount().getRoles(), is(Set.of()));
+        }
+    }
+
+    @Test
+    public void versionedClientsApi() throws Exception {
+        HttpGet request = new HttpGet("http://localhost:8080/admin/api/clients/");
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(404));
+        }
+
+        request = new HttpGet(HOSTNAME_LOCAL_ADMIN);
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(405)); // 405 for now due to the preflight check (needs to be fixed)
+            EntityUtils.consumeQuietly(response.getEntity());
+        }
+
+        request = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(200));
+            EntityUtils.consumeQuietly(response.getEntity());
+        }
+
+        request = new HttpGet("http://localhost:8080/admin/api/clients/v3");
+        setAuthHeader(request);
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(404));
         }
     }
 
