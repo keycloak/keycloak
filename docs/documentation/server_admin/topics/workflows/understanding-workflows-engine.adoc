@@ -1,0 +1,61 @@
+[id="understanding-workflow_{context}"]
+
+[[_understanding_workflows_engine_]]
+=  Understanding the workflows engine
+[role="_abstract"]
+
+The lifecycle and execution of workflows in {project_name} is managed by the Workflows Engine.
+The engine is responsible for processing events, creating workflow executions, and processing their steps.
+Once a workflow execution is created, the engine takes over and manages the execution of its steps chain.
+
+The execution of the steps chain is done asynchronously and detached from the request that originated the event that
+triggered the workflow. This means that workflows are not scheduled nor executed immediately within the context of the request,
+but rather sent to a task thread pool and scheduled to be executed later by the engine. This allows for better performance and scalability, as the steps can be executed
+in the background without blocking the main request thread.
+
+For immediate steps, the engine processes them as soon as the workflow execution is submitted to the task thread pool. This means that immediate steps are executed
+right away, as soon as the workflow execution is picked up by a worker thread from the pool.
+
+For scheduled steps, the engine continuously monitors the state of all active workflow executions in the realm. This is done by a background
+task that runs periodically to check for any workflow executions that have steps ready to be executed. The schedule steps of a workflow are also executed asynchronously
+by the background task, using the same task thread pool as immediate steps.
+
+== Configuring the scheduled steps execution interval
+
+By default, the background task tracking due steps runs every 12 hours, but this interval can be configured by setting the following server configuration option:
+
+*   `spi-events-listener--workflow-event-listener--step-runner-task-interval`: Defines the interval, in milliseconds, at which the background task runs to check for workflow steps that are due for execution.
+
+You can adjust this interval based on your realm's needs and the expected frequency of workflow executions.
+
+== Configuring the task execution timeout
+
+Most of the time, steps are executed in a short amount of time. However, there might be cases where a step takes longer
+to execute due to various reasons, such as network latency depending on an external service delays, or complex processing logic.
+
+By default, the timeout for executing a step is set to 1 second. If a step takes longer than this timeout to execute,
+it will be marked as failed, and the workflow execution will be halted. If the step is scheduled, it will run again
+in the next execution window of the background task. If the step is not scheduled, the workflow execution will be marked as failed
+and that step won't be retried.
+
+You can configure the timeout for step execution by setting the following server configuration option:
+
+*   `spi-workflow--default--executor-task-timeout`: Defines the timeout, in milliseconds, for executing a workflow step.
+
+== Performance considerations
+
+Workflows can introduce additional processing overhead. This is mainly true when workflows are triggered frequently
+such as when users are authenticating. Even though workflows are scheduled and executed asynchronously, they still consume
+system resources. Therefore, it's important to monitor the performance of your realm and adjust your workflow definitions
+accordingly to ensure optimal performance.
+
+Consider the following best practices when defining workflows:
+
+* Keep workflows simple and focused on specific tasks and avoid long-running transactions when executing steps in a workflow.
+This is specially true for steps that are executed immediately upon workflow execution creation.
+
+* Consider using short timeouts for the step execution to avoid blocking the workflow execution for too long and potentially
+exhaust the workflow task thread pool and impacting the execution of other workflows.
+
+* Adjust the background task interval based on the expected frequency of workflow executions in your realm. If your realm has a high volume of workflow executions,
+consider reducing the interval to avoid processing multiple workflows at once.

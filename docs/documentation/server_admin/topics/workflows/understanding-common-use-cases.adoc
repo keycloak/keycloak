@@ -1,0 +1,62 @@
+[id="understanding-common-use-cases_{context}"]
+
+[[_understanding_common_use_cases_]]
+=  Understanding common use cases
+[role="_abstract"]
+
+Workflows can be used to automate a wide range of administrative tasks within a realm. Here are some common use cases where workflows can be particularly beneficial:
+
+== User Onboarding
+
+When a new user is created, a workflow can automatically send a welcome email, and assign initial roles or groups to the user. This ensures that new users have the necessary access and information from the moment they join.
+
+```yaml
+name: Onboarding gold members
+on: user_created
+if: has-user-attribute('membership','gold')
+steps:
+  - uses: notify-user
+    with:
+      message: "Welcome to the Gold Membership program!"
+  - uses: assign-user-role
+    with:
+      role: gold-member
+```
+
+== User Offboarding
+
+When a user is removed from a specific group, a workflow can automatically revoke certain roles or permissions associated with that group.
+
+```yaml
+name: Offboarding sales members
+on: user_group_membership_removed('/Sales')
+steps:
+  - uses: revoke-role
+    with:
+      role: "manager,sales-rep,sales-intern"
+```
+
+== Tracking user activity and taking actions on inactivity
+
+When a user has been inactive for a certain period, a workflow can send reminder emails and deactivate the account.
+
+```yaml
+name: Track inactive users
+on: user_authenticated
+concurrency:
+  restart-in-progress: true
+steps:
+  - uses: notify-user
+    after: 180d
+    with:
+      message: It has been a while since your last login. We miss you!
+  - uses: notify-user
+    after: 60d
+    with:
+      message: Your account will be disabled in ${workflow.daysUntilNextStep} days!
+  - uses: disable-user
+    after: 7d
+  - uses: notify-user
+    with:
+      message: Your account was disabled. Sorry to see you go.
+```
