@@ -72,10 +72,10 @@ public class CredentialScopeModel implements ClientScopeModel {
     public static final String CONTEXTS = "vc.credential_contexts";
 
     /**
-     * if the credential is only meant for specific signing algorithms the global default list can be overridden here.
+     * If the credential is only meant for specific signing algorithms the global default list can be overridden here.
      * The global default list is retrieved from the available keys in the realm.
      */
-    public static final String SIGNING_ALG_VALUES_SUPPORTED = "vc.proof_signing_alg_values_supported";
+    public static final String SIGNING_ALG_VALUES_SUPPORTED = "vc.credential_signing_alg_values_supported";
 
     /**
      * if the credential is only meant for specific cryptographic binding algorithms the global default list can be
