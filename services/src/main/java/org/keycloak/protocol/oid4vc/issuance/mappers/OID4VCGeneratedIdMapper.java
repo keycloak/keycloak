@@ -43,7 +43,6 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_VC_ID;
 public class OID4VCGeneratedIdMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-generated-id-mapper";
-    private static final String SUBJECT_PROPERTY_CONFIG_KEY_DEFAULT = "id";
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
@@ -52,7 +51,7 @@ public class OID4VCGeneratedIdMapper extends OID4VCMapper {
         idPropertyNameConfig.setName(CLAIM_NAME);
         idPropertyNameConfig.setLabel("ID Property Name");
         idPropertyNameConfig.setHelpText("Name of the property to contain the generated id.");
-        idPropertyNameConfig.setDefaultValue(SUBJECT_PROPERTY_CONFIG_KEY_DEFAULT);
+        idPropertyNameConfig.setDefaultValue(CLAIM_NAME_VC_ID);
         idPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
         CONFIG_PROPERTIES.add(idPropertyNameConfig);
     }
@@ -67,16 +66,17 @@ public class OID4VCGeneratedIdMapper extends OID4VCMapper {
      */
     @Override
     public boolean includeInMetadata() {
-        return Optional.ofNullable(mapperModel.getConfig().get(CredentialScopeModel.INCLUDE_IN_METADATA))
+        Boolean included = Optional.ofNullable(mapperModel.getConfig().get(CredentialScopeModel.INCLUDE_IN_METADATA))
                 .map(Boolean::parseBoolean)
                 .orElse(false);
+        return included;
     }
 
     @Override
     public List<String> getMetadataAttributePath() {
         String property = Optional.ofNullable(mapperModel.getConfig())
                 .map(config -> config.get(CLAIM_NAME))
-                .orElse(SUBJECT_PROPERTY_CONFIG_KEY_DEFAULT);
+                .orElse(CLAIM_NAME_VC_ID);
         return ListUtils.union(getAttributePrefix(), List.of(property));
     }
 

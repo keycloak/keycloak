@@ -19,6 +19,7 @@ package org.keycloak.protocol.oid4vc.issuance;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.BadRequestException;
@@ -1375,10 +1377,14 @@ public class OID4VCIssuerEndpoint {
         // Include all available claims
         credClaims.forEach(vc.getCredentialSubject()::setClaims);
 
-        protocolMappers
-                .forEach(mapper -> mapper.setClaimsForCredential(vc, authResult.session()));
+        protocolMappers.forEach(mapper -> mapper.setClaimsForCredential(vc, authResult.session()));
 
-        LOGGER.debugf("The credential to sign is: %s", vc);
+        // Make sure, we always have a credential Id
+        if (vc.getId() == null) {
+            vc.setId(URI.create(String.format("urn:uuid:%s", UUID.randomUUID())));
+        }
+
+        LOGGER.debugf("The credential to sign is: %s", JsonSerialization.valueAsString(vc));
 
         // Build format-specific credential
         CredentialBuilder credentialBuilder = findCredentialBuilder(credentialConfig);

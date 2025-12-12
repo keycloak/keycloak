@@ -32,8 +32,6 @@ import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
-
 public class JwtCredentialBuilder implements CredentialBuilder {
 
     private static final String VC_CLAIM_KEY = "vc";
@@ -93,14 +91,8 @@ public class JwtCredentialBuilder implements CredentialBuilder {
         Optional.ofNullable(verifiableCredential.getExpirationDate())
                 .ifPresent(d -> jsonWebToken.exp(d.getEpochSecond()));
 
-        // Map the subject id claim to 'id'
-        // We can't use claim name 'id' directly because it clashes with vc_id
-        CredentialSubject subject = verifiableCredential.getCredentialSubject();
-        Optional.ofNullable(subject.getClaims().remove(CLAIM_NAME_SUBJECT_ID)).ifPresent( id -> {
-            subject.getClaims().put(ID_CLAIM_KEY, id);
-        });
-
         // sub should only be set if the credential subject has an id.
+        CredentialSubject subject = verifiableCredential.getCredentialSubject();
         Optional.ofNullable(subject.getClaims().get(ID_CLAIM_KEY))
                 .map(Object::toString)
                 .ifPresent(jsonWebToken::subject);
