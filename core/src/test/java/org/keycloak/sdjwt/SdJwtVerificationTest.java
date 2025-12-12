@@ -25,6 +25,7 @@ import java.util.function.Function;
 
 import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
@@ -169,7 +170,7 @@ public abstract class SdJwtVerificationTest {
 
     @Test
     public void sdJwtVerificationShouldFail_IfExpired() {
-        long now = Instant.now().getEpochSecond();
+        long now = Time.currentTime();
 
         ObjectNode claimSet = mapper.createObjectNode();
         claimSet.put("given_name", "John");
@@ -220,7 +221,7 @@ public abstract class SdJwtVerificationTest {
         // exp: null
         ObjectNode claimSet1 = mapper.createObjectNode();
         claimSet1.put("given_name", "John");
-        claimSet1.put("exp", Instant.now().getEpochSecond() - (31536000));
+        claimSet1.put("exp", Time.currentTime() - (31536000));
 
         // exp: invalid
         ObjectNode claimSet2 = mapper.createObjectNode();
@@ -268,7 +269,7 @@ public abstract class SdJwtVerificationTest {
 
     @Test
     public void sdJwtVerificationShouldFail_IfIssuedInTheFuture() {
-        long now = Instant.now().getEpochSecond();
+        long now = Time.currentTime();
 
         ObjectNode claimSet = mapper.createObjectNode();
         claimSet.put("given_name", "John");
@@ -317,7 +318,7 @@ public abstract class SdJwtVerificationTest {
 
     @Test
     public void sdJwtVerificationShouldFail_IfNbfInvalid() {
-        long now = Instant.now().getEpochSecond();
+        long now = Time.currentTime();
 
         ObjectNode claimSet = mapper.createObjectNode();
         claimSet.put("given_name", "John");
