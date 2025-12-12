@@ -315,6 +315,45 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         }
     }
 
+    @Test
+    public void testUsernameExposureWhenEnteringEmail() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        UserRepresentation member = UserBuilder.create()
+                .username("secretusername123")  // Different from email
+                .email("contractor@contractor.org")
+                .firstName("John")
+                .lastName("Doe")
+                .enabled(true)
+                .password(memberPassword)
+                .build();
+        
+        String memberId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), member, memberPassword);
+        organization.members().addMember(memberId).close();
+        
+        // Enter the email address in the login form
+        openIdentityFirstLoginPage(member.getEmail(), false, null, false, false);
+        
+        // when we enter an email, the attempted username should show the email, not the actual username of the resolved user account
+        loginPage.assertAttemptedUsernameAvailability(true);
+        String displayedUsername = loginPage.getAttemptedUsername();
+
+        assertEquals("Entering email should not expose actual username", member.getEmail(), displayedUsername);
+
+        // Enter email with different case (should still work with case-insensitive comparison)
+        String upperCaseEmail = member.getEmail().toUpperCase();
+        openIdentityFirstLoginPage(upperCaseEmail, false, null, false, false);
+
+        loginPage.assertAttemptedUsernameAvailability(true);
+        String displayedUsernameUpper = loginPage.getAttemptedUsername();
+        assertEquals("Should show what user entered (uppercase email)", upperCaseEmail, displayedUsernameUpper);
+        
+        Assert.assertTrue("Password input should be present", loginPage.isPasswordInputPresent());
+        
+        // Clean up
+        testRealm().users().get(memberId).remove();
+    }
+
     private void runOnServer(RunOnServer function) {
         testingClient.server(bc.consumerRealmName()).run(function);
     }
