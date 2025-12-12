@@ -39,7 +39,7 @@ import org.keycloak.tests.utils.MailUtils;
 
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -60,7 +60,7 @@ public class NotificationStepTest extends AbstractWorkflowTest {
     public void testNotifyUserStepWithCustomMessageOverride() throws IOException {
         // Create workflow: disable at 7 days, notify 2 days before (at day 5) with custom message
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_ADDED.name())
+                .onEvent(USER_CREATED.name())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .withConfig("message", "<p>Dear ${user.firstName} ${user.lastName}, </p>\n" +

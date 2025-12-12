@@ -154,7 +154,7 @@ public class UserAttributeWorkflowConditionTest extends AbstractWorkflowTest {
                 .orElse(null);
 
         WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ResourceOperationType.USER_ADDED.name())
+                .onEvent(ResourceOperationType.USER_CREATED.name())
                 .onCondition(attributeCondition)
                 .withSteps(
                         WorkflowStepRepresentation.create()

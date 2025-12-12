@@ -31,7 +31,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -60,7 +60,7 @@ public class RoleBasedStepTest extends AbstractWorkflowTest {
         List<String> expectedRoles = Stream.concat(expectedRealmRoles.stream(), expectedClientRoles.stream()).toList();
 
         create(WorkflowRepresentation.withName("grant-roles")
-                .onEvent(USER_ADDED.name())
+                .onEvent(USER_CREATED.name())
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(GrantRoleStepProviderFactory.ID)
@@ -91,7 +91,7 @@ public class RoleBasedStepTest extends AbstractWorkflowTest {
         grantRole(user, "realm-role-a", "realm-role-b", "realm-role-c", "myclient/client-role-a", "myclient/client-role-c");
 
         create(WorkflowRepresentation.withName("revoke-roles")
-                .onEvent(ResourceOperationType.USER_ROLE_REMOVED.name())
+                .onEvent(ResourceOperationType.USER_ROLE_REVOKED.name())
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(RevokeRoleStepProviderFactory.ID)

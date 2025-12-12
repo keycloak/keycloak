@@ -43,7 +43,7 @@ import org.keycloak.testframework.realm.UserConfigBuilder;
 
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -71,7 +71,7 @@ public class StepRunnerScheduledTaskTest extends AbstractWorkflowTest {
         RealmResource realm = adminClient.realm(realmName);
 
         realm.workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_ADDED.name())
+                .onEvent(USER_CREATED.name())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
