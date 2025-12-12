@@ -14,7 +14,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -26,7 +26,7 @@ public class AddRequiredActionTest extends AbstractWorkflowTest {
     @Test
     public void testStepRun() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_ADDED.name())
+                .onEvent(USER_CREATED.name())
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(AddRequiredActionStepProviderFactory.ID)

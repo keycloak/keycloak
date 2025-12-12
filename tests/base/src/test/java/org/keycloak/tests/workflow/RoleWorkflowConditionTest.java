@@ -84,7 +84,7 @@ public class RoleWorkflowConditionTest extends AbstractWorkflowTest {
         }
 
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("test-role-workflow")
-                .onEvent(ResourceOperationType.USER_ROLE_ADDED.name())
+                .onEvent(ResourceOperationType.USER_ROLE_GRANTED.name())
                 .onCondition(RoleWorkflowConditionFactory.ID + "(testRole)")
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -165,7 +165,7 @@ public class RoleWorkflowConditionTest extends AbstractWorkflowTest {
                 .reduce((a, b) -> a + " AND " + b).orElse(null);
 
         WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ResourceOperationType.USER_ROLE_ADDED.name())
+                .onEvent(ResourceOperationType.USER_ROLE_GRANTED.name())
                 .onCondition(roleCondition)
                 .withSteps(
                         WorkflowStepRepresentation.create()

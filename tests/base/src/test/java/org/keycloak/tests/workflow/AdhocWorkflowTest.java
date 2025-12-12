@@ -21,7 +21,7 @@ import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
@@ -200,7 +200,7 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
     @Test
     public void testDeactivateWorkflowForResource() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("One")
-                .onEvent(USER_ADDED.name())
+                .onEvent(USER_CREATED.name())
                 .withSteps(
                         WorkflowStepRepresentation.create()
                             .of(SetUserAttributeStepProviderFactory.ID)
@@ -214,7 +214,7 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
                 )
                 .build()).close();
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("Two")
-                .onEvent(USER_ADDED.name())
+                .onEvent(USER_CREATED.name())
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(SetUserAttributeStepProviderFactory.ID)

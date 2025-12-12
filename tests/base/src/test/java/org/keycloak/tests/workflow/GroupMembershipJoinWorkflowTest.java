@@ -31,8 +31,8 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
 import static org.keycloak.models.workflow.ResourceOperationType.USER_AUTHENTICATED;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -106,7 +106,7 @@ public class GroupMembershipJoinWorkflowTest extends AbstractWorkflowTest {
 
         String workflowId;
         try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_ADDED.toString(), USER_AUTHENTICATED.toString())
+                .onEvent(USER_CREATED.toString(), USER_AUTHENTICATED.toString())
                 .onCondition(GROUP_CONDITION)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
