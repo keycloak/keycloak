@@ -61,7 +61,7 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
 
         // we want to match members of engineering group OR users with admin role, but not those who are members of contractors group OR have attribute status=inactive
         // so only user bwayne should match this condition
-        String expression = "(is-member-of(engineering) OR has-role(admin)) AND !(is-member-of(contractors) OR has-user-attribute(status:inactive))";
+        String expression = "(is-member-of(engineering) or has-role(admin)) and not(is-member-of(contractors) or has-user-attribute(status:inactive))";
         String workflowId = createWorkflow(expression);
 
         checkWorkflowRunsForUser("bwayne", true); // matches all criteria
@@ -91,7 +91,7 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
         managedRealm.admin().workflows().workflow(workflowId).delete().close();
 
         // now we want to match users who are not testers and also are not managers
-        expression = "!has-role(tester) AND !has-user-attribute(title:manager)";
+        expression = "Not has-role(tester) And Not has-user-attribute(title:manager)";
         workflowId = createWorkflow(expression);
 
         checkWorkflowRunsForUser("bwayne", false); // is a manager
@@ -101,7 +101,7 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
         managedRealm.admin().workflows().workflow(workflowId).delete().close();
 
         // same thing but using the OR condition with negation - results should be equivalent
-        expression = "!(has-role(tester) OR has-user-attribute(title:manager))";
+        expression = "NOT(has-role(tester) OR has-user-attribute(title:manager))";
         workflowId = createWorkflow(expression);
 
         checkWorkflowRunsForUser("bwayne", false);
@@ -111,7 +111,7 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
         managedRealm.admin().workflows().workflow(workflowId).delete().close();
 
         // a malformed expression should cause the condition to evaluate to false and the workflow should not be created
-        expression = ")(has-role(tester) AND OR has-user-attribute(key, value1,value2)";
+        expression = ")(has-role(tester) and or has-user-attribute(key, value1,value2)";
         workflowId = createWorkflow(expression, false);
         assertThat(workflowId, nullValue());
     }
