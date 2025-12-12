@@ -31,17 +31,12 @@
     <name>Keycloak TestSuite</name>
     <description>Keycloak TestSuite</description>
 
-    <properties>
-        <undertow-core.version>2.3.20.Final</undertow-core.version>
-    </properties>
-
-
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>io.undertow</groupId>
                 <artifactId>undertow-core</artifactId>
-                <version>${undertow-core.version}</version>
+                <version>2.3.20.Final</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
