@@ -1,4 +1,4 @@
-package org.keycloak.tests.admin.model.workflow;
+package org.keycloak.tests.workflow;
 
 import java.time.Duration;
 import java.util.List;
@@ -21,7 +21,7 @@ import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
-import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailByRecipient;
+import static org.keycloak.tests.workflow.WorkflowManagementTest.findEmailByRecipient;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

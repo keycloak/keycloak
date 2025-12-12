@@ -1,11 +1,11 @@
 package org.keycloak.models.workflow;
 
-public class RestartWorkflowStepProvider implements WorkflowStepProvider {
+public record RestartWorkflowStepProvider(int position) implements WorkflowStepProvider {
 
     @Override
     public void run(WorkflowExecutionContext context) {
         if (context instanceof DefaultWorkflowExecutionContext) {
-            ((DefaultWorkflowExecutionContext) context).restart();
+            ((DefaultWorkflowExecutionContext) context).restart(position);
         } else {
             throw new IllegalArgumentException("Context must be DefaultWorkflowExecutionContext");
         }

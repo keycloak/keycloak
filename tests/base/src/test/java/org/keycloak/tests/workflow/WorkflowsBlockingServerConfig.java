@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.admin.model.workflow;
+package org.keycloak.tests.workflow;
 
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;

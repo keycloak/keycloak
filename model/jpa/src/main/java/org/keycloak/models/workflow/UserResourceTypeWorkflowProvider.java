@@ -31,6 +31,7 @@ import jakarta.persistence.criteria.Subquery;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.workflow.conditions.expression.BooleanConditionParser;
 import org.keycloak.models.workflow.conditions.expression.EvaluatorUtils;
@@ -67,6 +68,8 @@ public class UserResourceTypeWorkflowProvider implements ResourceTypeSelector {
                 cb.equal(stateRoot.get("workflowId"), workflow.getId())
             )
         );
+        RealmModel realm = session.getContext().getRealm();
+        predicates.add(cb.equal(userRoot.get("realmId"), realm.getId()));
         Predicate notExistsPredicate = cb.not(cb.exists(subquery));
         predicates.add(notExistsPredicate);
 

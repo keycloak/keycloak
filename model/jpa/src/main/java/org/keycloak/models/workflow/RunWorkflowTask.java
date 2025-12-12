@@ -1,6 +1,5 @@
 package org.keycloak.models.workflow;
 
-import java.util.List;
 
 import org.keycloak.common.util.DurationConverter;
 import org.keycloak.models.KeycloakSession;
@@ -13,54 +12,37 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
 
     private static final Logger log = Logger.getLogger(RunWorkflowTask.class);
 
-    private final String executionId;
-    private final String resourceId;
-    private final Workflow workflow;
-    private final WorkflowStep currentStep;
-    private final WorkflowEvent event;
+    protected final DefaultWorkflowExecutionContext context;
 
     RunWorkflowTask(DefaultWorkflowExecutionContext context) {
         super(context.getSession());
-        this.executionId = context.getExecutionId();
-        this.resourceId = context.getResourceId();
-        this.workflow = context.getWorkflow();
-        this.currentStep = context.getCurrentStep();
-        this.event = context.getEvent();
+        this.context = context;
     }
 
     @Override
     public void run(KeycloakSession session) {
-        DefaultWorkflowExecutionContext context = new DefaultWorkflowExecutionContext(session, workflow, event, currentStep == null ? null : currentStep.getId(), executionId, resourceId);
-        String executionId = context.getExecutionId();
-        String resourceId = context.getResourceId();
-        Workflow workflow = context.getWorkflow();
-        WorkflowStep currentStep = context.getCurrentStep();
-
-        if (currentStep != null) {
-            // we are resuming from a scheduled step - run it and then continue with the rest of the workflow
-            runWorkflowStep(context);
-        }
-
-        List<WorkflowStep> stepsToRun = workflow.getSteps()
-                .skip(currentStep != null ? currentStep.getPriority() : 0).toList();
+        DefaultWorkflowExecutionContext context = new DefaultWorkflowExecutionContext(session, this.context);
         WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+        Workflow workflow = context.getWorkflow();
+        String resourceId = context.getResourceId();
+        String executionId = context.getExecutionId();
+        WorkflowStep nextStep = runCurrentStep(context);
 
-        for (WorkflowStep step : stepsToRun) {
-            if (DurationConverter.isPositiveDuration(step.getAfter())) {
+        while (nextStep != null) {
+            if (DurationConverter.isPositiveDuration(nextStep.getAfter())) {
+                log.debugf("Scheduling step %s to run in %s for resource %s (execution id: %s)",
+                        nextStep.getProviderId(), nextStep.getAfter(), resourceId, executionId);
                 // If a step has a time defined, schedule it and stop processing the other steps of workflow
-                log.debugf("Scheduling step %s to run in %s ms for resource %s (execution id: %s)",
-                        step.getProviderId(), step.getAfter(), resourceId, executionId);
-                stateProvider.scheduleStep(workflow, step, resourceId, executionId);
+                stateProvider.scheduleStep(workflow, nextStep, resourceId, executionId);
                 return;
-            } else {
-                // Otherwise, run the step right away
-                context.setCurrentStep(step);
+            }
 
-                runWorkflowStep(context);
+            DefaultWorkflowExecutionContext stepContext = new DefaultWorkflowExecutionContext(session, this.context, nextStep);
 
-                if (context.isRestarted()) {
-                    return;
-                }
+            nextStep = runWorkflowStep(stepContext);
+
+            if (stepContext.isCompleted()) {
+                return;
             }
         }
 
@@ -69,15 +51,22 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
         stateProvider.remove(executionId);
     }
 
-    private void runWorkflowStep(DefaultWorkflowExecutionContext context) {
+    protected WorkflowStep runCurrentStep(DefaultWorkflowExecutionContext context) {
+        if (context.getStep() != null) {
+            return runWorkflowStep(context);
+        }
+        return context.getWorkflow().getSteps().findFirst().orElse(null);
+    }
+
+    private WorkflowStep runWorkflowStep(DefaultWorkflowExecutionContext context) {
+        WorkflowStep step = context.getStep();
         String executionId = context.getExecutionId();
-        WorkflowStep step = context.getCurrentStep();
         String resourceId = context.getResourceId();
         log.debugf("Running step %s on resource %s (execution id: %s)", step.getProviderId(), resourceId, executionId);
         try {
             getStepProvider(context.getSession(), step).run(context);
             log.debugf("Step %s completed successfully (execution id: %s)", step.getProviderId(), executionId);
-        } catch(WorkflowExecutionException e) {
+        } catch (WorkflowExecutionException e) {
             StringBuilder sb = new StringBuilder();
             sb.append("Step %s failed (execution id: %s)");
             String errorMessage = e.getMessage();
@@ -90,5 +79,7 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
             }
             throw e;
         }
+
+        return context.getNextStep();
     }
 }

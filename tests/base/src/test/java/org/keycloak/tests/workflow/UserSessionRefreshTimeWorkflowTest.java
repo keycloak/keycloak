@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.admin.model.workflow;
+package org.keycloak.tests.workflow;
 
 import java.time.Duration;
 import java.util.List;
@@ -41,9 +41,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
 import static org.keycloak.models.workflow.ResourceOperationType.USER_AUTHENTICATED;
-import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailByRecipient;
-import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailsByRecipient;
-import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.verifyEmailContent;
+import static org.keycloak.tests.workflow.WorkflowManagementTest.findEmailByRecipient;
+import static org.keycloak.tests.workflow.WorkflowManagementTest.findEmailsByRecipient;
+import static org.keycloak.tests.workflow.WorkflowManagementTest.verifyEmailContent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
