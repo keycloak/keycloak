@@ -46,7 +46,7 @@ public class OID4VCConstants {
     //   * A stable identifier for the VC subject
     //   * Would in most cases be the subject's DID
     //   * Can be mapped to user attributes
-    public static final String CLAIM_NAME_SUBJECT_ID = "sub";
+    public static final String CLAIM_NAME_SUBJECT_ID = "id";
     public static final String USER_ATTRIBUTE_NAME_DID = "did";
 
     public static final String KEYBINDING_JWT_TYP = "kb+jwt";

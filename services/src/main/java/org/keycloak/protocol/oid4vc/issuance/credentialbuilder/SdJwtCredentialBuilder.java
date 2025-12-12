@@ -71,19 +71,21 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
         CredentialSubject credentialSubject = verifiableCredential.getCredentialSubject();
         Map<String, Object> claims = new LinkedHashMap<>(credentialSubject.getClaims());
 
-        // Always add a new jti - this cannot and should not be mapped
-        claims.put(CLAIM_NAME_JTI, UUID.randomUUID().toString());
-
-        // Add inner (disclosed) claims id, iat
-        Optional.ofNullable(vcId).ifPresent(it ->
-                claims.put(CLAIM_NAME_VC_ID, it)
-        );
-        Optional.ofNullable(issuanceDate).ifPresent(it ->
-                claims.put(CLAIM_NAME_IAT, it.getEpochSecond())
-        );
         // Map subject id => sub
         Optional.ofNullable(claims.remove(CLAIM_NAME_SUBJECT_ID)).ifPresent(it ->
                 claims.put(CLAIM_NAME_SUB, it)
+        );
+
+        // Add credential id
+        Optional.ofNullable(vcId).ifPresent(it ->
+                claims.put(CLAIM_NAME_VC_ID, it)
+        );
+
+        // Always add a new jti - this cannot and should not be mapped
+        claims.put(CLAIM_NAME_JTI, UUID.randomUUID().toString());
+
+        Optional.ofNullable(issuanceDate).ifPresent(it ->
+                claims.put(CLAIM_NAME_IAT, it.getEpochSecond())
         );
 
         // Put inner claims into the disclosure spec, except the one to be kept visible
@@ -104,9 +106,8 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
         // expiry is optional, but should be set if available to comply with HAIP
         // see: https://openid.github.io/OpenID4VC-HAIP/openid4vc-high-assurance-interoperability-profile-wg-draft.html#section-6.1
         // Only set if not already set by a protocol mapper
-        if (!claims.containsKey(CLAIM_NAME_EXP)) {
-            Optional.ofNullable(expirationDate)
-                    .ifPresent(d -> claims.put(CLAIM_NAME_EXP, d.getEpochSecond()));
+        if (!claims.containsKey(CLAIM_NAME_EXP) && expirationDate != null) {
+            claims.put(CLAIM_NAME_EXP, expirationDate.getEpochSecond());
         }
 
         // jti, nbf, and iat are all optional. So need to be set by a protocol mapper if needed.
@@ -120,8 +121,7 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
 
         ObjectNode claimsNode = JsonSerialization.mapper.convertValue(claims, ObjectNode.class);
         IssuerSignedJWT issuerSignedJWT = IssuerSignedJWT.builder()
-                .withClaims(claimsNode,
-                        disclosureSpecBuilder.build())
+                .withClaims(claimsNode, disclosureSpecBuilder.build())
                 .withHashAlg(credentialBuildConfig.getHashAlgorithm())
                 .withJwsType(credentialBuildConfig.getTokenJwsType())
                 .build();

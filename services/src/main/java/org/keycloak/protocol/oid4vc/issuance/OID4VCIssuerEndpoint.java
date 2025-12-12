@@ -135,6 +135,7 @@ import org.jboss.logging.Logger;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.events.EventType.INTROSPECT_TOKEN_ERROR;
+import static org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper.generateRandomCredentialId;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_REQUEST;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION;
@@ -1375,10 +1376,14 @@ public class OID4VCIssuerEndpoint {
         // Include all available claims
         credClaims.forEach(vc.getCredentialSubject()::setClaims);
 
-        protocolMappers
-                .forEach(mapper -> mapper.setClaimsForCredential(vc, authResult.session()));
+        protocolMappers.forEach(mapper -> mapper.setClaimsForCredential(vc, authResult.session()));
 
-        LOGGER.debugf("The credential to sign is: %s", vc);
+        // Make sure, we always have a credential Id
+        if (vc.getId() == null) {
+            vc.setId(generateRandomCredentialId());
+        }
+
+        LOGGER.debugf("The credential to sign is: %s", JsonSerialization.valueAsString(vc));
 
         // Build format-specific credential
         CredentialBuilder credentialBuilder = findCredentialBuilder(credentialConfig);
