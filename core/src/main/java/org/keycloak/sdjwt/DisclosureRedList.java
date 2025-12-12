@@ -17,15 +17,15 @@
 package org.keycloak.sdjwt;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class DisclosureRedList {
-    public static final List<String> redList = Collections
-            .unmodifiableList(Arrays.asList("iss", "iat", "nbf", "exp", "cnf", "vct", "status"));
+
+    // https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-11.html#section-3.2.2.2
+    public static final List<String> redList = Arrays.asList("iss", "nbf", "exp", "cnf", "vct", "vct#integrity", "status");
 
     private final Set<SdJwtClaimName> redListClaimNames;
     public static final DisclosureRedList defaultList = defaultList();
@@ -44,10 +44,5 @@ public class DisclosureRedList {
 
     public boolean isRedListedClaimName(SdJwtClaimName claimName) {
         return redListClaimNames.contains(claimName);
-    }
-
-    public boolean containsRedListedClaimNames(Collection<SdJwtClaimName> claimNames) {
-        return !redListClaimNames.isEmpty() && !claimNames.isEmpty()
-                && !Collections.disjoint(redListClaimNames, claimNames);
     }
 }

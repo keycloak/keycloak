@@ -50,6 +50,7 @@ import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.ClaimDisplay;
@@ -101,6 +102,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest {
 
@@ -338,21 +340,21 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
      */
     @Test
     public void testMetaDataEndpointIsCorrectlySetup() {
-        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        CredentialIssuer issuerMetadata = getCredentialIssuerMetadata();
 
-        assertEquals(getRealmPath(TEST_REALM_NAME), credentialIssuer.getCredentialIssuer());
+        assertEquals(getRealmPath(TEST_REALM_NAME), issuerMetadata.getCredentialIssuer());
         assertEquals(getBasePath(TEST_REALM_NAME) + OID4VCIssuerEndpoint.CREDENTIAL_PATH,
-                credentialIssuer.getCredentialEndpoint());
-        assertNull("Display was not configured", credentialIssuer.getDisplay());
+                issuerMetadata.getCredentialEndpoint());
+        assertNull("Display was not configured", issuerMetadata.getDisplay());
         assertEquals("Authorization Server should have the realm-address.",
                 1,
-                credentialIssuer.getAuthorizationServers().size());
+                issuerMetadata.getAuthorizationServers().size());
         assertEquals("Authorization Server should point to the realm-address.",
                 getRealmPath(TEST_REALM_NAME),
-                credentialIssuer.getAuthorizationServers().get(0));
+                issuerMetadata.getAuthorizationServers().get(0));
 
         // Check credential_response_encryption
-        CredentialResponseEncryptionMetadata encryption = credentialIssuer.getCredentialResponseEncryption();
+        CredentialResponseEncryptionMetadata encryption = issuerMetadata.getCredentialResponseEncryption();
         assertNotNull("credential_response_encryption should be present", encryption);
         assertEquals(List.of(RSA_OAEP, RSA_OAEP_256), encryption.getAlgValuesSupported());
         assertEquals(List.of(A256GCM), encryption.getEncValuesSupported());
@@ -360,21 +362,22 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         assertTrue("encryption_required should be true", encryption.getEncryptionRequired());
 
         // Check credential_request_encryption
-        CredentialRequestEncryptionMetadata requestEncryption = credentialIssuer.getCredentialRequestEncryption();
+        CredentialRequestEncryptionMetadata requestEncryption = issuerMetadata.getCredentialRequestEncryption();
         assertNotNull("credential_request_encryption should be present", requestEncryption);
         assertEquals(List.of(A256GCM), requestEncryption.getEncValuesSupported());
         assertNotNull("zip_values_supported should be present", requestEncryption.getZipValuesSupported());
         assertTrue("encryption_required should be true", requestEncryption.isEncryptionRequired());
         assertNotNull("JWKS should be present", requestEncryption.getJwks());
 
-        CredentialIssuer.BatchCredentialIssuance batch = credentialIssuer.getBatchCredentialIssuance();
+        CredentialIssuer.BatchCredentialIssuance batch = issuerMetadata.getBatchCredentialIssuance();
         assertNotNull("batch_credential_issuance should be present", batch);
         assertEquals(Integer.valueOf(10), batch.getBatchSize());
 
-        for (ClientScopeRepresentation clientScope : List.of(jwtTypeCredentialClientScope,
+        for (ClientScopeRepresentation clientScope : List.of(
+                jwtTypeCredentialClientScope,
                 sdJwtTypeCredentialClientScope,
                 minimalJwtTypeCredentialClientScope)) {
-            compareMetadataToClientScope(credentialIssuer, clientScope);
+            compareMetadataToClientScope(issuerMetadata, clientScope);
         }
     }
 
@@ -630,7 +633,14 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                     if (mapper.includeInMetadata()) {
                         assertNotNull("There should be a claim matching the protocol-mappers config!", claim);
                     } else {
-                        assertNull("This claim should not be included in the metadata-config!", claim);
+                        if (claim != null) {
+                            // The id claim is used by OID4VCGeneratedIdMapper and also by OID4VCSubjectIdMapper
+                            // We are lenient about finding the claim in combination with OID4VCGeneratedIdMapper
+                            String mapperId = mapper.getId();
+                            String path = claim.getPath().get(0);
+                            if (!"id".equals(path) || !OID4VCGeneratedIdMapper.MAPPER_ID.equals(mapperId))
+                                fail("This claim should not be included in the metadata-config!");
+                        }
                         // no other checks to do for this claim
                         continue;
                     }

@@ -30,9 +30,6 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
  */
 public class LDCredentialBuilder implements CredentialBuilder {
 
-    public LDCredentialBuilder() {
-    }
-
     @Override
     public String getSupportedFormat() {
         return Format.LDP_VC;
@@ -46,6 +43,7 @@ public class LDCredentialBuilder implements CredentialBuilder {
         // The default credential format is basically this format,
         // so not much is to be done.
         verifiableCredential.setIssuer(credentialBuildConfig.getCredentialIssuer());
+
         return new LDCredentialBody(verifiableCredential);
     }
 }

@@ -135,6 +135,7 @@ import org.jboss.logging.Logger;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.events.EventType.INTROSPECT_TOKEN_ERROR;
+import static org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper.generateRandomCredentialId;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_REQUEST;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION;
@@ -243,7 +244,7 @@ public class OID4VCIssuerEndpoint {
                 .map(factory -> (CredentialBuilderFactory) factory)
                 .map(factory -> factory.create(keycloakSession, null))
                 .collect(Collectors.toMap(CredentialBuilder::getSupportedFormat,
-                        credentialBuilder ->  credentialBuilder));
+                        credentialBuilder -> credentialBuilder));
     }
 
     /**
@@ -342,19 +343,19 @@ public class OID4VCIssuerEndpoint {
      * <p>
      * Credential Offer Validity Matrix for the supported request parameters "pre_authorized", "client_id", "username" combinations.
      * </p>
-     * +----------+-----------+---------+---------+-----------------------------------------------------+
-     * | pre-auth | clientId  | username  | Valid   | Notes                                               |
-     * +----------+-----------+---------+---------+-----------------------------------------------------+
-     * | no       | no        | no      | yes     | Generic offer; any logged-in user may redeem.       |
-     * | no       | no        | yes     | yes     | Offer restricted to a specific user.                |
-     * | no       | yes       | no      | yes     | Bound to client; user determined at login.          |
-     * | no       | yes       | yes     | yes     | Bound to both client and user.                      |
-     * +----------+-----------+---------+---------+-----------------------------------------------------+
-     * | yes      | no        | no      | no      | Pre-auth requires a user subject; missing username.   |
-     * | yes      | yes       | no      | no      | Same as above; username required.                     |
-     * | yes      | no        | yes     | yes     | Pre-auth for a specific user; client unconstrained. |
-     * | yes      | yes       | yes     | yes     | Fully constrained: user + client.                   |
-     * +----------+-----------+---------+---------+-----------------------------------------------------+
+     * +----------+-----------+----------+---------+------------------------------------------------------+
+     * | pre-auth | clientId  | username | Valid   | Notes                                                |
+     * +----------+-----------+----------+---------+------------------------------------------------------+
+     * | no       | no        | no       | yes     | Generic offer; any logged-in user may redeem.        |
+     * | no       | no        | yes      | yes     | Offer restricted to a specific user.                 |
+     * | no       | yes       | no       | yes     | Bound to client; user determined at login.           |
+     * | no       | yes       | yes      | yes     | Bound to both client and user.                       |
+     * +----------+-----------+----------+---------+------------------------------------------------------+
+     * | yes      | no        | no       | no      | Pre-auth requires a user subject; missing username.  |
+     * | yes      | no        | yes      | yes     | Pre-auth for a specific user; client issuer defined. |
+     * | yes      | yes       | no       | no      | Same as above; username required.                    |
+     * | yes      | yes       | yes      | yes     | Fully constrained: user + client.                    |
+     * +----------+-----------+----------+---------+------------------------------------------------------+
      *
      * @param credConfigId  A valid credential configuration id
      * @param preAuthorized A flag whether the offer should be pre-authorized (requires targetUser)
@@ -849,7 +850,7 @@ public class OID4VCIssuerEndpoint {
             return credentialRequest;
         } catch (JsonProcessingException e) {
             String errorMessage = "Failed to parse JSON request: " + e.getMessage();
-            LOGGER.errorf(e, "JSON parsing failed. Request payload length: %d", 
+            LOGGER.errorf(e, "JSON parsing failed. Request payload length: %d",
                     requestPayload != null ? requestPayload.length() : 0);
             throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
@@ -859,7 +860,7 @@ public class OID4VCIssuerEndpoint {
      * Decrypts a JWE-encoded Credential Request and validates it against metadata.
      *
      * @param jweString The JWE compact serialization
-     * @param metadata The CredentialRequestEncryptionMetadata
+     * @param metadata  The CredentialRequestEncryptionMetadata
      * @return The parsed CredentialRequest
      * @throws JWEException If decryption or validation fails
      */
@@ -939,7 +940,7 @@ public class OID4VCIssuerEndpoint {
     /**
      * Decompresses content using the specified algorithm.
      *
-     * @param content The compressed content
+     * @param content      The compressed content
      * @param zipAlgorithm The compression algorithm (e.g., "DEF")
      * @return The decompressed content
      * @throws JWEException If decompression fails
@@ -1063,10 +1064,10 @@ public class OID4VCIssuerEndpoint {
     /**
      * Encrypts a CredentialResponse as a JWE using the provided encryption parameters.
      *
-     * @param response The CredentialResponse to encrypt
+     * @param response         The CredentialResponse to encrypt
      * @param encryptionParams The encryption parameters (alg, enc, jwk)
      * @return The compact JWE serialization
-     * @throws BadRequestException If encryption parameters are invalid
+     * @throws BadRequestException     If encryption parameters are invalid
      * @throws WebApplicationException If encryption fails due to server issues
      */
     private String encryptCredentialResponse(CredentialResponse response,
@@ -1366,24 +1367,27 @@ public class OID4VCIssuerEndpoint {
                 .setExpirationDate(normalizedExpiration)
                 .setType(List.of(credentialConfig.getScope()));
 
-        Map<String, Object> subjectClaims = new HashMap<>();
-        protocolMappers
-                .forEach(mapper -> mapper.setClaimsForSubject(subjectClaims, authResult.session()));
+        Map<String, Object> credClaims = new HashMap<>();
+        protocolMappers.forEach(mapper -> mapper.setClaimsForSubject(credClaims, authResult.session()));
 
         // Validate that requested claims from authorization_details are present
-        validateRequestedClaimsArePresent(subjectClaims, authResult.session(), credentialConfig.getScope());
+        validateRequestedClaimsArePresent(credClaims, authResult.session(), credentialConfig.getScope());
 
         // Include all available claims
-        subjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
+        credClaims.forEach(vc.getCredentialSubject()::setClaims);
 
-        protocolMappers
-                .forEach(mapper -> mapper.setClaimsForCredential(vc, authResult.session()));
+        protocolMappers.forEach(mapper -> mapper.setClaimsForCredential(vc, authResult.session()));
 
-        LOGGER.debugf("The credential to sign is: %s", vc);
+        // Make sure, we always have a credential Id
+        if (vc.getId() == null) {
+            vc.setId(generateRandomCredentialId());
+        }
+
+        LOGGER.debugf("The credential to sign is: %s", JsonSerialization.valueAsString(vc));
 
         // Build format-specific credential
-        CredentialBody credentialBody = this.findCredentialBuilder(credentialConfig)
-                .buildCredentialBody(vc, credentialConfig.getCredentialBuildConfig());
+        CredentialBuilder credentialBuilder = findCredentialBuilder(credentialConfig);
+        CredentialBody credentialBody = credentialBuilder.buildCredentialBody(vc, credentialConfig.getCredentialBuildConfig());
 
         return new VCIssuanceContext()
                 .setAuthResult(authResult)

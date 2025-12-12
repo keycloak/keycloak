@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,8 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 import org.apache.commons.collections4.ListUtils;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_VC_ID;
+
 /**
  * Adds a generated ID to the credential (as a configurable property).
  *
@@ -40,7 +43,6 @@ import org.apache.commons.collections4.ListUtils;
 public class OID4VCGeneratedIdMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-generated-id-mapper";
-    private static final String SUBJECT_PROPERTY_CONFIG_KEY_DEFAULT = "id";
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
@@ -49,9 +51,13 @@ public class OID4VCGeneratedIdMapper extends OID4VCMapper {
         idPropertyNameConfig.setName(CLAIM_NAME);
         idPropertyNameConfig.setLabel("ID Property Name");
         idPropertyNameConfig.setHelpText("Name of the property to contain the generated id.");
-        idPropertyNameConfig.setDefaultValue(SUBJECT_PROPERTY_CONFIG_KEY_DEFAULT);
+        idPropertyNameConfig.setDefaultValue(CLAIM_NAME_VC_ID);
         idPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
         CONFIG_PROPERTIES.add(idPropertyNameConfig);
+    }
+
+    public static URI generateRandomCredentialId() {
+        return URI.create(String.format("urn:uuid:%s", UUID.randomUUID()));
     }
 
     @Override
@@ -64,30 +70,35 @@ public class OID4VCGeneratedIdMapper extends OID4VCMapper {
      */
     @Override
     public boolean includeInMetadata() {
-        return Optional.ofNullable(mapperModel.getConfig().get(CredentialScopeModel.INCLUDE_IN_METADATA))
-                       .map(Boolean::parseBoolean)
-                       .orElse(false);
+        Boolean included = Optional.ofNullable(mapperModel.getConfig().get(CredentialScopeModel.INCLUDE_IN_METADATA))
+                .map(Boolean::parseBoolean)
+                .orElse(false);
+        return included;
     }
 
     @Override
     public List<String> getMetadataAttributePath() {
         String property = Optional.ofNullable(mapperModel.getConfig())
-                                  .map(config -> config.get(CLAIM_NAME))
-                                  .orElse(SUBJECT_PROPERTY_CONFIG_KEY_DEFAULT);
+                .map(config -> config.get(CLAIM_NAME))
+                .orElse(CLAIM_NAME_VC_ID);
         return ListUtils.union(getAttributePrefix(), List.of(property));
     }
 
-    public void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                       UserSessionModel userSessionModel) {
-        // nothing to do for the mapper.
+    public void setClaimsForCredential(VerifiableCredential verifiableCredential, UserSessionModel userSessionModel) {
+        // Assign a generated ID
+        URI vcId = generateRandomCredentialId();
+        List<String> attributePath = getMetadataAttributePath();
+        String propertyName = attributePath.get(attributePath.size() - 1);
+        if (CLAIM_NAME_VC_ID.equals(propertyName)) {
+            verifiableCredential.setId(vcId);
+        } else {
+            verifiableCredential.setAdditionalProperties(propertyName, vcId);
+        }
     }
 
     @Override
     public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
-        // Assign a generated ID
-        List<String> attributePath = getMetadataAttributePath();
-        String propertyName = attributePath.get(attributePath.size() - 1);
-        claims.put(propertyName, String.format("urn:uuid:%s", UUID.randomUUID()));
+        // nothing to do for the mapper.
     }
 
     @Override
@@ -97,7 +108,7 @@ public class OID4VCGeneratedIdMapper extends OID4VCMapper {
 
     @Override
     public String getHelpText() {
-        return "Assigns a generated ID to the credential's subject. The target property can be configured, but `id` is used by default.";
+        return "Assigns a generated ID to the credential. The target property can be configured, but `id` is used by default.";
     }
 
     @Override
