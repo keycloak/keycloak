@@ -30,6 +30,7 @@ import jakarta.ws.rs.ext.Provider;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oauth2.OAuth2WellKnownProviderFactory;
+import org.keycloak.protocol.oid4vc.issuance.JWTVCIssuerWellKnownProviderFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProviderFactory;
 import org.keycloak.services.cors.Cors;
 
@@ -73,6 +74,7 @@ public class ServerMetadataResource {
         // you can add codes here considering the current status of the implementation (preview, experimental).
         if (OAuth2WellKnownProviderFactory.PROVIDER_ID.equals(providerName)) return true;
         if (OID4VCIssuerWellKnownProviderFactory.PROVIDER_ID.equals(providerName)) return true;
+        if (JWTVCIssuerWellKnownProviderFactory.PROVIDER_ID.equals(providerName)) return true;
         return false;
     }
 }
