@@ -54,6 +54,9 @@ public class HardcodedPublicKeyLoader implements PublicKeyLoader {
                 keyWrapper.setType(KeyType.OKP);
                 keyWrapper.setPublicKey(PemUtils.decodePublicKey(encodedKey, Algorithm.EdDSA));
                 keyWrapper.setCurve(keyWrapper.getPublicKey().getAlgorithm());
+            } else if (JavaAlgorithm.isMldsaJavaAlgorithm(algorithm)) {
+                keyWrapper.setType(KeyType.AKP);
+                keyWrapper.setPublicKey(PemUtils.decodePublicKey(encodedKey, KeyType.AKP));
             } else if (JavaAlgorithm.isHMACJavaAlgorithm(algorithm)) {
                 keyWrapper.setType(KeyType.OCT);
                 keyWrapper.setSecretKey(KeyUtils.loadSecretKey(Base64Url.decode(encodedKey), algorithm));
