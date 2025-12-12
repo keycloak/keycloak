@@ -106,7 +106,7 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
 
         ClientRepresentation brokerApp = realmsResouce().realm(bc.providerRealmName())
                 .clients()
-                .findByClientId("brokerapp").get(0);
+                .findClientByClientId("brokerapp").orElseThrow();
         org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.realm(bc.providerRealmName()).client(brokerApp.getClientId(), brokerApp.getSecret()).doPasswordGrantRequest(bc.getUserLogin(), bc.getUserPassword());
         assertThat(tokenResponse.getIdToken(), notNullValue());
 
@@ -133,7 +133,7 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
     private void assertExternalToInternalExchange(String subjectIssuer, boolean idToken, boolean userInfo) throws Exception {
         RealmResource providerRealm = realmsResouce().realm(bc.providerRealmName());
         ClientsResource clients = providerRealm.clients();
-        ClientRepresentation brokerApp = clients.findByClientId("brokerapp").get(0);
+        ClientRepresentation brokerApp = clients.findClientByClientId("brokerapp").orElseThrow();
         brokerApp.setDirectAccessGrantsEnabled(true);
         ClientResource brokerAppResource = providerRealm.clients().get(brokerApp.getId());
         brokerAppResource.update(brokerApp);
@@ -170,7 +170,7 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
 
         testingClient.server(BrokerTestConstants.REALM_CONS_NAME).run(KcOidcBrokerTokenExchangeTest::setupRealm);
 
-        ClientRepresentation client = consumerRealm.clients().findByClientId("test-app").get(0);
+        ClientRepresentation client = consumerRealm.clients().findClientByClientId("test-app").orElseThrow();
 
         try (Client httpClient = AdminClientUtil.createResteasyClient()) {
             WebTarget exchangeUrl = getConsumerTokenEndpoint(httpClient);
@@ -276,7 +276,7 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
         testingClient.server(BrokerTestConstants.REALM_CONS_NAME).run(KcOidcBrokerTokenExchangeTest::setupRealm);
         RealmResource providerRealm = realmsResouce().realm(bc.providerRealmName());
         ClientsResource clients = providerRealm.clients();
-        ClientRepresentation brokerApp = clients.findByClientId("brokerapp").get(0);
+        ClientRepresentation brokerApp = clients.findClientByClientId("brokerapp").orElseThrow();
         brokerApp.setDirectAccessGrantsEnabled(true);
         ClientResource brokerAppResource = providerRealm.clients().get(brokerApp.getId());
         brokerAppResource.update(brokerApp);
@@ -316,7 +316,7 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
         testingClient.server(BrokerTestConstants.REALM_CONS_NAME).run(KcOidcBrokerTokenExchangeTest::setupRealm);
         RealmResource providerRealm = realmsResouce().realm(bc.providerRealmName());
         ClientsResource clients = providerRealm.clients();
-        ClientRepresentation brokerApp = clients.findByClientId("brokerapp").get(0);
+        ClientRepresentation brokerApp = clients.findClientByClientId("brokerapp").orElseThrow();
         brokerApp.setDirectAccessGrantsEnabled(true);
         ClientResource brokerAppResource = providerRealm.clients().get(brokerApp.getId());
         brokerAppResource.update(brokerApp);

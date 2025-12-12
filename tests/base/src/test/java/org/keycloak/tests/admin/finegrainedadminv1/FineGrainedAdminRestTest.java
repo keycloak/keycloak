@@ -63,7 +63,7 @@ public class FineGrainedAdminRestTest extends AbstractFineGrainedAdminTest {
         RoleRepresentation realmRole2 = managedRealm.admin().roles().get("realm-role2").toRepresentation();
         List<RoleRepresentation> realmRole2Set = new LinkedList<>();
         realmRole2Set.add(realmRole2);
-        ClientRepresentation client = managedRealm.admin().clients().findByClientId(CLIENT_NAME).get(0);
+        ClientRepresentation client = managedRealm.admin().clients().findClientByClientId(CLIENT_NAME).orElseThrow();
         ClientScopeRepresentation scope = managedRealm.admin().clientScopes().findAll().get(0);
         RoleRepresentation clientRole = managedRealm.admin().clients().get(client.getId()).roles().get("client-role").toRepresentation();
         List<RoleRepresentation> clientRoleSet = new LinkedList<>();

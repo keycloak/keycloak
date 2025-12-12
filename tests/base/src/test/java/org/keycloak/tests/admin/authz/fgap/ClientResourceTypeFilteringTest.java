@@ -38,6 +38,7 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
@@ -126,14 +127,12 @@ public class ClientResourceTypeFilteringTest extends AbstractPermissionTest {
     @Test
     public void testSearchByClientId() {
         String expectedClientId = "client-0";
-        List<ClientRepresentation> search = realmAdminClient.realm(realm.getName()).clients().findByClientId(expectedClientId);
-        assertTrue(search.isEmpty());
+        ClientRepresentation search = realmAdminClient.realm(realm.getName()).clients().findClientByClientId(expectedClientId).orElse(null);
+        assertNull(search);
 
         UserPolicyRepresentation allowPolicy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
         createPermission(client, expectedClientId, CLIENTS_RESOURCE_TYPE, Set.of(VIEW), allowPolicy);
-        search = realmAdminClient.realm(realm.getName()).clients().findByClientId(expectedClientId);
-        assertFalse(search.isEmpty());
-        assertEquals(1, search.size());
-        assertEquals(search.get(0).getClientId(), expectedClientId);
+        search = realmAdminClient.realm(realm.getName()).clients().findClientByClientId(expectedClientId).orElseThrow();
+        assertEquals(search.getClientId(), expectedClientId);
     }
 }

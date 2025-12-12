@@ -38,7 +38,7 @@ public class FineGrainedAdminMasterRealmTest extends AbstractFineGrainedAdminTes
         RoleRepresentation realmRole2 = managedRealm.admin().roles().get("realm-role2").toRepresentation();
         List<RoleRepresentation> realmRole2Set = new LinkedList<>();
         realmRole2Set.add(realmRole);
-        ClientRepresentation client = managedRealm.admin().clients().findByClientId(CLIENT_NAME).get(0);
+        ClientRepresentation client = managedRealm.admin().clients().findClientByClientId(CLIENT_NAME).orElseThrow();
         RoleRepresentation clientRole = managedRealm.admin().clients().get(client.getId()).roles().get("client-role").toRepresentation();
         List<RoleRepresentation> clientRoleSet = new LinkedList<>();
         clientRoleSet.add(clientRole);
@@ -75,7 +75,7 @@ public class FineGrainedAdminMasterRealmTest extends AbstractFineGrainedAdminTes
         managedRealm.admin().roles().create(composite);
         composite = managedRealm.admin().roles().get("composite").toRepresentation();
 
-        ClientRepresentation client = managedRealm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        ClientRepresentation client = managedRealm.admin().clients().findClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).orElseThrow();
         RoleRepresentation createClient = managedRealm.admin().clients().get(client.getId()).roles().get(AdminRoles.CREATE_CLIENT).toRepresentation();
         RoleRepresentation queryRealms = managedRealm.admin().clients().get(client.getId()).roles().get(AdminRoles.QUERY_REALMS).toRepresentation();
         List<RoleRepresentation> composites = new LinkedList<>();

@@ -142,8 +142,8 @@ public class AdminClientTest extends AbstractKeycloakTest {
     public void importRealm(RealmRepresentation realm) {
         super.importRealm(realm);
         if (Objects.equals(realm.getRealm(), realmName)) {
-            x509ClientUUID = adminClient.realm(realmName).clients().findByClientId(x509ClientId).get(0).getId();
-            clientUUID = adminClient.realm(realmName).clients().findByClientId(clientId).get(0).getId();
+            x509ClientUUID = adminClient.realm(realmName).clients().findClientByClientId(x509ClientId).orElseThrow().getId();
+            clientUUID = adminClient.realm(realmName).clients().findClientByClientId(clientId).orElseThrow().getId();
             userId = adminClient.realm(realmName).users().searchByUsername(userName, true).get(0).getId();
         }
     }

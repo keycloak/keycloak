@@ -141,7 +141,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
 
         // Delete the cookies, while maintaining the server side session active
         super.deleteCookies();
-        
+
         // Login the same user again and verify the configured error message is shown
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -421,7 +421,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
 
             events.expect(EventType.RESET_PASSWORD_ERROR).client("account").error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
         } finally {
-            testRealm().clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0).setDirectAccessGrantsEnabled(false);
+            testRealm().clients().findClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).orElseThrow().setDirectAccessGrantsEnabled(false);
             ApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
         }
     }

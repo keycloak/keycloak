@@ -40,7 +40,7 @@ public class FineGrainedAdminDefaultRealmTest extends AbstractFineGrainedAdminTe
             realmClient.realm(REALM_NAME).roles().create(composite);
             composite = managedRealm.admin().roles().get("composite").toRepresentation();
 
-            ClientRepresentation client = managedRealm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+            ClientRepresentation client = managedRealm.admin().clients().findClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).orElseThrow();
             RoleRepresentation viewUsers = managedRealm.admin().clients().get(client.getId()).roles().get(AdminRoles.CREATE_CLIENT).toRepresentation();
 
             List<RoleRepresentation> composites = new LinkedList<>();

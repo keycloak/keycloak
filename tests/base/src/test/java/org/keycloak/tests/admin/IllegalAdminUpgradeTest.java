@@ -23,6 +23,7 @@ import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -132,42 +133,44 @@ public class IllegalAdminUpgradeTest {
         UserRepresentation realmUser = managedRealm.admin().users().search("user").get(0);
         UserRepresentation masterUser = masterRealm.admin().users().search("user").get(0);
 
-        ClientRepresentation realmAdminClient = managedRealm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
-        RoleRepresentation realmManageAuthorization = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.MANAGE_AUTHORIZATION).toRepresentation();
-        RoleRepresentation realmViewAuthorization = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.VIEW_AUTHORIZATION).toRepresentation();
-        RoleRepresentation realmManageClients = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.MANAGE_CLIENTS).toRepresentation();
-        RoleRepresentation realmViewClients = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.VIEW_CLIENTS).toRepresentation();
-        RoleRepresentation realmManageEvents = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.MANAGE_EVENTS).toRepresentation();
-        RoleRepresentation realmViewEvents = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.VIEW_EVENTS).toRepresentation();
-        RoleRepresentation realmManageIdentityProviders = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.MANAGE_IDENTITY_PROVIDERS).toRepresentation();
-        RoleRepresentation realmViewIdentityProviders = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.VIEW_IDENTITY_PROVIDERS).toRepresentation();
-        RoleRepresentation realmManageRealm = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.MANAGE_REALM).toRepresentation();
-        RoleRepresentation realmViewRealm = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.VIEW_REALM).toRepresentation();
-        RoleRepresentation realmImpersonate = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.IMPERSONATION).toRepresentation();
-        RoleRepresentation realmManageUsers = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
-        RoleRepresentation realmViewUsers = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.VIEW_USERS).toRepresentation();
-        RoleRepresentation realmQueryUsers = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.QUERY_USERS).toRepresentation();
-        RoleRepresentation realmQueryClients = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.QUERY_CLIENTS).toRepresentation();
-        RoleRepresentation realmQueryGroups = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.QUERY_GROUPS).toRepresentation();
-        RoleRepresentation realmAdmin = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+        ClientRepresentation realmAdminClient = managedRealm.admin().clients().findClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).orElseThrow();
+        RolesResource realmManagementRoles = managedRealm.admin().clients().get(realmAdminClient.getId()).roles();
+        RoleRepresentation realmManageAuthorization = realmManagementRoles.get(AdminRoles.MANAGE_AUTHORIZATION).toRepresentation();
+        RoleRepresentation realmViewAuthorization = realmManagementRoles.get(AdminRoles.VIEW_AUTHORIZATION).toRepresentation();
+        RoleRepresentation realmManageClients = realmManagementRoles.get(AdminRoles.MANAGE_CLIENTS).toRepresentation();
+        RoleRepresentation realmViewClients = realmManagementRoles.get(AdminRoles.VIEW_CLIENTS).toRepresentation();
+        RoleRepresentation realmManageEvents = realmManagementRoles.get(AdminRoles.MANAGE_EVENTS).toRepresentation();
+        RoleRepresentation realmViewEvents = realmManagementRoles.get(AdminRoles.VIEW_EVENTS).toRepresentation();
+        RoleRepresentation realmManageIdentityProviders = realmManagementRoles.get(AdminRoles.MANAGE_IDENTITY_PROVIDERS).toRepresentation();
+        RoleRepresentation realmViewIdentityProviders = realmManagementRoles.get(AdminRoles.VIEW_IDENTITY_PROVIDERS).toRepresentation();
+        RoleRepresentation realmManageRealm = realmManagementRoles.get(AdminRoles.MANAGE_REALM).toRepresentation();
+        RoleRepresentation realmViewRealm = realmManagementRoles.get(AdminRoles.VIEW_REALM).toRepresentation();
+        RoleRepresentation realmImpersonate = realmManagementRoles.get(AdminRoles.IMPERSONATION).toRepresentation();
+        RoleRepresentation realmManageUsers = realmManagementRoles.get(AdminRoles.MANAGE_USERS).toRepresentation();
+        RoleRepresentation realmViewUsers = realmManagementRoles.get(AdminRoles.VIEW_USERS).toRepresentation();
+        RoleRepresentation realmQueryUsers = realmManagementRoles.get(AdminRoles.QUERY_USERS).toRepresentation();
+        RoleRepresentation realmQueryClients = realmManagementRoles.get(AdminRoles.QUERY_CLIENTS).toRepresentation();
+        RoleRepresentation realmQueryGroups = realmManagementRoles.get(AdminRoles.QUERY_GROUPS).toRepresentation();
+        RoleRepresentation realmAdmin = realmManagementRoles.get(AdminRoles.REALM_ADMIN).toRepresentation();
 
-        ClientRepresentation masterClient = masterRealm.admin().clients().findByClientId(REALM_NAME + "-realm").get(0);
-        RoleRepresentation masterManageAuthorization = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.MANAGE_AUTHORIZATION).toRepresentation();
-        RoleRepresentation masterViewAuthorization = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.VIEW_AUTHORIZATION).toRepresentation();
-        RoleRepresentation masterManageClients = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.MANAGE_CLIENTS).toRepresentation();
-        RoleRepresentation masterViewClients = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.VIEW_CLIENTS).toRepresentation();
-        RoleRepresentation masterManageEvents = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.MANAGE_EVENTS).toRepresentation();
-        RoleRepresentation masterViewEvents = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.VIEW_EVENTS).toRepresentation();
-        RoleRepresentation masterManageIdentityProviders = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.MANAGE_IDENTITY_PROVIDERS).toRepresentation();
-        RoleRepresentation masterViewIdentityProviders = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.VIEW_IDENTITY_PROVIDERS).toRepresentation();
-        RoleRepresentation masterManageRealm = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.MANAGE_REALM).toRepresentation();
-        RoleRepresentation masterViewRealm = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.VIEW_REALM).toRepresentation();
-        RoleRepresentation masterImpersonate = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.IMPERSONATION).toRepresentation();
-        RoleRepresentation masterManageUsers = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
-        RoleRepresentation masterViewUsers = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.VIEW_USERS).toRepresentation();
-        RoleRepresentation masterQueryUsers = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.QUERY_USERS).toRepresentation();
-        RoleRepresentation masterQueryClients = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.QUERY_CLIENTS).toRepresentation();
-        RoleRepresentation masterQueryGroups = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.QUERY_GROUPS).toRepresentation();
+        ClientRepresentation masterClient = masterRealm.admin().clients().findClientByClientId(REALM_NAME + "-realm").orElseThrow();
+        RolesResource masterClientRoles = masterRealm.admin().clients().get(masterClient.getId()).roles();
+        RoleRepresentation masterManageAuthorization = masterClientRoles.get(AdminRoles.MANAGE_AUTHORIZATION).toRepresentation();
+        RoleRepresentation masterViewAuthorization = masterClientRoles.get(AdminRoles.VIEW_AUTHORIZATION).toRepresentation();
+        RoleRepresentation masterManageClients = masterClientRoles.get(AdminRoles.MANAGE_CLIENTS).toRepresentation();
+        RoleRepresentation masterViewClients = masterClientRoles.get(AdminRoles.VIEW_CLIENTS).toRepresentation();
+        RoleRepresentation masterManageEvents = masterClientRoles.get(AdminRoles.MANAGE_EVENTS).toRepresentation();
+        RoleRepresentation masterViewEvents = masterClientRoles.get(AdminRoles.VIEW_EVENTS).toRepresentation();
+        RoleRepresentation masterManageIdentityProviders = masterClientRoles.get(AdminRoles.MANAGE_IDENTITY_PROVIDERS).toRepresentation();
+        RoleRepresentation masterViewIdentityProviders = masterClientRoles.get(AdminRoles.VIEW_IDENTITY_PROVIDERS).toRepresentation();
+        RoleRepresentation masterManageRealm = masterClientRoles.get(AdminRoles.MANAGE_REALM).toRepresentation();
+        RoleRepresentation masterViewRealm = masterClientRoles.get(AdminRoles.VIEW_REALM).toRepresentation();
+        RoleRepresentation masterImpersonate = masterClientRoles.get(AdminRoles.IMPERSONATION).toRepresentation();
+        RoleRepresentation masterManageUsers = masterClientRoles.get(AdminRoles.MANAGE_USERS).toRepresentation();
+        RoleRepresentation masterViewUsers = masterClientRoles.get(AdminRoles.VIEW_USERS).toRepresentation();
+        RoleRepresentation masterQueryUsers = masterClientRoles.get(AdminRoles.QUERY_USERS).toRepresentation();
+        RoleRepresentation masterQueryClients = masterClientRoles.get(AdminRoles.QUERY_CLIENTS).toRepresentation();
+        RoleRepresentation masterQueryGroups = masterClientRoles.get(AdminRoles.QUERY_GROUPS).toRepresentation();
 
         List<RoleRepresentation> roles = new LinkedList<>();
 
@@ -184,7 +187,7 @@ public class IllegalAdminUpgradeTest {
                     assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
                             is(equalTo(Response.Status.FORBIDDEN)));
                 }
-            
+
                 roles.clear();
                 roles.add(realmViewAuthorization);
                 try {
@@ -484,7 +487,7 @@ public class IllegalAdminUpgradeTest {
                     Assertions.fail("should fail with forbidden exception");
                 } catch (ClientErrorException e) {
                     assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
-                            is(equalTo(Response.Status.FORBIDDEN)));                    
+                            is(equalTo(Response.Status.FORBIDDEN)));
                 }
                 roles.clear();
                 roles.add(masterViewAuthorization);
@@ -493,7 +496,7 @@ public class IllegalAdminUpgradeTest {
                     Assertions.fail("should fail with forbidden exception");
                 } catch (ClientErrorException e) {
                     assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
-                            is(equalTo(Response.Status.FORBIDDEN)));                    
+                            is(equalTo(Response.Status.FORBIDDEN)));
                 }
                 roles.clear();
                 roles.add(masterManageClients);
@@ -502,7 +505,7 @@ public class IllegalAdminUpgradeTest {
                     Assertions.fail("should fail with forbidden exception");
                 } catch (ClientErrorException e) {
                     assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
-                            is(equalTo(Response.Status.FORBIDDEN)));                    
+                            is(equalTo(Response.Status.FORBIDDEN)));
                 }
                 roles.clear();
                 roles.add(masterViewClients);
@@ -511,7 +514,7 @@ public class IllegalAdminUpgradeTest {
                     Assertions.fail("should fail with forbidden exception");
                 } catch (ClientErrorException e) {
                     assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
-                            is(equalTo(Response.Status.FORBIDDEN)));                    
+                            is(equalTo(Response.Status.FORBIDDEN)));
                 }
                 roles.clear();
                 roles.add(masterManageEvents);
@@ -520,7 +523,7 @@ public class IllegalAdminUpgradeTest {
                     Assertions.fail("should fail with forbidden exception");
                 } catch (ClientErrorException e) {
                     assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
-                            is(equalTo(Response.Status.FORBIDDEN)));                    
+                            is(equalTo(Response.Status.FORBIDDEN)));
                 }
                 roles.clear();
                 roles.add(masterViewEvents);
@@ -529,7 +532,7 @@ public class IllegalAdminUpgradeTest {
                     Assertions.fail("should fail with forbidden exception");
                 } catch (ClientErrorException e) {
                     assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
-                            is(equalTo(Response.Status.FORBIDDEN)));                    
+                            is(equalTo(Response.Status.FORBIDDEN)));
                 }
                 roles.clear();
                 roles.add(masterManageIdentityProviders);
@@ -538,7 +541,7 @@ public class IllegalAdminUpgradeTest {
                     Assertions.fail("should fail with forbidden exception");
                 } catch (ClientErrorException e) {
                     assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
-                            is(equalTo(Response.Status.FORBIDDEN)));                    
+                            is(equalTo(Response.Status.FORBIDDEN)));
                 }
                 roles.clear();
                 roles.add(masterViewIdentityProviders);
@@ -547,7 +550,7 @@ public class IllegalAdminUpgradeTest {
                     Assertions.fail("should fail with forbidden exception");
                 } catch (ClientErrorException e) {
                     assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
-                            is(equalTo(Response.Status.FORBIDDEN)));                    
+                            is(equalTo(Response.Status.FORBIDDEN)));
                 }
                 roles.clear();
                 roles.add(masterManageRealm);
@@ -556,7 +559,7 @@ public class IllegalAdminUpgradeTest {
                     Assertions.fail("should fail with forbidden exception");
                 } catch (ClientErrorException e) {
                     assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
-                            is(equalTo(Response.Status.FORBIDDEN)));                    
+                            is(equalTo(Response.Status.FORBIDDEN)));
                 }
                 roles.clear();
                 roles.add(masterViewRealm);
@@ -565,7 +568,7 @@ public class IllegalAdminUpgradeTest {
                     Assertions.fail("should fail with forbidden exception");
                 } catch (ClientErrorException e) {
                     assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
-                            is(equalTo(Response.Status.FORBIDDEN)));                    
+                            is(equalTo(Response.Status.FORBIDDEN)));
                 }
                 roles.clear();
                 roles.add(masterImpersonate);
@@ -574,7 +577,7 @@ public class IllegalAdminUpgradeTest {
                     Assertions.fail("should fail with forbidden exception");
                 } catch (ClientErrorException e) {
                     assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
-                            is(equalTo(Response.Status.FORBIDDEN)));                    
+                            is(equalTo(Response.Status.FORBIDDEN)));
                 }
                 roles.clear();
                 roles.add(masterManageUsers);
@@ -583,7 +586,7 @@ public class IllegalAdminUpgradeTest {
                     Assertions.fail("should fail with forbidden exception");
                 } catch (ClientErrorException e) {
                     assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
-                            is(equalTo(Response.Status.FORBIDDEN)));                    
+                            is(equalTo(Response.Status.FORBIDDEN)));
                 }
                 roles.clear();
                 roles.add(masterViewUsers);
@@ -592,7 +595,7 @@ public class IllegalAdminUpgradeTest {
                     Assertions.fail("should fail with forbidden exception");
                 } catch (ClientErrorException e) {
                     assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
-                            is(equalTo(Response.Status.FORBIDDEN)));                    
+                            is(equalTo(Response.Status.FORBIDDEN)));
                 }
                 roles.clear();
                 roles.add(masterQueryUsers);
@@ -601,7 +604,7 @@ public class IllegalAdminUpgradeTest {
                     Assertions.fail("should fail with forbidden exception");
                 } catch (ClientErrorException e) {
                     assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
-                            is(equalTo(Response.Status.FORBIDDEN)));                    
+                            is(equalTo(Response.Status.FORBIDDEN)));
                 }
                 roles.clear();
                 roles.add(masterQueryGroups);
@@ -610,7 +613,7 @@ public class IllegalAdminUpgradeTest {
                     Assertions.fail("should fail with forbidden exception");
                 } catch (ClientErrorException e) {
                     assertThat(Response.Status.fromStatusCode(e.getResponse().getStatus()),
-                            is(equalTo(Response.Status.FORBIDDEN)));                    
+                            is(equalTo(Response.Status.FORBIDDEN)));
                 }
                 roles.clear();
                 roles.add(masterQueryClients);
@@ -632,80 +635,80 @@ public class IllegalAdminUpgradeTest {
                 roles.add(realmManageAuthorization);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(realmViewAuthorization);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(realmManageClients);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(realmViewClients);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(realmManageEvents);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(realmViewEvents);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(realmManageIdentityProviders);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(realmViewIdentityProviders);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(realmManageRealm);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(realmViewRealm);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(realmImpersonate);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(realmManageUsers);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
-                
+
+
                 roles.clear();
                 roles.add(realmViewUsers);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
-                
+
+
                 roles.clear();
                 roles.add(realmQueryUsers);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
-                
+
+
                 roles.clear();
                 roles.add(realmQueryGroups);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(realmQueryClients);
                 realmClient.realm(REALM_NAME).users().get(realmUser.getId()).roles().clientLevel(client.getId()).add(roles);
@@ -721,80 +724,80 @@ public class IllegalAdminUpgradeTest {
                 roles.add(masterManageAuthorization);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(masterViewAuthorization);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(masterManageClients);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(masterViewClients);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(masterManageEvents);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(masterViewEvents);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(masterManageIdentityProviders);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(masterViewIdentityProviders);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(masterManageRealm);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(masterViewRealm);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(masterImpersonate);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(masterManageUsers);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
-                
+
+
                 roles.clear();
                 roles.add(masterViewUsers);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
-                
+
+
                 roles.clear();
                 roles.add(masterQueryUsers);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
-                
+
+
                 roles.clear();
                 roles.add(masterQueryGroups);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).add(roles);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).remove(roles);
-                
+
                 roles.clear();
                 roles.add(masterQueryClients);
                 realmClient.realm(MASTER_REALM_NAME).users().get(masterUser.getId()).roles().clientLevel(client.getId()).add(roles);

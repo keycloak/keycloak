@@ -486,7 +486,7 @@ public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
         oauth.client("direct-legal", "secret");
         oauth.scope(OAuth2Constants.SCOPE_OPENID);
         ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
-        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+        ClientRepresentation rep = clients.findClientByClientId(oauth.getClientId()).orElseThrow();
         rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, oauth.APP_ROOT + "/admin/backchannelLogout");
         getCleanup().addCleanup(() -> {
             rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");

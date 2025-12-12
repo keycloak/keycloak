@@ -26,7 +26,6 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -174,9 +173,8 @@ public class RolePolicyTest extends AbstractAuthzTest {
         AuthzClient authzClient = getAuthzClient();
         RealmResource realm = getRealm();
         ClientsResource clients = realm.clients();
-        ClientRepresentation client = clients.findByClientId(authzClient.getConfiguration().getResource()).get(0);
         ClientScopeRepresentation rolesScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
-        ClientResource clientResource = clients.get(client.getId());
+        ClientResource clientResource = clients.getByClientId(authzClient.getConfiguration().getResource());
         clientResource.removeDefaultClientScope(rolesScope.getId());
         getCleanup().addCleanup(() -> clientResource.addDefaultClientScope(rolesScope.getId()));
         PermissionRequest request = new PermissionRequest("Resource B");
@@ -198,9 +196,8 @@ public class RolePolicyTest extends AbstractAuthzTest {
         AuthzClient authzClient = getAuthzClient();
         RealmResource realm = getRealm();
         ClientsResource clients = realm.clients();
-        ClientRepresentation client = clients.findByClientId(authzClient.getConfiguration().getResource()).get(0);
         ClientScopeRepresentation rolesScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
-        ClientResource clientResource = clients.get(client.getId());
+        ClientResource clientResource = clients.getByClientId(authzClient.getConfiguration().getResource());
         clientResource.removeDefaultClientScope(rolesScope.getId());
         UserRepresentation serviceAccountUser = clientResource.getServiceAccountUser();
         RoleRepresentation roleB = realm.roles().get("Role B").toRepresentation();
@@ -254,8 +251,7 @@ public class RolePolicyTest extends AbstractAuthzTest {
     }
 
     private ClientResource getClient(RealmResource realm) {
-        ClientsResource clients = realm.clients();
-        return clients.findByClientId("resource-server-test").stream().map(representation -> clients.get(representation.getId())).findFirst().orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
+        return realm.clients().getByClientId("resource-server-test");
     }
 
     private AuthzClient getAuthzClient() {

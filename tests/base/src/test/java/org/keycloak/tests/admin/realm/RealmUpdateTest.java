@@ -95,23 +95,23 @@ public class RealmUpdateTest extends AbstractRealmTest {
         adminClient.realm(OLD).update(rep);
 
         // Check client in master realm renamed
-        Assertions.assertEquals(0, adminClient.realm("master").clients().findByClientId("old-realm").size());
-        Assertions.assertEquals(1, adminClient.realm("master").clients().findByClientId("new-realm").size());
+        Assertions.assertFalse( adminClient.realm("master").clients().findClientByClientId("old-realm").isPresent());
+        Assertions.assertTrue( adminClient.realm("master").clients().findClientByClientId("new-realm").isPresent());
 
-        ClientRepresentation adminConsoleClient = adminClient.realm(NEW).clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
+        ClientRepresentation adminConsoleClient = adminClient.realm(NEW).clients().findClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).orElseThrow();
         assertEquals(Constants.AUTH_ADMIN_URL_PROP, adminConsoleClient.getRootUrl());
 
-        ClientRepresentation accountClient = adminClient.realm(NEW).clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+        ClientRepresentation accountClient = adminClient.realm(NEW).clients().findClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).orElseThrow();
         assertEquals(Constants.AUTH_BASE_URL_PROP, accountClient.getRootUrl());
 
-        ClientRepresentation accountConsoleClient = adminClient.realm(NEW).clients().findByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID).get(0);
+        ClientRepresentation accountConsoleClient = adminClient.realm(NEW).clients().findClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID).orElseThrow();
         assertEquals(Constants.AUTH_BASE_URL_PROP, accountConsoleClient.getRootUrl());
 
         newBaseUrls.forEach((clientId, baseUrl) -> {
-            assertEquals(baseUrl, adminClient.realm(NEW).clients().findByClientId(clientId).get(0).getBaseUrl());
+            assertEquals(baseUrl, adminClient.realm(NEW).clients().findClientByClientId(clientId).orElseThrow().getBaseUrl());
         });
         newRedirectUris.forEach((clientId, redirectUris) -> {
-            assertEquals(redirectUris, adminClient.realm(NEW).clients().findByClientId(clientId).get(0).getRedirectUris());
+            assertEquals(redirectUris, adminClient.realm(NEW).clients().findClientByClientId(clientId).orElseThrow().getRedirectUris());
         });
 
         adminClient.realms().realm(NEW).remove();

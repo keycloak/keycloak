@@ -13,7 +13,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.Base64Url;
@@ -124,12 +123,11 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         RealmResource realmResourceConsumerRealm = adminClient.realm(nbc.consumerRealmName());
         realmIdConsumerRealm = realmResourceConsumerRealm.toRepresentation().getId();
         accountClientIdConsumerRealm =
-                adminClient.realm(nbc.consumerRealmName()).clients().findByClientId(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID).get(0).getId();
+                adminClient.realm(nbc.consumerRealmName()).clients().findClientByClientId(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID).orElseThrow().getId();
 
         RealmResource realmResourceSubConsumerRealm = adminClient.realm(nbc.subConsumerRealmName());
         accountClientIdSubConsumerRealm =
-                adminClient.realm(nbc.subConsumerRealmName()).clients().findByClientId(ACCOUNT_CLIENT_NAME).get(0)
-                        .getId();
+                adminClient.realm(nbc.subConsumerRealmName()).clients().findClientByClientId(ACCOUNT_CLIENT_NAME).orElseThrow().getId();
     }
 
     @Before
@@ -804,12 +802,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
     }
 
     private ClientResource getByClientId(String realmName, String clientId) {
-        final ClientsResource c = adminClient.realm(realmName).clients();
-        ClientResource ipdClientResource = c.findByClientId(clientId).stream()
-          .findAny()
-          .map(rep -> c.get(rep.getId()))
-          .orElseThrow(IllegalArgumentException::new);
-        return ipdClientResource;
+        return adminClient.realm(realmName).clients().getByClientId(clientId);
     }
 
     private void disableClient(String realmName, String clientUuid) {
@@ -841,9 +834,6 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
     }
 
     private String getClientId(String realm, String clientId) {
-        return adminClient.realm(realm).clients().findByClientId(clientId).stream()
-         .findAny()
-         .map(ClientRepresentation::getId)
-         .orElse(null);
+        return adminClient.realm(realm).clients().findClientByClientId(clientId).orElseThrow().getId();
    }
 }

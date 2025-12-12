@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.authz.admin;
 
-import java.util.List;
 import java.util.Objects;
 
 import jakarta.ws.rs.NotFoundException;
@@ -40,7 +39,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 /**
@@ -55,11 +54,9 @@ public class ResourceServerManagementTest extends AbstractAuthorizationTest {
 
         clientsResource.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/client-with-authz-settings.json"), ClientRepresentation.class)).close();
 
-        List<ClientRepresentation> clients = clientsResource.findByClientId("authz-client");
+        ClientRepresentation client = clientsResource.findClientByClientId("authz-client").orElseThrow();
 
-        assertFalse(clients.isEmpty());
-
-        String clientId = clients.get(0).getId();
+        String clientId = client.getId();
         AuthorizationResource settings = clientsResource.get(clientId).authorization();
 
         assertEquals(PolicyEnforcementMode.PERMISSIVE, settings.exportSettings().getPolicyEnforcementMode());
@@ -74,9 +71,9 @@ public class ResourceServerManagementTest extends AbstractAuthorizationTest {
 
         clientsResource.get(clientId).remove();
 
-        clients = clientsResource.findByClientId("authz-client");
+        client = clientsResource.findClientByClientId("authz-client").orElse(null);
 
-        assertTrue(clients.isEmpty());
+        assertNull(client);
     }
 
     @Test
@@ -91,11 +88,9 @@ public class ResourceServerManagementTest extends AbstractAuthorizationTest {
 
         clientsResource.create(clientRepresentation).close();
 
-        List<ClientRepresentation> clients = clientsResource.findByClientId("authz-client");
+        ClientRepresentation client = clientsResource.findClientByClientId("authz-client").orElseThrow();
 
-        assertFalse(clients.isEmpty());
-
-        String clientId = clients.get(0).getId();
+        String clientId = client.getId();
 
         try {
             clientsResource.get(clientId).authorization().getSettings();
@@ -111,9 +106,8 @@ public class ResourceServerManagementTest extends AbstractAuthorizationTest {
         ClientRepresentation clientRep = JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/client-with-authz-settings.json"), ClientRepresentation.class);
         clientRep.setClientId(KeycloakModelUtils.generateId());
         clientsResource.create(clientRep).close();
-        List<ClientRepresentation> clients = clientsResource.findByClientId(clientRep.getClientId());
-        assertFalse(clients.isEmpty());
-        String clientId = clients.get(0).getId();
+        ClientRepresentation client = clientsResource.findClientByClientId(clientRep.getClientId()).orElseThrow();
+        String clientId = client.getId();
         AuthorizationResource authorization = clientsResource.get(clientId).authorization();
         ResourceServerRepresentation settings = authorization.exportSettings();
         assertEquals(PolicyEnforcementMode.PERMISSIVE, settings.getPolicyEnforcementMode());
@@ -127,10 +121,8 @@ public class ResourceServerManagementTest extends AbstractAuthorizationTest {
 
         ClientRepresentation anotherClientRep = ClientBuilder.create().clientId(KeycloakModelUtils.generateId()).secret("secret").authorizationServicesEnabled(true).serviceAccount().enabled(true).build();
         clientsResource.create(anotherClientRep).close();
-        clients = clientsResource.findByClientId(anotherClientRep.getClientId());
-        assertFalse(clients.isEmpty());
-        ClientRepresentation anotherClient = clients.get(0);
-        authorization = clientsResource.get(anotherClient.getId()).authorization();
+        client = clientsResource.findClientByClientId(anotherClientRep.getClientId()).orElseThrow();
+        authorization = clientsResource.get(client.getId()).authorization();
         authorization.importSettings(settings);
         ResourceServerRepresentation anotherSettings = authorization.exportSettings();
         assertEquals(PolicyEnforcementMode.PERMISSIVE, anotherSettings.getPolicyEnforcementMode());
@@ -148,9 +140,8 @@ public class ResourceServerManagementTest extends AbstractAuthorizationTest {
         ClientRepresentation clientRep = JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/client-with-authz-settings.json"), ClientRepresentation.class);
         clientRep.setClientId(KeycloakModelUtils.generateId());
         clientsResource.create(clientRep).close();
-        List<ClientRepresentation> clients = clientsResource.findByClientId(clientRep.getClientId());
-        assertFalse(clients.isEmpty());
-        String clientId = clients.get(0).getId();
+        ClientRepresentation client = clientsResource.findClientByClientId(clientRep.getClientId()).orElseThrow();
+        String clientId = client.getId();
         AuthorizationResource authorization = clientsResource.get(clientId).authorization();
         ResourceServerRepresentation settings = authorization.exportSettings();
         assertFalse(settings.getResources().stream().map(ResourceRepresentation::getId).anyMatch(Objects::nonNull));

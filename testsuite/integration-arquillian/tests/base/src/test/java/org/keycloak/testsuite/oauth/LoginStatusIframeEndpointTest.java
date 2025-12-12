@@ -171,7 +171,7 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
 
     @Test
     public void checkIframeWildcardOrigin() throws IOException {
-        String id = adminClient.realm("master").clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0).getId();
+        String id = adminClient.realm("master").clients().findClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).orElseThrow().getId();
         ClientResource master = adminClient.realm("master").clients().get(id);
         ClientRepresentation rep = master.toRepresentation();
         List<String> org = rep.getWebOrigins();

@@ -1,13 +1,13 @@
 /*
  * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,6 +20,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -81,7 +82,7 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
 
     @Test
     public void testIdpInitiatedLoginPostAdminUrl() throws IOException {
-        String url = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0)
+        String url = adminClient.realm(REALM_NAME).clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST).orElseThrow()
                 .getAttributes().get(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
         try (Closeable c = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)
                 .setAdminUrl(url)
@@ -105,7 +106,7 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
 
     @Test
     public void testIdpInitiatedLoginRedirect() throws IOException {
-        String url = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0)
+        String url = adminClient.realm(REALM_NAME).clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST).orElseThrow()
                 .getAttributes().get(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
         try (Closeable c = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)
                 .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, null)
@@ -166,8 +167,9 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
         Map<String, String> clientSessions = userSessions.get(0).getClients();
 
         Set<String> clientIds = clientSessions.values().stream()
-          .flatMap(c -> clients.findByClientId(c).stream())
-          .map(ClientRepresentation::getClientId)
+          .map(c -> clients.findClientByClientId(c))
+                .flatMap(Optional::stream)
+                .map(ClientRepresentation::getClientId)
           .collect(Collectors.toSet());
 
         assertThat(clientIds, containsInAnyOrder(SAML_CLIENT_ID_SALES_POST, SAML_CLIENT_ID_SALES_POST2));
@@ -176,7 +178,7 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
 
     @Test
     public void testIdpInitiatedLoginWithOIDCClient() {
-        ClientRepresentation clientRep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0);
+        ClientRepresentation clientRep = adminClient.realm(REALM_NAME).clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST).orElseThrow();
         adminClient.realm(REALM_NAME).clients().get(clientRep.getId()).update(ClientBuilder.edit(clientRep)
                 .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL).build());
 
@@ -204,7 +206,7 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
                               containsString("Redirecting, please wait."),
                               containsString("Authentication Redirect")
                             ),
-                            containsString("<input type=\"hidden\" name=\"SAMLResponse\""), 
+                            containsString("<input type=\"hidden\" name=\"SAMLResponse\""),
                             containsString(" id=\"kc-page-title\"")
                     )));
                 });
@@ -212,7 +214,7 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
 
     @Test
     public void testSamlPostBindingPageIdP() throws Exception {
-        try (IdentityProviderCreator idp = new IdentityProviderCreator(adminClient.realm(REALM_NAME), 
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(adminClient.realm(REALM_NAME),
                 IdentityProviderBuilder.create()
                     .alias("saml-idp")
                     .providerId("saml")
@@ -230,7 +232,7 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
                               containsString("Authentication Redirect")
                             ),
                             containsString("Redirecting, please wait."),
-                            containsString("<input type=\"hidden\" name=\"SAMLRequest\""), 
+                            containsString("<input type=\"hidden\" name=\"SAMLRequest\""),
                             containsString(" id=\"kc-page-title\"")
                     )));
                 });

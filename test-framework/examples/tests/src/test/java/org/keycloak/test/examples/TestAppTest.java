@@ -26,8 +26,7 @@ public class TestAppTest {
 
     @Test
     public void testPushNotBefore() throws InterruptedException {
-        String clientUuid = managedRealm.admin().clients().findByClientId("test-app").stream().findFirst().get().getId();
-        managedRealm.admin().clients().get(clientUuid).pushRevocation();
+        managedRealm.admin().clients().getByClientId("test-app").pushRevocation();
 
         PushNotBeforeAction adminPushNotBefore = testApp.kcAdmin().getAdminPushNotBefore();
         Assertions.assertNotNull(adminPushNotBefore);

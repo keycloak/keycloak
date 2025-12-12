@@ -32,7 +32,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.common.Profile;
@@ -155,8 +154,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     }
 
     private ClientResource getResourceServer() {
-        ClientsResource clients = testRealm().clients();
-        return clients.get(clients.findByClientId("my-resource-server").get(0).getId());
+        return testRealm().clients().getByClientId("my-resource-server");
     }
 
     @Override

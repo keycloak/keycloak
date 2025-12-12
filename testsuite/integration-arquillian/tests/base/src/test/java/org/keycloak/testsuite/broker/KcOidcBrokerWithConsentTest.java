@@ -1,7 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import java.util.List;
-
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -31,9 +29,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
         super.beforeBrokerTest();
         // Require broker to show consent screen
         RealmResource brokeredRealm = adminClient.realm(bc.providerRealmName());
-        List<ClientRepresentation> clients = brokeredRealm.clients().findByClientId("brokerapp");
-        org.junit.Assert.assertEquals(1, clients.size());
-        ClientRepresentation brokerApp = clients.get(0);
+        ClientRepresentation brokerApp = brokeredRealm.clients().findClientByClientId("brokerapp").orElseThrow();
         brokerApp.setConsentRequired(true);
         brokeredRealm.clients().get(brokerApp.getId()).update(brokerApp);
 

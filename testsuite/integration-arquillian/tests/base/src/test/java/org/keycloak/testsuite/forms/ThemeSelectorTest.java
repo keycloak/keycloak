@@ -27,7 +27,7 @@ public class ThemeSelectorTest extends AbstractTestRealmKeycloakTest {
         loginPage.open();
         assertEquals(System.getProperty(PROPERTY_LOGIN_THEME_DEFAULT, SYSTEM_DEFAULT_LOGIN_THEME), detectTheme());
 
-        ClientRepresentation rep = testRealm().clients().findByClientId("test-app").get(0);
+        ClientRepresentation rep = testRealm().clients().findClientByClientId("test-app").orElseThrow();
 
         try {
             rep.getAttributes().put("login_theme", "base");

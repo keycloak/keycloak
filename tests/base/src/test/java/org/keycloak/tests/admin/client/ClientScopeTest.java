@@ -267,7 +267,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
         // update with some scopes
         String accountMgmtId =
-                managedRealm.admin().clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0).getId();
+                managedRealm.admin().clients().findClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).orElseThrow().getId();
         RoleRepresentation viewAccountRoleRep = managedRealm.admin().clients().get(accountMgmtId).roles()
                 .get(AccountRoles.VIEW_PROFILE).toRepresentation();
         RoleMappingResource scopesResource = clientScopes().get(scopeId).getScopeMappings();
@@ -346,7 +346,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId("role-container-client");
         createClientWithCleanup(clientRep);
-        String roleContainerClientUuid = realm.clients().findByClientId("role-container-client").stream().findFirst().orElseThrow().getId();
+        String roleContainerClientUuid = realm.clients().findClientByClientId("role-container-client").orElseThrow().getId();
         ClientResource roleContainerClient = realm.clients().get(roleContainerClientUuid);
 
         RoleRepresentation clientCompositeRole = RoleConfigBuilder.create().name("client-composite").build();

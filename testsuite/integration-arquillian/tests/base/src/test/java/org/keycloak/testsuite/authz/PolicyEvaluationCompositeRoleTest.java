@@ -124,7 +124,7 @@ public class PolicyEvaluationCompositeRoleTest extends AbstractAuthzTest {
         testingClient.server().run(PolicyEvaluationCompositeRoleTest::setup);
 
         RealmResource realm = adminClient.realm(TEST);
-        String resourceServerId = realm.clients().findByClientId("myclient").get(0).getId();
+        String resourceServerId = realm.clients().findClientByClientId("myclient").orElseThrow().getId();
         UserRepresentation user = realm.users().search("user").get(0);
 
         PolicyEvaluationRequest request = new PolicyEvaluationRequest();

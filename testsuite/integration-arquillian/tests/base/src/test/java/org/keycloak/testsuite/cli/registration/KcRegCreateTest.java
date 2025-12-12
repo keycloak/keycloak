@@ -262,7 +262,7 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
             RealmResource realm = adminClient.realm("test");
             ClientsResource clients = realm.clients();
-            ClientRepresentation clientRep = clients.findByClientId("authz-client").get(0);
+            ClientRepresentation clientRep = clients.findClientByClientId("authz-client").orElseThrow();
 
             ClientResource client = clients.get(clientRep.getId());
 
