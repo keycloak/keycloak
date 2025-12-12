@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.keycloak.VCFormat;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 
@@ -105,8 +106,7 @@ public class SupportedCredentialConfiguration {
 
         credentialConfiguration.setScope(credentialScope.getName());
 
-        String format = Optional.ofNullable(credentialScope.getFormat()).orElse(Format.SD_JWT_VC);
-        credentialConfiguration.setFormat(format);
+        credentialConfiguration.setFormat(credentialScope.getFormat());
 
         String vct = Optional.ofNullable(credentialScope.getVct()).orElse(credentialScope.getName());
         credentialConfiguration.setVct(vct);
@@ -152,11 +152,9 @@ public class SupportedCredentialConfiguration {
      * <p>
      * For jwt_vc and ldp_vc, we will be inferring from the "credential_definition" See:
      * https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request-3
-     *
-     * @return
      */
     public VerifiableCredentialType deriveType() {
-        if (Objects.equals(format, Format.SD_JWT_VC)) {
+        if (Objects.equals(format, VCFormat.SD_JWT_VC.getValue())) {
             return VerifiableCredentialType.from(vct);
         }
         return null;

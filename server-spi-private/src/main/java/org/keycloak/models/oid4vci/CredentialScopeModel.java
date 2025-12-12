@@ -25,13 +25,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.keycloak.VCFormat;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
-import static org.keycloak.OID4VCConstants.SD_JWT_VC_FORMAT;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 
 /**
@@ -45,7 +45,7 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public static final String SD_JWT_VISIBLE_CLAIMS_DEFAULT = "id,iat,nbf,exp,jti";
     public static final int SD_JWT_DECOYS_DEFAULT = 10;
-    public static final String FORMAT_DEFAULT = SD_JWT_VC_FORMAT;
+    public static final VCFormat FORMAT_DEFAULT = VCFormat.SD_JWT_VC;
     public static final String HASH_ALGORITHM_DEFAULT = "SHA-256";
     public static final String TOKEN_TYPE_DEFAULT = "JWS";
     public static final int EXPIRY_IN_SECONDS_DEFAULT = 31536000; // 1 year
@@ -178,11 +178,11 @@ public class CredentialScopeModel implements ClientScopeModel {
     }
 
     public String getFormat() {
-        return Optional.ofNullable(clientScope.getAttribute(FORMAT)).orElse(FORMAT_DEFAULT);
+        return Optional.ofNullable(clientScope.getAttribute(FORMAT)).orElse(FORMAT_DEFAULT.getValue());
     }
 
     public void setFormat(String credentialFormat) {
-        clientScope.setAttribute(FORMAT, Optional.ofNullable(credentialFormat).orElse(FORMAT_DEFAULT));
+        clientScope.setAttribute(FORMAT, Optional.ofNullable(credentialFormat).orElse(FORMAT_DEFAULT.getValue()));
     }
 
     public Integer getExpiryInSeconds() {
