@@ -50,6 +50,7 @@ import org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Time;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
@@ -119,7 +120,9 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 	protected static final String CONTEXT_URL = "https://www.w3.org/2018/credentials/v1";
 	protected static final URI TEST_DID = URI.create("did:web:test.org");
 	protected static final List<String> TEST_TYPES = List.of("VerifiableCredential");
-	protected static final Instant TEST_EXPIRATION_DATE = Instant.now().plus(365, ChronoUnit.DAYS).truncatedTo(ChronoUnit.SECONDS);
+    protected static final Instant TEST_EXPIRATION_DATE = Instant.ofEpochMilli(Time.currentTimeMillis())
+            .plus(365, ChronoUnit.DAYS)
+            .truncatedTo(ChronoUnit.SECONDS);
 	protected static final Instant TEST_ISSUANCE_DATE = Instant.ofEpochSecond(1000);
 
 	protected static final KeyWrapper RSA_KEY = getRsaKey();
