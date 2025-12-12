@@ -29,8 +29,8 @@ import java.util.stream.Collectors;
 
 import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Time;
 import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.ECDSASignatureVerifierContext;
