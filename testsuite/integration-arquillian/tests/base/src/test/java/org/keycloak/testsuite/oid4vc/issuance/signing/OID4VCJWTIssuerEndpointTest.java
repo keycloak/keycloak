@@ -81,7 +81,6 @@ import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -595,40 +594,6 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         testCredentialIssuanceWithAuthZCodeFlow(sdJwtTypeCredentialClientScope, getAccessToken, sendCredentialRequest);
     }
 
-    @Test
-    public void testRequestCredentialWithNotificationId() {
-        final String scopeName = jwtTypeCredentialClientScope.getName();
-        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
-        String token = getBearerToken(oauth, client, scopeName);
-
-        testingClient.server(TEST_REALM_NAME).run((session) -> {
-            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-            authenticator.setTokenString(token);
-            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-            CredentialRequest credentialRequest = new CredentialRequest()
-                    .setCredentialConfigurationId(credConfigId);
-
-            String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
-
-            // First credential request
-            Response response1 = issuerEndpoint.requestCredential(requestPayload);
-            assertEquals("The credential request should be successful.", HttpStatus.SC_OK, response1.getStatus());
-            CredentialResponse credentialResponse1 = JsonSerialization.mapper.convertValue(
-                    response1.getEntity(), CredentialResponse.class);
-            assertNotNull("Credential response should not be null", credentialResponse1);
-            assertNotNull("Credential should be present", credentialResponse1.getCredentials());
-            assertNotNull("Notification ID should be present", credentialResponse1.getNotificationId());
-            assertFalse("Notification ID should not be empty", credentialResponse1.getNotificationId().isEmpty());
-            // Second credential request
-            Response response2 = issuerEndpoint.requestCredential(requestPayload);
-            assertEquals("The second credential request should be successful.", HttpStatus.SC_OK, response2.getStatus());
-            CredentialResponse credentialResponse2 = JsonSerialization.mapper.convertValue(
-                    response2.getEntity(), CredentialResponse.class);
-            assertNotEquals("Notification IDs should be unique",
-                    credentialResponse1.getNotificationId(), credentialResponse2.getNotificationId());
-        });
-    }
-
     /**
      * This is testing the multiple credential issuance flow in a single call with proofs
      */
@@ -696,10 +661,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                             "john@email.cz", vc.getCredentialSubject().getClaims().get("email"));
                     assertFalse("Only supported mappers should be evaluated",
                             vc.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
-
                 }
-
-                assertNotNull("Notification ID should be present", credentialResponse.getNotificationId());
             } catch (Exception e) {
                 throw new RuntimeException("Test failed due to: " + e.getMessage(), e);
             }

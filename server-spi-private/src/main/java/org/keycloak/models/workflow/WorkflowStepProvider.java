@@ -21,6 +21,28 @@ import org.keycloak.provider.Provider;
 
 public interface WorkflowStepProvider extends Provider {
 
+    /**
+     * Run this workflow step.
+     *
+     * @param context the workflow execution context
+     */
     void run(WorkflowExecutionContext context);
 
+    /**
+     * Returns the message or the text that should be used as the subject of the email when notifying the user about this step.
+     *
+     * @return the notification subject, or {@code null} if the default subject should be used
+     */
+    default String getNotificationSubject() {
+        return null;
+    }
+
+    /**
+     * Returns the message or the text that should be used as the body of the email when notifying the user about this step.
+     *
+     * @return the notification body, or {@code null} if the default subject should be used
+     */
+    default String getNotificationMessage() {
+        return null;
+    }
 }

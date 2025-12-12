@@ -108,7 +108,7 @@ describe("Users", () => {
     // Searching by attributes is only available from Keycloak > 15
     const users = await kcAdminClient.users.find({ q: "key:value" });
     expect(users.length).to.be.equal(1);
-    expect(users[0]).to.be.deep.include(currentUser);
+    expect(users[0]).to.be.deep.include(omit(currentUser, ["access"]));
   });
 
   it("find users by builtin attributes", async () => {
@@ -117,7 +117,7 @@ describe("Users", () => {
       q: `email:${currentUser.email}`,
     });
     expect(users.length).to.be.equal(1);
-    expect(users[0]).to.be.deep.include(currentUser);
+    expect(users[0]).to.be.deep.include(omit(currentUser, ["access"]));
   });
 
   it("get single users", async () => {

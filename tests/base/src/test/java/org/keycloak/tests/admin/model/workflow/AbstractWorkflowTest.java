@@ -2,8 +2,12 @@ package org.keycloak.tests.admin.model.workflow;
 
 import java.time.Duration;
 
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.models.workflow.WorkflowProvider;
+import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -16,6 +20,9 @@ import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public abstract class AbstractWorkflowTest {
 
@@ -35,6 +42,12 @@ public abstract class AbstractWorkflowTest {
 
     @InjectOAuthClient(realmRef = DEFAULT_REALM_NAME)
     OAuthClient oauth;
+
+    protected void create(WorkflowRepresentation workflow) {
+        try (Response response = managedRealm.admin().workflows().create(workflow)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+        }
+    }
 
     protected void runScheduledSteps(Duration duration) {
         runOnServer.run((RunOnServer) session -> {

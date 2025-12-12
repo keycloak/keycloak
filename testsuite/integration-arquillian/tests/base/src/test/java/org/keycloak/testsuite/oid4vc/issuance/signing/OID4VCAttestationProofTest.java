@@ -5,6 +5,7 @@ import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.constants.OID4VCIConstants;
@@ -25,7 +26,6 @@ import org.keycloak.protocol.oid4vc.issuance.keybinding.AttestationValidatorUtil
 import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
-import org.keycloak.protocol.oid4vc.model.ISO18045ResistanceLevel;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
@@ -54,6 +54,37 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
         String cNonce = getCNonce();
         testingClient.server(TEST_REALM_NAME).run(session -> {
             runAttestationProofWithRealmAttributeTrustedKeys(session, cNonce);
+        });
+    }
+
+    @Test
+    public void testAttestationProofAcceptsLegacyTyp() {
+        String cNonce = getCNonce();
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            try {
+                KeyWrapper attestationKey = createECKey("legacyAttestationKey");
+                KeyWrapper proofKey = createECKey("legacyProofKey");
+
+                JWK proofJwk = createJWK(proofKey);
+                String attestationJwt = createValidAttestationJwt(
+                        session,
+                        attestationKey,
+                        List.of(proofJwk),
+                        cNonce,
+                        AttestationValidatorUtil.LEGACY_ATTESTATION_JWT_TYP);
+
+                configureTrustedKeysInRealm(session, List.of(createJWK(attestationKey)));
+
+                VCIssuanceContext vcIssuanceContext = createVCIssuanceContextWithAttestationProof(session, attestationJwt);
+
+                AttestationProofValidatorFactory factory = new AttestationProofValidatorFactory();
+                AttestationProofValidator validator = (AttestationProofValidator) factory.create(session);
+
+                validateProofAndAssert(validator, vcIssuanceContext, proofKey);
+            } catch (Exception e) {
+                LOGGER.error("Legacy typ test failed with exception", e);
+                fail("Legacy typ attestation proof should be accepted: " + e.getMessage());
+            }
         });
     }
 
@@ -271,8 +302,8 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
             payload.setIat((long) TIME_PROVIDER.currentTimeSeconds());
             payload.setNonce(cNonce);
             payload.setAttestedKeys(List.of(proofJwk));
-            payload.setKeyStorage(List.of(ISO18045ResistanceLevel.HIGH.getValue()));
-            payload.setUserAuthentication(List.of(ISO18045ResistanceLevel.HIGH.getValue()));
+            payload.setKeyStorage(List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH));
+            payload.setUserAuthentication(List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH));
 
             String attestationJwt = new JWSBuilder()
                     .type(AttestationValidatorUtil.ATTESTATION_JWT_TYP)

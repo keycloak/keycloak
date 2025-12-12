@@ -114,10 +114,29 @@ public class CredentialScopeModel implements ClientScopeModel {
     public static final String TOKEN_JWS_TYPE = "vc.credential_build_config.token_jws_type";
 
     /**
-     * this configuration property can be used to enforce specific claims to be included in the metadata, if they
-     * would normally not and vice versa
+     * this configuration property can be used to enforce specific claims to be included in the metadata, if they would
+     * normally not and vice versa
      */
     public static final String INCLUDE_IN_METADATA = "vc.include_in_metadata";
+
+    /**
+     * OPTIONAL. Object that describes the requirement for key attestations as described in Appendix D, which the
+     * Credential Issuer expects the Wallet to send within the proof(s) of the Credential Request. If the Credential
+     * Issuer does not require a key attestation, this parameter MUST NOT be present in the metadata. If both
+     * key_storage and user_authentication parameters are absent, the key_attestations_required parameter may be empty,
+     * indicating a key attestation is needed without additional constraints.
+     */
+    public static final String KEY_ATTESTATION_REQUIRED = "vc.key_attestations_required";
+
+    /**
+     * OPTIONAL. A non-empty array defining values specified in Appendix D.2 accepted by the Credential Issuer.
+     */
+    public static final String KEY_ATTESTATION_REQUIRED_KEY_STORAGE = "vc.key_attestations_required.key_storage";
+
+    /**
+     * OPTIONAL. A non-empty array defining values specified in Appendix D.2 accepted by the Credential Issuer.
+     */
+    public static final String KEY_ATTESTATION_REQUIRED_USER_AUTH = "vc.key_attestations_required.user_authentication";
 
 
     /**
@@ -305,6 +324,46 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public void setVcDisplay(String vcDisplay) {
         clientScope.setAttribute(VC_DISPLAY, vcDisplay);
+    }
+
+    public boolean isKeyAttestationRequired() {
+        return Optional.ofNullable(clientScope.getAttribute(KEY_ATTESTATION_REQUIRED))
+                       .map(Boolean::parseBoolean)
+                       .orElse(false);
+    }
+
+    public void setKeyAttestationRequired(boolean keyAttestationRequired) {
+        clientScope.setAttribute(KEY_ATTESTATION_REQUIRED, String.valueOf(keyAttestationRequired));
+    }
+
+    public List<String> getRequiredKeyAttestationKeyStorage() {
+        return Optional.ofNullable(clientScope.getAttribute(KEY_ATTESTATION_REQUIRED_KEY_STORAGE))
+                       .map(s -> Arrays.asList(s.split(",")))
+                       // it is important to return null here instead of an empty list:
+                       // If both key_storage and user_authentication parameters are absent, the
+                       // key_attestations_required parameter may be empty, indicating a key attestation is needed
+                       // without additional constraints. Meaning we must not add empty objects to the metadata endpoint
+                       .orElse(null);
+    }
+
+    public void setRequiredKeyAttestationKeyStorage(List<String> keyStorage) {
+        clientScope.setAttribute(KEY_ATTESTATION_REQUIRED_KEY_STORAGE,
+                                 Optional.ofNullable(keyStorage).map(list -> String.join(",")).orElse(null));
+    }
+
+    public List<String> getRequiredKeyAttestationUserAuthentication() {
+        return Optional.ofNullable(clientScope.getAttribute(KEY_ATTESTATION_REQUIRED_USER_AUTH))
+                       .map(s -> Arrays.asList(s.split(",")))
+                       // it is important to return null here instead of an empty list:
+                       // If both key_storage and user_authentication parameters are absent, the
+                       // key_attestations_required parameter may be empty, indicating a key attestation is needed
+                       // without additional constraints. Meaning we must not add empty objects to the metadata endpoint
+                       .orElse(null);
+    }
+
+    public void getRequiredKeyAttestationUserAuthentication(List<String> userAuthentication) {
+        clientScope.setAttribute(KEY_ATTESTATION_REQUIRED_USER_AUTH,
+                                 Optional.ofNullable(userAuthentication).map(list -> String.join(",")).orElse(null));
     }
 
     @Override

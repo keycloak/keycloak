@@ -3,18 +3,26 @@ package org.keycloak.models.workflow;
 import java.util.List;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
-public class RestartWorkflowStepProviderFactory implements WorkflowStepProviderFactory<RestartWorkflowStepProvider> {
+public final class RestartWorkflowStepProviderFactory implements WorkflowStepProviderFactory<RestartWorkflowStepProvider> {
 
     public static final String ID = "restart";
-
-    private final RestartWorkflowStepProvider provider = new RestartWorkflowStepProvider();
+    public static final String CONFIG_POSITION = "position";
 
     @Override
     public RestartWorkflowStepProvider create(KeycloakSession session, ComponentModel model) {
-        return provider;
+        return new RestartWorkflowStepProvider(getPosition(model));
+    }
+
+    @Override
+    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
+        if (getPosition(model) < 0) {
+            throw new ComponentValidationException("Position must be a non-negative integer");
+        }
     }
 
     @Override
@@ -51,5 +59,9 @@ public class RestartWorkflowStepProviderFactory implements WorkflowStepProviderF
     @Override
     public String getHelpText() {
         return "Restarts the current workflow";
+    }
+
+    private int getPosition(ComponentModel model) {
+        return model.get(CONFIG_POSITION, 0);
     }
 }

@@ -16,9 +16,10 @@
  */
 package org.keycloak.operator.crds.v2alpha1.deployment;
 
-import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.model.annotation.SpecReplicas;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
@@ -38,16 +39,14 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
-
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.model.annotation.SpecReplicas;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class KeycloakSpec {

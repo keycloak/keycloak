@@ -23,12 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.SecretKeySelector;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
-import io.fabric8.kubernetes.client.utils.Serialization;
-import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
@@ -41,6 +35,13 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.update.UpdateStrategy;
+
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.SecretKeySelector;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
+import io.fabric8.kubernetes.client.utils.Serialization;
+import org.hamcrest.CoreMatchers;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;

@@ -48,4 +48,14 @@ public class DisableUserStepProvider implements WorkflowStepProvider {
             user.setEnabled(false);
         }
     }
+
+    @Override
+    public String getNotificationMessage() {
+        return "accountDisableNotificationBody";
+    }
+
+    @Override
+    public String getNotificationSubject() {
+        return "accountDisableNotificationSubject";
+    }
 }

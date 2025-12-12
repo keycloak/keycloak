@@ -2,6 +2,7 @@ package org.keycloak.models.workflow;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 
 public final class Workflows {
 
@@ -20,4 +21,19 @@ public final class Workflows {
         return providerFactory;
     }
 
+    public static WorkflowStepProvider getStepProvider(KeycloakSession session, WorkflowStep step) {
+        RealmModel realm = session.getContext().getRealm();
+        return getStepProviderFactory(session, step).create(session, realm.getComponent(step.getId()));
+    }
+
+    private static WorkflowStepProviderFactory<WorkflowStepProvider> getStepProviderFactory(KeycloakSession session, WorkflowStep step) {
+        WorkflowStepProviderFactory<WorkflowStepProvider> factory = (WorkflowStepProviderFactory<WorkflowStepProvider>) session
+                .getKeycloakSessionFactory().getProviderFactory(WorkflowStepProvider.class, step.getProviderId());
+
+        if (factory == null) {
+            throw new WorkflowInvalidStateException("Step not found: " + step.getProviderId());
+        }
+
+        return factory;
+    }
 }

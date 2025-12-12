@@ -50,4 +50,35 @@ public class OID4VCConstants {
 
     private OID4VCConstants() {
     }
+
+    /**
+     * from the OID4VCI specification:
+     *
+     * <pre>
+     *  Appendix D.2. Attack Potential Resistance
+     *
+     *  This specification defines the following values for key_storage and user_authentication:
+     *  iso_18045_high: It MUST be used when key storage or user authentication is resistant to attack with attack
+     *  potential "High", equivalent to VAN.5 according to [ISO.18045].
+     *  iso_18045_moderate: It MUST be used when key storage or user authentication is resistant to attack with attack
+     *  potential "Moderate", equivalent to VAN.4 according to [ISO.18045]. iso_18045_enhanced-basic: It MUST be used
+     *  when key storage or user authentication is resistant to attack with attack potential "Enhanced-Basic",
+     *  equivalent to VAN.3 according to [ISO.18045]. iso_18045_basic: It MUST be used when key storage or user
+     *  authentication is resistant to attack with attack potential "Basic", equivalent to VAN.2 according to
+     *  [ISO.18045]. Specifications that extend this list MUST choose collision-resistant values.
+     * </pre>
+     * <p>
+     * this tells us that the KeyAttestationResistance is potentially extendable, and must therefore be handled with
+     * strings
+     */
+    public static class KeyAttestationResistanceLevels {
+
+        public static final String HIGH = "iso_18045_high"; // VAN.5
+
+        public static final String MODERATE = "iso_18045_moderate"; // VAN.4
+
+        public static final String ENHANCED_BASIC = "iso_18045_enhanced-basic"; // VAN.3
+
+        public static final String BASIC = "iso_18045_basic"; // VAN.2
+    }
 }

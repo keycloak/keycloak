@@ -54,7 +54,7 @@ public class Profile {
 
         ACCOUNT_V3("Account Console version 3", Type.DEFAULT, 3, Feature.ACCOUNT_API),
 
-        ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW, 1),
+        ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.DEPRECATED, 1),
 
         ADMIN_FINE_GRAINED_AUTHZ_V2("Fine-Grained Admin Permissions version 2", Type.DEFAULT, 2, Feature.AUTHORIZATION),
 
@@ -80,7 +80,7 @@ public class Profile {
         TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
         TOKEN_EXCHANGE_EXTERNAL_INTERNAL_V2("External to Internal Token Exchange version 2", Type.EXPERIMENTAL, 2),
 
-        JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.EXPERIMENTAL),
+        JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.PREVIEW),
 
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
@@ -129,7 +129,7 @@ public class Profile {
 
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
-        OPENTELEMETRY("OpenTelemetry Tracing", Type.DEFAULT),
+        OPENTELEMETRY("OpenTelemetry support", Type.DEFAULT),
 
         DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),
 
@@ -147,7 +147,7 @@ public class Profile {
         ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
         ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.PREVIEW, 2),
 
-        WORKFLOWS("Workflows", Type.EXPERIMENTAL),
+        WORKFLOWS("Workflows", Type.DEFAULT),
 
         LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.DEFAULT),
 

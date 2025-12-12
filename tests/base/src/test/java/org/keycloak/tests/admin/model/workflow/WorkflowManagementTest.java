@@ -66,6 +66,7 @@ import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
@@ -83,6 +84,7 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -197,7 +199,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         }
 
         workflows.create(WorkflowRepresentation.withName("another-workflow")
-                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
+                .onEvent(ResourceOperationType.USER_AUTHENTICATED.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -255,12 +257,12 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         // while the workflow has no scheduled steps - i.e. no resource is currently going through the workflow - we can update any property
         workflow.setName("changed");
         workflow.setConditions(IdentityProviderWorkflowConditionFactory.ID + "(someidp)");
-        workflow.setOn("user-logged-in");
+        workflow.setOn("user-authenticated");
 
         managedRealm.admin().workflows().workflow(workflow.getId()).update(workflow).close();
         workflow = workflows.workflow(workflow.getId()).toRepresentation();
         assertThat(workflow.getName(), is("changed"));
-        assertThat(workflow.getOn(), is("user-logged-in"));
+        assertThat(workflow.getOn(), is("user-authenticated"));
         assertThat(workflow.getConditions(), is(IdentityProviderWorkflowConditionFactory.ID + "(someidp)"));
 
         // even adding or removing steps should be allowed
@@ -626,15 +628,12 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                 assertTrue(user.getUsername().startsWith("new-idp-user-"));
             });
         });
-        runOnServer.run((RunOnServer) session -> {
-            // check the same users are now scheduled to run the second step.
-            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
-            List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
-            assertEquals(1, registeredWorkflows.size());
-            Workflow workflow = registeredWorkflows.get(0);
-            // activate the workflow for all eligible users - i.e. only users from the same idp who are not yet assigned to the workflow.
-            provider.activateForAllEligibleResources(workflow);
-        });
+
+        List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
+        assertThat(workflows, hasSize(1));
+        // activate the workflow for all eligible users - i.e. only users from the same idp who are not yet assigned to the workflow.
+        managedRealm.admin().workflows().workflow(workflows.get(0).getId()).activateAll();
+
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = session.getContext().getRealm();
             // check the same users are now scheduled to run the second step.
@@ -771,7 +770,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
     }
 
     @Test
-    public void testRecurringWorkflow() {
+    public void testRestartWorkflow() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .onEvent(ResourceOperationType.USER_ADDED.toString())
                 .withSteps(
@@ -785,7 +784,37 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         // create a new user - should bind the user to the workflow and setup the only step in the workflow
         managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("testuser@example.com").build()).close();
 
+        Long scheduledAt = runOnServer.fetch((FetchOnServer) session -> {
+            RealmModel realm = session.getContext().getRealm();
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            UserModel user = session.users().getUserByUsername(realm, "testuser");
+            Workflow workflow = provider.getWorkflows().toList().get(0);
+            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+            ScheduledStep scheduledStep = stateProvider.getScheduledStep(workflow.getId(), user.getId());
+            assertNotNull(scheduledStep, "A step should have been scheduled for the user " + user.getUsername());
+            return scheduledStep.scheduledAt();
+        }, Long.class);
+
         runScheduledSteps(Duration.ofDays(6));
+
+        Long reScheduleAt = runOnServer.fetch((FetchOnServer) session -> {
+            RealmModel realm = session.getContext().getRealm();
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+
+            UserModel user = session.users().getUserByUsername(realm, "testuser");
+            Workflow workflow = provider.getWorkflows().toList().get(0);
+            WorkflowStep step = workflow.getSteps().toList().get(0);
+
+            // Verify that the step was scheduled again for the user
+            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+            ScheduledStep scheduledStep = stateProvider.getScheduledStep(workflow.getId(), user.getId());
+            assertNotNull(scheduledStep, "A step should have been scheduled for the user " + user.getUsername());
+            assertEquals(step.getId(), scheduledStep.stepId(), "The step should have been scheduled again");
+            assertThat("The step should have been scheduled again at a later time", scheduledStep.scheduledAt(), greaterThan(scheduledAt));
+            return  scheduledStep.scheduledAt();
+        }, Long.class);
+
+        runScheduledSteps(Duration.ofDays(12));
 
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = session.getContext().getRealm();
@@ -800,12 +829,246 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
             ScheduledStep scheduledStep = stateProvider.getScheduledStep(workflow.getId(), user.getId());
             assertNotNull(scheduledStep, "A step should have been scheduled for the user " + user.getUsername());
             assertEquals(step.getId(), scheduledStep.stepId(), "The step should have been scheduled again");
+            assertThat("The step should have been scheduled again at a later time", scheduledStep.scheduledAt(), greaterThan(reScheduleAt));
         });
 
-        runScheduledSteps(Duration.ofDays(12));
 
         // Verify that there should be two emails sent
         assertEquals(2, findEmailsByRecipient(mailServer, "testuser@example.com").size());
+        mailServer.runCleanup();
+    }
+
+    @Test
+    public void testRestartFromPosition() {
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(ResourceOperationType.USER_ADDED.toString())
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
+                                .withConfig("test", "value")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(RestartWorkflowStepProviderFactory.ID)
+                                .withConfig(RestartWorkflowStepProviderFactory.CONFIG_POSITION, "1")
+                                .build()
+                ).build())) {
+            assertThat(response.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
+            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(),
+                    is("No scheduled step found if restarting at position 1"));
+        }
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(ResourceOperationType.USER_ADDED.toString())
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
+                                .withConfig("test", "value")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(RestartWorkflowStepProviderFactory.ID)
+                                .withConfig(RestartWorkflowStepProviderFactory.CONFIG_POSITION, "2")
+                                .build()
+                ).build())) {
+            assertThat(response.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
+            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(),
+                    is("No scheduled step found if restarting at position 2"));
+        }
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(ResourceOperationType.USER_ADDED.toString())
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
+                                .withConfig("first", "first")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
+                                .withConfig("second", "second")
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(RestartWorkflowStepProviderFactory.ID)
+                                .withConfig(RestartWorkflowStepProviderFactory.CONFIG_POSITION, "1")
+                                .build()
+                ).build()).close();
+
+        // create a new user - should bind the user to the workflow and setup the only step in the workflow
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("testuser@example.com").build()).close();
+
+        Long scheduleAt = runOnServer.fetch((FetchOnServer) session -> {
+            RealmModel realm = session.getContext().getRealm();
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            UserModel user = session.users().getUserByUsername(realm, "testuser");
+            Workflow workflow = provider.getWorkflows().toList().get(0);
+            WorkflowStep step = workflow.getSteps().toList().get(0);
+            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+            ScheduledStep scheduledStep = stateProvider.getScheduledStep(workflow.getId(), user.getId());
+            assertNotNull(scheduledStep, "A step should have been scheduled for the user " + user.getUsername());
+            assertEquals(step.getId(), scheduledStep.stepId(), "The step should have been scheduled again");
+            return  scheduledStep.scheduledAt();
+        }, Long.class);
+
+        runScheduledSteps(Duration.ofDays(6));
+
+        Long reScheduledAt = runOnServer.fetch((FetchOnServer) session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "testuser");
+            // Verify that the first attribute was set, and the second is not yet set
+            assertThat(user.getAttributes().get("first"), containsInAnyOrder("first"));
+            assertThat(user.getAttributes().get("second"), nullValue());
+
+            // remove the first attribute to verify it gets set again after restart
+            user.removeAttribute("first");
+
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            Workflow workflow = provider.getWorkflows().toList().get(0);
+            WorkflowStep step = workflow.getSteps().toList().get(2);
+            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+            ScheduledStep scheduledStep = stateProvider.getScheduledStep(workflow.getId(), user.getId());
+            assertNotNull(scheduledStep, "A step should have been scheduled for the user " + user.getUsername());
+            assertEquals(step.getId(), scheduledStep.stepId(), "The step should have been scheduled again");
+            assertThat("The step should have been scheduled again at a later time", scheduledStep.scheduledAt(), greaterThan(scheduleAt));
+            return scheduledStep.scheduledAt();
+        }, Long.class);
+
+        runScheduledSteps(Duration.ofDays(6));
+
+        Long reScheduledAtLast = runOnServer.fetch((FetchOnServer) session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "testuser");
+            // Verify that both attributes are set
+            assertThat(user.getAttributes().get("first"), containsInAnyOrder("first"));
+            assertThat(user.getAttributes().get("second"), containsInAnyOrder("second"));
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            Workflow workflow = provider.getWorkflows().toList().get(0);
+            WorkflowStep expectedStep = workflow.getSteps().toList().get(2);
+
+            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+            ScheduledStep scheduledStep = stateProvider.getScheduledStep(workflow.getId(), user.getId());
+            assertNotNull(scheduledStep, "A step should have been scheduled for the user " + user.getUsername());
+            assertEquals(expectedStep.getId(), scheduledStep.stepId(), "The step should have been scheduled again");
+            assertThat("The step should have been scheduled again at a later time", scheduledStep.scheduledAt(), greaterThan(reScheduledAt));
+            return scheduledStep.scheduledAt();
+        }, Long.class);
+
+        runScheduledSteps(Duration.ofDays(12));
+
+        // Verify that there should be one email sent, the first step should not have run again
+        assertEquals(1, findEmailsByRecipient(mailServer, "testuser@example.com").size());
+
+        runOnServer.run((RunOnServer) session -> {
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            Workflow workflow = provider.getWorkflows().toList().get(0);
+            WorkflowStep expectedStep = workflow.getSteps().toList().get(2);
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "testuser");
+            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+            ScheduledStep scheduledStep = stateProvider.getScheduledStep(workflow.getId(), user.getId());
+            assertNotNull(scheduledStep, "A step should have been scheduled for the user " + user.getUsername());
+            assertEquals(expectedStep.getId(), scheduledStep.stepId(), "The step should have been scheduled again");
+            assertThat("The step should have been scheduled again at a later time", scheduledStep.scheduledAt(), greaterThan(reScheduledAtLast));
+        });
+
+        mailServer.runCleanup();
+    }
+
+    @Test
+    public void testRestartFromLastStep() {
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(ResourceOperationType.USER_ADDED.toString())
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
+                                .withConfig("first", "first")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
+                                .withConfig("second", "second")
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(RestartWorkflowStepProviderFactory.ID)
+                                .withConfig(RestartWorkflowStepProviderFactory.CONFIG_POSITION, "2")
+                                .build()
+                ).build()).close();
+
+        // create a new user - should bind the user to the workflow and setup the only step in the workflow
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("testuser@example.com").build()).close();
+
+        Long scheduleAt = runOnServer.fetch((FetchOnServer) session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "testuser");
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            Workflow workflow = provider.getWorkflows().toList().get(0);
+            WorkflowStep step = workflow.getSteps().toList().get(0);
+            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+            ScheduledStep scheduledStep = stateProvider.getScheduledStep(workflow.getId(), user.getId());
+            assertNotNull(scheduledStep, "A step should have been scheduled for the user " + user.getUsername());
+            assertEquals(step.getId(), scheduledStep.stepId(), "The step should have been scheduled again");
+            return  scheduledStep.scheduledAt();
+        }, Long.class);
+
+        runScheduledSteps(Duration.ofDays(6));
+
+        Long reScheduledAt = runOnServer.fetch((FetchOnServer) session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "testuser");
+            // Verify that the first attribute was set, and the second is not yet set
+            assertThat(user.getAttributes().get("first"), containsInAnyOrder("first"));
+            assertThat(user.getAttributes().get("second"), nullValue());
+
+            // remove the first attribute to verify it gets set again after restart
+            user.removeAttribute("first");
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            Workflow workflow = provider.getWorkflows().toList().get(0);
+            WorkflowStep step = workflow.getSteps().toList().get(2);
+            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+            ScheduledStep scheduledStep = stateProvider.getScheduledStep(workflow.getId(), user.getId());
+            assertNotNull(scheduledStep, "A step should have been scheduled for the user " + user.getUsername());
+            assertEquals(step.getId(), scheduledStep.stepId(), "The step should have been scheduled again");
+            assertThat("The step should have been scheduled again at a later time", scheduledStep.scheduledAt(), greaterThan(scheduleAt));
+            return scheduledStep.scheduledAt();
+        }, Long.class);
+
+        runScheduledSteps(Duration.ofDays(6));
+
+        Long reScheduledAtLast = runOnServer.fetch((FetchOnServer) session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "testuser");
+            // Verify that first attribute is not set, and the second is set
+            assertThat(user.getAttributes().get("first"), nullValue());
+            assertThat(user.getAttributes().get("second"), containsInAnyOrder("second"));
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            Workflow workflow = provider.getWorkflows().toList().get(0);
+            WorkflowStep expectedStep = workflow.getSteps().toList().get(2);
+            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+            ScheduledStep scheduledStep = stateProvider.getScheduledStep(workflow.getId(), user.getId());
+            assertNotNull(scheduledStep, "A step should have been scheduled for the user " + user.getUsername());
+            assertEquals(expectedStep.getId(), scheduledStep.stepId(), "The step should have been scheduled again");
+            assertThat("The step should have been scheduled again at a later time", scheduledStep.scheduledAt(), greaterThan(reScheduledAt));
+            user.removeAttribute("second");
+            return scheduledStep.scheduledAt();
+        }, Long.class);
+
+        runScheduledSteps(Duration.ofDays(12));
+
+        // Verify that there should be one email sent, the first step should not have run again
+        assertEquals(1, findEmailsByRecipient(mailServer, "testuser@example.com").size());
+        runOnServer.run((RunOnServer) session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "testuser");
+            // Verify that the first attribute is not set, and the second is set again
+            assertThat(user.getAttributes().get("first"), nullValue());
+            assertThat(user.getAttributes().get("second"), containsInAnyOrder(("second")));
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            Workflow workflow = provider.getWorkflows().toList().get(0);
+            WorkflowStep expectedStep = workflow.getSteps().toList().get(2);
+            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+            ScheduledStep scheduledStep = stateProvider.getScheduledStep(workflow.getId(), user.getId());
+            assertNotNull(scheduledStep, "A step should have been scheduled for the user " + user.getUsername());
+            assertEquals(expectedStep.getId(), scheduledStep.stepId(), "The step should have been scheduled again");
+            assertThat("The step should have been scheduled again at a later time", scheduledStep.scheduledAt(), greaterThan(reScheduledAtLast));
+        });
         mailServer.runCleanup();
     }
 
@@ -917,8 +1180,8 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
                                 .withConfig("reason", "compliance requirement")
-                                .withConfig("custom_message", "Your account requires immediate attention due to new compliance policies.")
-                                .withConfig("custom_subject_key", "customComplianceSubject")
+                                .withConfig("message", "${user.firstName}, your account requires immediate attention due to new compliance policies.")
+                                .withConfig("subject", "customComplianceSubject")
                                 .build(),
                         WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(7))

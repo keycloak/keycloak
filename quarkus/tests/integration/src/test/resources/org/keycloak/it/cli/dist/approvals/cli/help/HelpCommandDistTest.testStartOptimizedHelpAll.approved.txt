@@ -267,7 +267,10 @@ HTTP(S):
                      Enables the HTTP listener. Enabled by default in development mode. Typically
                        not enabled in production unless the server is fronted by a TLS termination
                        proxy. Default: false.
---http-host <host>   The HTTP Host. Default: 0.0.0.0.
+--http-host <host>   The HTTP Host. By default, Keycloak binds to all network addresses (0.0.0.0),
+                       which means the server may be accessible from other machines on your
+                       network. For local development, you can restrict access to localhost only by
+                       setting this to 127.0.0.1. Default: 0.0.0.0.
 --http-max-queued-requests <requests>
                      Maximum number of queued HTTP requests. Use this to shed load in an overload
                        situation. Excess requests will return a "503 Server not Available" response.
@@ -560,6 +563,26 @@ Logging:
                      Set the Syslog type used to format the sent message. Possible values are:
                        rfc5424, rfc3164. Default: rfc5424. Available only when Syslog is activated.
 
+Telemetry (OpenTelemetry):
+
+--telemetry-endpoint <url>
+                     OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
+                       Available only when any of available OpenTelemetry components (Traces) is
+                       turned on.
+--telemetry-protocol <protocol>
+                     OpenTelemetry protocol used for the communication between server and
+                       OpenTelemetry collector. Possible values are: grpc, http/protobuf. Default:
+                       grpc. Available only when any of available OpenTelemetry components (Traces)
+                       is turned on.
+--telemetry-resource-attributes <attributes>
+                     OpenTelemetry resource attributes characterize the telemetry producer. Values
+                       in format 'key1=val1,key2=val2'. Available only when any of available
+                       OpenTelemetry components (Traces) is turned on.
+--telemetry-service-name <name>
+                     OpenTelemetry service name. Takes precedence over 'service.name' defined in
+                       the 'telemetry-resource-attributes' property. Default: keycloak. Available
+                       only when any of available OpenTelemetry components (Traces) is turned on.
+
 Tracing:
 
 --tracing-compression <method>
@@ -567,8 +590,9 @@ Tracing:
                        compression is disabled. Possible values are: gzip, none. Default: none.
                        Available only when Tracing is enabled.
 --tracing-endpoint <url>
-                     OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
-                       Available only when Tracing is enabled.
+                     OpenTelemetry endpoint to connect to for traces. If not given, the value is
+                       inherited from the 'telemetry-endpoint' option. Default: http://localhost:
+                       4317. Available only when Tracing is enabled.
 --tracing-header-<header> <value>
                      OpenTelemetry header that will be part of the exporter request (mainly useful
                        for providing Authorization header). Check the documentation on how to set
@@ -578,21 +602,29 @@ Tracing:
                      Enables the OpenTelemetry tracing for embedded Infinispan. Default: true.
                        Available only when tracing and embedded Infinispan is enabled.
 --tracing-protocol <protocol>
-                     OpenTelemetry protocol used for the telemetry data. Possible values are: grpc,
+                     OpenTelemetry protocol used for the telemetry data. If not given, the value is
+                       inherited from the 'telemetry-protocol' option. Possible values are: grpc,
                        http/protobuf. Default: grpc. Available only when Tracing is enabled.
 --tracing-resource-attributes <attributes>
-                     OpenTelemetry resource attributes present in the exported trace to
+                     DEPRECATED. OpenTelemetry resource attributes present in the exported trace to
                        characterize the telemetry producer. Values in format 'key1=val1,key2=val2'.
-                       For more information, check the Tracing guide. Available only when Tracing
-                       is enabled.
+                       If not given, the value is inherited from the
+                       'telemetry-resource-attributes' option. For more information, check the
+                       Tracing guide. Available only when Tracing is enabled. Resource attributes
+                       are not directly related to Tracing and you should use the Telemetry option
+                       which takes precedence. Use the following option instead:
+                       telemetry-resource-attributes.
 --tracing-sampler-ratio <ratio>
                      OpenTelemetry sampler ratio. Probability that a span will be sampled. Expected
                        double value in interval [0,1]. Default: 1.0. Available only when Tracing is
                        enabled.
 --tracing-service-name <name>
-                     OpenTelemetry service name. Takes precedence over 'service.name' defined in
-                       the 'tracing-resource-attributes' property. Default: keycloak. Available
-                       only when Tracing is enabled.
+                     DEPRECATED. OpenTelemetry service name. Takes precedence over 'service.name'
+                       defined in the 'tracing-resource-attributes' property. If not given, the
+                       value is inherited from the 'telemetry-service-name' option. Default:
+                       keycloak. Available only when Tracing is enabled. Service name is not
+                       directly related to Tracing and you should use the Telemetry option which
+                       takes precedence. Use the following option instead: telemetry-service-name.
 
 Events:
 

@@ -116,7 +116,7 @@ public class Workflow {
 
     public Stream<WorkflowStep> getSteps() {
         return realm.getComponentsStream(getId(), WorkflowStepProvider.class.getName())
-                .map(WorkflowStep::new).sorted();
+                .map((c) -> new WorkflowStep(session, c)).sorted();
     }
 
     /**

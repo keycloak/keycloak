@@ -114,8 +114,10 @@ public class SupportedCredentialConfiguration {
         CredentialDefinition credentialDefinition = CredentialDefinition.parse(credentialScope);
         credentialConfiguration.setCredentialDefinition(credentialDefinition);
 
-         ProofTypesSupported proofTypesSupported = ProofTypesSupported.parse(keycloakSession,
-                                                                             globalSupportedSigningAlgorithms);
+        KeyAttestationsRequired keyAttestationsRequired = KeyAttestationsRequired.parse(credentialScope);
+        ProofTypesSupported proofTypesSupported = ProofTypesSupported.parse(keycloakSession,
+                                                                            keyAttestationsRequired,
+                                                                            globalSupportedSigningAlgorithms);
          credentialConfiguration.setProofTypesSupported(proofTypesSupported);
 
         List<String> signingAlgsSupported = credentialScope.getSigningAlgsSupported();
