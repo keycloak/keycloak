@@ -1,5 +1,6 @@
 package org.keycloak.testframework.events;
 
+import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
 
@@ -34,6 +35,16 @@ public class EventAssertion {
 
     public EventAssertion type(EventType type) {
         Assertions.assertEquals(type, EventType.valueOf(event.getType()));
+        return this;
+    }
+
+    public EventAssertion hasSessionId() {
+        MatcherAssert.assertThat(event.getSessionId(), EventMatchers.isSessionId());
+        return this;
+    }
+
+    public EventAssertion isCodeId() {
+        MatcherAssert.assertThat(event.getDetails().get(Details.CODE_ID), EventMatchers.isCodeId());
         return this;
     }
 

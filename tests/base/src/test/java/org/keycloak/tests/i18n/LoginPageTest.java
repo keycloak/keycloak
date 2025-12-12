@@ -210,6 +210,7 @@ public class LoginPageTest {
 
         // Update password
         changePasswordPage.changePassword("password", "password");
+        changePasswordPage.submit();
 
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
     }
@@ -430,6 +431,8 @@ public class LoginPageTest {
         saveLocalizationText(locale, realmLocalizationMessageKey, realmLocalizationMessageValue);
         String nonExistingUrl = oauth.loginForm().build().split("protocol")[0] + "incorrect-path";
         driver.open(nonExistingUrl);
+
+        errorPage.assertCurrent();
 
         assertThat(driver.page().getPageSource(), containsString(realmLocalizationMessageValue));
     }

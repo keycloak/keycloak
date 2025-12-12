@@ -251,6 +251,7 @@ public class EmailTest {
         loginPage.resetPassword();
         resetPasswordPage.assertCurrent();
         resetPasswordPage.changePassword("basic-user");
+        resetPasswordPage.submit();
     }
 
     private void verifyResetPassword(String expectedSubject, String expectedTextBodyContent, String expectedHtmlBodyContent, int expectedMsgCount)
@@ -303,6 +304,7 @@ public class EmailTest {
 
         loginPasswordUpdatePage.selectLanguage("English");
         loginPasswordUpdatePage.changePassword("pass", "pass");
+        loginPasswordUpdatePage.submit();
 
         assertThat(infoPage.getInfo(), containsString("Your account has been updated."));
 
@@ -328,6 +330,7 @@ public class EmailTest {
         driver.findElement(By.linkText("Passwort vergessen?")).click();
         assertEquals("Deutsch", resetPasswordPage.getSelectedLanguage());
         resetPasswordPage.changePassword("basic-user");
+        resetPasswordPage.submit();
 
         // Ensure that page is still in german (after authenticationSession was forked on server). The emailSentMessage should be also displayed in german
         loginPage.assertCurrent();

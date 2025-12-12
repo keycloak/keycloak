@@ -197,6 +197,7 @@ public class UserEmailTest extends AbstractUserTest {
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
+        passwordUpdatePage.submit();
 
         assertThat(driver.getCurrentUrl(), Matchers.containsString("client_id=" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID));
 
@@ -243,6 +244,7 @@ public class UserEmailTest extends AbstractUserTest {
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
+        passwordUpdatePage.submit();
 
         assertThat(driver.getCurrentUrl(), Matchers.containsString("client_id=" + SystemClientUtil.SYSTEM_CLIENT_ID));
 
@@ -326,6 +328,7 @@ public class UserEmailTest extends AbstractUserTest {
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
+        passwordUpdatePage.submit();
 
         assertEquals("Your account has been updated.", infoPage.getInfo());
 
@@ -363,6 +366,7 @@ public class UserEmailTest extends AbstractUserTest {
             passwordUpdatePage.assertCurrent();
 
             passwordUpdatePage.changePassword("new-pass" + i, "new-pass" + i);
+            passwordUpdatePage.submit();
             i++;
 
             assertEquals("Your account has been updated.", infoPage.getInfo());
@@ -406,6 +410,7 @@ public class UserEmailTest extends AbstractUserTest {
             passwordUpdatePage.assertCurrent();
 
             passwordUpdatePage.changePassword("new-pass" + i, "new-pass" + i);
+            passwordUpdatePage.submit();
             i++;
 
             assertEquals("Your account has been updated.", infoPage.getInfo());
@@ -455,6 +460,7 @@ public class UserEmailTest extends AbstractUserTest {
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
+        passwordUpdatePage.submit();
 
         assertEquals("Your account has been updated.", infoPage.getInfo());
     }
@@ -553,6 +559,7 @@ public class UserEmailTest extends AbstractUserTest {
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
+        passwordUpdatePage.submit();
 
         assertEquals("Your account has been updated.", infoPage.getInfo());
 
@@ -613,6 +620,7 @@ public class UserEmailTest extends AbstractUserTest {
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
+        passwordUpdatePage.submit();
 
         assertEquals("Your account has been updated.", driver.findElement(By.id("kc-page-title")).getText());
 
@@ -695,6 +703,7 @@ public class UserEmailTest extends AbstractUserTest {
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
+        passwordUpdatePage.submit();
 
         assertEquals("Your account has been updated.", driver.findElement(By.id("kc-page-title")).getText());
 
