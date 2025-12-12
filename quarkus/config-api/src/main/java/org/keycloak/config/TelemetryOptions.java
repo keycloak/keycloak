@@ -33,4 +33,30 @@ public class TelemetryOptions {
             .category(OptionCategory.TELEMETRY)
             .description("OpenTelemetry resource attributes characterize the telemetry producer. Values in format 'key1=val1,key2=val2'.")
             .build();
+
+    // Telemetry Logs
+    public static final Option<Boolean> TELEMETRY_LOGS_ENABLED = new OptionBuilder<>("telemetry-logs-enabled", Boolean.class)
+            .category(OptionCategory.TELEMETRY)
+            .description("Enables exporting logs to a destination handling telemetry data (OpenTelemetry Logs).")
+            .defaultValue(Boolean.FALSE)
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> TELEMETRY_LOGS_ENDPOINT = new OptionBuilder<>("telemetry-logs-endpoint", String.class)
+            .category(OptionCategory.TELEMETRY)
+            .description("Telemetry (OpenTelemetry) endpoint to export logs to. If not given, the value is inherited from the '%s' option.".formatted(TELEMETRY_ENDPOINT.getKey()))
+            .build();
+
+    public static final Option<String> TELEMETRY_LOGS_PROTOCOL = new OptionBuilder<>("telemetry-logs-protocol", String.class)
+            .category(OptionCategory.TELEMETRY)
+            .description("Telemetry (OpenTelemetry) protocol used for exporting logs. If not given, the value is inherited from the '%s' option.".formatted(TELEMETRY_PROTOCOL.getKey()))
+            .expectedValues("grpc", "http/protobuf")
+            .build();
+
+    public static final Option<LoggingOptions.Level> TELEMETRY_LOGS_LEVEL = new OptionBuilder<>("telemetry-logs-level", LoggingOptions.Level.class)
+            .category(OptionCategory.TELEMETRY)
+            .description("The most verbose log level exported to the telemetry endpoint. For more information, check the Telemetry guide.")
+            .defaultValue(LoggingOptions.Level.ALL)
+            .caseInsensitiveExpectedValues(true)
+            .build();
 }

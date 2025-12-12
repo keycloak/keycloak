@@ -303,4 +303,14 @@ public class LoggingDistTest {
                 .statusCode(200);
         cliResult.assertNoMessage("http://127.0.0.1:8080/realms/master/clients/account/redirect");
     }
+
+    // Telemetry Logs
+    @Test
+    @Launch({"start-dev", "--feature-opentelemetry-logs=enabled", "--telemetry-logs-enabled=true", "--log-level=io.opentelemetry:fine"})
+    void telemetryLogsEnabled(CLIResult cliResult) {
+        cliResult.assertStartedDevMode();
+        cliResult.assertMessage("opentelemetry");
+        cliResult.assertMessage("service.name=\"keycloak\"");
+        cliResult.assertMessage("Failed to export LogsRequestMarshaler.");
+    }
 }
