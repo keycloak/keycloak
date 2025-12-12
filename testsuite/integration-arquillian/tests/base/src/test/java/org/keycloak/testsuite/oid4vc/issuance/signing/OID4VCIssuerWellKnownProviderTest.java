@@ -59,6 +59,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.JWTVCIssuerMetadata;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
@@ -239,6 +240,57 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to process JWT metadata response: " + e.getMessage(), e);
+        }
+    }
+
+    @Test
+    public void shouldServeJwtVcMetadataAtSpecCompliantEndpoint() {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            String realm = TEST_REALM_NAME;
+            String wellKnownUri = getSpecCompliantRealmMetadataPath(realm);
+            String expectedIssuer = getRealmPath(realm);
+
+            HttpGet get = new HttpGet(wellKnownUri);
+            get.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+
+            try (CloseableHttpResponse response = httpClient.execute(get)) {
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+                String json = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+
+                JWTVCIssuerMetadata metadata = JsonSerialization.readValue(json, JWTVCIssuerMetadata.class);
+                assertNotNull(metadata);
+                assertEquals(expectedIssuer, metadata.getIssuer());
+                assertNotNull("JWKS must be present", metadata.getJwks());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to process spec-compliant JWT VC issuer metadata response: " + e.getMessage(), e);
+        }
+    }
+
+    @Test
+    public void shouldKeepLegacyJwtVcEndpointWithDeprecationHeaders() {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            String realm = TEST_REALM_NAME;
+            String wellKnownUri = getLegacyJwtVcRealmMetadataPath(realm); // legacy JWT VC path
+
+            HttpGet get = new HttpGet(wellKnownUri);
+            get.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+
+            try (CloseableHttpResponse response = httpClient.execute(get)) {
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+                Header warning = response.getFirstHeader("Warning");
+                Header deprecation = response.getFirstHeader("Deprecation");
+                Header link = response.getFirstHeader("Link");
+                assertNotNull("Warning header should be present", warning);
+                assertTrue("Warning header should mention deprecated endpoint", warning.getValue().contains("Deprecated endpoint"));
+                assertNotNull("Deprecation header should be present", deprecation);
+                assertEquals("true", deprecation.getValue());
+                assertNotNull("Link header should point to successor", link);
+                assertTrue("Link header should reference spec-compliant endpoint",
+                        link.getValue().contains(getSpecCompliantRealmMetadataPath(realm)));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to process legacy JWT VC issuer metadata response: " + e.getMessage(), e);
         }
     }
 
