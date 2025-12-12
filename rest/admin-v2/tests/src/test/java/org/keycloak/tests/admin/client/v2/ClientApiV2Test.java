@@ -25,7 +25,7 @@ import jakarta.ws.rs.core.MediaType;
 import org.keycloak.admin.api.client.ClientApi;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
-import org.keycloak.representations.admin.v2.ClientRepresentation;
+import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
@@ -85,7 +85,7 @@ public class ClientApiV2Test {
         setAuthHeader(request);
         try (var response = client.execute(request)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
-            ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertEquals("account", client.getClientId());
         }
     }
@@ -107,7 +107,7 @@ public class ClientApiV2Test {
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, ClientApi.CONTENT_TYPE_MERGE_PATCH);
 
-        ClientRepresentation patch = new ClientRepresentation();
+        OIDCClientRepresentation patch = new OIDCClientRepresentation();
         patch.setDescription("I'm also a description");
 
         request.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
@@ -115,7 +115,7 @@ public class ClientApiV2Test {
         try (var response = client.execute(request)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
 
-            ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertEquals("I'm also a description", client.getDescription());
         }
     }
@@ -126,7 +126,7 @@ public class ClientApiV2Test {
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
-        ClientRepresentation rep = new ClientRepresentation();
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setClientId("other");
 
         request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
@@ -142,7 +142,7 @@ public class ClientApiV2Test {
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
-        ClientRepresentation rep = new ClientRepresentation();
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setEnabled(true);
         rep.setClientId("other");
         rep.setDescription("I'm new");
@@ -151,7 +151,7 @@ public class ClientApiV2Test {
 
         try (var response = client.execute(request)) {
             assertEquals(201, response.getStatusLine().getStatusCode());
-            ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertEquals("I'm new", client.getDescription());
         }
 
@@ -160,7 +160,7 @@ public class ClientApiV2Test {
 
         try (var response = client.execute(request)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
-            ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertEquals("I'm updated", client.getDescription());
         }
     }
@@ -171,7 +171,7 @@ public class ClientApiV2Test {
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
-        ClientRepresentation rep = new ClientRepresentation();
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setEnabled(true);
         rep.setClientId("client-123");
         rep.setDescription("I'm new");
@@ -180,7 +180,7 @@ public class ClientApiV2Test {
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(),is(201));
-            ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertThat(client.getEnabled(),is(true));
             assertThat(client.getClientId(),is("client-123"));
             assertThat(client.getDescription(),is("I'm new"));
@@ -197,7 +197,7 @@ public class ClientApiV2Test {
         setAuthHeader(createRequest);
         createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
-        ClientRepresentation rep = new ClientRepresentation();
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setClientId("to-delete");
         rep.setEnabled(true);
 
@@ -225,13 +225,14 @@ public class ClientApiV2Test {
     }
 
     @Test
-    public void clientRepresentationValidation() throws Exception {
+    public void OIDCClientRepresentationValidation() throws Exception {
         HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
         request.setEntity(new StringEntity("""
                 {
+                    "protocol": "openid-connect",
                     "displayName": "something",
                     "appUrl": "notUrl"
                 }
@@ -250,6 +251,7 @@ public class ClientApiV2Test {
 
         request.setEntity(new StringEntity("""
                 {
+                    "protocol": "openid-connect",
                     "clientId": "some-client",
                     "displayName": "something",
                     "appUrl": "notUrl",
@@ -285,12 +287,12 @@ public class ClientApiV2Test {
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
-        ClientRepresentation rep = getTestingFullClientRep();
+        OIDCClientRepresentation rep = getTestingFullClientRep();
         request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
         try (var response = client.execute(request)) {
             assertEquals(201, response.getStatusLine().getStatusCode());
-            ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertThat(client, is(rep));
         }
     }
@@ -301,8 +303,8 @@ public class ClientApiV2Test {
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
-        ClientRepresentation rep = getTestingFullClientRep();
-        rep.getServiceAccount().setRoles(Set.of("non-existing", "bad-role"));
+        OIDCClientRepresentation rep = getTestingFullClientRep();
+        rep.setServiceAccountRoles(Set.of("non-existing", "bad-role"));
         request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
         try (var response = client.execute(request)) {
@@ -318,7 +320,7 @@ public class ClientApiV2Test {
         setAuthHeader(createRequest);
         createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
-        ClientRepresentation rep = new ClientRepresentation();
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setClientId("declarative-role-test");
         rep.setEnabled(true);
         rep.setRoles(Set.of("role1", "role2", "role3"));
@@ -327,7 +329,7 @@ public class ClientApiV2Test {
 
         try (var response = client.execute(createRequest)) {
             assertEquals(201, response.getStatusLine().getStatusCode());
-            ClientRepresentation created = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            OIDCClientRepresentation created = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertThat(created.getRoles(), is(Set.of("role1", "role2", "role3")));
         }
 
@@ -341,7 +343,7 @@ public class ClientApiV2Test {
 
         try (var response = client.execute(updateRequest)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
-            ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            OIDCClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertThat(updated.getRoles(), is(Set.of("new-role1", "new-role2")));
         }
 
@@ -351,7 +353,7 @@ public class ClientApiV2Test {
 
         try (var response = client.execute(updateRequest)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
-            ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            OIDCClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertThat(updated.getRoles(), is(Set.of("new-role1", "add-role3", "add-role4")));
         }
 
@@ -361,7 +363,7 @@ public class ClientApiV2Test {
 
         try (var response = client.execute(updateRequest)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
-            ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            OIDCClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertThat(updated.getRoles(), is(Set.of("new-role1", "add-role3", "add-role4")));
         }
 
@@ -371,7 +373,7 @@ public class ClientApiV2Test {
 
         try (var response = client.execute(updateRequest)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
-            ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            OIDCClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertThat(updated.getRoles(), is(Set.of()));
         }
     }
@@ -383,21 +385,19 @@ public class ClientApiV2Test {
         setAuthHeader(createRequest);
         createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
-        ClientRepresentation rep = new ClientRepresentation();
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setClientId("sa-declarative-test");
         rep.setEnabled(true);
 
-        var serviceAccount = new ClientRepresentation.ServiceAccount();
-        serviceAccount.setEnabled(true);
-        serviceAccount.setRoles(Set.of("default-roles-master", "offline_access"));
-        rep.setServiceAccount(serviceAccount);
+        rep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT));
+        rep.setServiceAccountRoles(Set.of("default-roles-master", "offline_access"));
 
         createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
         try (var response = client.execute(createRequest)) {
             assertEquals(201, response.getStatusLine().getStatusCode());
-            ClientRepresentation created = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
-            assertThat(created.getServiceAccount().getRoles(), is(Set.of("default-roles-master", "offline_access")));
+            OIDCClientRepresentation created = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
+            assertThat(created.getServiceAccountRoles(), is(Set.of("default-roles-master", "offline_access")));
         }
 
         // 2. Update with completely new roles - should remove old ones and add new ones
@@ -405,63 +405,55 @@ public class ClientApiV2Test {
         setAuthHeader(updateRequest);
         updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
-        serviceAccount.setRoles(Set.of("uma_authorization", "offline_access"));
-        rep.setServiceAccount(serviceAccount);
+        rep.setServiceAccountRoles(Set.of("uma_authorization", "offline_access"));
         updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
         try (var response = client.execute(updateRequest)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
-            ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
-            assertThat(updated.getServiceAccount().getRoles(), is(Set.of("uma_authorization", "offline_access")));
+            OIDCClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
+            assertThat(updated.getServiceAccountRoles(), is(Set.of("uma_authorization", "offline_access")));
         }
 
         // 3. Update with partial overlap - keep some, add some, remove some
-        serviceAccount.setRoles(Set.of("offline_access", "default-roles-master"));
-        rep.setServiceAccount(serviceAccount);
+        rep.setServiceAccountRoles(Set.of("offline_access", "default-roles-master"));
         updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
         try (var response = client.execute(updateRequest)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
-            ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
-            assertThat(updated.getServiceAccount().getRoles(), is(Set.of("offline_access", "default-roles-master")));
+            OIDCClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
+            assertThat(updated.getServiceAccountRoles(), is(Set.of("offline_access", "default-roles-master")));
         }
 
         // 4. Update with same roles - should be idempotent
-        serviceAccount.setRoles(Set.of("offline_access", "default-roles-master"));
-        rep.setServiceAccount(serviceAccount);
+        rep.setServiceAccountRoles(Set.of("offline_access", "default-roles-master"));
         updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
         try (var response = client.execute(updateRequest)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
-            ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
-            assertThat(updated.getServiceAccount().getRoles(), is(Set.of("offline_access", "default-roles-master")));
+            OIDCClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
+            assertThat(updated.getServiceAccountRoles(), is(Set.of("offline_access", "default-roles-master")));
         }
 
         // 5. Update with empty set - should remove all roles
-        serviceAccount.setRoles(Set.of());
-        rep.setServiceAccount(serviceAccount);
+        rep.setServiceAccountRoles(Set.of());
         updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
         try (var response = client.execute(updateRequest)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
-            ClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
-            assertThat(updated.getServiceAccount().getRoles(), is(Set.of()));
+            OIDCClientRepresentation updated = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
+            assertThat(updated.getServiceAccountRoles(), is(Set.of()));
         }
     }
 
-    private ClientRepresentation getTestingFullClientRep() {
-        var rep = new ClientRepresentation();
+    private OIDCClientRepresentation getTestingFullClientRep() {
+        var rep = new OIDCClientRepresentation();
         rep.setClientId("my-client");
         rep.setDisplayName("My Client");
         rep.setDescription("This is My Client");
-        rep.setProtocol(ClientRepresentation.OIDC);
         rep.setEnabled(true);
         rep.setAppUrl("http://localhost:3000");
-        rep.setAppRedirectUrls(Set.of("http://localhost:3000", "http://localhost:3001"));
-        // no login flows -> only flow overrides map
-        // rep.setLoginFlows(Set.of("browser"));
-        var auth = new ClientRepresentation.Auth();
-        auth.setEnabled(true);
+        rep.setRedirectUris(Set.of("http://localhost:3000", "http://localhost:3001"));
+        var auth = new OIDCClientRepresentation.Auth();
         auth.setMethod("client-jwt");
         auth.setSecret("secret-1234");
         // no certificate inside the old rep
@@ -469,11 +461,9 @@ public class ClientApiV2Test {
         rep.setAuth(auth);
         rep.setWebOrigins(Set.of("http://localhost:4000", "http://localhost:4001"));
         rep.setRoles(Set.of("view-consent", "manage-account"));
-        var serviceAccount = new ClientRepresentation.ServiceAccount();
-        serviceAccount.setEnabled(true);
+        rep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT));
         // TODO when roles are not set and SA is enabled, the default role 'default-roles-master' for the SA is used for the master realm
-        serviceAccount.setRoles(Set.of("default-roles-master"));
-        rep.setServiceAccount(serviceAccount);
+        rep.setServiceAccountRoles(Set.of("default-roles-master"));
         // not implemented yet
         // rep.setAdditionalFields(Map.of("key1", "val1", "key2", "val2"));
         return rep;
