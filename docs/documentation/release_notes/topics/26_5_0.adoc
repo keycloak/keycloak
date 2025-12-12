@@ -36,6 +36,15 @@ In some situation you might want to avoid it, as the calling client, for example
 
 You can now prevent this by disabling *Include in OpenID Provider Metadata*.
 
+== JWT Authorization Grant new feature
+
+{project_name} 26.5 introduces a new feature called JWT Authorization Grant, which adds support for https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523] to use external signed JWT assertions to request OAuth 2.0 access tokens.
+
+To accept signed JWT assertions, a trust relationship must be established between the external provider and {project_name}. This trust relationship can be configured through an identity provider in a dedicated section of the OpenID Connect v1.0 identity provider, or through the new JWT Authorization Grant identity provider.
+
+JWT Authorization Grant is recommended as an alternative to link:{securing_apps_base_link}/token-exchange#_external-token-to-internal-token-exchange[External to internal token exchange V1].
+This feature is in preview, and additional details are available in the link:{securing_apps_base_link}/jwt-authorization-grant[dedicated documentation].
+
 = Administration
 
 ////
@@ -129,3 +138,13 @@ MDC enables Keycloak to enrich log entries with contextual information such as r
 
 For more details, see the https://www.keycloak.org/server/logging#_adding_context_for_log_messages[Adding context for log messages] guide.
 
+== New centralized telemetry options
+
+{project_name} now provides centralized telemetry configuration options that can be shared across all telemetry (OpenTelemetry) components - traces, with future support planned for logs and metrics.
+Individual components can override these global settings when needed.
+
+New options: `telemetry-endpoint`, `telemetry-protocol`, `telemetry-service-name`, and `telemetry-resource-attributes`.
+
+*Deprecation:* The `tracing-service-name` and `tracing-resource-attributes` options are now deprecated in favor of `telemetry-service-name` and `telemetry-resource-attributes`.
+
+For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.

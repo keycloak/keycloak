@@ -105,7 +105,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
         checkFromAddress(config.get("from"), isAllowUTF8(config));
     }
 
-    private Properties buildEmailProperties(Map<String, String> config, String from) throws EmailException {
+    Properties buildEmailProperties(Map<String, String> config, String from) throws EmailException {
         Properties props = new Properties();
 
         if (config.containsKey("host")) {
@@ -142,9 +142,9 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             setupTruststore(props);
         }
 
-        props.setProperty("mail.smtp.timeout", "10000");
-        props.setProperty("mail.smtp.connectiontimeout", "10000");
-        props.setProperty("mail.smtp.writetimeout", "10000");
+        props.setProperty("mail.smtp.timeout", config.getOrDefault("timeout", "10000"));
+        props.setProperty("mail.smtp.connectiontimeout", config.getOrDefault("connectionTimeout", "10000"));
+        props.setProperty("mail.smtp.writetimeout", config.getOrDefault("writeTimeout", "10000"));
 
         String envelopeFrom = config.get("envelopeFrom");
         if (isNotBlank(envelopeFrom)) {

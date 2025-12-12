@@ -1,0 +1,65 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Centralize your observability stack with OpenTelemetry"
+summary="Learn about OpenTelemetry integration for centralized observability and telemetry data.">
+
+https://opentelemetry.io/docs/what-is-opentelemetry/[OpenTelemetry] (OTel) is an open-source observability framework designed to provide consistent and reliable ways to collect telemetry data across distributed systems.
+It is a project under the https://www.cncf.io/projects/opentelemetry/[Cloud Native Computing Foundation (CNCF)] as an incubating project.
+Its goal is to provide a unified standard and toolset for instrumenting, generating, and exporting telemetry data from modern applications, making it easier to monitor, debug, and understand complex services.
+
+The goal of {project_name} is to support OpenTelemetry Logs, Metrics, and Traces to create a centralized observability stack without any additional deployment overhead.
+
+== General options
+{project_name} provides support for global settings of telemetry data export.
+It means that you can configure connection parameters to a single https://opentelemetry.io/docs/collector/[OpenTelemetry collector] that will be used for all supported components.
+
+In order to have OpenTelemetry enabled, at least one component needs to be turned on, for example <<traces, Traces>>.
+
+NOTE: The OpenTelemetry feature is _enabled_ by default. Disable the feature in order to disable OpenTelemetry components.
+
+=== Endpoint
+You can configure the OpenTelemetry collector's global endpoint that is shared across all components by using the `telemetry-endpoint` option.
+The default value is `+http://localhost:4317+`.
+
+You can change the endpoint via CLI as follows:
+
+<@kc.start parameters="--telemetry-endpoint=http://my-otel-endpoint:4317"/>
+
+=== Service name
+You can configure the global OpenTelemetry service name used for identifying the exporter of the telemetry data.
+The default service name is `keycloak`, specified via the `telemetry-service-name` property, which takes precedence over `service.name` defined in the `telemetry-resource-attributes` property.
+
+You can change the service name via CLI as follows:
+
+<@kc.start parameters="--telemetry-service-name=my-keycloak-iam"/>
+
+=== Protocol
+You can configure the global OpenTelemetry transport protocol used as a communication channel between {project_name} and the OpenTelemetry collector.
+The default value is `grpc`.
+
+{project_name} supports these communication protocols:
+
+<@opts.expectedValues option="telemetry-protocol"/>
+
+You can change the protocol via CLI as follows:
+
+<@kc.start parameters="--telemetry-protocol=http/protobuf"/>
+
+== Traces
+
+See the https://www.keycloak.org/observability/tracing[Root cause analysis with tracing guide].
+
+You can override the global OpenTelemetry settings via the Tracing options if you want to export traces to a different OpenTelemetry collector.
+
+<@opts.printRelevantOptions includedOptions="telemetry-*">
+
+=== Traces
+<@opts.includeOptions includedOptions="tracing-enabled tracing-endpoint tracing-protocol tracing-service-name tracing-resource-attributes"/>
+
+</@opts.printRelevantOptions>
+
+</@tmpl.guide>

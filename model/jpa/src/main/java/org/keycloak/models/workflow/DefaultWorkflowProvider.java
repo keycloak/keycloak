@@ -235,8 +235,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
     }
 
     private void processEvent(Stream<Workflow> workflows, WorkflowEvent event) {
-        Map<String, ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByResource(event.getResourceId())
-                .collect(Collectors.toMap(ScheduledStep::workflowId, Function.identity()));
+        Map<String, ScheduledStep>[] scheduledSteps = new Map[] { null };
 
         workflows.forEach(workflow -> {
             if (!workflow.isEnabled()) {
@@ -247,8 +246,19 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
             EventBasedWorkflow provider = new EventBasedWorkflow(session, getWorkflowComponent(workflow.getId()));
 
             try {
-                ScheduledStep scheduledStep = scheduledSteps.get(workflow.getId());
+                if (!provider.supports(event.getResourceType())) {
+                    // Prevents loading of scheduled steps when this resource type is not supported for the workflow
+                    return;
+                }
+
                 DefaultWorkflowExecutionContext context = new DefaultWorkflowExecutionContext(session, workflow, event);
+
+                if (scheduledSteps[0] == null) {
+                    // Lazily loading the current steps for this resource
+                    scheduledSteps[0] = stateProvider.getScheduledStepsByResource(event.getResourceId())
+                            .collect(Collectors.toMap(ScheduledStep::workflowId, Function.identity()));
+                }
+                ScheduledStep scheduledStep = scheduledSteps[0].get(workflow.getId());
 
                 // if workflow is not active for the resource, check if the provider allows activating based on the event
                 if (scheduledStep == null) {

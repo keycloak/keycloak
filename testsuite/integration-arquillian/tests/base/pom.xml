@@ -304,7 +304,7 @@
                                     <includes>
                                         <include>wildfly-config.xml</include>
                                         <include>password-blacklists/**</include>
-                                        <include>log4j.properties</include>
+                                        <include>logging.properties</include>
                                         <include>vault/**</include>
                                         <include>firefox-cookies-prefs.js</include>
                                     </includes>

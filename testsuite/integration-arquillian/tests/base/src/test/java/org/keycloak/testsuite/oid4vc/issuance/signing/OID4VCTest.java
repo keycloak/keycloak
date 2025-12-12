@@ -641,13 +641,23 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 													  KeyWrapper attestationKey,
 													  JWK proofJwk,
 													  String cNonce) {
-		return createValidAttestationJwt(session, attestationKey, List.of(proofJwk), cNonce);
-	}
+        return createValidAttestationJwt(session, attestationKey, List.of(proofJwk), cNonce,
+                AttestationValidatorUtil.ATTESTATION_JWT_TYP);
+    }
 
 	protected static String createValidAttestationJwt(KeycloakSession session,
 													  KeyWrapper attestationKey,
 													  List<JWK> proofJwks,
 													  String cNonce) {
+        return createValidAttestationJwt(session, attestationKey, proofJwks, cNonce,
+                AttestationValidatorUtil.ATTESTATION_JWT_TYP);
+    }
+
+    protected static String createValidAttestationJwt(KeycloakSession session,
+                                                      KeyWrapper attestationKey,
+                                                      List<JWK> proofJwks,
+                                                      String cNonce,
+                                                      String typ) {
 		try {
 			KeyAttestationJwtBody payload = new KeyAttestationJwtBody();
 			payload.setIat((long) TIME_PROVIDER.currentTimeSeconds());
@@ -657,7 +667,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 			payload.setUserAuthentication(List.of(KeyAttestationResistanceLevels.HIGH));
 
 			return new JWSBuilder()
-					.type(AttestationValidatorUtil.ATTESTATION_JWT_TYP)
+					.type(typ)
 					.kid(attestationKey.getKid())
 					.jsonContent(payload)
 					.sign(new ECDSASignatureSignerContext(attestationKey));

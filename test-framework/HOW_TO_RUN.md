@@ -174,6 +174,16 @@ Valid values:
 | firefox          | Firefox WebDriver            |
 | firefox-headless | Firefox WebDriver without UI |
 
+Resolving the web driver is done either automatically by Selenium, or the binary can be specified directly either
+through using `CHROMEWEBDRIVER` and `GECKOWEBDRIVER` environment variables (these environment variables are already
+configured on GitHub Actions), or it can be configured using standard test framework configuration options. 
+
+Configuration:
+
+| Value                                               | Description        |
+|-----------------------------------------------------|--------------------|
+| `kc.test.browser.driver` / `KC_TEST_BROWSER_DRIVER` | Path to the driver |
+
 ### Supplier configuration
 
 #### Set the supplier

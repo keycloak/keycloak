@@ -33,6 +33,8 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.events.email.EmailEventListenerProviderFactory;
 import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -44,6 +46,7 @@ import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AssertEvents.ExpectedEvent;
+import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -80,8 +83,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
-    private static String userId;
-
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
@@ -108,8 +109,6 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
     private TimeBasedOTP totp = new TimeBasedOTP();
 
-    private int lifespan;
-
     private static final Integer failureFactor = 2;
 
     @Override
@@ -125,9 +124,6 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         testRealm.setMaxFailureWaitSeconds(100);
         testRealm.setWaitIncrementSeconds(20);
         testRealm.setOtpPolicyCodeReusable(true);
-        //testRealm.setQuickLoginCheckMilliSeconds(0L);
-
-        userId = user.getId();
 
         RealmRepUtil.findClientByClientId(testRealm, "test-app").setDirectAccessGrantsEnabled(true);
         testRealm.getUsers().add(UserBuilder.create().username("user2").email("user2@localhost").password(generatePassword("user2")).build());
@@ -136,6 +132,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     @Before
     public void config() {
         try {
+            testingClient.server().run(InfinispanTestUtil::setTestingTimeService);
             clearUserFailures();
             clearAllUserFailures();
             RealmRepresentation realm = adminClient.realm("test").toRepresentation();
@@ -156,6 +153,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     @After
     public void slowItDown() throws Exception {
         try {
+            testingClient.server().run(InfinispanTestUtil::revertTimeService);
             clearUserFailures();
             clearAllUserFailures();
             RealmRepresentation realm = adminClient.realm("test").toRepresentation();
@@ -178,7 +176,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         totp = new TimeBasedOTP();
     }
 
-    public String getAdminToken() throws Exception {
+    public String getAdminToken() {
         return oauth.realm("master").client(Constants.ADMIN_CLI_CLIENT_ID).doPasswordGrantRequest( "admin", "admin").getAccessToken();
     }
 
@@ -186,16 +184,16 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         return oauth.passwordGrantRequest("test-user@localhost", password).otp(totp).send();
     }
 
-    protected void clearUserFailures() throws Exception {
+    protected void clearUserFailures() {
         adminClient.realm("test").attackDetection().clearBruteForceForUser(findUser("test-user@localhost").getId());
     }
 
-    protected void clearAllUserFailures() throws Exception {
+    protected void clearAllUserFailures() {
         adminClient.realm("test").attackDetection().clearAllBruteForce();
     }
     
     @Test
-    public void testInvalidConfiguration() throws Exception {
+    public void testInvalidConfiguration() {
         RealmRepresentation realm = testRealm().toRepresentation();
         realm.setFailureFactor(-1);
         try {
@@ -261,7 +259,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testGrantInvalidPassword() throws Exception {
+    public void testGrantInvalidPassword() {
         {
             String totpSecret = totp.generateTOTP("totpSecret");
             AccessTokenResponse response = getTestToken(getPassword("test-user@localhost"), totpSecret);
@@ -307,7 +305,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testGrantInvalidOtp() throws Exception {
+    public void testGrantInvalidOtp() {
         {
             String totpSecret = totp.generateTOTP("totpSecret");
             AccessTokenResponse response = getTestToken(getPassword("test-user@localhost"), totpSecret);
@@ -355,7 +353,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testGrantMissingOtp() throws Exception {
+    public void testGrantMissingOtp() {
         {
             String totpSecret = totp.generateTOTP("totpSecret");
             AccessTokenResponse response = getTestToken(getPassword("test-user@localhost"), totpSecret);
@@ -399,7 +397,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testNumberOfFailuresForDisabledUsersWithPasswordGrantType() throws Exception {
+    public void testNumberOfFailuresForDisabledUsersWithPasswordGrantType() {
         try {
             UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
             assertUserNumberOfFailures(user.getId(), 0);
@@ -466,7 +464,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testBrowserInvalidPassword() throws Exception {
+    public void testBrowserInvalidPassword() {
         loginSuccess();
         loginInvalidPassword();
         loginInvalidPassword();
@@ -483,7 +481,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testFailureResetForTemporaryLockout() throws Exception {
+    public void testFailureResetForTemporaryLockout() {
         RealmRepresentation realm = testRealm().toRepresentation();
         try {
             realm.setMaxDeltaTimeSeconds(5);
@@ -503,7 +501,25 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testNoFailureResetForPermanentLockout() throws Exception {
+    public void testCacheExpiryForTemporaryLockout() {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        loginInvalidPassword();
+
+        //Wait for brute force executor to process the login and then wait for delta time
+        WaitUtils.waitForBruteForceExecutors(testingClient);
+        setTimeOffset(realm.getMaxDeltaTimeSeconds());
+
+        String realmId = realm.getId();
+        testingClient.server().run(session -> {
+            RealmModel realmModel = session.realms().getRealm(realmId);
+            UserModel userModel = session.users().getUserByEmail(realmModel, "test-user@localhost");
+            UserLoginFailureModel userLoginFailure = session.loginFailures().getUserLoginFailure(realmModel, userModel.getId());
+            Assert.assertNull("cache entry should have expired", userLoginFailure);
+        });
+    }
+
+    @Test
+    public void testNoFailureResetForPermanentLockout() {
         RealmRepresentation realm = testRealm().toRepresentation();
         try {
             realm.setMaxDeltaTimeSeconds(5);
@@ -528,7 +544,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testWait() throws Exception {
+    public void testWait() {
         loginSuccess();
         loginInvalidPassword();
         loginInvalidPassword();
@@ -562,7 +578,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testByMultipleStrategy() throws Exception {
+    public void testByMultipleStrategy() {
 
         try {
             UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
@@ -583,7 +599,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testLinearStrategy() throws Exception {
+    public void testLinearStrategy() {
         RealmRepresentation realm = testRealm().toRepresentation();
         UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
         try {
@@ -612,7 +628,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testBrowserInvalidPasswordDifferentCase() throws Exception {
+    public void testBrowserInvalidPasswordDifferentCase() {
         loginSuccess("test-user@localhost");
         loginInvalidPassword("test-User@localhost");
         loginInvalidPassword("Test-user@localhost");
@@ -622,7 +638,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testEmail() throws Exception {
+    public void testEmail() {
         String userId = adminClient.realm("test").users().search("user2", null, null, null, 0, 1).get(0).getId();
 
         loginInvalidPassword("user2");
@@ -632,7 +648,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
     
     @Test
-    public void testUserDisabledTemporaryLockout() throws Exception {
+    public void testUserDisabledTemporaryLockout() {
         String userId = adminClient.realm("test").users().search("test-user@localhost", null, null, null, 0, 1).get(0).getId();
 
         loginInvalidPassword();
@@ -645,7 +661,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testUserDisabledAfterSwitchFromMixedToPermanentLockout() throws Exception {
+    public void testUserDisabledAfterSwitchFromMixedToPermanentLockout() {
         UsersResource users = testRealm().users();
         UserRepresentation user = users.search("test-user@localhost", null, null, null, 0, 1).get(0);
 
@@ -696,7 +712,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testBrowserMissingPassword() throws Exception {
+    public void testBrowserMissingPassword() {
         loginSuccess();
         loginMissingPassword();
         loginMissingPassword();
@@ -704,7 +720,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testBrowserInvalidTotp() throws Exception {
+    public void testBrowserInvalidTotp() {
         loginSuccess();
         loginInvalidPassword();
         loginWithTotpFailure();
@@ -712,7 +728,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testBrowserMissingTotp() throws Exception {
+    public void testBrowserMissingTotp() {
         loginSuccess();
         loginWithMissingTotp();
         loginWithMissingTotp();
@@ -720,7 +736,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testBrowserTotpSessionInvalidAfterLockout() throws Exception {
+    public void testBrowserTotpSessionInvalidAfterLockout() {
         long start = System.currentTimeMillis();
         loginWithTotpFailure();
         continueLoginWithInvalidTotp();
@@ -916,7 +932,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testFailureCountResetWithPasswordGrantType() throws Exception {
+    public void testFailureCountResetWithPasswordGrantType() {
         String totpSecret = totp.generateTOTP("totpSecret");
         AccessTokenResponse response = getTestToken("invalid", totpSecret);
         Assert.assertNull(response.getAccessToken());
@@ -937,7 +953,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
-    public void testNonExistingAccounts() throws Exception {
+    public void testNonExistingAccounts() {
 
         loginInvalidPassword("non-existent-user");
         loginInvalidPassword("non-existent-user");
@@ -1208,7 +1224,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         events.clear();
     }
 
-    public void loginWithMissingTotp() throws Exception {
+    public void loginWithMissingTotp() {
         loginPage.open();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
@@ -1286,7 +1302,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         MatcherAssert.assertThat((Integer) userAttackInfo.get("numFailures"), is(numberOfFailures));
     }
 
-    private void sendInvalidPasswordPasswordGrant() throws Exception {
+    private void sendInvalidPasswordPasswordGrant() {
         String totpSecret = totp.generateTOTP("totpSecret");
         AccessTokenResponse response = getTestToken("invalid", totpSecret);
         Assert.assertNull(response.getAccessToken());
@@ -1295,7 +1311,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         events.clear();
     }
 
-    private void lockUserWithPasswordGrant() throws Exception {
+    private void lockUserWithPasswordGrant() {
         String totpSecret = totp.generateTOTP("totpSecret");
         AccessTokenResponse response = getTestToken(getPassword("test-user@localhost"), totpSecret);
         Assert.assertNotNull(response.getAccessToken());

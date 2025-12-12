@@ -16,6 +16,18 @@
  */
 package org.keycloak.operator.controllers;
 
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+import jakarta.inject.Inject;
+
+import org.keycloak.operator.Config;
+import org.keycloak.operator.ContextUtils;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusBuilder;
+
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
@@ -27,16 +39,6 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.quarkus.logging.Log;
-import jakarta.inject.Inject;
-import org.keycloak.operator.Config;
-import org.keycloak.operator.ContextUtils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusBuilder;
-
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 @Workflow(
 explicitInvocation = true,

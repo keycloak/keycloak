@@ -17,15 +17,17 @@
 
 package org.keycloak.operator.update;
 
-import io.javaoperatorsdk.operator.api.reconciler.Context;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 import org.keycloak.operator.update.impl.AutoUpdateLogic;
 import org.keycloak.operator.update.impl.ExplicitUpdateLogic;
 import org.keycloak.operator.update.impl.RecreateOnImageChangeUpdateLogic;
+
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 /**
  * The {@link UpdateLogic} factory. It returns an implementation based on the {@link Keycloak} configuration.

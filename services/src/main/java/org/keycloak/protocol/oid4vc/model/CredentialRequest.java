@@ -28,6 +28,8 @@ import org.keycloak.util.JsonSerialization;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
@@ -52,10 +54,20 @@ public class CredentialRequest {
     /**
      * Deprecated: use {@link #proofs} instead.
      * This field is kept only for backward compatibility with clients sending a single 'proof'.
+     * Can be either {@link JwtProof} or {@link AttestationProof} depending on the proof type.
      */
     @Deprecated
     @JsonProperty("proof")
-    private JwtProof proof;
+    @JsonTypeInfo(
+            use = JsonTypeInfo.Id.NAME,
+            include = JsonTypeInfo.As.EXISTING_PROPERTY,
+            property = "proof_type"
+    )
+    @JsonSubTypes({
+            @JsonSubTypes.Type(value = JwtProof.class, name = "jwt"),
+            @JsonSubTypes.Type(value = AttestationProof.class, name = "attestation")
+    })
+    private Object proof;
 
     // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-format-identifier-3
     @JsonProperty("credential_definition")
@@ -91,11 +103,11 @@ public class CredentialRequest {
         return this;
     }
 
-    public JwtProof getProof() {
+    public Object getProof() {
         return proof;
     }
 
-    public CredentialRequest setProof(JwtProof proof) {
+    public CredentialRequest setProof(Object proof) {
         this.proof = proof;
         return this;
     }
