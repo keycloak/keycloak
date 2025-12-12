@@ -107,7 +107,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             }
 
             return Response.status(responseStatus)
-                    .header(HttpHeaders.CONTENT_TYPE, jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE.toString())
+                    .type(MediaType.APPLICATION_JSON_TYPE)
                     .entity(error)
                     .build();
         }
