@@ -63,9 +63,8 @@ export const RealmSettingsTokensTab = ({
     serverInfo.providers!["signature"].providers,
   );
 
-  const asymmetricSigAlgOptions = defaultSigAlgOptions.filter(
-    (p) => !p.startsWith("HS"),
-  );
+  const asymmetricSigAlgOptions =
+    serverInfo.cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? [];
 
   const { control, register, reset, formState, handleSubmit } =
     useFormContext<RealmRepresentation>();
