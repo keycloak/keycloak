@@ -849,7 +849,7 @@ public class OID4VCIssuerEndpoint {
             return credentialRequest;
         } catch (JsonProcessingException e) {
             String errorMessage = "Failed to parse JSON request: " + e.getMessage();
-            LOGGER.errorf(e, "JSON parsing failed. Request payload length: %d", 
+            LOGGER.errorf(e, "JSON parsing failed. Request payload length: %d",
                     requestPayload != null ? requestPayload.length() : 0);
             throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
@@ -1367,8 +1367,7 @@ public class OID4VCIssuerEndpoint {
                 .setType(List.of(credentialConfig.getScope()));
 
         Map<String, Object> subjectClaims = new HashMap<>();
-        protocolMappers
-                .forEach(mapper -> mapper.setClaimsForSubject(subjectClaims, authResult.session()));
+        protocolMappers.forEach(mapper -> mapper.setClaim(subjectClaims, authResult.session()));
 
         // Validate that requested claims from authorization_details are present
         validateRequestedClaimsArePresent(subjectClaims, authResult.session(), credentialConfig.getScope());
@@ -1376,8 +1375,7 @@ public class OID4VCIssuerEndpoint {
         // Include all available claims
         subjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
 
-        protocolMappers
-                .forEach(mapper -> mapper.setClaimsForCredential(vc, authResult.session()));
+        protocolMappers.forEach(mapper -> mapper.setClaim(vc, authResult.session()));
 
         LOGGER.debugf("The credential to sign is: %s", vc);
 

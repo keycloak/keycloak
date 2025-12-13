@@ -74,8 +74,8 @@ public class OID4VCContextMapper extends OID4VCMapper {
         return List.of(TYPE_KEY);
     }
 
-    public void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                       UserSessionModel userSessionModel) {
+    public void setClaim(VerifiableCredential verifiableCredential,
+                         UserSessionModel userSessionModel) {
         // remove duplicates
         Set<String> contexts = new HashSet<>();
         if (verifiableCredential.getContext() != null) {
@@ -86,7 +86,7 @@ public class OID4VCContextMapper extends OID4VCMapper {
     }
 
     @Override
-    public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
+    public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
         // nothing to do for the mapper.
     }
 
