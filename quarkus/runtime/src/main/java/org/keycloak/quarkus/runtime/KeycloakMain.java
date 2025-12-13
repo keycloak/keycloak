@@ -17,7 +17,6 @@
 
 package org.keycloak.quarkus.runtime;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
@@ -27,7 +26,6 @@ import org.keycloak.common.Version;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.cli.Picocli;
-import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
@@ -80,22 +78,10 @@ public class KeycloakMain implements QuarkusApplication {
     }
 
     public static void main(String[] args, Picocli picocli) {
-        List<String> cliArgs = null;
-        try {
-            cliArgs = Picocli.parseArgs(args);
-        } catch (PropertyException e) {
-            picocli.usageException(e.getMessage(), e.getCause());
-            return;
-        }
+        List<String> cliArgs = List.of(args.length == 0 ? new String[] {"-h"} : args);
 
         if (DryRunMixin.isDryRunBuild() && (cliArgs.contains(DryRunMixin.DRYRUN_OPTION_LONG) || Boolean.valueOf(System.getenv().get(DryRunMixin.KC_DRY_RUN_ENV)))) {
             PersistedConfigSource.getInstance().useDryRunProperties();
-        }
-
-        if (cliArgs.isEmpty()) {
-            cliArgs = new ArrayList<>(cliArgs);
-            // default to show help message
-            cliArgs.add("-h");
         }
 
         // parse arguments and execute any of the configured commands
