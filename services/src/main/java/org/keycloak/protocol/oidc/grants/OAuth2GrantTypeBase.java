@@ -111,13 +111,12 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         this.tokenManager = (TokenManager) context.tokenManager;
     }
 
-    protected Response createTokenResponse(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,
-        String scopeParam, boolean code, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
+    protected TokenManager.AccessTokenResponseBuilder createTokenResponseBuilder(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,  String scopeParam, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
         clientSessionCtx.setAttribute(Constants.GRANT_TYPE, context.getGrantType());
         AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
-            .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token);
+                .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token);
         boolean useRefreshToken = useRefreshToken();
         if (useRefreshToken) {
             responseBuilder.generateRefreshToken();
@@ -153,6 +152,10 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
             }
         }
 
+        return responseBuilder;
+    }
+
+    protected Response createTokenResponse(TokenManager.AccessTokenResponseBuilder responseBuilder, ClientSessionContext clientSessionCtx, boolean code) {
         AccessTokenResponse res = null;
         if (code) {
             try {
@@ -160,7 +163,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
             } catch (RuntimeException re) {
                 if ("can not get encryption KEK".equals(re.getMessage())) {
                     throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                        "can not get encryption KEK", Response.Status.BAD_REQUEST);
+                            "can not get encryption KEK", Response.Status.BAD_REQUEST);
                 } else {
                     throw re;
                 }
@@ -175,6 +178,13 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         event.success();
 
         return cors.add(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE));
+    }
+
+    protected Response createTokenResponse(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,
+                                           String scopeParam, boolean code, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
+        TokenManager.AccessTokenResponseBuilder responseBuilder = createTokenResponseBuilder(user, userSession,
+                clientSessionCtx, scopeParam, clientPolicyContextGenerator);
+        return createTokenResponse(responseBuilder, clientSessionCtx, code);
     }
 
     protected void checkAndBindMtlsHoKToken(TokenManager.AccessTokenResponseBuilder responseBuilder, boolean useRefreshToken) {
