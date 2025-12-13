@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Environment;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.urls.HostnameProvider;
@@ -34,9 +35,9 @@ import org.jboss.logging.Logger;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class HostnameV2ProviderFactory implements HostnameProviderFactory, EnvironmentDependentProviderFactory {
-    
+
     private static final Logger LOGGER = Logger.getLogger(HostnameV2ProviderFactory.class);
-    
+
     private static final String INVALID_HOSTNAME = "Provided hostname is neither a plain hostname nor a valid URL";
     private String hostname;
     private URI hostnameUrl;
@@ -45,6 +46,9 @@ public class HostnameV2ProviderFactory implements HostnameProviderFactory, Envir
 
     @Override
     public void init(Config.Scope config) {
+        if (Environment.isNonServerMode()) {
+            return;
+        }
         // Strict mode is used just for enforcing that hostname is set
         boolean strictMode = config.getBoolean("hostname-strict", false);
 
@@ -68,7 +72,7 @@ public class HostnameV2ProviderFactory implements HostnameProviderFactory, Envir
 
         Optional.ofNullable(config.get("hostname-admin")).ifPresent(h ->
                 adminUrl = validateAndCreateUri(h, "Provided hostname-admin is not a valid URL"));
-        
+
         if (adminUrl != null && hostnameUrl == null) {
             throw new IllegalArgumentException("hostname must be set to a URL when hostname-admin is set");
         }
@@ -83,7 +87,7 @@ public class HostnameV2ProviderFactory implements HostnameProviderFactory, Envir
             throw new IllegalArgumentException("hostname-backchannel-dynamic must be set to false if hostname is not provided as full URL");
         }
     }
-    
+
     private void validateAndSetHostname(String hostname) {
         URI result;
         try {
