@@ -1,6 +1,7 @@
 package org.keycloak.services.logging;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -23,7 +24,9 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.utils.KeycloakSessionUtil;
 
+import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 
 /**
@@ -35,6 +38,8 @@ import org.jboss.logging.MDC;
  */
 public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiagnosticContextProviderFactory, MappedDiagnosticContextProvider, EnvironmentDependentProviderFactory {
 
+    private static final Logger logger = Logger.getLogger(DefaultMappedDiagnosticContextProviderFactory.class);
+
     public static final String MDC_KEY_REALM_NAME = MDC_PREFIX + "realmName";
     public static final String MDC_KEY_CLIENT_ID = MDC_PREFIX + "clientId";
     public static final String MDC_KEY_USER_ID = MDC_PREFIX + "userId";
@@ -43,6 +48,7 @@ public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiag
     public static final String MDC_KEY_SESSION_ID = MDC_PREFIX + "sessionId";
     public static final String MDC_KEY_AUTHENTICATION_SESSION_ID = MDC_PREFIX + "authenticationSessionId";
     public static final String MDC_KEY_AUTHENTICATION_TAB_ID = MDC_PREFIX + "authenticationTabId";
+    public static final String MDC_KEY_REQUEST_ID = MDC_PREFIX + "requestId";
 
     public static final String MDC_KEYS = "mdcKeys";
     private Set<String> mdcKeys;
@@ -55,8 +61,19 @@ public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiag
 
     @Override
     public void init(Config.Scope config) {
-        this.mdcKeys = Arrays.stream(Objects.requireNonNullElse(config.getArray(MDC_KEYS), new String[] {})).map(s -> MDC_PREFIX + s).collect(Collectors.toSet());
-        MappedDiagnosticContextUtil.setKeysToClear(mdcKeys);
+        String[] configuredKeys = config.getArray(MDC_KEYS);
+        this.mdcKeys = Arrays.stream(Objects.requireNonNullElse(configuredKeys, new String[] {}))
+            .map(s -> MDC_PREFIX + s)
+            .collect(Collectors.toSet());
+
+        // Always ensure RequestId is cleaned up since RequestIdHandler sets it unconditionally
+        Set<String> keysToRegister = new HashSet<>(mdcKeys);
+        keysToRegister.add(MDC_KEY_REQUEST_ID);
+
+        // Log cleanup registration (including always-registered RequestId)
+        logger.infof("MDC cleanup registered for keys: %s", String.join(", ", keysToRegister));
+
+        MappedDiagnosticContextUtil.setKeysToClear(keysToRegister);
     }
 
     @Override
@@ -82,7 +99,7 @@ public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiag
                 .name(MDC_KEYS)
                 .type("string")
                 .helpText("Comma-separated list of MDC keys to add to the Mapped Diagnostic Context.")
-                .options(Stream.of(MDC_KEY_REALM_NAME, MDC_KEY_CLIENT_ID, MDC_KEY_USER_ID, MDC_KEY_IP_ADDRESS, MDC_KEY_ORGANIZATION, MDC_KEY_SESSION_ID, MDC_KEY_AUTHENTICATION_SESSION_ID, MDC_KEY_AUTHENTICATION_TAB_ID)
+                .options(Stream.of(MDC_KEY_REALM_NAME, MDC_KEY_CLIENT_ID, MDC_KEY_USER_ID, MDC_KEY_IP_ADDRESS, MDC_KEY_ORGANIZATION, MDC_KEY_SESSION_ID, MDC_KEY_AUTHENTICATION_SESSION_ID, MDC_KEY_AUTHENTICATION_TAB_ID, MDC_KEY_REQUEST_ID)
                         .map(s -> s.substring(MDC_PREFIX.length())).collect(Collectors.toList()))
                 .add();
 
@@ -96,6 +113,7 @@ public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiag
 
     @Override
     public void update(KeycloakContext keycloakContext, AuthenticationSessionModel session) {
+        updateRequestId(keycloakContext);
         if (mdcKeys.contains(MDC_KEY_AUTHENTICATION_SESSION_ID)) {
             putMdc(MDC_KEY_AUTHENTICATION_SESSION_ID, session != null ? (session.getParentSession() != null ? session.getParentSession().getId() : null) : null);
         }
@@ -106,6 +124,7 @@ public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiag
 
     @Override
     public void update(KeycloakContext keycloakContext, RealmModel realm) {
+        updateRequestId(keycloakContext);
         if (mdcKeys.contains(MDC_KEY_REALM_NAME)) {
             putMdc(MDC_KEY_REALM_NAME, realm != null ? realm.getName() : null);
         }
@@ -113,6 +132,7 @@ public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiag
 
     @Override
     public void update(KeycloakContext keycloakContext, ClientModel client) {
+        updateRequestId(keycloakContext);
         if (mdcKeys.contains(MDC_KEY_CLIENT_ID)) {
             putMdc(MDC_KEY_CLIENT_ID, client != null ? client.getClientId() : null);
         }
@@ -120,6 +140,7 @@ public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiag
 
     @Override
     public void update(KeycloakContext keycloakContext, OrganizationModel organization) {
+        updateRequestId(keycloakContext);
         if (mdcKeys.contains(MDC_KEY_ORGANIZATION)) {
             putMdc(MDC_KEY_ORGANIZATION, organization != null ? organization.getAlias() : null);
         }
@@ -127,6 +148,7 @@ public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiag
 
     @Override
     public void update(KeycloakContext keycloakContext, UserSessionModel userSession) {
+        updateRequestId(keycloakContext);
         if (mdcKeys.contains(MDC_KEY_USER_ID)) {
             putMdc(MDC_KEY_USER_ID, userSession != null && userSession.getUser() != null ? userSession.getUser().getId() : null);
         }
@@ -135,6 +157,25 @@ public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiag
         }
         if (mdcKeys.contains(MDC_KEY_IP_ADDRESS)) {
             putMdc(MDC_KEY_IP_ADDRESS, userSession != null ? userSession.getIpAddress() : null);
+        }
+    }
+
+    /**
+     * Updates the RequestId in MDC if configured. The RequestId is retrieved from the session
+     * attributes where it was stored by the RequestIdHandler early in the request lifecycle.
+     */
+    protected void updateRequestId(KeycloakContext keycloakContext) {
+        if (mdcKeys.contains(MDC_KEY_REQUEST_ID)) {
+            String requestId = null;
+            try {
+                KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+                if (session != null) {
+                    requestId = (String) session.getAttribute("requestId");
+                }
+            } catch (Exception e) {
+                // Session might not be available, ignore
+            }
+            putMdc(MDC_KEY_REQUEST_ID, requestId);
         }
     }
 
