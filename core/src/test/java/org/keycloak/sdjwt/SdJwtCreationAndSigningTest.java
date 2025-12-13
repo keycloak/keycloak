@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.ECDSASignatureVerifierContext;
@@ -66,9 +67,10 @@ public abstract class SdJwtCreationAndSigningTest {
     @Test
     public void testCreateSdJwtWithoutKeybindingAndNoSignature() throws Exception {
 
-        final long iat = Instant.now().minus(10, ChronoUnit.SECONDS).getEpochSecond();
-        final long nbf = Instant.now().minus(5, ChronoUnit.SECONDS).getEpochSecond();
-        final long exp = Instant.now().plus(60, ChronoUnit.SECONDS).getEpochSecond();
+        Instant now = Instant.ofEpochSecond(Time.currentTime());
+        final long iat = now.minus(10, ChronoUnit.SECONDS).getEpochSecond();
+        final long nbf = now.minus(5, ChronoUnit.SECONDS).getEpochSecond();
+        final long exp = now.plus(60, ChronoUnit.SECONDS).getEpochSecond();
 
         String disclosurePayload = "{\n" +
             "  \"given_name\": \"Carlos\",\n" +
@@ -193,9 +195,10 @@ public abstract class SdJwtCreationAndSigningTest {
         SignatureSignerContext issuerSignerContext = new ECDSASignatureSignerContext(issuerKeyPair);
         SignatureSignerContext holderSignerContext = new ECDSASignatureSignerContext(holderKeyPair);
 
-        final long iat = Instant.now().minus(10, ChronoUnit.SECONDS).getEpochSecond();
-        final long nbf = Instant.now().minus(5, ChronoUnit.SECONDS).getEpochSecond();
-        final long exp = Instant.now().plus(60, ChronoUnit.SECONDS).getEpochSecond();
+        Instant now = Instant.ofEpochSecond(Time.currentTime());
+        final long iat = now.minus(10, ChronoUnit.SECONDS).getEpochSecond();
+        final long nbf = now.minus(5, ChronoUnit.SECONDS).getEpochSecond();
+        final long exp = now.plus(60, ChronoUnit.SECONDS).getEpochSecond();
         final String nonce = "123456789";
         final String audience = String.format("x509_san_dns:%s", authorizationServerUrl);
 
