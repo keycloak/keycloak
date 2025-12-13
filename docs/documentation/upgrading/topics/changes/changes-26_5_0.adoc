@@ -27,6 +27,10 @@ You are only affected by the change if you have configured a client-specific Cli
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== Welcome Page now includes additional user profile fields
+
+The Welcome Page, used to create the initial administrative user, now includes optional fields for *First name*, *Last name*, and *Email*. These fields allow administrators to provide additional profile information when creating the initial admin user. All new fields are optional and do not affect the existing functionality.
+
 === Method `UserProfile#toRepresentation(boolean)` added
 
 The `UserProfile` interface has a new method `toRepresentation(boolean)`. This method allows clients to specify whether to include
