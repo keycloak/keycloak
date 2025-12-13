@@ -92,11 +92,13 @@ public class SupportedCredentialConfiguration {
      * @param credentialScope                  The scope that holds the credentials configuration
      * @param globalSupportedSigningAlgorithms added as a parameter to avoid reading the global config from the session
      *                                         for each credential
+     * @param realmSupportedSigningAlgorithms  the signing algorithms supported by active keys in the realm
      * @return the credentials configuration that was entered into the ClientScope
      */
     public static SupportedCredentialConfiguration parse(KeycloakSession keycloakSession,
                                                          CredentialScopeModel credentialScope,
-                                                         List<String> globalSupportedSigningAlgorithms) {
+                                                         List<String> globalSupportedSigningAlgorithms,
+                                                         List<String> realmSupportedSigningAlgorithms) {
         SupportedCredentialConfiguration credentialConfiguration = new SupportedCredentialConfiguration();
 
         String credentialConfigurationId = Optional.ofNullable(credentialScope.getCredentialConfigurationId())
@@ -121,10 +123,10 @@ public class SupportedCredentialConfiguration {
          credentialConfiguration.setProofTypesSupported(proofTypesSupported);
 
         List<String> signingAlgsSupported = credentialScope.getSigningAlgsSupported();
-        signingAlgsSupported = signingAlgsSupported.isEmpty() ? globalSupportedSigningAlgorithms :
+        signingAlgsSupported = signingAlgsSupported.isEmpty() ? realmSupportedSigningAlgorithms :
                 // if the config has listed different algorithms than supported by keycloak we must use the
                 // intersection of the configuration with the actual supported algorithms.
-                ListUtils.intersection(signingAlgsSupported, globalSupportedSigningAlgorithms);
+                ListUtils.intersection(signingAlgsSupported, realmSupportedSigningAlgorithms);
         credentialConfiguration.setCredentialSigningAlgValuesSupported(signingAlgsSupported);
 
         // TODO resolve value dynamically from provider implementations?
