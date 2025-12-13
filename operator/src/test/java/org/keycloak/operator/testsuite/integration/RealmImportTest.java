@@ -20,7 +20,6 @@ package org.keycloak.operator.testsuite.integration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import jakarta.inject.Inject;
 
@@ -87,7 +86,7 @@ public class RealmImportTest extends BaseOperatorTest {
         k8sclient.resource(getResourceFromFile("example-smtp-secret.yaml", Secret.class)).delete();
     }
 
-    private String getJobArgs() {
+    private List<String> getJobArgs() {
         return k8sclient
                 .batch()
                 .v1()
@@ -100,16 +99,13 @@ public class RealmImportTest extends BaseOperatorTest {
                 .getSpec()
                 .getContainers()
                 .get(0)
-                .getArgs()
-                .stream()
-                .collect(Collectors.joining());
+                .getArgs();
     }
 
     protected static void deploySmtpSecret() {
         K8sUtils.set(k8sclient, getResourceFromFile("example-smtp-secret.yaml", Secret.class));
     }
 
-    @DisabledIfApiServerTest
     @Test
     public void testWorkingRealmImport() {
         // Arrange
@@ -126,7 +122,6 @@ public class RealmImportTest extends BaseOperatorTest {
         assertWorkingRealmImport(kc);
     }
 
-    @DisabledIfApiServerTest
     @Test
     public void testWorkingRealmImportWithReplacement() {
         // Arrange
@@ -209,7 +204,7 @@ public class RealmImportTest extends BaseOperatorTest {
             assertThat(curlOutput).isEqualTo("200");
         });
 
-        assertThat(getJobArgs()).contains("build");
+        assertThat(getJobArgs()).contains("import");
         assertThat(job.getMetadata().getLabels().get("example")).isEqualTo("test");
 
         return envvars;
