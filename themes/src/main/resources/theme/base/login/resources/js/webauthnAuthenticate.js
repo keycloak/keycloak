@@ -91,6 +91,9 @@ export function returnSuccess(result) {
     if (result.response.userHandle) {
         document.getElementById("userHandle").value = base64url.stringify(new Uint8Array(result.response.userHandle), { pad: false });
     }
+    if (result.response.authenticatorAttachment) {
+        document.getElementById("authenticatorAttachment").value = result.response.authenticatorAttachment;
+    }
     document.getElementById("webauth").requestSubmit();
 }
 

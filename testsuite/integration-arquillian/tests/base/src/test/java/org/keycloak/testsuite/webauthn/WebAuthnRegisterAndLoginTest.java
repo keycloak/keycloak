@@ -575,4 +575,5 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             userResource.removeCredential(credentialRep.getId());
         }
     }
+
 }
