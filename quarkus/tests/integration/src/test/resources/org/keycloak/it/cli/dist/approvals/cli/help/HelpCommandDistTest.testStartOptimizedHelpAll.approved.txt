@@ -567,21 +567,37 @@ Telemetry (OpenTelemetry):
 
 --telemetry-endpoint <url>
                      OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
-                       Available only when any of available OpenTelemetry components (Traces) is
-                       turned on.
+                       Available only when any of available OpenTelemetry components (Logs, Traces)
+                       is turned on.
+--telemetry-logs-endpoint <url>
+                     Telemetry (OpenTelemetry) endpoint to export logs to. If not given, the value
+                       is inherited from the 'telemetry-endpoint' option. Available only when
+                       Telemetry Logs functionality ('telemetry-logs-enabled') is enabled.
+--telemetry-logs-level <level>
+                     The most verbose log level exported to the telemetry endpoint. For more
+                       information, check the Telemetry guide. Possible values are (case
+                       insensitive): off, fatal, error, warn, info, debug, trace, all. Default:
+                       all. Available only when Telemetry Logs functionality
+                       ('telemetry-logs-enabled') is enabled.
+--telemetry-logs-protocol <protocol>
+                     Telemetry (OpenTelemetry) protocol used for exporting logs. If not given, the
+                       value is inherited from the 'telemetry-protocol' option. Possible values
+                       are: grpc, http/protobuf. Available only when Telemetry Logs functionality
+                       ('telemetry-logs-enabled') is enabled.
 --telemetry-protocol <protocol>
                      OpenTelemetry protocol used for the communication between server and
                        OpenTelemetry collector. Possible values are: grpc, http/protobuf. Default:
-                       grpc. Available only when any of available OpenTelemetry components (Traces)
-                       is turned on.
+                       grpc. Available only when any of available OpenTelemetry components (Logs,
+                       Traces) is turned on.
 --telemetry-resource-attributes <attributes>
                      OpenTelemetry resource attributes characterize the telemetry producer. Values
                        in format 'key1=val1,key2=val2'. Available only when any of available
-                       OpenTelemetry components (Traces) is turned on.
+                       OpenTelemetry components (Logs, Traces) is turned on.
 --telemetry-service-name <name>
                      OpenTelemetry service name. Takes precedence over 'service.name' defined in
                        the 'telemetry-resource-attributes' property. Default: keycloak. Available
-                       only when any of available OpenTelemetry components (Traces) is turned on.
+                       only when any of available OpenTelemetry components (Logs, Traces) is turned
+                       on.
 
 Tracing:
 

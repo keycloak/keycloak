@@ -6,6 +6,7 @@ import java.net.URL;
 import java.util.List;
 
 import org.keycloak.common.Profile;
+import org.keycloak.config.TelemetryOptions;
 import org.keycloak.config.TracingOptions;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -15,6 +16,10 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_ENABLED;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_ENDPOINT;
+import static org.keycloak.config.TelemetryOptions.TELEMETRY_LOGS_ENABLED;
+import static org.keycloak.config.TelemetryOptions.TELEMETRY_LOGS_ENDPOINT;
+import static org.keycloak.config.TelemetryOptions.TELEMETRY_LOGS_LEVEL;
+import static org.keycloak.config.TelemetryOptions.TELEMETRY_LOGS_PROTOCOL;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_PROTOCOL;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_RESOURCE_ATTRIBUTES;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_SERVICE_NAME;
@@ -22,13 +27,15 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 
 public class TelemetryPropertyMappers implements PropertyMapperGrouping{
     private static final String OTEL_FEATURE_ENABLED_MSG = "'opentelemetry' feature is enabled";
-    private static final String OTEL_COLLECTOR_ENABLED_MSG = "any of available OpenTelemetry components (Traces) is turned on";
+    private static final String OTEL_COLLECTOR_ENABLED_MSG = "any of available OpenTelemetry components (Logs, Traces) is turned on";
+    private static final String OTEL_LOGS_FEATURE_ENABLED_MSG = "feature '%s' is enabled".formatted(Profile.Feature.OPENTELEMETRY_LOGS.getVersionedKey());
+    private static final String OTEL_LOGS_ENABLED_MSG = "Telemetry Logs functionality ('%s') is enabled".formatted(TELEMETRY_LOGS_ENABLED.getKey());
 
     @Override
     public List<? extends PropertyMapper<?>> getPropertyMappers() {
         return List.of(
                 fromOption(TELEMETRY_ENABLED)
-                        .isEnabled(TelemetryPropertyMappers::isFeatureEnabled, OTEL_FEATURE_ENABLED_MSG)
+                        .isEnabled(TelemetryPropertyMappers::isOtelFeatureEnabled, OTEL_FEATURE_ENABLED_MSG)
                         .transformer(TelemetryPropertyMappers::checkIfDependantsAreEnabled)
                         .to("quarkus.otel.enabled")
                         .build(),
@@ -54,23 +61,55 @@ public class TelemetryPropertyMappers implements PropertyMapperGrouping{
                         .isEnabled(TelemetryPropertyMappers::isTelemetryEnabled, OTEL_COLLECTOR_ENABLED_MSG)
                         .to("quarkus.otel.resource.attributes")
                         .paramLabel("attributes")
+                        .build(),
+                // Telemetry Logs
+                fromOption(TELEMETRY_LOGS_ENABLED)
+                        .isEnabled(TelemetryPropertyMappers::isOtelLogsFeatureEnabled, OTEL_LOGS_FEATURE_ENABLED_MSG)
+                        .to("quarkus.otel.logs.enabled")
+                        .build(),
+                fromOption(TELEMETRY_LOGS_ENDPOINT)
+                        .isEnabled(TelemetryPropertyMappers::isTelemetryLogsEnabled, OTEL_LOGS_ENABLED_MSG)
+                        .mapFrom(TelemetryOptions.TELEMETRY_ENDPOINT)
+                        .to("quarkus.otel.exporter.otlp.logs.endpoint")
+                        .validator(TelemetryPropertyMappers::validateEndpoint)
+                        .paramLabel("url")
+                        .build(),
+                fromOption(TELEMETRY_LOGS_PROTOCOL)
+                        .isEnabled(TelemetryPropertyMappers::isTelemetryLogsEnabled, OTEL_LOGS_ENABLED_MSG)
+                        .mapFrom(TelemetryOptions.TELEMETRY_PROTOCOL)
+                        .to("quarkus.otel.exporter.otlp.logs.protocol")
+                        .paramLabel("protocol")
+                        .build(),
+                fromOption(TELEMETRY_LOGS_LEVEL)
+                        .isEnabled(TelemetryPropertyMappers::isTelemetryLogsEnabled, OTEL_LOGS_ENABLED_MSG)
+                        .to("quarkus.otel.logs.level")
+                        .paramLabel("level")
+                        .transformer(LoggingPropertyMappers::upperCase)
                         .build()
         );
     }
 
     private static String checkIfDependantsAreEnabled(String value, ConfigSourceInterceptorContext context) {
-        if (Configuration.isTrue(TracingOptions.TRACING_ENABLED)) {
+        if (TelemetryPropertyMappers.isTelemetryLogsEnabled() || TracingPropertyMappers.isTracingEnabled()) {
             return Boolean.TRUE.toString();
         }
         return Boolean.FALSE.toString();
     }
 
-    private static boolean isFeatureEnabled() {
+    private static boolean isOtelFeatureEnabled() {
         return Profile.isFeatureEnabled(Profile.Feature.OPENTELEMETRY);
+    }
+
+    public static boolean isOtelLogsFeatureEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.OPENTELEMETRY_LOGS);
     }
 
     public static boolean isTelemetryEnabled() {
         return Configuration.isTrue("quarkus.otel.enabled");
+    }
+
+    public static boolean isTelemetryLogsEnabled() {
+        return Configuration.isTrue("quarkus.otel.logs.enabled");
     }
 
     static void validateEndpoint(String value) {

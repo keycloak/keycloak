@@ -1266,7 +1266,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), anyOf(
                 containsString("Disabled option: '--tracing-service-name'. Available only when Tracing is enabled"),
-                containsString("Disabled option: '--telemetry-service-name'. Available only when any of available OpenTelemetry components (Traces) is turned on")
+                containsString("Disabled option: '--telemetry-service-name'. Available only when any of available OpenTelemetry components (Logs, Traces) is turned on")
         ));
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.enabled").getValue(), is("false"));
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.traces.enabled").getValue(), is("false"));
@@ -1276,7 +1276,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         // disabled tracing
         nonRunningPicocli = pseudoLaunch("start-dev", "--telemetry-service-name=service123");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--telemetry-service-name'. Available only when any of available OpenTelemetry components (Traces) is turned on"));
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--telemetry-service-name'. Available only when any of available OpenTelemetry components (Logs, Traces) is turned on"));
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.enabled").getValue(), is("false"));
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.traces.enabled").getValue(), is("false"));
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.service.name").getValue(), is(nullValue()));
@@ -1369,5 +1369,131 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.exporter.otlp.endpoint").getValue(), is("http://keycloak-keycloak-keycloak.org:3455")); // value inherited
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.exporter.otlp.traces.endpoint").getValue(), is("http://keycloak-keycloak-keycloak.org:3455")); // value inherited
+    }
+
+    @Test
+    public void otelLogs() {
+        // parent feature disabled
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--feature-opentelemetry=disabled", "--feature-opentelemetry-logs=enabled");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("ERROR: Feature opentelemetry-logs depends on disabled feature opentelemetry"));
+        onAfter();
+
+        // feature disabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--telemetry-logs-enabled=true");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--telemetry-logs-enabled'. Available only when feature 'opentelemetry-logs:v1' is enabled"));
+        onAfter();
+
+        // export disabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=false", "--telemetry-logs-protocol=http/protobuf");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--telemetry-logs-protocol'. Available only when Telemetry Logs functionality ('telemetry-logs-enabled') is enabled"));
+        onAfter();
+
+        // check enabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.logs.enabled", "true"
+        ));
+        onAfter();
+
+        // multiple components enabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--tracing-enabled=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.logs.enabled", "true",
+                "quarkus.otel.traces.enabled", "false"
+        ));
+        onAfter();
+
+        // wrong protocol
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-logs-protocol=wrong");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--telemetry-logs-protocol': wrong. Expected values are: grpc, http/protobuf"));
+        onAfter();
+
+        // otel protocol
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-logs-protocol=http/protobuf");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.logs.protocol", "http/protobuf"
+        ));
+        onAfter();
+
+        // parent + child protocol
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-logs-protocol=http/protobuf", "--telemetry-protocol=grpc");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.protocol", "grpc",
+                "quarkus.otel.exporter.otlp.logs.protocol", "http/protobuf"
+        ));
+        onAfter();
+
+        // parent protocol
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-protocol=http/protobuf");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.protocol", "http/protobuf",
+                "quarkus.otel.exporter.otlp.logs.protocol", "http/protobuf"
+        ));
+        onAfter();
+
+        // wrong parent endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-endpoint=not-url");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Specified Endpoint URL is invalid"));
+        onAfter();
+
+        // wrong endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-logs-endpoint=not-url");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Specified Endpoint URL is invalid"));
+        onAfter();
+
+        // otel endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-logs-endpoint=http://keycloak.org");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig("quarkus.otel.exporter.otlp.logs.endpoint", "http://keycloak.org");
+        onAfter();
+
+        // parent + child endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-endpoint=http://keycloak-keycloak-keycloak.org:3455", "--telemetry-logs-endpoint=http://keycloak.org");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.exporter.otlp.endpoint", "http://keycloak-keycloak-keycloak.org:3455",
+                "quarkus.otel.exporter.otlp.logs.endpoint", "http://keycloak.org"
+        ));
+        onAfter();
+
+        // parent endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-endpoint=http://keycloak-keycloak-keycloak.org:3455");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.exporter.otlp.endpoint", "http://keycloak-keycloak-keycloak.org:3455",
+                "quarkus.otel.exporter.otlp.logs.endpoint", "http://keycloak-keycloak-keycloak.org:3455"
+        ));
+        onAfter();
+
+        // wrong level
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-logs-level=wrong");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--telemetry-logs-level': wrong. Expected values are (case insensitive): off, fatal, error, warn, info, debug, trace, all"));
+        onAfter();
+
+        // level
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-logs-level=debug");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.logs.enabled", "true",
+                "quarkus.otel.logs.level", "DEBUG"
+        ));
     }
 }
