@@ -272,8 +272,8 @@ public class CredentialScopeModel implements ClientScopeModel {
         return clientScope.getAttribute(SIGNING_ALG);
     }
 
-    public void setSigningAlg(String signingAlgsSupported) {
-        clientScope.setAttribute(SIGNING_ALG, signingAlgsSupported);
+    public void setSigningAlg(String signingAlg) {
+        clientScope.setAttribute(SIGNING_ALG, signingAlg);
     }
 
     public List<String> getCryptographicBindingMethods() {
