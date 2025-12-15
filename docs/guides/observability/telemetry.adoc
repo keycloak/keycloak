@@ -70,7 +70,6 @@ You can enable OpenTelemetry Logs via CLI as follows:
 
 <@kc.start parameters="--features=opentelemetry-logs --telemetry-logs-enabled=true"/>
 
-For more details about OpenTelemetry Logs functionality in Quarkus, see the https://quarkus.io/guides/opentelemetry-logging[Quarkus OpenTelemetry Logging guide].
 For more information on how to set up logging, see the https://www.keycloak.org/server/logging[Configuring Logging guide].
 
 === Log level
