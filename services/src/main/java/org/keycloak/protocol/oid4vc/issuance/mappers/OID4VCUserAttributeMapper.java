@@ -31,8 +31,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
 /**
@@ -50,15 +52,15 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
     static {
         ProviderConfigProperty subjectPropertyNameConfig = new ProviderConfigProperty();
         subjectPropertyNameConfig.setName(CLAIM_NAME);
-        subjectPropertyNameConfig.setLabel("Claim Name");
-        subjectPropertyNameConfig.setHelpText("The user attribute to be added to the credential subject.");
+        subjectPropertyNameConfig.setLabel(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME_LABEL);
+        subjectPropertyNameConfig.setHelpText(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME_TOOLTIP);
         subjectPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
         CONFIG_PROPERTIES.add(subjectPropertyNameConfig);
 
         ProviderConfigProperty userAttributeConfig = new ProviderConfigProperty();
         userAttributeConfig.setName(USER_ATTRIBUTE_KEY);
-        userAttributeConfig.setLabel("User attribute");
-        userAttributeConfig.setHelpText("The user attributes to be added to the credential subject.");
+        userAttributeConfig.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_LABEL);
+        userAttributeConfig.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
         userAttributeConfig.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
         CONFIG_PROPERTIES.add(userAttributeConfig);
 
