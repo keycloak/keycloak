@@ -143,7 +143,6 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .setCredentialIssuer(getIssuer(context))
                 .setCredentialEndpoint(getCredentialsEndpoint(context))
                 .setNonceEndpoint(getNonceEndpoint(context))
-                .setDeferredCredentialEndpoint(getDeferredCredentialEndpoint(context))
                 .setCredentialsSupported(getSupportedCredentials(keycloakSession))
                 .setAuthorizationServers(List.of(getIssuer(context)))
                 .setCredentialResponseEncryption(responseEnc)
@@ -167,10 +166,6 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         }
 
         return issuer;
-    }
-
-    private static String getDeferredCredentialEndpoint(KeycloakContext context) {
-        return getIssuer(context) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/deferred_credential";
     }
 
     private CredentialIssuer.BatchCredentialIssuance getBatchCredentialIssuance(KeycloakSession session) {

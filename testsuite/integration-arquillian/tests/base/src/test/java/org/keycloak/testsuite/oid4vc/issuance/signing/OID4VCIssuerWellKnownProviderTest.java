@@ -154,9 +154,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                 assertEquals("nonce_endpoint should be correct",
                         expectedIssuer + "/protocol/oid4vc/nonce",
                         issuer.getNonceEndpoint());
-                assertEquals("deferred_credential_endpoint should be correct",
-                        expectedIssuer + "/protocol/oid4vc/deferred_credential",
-                        issuer.getDeferredCredentialEndpoint());
+                assertNull("deferred_credential_endpoint should be omitted", issuer.getDeferredCredentialEndpoint());
                 assertNotNull("authorization_servers should be present", issuer.getAuthorizationServers());
                 assertNotNull("credential_response_encryption should be present", issuer.getCredentialResponseEncryption());
                 assertNotNull("batch_credential_issuance should be present", issuer.getBatchCredentialIssuance());
@@ -216,9 +214,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                 assertEquals("nonce_endpoint should be correct",
                         expectedIssuer + "/protocol/oid4vc/nonce",
                         claims.get("nonce_endpoint"));
-                assertEquals("deferred_credential_endpoint should be correct",
-                        expectedIssuer + "/protocol/oid4vc/deferred_credential",
-                        claims.get("deferred_credential_endpoint"));
+                assertFalse("deferred_credential_endpoint should be omitted",
+                        claims.containsKey("deferred_credential_endpoint"));
                 assertNotNull("authorization_servers should be present", claims.get("authorization_servers"));
                 assertNotNull("credential_response_encryption should be present", claims.get("credential_response_encryption"));
                 assertNotNull("batch_credential_issuance should be present", claims.get("batch_credential_issuance"));
@@ -674,7 +671,6 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
     public static void testCredentialConfig(SuiteContext suiteContext, KeycloakTestingClient testingClient) {
         String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
         String expectedCredentialsEndpoint = expectedIssuer + "/protocol/oid4vc/credential";
-        String expectedDeferredEndpoint = expectedIssuer + "/protocol/oid4vc/deferred_credential";
         final String expectedAuthorizationServer = expectedIssuer;
         testingClient
                 .server(TEST_REALM_NAME)
@@ -683,7 +679,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                     CredentialIssuer credentialIssuer = oid4VCIssuerWellKnownProvider.getIssuerMetadata();
                     assertEquals("The correct issuer should be included.", expectedIssuer, credentialIssuer.getCredentialIssuer());
                     assertEquals("The correct credentials endpoint should be included.", expectedCredentialsEndpoint, credentialIssuer.getCredentialEndpoint());
-                    assertEquals("The correct deferred_credential_endpoint should be included.", expectedDeferredEndpoint, credentialIssuer.getDeferredCredentialEndpoint());
+                    assertNull("deferred_credential_endpoint should be omitted.", credentialIssuer.getDeferredCredentialEndpoint());
                     assertEquals("Since the authorization server is equal to the issuer, just 1 should be returned.", 1, credentialIssuer.getAuthorizationServers().size());
                     assertEquals("The expected server should have been returned.", expectedAuthorizationServer, credentialIssuer.getAuthorizationServers().get(0));
                     assertTrue("The test-credential should be supported.", credentialIssuer.getCredentialsSupported().containsKey("test-credential"));
@@ -768,8 +764,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                         expectedIssuer + "/protocol/oid4vc/credential", issuer.getCredentialEndpoint());
                 assertEquals("nonce_endpoint should be correct",
                         expectedIssuer + "/protocol/oid4vc/nonce", issuer.getNonceEndpoint());
-                assertEquals("deferred_credential_endpoint should be correct",
-                        expectedIssuer + "/protocol/oid4vc/deferred_credential", issuer.getDeferredCredentialEndpoint());
+                assertNull("deferred_credential_endpoint should be omitted",
+                        issuer.getDeferredCredentialEndpoint());
 
                 assertNotNull("authorization_servers should be present", issuer.getAuthorizationServers());
                 assertNotNull("credential_response_encryption should be present", issuer.getCredentialResponseEncryption());
