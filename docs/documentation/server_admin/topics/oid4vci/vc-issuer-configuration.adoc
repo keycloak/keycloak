@@ -248,7 +248,7 @@ Create a JSON file (e.g., `client-scopes.json`) with the following content:
     "vc.verifiable_credential_type": "my-vct",
     "vc.supported_credential_types": "credential-type-1,credential-type-2",
     "vc.credential_contexts": "context-1,context-2",
-    "vc.credential_signing_alg_values_supported": "ES256",
+    "vc.credential_signing_alg": "ES256",
     "vc.cryptographic_binding_methods_supported": "jwk",
     "vc.signing_key_id": "key-id-123456",
     "vc.display": "[{\"name\": \"IdentityCredential\", \"logo\": {\"uri\": \"https://university.example.edu/public/logo.png\", \"alt_text\": \"a square logo of a university\"}, \"locale\": \"en-US\", \"background_color\": \"#12107c\", \"text_color\": \"#FFFFFF\"}]",
@@ -358,9 +358,9 @@ _Default_: `$\{name}+`
 | The context values of the Verifiable Credential Type. +
 _Default_: `$\{name}+`
 
-| `vc.credential_signing_alg_values_supported`
+| `vc.credential_signing_alg`
 | optional
-| Supported signature algorithms for this credential. +
+| Supported signature algorithm for this credential. +
 _Default_: All asymmetric signing algorithms backed by realm keys.
 
 | `vc.cryptographic_binding_methods_supported`

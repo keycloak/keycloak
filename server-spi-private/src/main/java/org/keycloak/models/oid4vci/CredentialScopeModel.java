@@ -72,10 +72,9 @@ public class CredentialScopeModel implements ClientScopeModel {
     public static final String CONTEXTS = "vc.credential_contexts";
 
     /**
-     * If the credential is only meant for specific signing algorithms the global default list can be overridden here.
-     * The global default list is retrieved from the available keys in the realm.
+     * The credential signature algorithm. If it is not configured, then the realm active key is used to sign the verifiable credential
      */
-    public static final String SIGNING_ALG_VALUES_SUPPORTED = "vc.credential_signing_alg_values_supported";
+    public static final String SIGNING_ALG = "vc.credential_signing_alg";
 
     /**
      * if the credential is only meant for specific cryptographic binding algorithms the global default list can be
@@ -269,20 +268,12 @@ public class CredentialScopeModel implements ClientScopeModel {
         clientScope.setAttribute(CONTEXTS, String.join(",", vcContexts));
     }
 
-    public List<String> getSigningAlgsSupported() {
-        return Optional.ofNullable(clientScope.getAttribute(SIGNING_ALG_VALUES_SUPPORTED))
-                       .map(s -> s.split(","))
-                       .map(Arrays::asList)
-                       .orElse(Collections.emptyList());
+    public String getSigningAlg() {
+        return clientScope.getAttribute(SIGNING_ALG);
     }
 
-    public void setSigningAlgsSupported(String signingAlgsSupported) {
-        clientScope.setAttribute(SIGNING_ALG_VALUES_SUPPORTED, signingAlgsSupported);
-    }
-
-    public void setSigningAlgsSupported(List<String> signingAlgsSupported) {
-        clientScope.setAttribute(SIGNING_ALG_VALUES_SUPPORTED,
-                                 String.join(",", signingAlgsSupported));
+    public void setSigningAlg(String signingAlgsSupported) {
+        clientScope.setAttribute(SIGNING_ALG, signingAlgsSupported);
     }
 
     public List<String> getCryptographicBindingMethods() {

@@ -543,12 +543,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         MatcherAssert.assertThat(proofTypesSupported.getSupportedProofTypes().keySet(),
                 Matchers.containsInAnyOrder(ProofType.JWT, ProofType.ATTESTATION));
 
-        List<String> expectedProofSigningAlgs = List.of(
-                Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
-                Algorithm.RS256, Algorithm.RS384, Algorithm.RS512,
-                Algorithm.ES256, Algorithm.ES384, Algorithm.ES512,
-                Algorithm.EdDSA
-        );
+        List<String> expectedProofSigningAlgs = getAllAsymmetricAlgorithms();
 
         KeyAttestationsRequired expectedKeyAttestationsRequired;
         if (Boolean.parseBoolean(clientScope.getAttributes().get(CredentialScopeModel.KEY_ATTESTATION_REQUIRED))) {
@@ -592,15 +587,22 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                         session, keyAttestationsRequired, actualProofSigningAlgs);
                 assertEquals(expectedProofTypesSupported, actualProofTypesSupported);
 
-                List<String> expectedSigningAlgs = List.of(Algorithm.RS256);
                 MatcherAssert.assertThat(signingAlgsSupported,
-                        Matchers.containsInAnyOrder(expectedSigningAlgs.toArray()));
+                        Matchers.containsInAnyOrder(getAllAsymmetricAlgorithms().toArray()));
             })));
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
 
         compareClaims(expectedFormat, supportedConfig.getCredentialMetadata().getClaims(), clientScope.getProtocolMappers());
+    }
+
+    private static List<String> getAllAsymmetricAlgorithms() {
+        return List.of(
+                Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
+                Algorithm.RS256, Algorithm.RS384, Algorithm.RS512,
+                Algorithm.ES256, Algorithm.ES384, Algorithm.ES512,
+                Algorithm.EdDSA);
     }
 
     private void compareDisplay(SupportedCredentialConfiguration supportedConfig, ClientScopeRepresentation clientScope) {
