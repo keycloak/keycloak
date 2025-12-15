@@ -17,12 +17,19 @@
 
 package org.keycloak.operator.controllers;
 
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.EnvVarBuilder;
-import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
-import io.fabric8.kubernetes.api.model.SecretKeySelector;
-import io.quarkus.logging.Log;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import jakarta.enterprise.context.ApplicationScoped;
+
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -38,16 +45,11 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
+import io.fabric8.kubernetes.api.model.SecretKeySelector;
+import io.quarkus.logging.Log;
 
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 

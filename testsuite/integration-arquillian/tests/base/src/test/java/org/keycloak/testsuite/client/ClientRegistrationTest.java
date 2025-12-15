@@ -42,6 +42,7 @@ import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
@@ -152,6 +153,26 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
             fail("Expected NotFoundException");
         } catch (NotFoundException e) {
         }
+    }
+
+    @Test
+    public void updateServiceAccount() throws Exception {
+        authManageClients();
+        ClientRepresentation client = buildClient();
+        final ClientRepresentation createdClient = registerClient(client);
+
+        client = reg.get(CLIENT_ID);
+        assertFalse(client.isServiceAccountsEnabled());
+        assertTrue(adminClient.realm(REALM_NAME).users().search(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId(), true).isEmpty());
+        client.setServiceAccountsEnabled(true);
+        client = reg.update(client);
+        assertTrue(client.isServiceAccountsEnabled());
+        assertFalse(adminClient.realm(REALM_NAME).users().search(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId(), true).isEmpty());
+
+        client.setServiceAccountsEnabled(false);
+        client = reg.update(client);
+        assertFalse(client.isServiceAccountsEnabled());
+        assertTrue(adminClient.realm(REALM_NAME).users().search(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId(), true).isEmpty());
     }
 
     @Test

@@ -89,6 +89,8 @@
 :operatorguide_link: https://www.keycloak.org/guides#operator
 :tracingguide_name: Root cause analysis with tracing
 :tracingguide_link: https://www.keycloak.org/observability/tracing
+:telemetryguide_name: Centralize your observability stack with OpenTelemetry
+:telemetryguide_link: https://www.keycloak.org/observability/telemetry
 :upgradingguide_name: Upgrading Guide
 :upgradingguide_name_short: Upgrading
 :upgradingguide_link: {project_doc_base_url}/upgrading/

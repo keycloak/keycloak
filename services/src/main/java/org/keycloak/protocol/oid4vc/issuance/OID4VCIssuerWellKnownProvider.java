@@ -452,7 +452,6 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      */
     public static Map<String, SupportedCredentialConfiguration> getSupportedCredentials(KeycloakSession keycloakSession) {
         List<String> globalSupportedSigningAlgorithms = getSupportedAsymmetricSignatureAlgorithms(keycloakSession);
-        List<String> realmSupportedSigningAlgorithms = getRealmSupportedAsymmetricSignatureAlgorithms(keycloakSession);
 
         RealmModel realm = keycloakSession.getContext().getRealm();
         Map<String, SupportedCredentialConfiguration> supportedCredentialConfigurations =
@@ -462,8 +461,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                         .map(clientScope -> {
                             return SupportedCredentialConfiguration.parse(keycloakSession,
                                     clientScope,
-                                    globalSupportedSigningAlgorithms,
-                                    realmSupportedSigningAlgorithms
+                                    globalSupportedSigningAlgorithms
                             );
                         })
                         .collect(Collectors.toMap(SupportedCredentialConfiguration::getId, sc -> sc, (sc1, sc2) -> sc1));
@@ -474,12 +472,10 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     public static SupportedCredentialConfiguration toSupportedCredentialConfiguration(KeycloakSession keycloakSession,
                                                                                       CredentialScopeModel credentialModel) {
         List<String> globalSupportedSigningAlgorithms = getSupportedAsymmetricSignatureAlgorithms(keycloakSession);
-        List<String> realmSupportedSigningAlgorithms = getRealmSupportedAsymmetricSignatureAlgorithms(keycloakSession);
 
         return SupportedCredentialConfiguration.parse(keycloakSession,
                 credentialModel,
-                globalSupportedSigningAlgorithms,
-                realmSupportedSigningAlgorithms);
+                globalSupportedSigningAlgorithms);
     }
 
     /**
@@ -520,13 +516,6 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      */
     public static List<String> getSupportedAsymmetricSignatureAlgorithms(KeycloakSession session) {
         return CryptoUtils.getSupportedAsymmetricSignatureAlgorithms(session);
-    }
-
-    /**
-     * Returns the supported asymmetric signature algorithms in the context realm.
-     */
-    public static List<String> getRealmSupportedAsymmetricSignatureAlgorithms(KeycloakSession session) {
-        return CryptoUtils.getSupportedAsymmetricSignatureAlgorithms(session, session.getContext().getRealm());
     }
 
     /**

@@ -17,16 +17,8 @@
 
 package org.keycloak.operator.testsuite.integration;
 
-import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
-import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
-import io.fabric8.kubernetes.api.model.networking.v1.ServiceBackendPortBuilder;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.quarkus.logging.Log;
-import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.RestAssured;
+import java.util.Map;
 
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakController;
 import org.keycloak.operator.controllers.KeycloakIngressDependentResource;
@@ -37,14 +29,24 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
-import java.util.Map;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
+import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1.ServiceBackendPortBuilder;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.quarkus.logging.Log;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
+
+import static org.keycloak.operator.testsuite.utils.K8sUtils.disableHttps;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.enableHttp;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.disableHttps;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.enableHttp;
 
 @QuarkusTest
 public class KeycloakIngressTest extends BaseOperatorTest {

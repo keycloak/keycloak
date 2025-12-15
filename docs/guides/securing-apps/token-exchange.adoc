@@ -675,6 +675,8 @@ These types of changes required a configured identity provider in the Admin Cons
 
 NOTE:  SAML identity providers are not supported at this time.  Twitter tokens cannot be exchanged either.
 
+WARNING: External to internal Token Exchange will be replaced by <<_standard-token-exchange,Standard Token Exchange V2>> and <@links.securingapps id="jwt-authorization-grant" />. Following the idea presented in the current draft specification link:https://datatracker.ietf.org/doc/html/draft-ietf-oauth-identity-chaining-06[OAuth Identity and Authorization Chaining Across Domains], the final access token will be obtained performing two requests: a standard token exchange in the external identity server to get a valid JWT assertion; a JWT Authorization Grant to finally request an access token in the internal {project_name} realm. The JWT Authorization grant can be eventually used directly to exchange your external tokens as long as they are JWT tokens, which conforms to all the requirements specified for the JWT Authorization Grant.
+
 ==== Granting permission for the exchange
 
 Before external token exchanges can be done, you grant permission for the calling client to make the exchange.  This

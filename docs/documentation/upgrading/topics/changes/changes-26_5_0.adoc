@@ -1,11 +1,25 @@
 // ------------------------ Breaking changes ------------------------  //
 == Breaking changes
 
-= Loopback Hostname Verification on Windows
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Loopback Hostname Verification on Windows
 
 Setups on Windows that previously relied on custom machine names or non-standard hostnames for loopback (for example, `127.0.0.1` resolving to a custom name) may require updates to their trusted domain configuration. Only `localhost` and `*.localhost` are now recognized for loopback verification.
 
 {project_name} now consistently normalizes loopback addresses to `localhost` for domain verification across all platforms. This change ensures predictable behavior for trusted domain checks, regardless of the underlying OS.
+
+=== Validation of client session timeouts
+
+Previous versions did not validate client specific settings against the realm settings for SSO session idle and max lifetime, including the remember me settings of the realm.
+This leads to those settings either not being effective with unexpected results to administrators,
+or to refresh tokens issued where the user session might have already expired when the client was trying to refresh the token.
+
+{project_name} now validates that a client specific settings for Client Session Idle and Client Session Max does not exceed the realm settings when a client is created or updated, and will show a validation error when the validation fails.
+It does currently not validate the client settings when the realm SSO settings or remember me changes, though this might change in future releases.
+
+You are only affected by the change if you have configured a client-specific Client Session Idle and Client Session Max setting in the Advanced tab of the client configuration that exceeds the realm settings.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
@@ -80,6 +94,12 @@ If you are running on PostgreSQL as a database for {project_name}, ensure that t
 
 This is used during upgrades of {project_name} to determine an estimated number of rows in a table.
 If {project_name} does not have permissions to access these tables, it will log a warning and proceed with the less efficient `+SELECT COUNT(*) ...+` operation during the upgrade to determine the number of rows in tables affected by schema changes.
+
+=== Expiration of login failures from the embedded caches
+
+Previous entries in the `loginFailures` cache never expired, and entries accumulated as users entered wrong credentials, increasing the memory consumption.
+
+Starting with this release, entries will expire based on the "`Failure reset time`" configured in the "`Brute force detection`" for the modes "`Lockout temporarily`" and "`Lockout permanently after temporary lockout`". For "`Lockout permanently`", entries will not expire as before, as this mode does not have a "`Failure reset time`".
 
 === Not recommended to use org.keycloak.credential.UserCredentialManager directly in your extensions
 
@@ -174,6 +194,20 @@ It is still triggered in this {project_name} version, but will be removed in a f
 
 Fine-Grained Admin Permissions (FGAP) v1 is now deprecated. This version no longer receives enhancements and improvements  and will be removed in future
 release. Please migrate to FGAP v2 to ensure continued support.
+
+=== Tracing options `tracing-service-name` and `tracing-resource-attributes`
+
+The `tracing-service-name` and `tracing-resource-attributes` options are now deprecated in favor of the new centralized telemetry options `telemetry-service-name` and `telemetry-resource-attributes`.
+The service name and resource attributes are not directly related to the OpenTelemetry Tracing itself, but to the whole OpenTelemetry settings.
+
+The deprecated options will continue to work, but the new telemetry options take precedence.
+
+Migration path:
+[source]
+----
+tracing-service-name --> telemetry-service-name
+tracing-resource-attributes --> telemetry-resource-attributes
+----
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

@@ -17,17 +17,10 @@
 
 package org.keycloak.operator.testsuite.integration;
 
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.utils.Serialization;
-import io.quarkus.logging.Log;
-import io.quarkus.test.junit.QuarkusTest;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.IOUtils;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpecBuilder;
@@ -35,12 +28,20 @@ import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeUnit;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.utils.Serialization;
+import io.quarkus.logging.Log;
+import io.quarkus.test.junit.QuarkusTest;
+import org.apache.commons.io.IOUtils;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 
 @DisabledIfApiServerTest
 @QuarkusTest

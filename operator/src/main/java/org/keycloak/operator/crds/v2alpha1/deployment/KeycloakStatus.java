@@ -21,7 +21,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import io.fabric8.kubernetes.model.annotation.LabelSelector;
 import io.fabric8.kubernetes.model.annotation.StatusReplicas;
 import io.sundr.builder.annotations.Buildable;

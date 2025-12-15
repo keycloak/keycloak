@@ -16,12 +16,11 @@
  */
 package org.keycloak.operator.testsuite.integration;
 
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
-import io.quarkus.test.junit.QuarkusTest;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Test;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
@@ -29,16 +28,19 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpecBuilder;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
+import io.quarkus.test.junit.QuarkusTest;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResource.KC_TRACING_RESOURCE_ATTRIBUTES;
 import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResource.KC_TRACING_SERVICE_NAME;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisabledIfApiServerTest
 @QuarkusTest
