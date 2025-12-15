@@ -43,10 +43,12 @@ import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.user.SynchronizationResult;
+import org.keycloak.storage.user.UserStorageConnectionTest;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -278,5 +280,39 @@ public class UserStorageProviderResource {
         eventRep.put("result", syncResult);
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(eventRep).success();
         return syncResult;
+    }
+
+    @POST
+    @Path("{componentId}/test-connection")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response testConnection(@PathParam("componentId") String componentId) {
+        auth.realm().requireManageRealm();
+
+        ComponentModel model = realm.getComponent(componentId);
+        if (model == null) {
+            throw new NotFoundException("Could not find component");
+        }
+        if (!model.getProviderType().equals(UserStorageProvider.class.getName())) {
+            throw new NotFoundException("found, but not a UserStorageProvider");
+        }
+
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        UserStorageProviderFactory<?> factory = (UserStorageProviderFactory<?>) sessionFactory
+                .getProviderFactory(UserStorageProvider.class, model.getProviderId());
+
+        if (!(factory instanceof UserStorageConnectionTest connectionTest)) {
+            throw ErrorResponse.error("Provider does not support connection testing", Response.Status.BAD_REQUEST);
+        }
+
+        try {
+            UserStorageConnectionTest.Result result = connectionTest.testConnection(session, realm, model);
+            if (result.isSuccess()) {
+                return Response.noContent().build();
+            } else {
+                throw ErrorResponse.error(result.getMessage().orElse("UnknownError"), Response.Status.BAD_REQUEST);
+            }
+        } catch (Exception e) {
+            throw ErrorResponse.error(getErrorCode(e), Response.Status.BAD_REQUEST);
+        }
     }
 }
