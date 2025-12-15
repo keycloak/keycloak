@@ -10,6 +10,7 @@ import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierOrder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.RemoteProviders;
+import org.keycloak.testframework.server.KeycloakServer;
 
 import org.apache.http.client.HttpClient;
 
@@ -17,6 +18,8 @@ public class RunOnServerSupplier implements Supplier<RunOnServerClient, InjectRu
 
     @Override
     public RunOnServerClient getValue(InstanceContext<RunOnServerClient, InjectRunOnServer> instanceContext) {
+        KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
+
         HttpClient httpClient = instanceContext.getDependency(HttpClient.class);
         ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class, instanceContext.getAnnotation().realmRef());
         instanceContext.getDependency(RemoteProviders.class);
@@ -25,7 +28,7 @@ public class RunOnServerSupplier implements Supplier<RunOnServerClient, InjectRu
         String[] permittedPackages = instanceContext.getAnnotation().permittedPackages();
         testClassServer.addPermittedPackages(new HashSet<>(Arrays.asList(permittedPackages)));
 
-        return new RunOnServerClient(httpClient, realm.getBaseUrl());
+        return new RunOnServerClient(httpClient, realm.getBaseUrl(), server.hashCode());
     }
 
     @Override
