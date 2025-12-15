@@ -95,6 +95,10 @@ As PostgreSQL 13 is end-of-life it is now longer supported.
 
 We also updated the docs on how to use a TLS certificate for the JDBC-connection when connecting to a PostgreSQL database.
 
+== EnterpriseDB Advanced 18 support
+
+EDB 18 is now tested and supported in addition to the existing EDB 17 support.
+
 == Enhanced HTTP performance (preview)
 
 You can now enable a more efficient way to handle JSON data in the HTTP layer.

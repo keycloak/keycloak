@@ -175,7 +175,7 @@
         <oracle-jdbc.version>23.6.0.24.10</oracle-jdbc.version>
         <!-- Custom image, lives in test-framework/db-edb/container -->
         <edb.container>quay.io/keycloakqe/enterprisedb:${edb.version}</edb.container>
-        <edb.version>17</edb.version>
+        <edb.version>18</edb.version>
 
         <!-- Infinispan Server Container -->
         <infinispan.container>quay.io/infinispan/server:${infinispan.version}</infinispan.container>
