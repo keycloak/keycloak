@@ -248,6 +248,9 @@ export class Agent {
         ...requestOptions,
         headers: requestHeaders,
         method,
+        ...(this.#client.timeout
+          ? { signal: AbortSignal.timeout(this.#client.timeout) }
+          : {}),
       });
 
       // now we get the response of the http request
