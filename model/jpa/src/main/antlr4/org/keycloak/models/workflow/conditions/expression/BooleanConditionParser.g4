@@ -9,7 +9,7 @@ expression : expression OR andExpression | andExpression;
 
 andExpression : andExpression AND notExpression | notExpression;
 
-notExpression : '!' notExpression | atom;
+notExpression : NOT notExpression | atom;
 
 atom : LPAREN expression RPAREN // For grouping: (A OR B)
      | conditionCall

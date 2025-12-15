@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.admin.model.workflow;
+package org.keycloak.tests.workflow;
 
 import java.time.Duration;
 import java.util.List;
@@ -39,11 +39,11 @@ import org.keycloak.testframework.realm.UserConfigBuilder;
 
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
 import static org.keycloak.models.workflow.ResourceOperationType.USER_AUTHENTICATED;
-import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailByRecipient;
-import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailsByRecipient;
-import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.verifyEmailContent;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
+import static org.keycloak.tests.workflow.WorkflowManagementTest.findEmailByRecipient;
+import static org.keycloak.tests.workflow.WorkflowManagementTest.findEmailsByRecipient;
+import static org.keycloak.tests.workflow.WorkflowManagementTest.verifyEmailContent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -63,7 +63,7 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
     @Test
     public void testDisabledUserAfterInactivityPeriod() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_ADDED.toString(), USER_AUTHENTICATED.toString())
+                .onEvent(USER_CREATED.toString(), USER_AUTHENTICATED.toString())
                 .concurrency().restartInProgress("true") // this setting enables restarting the workflow
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -138,7 +138,7 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
     @Test
     public void testMultipleWorkflows() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_ADDED.toString(), USER_AUTHENTICATED.toString())
+                .onEvent(USER_CREATED.toString(), USER_AUTHENTICATED.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -147,7 +147,7 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
                                 .build())
                 .build()).close();
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow_2")
-                .onEvent(USER_ADDED.toString(), USER_AUTHENTICATED.toString())
+                .onEvent(USER_CREATED.toString(), USER_AUTHENTICATED.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(10))

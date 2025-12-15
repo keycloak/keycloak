@@ -118,9 +118,7 @@
         <sun.xml.ws.version>4.0.0</sun.xml.ws.version>
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
-        <undertow.version>${undertow-legacy.version}</undertow.version>
-        <undertow-legacy.version>2.2.24.Final</undertow-legacy.version>
-        <undertow-jakarta.version>2.3.2.Final</undertow-jakarta.version>
+        <undertow.version>2.3.20.Final</undertow.version>
         <wildfly-elytron.version>2.6.5.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <woodstox.version>6.0.3</woodstox.version>
@@ -175,7 +173,7 @@
         <oracle-jdbc.version>23.6.0.24.10</oracle-jdbc.version>
         <!-- Custom image, lives in test-framework/db-edb/container -->
         <edb.container>quay.io/keycloakqe/enterprisedb:${edb.version}</edb.container>
-        <edb.version>17</edb.version>
+        <edb.version>18</edb.version>
 
         <!-- Infinispan Server Container -->
         <infinispan.container>quay.io/infinispan/server:${infinispan.version}</infinispan.container>

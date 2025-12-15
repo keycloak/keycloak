@@ -130,6 +130,7 @@ public class Profile {
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
         OPENTELEMETRY("OpenTelemetry support", Type.DEFAULT),
+        OPENTELEMETRY_LOGS("OpenTelemetry Logs support", Type.PREVIEW, OPENTELEMETRY),
 
         DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),
 
@@ -147,7 +148,7 @@ public class Profile {
         ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
         ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.PREVIEW, 2),
 
-        WORKFLOWS("Workflows", Type.DEFAULT),
+        WORKFLOWS("Workflows", Type.PREVIEW),
 
         LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.DEFAULT),
 

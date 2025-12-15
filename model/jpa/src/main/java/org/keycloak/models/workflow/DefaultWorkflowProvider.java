@@ -156,7 +156,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                             scheduled.resourceId(), scheduled.workflowId());
                     stateProvider.remove(scheduled.executionId());
                 } else {
-                    WorkflowStep step = context.getCurrentStep();
+                    WorkflowStep step = context.getStep();
                     if (step == null) {
                         log.warnf("Could not find step %s in workflow %s for resource %s. Cancelling execution of the workflow.",
                                 scheduled.stepId(), scheduled.workflowId(), scheduled.resourceId());
@@ -279,7 +279,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                     String executionId = scheduledStep.executionId();
                     String resourceId = scheduledStep.resourceId();
                     if (provider.restart(context)) {
-                        new DefaultWorkflowExecutionContext(session, workflow, event, scheduledStep).restart();
+                        new DefaultWorkflowExecutionContext(session, workflow, event, scheduledStep).restart(0);
                     } else if (provider.deactivate(context)) {
                         log.debugf("Workflow '%s' cancelled for resource %s (execution id: %s)", workflow.getName(), resourceId, executionId);
                         stateProvider.remove(executionId);

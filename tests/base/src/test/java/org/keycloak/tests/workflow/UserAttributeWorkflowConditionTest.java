@@ -1,4 +1,4 @@
-package org.keycloak.tests.admin.model.workflow;
+package org.keycloak.tests.workflow;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -154,7 +154,7 @@ public class UserAttributeWorkflowConditionTest extends AbstractWorkflowTest {
                 .orElse(null);
 
         WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ResourceOperationType.USER_ADDED.name())
+                .onEvent(ResourceOperationType.USER_CREATED.name())
                 .onCondition(attributeCondition)
                 .withSteps(
                         WorkflowStepRepresentation.create()

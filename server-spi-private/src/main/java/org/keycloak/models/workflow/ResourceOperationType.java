@@ -22,14 +22,14 @@ import static org.keycloak.models.utils.KeycloakModelUtils.GROUP_PATH_SEPARATOR;
 
 public enum ResourceOperationType {
 
-    USER_ADDED(List.of(OperationType.CREATE, EventType.REGISTER)),
+    USER_CREATED(List.of(OperationType.CREATE, EventType.REGISTER)),
     USER_AUTHENTICATED(List.of(EventType.LOGIN), userLoginPredicate()),
     USER_FEDERATED_IDENTITY_ADDED(List.of(FederatedIdentityCreatedEvent.class), fedIdentityPredicate()),
     USER_FEDERATED_IDENTITY_REMOVED(List.of(FederatedIdentityRemovedEvent.class), fedIdentityPredicate()),
     USER_GROUP_MEMBERSHIP_ADDED(List.of(GroupMemberJoinEvent.class), groupMembershipPredicate()),
     USER_GROUP_MEMBERSHIP_REMOVED(List.of(GroupModel.GroupMemberLeaveEvent.class), groupMembershipPredicate()),
-    USER_ROLE_ADDED(List.of(RoleGrantedEvent.class), roleMembershipPredicate()),
-    USER_ROLE_REMOVED(List.of(RoleModel.RoleRevokedEvent.class), roleMembershipPredicate()),
+    USER_ROLE_GRANTED(List.of(RoleGrantedEvent.class), roleMembershipPredicate()),
+    USER_ROLE_REVOKED(List.of(RoleModel.RoleRevokedEvent.class), roleMembershipPredicate()),
     AD_HOC(List.of(new Class[] {}));
 
     private final List<Object> types;

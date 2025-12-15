@@ -68,4 +68,60 @@ public class TelemetryConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.otel.resource.attributes", "val3=hello3"
         ));
     }
+
+    @Test
+    public void logsDefault() {
+        initConfig();
+
+        assertConfig(Map.of(
+                "telemetry-logs-enabled", "false",
+                "telemetry-logs-endpoint", "http://localhost:4317",
+                "telemetry-logs-protocol", "grpc",
+                "telemetry-logs-level", "all"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.otel.logs.enabled", "false",
+                "quarkus.otel.enabled", "false",
+                "quarkus.otel.exporter.otlp.logs.endpoint", "http://localhost:4317",
+                "quarkus.otel.exporter.otlp.logs.protocol", "grpc",
+                "quarkus.otel.logs.level","ALL"
+        ));
+    }
+
+    @Test
+    public void logsPriority() {
+        ConfigArgsConfigSource.setCliArgs("--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-logs-endpoint=localhost:2000", "--telemetry-logs-protocol=http/protobuf", "--telemetry-logs-level=warn");
+        initConfig();
+        assertConfig(Map.of(
+                "telemetry-logs-enabled", "true",
+                "telemetry-logs-endpoint", "localhost:2000",
+                "telemetry-logs-protocol", "http/protobuf",
+                "telemetry-logs-level", "warn"
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.otel.logs.enabled", "true",
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.logs.endpoint", "localhost:2000",
+                "quarkus.otel.exporter.otlp.logs.protocol", "http/protobuf",
+                "quarkus.otel.logs.level","WARN"
+        ));
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--features=opentelemetry-logs", "--telemetry-endpoint=http://keycloak.org:1234", "--telemetry-protocol=grpc", "--telemetry-logs-enabled=true", "--telemetry-logs-endpoint=my-domain:2001", "--telemetry-logs-protocol=http/protobuf");
+        initConfig();
+        assertConfig(Map.of(
+                "telemetry-logs-enabled", "true",
+                "telemetry-logs-endpoint", "my-domain:2001",
+                "telemetry-logs-protocol", "http/protobuf",
+                "telemetry-endpoint", "http://keycloak.org:1234",
+                "telemetry-protocol", "grpc"
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.otel.logs.enabled", "true",
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.logs.endpoint", "my-domain:2001",
+                "quarkus.otel.exporter.otlp.logs.protocol", "http/protobuf"
+        ));
+    }
 }

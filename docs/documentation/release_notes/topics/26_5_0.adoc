@@ -95,6 +95,10 @@ As PostgreSQL 13 is end-of-life it is now longer supported.
 
 We also updated the docs on how to use a TLS certificate for the JDBC-connection when connecting to a PostgreSQL database.
 
+== EnterpriseDB Advanced 18 support
+
+EDB 18 is now tested and supported in addition to the existing EDB 17 support.
+
 == Enhanced HTTP performance (preview)
 
 You can now enable a more efficient way to handle JSON data in the HTTP layer.
@@ -140,11 +144,18 @@ For more details, see the https://www.keycloak.org/server/logging#_adding_contex
 
 == New centralized telemetry options
 
-{project_name} now provides centralized telemetry configuration options that can be shared across all telemetry (OpenTelemetry) components - traces, with future support planned for logs and metrics.
+{project_name} now provides centralized telemetry configuration options that can be shared across all telemetry (OpenTelemetry) components - traces and logs, with future support planned for metrics.
 Individual components can override these global settings when needed.
 
 New options: `telemetry-endpoint`, `telemetry-protocol`, `telemetry-service-name`, and `telemetry-resource-attributes`.
 
 *Deprecation:* The `tracing-service-name` and `tracing-resource-attributes` options are now deprecated in favor of `telemetry-service-name` and `telemetry-resource-attributes`.
+
+For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+== OpenTelemetry Logs (preview)
+
+{project_name} now supports exporting logs to OpenTelemetry collectors, enabling centralized log management.
+This preview feature allows you to export {project_name} logs to any OpenTelemetry-compatible backend and use the same OpenTelemetry collector for logs and traces.
 
 For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
