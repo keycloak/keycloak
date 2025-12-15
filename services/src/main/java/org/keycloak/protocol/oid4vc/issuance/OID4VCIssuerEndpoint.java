@@ -1481,13 +1481,13 @@ public class OID4VCIssuerEndpoint {
                                     ". The requested claims are not available in the user profile.");
                         }
                     } else {
-                        LOGGER.infof("Stored claims list is null or empty");
+                        LOGGER.debug("Stored claims list is null or empty");
                     }
                 } catch (Exception e) {
                     LOGGER.errorf(e, "Failed to parse stored claims for scope %s", scope);
                 }
             } else {
-                LOGGER.infof("No stored claims found for scope %s", scope);
+                LOGGER.debugf("No stored claims found for scope %s", scope);
             }
             // No claims filtering requested, all claims are valid
 
