@@ -28,7 +28,10 @@ import java.util.function.BiFunction;
 import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientScopeResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
 import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
@@ -38,6 +41,10 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -89,6 +96,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     protected abstract String getExpectedClaimPath();
 
     /**
+     * Get the name of the protocol mapper for firstName
+     */
+    protected abstract String getFirstNameProtocolMapperName();
+
+    /**
      * Prepare OID4VC test context by fetching issuer metadata and credential offer
      */
     protected Oid4vcTestContext prepareOid4vcTestContext() throws Exception {
@@ -137,10 +149,145 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         testCompleteFlowWithClaimsValidationAuthorizationCode(credRequestSupplier);
     }
 
+    // Test for the authorization_code flow with "mandatory" claim specified in the "authorization_details" parameter
+    @Test
+    public void testCompleteFlow_mandatoryClaimsInAuthzDetailsParameter() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+        BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
+            CredentialRequest credentialRequest = new CredentialRequest();
+            credentialRequest.setCredentialIdentifier(credentialIdentifier);
+            return credentialRequest;
+        };
+
+        // 1 - Update user to have missing "lastName" (mandatory attribute)
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "john");
+        UserRepresentation userRep = user.toRepresentation();
+        // NOTE: Need to call both "setLastName" and set attributes to be able to set last name as null
+        userRep.setAttributes(Collections.emptyMap());
+        userRep.setLastName(null);
+        user.update(userRep);
+
+        // 2 - Test the flow. Credential request should fail due the missing "lastName"
+        // Perform authorization code flow to get authorization code
+        AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
+        String credentialIdentifier = assertTokenResponse(tokenResponse);
+        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+
+        // Request the actual credential using the identifier
+        HttpPost postCredential = getCredentialRequest(ctx, credRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
+
+        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+            assertErrorCredentialResponse(credentialResponse);
+        }
+
+        // 3 - Update user to add "lastName"
+        userRep.setLastName("Doe");
+        user.update(userRep);
+
+        // 4 - Test the credential-request again. Should be OK now
+        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+            assertSuccessfulCredentialResponse(credentialResponse);
+        }
+    }
+
+
+    // Test for the authorization_code flow with "mandatory" claim specified in the "authorization_details" parameter as well as
+    // mandatory claims in the protocol mappers configuration
+    @Test
+    public void testCompleteFlow_mandatoryClaimsInAuthzDetailsParameterAndProtocolMappersConfig() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+        BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
+            CredentialRequest credentialRequest = new CredentialRequest();
+            credentialRequest.setCredentialIdentifier(credentialIdentifier);
+            return credentialRequest;
+        };
+
+        // 1 - Update "firstName" protocol mapper to be mandatory
+        ClientScopeResource clientScopeResource = ApiUtil.findClientScopeByName(testRealm(), getCredentialClientScope().getName());
+        assertNotNull(clientScopeResource);
+        ProtocolMapperRepresentation protocolMapper = clientScopeResource.getProtocolMappers().getMappers()
+                .stream()
+                .filter(protMapper -> getFirstNameProtocolMapperName().equals(protMapper.getName()))
+                .findFirst()
+                .orElseThrow((() -> new RuntimeException("Not found protocol mapper with name 'firstName-mapper'.")));
+        protocolMapper.getConfig().put(Oid4vcProtocolMapperModel.MANDATORY, "true");
+        clientScopeResource.getProtocolMappers().update(protocolMapper.getId(), protocolMapper);
+
+        try {
+            // 2 - Update user to have missing "lastName" (mandatory attribute by authorization_details parameter) and "firstName" (mandatory attribute by protocol mapper)
+            UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "john");
+            UserRepresentation userRep = user.toRepresentation();
+            // NOTE: Need to call both "setLastName" and set attributes to be able to set last name as null
+            userRep.setAttributes(Collections.emptyMap());
+            userRep.setFirstName(null);
+            userRep.setLastName(null);
+            user.update(userRep);
+
+            // 2 - Test the flow. Credential request should fail due the missing "lastName"
+            // Perform authorization code flow to get authorization code
+            AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
+            String credentialIdentifier = assertTokenResponse(tokenResponse);
+            String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+
+            // Request the actual credential using the identifier
+            HttpPost postCredential = getCredentialRequest(ctx, credRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
+
+            try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+                assertErrorCredentialResponse(credentialResponse);
+            }
+
+            // 3 - Update user to add "lastName", but keep "firstName" missing. Credential request should still fail
+            userRep.setLastName("Doe");
+            userRep.setFirstName(null);
+            user.update(userRep);
+
+            try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+                assertErrorCredentialResponse(credentialResponse);
+            }
+
+            // 4 - Update user to add "firstName", but missing "lastName"
+            userRep.setLastName(null);
+            userRep.setFirstName("John");
+            user.update(userRep);
+
+            try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+                assertErrorCredentialResponse(credentialResponse);
+            }
+
+            // 5 - Update user to both "firstName" and "lastName". Credential request should be successful
+            userRep.setLastName("Doe");
+            userRep.setFirstName("John");
+            user.update(userRep);
+
+            try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+                assertSuccessfulCredentialResponse(credentialResponse);
+            }
+        } finally {
+            // 6 - Revert protocol mapper config
+            protocolMapper.getConfig().put(Oid4vcProtocolMapperModel.MANDATORY, "false");
+            clientScopeResource.getProtocolMappers().update(protocolMapper.getId(), protocolMapper);
+        }
+    }
+
 
     private void testCompleteFlowWithClaimsValidationAuthorizationCode(BiFunction<String, String, CredentialRequest> credentialRequestSupplier) throws Exception {
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
+        // Perform authorization code flow to get authorization code
+        AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
+        String credentialIdentifier = assertTokenResponse(tokenResponse);
+        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+
+        // Request the actual credential using the identifier
+        HttpPost postCredential = getCredentialRequest(ctx, credentialRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
+
+        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+            assertSuccessfulCredentialResponse(credentialResponse);
+        }
+    }
+
+    // Successful authorization_code flow
+    private AccessTokenResponse authzCodeFlow(Oid4vcTestContext ctx) throws Exception {
         // Perform authorization code flow to get authorization code
         oauth.client(client.getClientId());
         oauth.scope(getCredentialClientScope().getName()); // Add the credential scope
@@ -183,13 +330,15 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         UrlEncodedFormEntity tokenFormEntity = new UrlEncodedFormEntity(tokenParameters, StandardCharsets.UTF_8);
         postToken.setEntity(tokenFormEntity);
 
-        AccessTokenResponse tokenResponse;
         try (CloseableHttpResponse tokenHttpResponse = httpClient.execute(postToken)) {
             assertEquals(HttpStatus.SC_OK, tokenHttpResponse.getStatusLine().getStatusCode());
             String tokenResponseBody = IOUtils.toString(tokenHttpResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            tokenResponse = JsonSerialization.readValue(tokenResponseBody, AccessTokenResponse.class);
+            return JsonSerialization.readValue(tokenResponseBody, AccessTokenResponse.class);
         }
+    }
 
+    // Test successful token response. Returns "Credential identifier" of the VC credential
+    private String assertTokenResponse(AccessTokenResponse tokenResponse) throws Exception {
         // Extract authorization_details from token response
         List<OID4VCAuthorizationDetailsResponse> authDetailsResponse = parseAuthorizationDetails(JsonSerialization.writeValueAsString(tokenResponse));
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
@@ -206,8 +355,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         assertNotNull("Credential identifiers should not be null", credentialIdentifiers);
         assertEquals("Credential identifiers expected to have 1 item. It had " + credentialIdentifiers.size() + " with value " + credentialIdentifiers,
                 1, credentialIdentifiers.size());
-        String credentialIdentifier = credentialIdentifiers.get(0);
+        return credentialIdentifiers.get(0);
+    }
 
+    private HttpPost getCredentialRequest(Oid4vcTestContext ctx, BiFunction<String, String, CredentialRequest> credentialRequestSupplier, AccessTokenResponse tokenResponse,
+                                          String credentialConfigurationId, String credentialIdentifier) throws Exception {
         // Request the actual credential using the identifier
         HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
         postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + tokenResponse.getToken());
@@ -218,27 +370,36 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
         postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));
 
-        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-            assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+        return postCredential;
+    }
 
-            // Parse the credential response
-            CredentialResponse parsedResponse = JsonSerialization.readValue(responseBody, CredentialResponse.class);
-            assertNotNull("Credential response should not be null", parsedResponse);
-            assertNotNull("Credentials should be present", parsedResponse.getCredentials());
-            assertEquals("Should have exactly one credential", 1, parsedResponse.getCredentials().size());
+    private void assertSuccessfulCredentialResponse(CloseableHttpResponse credentialResponse) throws Exception {
+        assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusLine().getStatusCode());
+        String responseBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
 
-            // Verify that the issued credential contains the requested claims AND may contain additional claims
-            CredentialResponse.Credential credentialWrapper = parsedResponse.getCredentials().get(0);
-            assertNotNull("Credential wrapper should not be null", credentialWrapper);
+        // Parse the credential response
+        CredentialResponse parsedResponse = JsonSerialization.readValue(responseBody, CredentialResponse.class);
+        assertNotNull("Credential response should not be null", parsedResponse);
+        assertNotNull("Credentials should be present", parsedResponse.getCredentials());
+        assertEquals("Should have exactly one credential", 1, parsedResponse.getCredentials().size());
 
-            // The credential is stored as Object, so we need to cast it
-            Object credentialObj = credentialWrapper.getCredential();
-            assertNotNull("Credential object should not be null", credentialObj);
+        // Verify that the issued credential contains the requested claims AND may contain additional claims
+        CredentialResponse.Credential credentialWrapper = parsedResponse.getCredentials().get(0);
+        assertNotNull("Credential wrapper should not be null", credentialWrapper);
 
-            // Verify the credential structure based on formatfix-authorization_details-processing
-            verifyCredentialStructure(credentialObj);
-        }
+        // The credential is stored as Object, so we need to cast it
+        Object credentialObj = credentialWrapper.getCredential();
+        assertNotNull("Credential object should not be null", credentialObj);
+
+        // Verify the credential structure based on formatfix-authorization_details-processing
+        verifyCredentialStructure(credentialObj);
+    }
+
+    private void assertErrorCredentialResponse(CloseableHttpResponse credentialResponse) throws Exception {
+        assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusLine().getStatusCode());
+        String responseBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+        OAuth2ErrorRepresentation error = JsonSerialization.readValue(responseBody, OAuth2ErrorRepresentation.class);
+        assertEquals("Credential issuance failed: No elements selected after processing claims path pointer. The requested claims are not available in the user profile.", error.getError());
     }
 
     /**

@@ -49,6 +49,11 @@ public class OID4VCSdJwtAuthorizationCodeFlowTest extends OID4VCAuthorizationCod
     }
 
     @Override
+    protected String getFirstNameProtocolMapperName() {
+        return "firstName-mapper";
+    }
+
+    @Override
     protected void verifyCredentialStructure(Object credentialObj) {
         assertNotNull("Credential object should not be null", credentialObj);
 
