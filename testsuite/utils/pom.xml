@@ -162,7 +162,6 @@
         <dependency>
             <groupId>io.undertow</groupId>
             <artifactId>undertow-servlet</artifactId>
-            <version>${undertow-jakarta.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

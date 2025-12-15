@@ -118,9 +118,7 @@
         <sun.xml.ws.version>4.0.0</sun.xml.ws.version>
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
-        <undertow.version>${undertow-legacy.version}</undertow.version>
-        <undertow-legacy.version>2.2.24.Final</undertow-legacy.version>
-        <undertow-jakarta.version>2.3.2.Final</undertow-jakarta.version>
+        <undertow.version>2.3.20.Final</undertow.version>
         <wildfly-elytron.version>2.6.5.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <woodstox.version>6.0.3</woodstox.version>
