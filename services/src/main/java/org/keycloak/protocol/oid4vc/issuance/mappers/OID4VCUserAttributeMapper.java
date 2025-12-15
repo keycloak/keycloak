@@ -44,12 +44,6 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-user-attribute-mapper";
     public static final String AGGREGATE_ATTRIBUTES_KEY = "aggregateAttributes";
-    public static final List<String> SELECTABLE_PROPERTIES = List.of(UserModel.USERNAME,
-                                                                     UserModel.LOCALE,
-                                                                     UserModel.FIRST_NAME,
-                                                                     UserModel.LAST_NAME,
-                                                                     UserModel.EMAIL,
-                                                                     UserModel.EMAIL_VERIFIED);
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
@@ -57,16 +51,15 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
         ProviderConfigProperty subjectPropertyNameConfig = new ProviderConfigProperty();
         subjectPropertyNameConfig.setName(CLAIM_NAME);
         subjectPropertyNameConfig.setLabel("Claim Name");
-        subjectPropertyNameConfig.setHelpText("The user attributes to be added to the credential subject.");
+        subjectPropertyNameConfig.setHelpText("The user attribute to be added to the credential subject.");
         subjectPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
         CONFIG_PROPERTIES.add(subjectPropertyNameConfig);
 
         ProviderConfigProperty userAttributeConfig = new ProviderConfigProperty();
         userAttributeConfig.setName(USER_ATTRIBUTE_KEY);
         userAttributeConfig.setLabel("User attribute");
-        userAttributeConfig.setHelpText("The user attribute to be added to the credential subject.");
+        userAttributeConfig.setHelpText("The user attributes to be added to the credential subject.");
         userAttributeConfig.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
-        userAttributeConfig.setOptions(SELECTABLE_PROPERTIES);
         CONFIG_PROPERTIES.add(userAttributeConfig);
 
         ProviderConfigProperty aggregateAttributesConfig = new ProviderConfigProperty();
