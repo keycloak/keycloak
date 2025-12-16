@@ -2,6 +2,7 @@ package org.keycloak.testframework.injection;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -9,7 +10,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.keycloak.testframework.TestFrameworkExecutor;
+
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.InvocationInterceptor;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class Registry implements ExtensionContext.Store.CloseableResource {
@@ -112,8 +118,8 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         return (T) dependency.getValue();
     }
 
-    public void beforeEach(Object testInstance) {
-        findRequestedInstances(testInstance);
+    public void beforeEach(Object testInstance, Method testMethod) {
+        findRequestedInstances(testInstance, testMethod);
         destroyIncompatibleInstances();
         matchDeployedInstancesWithRequestedInstances();
         deployRequestedInstances();
@@ -121,9 +127,37 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         invokeBeforeEachOnSuppliers();
     }
 
-    private void findRequestedInstances(Object testInstance) {
+    public void intercept(InvocationInterceptor.Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext) throws Throwable {
+        Class<?> testClass = invocationContext.getTargetClass();
+        Method testMethod = invocationContext.getExecutable();
+
+        TestFrameworkExecutor testFrameworkExecutor = getExecutor(testMethod);
+        if (testFrameworkExecutor != null) {
+            testFrameworkExecutor.execute(this, testClass, testMethod);
+            invocation.skip();
+        } else {
+            invocation.proceed();
+        }
+    }
+
+    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
+        Method testMethod = (Method) parameterContext.getParameter().getDeclaringExecutable();
+        Class<?> parameterType = parameterContext.getParameter().getType();
+        TestFrameworkExecutor testFrameworkExecutor = getExecutor(testMethod);
+        return testFrameworkExecutor != null && testFrameworkExecutor.supportsParameter(testMethod, parameterType);
+    }
+
+    private void findRequestedInstances(Object testInstance, Method testMethod) {
         List<Class<?>> alwaysEnabledValueTypes = extensions.getAlwaysEnabledValueTypes();
         for (Class<?> valueType : alwaysEnabledValueTypes) {
+            RequestedInstance requestedInstance = createRequestedInstance(null, valueType);
+            if (requestedInstance != null) {
+                requestedInstances.add(requestedInstance);
+            }
+        }
+
+        List<Class<?>> methodValueTypes = extensions.getMethodValueTypes(testMethod);
+        for (Class<?> valueType : methodValueTypes) {
             RequestedInstance requestedInstance = createRequestedInstance(null, valueType);
             if (requestedInstance != null) {
                 requestedInstances.add(requestedInstance);
@@ -315,6 +349,10 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         for (InstanceContext i : deployedInstances) {
             i.getSupplier().onBeforeEach(i);
         }
+    }
+
+    private TestFrameworkExecutor getExecutor(Method testMethod) {
+        return extensions.getTestFrameworkExecutors().stream().filter(e -> e.shouldExecute(testMethod)).findFirst().orElse(null);
     }
 
     private static class RequestedInstanceComparator implements Comparator<RequestedInstance> {
