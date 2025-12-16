@@ -54,7 +54,7 @@ public final class PropertyMappers {
                 new FeaturePropertyMappers(), new ImportPropertyMappers(), new ManagementPropertyMappers(),
                 new MetricsPropertyMappers(), new OpenApiPropertyMappers(), new LoggingPropertyMappers(), new ProxyPropertyMappers(),
                 new VaultPropertyMappers(), new TracingPropertyMappers(), new TransactionPropertyMappers(),
-                new SecurityPropertyMappers(), new TruststorePropertyMappers());
+                new SecurityPropertyMappers(), new TruststorePropertyMappers(), new TelemetryPropertyMappers());
     }
 
     public static List<PropertyMapperGrouping> getPropertyMapperGroupings() {

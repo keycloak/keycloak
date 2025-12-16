@@ -9,12 +9,11 @@ import org.jboss.logging.Logger;
 final class ScheduleWorkflowTask extends WorkflowTransactionalTask {
 
     private static final Logger log = Logger.getLogger(ScheduleWorkflowTask.class);
-
-    private final DefaultWorkflowExecutionContext workflowContext;
+    private final DefaultWorkflowExecutionContext context;
 
     ScheduleWorkflowTask(DefaultWorkflowExecutionContext context) {
         super(context.getSession());
-        this.workflowContext = context;
+        this.context = context;
     }
 
     @Override
@@ -27,7 +26,7 @@ final class ScheduleWorkflowTask extends WorkflowTransactionalTask {
             return;
         }
 
-
+        DefaultWorkflowExecutionContext workflowContext = new DefaultWorkflowExecutionContext(session, this.context);
         Workflow workflow = workflowContext.getWorkflow();
         WorkflowEvent event = workflowContext.getEvent();
         WorkflowStep firstStep = workflow.getSteps().findFirst().orElseThrow(() -> new WorkflowInvalidStateException("No steps found for workflow " + workflow.getName()));
@@ -46,7 +45,7 @@ final class ScheduleWorkflowTask extends WorkflowTransactionalTask {
 
     @Override
     public String toString() {
-        WorkflowEvent event = workflowContext.getEvent();
+        WorkflowEvent event = context.getEvent();
         return "eventType=" + event.getOperation() +
                 ",resourceType=" + event.getResourceType() +
                 ",resourceId=" + event.getResourceId();

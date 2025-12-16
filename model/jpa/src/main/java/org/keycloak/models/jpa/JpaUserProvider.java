@@ -44,6 +44,7 @@ import jakarta.persistence.criteria.Root;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.models.ClientModel;
@@ -118,7 +119,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         entity.setUsername(username.toLowerCase());
         entity.setRealmId(realm.getId());
         em.persist(entity);
-        em.flush();
+        if (!EntityManagers.isBatchMode()) {
+            em.flush();
+        }
         UserAdapter userModel = new UserAdapter(session, realm, em, entity);
 
         if (addDefaultRoles) {

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.keycloak.common.util.DurationConverter;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.conditions.expression.BooleanConditionParser;
 import org.keycloak.models.workflow.conditions.expression.ConditionNameCollector;
@@ -53,10 +54,16 @@ public class WorkflowValidator {
             if (steps.indexOf(restartStep) != steps.size() - 1) {
                 throw new WorkflowInvalidStateException("Workflow restart step must be the last step.");
             }
+            MultivaluedHashMap<String, String> config = restartStep.getConfig();
+            int position = config == null ? 0 : Integer.parseInt(config.getFirstOrDefault("position", "0"));
+            if (position < 0 || position >= steps.size()) {
+                throw new WorkflowInvalidStateException("Workflow restart step has invalid position: " + position);
+            }
             boolean hasScheduledStep = steps.stream()
+                    .skip(position)
                     .anyMatch(step -> DurationConverter.isPositiveDuration(step.getAfter()));
             if (!hasScheduledStep) {
-                throw new WorkflowInvalidStateException("A workflow with a restart step must have at least one step with a time delay.");
+                throw new WorkflowInvalidStateException("No scheduled step found if restarting at position " + position);
             }
         }
     }

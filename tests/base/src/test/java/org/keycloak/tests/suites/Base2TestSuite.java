@@ -16,7 +16,8 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.oauth",
         "org.keycloak.tests.tracing",
         "org.keycloak.tests.transactions",
-        "org.keycloak.tests.welcomepage"
+        "org.keycloak.tests.welcomepage",
+        "org.keycloak.tests.workflow"
 })
 public class Base2TestSuite {
 }

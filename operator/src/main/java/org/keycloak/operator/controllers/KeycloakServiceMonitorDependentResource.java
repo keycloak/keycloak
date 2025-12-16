@@ -1,9 +1,5 @@
 package org.keycloak.operator.controllers;
 
-import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResource.managementEndpoint;
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.METRICS_ENABLED;
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.configuredOptions;
-
 import java.net.HttpURLConnection;
 
 import org.keycloak.operator.Constants;
@@ -23,6 +19,10 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.quarkus.logging.Log;
+
+import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResource.managementEndpoint;
+import static org.keycloak.operator.crds.v2alpha1.CRDUtils.METRICS_ENABLED;
+import static org.keycloak.operator.crds.v2alpha1.CRDUtils.configuredOptions;
 
 @KubernetesDependent(
       informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)

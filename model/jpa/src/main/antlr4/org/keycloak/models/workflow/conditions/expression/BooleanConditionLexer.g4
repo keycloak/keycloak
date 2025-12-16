@@ -1,9 +1,13 @@
 lexer grammar BooleanConditionLexer;
 
 // --- DEFAULT_MODE (mode 0) ---
-OR  : 'OR';
-AND : 'AND';
-NOT : '!';
+
+// CASE-INSENSITIVE OPERATORS
+// We use character sets like [oO] to match both cases.
+
+OR  : [oO] [rR];             // Matches: or, OR, Or, oR
+AND : [aA] [nN] [dD];        // Matches: and, AND, And, ...
+NOT : [nN] [oO] [tT];        // Matches: not, NOT, Not, ...
 
 Identifier : [\p{L}_][\p{L}0-9_/-]*;
 

@@ -800,10 +800,12 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             kcSession.getContext().setRealm(realm);
             UserLoginFailureModel failure1 = kcSession.loginFailures().addUserLoginFailure(realm, "user1");
             failure1.incrementFailures();
+            failure1.setLastFailure(Time.currentTimeMillis());
 
             UserLoginFailureModel failure2 = kcSession.loginFailures().addUserLoginFailure(realm, "user2");
             failure2.incrementFailures();
             failure2.incrementFailures();
+            failure2.setLastFailure(Time.currentTimeMillis());
         });
 
         testingClient.server().run((KeycloakSession kcSession) -> {

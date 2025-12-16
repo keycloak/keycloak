@@ -6,6 +6,7 @@ import java.util.function.Function;
 import org.keycloak.testframework.ui.page.AbstractPage;
 
 import org.junit.jupiter.api.Assertions;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -21,7 +22,7 @@ public class WaitUtils {
     public WaitUtils waitForPage(AbstractPage page) {
         String expectedPageId = page.getExpectedPageId();
         try {
-            createDefaultWait().until(d -> expectedPageId.equals(managed.page().getCurrentPageId()));
+            createDefaultWait().ignoring(StaleElementReferenceException.class).until(d -> expectedPageId.equals(managed.page().getCurrentPageId()));
         } catch (TimeoutException e) {
             Assertions.fail("Expected page '" + expectedPageId + "' to be loaded, but currently on page '" + managed.page().getCurrentPageId() + "' after timeout");
         }

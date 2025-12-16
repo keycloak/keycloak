@@ -137,18 +137,18 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
                             // Use a reasonable expiration time (e.g., 1 hour)
                             int expiration = Time.currentTime() + 3600;
                             CredentialOfferStorage.CredentialOfferState offerState = new CredentialOfferStorage.CredentialOfferState(
-                                    credOffer, client.getClientId(), user.getUsername(), expiration);
+                                    credOffer, client.getClientId(), user.getId(), expiration);
                             offerState.setAuthorizationDetails(oid4vcDetail);
 
                             offerStorage.putOfferState(session, offerState);
                             logger.debugf("Created credential offer state for authorization code flow: [cid=%s, uid=%s, credConfigId=%s, credId=%s]",
-                                    client.getClientId(), user.getUsername(), oid4vcDetail.getCredentialConfigurationId(), credentialId);
+                                    client.getClientId(), offerState.getUserId(), oid4vcDetail.getCredentialConfigurationId(), credentialId);
                         } else {
                             // Update existing offer state with new authorization details (e.g., if same credential identifier is reused)
                             existingState.setAuthorizationDetails(oid4vcDetail);
                             offerStorage.replaceOfferState(session, existingState);
                             logger.debugf("Updated existing credential offer state for authorization code flow: [cid=%s, uid=%s, credConfigId=%s, credId=%s]",
-                                    client.getClientId(), user.getUsername(), oid4vcDetail.getCredentialConfigurationId(), credentialId);
+                                    client.getClientId(), existingState.getUserId(), oid4vcDetail.getCredentialConfigurationId(), credentialId);
                         }
                     }
                 }

@@ -17,11 +17,10 @@
 
 package org.keycloak.operator.crds.v2alpha1.deployment;
 
-import io.fabric8.kubernetes.api.model.SecretKeySelector;
-
 import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.fabric8.kubernetes.api.model.SecretKeySelector;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>

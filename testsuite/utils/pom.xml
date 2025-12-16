@@ -78,13 +78,8 @@
             <artifactId>keycloak-account-ui</artifactId>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-reload4j</artifactId>
+            <groupId>org.jboss.logmanager</groupId>
+            <artifactId>jboss-logmanager</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -167,7 +162,6 @@
         <dependency>
             <groupId>io.undertow</groupId>
             <artifactId>undertow-servlet</artifactId>
-            <version>${undertow-jakarta.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

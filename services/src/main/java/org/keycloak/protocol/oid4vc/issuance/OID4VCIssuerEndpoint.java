@@ -83,6 +83,7 @@ import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
+import org.keycloak.protocol.oid4vc.model.AttestationProof;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
@@ -271,15 +272,6 @@ public class OID4VCIssuerEndpoint {
         }
 
         LOGGER.debugf("Client '%s' is enabled for OID4VCI features.", client.getClientId());
-    }
-
-    /**
-     * Generates a unique notification ID for use in CredentialResponse.
-     *
-     * @return a unique string identifier
-     */
-    private String generateNotificationId() {
-        return SecretGenerator.getInstance().randomString();
     }
 
     /**
@@ -781,7 +773,6 @@ public class OID4VCIssuerEndpoint {
 
         // Generate credential response
         CredentialResponse responseVO = new CredentialResponse();
-        responseVO.setNotificationId(generateNotificationId());
 
         if (allProofs.isEmpty()) {
             // Single issuance without proof
@@ -985,11 +976,28 @@ public class OID4VCIssuerEndpoint {
 
         if (credentialRequest.getProof() != null) {
             LOGGER.debugf("Converting single 'proof' field to 'proofs' array for backward compatibility");
-            JwtProof singleProof = credentialRequest.getProof();
+            Object singleProof = credentialRequest.getProof();
             Proofs proofsArray = new Proofs();
-            if (singleProof.getJwt() != null) {
-                proofsArray.setJwt(List.of(singleProof.getJwt()));
+
+            // Handle AttestationProof
+            if (singleProof instanceof AttestationProof attestationProof) {
+                String attestationValue = attestationProof.getAttestation();
+                if (attestationValue != null) {
+                    proofsArray.setAttestation(List.of(attestationValue));
+                }
             }
+            // Handle JwtProof
+            else if (singleProof instanceof JwtProof jwtProof) {
+                String jwtValue = jwtProof.getJwt();
+                if (jwtValue != null) {
+                    proofsArray.setJwt(List.of(jwtValue));
+                }
+            } else {
+                String message = "Unsupported proof type: " + (singleProof != null ? singleProof.getClass().getName() : "null");
+                LOGGER.debug(message);
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, message));
+            }
+
             credentialRequest.setProofs(proofsArray);
             credentialRequest.setProof(null);
         }

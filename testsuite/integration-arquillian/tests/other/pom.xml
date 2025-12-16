@@ -59,7 +59,7 @@
                                         <artifactId>integration-arquillian-tests-base</artifactId>
                                         <version>${project.version}</version>
                                         <classifier>tests</classifier>
-                                        <includes>arquillian.xml,wildfly-config.xml,test-constants.properties,kerberos/*,keystore/*,password-blacklists/*,log4j.properties,vault/*</includes>
+                                        <includes>arquillian.xml,wildfly-config.xml,test-constants.properties,kerberos/*,keystore/*,password-blacklists/*,logging.properties,vault/*</includes>
                                     </artifactItem>
                                 </artifactItems>
                             </configuration>
@@ -92,12 +92,6 @@
                     <type>test-jar</type>
                 </dependency>
             </dependencies>
-        </profile>
-        <profile>
-            <id>jpa-performance</id>
-            <modules>
-                <module>jpa-performance</module>
-            </modules>
         </profile>
         <profile>
             <id>sssd</id>

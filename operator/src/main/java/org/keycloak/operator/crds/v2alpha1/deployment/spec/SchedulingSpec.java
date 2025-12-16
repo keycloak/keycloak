@@ -1,14 +1,13 @@
 package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
-import io.fabric8.kubernetes.api.model.Affinity;
-import io.fabric8.kubernetes.api.model.Toleration;
-import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
-import io.sundr.builder.annotations.Buildable;
-
 import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.Toleration;
+import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
+import io.sundr.builder.annotations.Buildable;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")

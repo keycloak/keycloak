@@ -16,6 +16,42 @@
  */
 package org.keycloak.operator.controllers;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.keycloak.operator.Config;
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.ContextUtils;
+import org.keycloak.operator.Utils;
+import org.keycloak.operator.crds.v2alpha1.CRDUtils;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
+import org.keycloak.operator.update.impl.RecreateOnImageChangeUpdateLogic;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -37,41 +73,6 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.quarkus.logging.Log;
-import org.keycloak.operator.Config;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.ContextUtils;
-import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.CRDUtils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
-import org.keycloak.operator.update.impl.RecreateOnImageChangeUpdateLogic;
-
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.keycloak.operator.Utils.addResources;
 import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;

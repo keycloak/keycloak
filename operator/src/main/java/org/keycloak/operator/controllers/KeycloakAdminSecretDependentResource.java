@@ -1,5 +1,13 @@
 package org.keycloak.operator.controllers;
 
+import java.util.Optional;
+import java.util.UUID;
+
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.Utils;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
+
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
@@ -11,14 +19,6 @@ import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
-
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
-
-import java.util.Optional;
-import java.util.UUID;
 
 @KubernetesDependent(
         informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)

@@ -17,13 +17,13 @@
 
 package org.keycloak.operator.testsuite.utils;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.security.cert.X509Certificate;
-import java.security.SecureRandom;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 
 /**
  * Helper class to provide an SSLContext that trusts all server certificates.
