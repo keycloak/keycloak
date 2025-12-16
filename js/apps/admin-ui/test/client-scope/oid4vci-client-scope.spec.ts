@@ -67,6 +67,7 @@ const OID4VCI_FIELDS = {
   FORMAT: "#kc-vc-format",
   TOKEN_JWS_TYPE: "attributes.vc🍺credential_build_config🍺token_jws_type",
   SIGNING_KEY_ID: "#kc-signing-key-id",
+  SIGNING_ALGORITHM: "attributes.vc🍺credential_signing_alg",
   DISPLAY: "attributes.vc🍺display",
   SUPPORTED_CREDENTIAL_TYPES: "attributes.vc🍺supported_credential_types",
   VERIFIABLE_CREDENTIAL_TYPE: "attributes.vc🍺verifiable_credential_type",
@@ -80,6 +81,7 @@ const TEST_VALUES = {
   CREDENTIAL_ID: "test-cred-identifier",
   ISSUER_DID: "did:key:test123",
   EXPIRY_SECONDS: "86400",
+  SIGNING_ALG: "ES256",
   TOKEN_JWS_TYPE: "dc+sd-jwt",
   VISIBLE_CLAIMS: "id,iat,nbf,exp,jti,given_name",
   DISPLAY:
@@ -124,6 +126,9 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     ).toBeVisible();
     await expect(page.locator(OID4VCI_FIELDS.FORMAT)).toBeVisible();
     await expect(page.getByTestId(OID4VCI_FIELDS.TOKEN_JWS_TYPE)).toBeVisible();
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.SIGNING_ALGORITHM),
+    ).toBeVisible();
     await expect(page.getByTestId(OID4VCI_FIELDS.DISPLAY)).toBeVisible();
   });
 
@@ -153,6 +158,9 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await page
       .getByTestId(OID4VCI_FIELDS.TOKEN_JWS_TYPE)
       .fill(TEST_VALUES.TOKEN_JWS_TYPE);
+    await page
+      .getByTestId(OID4VCI_FIELDS.SIGNING_ALGORITHM)
+      .fill(TEST_VALUES.SIGNING_ALG);
 
     await page.getByTestId(OID4VCI_FIELDS.DISPLAY).fill(TEST_VALUES.DISPLAY);
     await page
@@ -181,6 +189,9 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await expect(page.locator("#kc-vc-format")).toContainText(
       "JWT VC (jwt_vc)",
     );
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.SIGNING_ALGORITHM),
+    ).toHaveValue(TEST_VALUES.SIGNING_ALG);
     await expect(page.getByTestId(OID4VCI_FIELDS.DISPLAY)).toHaveValue(
       TEST_VALUES.DISPLAY,
     );
@@ -237,6 +248,9 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       page.getByTestId(OID4VCI_FIELDS.EXPIRY_IN_SECONDS),
     ).toBeHidden();
     await expect(page.locator(OID4VCI_FIELDS.FORMAT)).toBeHidden();
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.SIGNING_ALGORITHM),
+    ).toBeHidden();
     await expect(page.getByTestId(OID4VCI_FIELDS.DISPLAY)).toBeHidden();
   });
 
@@ -354,6 +368,9 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await page
       .getByTestId(OID4VCI_FIELDS.CREDENTIAL_IDENTIFIER)
       .fill(TEST_VALUES.CREDENTIAL_ID);
+    await page
+      .getByTestId(OID4VCI_FIELDS.SIGNING_ALGORITHM)
+      .fill(TEST_VALUES.SIGNING_ALG);
     await page.getByTestId(OID4VCI_FIELDS.DISPLAY).fill(TEST_VALUES.DISPLAY);
     await page
       .getByTestId(OID4VCI_FIELDS.SUPPORTED_CREDENTIAL_TYPES)
@@ -381,6 +398,9 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await expect(
       page.getByTestId(OID4VCI_FIELDS.VERIFIABLE_CREDENTIAL_TYPE),
     ).toHaveValue(TEST_VALUES.VERIFIABLE_CREDENTIAL_TYPE);
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.SIGNING_ALGORITHM),
+    ).toHaveValue(TEST_VALUES.SIGNING_ALG);
     await expect(page.getByTestId(OID4VCI_FIELDS.VISIBLE_CLAIMS)).toHaveValue(
       TEST_VALUES.VISIBLE_CLAIMS,
     );
