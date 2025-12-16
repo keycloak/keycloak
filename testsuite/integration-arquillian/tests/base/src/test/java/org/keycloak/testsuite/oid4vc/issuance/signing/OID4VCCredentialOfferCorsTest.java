@@ -53,7 +53,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Test class for CORS functionality on OID4VCI credential offer endpoints.
  * Tests both the authenticated credential-offer-uri endpoint and the
- * session-based credential-offer/{sessionCode} endpoint.
+ * session-based credential-offer/{nonce} endpoint.
  *
  * @author <a href="https://github.com/forkimenjeckayang">Forkim Akwichek</a>
  */
@@ -145,12 +145,12 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testCredentialOfferSessionCorsValidOrigin() throws Exception {
-        // First get a credential offer URI to obtain a session code
+        // First get a credential offer URI to obtain a nonce
         AccessTokenResponse tokenResponse = getAccessToken();
-        String sessionCode = getSessionCodeFromOfferUri(tokenResponse.getAccessToken());
+        String nonce = getNonceFromOfferUri(tokenResponse.getAccessToken());
 
         // Test credential offer endpoint with valid origin
-        String offerUrl = getCredentialOfferUrl(sessionCode);
+        String offerUrl = getCredentialOfferUrl(nonce);
 
         try (CloseableHttpResponse response = makeCorsRequest(offerUrl, VALID_CORS_URL, null)) {
             assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
@@ -166,12 +166,12 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testCredentialOfferSessionCorsInvalidOrigin() throws Exception {
-        // First get a credential offer URI to obtain a session code
+        // First get a credential offer URI to obtain a nonce
         AccessTokenResponse tokenResponse = getAccessToken();
-        String sessionCode = getSessionCodeFromOfferUri(tokenResponse.getAccessToken());
+        String nonce = getNonceFromOfferUri(tokenResponse.getAccessToken());
 
         // Test credential offer endpoint with invalid origin
-        String offerUrl = getCredentialOfferUrl(sessionCode);
+        String offerUrl = getCredentialOfferUrl(nonce);
 
         try (CloseableHttpResponse response = makeCorsRequest(offerUrl, INVALID_CORS_URL, null)) {
             // Should still return 200 OK and include CORS headers (allows all origins)
@@ -182,12 +182,12 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testCredentialOfferSessionCorsPreflightRequest() throws Exception {
-        // First get a credential offer URI to obtain a session code
+        // First get a credential offer URI to obtain a nonce
         AccessTokenResponse tokenResponse = getAccessToken();
-        String sessionCode = getSessionCodeFromOfferUri(tokenResponse.getAccessToken());
+        String nonce = getNonceFromOfferUri(tokenResponse.getAccessToken());
 
         // Test preflight request for credential offer endpoint
-        String offerUrl = getCredentialOfferUrl(sessionCode);
+        String offerUrl = getCredentialOfferUrl(nonce);
 
         try (CloseableHttpResponse response = makePreflightRequest(offerUrl, VALID_CORS_URL)) {
             assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
@@ -258,7 +258,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         return getCredentialOfferUriUrl(jwtTypeCredentialConfigurationIdName);
     }
 
-    private String getSessionCodeFromOfferUri(String accessToken) throws Exception {
+    private String getNonceFromOfferUri(String accessToken) throws Exception {
         String offerUriUrl = getCredentialOfferUriUrl();
 
         try (CloseableHttpResponse response = makeCorsRequest(offerUriUrl, VALID_CORS_URL, accessToken)) {
@@ -314,7 +314,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         assertEquals("Access-Control-Allow-Origin should match request origin",
                 expectedOrigin, response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN).getValue());
 
-        // Session-based endpoints don't require credentials since they use session codes for security
+        // Session-based endpoints don't require credentials since they use nonces for security
         // and allow all origins, so credentials header should be false for security reasons
         Header credentialsHeader = response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS);
         assertNotNull("Access-Control-Allow-Credentials header should be present for session endpoints",
