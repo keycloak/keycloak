@@ -68,13 +68,15 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
             JsonWebToken jwt = clientAssertionState.getToken();
 
-            // Ignore for client assertions signed by third-parties
-            if (!Objects.equals(jwt.getIssuer(), jwt.getSubject())) {
-                return;
-            }
+            if (jwt != null) {
+                // Ignore for client assertions signed by third-parties
+                if (!Objects.equals(jwt.getIssuer(), jwt.getSubject())) {
+                    return;
+                }
 
-            if (clientAssertionState.getClient() == null) {
-                clientAssertionState.setClient(context.getRealm().getClientByClientId(jwt.getSubject()));
+                if (clientAssertionState.getClient() == null) {
+                    clientAssertionState.setClient(context.getRealm().getClientByClientId(jwt.getSubject()));
+                }
             }
 
             JWTClientValidator validator = new JWTClientValidator(context, this::verifySignature, getId());
