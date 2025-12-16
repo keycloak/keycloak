@@ -125,6 +125,15 @@ public org.keycloak.models.UserCredentialManager credentialManager() {
 }
 ----
 
+=== HTTP client connection request timeout has a default and is configurable
+
+In previous versions, the HTTP client (SPI `connections-http-client`, provider `default`) had no default for the connection request timeout, which meant unlimited time.
+In situations with long-running out-going HTTP requests this would cause pool contention.
+
+In this release, the default is 5000 milliseconds. You may adjust the default with a new provider option:
+
+- **Connection request timeout property**: `connection-request-timeout-millis` (default: `5000`)
+
 === OCSP request timeouts follow HTTP client configuration
 
 In previous versions, OCSP requests used hardcoded connection and socket timeouts of 10 seconds.
