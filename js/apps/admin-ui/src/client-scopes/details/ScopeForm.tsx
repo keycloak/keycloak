@@ -367,6 +367,13 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                 options={keyOptions}
               />
             )}
+            <TextControl
+              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                "attributes.vc.credential_signing_alg",
+              )}
+              label={t("credentialSigningAlgorithm")}
+              labelIcon={t("credentialSigningAlgorithmHelp")}
+            />
             <TextAreaControl
               name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
                 "attributes.vc.display",
