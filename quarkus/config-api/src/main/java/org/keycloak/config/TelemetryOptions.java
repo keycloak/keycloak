@@ -59,4 +59,29 @@ public class TelemetryOptions {
             .defaultValue(LoggingOptions.Level.ALL)
             .caseInsensitiveExpectedValues(true)
             .build();
+
+    // Telemetry Metrics
+    public static final Option<Boolean> TELEMETRY_METRICS_ENABLED = new OptionBuilder<>("telemetry-metrics-enabled", Boolean.class)
+            .category(OptionCategory.TELEMETRY)
+            .description("Enables exporting metrics to a destination handling telemetry data (OpenTelemetry Metrics).")
+            .defaultValue(Boolean.FALSE)
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> TELEMETRY_METRICS_ENDPOINT = new OptionBuilder<>("telemetry-metrics-endpoint", String.class)
+            .category(OptionCategory.TELEMETRY)
+            .description("Telemetry (OpenTelemetry) endpoint to connect to for Metrics. If not given, the value is inherited from the '%s' option.".formatted(TelemetryOptions.TELEMETRY_ENDPOINT.getKey()))
+            .build();
+
+    public static final Option<String> TELEMETRY_METRICS_PROTOCOL = new OptionBuilder<>("telemetry-metrics-protocol", String.class)
+            .category(OptionCategory.TELEMETRY)
+            .description("Telemetry (OpenTelemetry) protocol used for the metrics telemetry data. If not given, the value is inherited from the '%s' option.".formatted(TelemetryOptions.TELEMETRY_PROTOCOL.getKey()))
+            .expectedValues("grpc", "http/protobuf")
+            .build();
+
+    public static final Option<String> TELEMETRY_METRICS_INTERVAL = new OptionBuilder<>("telemetry-metrics-interval", String.class)
+            .category(OptionCategory.TELEMETRY)
+            .description("The interval between the start of two metric export attempts to the destination handling telemetry data (OpenTelemetry Metrics). It accepts simplified format for time units as java.time.Duration (like 5000ms, 30s, 5m, 1h). If the value is only a number, it represents time in seconds.")
+            .defaultValue("60s")
+            .build();
 }
