@@ -2,11 +2,6 @@ package org.keycloak.test.examples;
 
 import java.io.IOException;
 import java.net.URL;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import java.security.cert.X509Certificate;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -45,26 +40,14 @@ public class TlsEnabledTest {
     @InjectKeycloakUrls
     KeycloakUrls keycloakUrls;
 
-
     @Test
-    public void testCertSupplier() throws KeyStoreException {
+    public void testCertSupplier() {
         Assertions.assertNotNull(managedCertificates);
 
-        KeyStore trustStore = managedCertificates.getServerTrustStore();
-        Assertions.assertNotNull(trustStore);
+        Assertions.assertNotNull(managedCertificates.getServerKeyStorePath());
+        Assertions.assertNull(managedCertificates.getServerTrustStorePath());
 
-        X509Certificate cert = managedCertificates.getServerCertificate();
-        Assertions.assertNotNull(cert);
-        Assertions.assertEquals(cert.getSerialNumber(), ((X509Certificate) trustStore.getCertificate(managedCertificates.getServerCertificateEntry())).getSerialNumber());
-    }
-
-    @Test
-    public void testCertDetails() throws CertificateNotYetValidException, CertificateExpiredException {
-        X509Certificate cert = managedCertificates.getServerCertificate();
-
-        cert.checkValidity();
-        Assertions.assertEquals("CN=localhost", cert.getSubjectX500Principal().getName());
-        Assertions.assertEquals("CN=localhost", cert.getIssuerX500Principal().getName());
+        Assertions.assertNotNull(managedCertificates.getClientSSLContext());
     }
 
     @Test
@@ -86,7 +69,6 @@ public class TlsEnabledTest {
     public void testOAuthClient() {
         Assertions.assertTrue(oAuthClient.doWellKnownRequest().getTokenEndpoint().startsWith("https://"));
     }
-
 
     private static class TlsEnabledConfig implements CertificatesConfig {
 

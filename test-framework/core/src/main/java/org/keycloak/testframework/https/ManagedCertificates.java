@@ -1,17 +1,14 @@
 package org.keycloak.testframework.https;
 
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.KeyManagementException;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLContext;
@@ -28,16 +25,24 @@ public class ManagedCertificates {
 
     private static final Logger LOGGER = Logger.getLogger(ManagedCertificates.class);
 
-    private final CryptoProvider cryptoProvider;
+    private final static Path KEYSTORES_DIR = Path.of(System.getProperty("java.io.tmpdir"));
 
-    private Certificate server;
-    private Certificate client;
-    private final char[] password;
+    private static final String STORE_PASSWORD = "mysuperstrongstorepassword";
+    private static final char[] STORE_PASSWORD_CHARS = STORE_PASSWORD.toCharArray();
+
     private final boolean tlsEnabled;
     private final boolean mTlsEnabled;
     private final KeystoreUtil.KeystoreFormat keystoreFormat;
 
-    private final static Path KEYSTORES_DIR = Path.of(System.getProperty("java.io.tmpdir"));
+    private final CryptoProvider cryptoProvider;
+
+    private Path serverKeystorePath;
+    private Path serverTruststorePath;
+
+    private Path clientKeystorePath;
+    private Path clientTruststorePath;
+
+    private SSLContext clientSslContext;
 
     public ManagedCertificates(CertificatesConfigBuilder configBuilder) throws ManagedCertificatesException {
         if (!CryptoIntegration.isInitialised()) {
@@ -48,86 +53,38 @@ public class ManagedCertificates {
         keystoreFormat = configBuilder.getKeystoreFormat();
         tlsEnabled = configBuilder.isTlsEnabled();
         mTlsEnabled = configBuilder.isMTlsEnabled();
-        password = keystoreFormat == KeystoreUtil.KeystoreFormat.JKS ? "password".toCharArray() : "passwordpassword".toCharArray();
 
-        initServerAndClientCertificateObjects();
+        serverKeystorePath = resolvePath("kc-testing-server-keystore");
+        serverTruststorePath = resolvePath("kc-testing-server-truststore");
 
-        initKeyAndTrustStores();
-    }
+        clientKeystorePath = resolvePath("kc-testing-client-keystore");
+        clientTruststorePath = resolvePath("kc-testing-client-truststore");
 
-    public void initServerAndClientCertificateObjects() {
-        Path serverKeystorePath = resolvePath("kc-testing-server-keystore");
-        Path serverTruststorePath = resolvePath("kc-testing-server-truststore");
-        server = new Certificate(serverKeystorePath, serverTruststorePath);
-        server.setKeyEntry("server-private-key");
-        server.setCertificateEntry("server-certificate");
-
-        if (mTlsEnabled) {
-            Path clientKeystorePath = resolvePath("kc-testing-client-keystore");
-            Path clientTruststorePath = resolvePath("kc-testing-client-truststore");
-            client = new Certificate(clientKeystorePath, clientTruststorePath);
-            client.setKeyEntry("client-private-key");
-            client.setCertificateEntry("client-certificate");
+        if (!Files.exists(serverKeystorePath) || !Files.exists(serverTruststorePath) || !Files.exists(clientKeystorePath) || !Files.exists(clientTruststorePath)) {
+            createStores();
         }
-    }
 
-    private Path resolvePath(String fileName) {
-        return KEYSTORES_DIR.resolve(fileName + "." + keystoreFormat.getPrimaryExtension());
-    }
-
-    public SSLContext getClientSSLContext() {
-        try {
-            if (mTlsEnabled) {
-                return SSLContextBuilder.create()
-                        .loadTrustMaterial(client.getTruststorePath().toFile(), password)
-                        .loadKeyMaterial(client.getKeystore(), password)
-                        .build();
-            } else {
-                return SSLContextBuilder.create()
-                        .loadTrustMaterial(server.getTruststore(), null)
-                        .build();
-            }
-        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
-            throw new ManagedCertificatesException(e);
-        } catch (UnrecoverableKeyException | CertificateException | IOException e) {
-            throw new RuntimeException(e);
-        }
+        clientSslContext = tlsEnabled ? createClientSSLContext() : null;
     }
 
     public String getServerKeyStorePath() {
-        return server.getKeystorePath().toString();
+        return tlsEnabled ? serverKeystorePath.toString() : null;
     }
 
-    public String getClientTrustStorePath() {
-        return server.getTruststorePath().toString();
+    public String getServerKeyStorePassword() {
+        return tlsEnabled ? STORE_PASSWORD : null;
     }
 
-    public String getKeyAndTrustStorePassword() {
-        return String.valueOf(password);
+    public String getServerTrustStorePath() {
+        return mTlsEnabled ? serverTruststorePath.toString() : null;
     }
 
-    public KeyStore getServerTrustStore() {
-        if (mTlsEnabled) {
-            return client.getTruststore();
-        } else {
-            return server.getTruststore();
-        }
+    public String getServerTrustStorePassword() {
+        return mTlsEnabled ? STORE_PASSWORD : null;
     }
 
-    public String getServerCertificateEntry() {
-        return server.getCertificateEntry();
-    }
-
-    public X509Certificate getServerCertificate() {
-        try {
-            if (mTlsEnabled) {
-                return (X509Certificate) client.getKeystore().getCertificate(server.getCertificateEntry());
-            } else {
-                return (X509Certificate) server.getKeystore().getCertificate(server.getCertificateEntry());
-            }
-        } catch (KeyStoreException e) {
-            throw new ManagedCertificatesException(e);
-        }
+    public SSLContext getClientSSLContext() {
+        return clientSslContext;
     }
 
     public boolean isTlsEnabled()  {
@@ -138,69 +95,62 @@ public class ManagedCertificates {
         return mTlsEnabled;
     }
 
-    private void initKeyAndTrustStores() throws ManagedCertificatesException {
+
+    private SSLContext createClientSSLContext() {
         try {
-            server.setKeystore(cryptoProvider.getKeyStore(keystoreFormat));
-            server.setTruststore(cryptoProvider.getKeyStore(keystoreFormat));
+            SSLContextBuilder sslContextBuilder = SSLContextBuilder.create()
+                    .loadTrustMaterial(clientTruststorePath.toFile(), STORE_PASSWORD_CHARS);
 
             if (mTlsEnabled) {
-                client.setKeystore(cryptoProvider.getKeyStore(keystoreFormat));
-                client.setTruststore(cryptoProvider.getKeyStore(keystoreFormat));
+                sslContextBuilder.loadKeyMaterial(clientKeystorePath.toFile(), STORE_PASSWORD_CHARS, STORE_PASSWORD_CHARS);
             }
 
-            if (Files.exists(server.getKeystorePath()) && Files.exists(server.getTruststorePath())
-                    && Files.exists(client.getKeystorePath()) && Files.exists(client.getTruststorePath())) {
-                LOGGER.debugv("Existing Server KeyStore files found in {0}", KEYSTORES_DIR);
+            return sslContextBuilder.build();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-                if (mTlsEnabled) {
-                    loadKeyStore(client.getKeystore(), client.getKeystorePath(), password);
-                    loadKeyStore(client.getTruststore(), client.getTruststorePath(), password);
-                }
+    private void createStores() {
+        try {
+            KeyPair serverKeyPair = generateKeyPair();
+            X509Certificate serverCertificate = generateX509CertificateCertificate(serverKeyPair, "localhost");
 
-                loadKeyStore(server.getKeystore(), server.getKeystorePath(), password);
-                loadKeyStore(server.getTruststore(), server.getTruststorePath(), password);
-            } else {
-                LOGGER.debugv("Generating Server KeyStore files in {0}", KEYSTORES_DIR);
+            KeyPair clientKeyPair = generateKeyPair();
+            X509Certificate clientCertificate = generateX509CertificateCertificate(clientKeyPair, "myclient");
 
-                if (mTlsEnabled) {
-                    generateKeystoreAndTruststore(client.getKeystore(), server.getTruststore(), client.getKeyEntry(), client.getCertificateEntry(), "localhost");
-                    storeKeyOrTrustStore(client.getKeystore(), client.getKeystorePath());
+            KeyStore serverKeyStore = cryptoProvider.getKeyStore(keystoreFormat);
+            serverKeyStore.load(null, STORE_PASSWORD_CHARS);
+            serverKeyStore.setKeyEntry("server-key", serverKeyPair.getPrivate(), STORE_PASSWORD_CHARS, new X509Certificate[] { serverCertificate });
+            save(serverKeyStore, serverKeystorePath);
 
-                    generateKeystoreAndTruststore(server.getKeystore(), client.getTruststore(), server.getKeyEntry(), server.getCertificateEntry(), "localhost");
-                    storeKeyOrTrustStore(client.getTruststore(), client.getTruststorePath());
-                } else {
-                    generateKeystoreAndTruststore(server.getKeystore(), server.getTruststore(), server.getKeyEntry(), server.getCertificateEntry(), "localhost");
-                }
-                storeKeyOrTrustStore(server.getKeystore(), server.getKeystorePath());
-                storeKeyOrTrustStore(server.getTruststore(), server.getTruststorePath());
-            }
+            KeyStore serverTrustStore = cryptoProvider.getKeyStore(keystoreFormat);
+            serverTrustStore.load(null, STORE_PASSWORD_CHARS);
+            serverTrustStore.setCertificateEntry("myclient-certificate", clientCertificate);
+            save(serverTrustStore, serverTruststorePath);
+
+            KeyStore clientKeyStore = cryptoProvider.getKeyStore(keystoreFormat);
+            clientKeyStore.load(null, STORE_PASSWORD_CHARS);
+            clientKeyStore.setKeyEntry("client-key", clientKeyPair.getPrivate(), STORE_PASSWORD_CHARS, new X509Certificate[] { clientCertificate });
+            save(clientKeyStore, clientKeystorePath);
+
+            KeyStore clientTrustStore = cryptoProvider.getKeyStore(keystoreFormat);
+            clientTrustStore.load(null, STORE_PASSWORD_CHARS);
+            clientTrustStore.setCertificateEntry("server-certificate", serverCertificate);
+            save(clientTrustStore, clientTruststorePath);
         } catch (Exception e) {
             throw new ManagedCertificatesException(e);
         }
     }
 
-    private void storeKeyOrTrustStore(KeyStore store, Path storePath) throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
+    private Path resolvePath(String fileName) {
+        return KEYSTORES_DIR.resolve(fileName + "." + keystoreFormat.getPrimaryExtension());
+    }
+
+    private void save(KeyStore store, Path storePath) throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
         try (FileOutputStream fos = new FileOutputStream(storePath.toFile())) {
-            store.store(fos, password);
+            store.store(fos, STORE_PASSWORD_CHARS);
         }
-    }
-
-    private void loadKeyStore(KeyStore keyStore, Path keyStorePath, char[] keyStorePasswd) throws NoSuchAlgorithmException, IOException, CertificateException {
-        try (FileInputStream fis = new FileInputStream(keyStorePath.toFile())) {
-            keyStore.load(fis, keyStorePasswd);
-        }
-    }
-
-    private void generateKeystoreAndTruststore(KeyStore keyStore, KeyStore trustStore, String privateKey, String certificateEntry, String subject) throws NoSuchAlgorithmException, NoSuchProviderException, CertificateException, IOException, KeyStoreException, Exception {
-        keyStore.load(null);
-        trustStore.load(null);
-
-        KeyPair keyPair = generateKeyPair();
-        X509Certificate cert = generateX509CertificateCertificate(keyPair, subject);
-
-        keyStore.setCertificateEntry(certificateEntry, cert);
-        trustStore.setCertificateEntry(certificateEntry, cert);
-        keyStore.setKeyEntry(privateKey, keyPair.getPrivate(), password, new X509Certificate[]{cert});
     }
 
     private KeyPair generateKeyPair() throws NoSuchAlgorithmException, NoSuchProviderException {

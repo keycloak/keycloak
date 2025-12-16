@@ -26,11 +26,11 @@ public class CertificatesConfigBuilder {
     }
 
     public boolean isTlsEnabled() {
-        return this.tlsEnabled;
+        return tlsEnabled || mTlsEnabled;
     }
 
-    public CertificatesConfigBuilder mTlsEnabled(boolean enabled) {
-        mTlsEnabled = enabled;
+    public CertificatesConfigBuilder mTlsEnabled(boolean mTlsEnabled) {
+        this.mTlsEnabled = mTlsEnabled;
         return this;
     }
 
