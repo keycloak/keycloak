@@ -44,4 +44,8 @@ public interface Supplier<T, S extends Annotation> {
         return SupplierOrder.DEFAULT;
     }
 
+    default RequiredDependencies getDependencies() {
+        return RequiredDependencies.none();
+    }
+
 }

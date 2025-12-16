@@ -10,6 +10,7 @@ import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.Registry;
 import org.keycloak.testframework.injection.RequestedInstance;
+import org.keycloak.testframework.injection.RequiredDependencies;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierHelpers;
 import org.keycloak.testframework.injection.SupplierOrder;
@@ -93,6 +94,11 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
     @Override
     public void close(InstanceContext<KeycloakServer, KeycloakIntegrationTest> instanceContext) {
         instanceContext.getValue().stop();
+    }
+
+    @Override
+    public RequiredDependencies getDependencies() {
+        return RequiredDependencies.create(ManagedCertificates.class);
     }
 
     public abstract KeycloakServer getServer();
