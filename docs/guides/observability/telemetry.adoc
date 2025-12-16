@@ -82,12 +82,13 @@ For example, if you want only to export `WARN` and `ERROR` logs, you can change 
 
 == Metrics
 
-WARNING: This OpenTelemetry Metrics feature is currently in an experimental mode, and it is not recommended for use in production.
+WARNING: The OpenTelemetry Metrics feature is currently experimental, and it is not recommended for use in production.
 
-NOTE: The OpenTelemetry feature (`opentelemetry`) needs to be turned on (by default).
+NOTE: In order for the Metrics feature to function, the OpenTelemetry feature `opentelemetry` cannot be disabled.
 
-For integrating OpenTelemetry Metrics, {project_name} uses the https://quarkus.io/guides/telemetry-micrometer-to-opentelemetry[Micrometer-to-OpenTelemetry bridge] that provides the functionality to export metrics created by Micrometer to OpenTelemetry Collector.
-It means that all metrics created via Micrometer or OpenTelemetry metrics will be exported to the OpenTelemetry.
+For integrating OpenTelemetry Metrics, {project_name} uses the https://quarkus.io/guides/telemetry-micrometer-to-opentelemetry[Micrometer-to-OpenTelemetry bridge],
+which provides the functionality to export metrics created by Micrometer to the OpenTelemetry Collector.
+This means that all metrics created via Micrometer or OpenTelemetry metrics will be exported to the OpenTelemetry.
 
 There are some https://quarkus.io/guides/telemetry-micrometer-to-opentelemetry#metric-differences-between-micrometer-and-opentelemetry[API, and Semantic convention differences] for Micrometer vs OTel Metrics, so you should check if all required metrics are exported.
 
