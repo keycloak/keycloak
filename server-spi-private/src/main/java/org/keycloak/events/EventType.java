@@ -189,6 +189,13 @@ public enum EventType implements EnumWithStableIndex {
 
     USER_SESSION_DELETED(61, false),
     USER_SESSION_DELETED_ERROR(0x10000 + USER_SESSION_DELETED.getStableIndex(), false),
+
+    CREDENTIAL_REQUEST(62, true),
+    CREDENTIAL_REQUEST_ERROR(0x10000 + CREDENTIAL_REQUEST.getStableIndex(), true),
+    CREDENTIAL_OFFER_REQUEST(63, false),
+    CREDENTIAL_OFFER_REQUEST_ERROR(0x10000 + CREDENTIAL_OFFER_REQUEST.getStableIndex(), false),
+    CREDENTIAL_NONCE_REQUEST(64, false),
+    CREDENTIAL_NONCE_REQUEST_ERROR(0x10000 + CREDENTIAL_NONCE_REQUEST.getStableIndex(), false),
     ;
 
     private final int stableIndex;

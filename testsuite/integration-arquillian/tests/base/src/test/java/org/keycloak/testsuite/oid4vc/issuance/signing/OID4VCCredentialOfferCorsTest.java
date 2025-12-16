@@ -25,6 +25,8 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.common.Profile;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -89,6 +91,8 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
     public void testCredentialOfferUriCorsValidOrigin() throws Exception {
 
         AccessTokenResponse tokenResponse = getAccessToken();
+        // Clear events from token retrieval
+        events.clear();
 
         // Test credential offer URI endpoint with valid origin
         String offerUriUrl = getCredentialOfferUriUrl();
@@ -102,6 +106,14 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
             CredentialOfferURI offerUri = JsonSerialization.readValue(responseBody, CredentialOfferURI.class);
             assertNotNull("Credential offer URI should not be null", offerUri.getIssuer());
             assertNotNull("Nonce should not be null", offerUri.getNonce());
+
+            // Verify CREDENTIAL_OFFER_REQUEST event was fired
+            events.expect(EventType.CREDENTIAL_OFFER_REQUEST)
+                    .client(clientId)
+                    .user(AssertEvents.isUUID())
+                    .session(AssertEvents.isSessionId())
+                    .detail(Details.USERNAME, "john")
+                    .assertEvent();
         }
     }
 
@@ -149,6 +161,9 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         AccessTokenResponse tokenResponse = getAccessToken();
         String sessionCode = getSessionCodeFromOfferUri(tokenResponse.getAccessToken());
 
+        // Clear events before credential offer request
+        events.clear();
+
         // Test credential offer endpoint with valid origin
         String offerUrl = getCredentialOfferUrl(sessionCode);
 
@@ -161,6 +176,17 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
             CredentialsOffer offer = JsonSerialization.readValue(responseBody, CredentialsOffer.class);
             assertNotNull("Credential offer should not be null", offer.getCredentialIssuer());
             assertNotNull("Credential configuration IDs should not be null", offer.getCredentialConfigurationIds());
+
+            // The credential_type detail contains the credential configuration ID from the offer
+            // We already assert that credentialConfigurationIds is not null and not empty above
+            String expectedCredentialType = offer.getCredentialConfigurationIds().get(0);
+
+            events.expect(EventType.CREDENTIAL_OFFER_REQUEST)
+                    .client(clientId)
+                    .user(AssertEvents.isUUID())
+                    .session((String) null) // No session for unauthenticated endpoint
+                    .detail(Details.CREDENTIAL_TYPE, expectedCredentialType)
+                    .assertEvent();
         }
     }
 

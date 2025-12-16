@@ -28,6 +28,8 @@ import java.util.function.BiFunction;
 import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
 import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
@@ -38,6 +40,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -50,6 +53,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
+import org.junit.Rule;
 import org.junit.Test;
 
 import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
@@ -64,6 +68,9 @@ import static org.junit.Assert.assertNotNull;
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
 public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEndpointTest {
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     /**
      * Test context for OID4VC tests
@@ -218,8 +225,20 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
         postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));
 
+        // Clear events from token exchange
+        events.clear();
+
         try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
             assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusLine().getStatusCode());
+
+            // Verify CREDENTIAL_REQUEST event was fired
+            events.expect(EventType.CREDENTIAL_REQUEST)
+                    .client(client.getClientId())
+                    .user(AssertEvents.isUUID())
+                    .session(AssertEvents.isSessionId())
+                    .detail(Details.USERNAME, "john")
+                    .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
+                    .assertEvent();
             String responseBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
 
             // Parse the credential response
