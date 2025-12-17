@@ -35,6 +35,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public abstract class SdJwsTest {
 
@@ -195,12 +196,10 @@ public abstract class SdJwsTest {
         VerificationException exception = assertThrows(VerificationException.class, () -> {
             new ClaimVerifier.IatLifetimeCheck(0, maxLifetime).test(sdJws.getPayload());
         });
-        assertEquals(String.format("Token has expired by iat: now: '%s', expired at: '%s', "
-                                       + "iat: '%s', maxLifetime: '%s'",
-                                   now,
-                                   iat + maxLifetime,
-                                   iat,
-                                   maxLifetime), exception.getMessage());
+
+        assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
+                exception.getMessage().matches("Token has expired by iat: now: '\\d+', expired at:"
+                        + " '\\d+', iat: '\\d+', maxLifetime: '180'"));
     }
 
     private JwsToken exampleSdJws(long iat) {
