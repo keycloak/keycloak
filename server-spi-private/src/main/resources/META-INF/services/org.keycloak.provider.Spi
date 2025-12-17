@@ -110,4 +110,5 @@ org.keycloak.models.workflow.WorkflowSpi
 org.keycloak.models.workflow.WorkflowConditionSpi
 org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorSpi
 org.keycloak.cache.AlternativeLookupSPI
+org.keycloak.cache.LocalCacheSPI
 org.keycloak.models.workflow.WorkflowStateSpi
