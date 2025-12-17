@@ -1,10 +1,14 @@
 package org.keycloak.testframework.realm;
 
+import java.util.List;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.injection.AbstractInterceptorHelper;
+import org.keycloak.testframework.injection.DependenciesBuilder;
+import org.keycloak.testframework.injection.Dependency;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.Registry;
 import org.keycloak.testframework.injection.RequestedInstance;
@@ -14,6 +18,12 @@ import org.keycloak.testframework.injection.SupplierOrder;
 import org.keycloak.testframework.server.KeycloakServer;
 
 public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
+
+    @Override
+    public List<Dependency> getDependencies(RequestedInstance<ManagedRealm, InjectRealm> instanceContext) {
+        return DependenciesBuilder.create(KeycloakServer.class)
+                .add(Keycloak.class, "bootstrap-client").build();
+    }
 
     @Override
     public ManagedRealm getValue(InstanceContext<ManagedRealm, InjectRealm> instanceContext) {

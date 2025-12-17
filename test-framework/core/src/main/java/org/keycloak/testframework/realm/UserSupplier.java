@@ -1,5 +1,7 @@
 package org.keycloak.testframework.realm;
 
+import java.util.List;
+
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -7,6 +9,8 @@ import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectUser;
+import org.keycloak.testframework.injection.DependenciesBuilder;
+import org.keycloak.testframework.injection.Dependency;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
@@ -16,6 +20,11 @@ import org.keycloak.testframework.util.ApiUtil;
 public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
 
     private static final String USER_UUID_KEY = "userUuid";
+
+    @Override
+    public List<Dependency> getDependencies(RequestedInstance<ManagedUser, InjectUser> instanceContext) {
+        return DependenciesBuilder.create(ManagedRealm.class, instanceContext.getAnnotation().realmRef()).build();
+    }
 
     @Override
     public ManagedUser getValue(InstanceContext<ManagedUser, InjectUser> instanceContext) {

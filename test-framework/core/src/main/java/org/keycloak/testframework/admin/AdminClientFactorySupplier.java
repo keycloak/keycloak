@@ -1,15 +1,23 @@
 package org.keycloak.testframework.admin;
 
+import java.util.List;
 import javax.net.ssl.SSLContext;
 
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.https.ManagedCertificates;
+import org.keycloak.testframework.injection.DependenciesBuilder;
+import org.keycloak.testframework.injection.Dependency;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.server.KeycloakServer;
 
 public class AdminClientFactorySupplier implements Supplier<AdminClientFactory, InjectAdminClientFactory> {
+
+    @Override
+    public List<Dependency> getDependencies(RequestedInstance<AdminClientFactory, InjectAdminClientFactory> instanceContext) {
+        return DependenciesBuilder.create(KeycloakServer.class).add(ManagedCertificates.class).build();
+    }
 
     @Override
     public AdminClientFactory getValue(InstanceContext<AdminClientFactory, InjectAdminClientFactory> instanceContext) {

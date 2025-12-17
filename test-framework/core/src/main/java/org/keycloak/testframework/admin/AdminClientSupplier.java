@@ -1,5 +1,7 @@
 package org.keycloak.testframework.admin;
 
+import java.util.List;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -8,6 +10,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.TestFrameworkException;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.config.Config;
+import org.keycloak.testframework.injection.DependenciesBuilder;
+import org.keycloak.testframework.injection.Dependency;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
@@ -16,6 +20,15 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 
 public class AdminClientSupplier implements Supplier<Keycloak, InjectAdminClient> {
+
+    @Override
+    public List<Dependency> getDependencies(RequestedInstance<Keycloak, InjectAdminClient> instanceContext) {
+        DependenciesBuilder builder = DependenciesBuilder.create(AdminClientFactory.class);
+        if (instanceContext.getAnnotation().mode().equals(InjectAdminClient.Mode.MANAGED_REALM)) {
+            builder.add(ManagedRealm.class);
+        }
+        return builder.build();
+    }
 
     @Override
     public Keycloak getValue(InstanceContext<Keycloak, InjectAdminClient> instanceContext) {
