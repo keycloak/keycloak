@@ -18,8 +18,6 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -34,6 +32,7 @@ import jakarta.annotation.Nullable;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
@@ -80,10 +79,10 @@ public class JwtCNonceHandler implements CNonceHandler {
         RealmModel realm = keycloakSession.getContext().getRealm();
         final String issuer = OID4VCIssuerWellKnownProvider.getIssuer(keycloakSession.getContext());
         // TODO discussion about the attribute name to use
-        final Integer nonceLifetimeMillis = realm.getAttribute(OID4VCIConstants.C_NONCE_LIFETIME_IN_SECONDS, 60);
+        final Integer nonceLifetimeSeconds = realm.getAttribute(OID4VCIConstants.C_NONCE_LIFETIME_IN_SECONDS, 60);
         audiences = Optional.ofNullable(audiences).orElseGet(Collections::emptyList);
-        final Instant now = Instant.now();
-        final long expiresAt = now.plus(nonceLifetimeMillis, ChronoUnit.SECONDS).getEpochSecond();
+        final long nowSeconds = Time.currentTime();
+        final long expiresAt = nowSeconds + nonceLifetimeSeconds;
         final int nonceLength = NONCE_DEFAULT_LENGTH + new Random().nextInt(NONCE_LENGTH_RANDOM_OFFSET);
         // this generated value itself is basically just a salt-value for the generated token, which itself is the nonce.
         final String strongSalt = Base64.getEncoder().encodeToString(RandomSecret.createRandomSecret(nonceLength));
@@ -144,7 +143,7 @@ public class JwtCNonceHandler implements CNonceHandler {
                                             if (exp == null) {
                                                 throw new VerificationException("c_nonce has no expiration time");
                                             }
-                                            long now = Instant.now().getEpochSecond();
+                                            long now = Time.currentTime();
                                             if (exp < now) {
                                                 String message = String.format(
                                                         "c_nonce not valid: %s(exp) < %s(now)",

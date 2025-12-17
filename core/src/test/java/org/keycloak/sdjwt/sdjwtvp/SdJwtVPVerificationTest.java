@@ -17,13 +17,13 @@
 
 package org.keycloak.sdjwt.sdjwtvp;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
@@ -265,7 +265,7 @@ public abstract class SdJwtVPVerificationTest {
 
     @Test
     public void testShouldFail_IfKbIssuedInFuture() {
-        long now = Instant.now().getEpochSecond();
+        long now = Time.currentTime();
 
         ObjectNode kbPayload = exampleKbPayload();
         kbPayload.set(OID4VCConstants.CLAIM_NAME_IAT, mapper.valueToTree(now + 1000));
@@ -280,7 +280,7 @@ public abstract class SdJwtVPVerificationTest {
 
     @Test
     public void testShouldTolerateKbIssuedInTheFutureWithinClockSkew() throws VerificationException {
-        long now = Instant.now().getEpochSecond();
+        long now = Time.currentTime();
 
         ObjectNode kbPayload = exampleKbPayload();
         // Issued just 5 seconds in the future. Should pass with a clock skew of 10 seconds.
@@ -317,7 +317,7 @@ public abstract class SdJwtVPVerificationTest {
 
     @Test
     public void testShouldFail_IfKbExpired() {
-        long now = Instant.now().getEpochSecond();
+        long now = Time.currentTime();
 
         ObjectNode kbPayload = exampleKbPayload();
         kbPayload.set(OID4VCConstants.CLAIM_NAME_EXP, mapper.valueToTree(now - 1000));
@@ -332,7 +332,7 @@ public abstract class SdJwtVPVerificationTest {
 
     @Test
     public void testShouldTolerateExpiredKbWithinClockSkew() throws VerificationException {
-        long now = Instant.now().getEpochSecond();
+        long now = Time.currentTime();
 
         ObjectNode kbPayload = exampleKbPayload();
         // Expires just 5 seconds ago. Should pass with a clock skew of 10 seconds.
@@ -351,7 +351,7 @@ public abstract class SdJwtVPVerificationTest {
 
     @Test
     public void testShouldFail_IfKbNotBeforeTimeYet() {
-        long now = Instant.now().getEpochSecond();
+        long now = Time.currentTime();
 
         ObjectNode kbPayload = exampleKbPayload();
         kbPayload.set(OID4VCConstants.CLAIM_NAME_NBF, mapper.valueToTree(now + 1000));
