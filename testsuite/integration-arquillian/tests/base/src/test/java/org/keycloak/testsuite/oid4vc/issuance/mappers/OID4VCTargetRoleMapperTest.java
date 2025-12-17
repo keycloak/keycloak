@@ -64,7 +64,7 @@ public class OID4VCTargetRoleMapperTest extends OID4VCTest {
 						AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
 						authenticator.setTokenString(token);
 						UserSessionModel userSessionModel = authenticator.authenticate().session();
-						roleMapper.setClaimsForSubject(claimsMap, userSessionModel);
+						roleMapper.setClaim(claimsMap, userSessionModel);
 						assertTrue("The roles should be included as a claim.", claimsMap.containsKey("roles"));
 						if (claimsMap.get("roles") instanceof HashSet roles) {
 							List<Role> rolesList = roles.stream().map(ro -> new ObjectMapper().convertValue(ro, Role.class)).toList();
