@@ -521,8 +521,8 @@ public class OID4VCIssuerEndpoint {
      * Handles CORS preflight requests for credential offer endpoint
      */
     @OPTIONS
-    @Path(CREDENTIAL_OFFER_PATH + "{sessionCode}")
-    public Response getCredentialOfferPreflight(@PathParam("sessionCode") String sessionCode) {
+    @Path(CREDENTIAL_OFFER_PATH + "{nonce}")
+    public Response getCredentialOfferPreflight(@PathParam("nonce") String nonce) {
         configureCors(false);
         cors.preflight();
         return cors.add(Response.ok());
