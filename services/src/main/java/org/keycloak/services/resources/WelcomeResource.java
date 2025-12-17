@@ -114,9 +114,24 @@ public class WelcomeResource {
             String username = formData.getFirst("username");
             String password = formData.getFirst("password");
             String passwordConfirmation = formData.getFirst("passwordConfirmation");
+            String firstName = formData.getFirst("firstName");
+            String lastName = formData.getFirst("lastName");
+            String email = formData.getFirst("email");
 
             if (username != null) {
                 username = username.trim();
+            }
+
+            if (firstName != null) {
+                firstName = firstName.trim();
+            }
+
+            if (lastName != null) {
+                lastName = lastName.trim();
+            }
+
+            if (email != null) {
+                email = email.trim();
             }
 
             if (username == null || username.length() == 0) {
@@ -134,7 +149,7 @@ public class WelcomeResource {
 
             try {
                 ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
-                applianceBootstrap.createMasterRealmUser(username, password, false);
+                applianceBootstrap.createMasterRealmUser(username, password, firstName, lastName, email, false);
             } catch (ModelException e) {
                 session.getTransactionManager().rollback();
                 logger.error("Error creating the administrative user", e);
