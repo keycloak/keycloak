@@ -80,6 +80,27 @@ For example, if you want only to export `WARN` and `ERROR` logs, you can change 
 
 <@kc.start parameters="--telemetry-logs-level=WARN"/>
 
+== Metrics
+
+WARNING: The OpenTelemetry Metrics feature is currently experimental, and it is not recommended for use in production.
+
+NOTE: In order for the Metrics feature to function, the OpenTelemetry feature `opentelemetry` cannot be disabled.
+
+For integrating OpenTelemetry Metrics, {project_name} uses the https://quarkus.io/guides/telemetry-micrometer-to-opentelemetry[Micrometer-to-OpenTelemetry bridge],
+which provides the functionality to export metrics created by Micrometer to the OpenTelemetry Collector.
+This means that all metrics created via Micrometer or OpenTelemetry metrics will be exported to the OpenTelemetry.
+
+There are some https://quarkus.io/guides/telemetry-micrometer-to-opentelemetry#metric-differences-between-micrometer-and-opentelemetry[API, and Semantic convention differences] for Micrometer vs OTel Metrics, so you should check if all required metrics are exported.
+
+=== Enable Metrics
+You can enable the OpenTelemetry Metrics via CLI as follows:
+
+<@kc.start parameters="--features=opentelemetry-metrics --telemetry-metrics-enabled=true --metrics-enabled=true"/>
+
+NOTE: Metrics (`metrics-enabled`) needs to be enabled as well
+
+For more information on how to set up metrics, see the configuration options below or visit the https://www.keycloak.org/observability/configuration-metrics[Gaining insights with metrics guide].
+
 <@profile.ifCommunity>
 
 == Development setup
@@ -100,13 +121,16 @@ Then, you can navigate to Grafana UI by accessing `+localhost:3000+` and then yo
 
 </@profile.ifCommunity>
 
-<@opts.printRelevantOptions includedOptions="telemetry-*" excludedOptions="telemetry-logs-*">
+<@opts.printRelevantOptions includedOptions="telemetry-*" excludedOptions="telemetry-logs-* telemetry-metrics-*">
 
 === Traces
 <@opts.includeOptions includedOptions="tracing-enabled tracing-endpoint tracing-protocol tracing-service-name tracing-resource-attributes"/>
 
 === Logs
 <@opts.includeOptions includedOptions="telemetry-logs-*"/>
+
+=== Metrics
+<@opts.includeOptions includedOptions="metrics-enabled telemetry-metrics-*"/>
 
 </@opts.printRelevantOptions>
 

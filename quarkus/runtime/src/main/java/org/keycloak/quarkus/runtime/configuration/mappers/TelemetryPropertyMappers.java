@@ -6,12 +6,14 @@ import java.net.URL;
 import java.util.List;
 
 import org.keycloak.common.Profile;
+import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.TelemetryOptions;
 import org.keycloak.config.TracingOptions;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.StringUtil;
 
+import io.quarkus.runtime.configuration.DurationConverter;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_ENABLED;
@@ -20,6 +22,10 @@ import static org.keycloak.config.TelemetryOptions.TELEMETRY_LOGS_ENABLED;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_LOGS_ENDPOINT;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_LOGS_LEVEL;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_LOGS_PROTOCOL;
+import static org.keycloak.config.TelemetryOptions.TELEMETRY_METRICS_ENABLED;
+import static org.keycloak.config.TelemetryOptions.TELEMETRY_METRICS_ENDPOINT;
+import static org.keycloak.config.TelemetryOptions.TELEMETRY_METRICS_INTERVAL;
+import static org.keycloak.config.TelemetryOptions.TELEMETRY_METRICS_PROTOCOL;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_PROTOCOL;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_RESOURCE_ATTRIBUTES;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_SERVICE_NAME;
@@ -27,9 +33,11 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 
 public class TelemetryPropertyMappers implements PropertyMapperGrouping{
     private static final String OTEL_FEATURE_ENABLED_MSG = "'opentelemetry' feature is enabled";
-    private static final String OTEL_COLLECTOR_ENABLED_MSG = "any of available OpenTelemetry components (Logs, Traces) is turned on";
+    private static final String OTEL_COLLECTOR_ENABLED_MSG = "any of available OpenTelemetry components (Logs, Metrics, Traces) is turned on";
     private static final String OTEL_LOGS_FEATURE_ENABLED_MSG = "feature '%s' is enabled".formatted(Profile.Feature.OPENTELEMETRY_LOGS.getVersionedKey());
     private static final String OTEL_LOGS_ENABLED_MSG = "Telemetry Logs functionality ('%s') is enabled".formatted(TELEMETRY_LOGS_ENABLED.getKey());
+    private static final String OTEL_METRICS_FEATURE_ENABLED_MSG = "metrics and feature '%s' are enabled".formatted(Profile.Feature.OPENTELEMETRY_METRICS.getVersionedKey());
+    private static final String OTEL_METRICS_ENABLED_MSG = "metrics ('%s') and Telemetry Metrics functionality ('%s') are enabled".formatted(MetricsOptions.METRICS_ENABLED.getKey(), TELEMETRY_METRICS_ENABLED.getKey());
 
     @Override
     public List<? extends PropertyMapper<?>> getPropertyMappers() {
@@ -85,12 +93,36 @@ public class TelemetryPropertyMappers implements PropertyMapperGrouping{
                         .to("quarkus.otel.logs.level")
                         .paramLabel("level")
                         .transformer(LoggingPropertyMappers::upperCase)
+                        .build(),
+                // Telemetry Metrics
+                fromOption(TELEMETRY_METRICS_ENABLED)
+                        .isEnabled(TelemetryPropertyMappers::isOtelMetricsFeatureEnabled, OTEL_METRICS_FEATURE_ENABLED_MSG)
+                        .to("quarkus.otel.metrics.enabled")
+                        .build(),
+                fromOption(TELEMETRY_METRICS_ENDPOINT)
+                        .isEnabled(TelemetryPropertyMappers::isTelemetryMetricsEnabled, OTEL_METRICS_ENABLED_MSG)
+                        .mapFrom(TelemetryOptions.TELEMETRY_ENDPOINT)
+                        .to("quarkus.otel.exporter.otlp.metrics.endpoint")
+                        .paramLabel("url")
+                        .validator(TelemetryPropertyMappers::validateEndpoint)
+                        .build(),
+                fromOption(TELEMETRY_METRICS_PROTOCOL)
+                        .isEnabled(TelemetryPropertyMappers::isTelemetryMetricsEnabled, OTEL_METRICS_ENABLED_MSG)
+                        .mapFrom(TelemetryOptions.TELEMETRY_PROTOCOL)
+                        .to("quarkus.otel.exporter.otlp.metrics.protocol")
+                        .paramLabel("protocol")
+                        .build(),
+                fromOption(TELEMETRY_METRICS_INTERVAL)
+                        .isEnabled(TelemetryPropertyMappers::isTelemetryMetricsEnabled, OTEL_METRICS_ENABLED_MSG)
+                        .to("quarkus.otel.metric.export.interval")
+                        .paramLabel("duration")
+                        .validator(TelemetryPropertyMappers::validateDuration)
                         .build()
         );
     }
 
     private static String checkIfDependantsAreEnabled(String value, ConfigSourceInterceptorContext context) {
-        if (TelemetryPropertyMappers.isTelemetryLogsEnabled() || TracingPropertyMappers.isTracingEnabled()) {
+        if (TelemetryPropertyMappers.isTelemetryLogsEnabled() || TelemetryPropertyMappers.isTelemetryMetricsEnabled() || TracingPropertyMappers.isTracingEnabled()) {
             return Boolean.TRUE.toString();
         }
         return Boolean.FALSE.toString();
@@ -104,12 +136,20 @@ public class TelemetryPropertyMappers implements PropertyMapperGrouping{
         return Profile.isFeatureEnabled(Profile.Feature.OPENTELEMETRY_LOGS);
     }
 
+    public static boolean isOtelMetricsFeatureEnabled() {
+        return MetricsPropertyMappers.metricsEnabled() && Profile.isFeatureEnabled(Profile.Feature.OPENTELEMETRY_METRICS);
+    }
+
     public static boolean isTelemetryEnabled() {
         return Configuration.isTrue("quarkus.otel.enabled");
     }
 
     public static boolean isTelemetryLogsEnabled() {
         return Configuration.isTrue("quarkus.otel.logs.enabled");
+    }
+
+    public static boolean isTelemetryMetricsEnabled() {
+        return MetricsPropertyMappers.metricsEnabled() && Configuration.isTrue("quarkus.otel.metrics.enabled");
     }
 
     static void validateEndpoint(String value) {
@@ -128,6 +168,17 @@ public class TelemetryPropertyMappers implements PropertyMapperGrouping{
             return true;
         } catch (MalformedURLException | URISyntaxException e) {
             return false;
+        }
+    }
+
+    private static void validateDuration(String value) {
+        try {
+            var duration = DurationConverter.parseDuration(value);
+            if (duration.isNegative() || duration.isZero()) {
+                throw new IllegalArgumentException();
+            }
+        } catch (IllegalArgumentException e) {
+            throw new PropertyException("Duration specified via '%s' is invalid.".formatted(TELEMETRY_METRICS_INTERVAL.getKey()));
         }
     }
 }

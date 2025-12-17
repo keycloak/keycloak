@@ -156,6 +156,13 @@ For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guid
 == OpenTelemetry Logs (preview)
 
 {project_name} now supports exporting logs to OpenTelemetry collectors, enabling centralized log management.
-This preview feature allows you to export {project_name} logs to any OpenTelemetry-compatible backend and use the same OpenTelemetry collector for logs and traces.
+This preview feature allows you to export {project_name} logs to any OpenTelemetry-compatible backend and use the same OpenTelemetry collector for logs, metrics and traces.
+
+For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+== OpenTelemetry Metrics (experimental)
+
+{project_name} now provides the experimental support for exporting metrics to OpenTelemetry collectors by using the https://quarkus.io/guides/telemetry-micrometer-to-opentelemetry[Micrometer-to-OpenTelemetry bridge].
+This experimental feature allows you to export {project_name} metrics to any OpenTelemetry-compatible backend and use the same OpenTelemetry collector for logs, metrics and traces.
 
 For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
