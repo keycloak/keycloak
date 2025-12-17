@@ -520,7 +520,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         Map<String, String> clientSessions = userSessions.get(0).getClients();
 
         Set<String> clientIds = clientSessions.values().stream()
-          .flatMap(c -> clients.findByClientId(c).stream())
+          .map(c -> clients.findClientByClientId(c).orElseThrow())
           .map(ClientRepresentation::getClientId)
           .collect(Collectors.toSet());
 

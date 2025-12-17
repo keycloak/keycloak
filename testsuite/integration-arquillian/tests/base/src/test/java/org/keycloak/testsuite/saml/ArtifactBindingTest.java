@@ -755,7 +755,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
      // Won't work with openshift, because openshift wouldn't see ArtifactResolutionService
     @Test
     public void testSessionStateDuringArtifactBindingLogoutWithOneClient() {
-        ClientRepresentation salesRep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0);
+        ClientRepresentation salesRep = adminClient.realm(REALM_NAME).clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST).orElseThrow();
         final String clientId = salesRep.getId();
 
         getCleanup()
@@ -823,10 +823,10 @@ public class ArtifactBindingTest extends AbstractSamlTest {
                     .update()
             );
 
-        ClientRepresentation salesRep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0);
+        ClientRepresentation salesRep = adminClient.realm(REALM_NAME).clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST).orElseThrow();
         final String salesRepId = salesRep.getId();
 
-        ClientRepresentation salesRep2 = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST2).get(0);
+        ClientRepresentation salesRep2 = adminClient.realm(REALM_NAME).clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST2).orElseThrow();
         final String salesRep2Id = salesRep2.getId();
 
         final AtomicReference<String> userSessionId = new AtomicReference<>();
@@ -1064,8 +1064,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
     public void testArtifactBindingIdentifierChangedWhenClientIdChanged() throws IOException {
         ClientRepresentation clientRepresentation = adminClient.realm(REALM_NAME)
                 .clients()
-                .findByClientId(SAML_CLIENT_ID_SALES_POST)
-                .get(0);
+                .findClientByClientId(SAML_CLIENT_ID_SALES_POST).orElseThrow();
 
         String oldIdentifier = clientRepresentation.getAttributes().get(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER);
         assertThat(oldIdentifier, notNullValue());
@@ -1078,8 +1077,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         ) {
             clientRepresentation = adminClient.realm(REALM_NAME)
                     .clients()
-                    .findByClientId(newClientId)
-                    .get(0);
+                    .findClientByClientId(newClientId).orElseThrow();
 
             String identifier = clientRepresentation.getAttributes().get(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER);
 
@@ -1089,8 +1087,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
 
         clientRepresentation = adminClient.realm(REALM_NAME)
                 .clients()
-                .findByClientId(SAML_CLIENT_ID_SALES_POST)
-                .get(0);
+                .findClientByClientId(SAML_CLIENT_ID_SALES_POST).orElseThrow();
 
         assertThat(clientRepresentation.getAttributes().get(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER), equalTo(oldIdentifier));
     }

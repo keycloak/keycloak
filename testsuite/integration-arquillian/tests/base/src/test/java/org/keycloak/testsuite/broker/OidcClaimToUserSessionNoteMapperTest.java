@@ -54,7 +54,7 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
     public void setup() {
         RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
 
-        consumerClientRep = consumerRealm.clients().findByClientId("broker-app").get(0);
+        consumerClientRep = consumerRealm.clients().findClientByClientId("broker-app").orElseThrow();
 
         setupIdentityProvider();
         // initialize the user with firstName and lastName, to avoid having to complete account data after login
@@ -72,7 +72,7 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
                 .createMapper(consumerSessionNoteToClaimMapper));
 
         RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
-        ClientRepresentation providerClientRep = providerRealm.clients().findByClientId("brokerapp").get(0);
+        ClientRepresentation providerClientRep = providerRealm.clients().findClientByClientId("brokerapp").orElseThrow();
         providerClientUuid = providerClientRep.getId();
 
         ProtocolMapperRepresentation providerHardcodedClaimMapper = new ProtocolMapperRepresentation();

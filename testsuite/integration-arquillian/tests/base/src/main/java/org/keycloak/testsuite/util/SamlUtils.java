@@ -9,7 +9,6 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.protocol.saml.installation.SamlSPDescriptorClientInstallation;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.testsuite.utils.arquillian.DeploymentArchiveProcessorUtils;
@@ -42,11 +41,7 @@ public class SamlUtils {
     }
 
     public static SPSSODescriptorType getSPInstallationDescriptor(ClientsResource res, String clientId) throws ParsingException {
-        String spDescriptorString = res.findByClientId(clientId).stream().findFirst()
-                .map(ClientRepresentation::getId)
-                .map(res::get)
-                .map(clientResource -> clientResource.getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR))
-                .orElseThrow(() -> new RuntimeException("Missing descriptor"));
+        String spDescriptorString = res.getByClientId(clientId).getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR);
 
         SAMLParser parser = SAMLParser.getInstance();
         EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));

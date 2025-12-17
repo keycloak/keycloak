@@ -234,8 +234,9 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     protected static UserProfileAttributeMetadata getUserProfileAttributeMetadata(UserRepresentation user, String attName) {
-        if(user.getUserProfileMetadata() == null)
+        if(user.getUserProfileMetadata() == null) {
             return null;
+        }
         for(UserProfileAttributeMetadata uam : user.getUserProfileMetadata().getAttributes()) {
             if(attName.equals(uam.getName())) {
                 return uam;
@@ -1788,7 +1789,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         }
 
         // update to correct audience
-        org.keycloak.representations.idm.ClientRepresentation clientRep = testRealm().clients().findByClientId("custom-audience").get(0);
+        org.keycloak.representations.idm.ClientRepresentation clientRep = testRealm().clients().findClientByClientId("custom-audience").orElseThrow();
         ProtocolMapperRepresentation mapperRep = clientRep.getProtocolMappers().stream().filter(m -> m.getName().equals("aud")).findFirst().orElse(null);
         assertNotNull("Audience mapper not found", mapperRep);
         mapperRep.getConfig().put("included.custom.audience", "account");

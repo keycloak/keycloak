@@ -492,7 +492,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
         KeysMetadataRepresentation keyMetadata = adminClient.realm("test").keys().getKeyMetadata();
         String sampleRealmRoleId = adminClient.realm("test").roles().get("sample-realm-role").toRepresentation().getId();
         Map<String, List<String>> roleAttributes = adminClient.realm("test").roles().get("attribute-role").toRepresentation().getAttributes();
-        String testAppId = adminClient.realm("test").clients().findByClientId("test-app").get(0).getId();
+        String testAppId = adminClient.realm("test").clients().findClientByClientId("test-app").orElseThrow().getId();
         String sampleClientRoleId = adminClient.realm("test").clients().get(testAppId).roles().get("sample-client-role").toRepresentation().getId();
         String sampleClientRoleAttribute = adminClient.realm("test").clients().get(testAppId).roles().get("sample-client-role").toRepresentation().getAttributes().get("sample-client-role-attribute").get(0);
 

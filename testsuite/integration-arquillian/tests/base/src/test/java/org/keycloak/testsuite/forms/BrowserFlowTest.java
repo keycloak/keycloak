@@ -435,7 +435,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
     public void testConditionalRoleAuthenticatorWithClientRoleIncludedInCompositeClientRole() {
 
         String clientName = "test-app";
-        ClientRepresentation testClient = testRealm().clients().findByClientId(clientName).get(0);
+        ClientRepresentation testClient = testRealm().clients().findClientByClientId(clientName).orElseThrow();
 
         // Create composite-client-role-1
         String compositeClientRoleName = "composite-client-role-1";

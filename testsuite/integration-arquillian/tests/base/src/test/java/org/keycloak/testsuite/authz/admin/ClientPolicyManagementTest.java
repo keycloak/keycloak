@@ -150,7 +150,7 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
         assertCreated(authorization, representation);
 
         ClientsResource clients = getRealm().clients();
-        ClientRepresentation client = clients.findByClientId("Client D").get(0);
+        ClientRepresentation client = clients.findClientByClientId("Client D").orElseThrow();
 
         clients.get(client.getId()).remove();
 
@@ -159,7 +159,7 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
         Assert.assertEquals(2, representation.getClients().size());
         Assert.assertFalse(representation.getClients().contains(client.getId()));
 
-        client = clients.findByClientId("Client E").get(0);
+        client = clients.findClientByClientId("Client E").orElseThrow();
         clients.get(client.getId()).remove();
 
         representation = authorization.policies().client().findById(representation.getId()).toRepresentation();
@@ -167,7 +167,7 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
         Assert.assertEquals(1, representation.getClients().size());
         Assert.assertFalse(representation.getClients().contains(client.getId()));
 
-        client = clients.findByClientId("Client F").get(0);
+        client = clients.findClientByClientId("Client F").orElseThrow();
         clients.get(client.getId()).remove();
 
         representation = authorization.policies().client().findById(representation.getId()).toRepresentation();
@@ -195,7 +195,7 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
             assertNotNull(genericConfig.getConfig());
             assertNotNull(genericConfig.getConfig().get("clients"));
 
-            ClientRepresentation user = getRealm().clients().findByClientId("Client A").get(0);
+            ClientRepresentation user = getRealm().clients().findClientByClientId("Client A").orElseThrow();
 
             assertTrue(genericConfig.getConfig().get("clients").contains(user.getId()));
         }

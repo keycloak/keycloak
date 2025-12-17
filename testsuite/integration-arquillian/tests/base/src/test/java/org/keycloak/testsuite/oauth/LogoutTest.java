@@ -350,7 +350,7 @@ public class LogoutTest extends AbstractKeycloakTest {
     @Test
     public void successfulKLogoutAfterEmptyBackChannelUrl() throws Exception {
         ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
-        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+        ClientRepresentation rep = clients.findClientByClientId(oauth.getClientId()).orElseThrow();
 
         rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
 
@@ -387,7 +387,7 @@ public class LogoutTest extends AbstractKeycloakTest {
     @Test
     public void backChannelPreferenceOverKLogout() throws Exception {
         ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
-        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+        ClientRepresentation rep = clients.findClientByClientId(oauth.getClientId()).orElseThrow();
 
         rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, oauth.APP_ROOT + "/admin/backchannelLogout");
 
@@ -427,7 +427,7 @@ public class LogoutTest extends AbstractKeycloakTest {
     @Test
     public void backChannelWithPairwiseLogout() throws Exception {
         ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
-        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+        ClientRepresentation rep = clients.findClientByClientId(oauth.getClientId()).orElseThrow();
 
         rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, oauth.APP_ROOT + "/admin/backchannelLogout");
         List<ProtocolMapperRepresentation> mappers = new LinkedList<>();

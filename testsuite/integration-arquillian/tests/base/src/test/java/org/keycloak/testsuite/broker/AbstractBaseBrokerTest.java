@@ -60,7 +60,6 @@ import org.keycloak.testsuite.util.oauth.LogoutUrlBuilder;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
@@ -77,7 +76,6 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -317,11 +315,9 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
      * @return Login URL
      */
     protected String getLoginUrl(String contextRoot, String realmName, String clientId) {
-        List<ClientRepresentation> clients = adminClient.realm(realmName).clients().findByClientId(clientId);
+        ClientRepresentation client = adminClient.realm(realmName).clients().findClientByClientId(clientId).orElseThrow();
 
-        assertThat(clients, Matchers.is(Matchers.not(Matchers.empty())));
-
-        String redirectURI = clients.get(0).getBaseUrl();
+        String redirectURI = client.getBaseUrl();
         if (redirectURI.startsWith("/")) {
             redirectURI = contextRoot + "/auth" + redirectURI;
         }
