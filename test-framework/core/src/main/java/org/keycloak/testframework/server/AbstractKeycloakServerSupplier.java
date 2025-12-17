@@ -10,6 +10,7 @@ import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.Registry;
 import org.keycloak.testframework.injection.RequestedInstance;
+import org.keycloak.testframework.injection.RequiredDependencies;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierHelpers;
 import org.keycloak.testframework.injection.SupplierOrder;
@@ -50,10 +51,17 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
         ServerConfigInterceptorHelper interceptor = new ServerConfigInterceptorHelper(instanceContext.getRegistry());
         command = interceptor.intercept(command, instanceContext);
 
-        if (command.tlsEnabled()) {
-            ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
-            command.option("https-key-store-file", managedCert.getKeycloakServerKeyStorePath());
-            command.option("https-key-store-password", managedCert.getKeycloakServerKeyStorePassword());
+        ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
+
+        if (managedCert.isTlsEnabled()) {
+            command.option("https-key-store-file", managedCert.getServerKeyStorePath());
+            command.option("https-key-store-password", managedCert.getServerKeyStorePassword());
+        }
+
+        if (managedCert.isMTlsEnabled()) {
+            command.option("https-client-auth", "request");
+            command.option("https-trust-store-file", managedCert.getServerTrustStorePath());
+            command.option("https-trust-store-password", managedCert.getServerTrustStorePassword());
         }
 
         command.log().fromConfig(Config.getConfig());
@@ -66,7 +74,7 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
         long start = System.currentTimeMillis();
 
         KeycloakServer server = getServer();
-        server.start(command);
+        server.start(command, managedCert.isTlsEnabled());
 
         getLogger().infov("Keycloak test server started in {0} ms", System.currentTimeMillis() - start);
 
@@ -86,6 +94,11 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
     @Override
     public void close(InstanceContext<KeycloakServer, KeycloakIntegrationTest> instanceContext) {
         instanceContext.getValue().stop();
+    }
+
+    @Override
+    public RequiredDependencies getDependencies() {
+        return RequiredDependencies.create(ManagedCertificates.class);
     }
 
     public abstract KeycloakServer getServer();

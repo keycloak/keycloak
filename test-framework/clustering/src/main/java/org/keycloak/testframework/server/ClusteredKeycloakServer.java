@@ -54,7 +54,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
     }
 
     @Override
-    public void start(KeycloakServerConfigBuilder configBuilder) {
+    public void start(KeycloakServerConfigBuilder configBuilder, boolean tlsEnabled) {
         int numServers = containers.length;
         CountdownLatchLoggingConsumer clusterLatch = new CountdownLatchLoggingConsumer(numServers, String.format(CLUSTER_VIEW_REGEX, numServers));
         String[] imagePeServer = null;
@@ -153,11 +153,6 @@ public class ClusteredKeycloakServer implements KeycloakServer {
     @Override
     public String getManagementBaseUrl() {
         return getManagementBaseUrl(0);
-    }
-
-    @Override
-    public boolean isTlsEnabled() {
-        return false;
     }
 
     public int getBasePort(int index) {

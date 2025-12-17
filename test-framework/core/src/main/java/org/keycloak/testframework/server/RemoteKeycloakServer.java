@@ -17,13 +17,13 @@ import static java.lang.System.out;
 
 public class RemoteKeycloakServer implements KeycloakServer {
 
-    private boolean enableTls = false;
+    private boolean tlsEnabled = false;
 
     private String kcwCommand;
 
     @Override
-    public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
-        enableTls = keycloakServerConfigBuilder.tlsEnabled();
+    public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder, boolean tlsEnabled) {
+        this.tlsEnabled = tlsEnabled;
         kcwCommand = Config.getValueTypeConfig(KeycloakServer.class, "kcw", null, String.class);
         if (!verifyRunningKeycloak()) {
             if (kcwCommand != null) {
@@ -41,7 +41,7 @@ public class RemoteKeycloakServer implements KeycloakServer {
 
     @Override
     public String getBaseUrl() {
-        if (isTlsEnabled()) {
+        if (tlsEnabled) {
             return "https://localhost:8443";
         } else {
             return "http://localhost:8080";
@@ -50,16 +50,11 @@ public class RemoteKeycloakServer implements KeycloakServer {
 
     @Override
     public String getManagementBaseUrl() {
-        if (isTlsEnabled()) {
+        if (tlsEnabled) {
             return "https://localhost:9000";
         } else {
             return "http://localhost:9000";
         }
-    }
-
-    @Override
-    public boolean isTlsEnabled() {
-        return enableTls;
     }
 
     private void printStartupInstructionsManual(KeycloakServerConfigBuilder config) {

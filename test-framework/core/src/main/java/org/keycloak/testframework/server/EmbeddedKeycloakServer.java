@@ -16,12 +16,12 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
 
     private Keycloak keycloak;
     private Path homeDir;
-    private boolean enableTls = false;
+    private boolean tlsEnabled = false;
 
     @Override
-    public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
+    public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder, boolean tlsEnabled) {
         Keycloak.Builder builder = Keycloak.builder().setVersion(Version.VERSION);
-        enableTls = keycloakServerConfigBuilder.tlsEnabled();
+        this.tlsEnabled = tlsEnabled;
 
         for(Dependency dependency : keycloakServerConfigBuilder.toDependencies()) {
             builder.addDependency(dependency.getGroupId(), dependency.getArtifactId(), "");
@@ -64,7 +64,7 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
 
     @Override
     public String getBaseUrl() {
-        if (isTlsEnabled()) {
+        if (tlsEnabled) {
             return "https://localhost:8443";
         } else {
             return "http://localhost:8080";
@@ -73,15 +73,10 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
 
     @Override
     public String getManagementBaseUrl() {
-        if (isTlsEnabled()) {
+        if (tlsEnabled) {
             return "https://localhost:9001";
         } else {
             return "http://localhost:9001";
         }
-    }
-
-    @Override
-    public boolean isTlsEnabled() {
-        return enableTls;
     }
 }
