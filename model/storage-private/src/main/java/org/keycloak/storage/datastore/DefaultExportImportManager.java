@@ -900,6 +900,7 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         updateCibaSettings(rep, realm);
         updateParSettings(rep, realm);
+        validateClientAndRealmTimeouts(realm);
         session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
 
         if (rep.getSmtpServer() != null) {
@@ -1730,6 +1731,26 @@ public class DefaultExportImportManager implements ExportImportManager {
                         provider.addMember(orgModel, m);
                     }
                 }
+            }
+        }
+    }
+
+    private void validateClientAndRealmTimeouts(RealmModel realm) {
+        if (realm.isRememberMe()) {
+            if (realm.getClientSessionIdleTimeout() > Math.max(realm.getSsoSessionIdleTimeout(), realm.getSsoSessionIdleTimeoutRememberMe())) {
+                throw new ModelException("Client session idle timeout cannot exceed realm SSO session idle timeout and RememberMe idle timeout.");
+            }
+
+            if (realm.getClientSessionMaxLifespan() > Math.max(realm.getSsoSessionMaxLifespan(), realm.getSsoSessionMaxLifespanRememberMe())) {
+                throw new ModelException("Client session max lifespan cannot exceed realm SSO session max lifespan and RememberMe Max span.");
+            }
+        } else {
+            if (realm.getClientSessionIdleTimeout() > realm.getSsoSessionIdleTimeout()) {
+                throw new ModelException("Client Session Idle Timeout cannot be greater than Realm SSO Idle Timeout.");
+            }
+
+            if (realm.getClientSessionMaxLifespan() > realm.getSsoSessionMaxLifespan()) {
+                throw new ModelException("Client session max lifespan cannot exceed realm SSO session max lifespan.");
             }
         }
     }
