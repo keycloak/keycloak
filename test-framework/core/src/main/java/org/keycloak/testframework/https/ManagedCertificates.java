@@ -18,12 +18,10 @@ import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.crypto.def.DefaultCryptoProvider;
 
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.ssl.SSLContextBuilder;
-import org.jboss.logging.Logger;
 
 public class ManagedCertificates {
-
-    private static final Logger LOGGER = Logger.getLogger(ManagedCertificates.class);
 
     private final static Path KEYSTORES_DIR = Path.of(System.getProperty("java.io.tmpdir"));
 
@@ -36,13 +34,13 @@ public class ManagedCertificates {
 
     private final CryptoProvider cryptoProvider;
 
-    private Path serverKeystorePath;
-    private Path serverTruststorePath;
+    private final Path serverKeystorePath;
+    private final Path serverTruststorePath;
 
-    private Path clientKeystorePath;
-    private Path clientTruststorePath;
+    private final Path clientKeystorePath;
+    private final Path clientTruststorePath;
 
-    private SSLContext clientSslContext;
+    private final SSLContext clientSslContext;
 
     public ManagedCertificates(CertificatesConfigBuilder configBuilder) throws ManagedCertificatesException {
         if (!CryptoIntegration.isInitialised()) {
@@ -99,7 +97,7 @@ public class ManagedCertificates {
     private SSLContext createClientSSLContext() {
         try {
             SSLContextBuilder sslContextBuilder = SSLContextBuilder.create()
-                    .loadTrustMaterial(clientTruststorePath.toFile(), STORE_PASSWORD_CHARS);
+                    .loadTrustMaterial(clientTruststorePath.toFile(), STORE_PASSWORD_CHARS, TrustSelfSignedStrategy.INSTANCE);
 
             if (mTlsEnabled) {
                 sslContextBuilder.loadKeyMaterial(clientKeystorePath.toFile(), STORE_PASSWORD_CHARS, STORE_PASSWORD_CHARS);
