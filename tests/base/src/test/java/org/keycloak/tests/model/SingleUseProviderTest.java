@@ -17,7 +17,7 @@
  *
  */
 
-package org.keycloak.testsuite.model;
+package org.keycloak.tests.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,27 +29,29 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.ModelTest;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.annotations.TestOnServer;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.jboss.logging.Logger;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class SingleUseProviderTest extends AbstractTestRealmKeycloakTest {
+@KeycloakIntegrationTest
+public class SingleUseProviderTest {
+
+    private static final Logger logger = Logger.getLogger(SingleUseProviderTest.class);
 
     private static final int ITEMS_COUNT = 100;
     private static final int THREADS_COUNT = 20;
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
 
-    }
+    @InjectRealm(attachTo = "master")
+    ManagedRealm realm;
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testConcurrentRemoveFromSingleUseCacheShouldFail(KeycloakSession session) throws Exception {
         Map<Integer, Tracker> tracker = new ConcurrentHashMap<>();
 
@@ -94,12 +96,12 @@ public class SingleUseProviderTest extends AbstractTestRealmKeycloakTest {
 
         // Check countSuccess and countFailures. For each key, only single successful "remove" is allowed. Other threads should fail to remove the item and nothing should be found
         for (Map.Entry<Integer, Tracker> entry : tracker.entrySet()) {
-            getLogger().info(entry.getKey() + ": " + entry.getValue());
+            logger.debug(entry.getKey() + ": " + entry.getValue());
         }
 
         for (Map.Entry<Integer, Tracker> entry : tracker.entrySet()) {
-            Assert.assertEquals(1, entry.getValue().countSuccess.get());
-            Assert.assertEquals(THREADS_COUNT - 1, entry.getValue().countFailures.get());
+            Assertions.assertEquals(1, entry.getValue().countSuccess.get());
+            Assertions.assertEquals(THREADS_COUNT - 1, entry.getValue().countFailures.get());
         }
     }
 

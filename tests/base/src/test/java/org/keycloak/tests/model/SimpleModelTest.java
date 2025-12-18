@@ -15,47 +15,35 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.model;
-
-import java.util.List;
+package org.keycloak.tests.model;
 
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.ModelTest;
-import org.keycloak.testsuite.runonserver.RunOnServerException;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.annotations.TestOnServer;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.jboss.logging.Logger;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class SimpleModelTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class SimpleModelTest {
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-    }
+    private static final Logger log = Logger.getLogger(SimpleModelTest.class);
 
+    @InjectRealm(attachTo = "master")
+    ManagedRealm realm;
 
-    @Test
-    @ModelTest
-    public void simpleModelTest(KeycloakSession session) {
-        log.infof("simpleModelTest");
-        RealmModel realm = session.realms().getRealmByName("master");
-
-        Assert.assertNotNull("Master realm was not found!", realm);
-    }
-
-
-    @Test
-    @ModelTest
+    @TestOnServer
     public void simpleModelTestWithNestedTransactions(KeycloakSession session) {
-        log.infof("simpleModelTestWithNestedTransactions");
+        log.debug("simpleModelTestWithNestedTransactions");
 
         // Transaction 1
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session1) -> {
@@ -69,7 +57,7 @@ public class SimpleModelTest extends AbstractKeycloakTest {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session2) -> {
 
             RealmModel realm = session2.realms().getRealmByName("foo");
-            Assert.assertNotNull(realm);
+            Assertions.assertNotNull(realm);
             session2.getContext().setRealm(realm);
 
             realm.setAttribute("bar", "baz");
@@ -80,11 +68,11 @@ public class SimpleModelTest extends AbstractKeycloakTest {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session3) -> {
 
             RealmModel realm = session3.realms().getRealmByName("foo");
-            Assert.assertNotNull(realm);
+            Assertions.assertNotNull(realm);
             session3.getContext().setRealm(realm);
 
             String attrValue = realm.getAttribute("bar");
-            Assert.assertEquals("baz", attrValue);
+            Assertions.assertEquals("baz", attrValue);
 
             realm.setAttribute("bar", "baz2");
 
@@ -95,34 +83,14 @@ public class SimpleModelTest extends AbstractKeycloakTest {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session4) -> {
 
             RealmModel realm = session4.realms().getRealmByName("foo");
-            Assert.assertNotNull(realm);
+            Assertions.assertNotNull(realm);
             session4.getContext().setRealm(realm);
 
             String attrValue = realm.getAttribute("bar");
-            Assert.assertEquals("baz", attrValue);
+            Assertions.assertEquals("baz", attrValue);
 
             new RealmManager(session4).removeRealm(realm);
         });
     }
 
-
-    // Just for the test that AssertionError is correctly propagated
-    @Test(expected = AssertionError.class)
-    @ModelTest
-    public void simpleModelTestWithAssertionError(KeycloakSession session) {
-        log.infof("simpleModelTestWithAssertionError");
-        RealmModel realm = session.realms().getRealmByName("masterr");
-
-        // This should fail and throw the AssertionError
-        Assert.assertNotNull("Master realm was not found!", realm);
-    }
-
-
-    // Just for the test that other exception is correctly propagated
-    @Test(expected = RunOnServerException.class)
-    @ModelTest
-    public void simpleModelTestWithOtherError(KeycloakSession session) {
-        log.infof("simpleModelTestWithOtherError");
-        throw new RuntimeException("Some strange exception");
-    }
 }

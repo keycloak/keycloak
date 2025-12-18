@@ -15,9 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.model;
+package org.keycloak.tests.model;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -33,11 +32,13 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.ModelTest;
-
-import org.junit.Test;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.remote.annotations.TestOnServer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -47,26 +48,18 @@ import static org.hamcrest.core.IsNull.notNullValue;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-public class ClientModelTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class ClientModelTest {
+
+    @InjectRealm(lifecycle = LifeCycle.METHOD, config = ClientModelRealmConfig.class)
+    ManagedRealm managedRealm;
+
     private ClientModel client;
     private String roleId;
-    private String realmName="original";
+    private static final String realmName = "original";
     private KeycloakSession currentSession;
 
-    @Override
-    protected boolean isImportAfterEachMethod() {
-        return true;
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = new RealmRepresentation();
-        realm.setRealm(realmName);
-        realm.setEnabled(true);
-        testRealms.add(realm);
-    }
-
-    public static void assertEquals(ClientModel expected, ClientModel actual) {
+    private static void assertEquals(ClientModel expected, ClientModel actual) {
         assertThat(expected.getClientId(), is(actual.getClientId()));
         assertThat(expected.getName(), is(actual.getName()));
         assertThat(expected.getDescription(), is(actual.getDescription()));
@@ -76,7 +69,6 @@ public class ClientModelTest extends AbstractKeycloakTest {
         assertThat(expected.getWebOrigins().containsAll(actual.getWebOrigins()), is(true));
         assertThat(expected.getRegisteredNodes(), is(actual.getRegisteredNodes()));
     }
-
 
     private ClientModel setUpClient(RealmModel realm) {
         ClientModel client = realm.addClient("app-name");
@@ -99,8 +91,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
         return client;
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testClientRoleRemovalAndClientScope(KeycloakSession session) {
         // Client "from" has a role.  Assign this role to a scope to client "scoped".  Delete the role and make sure
         // cache gets cleared
@@ -148,8 +139,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
 
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testClientRoleRemovalAndClientScopeSameTx(KeycloakSession session) {
         // Client "from" has a role.  Assign this role to a scope to client "scoped".  Delete the role and make sure
         // cache gets cleared
@@ -185,8 +175,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testRealmRoleRemovalAndClientScope(KeycloakSession session) {
         // Client "from" has a role.  Assign this role to a scope to client "scoped".  Delete the role and make sure
         // cache gets cleared
@@ -218,8 +207,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testCircularClientScopes(KeycloakSession session) {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sessionCircuilarClient1) -> {
@@ -243,8 +231,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void persist(KeycloakSession session) {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sessionPersist) -> {
             currentSession = sessionPersist;
@@ -261,8 +248,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void json(KeycloakSession session) {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sessionJson) -> {
             currentSession = sessionJson;
@@ -290,8 +276,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testAddApplicationWithId(KeycloakSession session) {
         final String id = KeycloakModelUtils.generateId();
         String newClientId = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sessionAppWithId1) -> {
@@ -313,8 +298,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testClientScopesBinding(KeycloakSession session) {
         AtomicReference<ClientScopeModel> scope1Atomic = new AtomicReference<>();
         AtomicReference<ClientScopeModel> scope2Atomic = new AtomicReference<>();
@@ -405,8 +389,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testDefaultDefaultClientScopes(KeycloakSession session) {
         AtomicReference<ClientScopeModel> scope1Atomic = new AtomicReference<>();
         AtomicReference<ClientScopeModel> scope2Atomic = new AtomicReference<>();
@@ -510,4 +493,14 @@ public class ClientModelTest extends AbstractKeycloakTest {
             realm.removeClientScope(scope3Atomic.get().getId());
         });
     }
+
+    public static class ClientModelRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            return realm.name(realmName);
+        }
+
+    }
+
 }

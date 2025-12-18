@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.model;
+package org.keycloak.tests.model;
 
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
@@ -29,34 +29,31 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.ModelTest;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.annotations.TestOnServer;
 
 import org.jboss.logging.Logger;
-import org.junit.Assert;
-import org.junit.Test;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
+@KeycloakIntegrationTest
+public class ConcurrentTransactionsTest {
 
     private static final int LATCH_TIMEOUT_MS = 30000;
 
     private static final Logger logger = Logger.getLogger(ConcurrentTransactionsTest.class);
 
-    @Test
-    @ModelTest(realmName = "test")
-    public void persistClient(KeycloakSession session) {
+    @InjectRealm(attachTo = "master")
+    ManagedRealm realm;
 
+    @TestOnServer
+    public void persistClient(KeycloakSession session) {
         final ClientModel[] client = {null};
         AtomicReference<String> clientDBIdAtomic = new AtomicReference<>();
         AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
@@ -64,11 +61,7 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
         try {
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sessionSetup) -> {
 
-                RealmModel realm = sessionSetup.realms().getRealmByName("test");
-                sessionSetup.users().addUser(realm, "user1").setEmail("user1@localhost");
-                sessionSetup.users().addUser(realm, "user2").setEmail("user2@localhost");
-
-                realm = sessionSetup.realms().createRealm("original");
+                RealmModel realm = sessionSetup.realms().createRealm("original");
                 RoleModel defaultRole = sessionSetup.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName());
                 realm.setDefaultRole(defaultRole);
 
@@ -165,7 +158,7 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
                 }
 
                 if (exceptionHolder.get() != null) {
-                    Assert.fail("Some thread thrown an exception. See the log for the details");
+                    Assertions.fail("Some thread thrown an exception. See the log for the details");
                 }
 
                 logger.info("after thread join");
@@ -181,21 +174,19 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
                 logger.info("SECRET FROM DB : " + clientFromDB.getSecret());
                 logger.info("SECRET FROM CACHE : " + clientFromCache.getSecret());
 
-                Assert.assertEquals("new", clientFromDB.getSecret());
-                Assert.assertEquals("new", clientFromCache.getSecret());
+                Assertions.assertEquals("new", clientFromDB.getSecret());
+                Assertions.assertEquals("new", clientFromCache.getSecret());
 
                 session2.sessions().removeUserSessions(realm);
 
             });
         } finally {
-            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> tearDownRealm(kcSession, "user1", "user2"));
+            tearDownRealm(session, "original");
         }
     }
 
-
     // KEYCLOAK-3296 , KEYCLOAK-3494
-    @Test
-    @ModelTest
+    @TestOnServer
     public void removeUserAttribute(KeycloakSession session) throws Exception {
 
         try {
@@ -269,36 +260,19 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
 
                 logger.info("removeUserAttribute: after thread join");
                 if (reference.get() != null) {
-                    Assert.fail("Exception happened in some of threads. Details: " + reference.get().getMessage());
+                    Assertions.fail("Exception happened in some of threads. Details: " + reference.get().getMessage());
                 }
             });
         } finally {
-            tearDownRealm(session, "john", "john2");
+            tearDownRealm(session, "original");
         }
     }
 
-    private void tearDownRealm(KeycloakSession session, String user1, String user2) {
-        KeycloakSession currentSession = session;
-
-        RealmModel realm = currentSession.realms().getRealmByName("original");
-
-        UserModel realmUser1 = currentSession.users().getUserByUsername(realm, user1);
-        UserModel realmUser2 = currentSession.users().getUserByUsername(realm, user2);
-
-        UserManager um = new UserManager(currentSession);
-        if (realmUser1 != null) {
-            um.removeUser(realm, realmUser1);
+    private void tearDownRealm(KeycloakSession session, String realmName) {
+        RealmModel realm = session.realms().getRealmByName(realmName);
+        if (realm != null) {
+            session.realms().removeRealm(realm.getId());
         }
-        if (realmUser2 != null) {
-            um.removeUser(realm, realmUser2);
-        }
-
-        currentSession.getContext().setRealm(realm);
-        Assert.assertTrue(currentSession.realms().removeRealm(realm.getId()));
-        assertThat(currentSession.realms().getRealm(realm.getId()), is(nullValue()));
     }
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
 }

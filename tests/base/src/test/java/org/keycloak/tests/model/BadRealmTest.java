@@ -1,28 +1,26 @@
-package org.keycloak.testsuite.model;
-
-import java.util.List;
+package org.keycloak.tests.model;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.ModelTest;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.annotations.TestOnServer;
 import org.keycloak.utils.ReservedCharValidator;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import static org.junit.Assert.fail;
+@KeycloakIntegrationTest
+public class BadRealmTest {
 
-public class BadRealmTest extends AbstractKeycloakTest {
+    @InjectRealm(attachTo = "master")
+    ManagedRealm realm;
+
     private String name = "MyRealm";
     private String id = "MyId";
     private String script = "<script>alert(4)</script>";
 
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-    }
-
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testBadRealmName(KeycloakSession session) {
         RealmManager manager = new RealmManager(session);
         try {
@@ -31,8 +29,7 @@ public class BadRealmTest extends AbstractKeycloakTest {
         } catch (ReservedCharValidator.ReservedCharException ex) {}
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testBadRealmId(KeycloakSession session) {
         RealmManager manager = new RealmManager(session);
         try {
