@@ -82,26 +82,26 @@ import static org.junit.Assert.fail;
 /**
  * Credential Offer Validity Matrix
  * <p>
- * +----------+-----------+---------+---------+------------------------------------------------------+
- * | pre-auth | clientId  | username  | Valid   | Notes                                                |
- * +----------+-----------+---------+---------+------------------------------------------------------+
- * | no       | no        | no      | yes     | Generic offer; any logged-in user may redeem.        |
- * | no       | no        | yes     | yes     | Offer restricted to a specific user.                 |
- * | no       | yes       | no      | yes     | Bound to client; user determined at login.           |
- * | no       | yes       | yes     | yes     | Bound to both client and user.                       |
- * +----------+-----------+---------+---------+------------------------------------------------------+
- * | yes      | no        | no      | no      | Pre-auth requires a user subject; missing username.   |
- * | yes      | no        | yes     | yes     | Pre-auth for a specific user; client issuer defined. |
- * | yes      | yes       | no      | no      | Same as above; username required.                      |
- * | yes      | yes       | yes     | yes     | Fully constrained: user + client.                    |
- * +----------+-----------+---------+---------+------------------------------------------------------+
+ * +----------+-----------+----------+---------+------------------------------------------------------+
+ * | pre-auth | clientId  | username | Valid   | Notes                                                |
+ * +----------+-----------+----------+---------+------------------------------------------------------+
+ * | no       | no        | no       | yes     | Generic offer; any logged-in user may redeem.        |
+ * | no       | no        | yes      | yes     | Offer restricted to a specific user.                 |
+ * | no       | yes       | no       | yes     | Bound to client; user determined at login.           |
+ * | no       | yes       | yes      | yes     | Bound to both client and user.                       |
+ * +----------+-----------+----------+---------+------------------------------------------------------+
+ * | yes      | no        | no       | no      | Pre-auth requires a user subject; missing username.  |
+ * | yes      | no        | yes      | yes     | Pre-auth for a specific user; client issuer defined. |
+ * | yes      | yes       | no       | no      | Same as above; username required.                    |
+ * | yes      | yes       | yes      | yes     | Fully constrained: user + client.                    |
+ * +----------+-----------+----------+---------+------------------------------------------------------+
  */
 public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     String issUsername = "john";
     String issClientId = clientId;
 
-    String namedUsername = "alice";
+    String appUsername = "alice";
 
     String credScopeName = jwtTypeCredentialScopeName;
     String credConfigId = jwtTypeCredentialConfigurationIdName;
@@ -133,22 +133,22 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testVariousLogins() {
         assertNotNull(getBearerTokenAndLogout(issClientId, issUsername, "openid"));
-        assertNotNull(getBearerTokenAndLogout(issClientId, namedUsername, "openid"));
+        assertNotNull(getBearerTokenAndLogout(issClientId, appUsername, "openid"));
         assertNotNull(getBearerTokenAndLogout(namedClientId, issUsername, "openid"));
-        assertNotNull(getBearerTokenAndLogout(namedClientId, namedUsername, "openid"));
+        assertNotNull(getBearerTokenAndLogout(namedClientId, appUsername, "openid"));
     }
 
     @Test
     public void testCredentialWithoutOffer() throws Exception {
 
-        var ctx = newTestContext(false, null, namedUsername);
+        var ctx = newTestContext(false, null, appUsername);
 
         AuthorizationDetail authDetail = new AuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(credConfigId);
         authDetail.setLocations(List.of(ctx.issuerMetadata.getCredentialIssuer()));
 
-        // [TODO] Requires Credential scope in AuthorizationRequest although already given in AuthorizationDetails
+        // [TODO #44320] Requires Credential scope in AuthorizationRequest although already given in AuthorizationDetails
         // https://github.com/keycloak/keycloak/issues/44320
         String accessToken = getBearerToken(issClientId, ctx.appUser, credScopeName, authDetail);
 
@@ -163,7 +163,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testCredentialOffer_noPreAuth_noClientId_UserId() throws Exception {
-        runCredentialOfferTest(newTestContext(false, null, namedUsername));
+        runCredentialOfferTest(newTestContext(false, null, appUsername));
     }
 
     @Test
@@ -173,7 +173,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testCredentialOffer_noPreAuth_ClientId_UserId() throws Exception {
-        runCredentialOfferTest(newTestContext(false, namedClientId, namedUsername));
+        runCredentialOfferTest(newTestContext(false, namedClientId, appUsername));
     }
 
     // Pre Authorized --------------------------------------------------------------------------------------------------
@@ -191,7 +191,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testCredentialOffer_PreAuth_noClientId_UserId() throws Exception {
-        runCredentialOfferTest(newTestContext(true, null, namedUsername));
+        runCredentialOfferTest(newTestContext(true, null, appUsername));
     }
 
     @Test
@@ -207,22 +207,22 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testCredentialOffer_PreAuth_ClientId_Username() throws Exception {
-        runCredentialOfferTest(newTestContext(true, namedClientId, namedUsername));
+        runCredentialOfferTest(newTestContext(true, namedClientId, appUsername));
     }
 
     @Test
     public void testCredentialOffer_PreAuth_ClientId_Username_disabledUser() throws Exception {
         // Disable user
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), namedUsername);
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), appUsername);
         UserRepresentation userRep = user.toRepresentation();
         userRep.setEnabled(false);
         user.update(userRep);
 
         try {
-            runCredentialOfferTest(newTestContext(true, namedClientId, namedUsername));
+            runCredentialOfferTest(newTestContext(true, namedClientId, appUsername));
             fail("Expected " + INVALID_CREDENTIAL_OFFER_REQUEST.name());
         } catch (RuntimeException ex) {
-            List.of(INVALID_CREDENTIAL_OFFER_REQUEST.name(), "User '" + namedUsername + "' disabled")
+            List.of(INVALID_CREDENTIAL_OFFER_REQUEST.name(), "User '" + appUsername + "' disabled")
                     .forEach(it -> assertTrue(ex.getMessage() + " does not contain " + it, ex.getMessage().contains(it)));
         } finally {
             // Re-enable user
@@ -286,7 +286,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
             } else {
 
                 String clientId = ctx.appClient != null ? ctx.appClient : namedClientId;
-                String userId = ctx.appUser != null ? ctx.appUser : namedUsername;
+                String userId = ctx.appUser != null ? ctx.appUser : appUsername;
                 String credConfigId = credOffer.getCredentialConfigurationIds().get(0);
 
                 SupportedCredentialConfiguration credConfig = ctx.issuerMetadata.getCredentialsSupported().get(credConfigId);
@@ -439,7 +439,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull("The first credential in the array should not be null", credentialObj);
 
-        String expUsername = ctx.appUser != null ? ctx.appUser : namedUsername;
+        String expUsername = ctx.appUser != null ? ctx.appUser : appUsername;
 
         JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialObj.getCredential(), JsonWebToken.class).getToken();
         assertEquals("did:web:test.org", jsonWebToken.getIssuer());

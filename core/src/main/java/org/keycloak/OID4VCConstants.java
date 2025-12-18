@@ -22,6 +22,23 @@ public class OID4VCConstants {
     public static final String CLAIM_NAME_ISSUER = "iss";
     public static final String CLAIM_NAME_CNF = "cnf";
     public static final String CLAIM_NAME_JWK = "jwk";
+    public static final String CLAIM_NAME_SUB = "sub";
+    public static final String CLAIM_NAME_VC = "vc";
+    public static final String CLAIM_NAME_VCT = "vct";
+
+    // The JWT identifier uniquely identifies a SD_JWT credential
+    // It is useful for:
+    //   * replay protection of the SD-JWT
+    //   * introspection caches
+    //   * deduplication
+    //   * credential revocation tracking (optional)
+    public static final String CLAIM_NAME_JTI = "jti";
+
+    // The credential subject identifier
+    //   * A stable identifier for the VC subject
+    //   * Would in most cases be the subject's DID
+    //   * Can be mapped to user attributes
+    public static final String CLAIM_NAME_SUBJECT_ID = "id";
 
     public static final String KEYBINDING_JWT_TYP = "kb+jwt";
 
