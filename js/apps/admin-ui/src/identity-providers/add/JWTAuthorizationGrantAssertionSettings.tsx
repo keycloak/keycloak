@@ -58,6 +58,12 @@ export const JWTAuthorizationGrantAssertionSettings = () => {
           defaultValue: "",
         }}
       />
+      <DefaultSwitchControl
+        name="config.jwtAuthorizationGrantLimitAccessTokenExp"
+        label={t("jwtAuthorizationGrantLimitAccessTokenExp")}
+        labelIcon={t("jwtAuthorizationGrantLimitAccessTokenExpHelp")}
+        stringify
+      />
     </>
   );
 };

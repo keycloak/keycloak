@@ -129,7 +129,13 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             event.session(userSession);
             ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, userSession,
                     authSession, authorizationGrantContext.getRestrictedScopes(), false);
-            return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, null);
+            TokenManager.AccessTokenResponseBuilder responseBuilder = createTokenResponseBuilder(user, userSession, clientSessionCtx, scopeParam, null);
+            if (jwtAuthorizationGrantProvider.isLimitAccessTokenExpiration()) {
+                if (authorizationGrantContext.getJWT().getExp() < responseBuilder.getAccessToken().getExp()) {
+                    responseBuilder.getAccessToken().exp(authorizationGrantContext.getJWT().getExp());
+                }
+            }
+            return createTokenResponse(responseBuilder, clientSessionCtx, true);
         } catch (CorsErrorResponseException e) {
             throw e;
         } catch (Exception e) {

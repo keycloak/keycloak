@@ -17,6 +17,8 @@ public interface JWTAuthorizationGrantConfig {
 
     String JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG = "jwtAuthorizationGrantAssertionSignatureAlg";
 
+    String JWT_AUTHORIZATION_GRANT_LIMIT_ACCESS_TOKEN_EXP = "jwtAuthorizationGrantLimitAccessTokenExp";
+
     String JWT_AUTHORIZATION_GRANT_ALLOWED_CLOCK_SKEW = "jwtAuthorizationGrantAllowedClockSkew";
 
     String PUBLIC_KEY_SIGNATURE_VERIFIER = "publicKeySignatureVerifier";
@@ -43,6 +45,10 @@ public interface JWTAuthorizationGrantConfig {
 
     default String getJWTAuthorizationGrantAssertionSignatureAlg() {
         return getConfig().get(JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG);
+    }
+
+    default boolean isJwtAuthorizationGrantLimitAccessTokenExp() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(JWT_AUTHORIZATION_GRANT_LIMIT_ACCESS_TOKEN_EXP, "false"));
     }
 
     default int getJWTAuthorizationGrantAllowedClockSkew() {

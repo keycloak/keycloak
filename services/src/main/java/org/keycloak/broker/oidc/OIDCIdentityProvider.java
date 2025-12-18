@@ -1116,4 +1116,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public String getAssertionSignatureAlg() {
         return getConfig().getJWTAuthorizationGrantAssertionSignatureAlg();
     }
+
+    @Override
+    public boolean isLimitAccessTokenExpiration() {
+        return getConfig().isJwtAuthorizationGrantLimitAccessTokenExp();
+    }
 }
