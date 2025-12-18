@@ -1,0 +1,102 @@
+[id="defining-workflow-steps_{context}"]
+
+[[_workflow_steps_]]
+= Defining steps
+
+The `steps` setting allows you to define the step chain, which is a sequence of actions to be executed during the lifetime of a workflow execution.
+Each step represents a specific action that can be performed, such as sending a notification, updating user attributes, or interacting with external systems.
+
+Each step in the step chain is defined using the following structure:
+
+```yaml
+steps:
+  - uses: <step>
+    with:
+      <param>: <value>
+      ...
+    after: <duration>
+  ...
+```
+
+In its simplest form, a step is defined using only the `uses` field:
+
+```yaml
+steps:
+  - uses: disable-user
+```
+
+However, some steps also support additional settings to customize their behavior:
+
+```yaml
+steps:
+  - uses: notify-user
+    with:
+      message: "Welcome to the platform!"
+```
+
+Here is a more detailed look at all fields available from defining a step:
+
+`uses`::
+The name of the step to be executed. This field is mandatory.
+
+`with`::
+Key/value pairs to be passed to the step. The available parameters depend on the step being used. This field is optional.
+
+`after`::
+An optional duration to wait before executing the step. The duration is defined using a number followed by a time unit:
+*   `ms`: milliseconds
+*   `s`: seconds (default if no unit is specified)
+*   `m`: minutes
+*   `h`: hours
+*   `d`: days
+
+{project_name} provides a set of built-in steps that you can use in your workflows. The steps are targeted at performing actions
+on the realm resource associated with the event, so that each realm resource type has its own set of steps.
+
+[[_workflow_user_steps_]]
+== User steps
+
+[cols="3*", options="header"]
+|===
+|Step
+|Description
+|Configuration
+| `set-user-required-action` | Set a required action to the user a|
+* `action`: The name of the required action
+| `delete-user` | Delete the user | None
+| `disable-user` | Disable the user | None
+| `notify-user` | Notify the user by email a|
+- `subject`: The email subject
+- `message`: The email message in plain text or HTML format
+| `set-user-attribute` | Set an attribute to the user. Allows providing multiple `<name>`/`<value>` pairs a|
+- `<name>`: The attribute name
+- `<value>`: The value of the attribute
+|===
+
+[[_workflow_immediate_steps_]]
+== Understanding immediate steps
+
+A step can run immediately whenever it is reached in the step chain. A immediate step is executed as soon as the previous step is completed,
+without any delay. This is the default behavior for steps in a workflow.
+
+For example, in the following workflow definition, both steps are immediate steps:
+
+```yaml
+steps:
+  - uses: notify-user
+  - uses: disable-user
+```
+
+== Understanding scheduled steps
+
+A step can be scheduled to run after a specific duration using the `after` field. A scheduled step is executed after waiting for the defined duration
+once the previous step is completed.
+
+For example, in the following workflow definition, the `disable-user` step is a scheduled step that will run 7 days after notifying the user:
+
+```yaml
+steps:
+  - uses: notify-user
+  - uses: disable-user
+    after: 7d
+```

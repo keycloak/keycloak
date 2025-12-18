@@ -1,0 +1,41 @@
+[id="managing-workflows_{context}"]
+
+[[_managing_workflows_]]
+=  Managing workflows
+[role="_abstract"]
+
+Workflows can be managed through the Admin Console or the Admin REST API.
+
+== Managing workflows through the Admin Console
+
+To manage workflows through the Admin Console, you can follow these steps:
+
+.Procedure
+
+. Click *Workflows* in the menu.
+
+.Empty workflows list
+image:images/workflows-empty-list.png[alt="Empty workflows list"]
+
+If your realm does not have any workflows defined yet, you will see an empty list. To create a new workflow, click *Create*.
+
+. Creating a new workflow
+image:images/workflows-create.png[alt="Creating a new workflow"]
+
+This will open the workflow creation screen where you can define the workflow using YAML format. To save the workflow, click *Save*.
+
+Once you have created one or more workflows, they will be listed in the workflows list.
+
+.List of workflows
+image:images/workflows-list.png[alt="List of workflows"]
+
+From the workflows list, you can perform the following actions:
+
+*   **Create**: Click *Create workflow* to create a new workflow.
+*   **Update**: Click on the name of an existing workflow to update it.
+*   **Enable/Disable**: Use the toggle button on the *Status* column to enable or disable a workflow.
+*   **Copy**: Click on the *Copy* button next to a workflow to create a copy of it. This is useful if you want to create a new workflow based on an existing one.
+*   **Delete**: Click on the *Delete* button next to a workflow to delete it.
+
+
+
