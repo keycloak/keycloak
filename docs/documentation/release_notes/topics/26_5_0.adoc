@@ -186,3 +186,9 @@ For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guid
 This experimental feature allows you to export {project_name} metrics to any OpenTelemetry-compatible backend and use the same OpenTelemetry collector for logs, metrics and traces.
 
 For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+== x509cert-lookup SPI no longer internal
+
+The x509cert-lookup SPI is no longer internal to allow for the creation of custom client certificate lookup.
+
+Developers must take care to ensure that the source of the certificate is trusted.
