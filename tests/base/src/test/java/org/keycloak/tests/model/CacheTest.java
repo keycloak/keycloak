@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.model;
+package org.keycloak.tests.model;
 
 import java.util.Set;
 import java.util.UUID;
@@ -28,28 +28,36 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.ClientAdapter;
 import org.keycloak.models.cache.infinispan.RealmAdapter;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.Assert;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CacheTest extends AbstractTestRealmKeycloakTest {
+@KeycloakIntegrationTest
+public class CacheTest {
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
+    @InjectRealm(config = CacheRealmConfig.class)
+    ManagedRealm managedRealm;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @Test
     public void testStaleCache() throws Exception {
-        testingClient.server().run(session -> {
+        runOnServer.run(session -> {
             // load up cache
             RealmModel realm = session.realms().getRealmByName("test");
             assertTrue(realm instanceof RealmAdapter);
@@ -75,22 +83,22 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
 
             // make sure that app cache was flushed and enabled changed
             realm = session.realms().getRealmByName("test");
-            Assert.assertEquals(200, realm.getAccessCodeLifespanLogin());
+            Assertions.assertEquals(200, realm.getAccessCodeLifespanLogin());
             testApp = session.clients().getClientById(realm, appId);
-            Assert.assertFalse(testApp.isEnabled());
+            Assertions.assertFalse(testApp.isEnabled());
         });
     }
 
     @Test
     public void testAddUserNotAddedToCache() {
 
-    	testingClient.server().run(session -> {
+    	runOnServer.run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
 
             UserModel user = session.users().addUser(realm, "testAddUserNotAddedToCache");
             user.setFirstName("firstName");
             user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
-    	
+
             UserSessionModel userSession = session.sessions().createUserSession(UUID.randomUUID().toString(), realm, user, "testAddUserNotAddedToCache",
 					"127.0.0.1", "auth", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
             user = userSession.getUser();
@@ -99,13 +107,13 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
 
             assertNotNull(user.getLastName());
        });
-  
+
     }
 
     // KEYCLOAK-1842
     @Test
     public void testRoleMappingsInvalidatedWhenClientRemoved() {
-      	testingClient.server().run(session -> {
+      	runOnServer.run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             
             UserModel user = session.users().addUser(realm, "joel");
@@ -114,7 +122,7 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
             user.grantRole(fooRole);
        });
 
-        testingClient.server().run(session -> {  
+        runOnServer.run(session -> {
         	RealmModel realm = session.realms().getRealmByName("test");
             UserModel user = session.users().getUserByUsername(realm, "joel");
             long grantedRolesCount = user.getRoleMappingsStream().count();
@@ -127,12 +135,22 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
         
             Set<RoleModel> roles = user.getRoleMappingsStream().collect(Collectors.toSet());
             for (RoleModel role : roles) {
-                Assert.assertNotNull(role.getContainer());
+                Assertions.assertNotNull(role.getContainer());
             }
         
-            Assert.assertEquals(roles.size(), grantedRolesCount - 1);
+            Assertions.assertEquals(roles.size(), grantedRolesCount - 1);
         });
 
+    }
+
+    public static final class CacheRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            realm.name("test");
+            realm.addClient("test-app");
+            return realm;
+        }
     }
 
 }
