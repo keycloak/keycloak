@@ -19,6 +19,10 @@ Read on to learn more about each new feature. If you are upgrading from a previo
 
 The client logout configuration now includes an option to show a logout confirmation page. When enabled, users will see a "`You are logged out`" confirmation page upon successful logout.
 
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/slaskawi[Sebastian Łaskawiec] for the contribution.
+endif::[]
+
 == CORS enhancements
 // https://github.com/keycloak/keycloak/pull/43767
 // https://github.com/keycloak/keycloak/issues/8863
@@ -112,6 +116,16 @@ We gather more feedback about potential issues in https://github.com/keycloak/ke
 endif::[]
 
 For more details, see the https://www.keycloak.org/server/configuration-production[Configuring Keycloak for production] guide.
+
+== Ability to configure retry behavior for outgoing HTTP requests
+
+{project_name} has now more flexibility how to configure retrying of outgoing HTTP requests. This is useful for handling transient network errors or temporary unavailability
+of the service where {project_name} needs to send HTTP request. Retry behavior is disabled by default and must be explicitly enabled.
+More details are available in the link:{server_guide_base_link}/outgoinghttp[Outgoing HTTP requests documentation].
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/chance-coleman[Chance Coleman] for the contribution.
+endif::[]
 
 == Enable/disable features via a single option
 
