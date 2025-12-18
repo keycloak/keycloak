@@ -660,7 +660,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRepresentation);
 
         assertThat(wrapper.hasRotatedSecret(), is(false));
-        assertThat(wrapper.getClientSecretExpirationTime(),is(0));
+        assertThat(wrapper.getClientSecretExpirationTime(),is(0L));
     }
 
     /**
@@ -692,7 +692,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRepresentation);
         assertThat(clientResource.getSecret().getValue(),equalTo(newSecret));
         assertThat(wrapper.hasRotatedSecret(), is(false));
-        assertThat(wrapper.getClientSecretExpirationTime(),is(0));
+        assertThat(wrapper.getClientSecretExpirationTime(),is(0L));
     }
 
     /**
