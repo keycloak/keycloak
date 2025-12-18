@@ -137,6 +137,12 @@ The `feature-<name>` option takes precedence over both `features` and `features-
 
 For more details, see the https://www.keycloak.org/server/features[Enabling and disabling features] guide.
 
+== Client certificate lookup compliant with RFC 9440
+
+You can now use a new client certificate lookup provider that is compliant with https://datatracker.ietf.org/doc/html/rfc9440[RFC 9440].
+This enables native support e.g. for Caddy and other reverse proxies that follow the RFC.
+For details, navigate to link:{server_guide_base_link}/reverseproxy#_enabling_client_certificate_lookup[Enabling Client Certificate Lookup] section of the documentation.
+
 = Observability
 
 == Export traces with custom request headers
