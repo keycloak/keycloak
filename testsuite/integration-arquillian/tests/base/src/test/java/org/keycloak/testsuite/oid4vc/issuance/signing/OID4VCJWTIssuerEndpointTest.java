@@ -712,19 +712,20 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     assertNotNull("The jwt_vc-credential can optionally provide a claims claim.",
                             jwtVcClaims);
 
-                    assertEquals(5, jwtVcClaims.size());
+                    assertEquals(6, jwtVcClaims.size());
                     {
                         Claim claim = jwtVcClaims.get(0);
-                        assertEquals("The jwt_vc-credential claim credentialSubject.given_name is present.",
-                                CREDENTIAL_SUBJECT,
-                                claim.getPath().get(0));
-                        assertEquals("The jwt_vc-credential claim credentialSubject.given_name is present.",
-                                "given_name",
-                                claim.getPath().get(1));
-                        assertFalse("The jwt_vc-credential claim credentialSubject.given_name is not mandatory.",
-                                claim.isMandatory());
-                        assertNotNull("The jwt_vc-credential claim credentialSubject.given_name has display configured",
-                                claim.getDisplay());
+                        assertEquals("Has credentialSubject.id", CREDENTIAL_SUBJECT, claim.getPath().get(0));
+                        assertEquals("credentialSubject.id mapped correctly","id", claim.getPath().get(1));
+                        assertFalse("credentialSubject.id is not mandatory", claim.isMandatory());
+                        assertNull("credentialSubject.id has no display", claim.getDisplay());
+                    }
+                    {
+                        Claim claim = jwtVcClaims.get(1);
+                        assertEquals("Has credentialSubject.given_name", CREDENTIAL_SUBJECT, claim.getPath().get(0));
+                        assertEquals("credentialSubject.given_name mapped correctly","given_name", claim.getPath().get(1));
+                        assertFalse("credentialSubject.given_name is not mandatory", claim.isMandatory());
+                        assertNotNull("credentialSubject.given_name has display", claim.getDisplay());
                         assertEquals(15, claim.getDisplay().size());
                         for (ClaimDisplay givenNameDisplay : claim.getDisplay()) {
                             assertNotNull(givenNameDisplay.getName());
@@ -732,17 +733,11 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         }
                     }
                     {
-                        Claim claim = jwtVcClaims.get(1);
-                        assertEquals("The jwt_vc-credential claim credentialSubject.family_name is present.",
-                                CREDENTIAL_SUBJECT,
-                                claim.getPath().get(0));
-                        assertEquals("The jwt_vc-credential claim credentialSubject.family_name is present.",
-                                "family_name",
-                                claim.getPath().get(1));
-                        assertFalse("The jwt_vc-credential claim credentialSubject.family_name is not mandatory.",
-                                claim.isMandatory());
-                        assertNotNull("The jwt_vc-credential claim credentialSubject.family_name has display configured",
-                                claim.getDisplay());
+                        Claim claim = jwtVcClaims.get(2);
+                        assertEquals("Has credentialSubject.family_name", CREDENTIAL_SUBJECT, claim.getPath().get(0));
+                        assertEquals("credentialSubject.family_name mapped correctly","family_name", claim.getPath().get(1));
+                        assertFalse("credentialSubject.family_name is not mandatory", claim.isMandatory());
+                        assertNotNull("credentialSubject.family_name has display", claim.getDisplay());
                         assertEquals(15, claim.getDisplay().size());
                         for (ClaimDisplay familyNameDisplay : claim.getDisplay()) {
                             assertNotNull(familyNameDisplay.getName());
@@ -750,35 +745,11 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         }
                     }
                     {
-                        Claim claim = jwtVcClaims.get(2);
-                        assertEquals("The jwt_vc-credential claim credentialSubject.birthdate is present.",
-                                CREDENTIAL_SUBJECT,
-                                claim.getPath().get(0));
-                        assertEquals("The jwt_vc-credential claim credentialSubject.birthdate is present.",
-                                "birthdate",
-                                claim.getPath().get(1));
-                        assertFalse("The jwt_vc-credential claim credentialSubject.birthdate is not mandatory.",
-                                claim.isMandatory());
-                        assertNotNull("The jwt_vc-credential claim credentialSubject.birthdate has display configured",
-                                claim.getDisplay());
-                        assertEquals(15, claim.getDisplay().size());
-                        for (ClaimDisplay birthDateDisplay : claim.getDisplay()) {
-                            assertNotNull(birthDateDisplay.getName());
-                            assertNotNull(birthDateDisplay.getLocale());
-                        }
-                    }
-                    {
                         Claim claim = jwtVcClaims.get(3);
-                        assertEquals("The jwt_vc-credential claim credentialSubject.email is present.",
-                                CREDENTIAL_SUBJECT,
-                                claim.getPath().get(0));
-                        assertEquals("The jwt_vc-credential claim credentialSubject.email is present.",
-                                "email",
-                                claim.getPath().get(1));
-                        assertFalse("The jwt_vc-credential claim credentialSubject.email is not mandatory.",
-                                claim.isMandatory());
-                        assertNotNull("The jwt_vc-credential claim credentialSubject.email has display configured",
-                                claim.getDisplay());
+                        assertEquals("Has credentialSubject.birthdate", CREDENTIAL_SUBJECT, claim.getPath().get(0));
+                        assertEquals("credentialSubject.birthdate mapped correctly","birthdate", claim.getPath().get(1));
+                        assertFalse("credentialSubject.birthdate is not mandatory", claim.isMandatory());
+                        assertNotNull("credentialSubject.birthdate has display", claim.getDisplay());
                         assertEquals(15, claim.getDisplay().size());
                         for (ClaimDisplay birthDateDisplay : claim.getDisplay()) {
                             assertNotNull(birthDateDisplay.getName());
@@ -787,16 +758,22 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     }
                     {
                         Claim claim = jwtVcClaims.get(4);
-                        assertEquals("The jwt_vc-credential claim credentialSubject.scope-name is present.",
-                                CREDENTIAL_SUBJECT,
-                                claim.getPath().get(0));
-                        assertEquals("The jwt_vc-credential claim credentialSubject.scope-name is present.",
-                                "scope-name",
-                                claim.getPath().get(1));
-                        assertFalse("The jwt_vc-credential claim credentialSubject.scope-name is not mandatory.",
-                                claim.isMandatory());
-                        assertNull("The jwt_vc-credential claim credentialSubject.scope-name has no display configured",
-                                claim.getDisplay());
+                        assertEquals("Has credentialSubject.email", CREDENTIAL_SUBJECT, claim.getPath().get(0));
+                        assertEquals("credentialSubject.email mapped correctly","email", claim.getPath().get(1));
+                        assertFalse("credentialSubject.email is not mandatory", claim.isMandatory());
+                        assertNotNull("credentialSubject.email has display", claim.getDisplay());
+                        assertEquals(15, claim.getDisplay().size());
+                        for (ClaimDisplay birthDateDisplay : claim.getDisplay()) {
+                            assertNotNull(birthDateDisplay.getName());
+                            assertNotNull(birthDateDisplay.getLocale());
+                        }
+                    }
+                    {
+                        Claim claim = jwtVcClaims.get(5);
+                        assertEquals("Has credentialSubject.scope-name", CREDENTIAL_SUBJECT, claim.getPath().get(0));
+                        assertEquals("credentialSubject.scope-name mapped correctly","scope-name", claim.getPath().get(1));
+                        assertFalse("credentialSubject.scope-name is not mandatory", claim.isMandatory());
+                        assertNull("credentialSubject.scope-name has no display", claim.getDisplay());
                     }
 
                     assertEquals("The jwt_vc-credential should offer vct",
