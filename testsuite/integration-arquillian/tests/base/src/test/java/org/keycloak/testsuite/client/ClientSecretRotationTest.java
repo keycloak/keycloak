@@ -555,7 +555,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
                 clientResource.toRepresentation());
-        int clientSecretExpirationTime = wrapper.getClientSecretExpirationTime();
+        long clientSecretExpirationTime = wrapper.getClientSecretExpirationTime();
         assertThat(clientSecretExpirationTime, is(not(0)));
 
     }
@@ -699,8 +699,8 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
      * -------------------- support methods --------------------
      **/
 
-    private void configureCustomProfileAndPolicy(int secretExpiration, int rotatedExpiration,
-                                                 int remainingExpiration) throws Exception {
+    private void configureCustomProfileAndPolicy(long secretExpiration, long rotatedExpiration,
+                                                 long remainingExpiration) throws Exception {
         ClientProfileBuilder profileBuilder = new ClientProfileBuilder();
         ClientSecretRotationExecutor.Configuration profileConfig = getClientProfileConfiguration(
                 secretExpiration, rotatedExpiration, remainingExpiration);
@@ -750,7 +750,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
     @NotNull
     private ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
-            int expirationPeriod, int rotatedExpirationPeriod, int remainExpirationPeriod) {
+            long expirationPeriod, long rotatedExpirationPeriod, long remainExpirationPeriod) {
         ClientSecretRotationExecutor.Configuration profileConfig = new ClientSecretRotationExecutor.Configuration();
         profileConfig.setExpirationPeriod(expirationPeriod);
         profileConfig.setRotatedExpirationPeriod(rotatedExpirationPeriod);
