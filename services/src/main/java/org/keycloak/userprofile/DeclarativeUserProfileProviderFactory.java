@@ -73,6 +73,7 @@ import org.keycloak.validate.validators.EmailValidator;
 
 import static java.util.Optional.ofNullable;
 
+import static org.keycloak.common.Profile.Feature.OID4VC_VCI;
 import static org.keycloak.common.util.ObjectUtil.isBlank;
 import static org.keycloak.userprofile.DefaultAttributes.READ_ONLY_ATTRIBUTE_KEY;
 import static org.keycloak.userprofile.UserProfileContext.ACCOUNT;
@@ -104,7 +105,11 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     private final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry = new HashMap<>();
 
     public static void setDefaultConfig(UPConfig defaultConfig) {
-        if (PARSED_DEFAULT_RAW_CONFIG == null) {
+        setDefaultConfig(defaultConfig, false);
+    }
+
+    public static void setDefaultConfig(UPConfig defaultConfig, boolean force) {
+        if (force || PARSED_DEFAULT_RAW_CONFIG == null) {
             PARSED_DEFAULT_RAW_CONFIG = defaultConfig;
         }
     }
@@ -494,7 +499,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
         metadata.addAttribute(TermsAndConditions.USER_ATTRIBUTE, -1, AttributeMetadata.ALWAYS_FALSE,
-                DeclarativeUserProfileProviderFactory::isTermAndConditionsEnabled)
+                        DeclarativeUserProfileProviderFactory::isTermAndConditionsEnabled)
                 .setAttributeDisplayName("${termsAndConditionsUserAttribute}")
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
@@ -521,21 +526,63 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     }
 
     private void initDefaultConfiguration(Scope config) {
+
         // The user-defined configuration is always parsed during init and should be avoided as much as possible
         // If no user-defined configuration is set, the system default configuration must have been set
         // In Quarkus, the system default configuration is set at build time for optimization purposes
-        UPConfig defaultConfig = ofNullable(config.get("configFile"))
+        UPConfig parsedConfig = ofNullable(config.get("configFile"))
                 .map(Paths::get)
                 .map(UPConfigUtils::parseConfig)
-                .orElse(PARSED_DEFAULT_RAW_CONFIG);
+                .orElse(null);
 
-        if (defaultConfig == null) {
-            // as a fallback parse the system default config
-            defaultConfig = UPConfigUtils.parseSystemDefaultConfig();
+        // For all intents and purposes, a Verifiable Credential (VC) is bound to a Holder's Digital Identity (DID).
+        // The Holder's DID is in turn bound to Key Material that the Issuer + Verifier can discover from the DID Document.
+        // In case of "did:key:..." the Public Key is already encoded in the DID.
+        //
+        // Here, we make sure that the default UserProfile has a 'did' attribute when --feature=oid4vc-vci is enabled.
+        // Conceptually, it is however debatable whether the Issuer should know even one of the Holder's DIDs
+        //
+        // In future, it may be possible that ...
+        //
+        //  * The Holder communicates the DID at the time of Authorization
+        //  * The Issuer then verifies Holder possession of the associated Key Material
+        //  * The Issuer then somehow associates the AuthorizationRequest with a registered User
+        //  * The VC is then issued to the Holder without the Issuer needing to remember that Holder DID
+        //
+        // This kind of Authorization protocol is for example required by EBSI, which we aim to become compatible with.
+        // https://hub.ebsi.eu/conformance/build-solutions/issue-to-holder-functional-flows
+        //
+        // Note, that current EBSI Compatibility Tests use the Holder's DID as OIDC client_id in the AuthorizationRequest.
+        // That is something we need to work with, but I don't think we should model it like that in our realm config.
+        //
+        // Here the attribute definition that we add by default (when not defined already)
+        //
+        //   {
+        //     "name": "did",
+        //     "displayName": "DID",
+        //     "permissions": {
+        //       "view": ["admin", "user"],
+        //       "edit": ["admin", "user"]
+        //     },
+        //     "validations": {
+        //       "pattern": {
+        //         "pattern": "^did:.+:.+$",
+        //         "error-message": "Value must start with 'did:scheme:'"
+        //       }
+        //     }
+        //   }
+        if (parsedConfig == null && Profile.isFeatureEnabled(OID4VC_VCI)) {
+            parsedConfig = UPConfigUtils.parseUserProfileConfig("keycloak-oid4vci-user-profile.json");
         }
 
-        PARSED_DEFAULT_RAW_CONFIG = null;
-        setDefaultConfig(defaultConfig);
+        // As fallback parse the system default config
+        if (parsedConfig == null && PARSED_DEFAULT_RAW_CONFIG == null) {
+            parsedConfig = UPConfigUtils.parseSystemDefaultConfig();
+        }
+
+        if (parsedConfig != null) {
+            setDefaultConfig(parsedConfig, true);
+        }
     }
 
     private static Map<String, Object> getEmailAnnotationDecorator(AttributeContext c) {
