@@ -4,9 +4,9 @@ import java.util.function.Consumer;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.Assert;
