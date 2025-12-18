@@ -1,0 +1,161 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Integrating with Model Context Protocol (MCP)"
+priority=115
+summary="Using {project_name} as an authorization server for Model Context Protocol (MCP) servers.">
+
+There are currently four versions of the Model Context Protocol (MCP) specification:
+
+* 2025-11-25 (latest version)
+* 2025-06-18
+* 2025-03-26
+* 2024-11-05 (initial version)
+
+The initial version (2024-11-05) does not cover authorization, as such is not covered in this guide.
+
+This guide shows you the following:
+
+* Which MCP version {project_name} supports.
+* How to set up {project_name} as an authorization server in MCP.
+
+However, the guide does not cover everything you need to know. Therefore, you are recommended to read the authorization section of the relevant MCP version as well.
+
+== Standards Compliance MCP requires
+
+According to the https://modelcontextprotocol.io/specification/draft/basic/authorization#standards-compliance[MCP specification], there are several standards regarding an authorization server in MCP. The following table shows:
+
+* Which MCP version requires an authorization server to support which standards in which level (MUST, SHOULD, MAY).
+* With which standards {project_name} complies.
+
+[%autowidth]
+|======
+|Standard |2025-11-25 |2025-06-18 |2025-03-26 |{project_name}
+
+| https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-14[The OAuth 2.1 Authorization Framework (Internet Draft)]
+| MUST
+| MUST
+| MUST
+| Supported
+
+| https://datatracker.ietf.org/doc/html/rfc8414[OAuth 2.0 Authorization Server Metadata (RFC 8414)]
+| MUST
+| MUST
+| MUST
+| Supported
+
+| https://datatracker.ietf.org/doc/html/rfc8707[Resource Indicators for OAuth 2.0 (RFC 8707)]
+| MUST
+| MUST
+| -
+| Not supported
+
+| https://datatracker.ietf.org/doc/html/rfc7591[OAuth 2.0 Dynamic Client Registration Protocol (RFC 7591)]
+| MAY
+| SHOULD
+| SHOULD
+| Supported
+
+| https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-00[OAuth Client ID Metadata Document (Internet Draft)]
+| SHOULD
+| -
+| -
+| Not supported
+
+|======
+
+The MCP specification adopts https://datatracker.ietf.org/doc/html/rfc9728[OAuth 2.0 Protected Resource Metadata (RFC 9728)]. The standard is for an MCP server and not for an authorization server like {project_name}. Therefore, it is not included in the above table.
+
+== MCP version compliance
+
+In this guide, as criteria for compliance, "{project_name} supports MCP" means that {project_name} meets all MUST and SHOULD requirements by MCP.
+
+According to these criteria, the following table shows which MCP version {project_name} supports.
+
+[%autowidth]
+|===
+|MCP Version |Conformance
+
+| https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization[2025-03-26]
+| Supported
+
+| https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization[2025-06-18]
+| Partially Supported without Resource Indicators for OAuth 2.0
+
+| https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization[2025-11-25]
+| Partially Supported without Resource Indicators for OAuth 2.0 and OAuth Client ID Metadata Document
+
+|===
+
+== Setup
+
+=== For MCP 2025-03-26
+
+No special setup is required.
+
+=== For MCP 2025-06-18 and 2025-11-25
+
+==== Token Audience Binding and Validation
+
+To gain security benefit, the MCP specification requires an access token to be bound with its audience. In order to do so, the MCP specification requires the following:
+
+* An MCP client MUST include the `resource` parameter defined in https://datatracker.ietf.org/doc/html/rfc8707[Resource Indicators for OAuth 2.0 (RFC 8707)] in an authorization request and token request. The parameter's value MUST identify an MCP server that the MCP client intends to use the token with.
+
+* An MCP server MUST validate that tokens presented to them were specifically issued for their use.
+
+The MCP specification does not describe how to do this binding. One method for the binding is to set a value of `resource` parameter to an `aud` claim in an access token. However, {project_name} cannot recognize `resource` parameter.
+
+The Keycloak community is planning to support Resource Indicators for OAuth 2.0 (RFC 8707) to {project_name} to make {project_name} recognize and process the `resource` parameter as the MCP specification expects. Until this support is completed, you can use OAuth 2.0's `scope` parameter instead of the `resource` parameter. To show the binding, please consider the following situation:
+
+* An MCP server's URL is `+https://example.com/mcp+`
+* The MCP supports the following three scopes: `mcp:tools`, `mcp:prompts` and  `mcp:resources`.
+* To get an access token for accessing the MCP server, an MCP client sends to {project_name} an authorization request whose `resource` parameter value is `+https://example.com/mcp+` and `scope` parameter includes any combination of the three scopes.
+* We want {project_name} to issue an access token whose `aud` claim's value is MCP server's URL, namely `+https://example.com/mcp+`.
+
+To make {project_name} issue such the access token, we could configure {project_name} as follows:
+
+* Add a client scope `mcp:tools` whose type is `Optional`.
+* Add to the client scope a new `Audience` mapper whose `Included Custom Audience` field is `+https://example.com/mcp+`.
+* Add a client scope `mcp:prompts` whose type is `Optional`.
+* Add to the client scope a new `Audience` mapper whose `Included Custom Audience` field is `+https://example.com/mcp+`.
+* Add a client scope `mcp:resources` whose type is `Optional`.
+* Add to the client scope a new `Audience` mapper whose `Included Custom Audience` field is `+https://example.com/mcp+`.
+
+Please not that the client scope's `Included Custom Audience` field needs to be the same as the authorization request's `resource` parameter value and the MCP server's URL.
+
+With the configuration, if the MCP client send to {project_name} an authorization request whose `resource` parameter value is `+https://example.com/mcp+` and `scope` parameter includes `mcp:resources`, `mcp:tools` and `mcp:prompts`, {project_name} can issue the following access token:
+
+```json
+{
+  ...
+  "aud": "https://example.com/mcp",
+  "scope": "mcp:resources mcp:tools mcp:prompts"
+  ...
+}
+```
+
+=== MCP Inspector integration
+
+If you want to use https://github.com/modelcontextprotocol/inspector[MCP Inspector], an official debugging tools for MCP server, with {project_name} as an authorization server, you need to do an appropriate setup regarding CORS on {project_name}'s' client registration endpoint because MCP Inspector executes JavaScript downloaded from the MCP Inspector's backend server to register an MCP client dynamically to {project_name}.
+
+You need to do an appropriate setup for Client Registration's anonymous access policies as follows:
+
+* Allowed Client Scopes: Needs to include scopes supported by an MCP server.
+* Allowed Registration Web Origins: Needs to include web origin of MCP inspector's backend server.
+* Trusted Hosts: Needs to include hostname or IP address of the machine that sends a dynamic client registration request to {project_name}, namely the machine your browser runs on.
+
+=== For MCP 2025-11-25
+
+==== Client Registration
+
+According to https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization#client-registration-approaches[Client Registration Approaches] section of the MCP specification, the following three client registration mechanisms are supported and you can choose based on your scenario:
+
+* Client ID Metadata Documents: When client and server have no prior relationship (most common)
+* Pre-registration: When client and server have an existing relationship
+* Dynamic Client Registration: For backwards compatibility or specific requirements
+
+The Keycloak community is planning to support OAuth Client ID Metadata Document in the future. Until the support is completed, {project_name} can still accommodate an MCP client by pre-registration or Dynamic Client Registration.
+
+
+</@tmpl.guide>
