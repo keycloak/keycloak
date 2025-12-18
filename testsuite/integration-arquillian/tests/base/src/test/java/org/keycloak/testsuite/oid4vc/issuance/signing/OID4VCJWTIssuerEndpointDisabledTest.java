@@ -4,6 +4,7 @@ import java.util.function.Consumer;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.services.CorsErrorResponseException;
@@ -24,6 +25,30 @@ public class OID4VCJWTIssuerEndpointDisabledTest extends OID4VCIssuerEndpointTes
     @Override
     protected boolean shouldEnableOid4vci() {
         return false;
+    }
+
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        super.configureTestRealm(testRealm);
+        testRealm.setVerifiableCredentialsEnabled(false);
+    }
+
+    /**
+     * When verifiable credentials are disabled at the realm level, OID4VCI endpoints
+     * must reject calls regardless of the client configuration.
+     */
+    @Test
+    public void testRealmDisabledEndpoints() {
+        testWithBearerToken(token -> testingClient.server(TEST_REALM_NAME).run((session) -> {
+            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+            // Nonce endpoint should be forbidden when OID4VCI is disabled for the realm
+            CorsErrorResponseException nonceException = Assert.assertThrows(CorsErrorResponseException.class, issuerEndpoint::getCNonce);
+            assertEquals("Realm-disabled OID4VCI should return 403 for nonce endpoint",
+                    Response.Status.FORBIDDEN.getStatusCode(), nonceException.getResponse().getStatus());
+        }));
     }
 
     @Test

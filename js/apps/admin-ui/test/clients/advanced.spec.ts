@@ -138,7 +138,9 @@ test.describe.serial("OpenID for Verifiable Credentials", () => {
   const realmName = `oid4vci-test-${uuidv4()}`;
   const clientIdOpenIdConnect = `client-oidc-${uuidv4()}`;
   test.beforeAll(async () => {
-    await adminClient.createRealm(realmName, {});
+    await adminClient.createRealm(realmName, {
+      verifiableCredentialsEnabled: true,
+    });
     await adminClient.createClient({
       clientId: clientIdOpenIdConnect,
       realm: realmName,
@@ -182,6 +184,28 @@ test.describe.serial("OpenID for Verifiable Credentials", () => {
       } else {
         await expect(toggleSwitch).toBeHidden();
       }
+    });
+
+    test("should hide OID4VC section when verifiable credentials are disabled for the realm", async ({
+      page,
+    }) => {
+      await adminClient.updateRealm(realmName, {
+        verifiableCredentialsEnabled: false,
+      });
+
+      await page.reload();
+      await page.waitForSelector('[data-testid="advancedTab"]', {
+        state: "visible",
+        timeout: 10000,
+      });
+      await page.getByTestId("advancedTab").click();
+
+      const toggleSwitch = page.locator("#attributes\\.oid4vci🍺enabled");
+      await expect(toggleSwitch).toBeHidden();
+
+      await adminClient.updateRealm(realmName, {
+        verifiableCredentialsEnabled: true,
+      });
     });
   });
 });
