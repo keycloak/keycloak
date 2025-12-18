@@ -18,7 +18,10 @@
 package org.keycloak.quarkus.runtime.logging;
 
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Filter;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.regex.Pattern;
@@ -26,6 +29,7 @@ import java.util.regex.Pattern;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 
+import io.quarkus.bootstrap.logging.InitialConfigurator;
 import io.quarkus.logging.LoggingFilter;
 
 /**
@@ -37,6 +41,10 @@ public final class KeycloakLogFilter implements Filter {
     // avoid logging ISPN000312 for sessions, offlineSessions, clientSessions and offlineClientSessions caches only.
     private static final Pattern ISPN000312_PATTERN = Pattern.compile(
             "^\\[Context=(" + String.join("|", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME) + ")] ISPN000312: .*");
+
+    // Use this thread pool to asynchronously log from non-blocking threads, which could otherwise be pinned and lead to deadlocks.
+    // A single thread ensures that all log entries appear in the correct order.
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @Override
     public boolean isLoggable(LogRecord record) {
@@ -55,6 +63,21 @@ public final class KeycloakLogFilter implements Filter {
             }
         }
 
+        if (Thread.currentThread().getName().startsWith("non-blocking-thread")) {
+            executor.submit(new RecordLogger(record));
+            return false;
+        }
+
         return true;
     }
+
+    public record RecordLogger(LogRecord record) implements Runnable {
+        @Override
+        public void run() {
+            for (Handler handler : InitialConfigurator.DELAYED_HANDLER.getHandlers()) {
+                handler.publish(record);
+            }
+        }
+    }
+
 }
