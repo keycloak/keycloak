@@ -58,6 +58,8 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -938,6 +940,96 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 assertEquals("Both 'proof' and 'proofs' must not be present at the same time",
                         error.getErrorDescription());
             }
+        });
+    }
+
+    /**
+     * Test that credential requests work when the client scope is assigned as Optional.
+     */
+    @Test
+    public void testCredentialRequestWithOptionalClientScope() {
+        // Create and register scope, then assign as Optional
+        ClientScopeRepresentation optionalScope = registerClientScope(
+                "optional-jwt-credential",
+                TEST_DID.toString(),
+                "optional-jwt-credential-config-id",
+                null, null,
+                Format.JWT_VC,
+                null, null);
+        
+        ClientRepresentation testClient = testRealm().clients().findByClientId(client.getClientId()).get(0);
+        testRealm().clients().get(testClient.getId()).addOptionalClientScope(optionalScope.getId());
+
+        // Extract serializable data before lambda
+        final String scopeName = optionalScope.getName();
+        final String configId = optionalScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String token = getBearerToken(oauth, client, scopeName);
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+            CredentialRequest credentialRequest = new CredentialRequest()
+                    .setCredentialConfigurationId(configId);
+
+            String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+            Response credentialResponse = issuerEndpoint.requestCredential(requestPayload);
+
+            assertEquals("The credential request should succeed for Optional client scope",
+                    HttpStatus.SC_OK, credentialResponse.getStatus());
+            assertNotNull("A credential should be returned", credentialResponse.getEntity());
+
+            CredentialResponse credentialResponseVO = JsonSerialization.mapper
+                    .convertValue(credentialResponse.getEntity(), CredentialResponse.class);
+
+            assertNotNull("Credentials array should not be null", credentialResponseVO.getCredentials());
+            assertFalse("Credentials array should not be empty", credentialResponseVO.getCredentials().isEmpty());
+        });
+    }
+
+    /**
+     * Test that credential requests work when the client scope is assigned as Default.
+     */
+    @Test
+    public void testCredentialRequestWithDefaultClientScope() {
+        // Create and register scope, then assign as Default
+        ClientScopeRepresentation defaultScope = registerClientScope(
+                "default-jwt-credential",
+                TEST_DID.toString(),
+                "default-jwt-credential-config-id",
+                null, null,
+                Format.JWT_VC,
+                null, null);
+        
+        ClientRepresentation testClient = testRealm().clients().findByClientId(client.getClientId()).get(0);
+        testRealm().clients().get(testClient.getId()).addDefaultClientScope(defaultScope.getId());
+
+        // Extract serializable data before lambda
+        final String scopeName = defaultScope.getName();
+        final String configId = defaultScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String token = getBearerToken(oauth, client, scopeName);
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+            CredentialRequest credentialRequest = new CredentialRequest()
+                    .setCredentialConfigurationId(configId);
+
+            String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+            Response credentialResponse = issuerEndpoint.requestCredential(requestPayload);
+
+            assertEquals("The credential request should succeed for Default client scope",
+                    HttpStatus.SC_OK, credentialResponse.getStatus());
+            assertNotNull("A credential should be returned", credentialResponse.getEntity());
+
+            CredentialResponse credentialResponseVO = JsonSerialization.mapper
+                    .convertValue(credentialResponse.getEntity(), CredentialResponse.class);
+
+            assertNotNull("Credentials array should not be null", credentialResponseVO.getCredentials());
+            assertFalse("Credentials array should not be empty", credentialResponseVO.getCredentials().isEmpty());
         });
     }
 }
