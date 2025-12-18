@@ -120,7 +120,7 @@ public class OID4VCTargetRoleMapperTest extends OID4VCTest {
 
 		List<UserRepresentation> realmUsers = Optional.ofNullable(testRealm.getUsers()).map(ArrayList::new)
 				.orElse(new ArrayList<>());
-		realmUsers.add(getUserRepresentation("John Doe", List.of(),
+		realmUsers.add(getUserRepresentation("John Doe", Map.of(), List.of(),
                 Map.of(clientId, List.of("testRole"), "newClient", List.of("newRole"))));
 		testRealm.setUsers(realmUsers);
 	}
