@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.model;
+package org.keycloak.tests.model;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,37 +41,44 @@ import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderEventListener;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.ModelTest;
-import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.remote.annotations.TestOnServer;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.utils.infinispan.InfinispanTimeUtil;
 
 import org.hamcrest.Matchers;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
+@KeycloakIntegrationTest
+public class UserSessionProviderTest {
 
-    @Rule
-    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
+    @InjectRealm(config = UserSessionProviderRealm.class)
+    ManagedRealm managedRealm;
 
-    @Before
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
+    @BeforeEach
     public  void before() {
-        testingClient.server().run( session -> {
+        runOnServer.run( session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             session.getContext().setRealm(realm);
             session.users().addUser(realm, "user1").setEmail("user1@localhost");
@@ -79,9 +86,9 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @After
+    @AfterEach
     public void after() {
-        testingClient.server().run( session -> {
+        runOnServer.run( session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             session.getContext().setRealm(realm);
             session.sessions().removeUserSessions(realm);
@@ -98,8 +105,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public  void testCreateSessions(KeycloakSession session) {
         int started = Time.currentTime();
         RealmModel realm = session.realms().getRealmByName("test");
@@ -112,8 +118,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testUpdateSession(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         UserSessionModel[] sessions = createSessions(session);
@@ -125,8 +130,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testUpdateSessionInSameTransaction(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         UserSessionModel[] sessions = createSessions(session);
@@ -138,8 +142,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testRestartSession(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         int started = Time.currentTime();
@@ -180,8 +183,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testCreateClientSession(KeycloakSession session) {
 
         RealmModel realm = session.realms().getRealmByName("test");
@@ -204,8 +206,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testUpdateClientSession(KeycloakSession session) {
 
         RealmModel realm = session.realms().getRealmByName("test");
@@ -231,8 +232,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testUpdateClientSessionWithGetByClientId(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         UserSessionModel[] sessions = createSessions(session);
@@ -257,8 +257,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testUpdateClientSessionInSameTransaction(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         UserSessionModel[] sessions = createSessions(session);
@@ -280,8 +279,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testGetUserSessions(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         UserSessionModel[] sessions = createSessions(session);
@@ -295,8 +293,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testRemoveUserSessionsByUser(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         createSessions(session);
@@ -321,14 +318,13 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             assertSame(1, userSessions.size());
 
             for (UserSessionModel userSession : userSessions) {
-                Assert.assertEquals((int) clientSessionsKept.get(userSession.getId()),
+                Assertions.assertEquals((int) clientSessionsKept.get(userSession.getId()),
                         userSession.getAuthenticatedClientSessions().size());
             }
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testRemoveUserSession(KeycloakSession session) {
         String userSessionId = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), kcSession -> {
             RealmModel realm = kcSession.realms().getRealmByName("test");
@@ -346,8 +342,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testRemoveUserSessionsByRealm(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         session.getContext().setRealm(realm);
@@ -365,8 +360,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         assertEquals(0, session.sessions().getUserSessionsStream(realm, user2).count());
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testOnClientRemoved(KeycloakSession session) {
         UserSessionModel[] sessions = createSessions(session);
 
@@ -408,9 +402,9 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public  void testRemoveUserSessionsByExpired(KeycloakSession session) {
+        InfinispanTimeUtil.enableTestingTimeService(session);
         try {
             RealmModel realm = session.realms().getRealmByName("test");
             session.getContext().setRealm(realm);
@@ -472,11 +466,11 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         } finally {
             Time.setOffset(0);
             session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
+            InfinispanTimeUtil.disableTestingTimeService(session);
         }
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public  void testTransientUserSession(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         session.getContext().setRealm(realm);
@@ -497,17 +491,17 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
             // Can find session by ID in current transaction
             UserSessionModel foundSession = session1.sessions().getUserSession(realm, userSessionId);
-            Assert.assertEquals(userSession, foundSession);
+            Assertions.assertEquals(userSession, foundSession);
 
             // Count of sessions should be still the same
-            Assert.assertEquals(sessionsBefore, session1.sessions().getActiveUserSessions(realm, client));
+            Assertions.assertEquals(session1.sessions().getActiveUserSessions(realm, client), sessionsBefore);
         });
 
         // create an user session whose last refresh exceeds the max session idle timeout.
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session1) -> {
             session1.getContext().setRealm(realm);
             UserSessionModel userSession = session1.sessions().getUserSession(realm, userSessionId);
-            Assert.assertNull(userSession);
+            Assertions.assertNull(userSession);
         });
     }
 
@@ -517,9 +511,9 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
      *
      * @param session the {@code KeycloakSession}
      */
-    @Test
-    @ModelTest
+    @TestOnServer
     public  void testRemoveUserSessionsByExpiredRememberMe(KeycloakSession session) {
+        InfinispanTimeUtil.enableTestingTimeService(session);
         RealmModel testRealm = session.realms().getRealmByName("test");
         session.getContext().setRealm(testRealm);
         int previousMaxLifespan = testRealm.getSsoSessionMaxLifespanRememberMe();
@@ -610,12 +604,12 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
                 r.setSsoSessionIdleTimeoutRememberMe(previousMaxIdle);
                 r.setRememberMe(false);
             });
+            InfinispanTimeUtil.disableTestingTimeService(session);
         }
     }
 
     // KEYCLOAK-2508
-    @Test
-    @ModelTest
+    @TestOnServer
      public void testRemovingExpiredSession(KeycloakSession session) {
         UserSessionModel[] sessions = createSessions(session);
         try {
@@ -635,8 +629,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testGetByClient(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         final UserSessionModel[] sessions = createSessions(session);
@@ -650,8 +643,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testGetByClientPaginated(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
 
@@ -683,8 +675,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testCreateAndGetInSameTransaction(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         session.getContext().setRealm(realm);
@@ -694,15 +685,14 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
         UserSessionModel userSessionLoaded = session.sessions().getUserSession(realm, userSession.getId());
         AuthenticatedClientSessionModel clientSessionLoaded = userSessionLoaded.getAuthenticatedClientSessions().get(client.getId());
-        Assert.assertNotNull(userSessionLoaded);
-        Assert.assertNotNull(clientSessionLoaded);
+        Assertions.assertNotNull(userSessionLoaded);
+        Assertions.assertNotNull(clientSessionLoaded);
 
-        Assert.assertEquals(userSession.getId(), clientSessionLoaded.getUserSession().getId());
-        Assert.assertEquals(1, userSessionLoaded.getAuthenticatedClientSessions().size());
+        Assertions.assertEquals(userSession.getId(), clientSessionLoaded.getUserSession().getId());
+        Assertions.assertEquals(1, userSessionLoaded.getAuthenticatedClientSessions().size());
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testAuthenticatedClientSessions(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         session.getContext().setRealm(realm);
@@ -729,7 +719,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         // Ensure sessions are here
         userSession = session.sessions().getUserSession(realm, userSession.getId());
         Map<String, AuthenticatedClientSessionModel> clientSessions = userSession.getAuthenticatedClientSessions();
-        Assert.assertEquals(2, clientSessions.size());
+        Assertions.assertEquals(2, clientSessions.size());
         testAuthenticatedClientSession(clientSessions.get(client1.getId()), "test-app", userSession.getId(), "foo1", currentTime1);
         testAuthenticatedClientSession(clientSessions.get(client2.getId()), "third-party", userSession.getId(), "foo2", currentTime2);
 
@@ -752,7 +742,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         // Ensure updated
         userSession = session.sessions().getUserSession(realm, userSession.getId());
         clientSessions = userSession.getAuthenticatedClientSessions();
-        Assert.assertEquals(2, clientSessions.size());
+        Assertions.assertEquals(2, clientSessions.size());
         testAuthenticatedClientSession(clientSessions.get(client1.getId()), "test-app", userSession.getId(), "foo1-updated", currentTime1);
         testAuthenticatedClientSession(clientSessions.get(client2.getId()), "third-party", userSession.getId(), "foo2-rewrited", currentTime3);
 
@@ -762,16 +752,16 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
         userSession = session.sessions().getUserSession(realm, userSession.getId());
         clientSessions = userSession.getAuthenticatedClientSessions();
-        Assert.assertEquals(1, clientSessions.size());
-        Assert.assertNull(clientSessions.get(client1.getId()));
+        Assertions.assertEquals(1, clientSessions.size());
+        Assertions.assertNull(clientSessions.get(client1.getId()));
     }
 
 
     private static void testAuthenticatedClientSession(AuthenticatedClientSessionModel clientSession, String expectedClientId, String expectedUserSessionId, String expectedAction, int expectedTimestamp) {
-        Assert.assertEquals(expectedClientId, clientSession.getClient().getClientId());
-        Assert.assertEquals(expectedUserSessionId, clientSession.getUserSession().getId());
-        Assert.assertEquals(expectedAction, clientSession.getAction());
-        Assert.assertEquals(expectedTimestamp, clientSession.getTimestamp());
+        Assertions.assertEquals(expectedClientId, clientSession.getClient().getClientId());
+        Assertions.assertEquals(expectedUserSessionId, clientSession.getUserSession().getId());
+        Assertions.assertEquals(expectedAction, clientSession.getAction());
+        Assertions.assertEquals(expectedTimestamp, clientSession.getTimestamp());
     }
 
     private static void assertPaginatedSession(KeycloakSession session, RealmModel realm, ClientModel client, int start, int max, int expectedSize) {
@@ -780,8 +770,9 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testGetCountByClient() {
-        testingClient.server().run(UserSessionProviderTest::testGetCountByClient);
+        runOnServer.run(UserSessionProviderTest::testGetCountByClient);
     }
+
     public static void testGetCountByClient(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         createSessions(session);
@@ -795,7 +786,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void loginFailures() {
-        testingClient.server().run((KeycloakSession kcSession) -> {
+        runOnServer.run((KeycloakSession kcSession) -> {
             RealmModel realm = kcSession.realms().getRealmByName("test");
             kcSession.getContext().setRealm(realm);
             UserLoginFailureModel failure1 = kcSession.loginFailures().addUserLoginFailure(realm, "user1");
@@ -808,7 +799,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             failure2.setLastFailure(Time.currentTimeMillis());
         });
 
-        testingClient.server().run((KeycloakSession kcSession) -> {
+        runOnServer.run((KeycloakSession kcSession) -> {
             RealmModel realm = kcSession.realms().getRealmByName("test");
             kcSession.getContext().setRealm(realm);
 
@@ -830,13 +821,13 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             assertEquals(0, failure1.getNumFailures());
         });
 
-        testingClient.server().run((KeycloakSession kcSession) -> {
+        runOnServer.run((KeycloakSession kcSession) -> {
             RealmModel realm = kcSession.realms().getRealmByName("test");
             kcSession.getContext().setRealm(realm);
             kcSession.loginFailures().removeUserLoginFailure(realm, "user1");
         });
 
-        testingClient.server().run((KeycloakSession kcSession) -> {
+        runOnServer.run((KeycloakSession kcSession) -> {
             RealmModel realm = kcSession.realms().getRealmByName("test");
             kcSession.getContext().setRealm(realm);
 
@@ -845,7 +836,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             kcSession.loginFailures().removeAllUserLoginFailures(realm);
         });
 
-        testingClient.server().run((KeycloakSession kcSession) -> {
+        runOnServer.run((KeycloakSession kcSession) -> {
             RealmModel realm = kcSession.realms().getRealmByName("test");
             kcSession.getContext().setRealm(realm);
             assertNull(kcSession.loginFailures().getUserLoginFailure(realm, "user1"));
@@ -855,7 +846,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testOnUserRemoved() {
-        testingClient.server().run(UserSessionProviderTest::testOnUserRemoved);
+        runOnServer.run(UserSessionProviderTest::testOnUserRemoved);
     }
 
     public static void testOnUserRemoved(KeycloakSession session) {
@@ -887,12 +878,12 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testOnUserRemovedLazyUserAttributesAreLoaded() {
-        testingClient.server().run(session -> {
+        runOnServer.run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             UserModel user1 = session.users().getUserByUsername(realm, "user1");
             user1.setSingleAttribute("customAttribute", "value1");
         });
-        testingClient.server().run(UserSessionProviderTest::testOnUserRemovedLazyUserAttributesAreLoaded);
+        runOnServer.run(UserSessionProviderTest::testOnUserRemovedLazyUserAttributesAreLoaded);
     }
 
     public static void testOnUserRemovedLazyUserAttributesAreLoaded(KeycloakSession session) {
@@ -974,7 +965,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         for (Map.Entry<String, AuthenticatedClientSessionModel> entry : session.getAuthenticatedClientSessions().entrySet()) {
             String clientUUID = entry.getKey();
             AuthenticatedClientSessionModel clientSession = entry.getValue();
-            Assert.assertEquals(clientUUID, clientSession.getClient().getId());
+            Assertions.assertEquals(clientUUID, clientSession.getClient().getId());
             actualClients[i] = clientSession.getClient().getClientId();
             i++;
         }
@@ -985,8 +976,15 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         assertArrayEquals(clients, actualClients);
     }
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
+    private static class UserSessionProviderRealm implements RealmConfig {
 
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            realm.name("test");
+            realm.addClient("test-app");
+            realm.addClient("third-party");
+            return realm;
+        }
     }
+
 }

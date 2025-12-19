@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.model;
+package org.keycloak.tests.model;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,15 +33,17 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.ModelTest;
-import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.remote.annotations.TestOnServer;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -50,28 +52,18 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class UserModelTest extends AbstractTestRealmKeycloakTest {
+@KeycloakIntegrationTest
+public class UserModelTest {
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(RealmBuilder.create().name("original").build());
-        testRealms.add(RealmBuilder.create().name("other").build());
-        testRealms.add(RealmBuilder.create().name("realm1").build());
-        testRealms.add(RealmBuilder.create().name("realm2").build());
-    }
+    @InjectRealm(lifecycle = LifeCycle.METHOD, config = UserModelRealm.class)
+    ManagedRealm originalRealm;
 
-    @Override
-    protected boolean isImportAfterEachMethod() {
-        return true;
-    }
-
-    @Test
-    @ModelTest(realmName = "original")
+    @TestOnServer
     public void persistUser(KeycloakSession session) {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sesPersistUser) -> {
             KeycloakSession currentSession = sesPersistUser;
@@ -83,7 +75,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             user.setEmail("email");
             assertNotNull(user.getCreatedTimestamp());
             // test that timestamp is current with 10s tollerance
-            Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
+            Assertions.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
 
             user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
             user.addRequiredAction(RequiredAction.UPDATE_PASSWORD);
@@ -120,10 +112,8 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest(realmName = "original")
+    @TestOnServer
     public void webOriginSetTest(KeycloakSession session) {
-
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sesWebOrigin) -> {
             KeycloakSession currentSession = sesWebOrigin;
             RealmModel realm = currentSession.realms().getRealmByName("original");
@@ -162,10 +152,8 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest(realmName = "original")
-    public void testUserRequiredActions(KeycloakSession session) throws Exception {
-
+    @TestOnServer
+    public void testUserRequiredActions(KeycloakSession session) {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sesUserReqActions) -> {
             KeycloakSession currentSession = sesUserReqActions;
             RealmModel realm = currentSession.realms().getRealmByName("original");
@@ -216,8 +204,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest(realmName = "original")
+    @TestOnServer
     public void testUserMultipleAttributes(KeycloakSession session) throws Exception {
         AtomicReference<List<String>> attrValsAtomic = new AtomicReference<>();
 
@@ -282,8 +269,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
     }
 
     // KEYCLOAK-3494
-    @Test
-    @ModelTest(realmName = "original")
+    @TestOnServer
     public void testUpdateUserAttribute(KeycloakSession session) throws Exception {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sesUpdateAtr1) -> {
@@ -314,8 +300,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
     }
 
     // KEYCLOAK-3608
-    @Test
-    @ModelTest(realmName = "original")
+    @TestOnServer
     public void testUpdateUserSingleAttribute(KeycloakSession session) {
 
         AtomicReference<Map<String, List<String>>> expectedAtomic = new AtomicReference<>();
@@ -355,8 +340,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest(realmName = "original")
+    @TestOnServer
     public void testSearchByString(KeycloakSession session) {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sesSearchString1) -> {
@@ -379,65 +363,66 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest(realmName = "original")
-    public void testSearchByUserAttribute(KeycloakSession session) throws Exception {
+    @TestOnServer
+    public void testSearchByUserAttribute(KeycloakSession session) {
+        try {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sesSearchAtr1) -> {
+                KeycloakSession currentSession = sesSearchAtr1;
+                RealmModel realm = currentSession.realms().getRealmByName("original");
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sesSearchAtr1) -> {
-            KeycloakSession currentSession = sesSearchAtr1;
-            RealmModel realm = currentSession.realms().getRealmByName("original");
+                UserModel user1 = currentSession.users().addUser(realm, "user1");
+                UserModel user2 = currentSession.users().addUser(realm, "user2");
+                UserModel user3 = currentSession.users().addUser(realm, "user3");
 
-            UserModel user1 = currentSession.users().addUser(realm, "user1");
-            UserModel user2 = currentSession.users().addUser(realm, "user2");
-            UserModel user3 = currentSession.users().addUser(realm, "user3");
+                user1.setSingleAttribute("key1", "value1");
+                user1.setSingleAttribute("key2", "value21");
 
-            user1.setSingleAttribute("key1", "value1");
-            user1.setSingleAttribute("key2", "value21");
+                user2.setSingleAttribute("key1", "value1");
+                user2.setSingleAttribute("key2", "value22");
 
-            user2.setSingleAttribute("key1", "value1");
-            user2.setSingleAttribute("key2", "value22");
+                user3.setSingleAttribute("key2", "value21");
 
-            user3.setSingleAttribute("key2", "value21");
+                RealmModel otherRealm = new RealmManager(session).createRealm("other", "other");
+                UserModel otherRealmUser = currentSession.users().addUser(otherRealm, "user1");
+                otherRealmUser.setSingleAttribute("key2", "value21");
+            });
 
-            RealmModel otherRealm = currentSession.realms().getRealmByName("other");
-            currentSession.getContext().setRealm(otherRealm);
-            UserModel otherRealmUser = currentSession.users().addUser(otherRealm, "user1");
-            otherRealmUser.setSingleAttribute("key2", "value21");
-        });
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sesSearchAtr2) -> {
+                KeycloakSession currentSession = sesSearchAtr2;
+                RealmModel realm = currentSession.realms().getRealmByName("original");
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sesSearchAtr2) -> {
-            KeycloakSession currentSession = sesSearchAtr2;
-            RealmModel realm = currentSession.realms().getRealmByName("original");
+                UserModel user1 = currentSession.users().getUserByUsername(realm, "user1");
+                UserModel user2 = currentSession.users().getUserByUsername(realm, "user2");
+                UserModel user3 = currentSession.users().getUserByUsername(realm, "user3");
 
-            UserModel user1 = currentSession.users().getUserByUsername(realm, "user1");
-            UserModel user2 = currentSession.users().getUserByUsername(realm, "user2");
-            UserModel user3 = currentSession.users().getUserByUsername(realm, "user3");
+                List<UserModel> users = currentSession.users().searchForUserByUserAttributeStream(realm, "key1", "value1")
+                        .collect(Collectors.toList());
+                assertThat(users, hasSize(2));
+                assertThat(users, containsInAnyOrder(user1, user2));
 
-            List<UserModel> users = currentSession.users().searchForUserByUserAttributeStream(realm, "key1", "value1")
-                    .collect(Collectors.toList());
-            assertThat(users, hasSize(2));
-            assertThat(users, containsInAnyOrder(user1, user2));
+                users = currentSession.users().searchForUserByUserAttributeStream(realm, "key2", "value21")
+                        .collect(Collectors.toList());
+                assertThat(users, hasSize(2));
+                assertThat(users, containsInAnyOrder(user1, user3));
 
-            users = currentSession.users().searchForUserByUserAttributeStream(realm, "key2", "value21")
-                    .collect(Collectors.toList());
-            assertThat(users, hasSize(2));
-            assertThat(users, containsInAnyOrder(user1, user3));
+                users = currentSession.users().searchForUserByUserAttributeStream(realm, "key2", "value22")
+                        .collect(Collectors.toList());
+                assertThat(users, hasSize(1));
+                assertThat(users, contains(user2));
 
-            users = currentSession.users().searchForUserByUserAttributeStream(realm, "key2", "value22")
-                    .collect(Collectors.toList());
-            assertThat(users, hasSize(1));
-            assertThat(users, contains(user2));
-
-            users = currentSession.users().searchForUserByUserAttributeStream(realm, "key3", "value3")
-                    .collect(Collectors.toList());
-            assertThat(users, empty());
-        });
+                users = currentSession.users().searchForUserByUserAttributeStream(realm, "key3", "value3")
+                        .collect(Collectors.toList());
+                assertThat(users, empty());
+            });
+        } finally {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession cleanupSession) -> {
+                cleanupSession.realms().removeRealm("other");
+            });
+        }
     }
 
-    @Test
-    @ModelTest(realmName = "original")
-    public void testServiceAccountLink(KeycloakSession session) throws Exception {
-
+    @TestOnServer
+    public void testServiceAccountLink(KeycloakSession session) {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sesServiceLink1) -> {
             KeycloakSession currentSession = sesServiceLink1;
             RealmModel realm = currentSession.realms().getRealmByName("original");
@@ -505,59 +490,64 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test
-    @ModelTest
-    public void testGrantToAll(KeycloakSession session) throws Exception {
+    @TestOnServer
+    public void testGrantToAll(KeycloakSession session) {
+        try {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesGrantToAll1) -> {
+                KeycloakSession currentSession = sesGrantToAll1;
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesGrantToAll1) -> {
-            KeycloakSession currentSession = sesGrantToAll1;
+                RealmManager realmManager = new RealmManager(currentSession);
 
-            RealmModel realm1 = currentSession.realms().getRealmByName("realm1");
-            currentSession.getContext().setRealm(realm1);
+                RealmModel realm1 = realmManager.createRealm("realm1", "realm1");
+                currentSession.getContext().setRealm(realm1);
 
-            realm1.addRole("role1");
-            currentSession.users().addUser(realm1, "user1");
-            currentSession.users().addUser(realm1, "user2");
+                realm1.addRole("role1");
+                currentSession.users().addUser(realm1, "user1");
+                currentSession.users().addUser(realm1, "user2");
 
-            RealmModel realm2 = currentSession.realms().getRealmByName("realm2");
-            currentSession.users().addUser(realm2, "user1");
-        });
+                RealmModel realm2 = realmManager.createRealm("realm2", "realm2");
+                currentSession.users().addUser(realm2, "user1");
+            });
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesGrantToAll2) -> {
-            KeycloakSession currentSession = sesGrantToAll2;
-            RealmModel realm1 = currentSession.realms().getRealmByName("realm1");
-            currentSession.getContext().setRealm(realm1);
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesGrantToAll2) -> {
+                KeycloakSession currentSession = sesGrantToAll2;
+                RealmModel realm1 = currentSession.realms().getRealmByName("realm1");
+                currentSession.getContext().setRealm(realm1);
 
-            RoleModel role1 = realm1.getRole("role1");
-            currentSession.users().grantToAllUsers(realm1, role1);
-        });
+                RoleModel role1 = realm1.getRole("role1");
+                currentSession.users().grantToAllUsers(realm1, role1);
+            });
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesGrantToAll2) -> {
-            KeycloakSession currentSession = sesGrantToAll2;
-            RealmModel realm1 = currentSession.realms().getRealmByName("realm1");
-            currentSession.getContext().setRealm(realm1);
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesGrantToAll2) -> {
+                KeycloakSession currentSession = sesGrantToAll2;
+                RealmModel realm1 = currentSession.realms().getRealmByName("realm1");
+                currentSession.getContext().setRealm(realm1);
 
-            RoleModel role1 = realm1.getRole("role1");
-            UserModel user1 = currentSession.users().getUserByUsername(realm1, "user1");
-            UserModel user2 = currentSession.users().getUserByUsername(realm1, "user2");
-            Assert.assertTrue(user1.hasRole(role1));
-            Assert.assertTrue(user2.hasRole(role1));
+                RoleModel role1 = realm1.getRole("role1");
+                UserModel user1 = currentSession.users().getUserByUsername(realm1, "user1");
+                UserModel user2 = currentSession.users().getUserByUsername(realm1, "user2");
+                Assertions.assertTrue(user1.hasRole(role1));
+                Assertions.assertTrue(user2.hasRole(role1));
 
-            RealmModel realm2 = currentSession.realms().getRealmByName("realm2");
-            currentSession.getContext().setRealm(realm2);
-            UserModel realm2User1 = currentSession.users().getUserByUsername(realm2, "user1");
-            Assert.assertFalse(realm2User1.hasRole(role1));
+                RealmModel realm2 = currentSession.realms().getRealmByName("realm2");
+                currentSession.getContext().setRealm(realm2);
+                UserModel realm2User1 = currentSession.users().getUserByUsername(realm2, "user1");
+                Assertions.assertFalse(realm2User1.hasRole(role1));
 
-            currentSession.realms().removeRealm(realm2.getId());
-            currentSession.getContext().setRealm(realm1);
-            currentSession.realms().removeRealm(realm1.getId());
-        });
+                currentSession.realms().removeRealm(realm2.getId());
+                currentSession.getContext().setRealm(realm1);
+                currentSession.realms().removeRealm(realm1.getId());
+            });
+        } finally {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession cleanupSession) -> {
+                cleanupSession.realms().removeRealm("realm1");
+                cleanupSession.realms().removeRealm("realm2");
+            });
+        }
     }
 
-    @Test
-    @ModelTest(realmName = "original")
-    public void testUserNotBefore(KeycloakSession session) throws Exception {
-
+    @TestOnServer
+    public void testUserNotBefore(KeycloakSession session) {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sesUserNotBefore1) -> {
             KeycloakSession currentSession = sesUserNotBefore1;
             RealmModel realm = currentSession.realms().getRealmByName("original");
@@ -597,7 +587,12 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
                 containsInAnyOrder(expected.getRequiredActionsStream().toArray()));
     }
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
+    private static final class UserModelRealm implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            return realm.name("original");
+        }
     }
+
 }
