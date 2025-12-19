@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.workflow;
+package org.keycloak.tests.workflow.step;
 
 import java.time.Duration;
 import java.util.List;
@@ -50,7 +50,9 @@ import org.keycloak.testframework.ui.page.ConsentPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.tests.workflow.DeleteUserWorkflowStepTest.DeleteUserWorkflowServerConf;
+import org.keycloak.tests.workflow.AbstractWorkflowTest;
+import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
+import org.keycloak.tests.workflow.step.DeleteUserWorkflowStepTest.DeleteUserWorkflowServerConf;
 import org.keycloak.testsuite.federation.DummyUserFederationProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 
@@ -70,6 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
+ * Tests the execution of the 'delete-user' workflow step.
  */
 @KeycloakIntegrationTest(config = DeleteUserWorkflowServerConf.class)
 public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {

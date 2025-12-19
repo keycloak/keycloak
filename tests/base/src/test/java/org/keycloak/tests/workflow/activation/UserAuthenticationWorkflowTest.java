@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.workflow;
+package org.keycloak.tests.workflow.activation;
 
 import java.time.Duration;
 import java.util.List;
@@ -36,22 +36,27 @@ import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.tests.workflow.AbstractWorkflowTest;
+import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.models.workflow.ResourceOperationType.USER_AUTHENTICATED;
 import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
-import static org.keycloak.tests.workflow.WorkflowManagementTest.findEmailByRecipient;
-import static org.keycloak.tests.workflow.WorkflowManagementTest.findEmailsByRecipient;
-import static org.keycloak.tests.workflow.WorkflowManagementTest.verifyEmailContent;
+import static org.keycloak.tests.workflow.util.EmailTestUtils.findEmailByRecipient;
+import static org.keycloak.tests.workflow.util.EmailTestUtils.findEmailsByRecipient;
+import static org.keycloak.tests.workflow.util.EmailTestUtils.verifyEmailContent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Tests activation of workflows based on login (user authentication) events.
+ */
 @KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
-public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
+public class UserAuthenticationWorkflowTest extends AbstractWorkflowTest {
 
     @InjectUser(ref = "alice", config = DefaultUserConfig.class, lifecycle = LifeCycle.METHOD, realmRef = DEFAULT_REALM_NAME)
     private ManagedUser userAlice;
@@ -61,9 +66,9 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
 
 
     @Test
-    public void testDisabledUserAfterInactivityPeriod() {
+    public void testActivateWorkflowOnUserAuthentication() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_CREATED.toString(), USER_AUTHENTICATED.toString())
+                .onEvent(USER_AUTHENTICATED.toString())
                 .concurrency().restartInProgress("true") // this setting enables restarting the workflow
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)

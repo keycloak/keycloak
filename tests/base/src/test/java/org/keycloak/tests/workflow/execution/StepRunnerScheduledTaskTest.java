@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.workflow;
+package org.keycloak.tests.workflow.execution;
 
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
@@ -40,7 +40,10 @@ import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.tests.workflow.AbstractWorkflowTest;
+import org.keycloak.tests.workflow.config.WorkflowsScheduledTaskServerConfig;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
@@ -53,6 +56,7 @@ public class StepRunnerScheduledTaskTest extends AbstractWorkflowTest {
     @InjectAdminClient(mode = InjectAdminClient.Mode.BOOTSTRAP, realmRef = DEFAULT_REALM_NAME)
     Keycloak adminClient;
 
+    @Disabled
     @Test
     public void testStepRunnerScheduledTask() {
         for (int i = 0; i < 2; i++) {

@@ -1,4 +1,4 @@
-package org.keycloak.tests.workflow;
+package org.keycloak.tests.workflow.config;
 
 import org.keycloak.models.workflow.WorkflowsEventListenerFactory;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;

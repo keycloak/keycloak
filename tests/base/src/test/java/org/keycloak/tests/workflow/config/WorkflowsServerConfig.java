@@ -1,4 +1,4 @@
-package org.keycloak.tests.workflow;
+package org.keycloak.tests.workflow.config;
 
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.testframework.server.KeycloakServerConfig;

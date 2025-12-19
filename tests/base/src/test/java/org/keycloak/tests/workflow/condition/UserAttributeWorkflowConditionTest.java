@@ -1,4 +1,4 @@
-package org.keycloak.tests.workflow;
+package org.keycloak.tests.workflow.condition;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -26,6 +26,8 @@ import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
+import org.keycloak.tests.workflow.AbstractWorkflowTest;
+import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
