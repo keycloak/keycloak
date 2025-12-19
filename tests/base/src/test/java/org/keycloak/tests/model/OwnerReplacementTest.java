@@ -16,9 +16,8 @@
  *
  */
 
-package org.keycloak.testsuite.model;
+package org.keycloak.tests.model;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 
@@ -38,58 +37,33 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.ModelTest;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.remote.annotations.TestOnServer;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Test for the CRUD scenarios when the operation is called on the object, which is owned by different realm
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OwnerReplacementTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class OwnerReplacementTest {
 
-    private static String testRealmId;
-    private static String fooRealmId;
+    @InjectRealm(fromJson = "/org/keycloak/tests/testrealm.json")
+    ManagedRealm testRealm;
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        log.debug("Adding test realm for import from testrealm.json");
-        RealmRepresentation testRealm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        testRealms.add(testRealm);
+    @InjectRealm(config = FooRealm.class, ref = "foo")
+    ManagedRealm fooRealm;
 
-        UserRepresentation user = UserBuilder.create()
-                .username("foo@user")
-                .email("foo@user.com")
-                .password("password")
-                .build();
+    private static final String testRealmId = "test";
+    private static final String fooRealmId = "foo";
 
-        RealmRepresentation realm2 = RealmBuilder.create()
-                .name("foo")
-                .user(user)
-                .build();
-        testRealms.add(realm2);
-    }
-
-    @Before
-    public void before() {
-        testingClient.server().run(session -> {
-            testRealmId = session.realms().getRealmByName("test").getId();
-            fooRealmId = session.realms().getRealmByName("foo").getId();
-        });
-    }
-
-    @Test
-    @ModelTest
+    @TestOnServer
     public void componentsTest(KeycloakSession session1) {
         doTest(session1,
             // Get ID of some component from realm1
@@ -98,7 +72,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
             ((session, realm2, realm1ComponentId) -> {
 
                 ComponentModel component = realm2.getComponent(realm1ComponentId);
-                Assert.assertNull(component);
+                Assertions.assertNull(component);
 
             }),
             // Try to update some component in realm1 through the realm2
@@ -114,7 +88,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
             ((session, realm1, realm1ComponentId) -> {
 
                 ComponentModel component = realm1.getComponent(realm1ComponentId);
-                Assert.assertNull(component.get("key1"));
+                Assertions.assertNull(component.get("key1"));
 
             }),
             // Try remove component from realm1 in the context of realm2
@@ -129,14 +103,13 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
             ((session, realm1, realm1ComponentId) -> {
 
                 ComponentModel component = realm1.getComponent(realm1ComponentId);
-                Assert.assertNotNull(component);
+                Assertions.assertNotNull(component);
 
             })
         );
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void requiredActionProvidersTest(KeycloakSession session1) {
         doTest(session1,
                 // Get ID of some object from realm1
@@ -145,7 +118,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm2, realm1ReqActionId) -> {
 
                     RequiredActionProviderModel reqAction = realm2.getRequiredActionProviderById(realm1ReqActionId);
-                    Assert.assertNull(reqAction);
+                    Assertions.assertNull(reqAction);
 
                 }),
                 // Try to update some object in realm1 through the realm2
@@ -161,7 +134,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm1, realm1ReqActionId) -> {
 
                     RequiredActionProviderModel reqAction = realm1.getRequiredActionProviderById(realm1ReqActionId);
-                    Assert.assertNull(reqAction.getConfig().get("key1"));
+                    Assertions.assertNull(reqAction.getConfig().get("key1"));
 
                 }),
                 // Try remove object from realm1 in the context of realm2
@@ -176,15 +149,13 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm1, realm1ReqActionId) -> {
 
                     RequiredActionProviderModel reqAction = realm1.getRequiredActionProviderById(realm1ReqActionId);
-                    Assert.assertNotNull(reqAction);
+                    Assertions.assertNotNull(reqAction);
 
                 })
         );
     }
 
-
-    @Test
-    @ModelTest
+    @TestOnServer
     public void authenticationFlowsTest(KeycloakSession session1) {
         doTest(session1,
                 // Get ID of some object from realm1
@@ -198,7 +169,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm2, realm1FlowId) -> {
 
                     AuthenticationFlowModel flow = realm2.getAuthenticationFlowById(realm1FlowId);
-                    Assert.assertNull(flow);
+                    Assertions.assertNull(flow);
 
                 }),
                 // Try to update some object in realm1 through the realm2
@@ -214,7 +185,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm1, realm1FlowId) -> {
 
                     AuthenticationFlowModel flow = realm1.getAuthenticationFlowById(realm1FlowId);
-                    Assert.assertNotEquals("foo", flow.getDescription());
+                    Assertions.assertNotEquals("foo", flow.getDescription());
 
                 }),
                 // Try remove object from realm1 in the context of realm2
@@ -229,15 +200,13 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm1, realm1FlowId) -> {
 
                     AuthenticationFlowModel flow = realm1.getAuthenticationFlowById(realm1FlowId);
-                    Assert.assertNotNull(flow);
+                    Assertions.assertNotNull(flow);
 
                 })
         );
     }
 
-
-    @Test
-    @ModelTest
+    @TestOnServer
     public void authenticationExecutionsTest(KeycloakSession session1) {
         doTest(session1,
                 // Get ID of some object from realm1
@@ -251,7 +220,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm2, realm1ExecutionId) -> {
 
                     AuthenticationExecutionModel execution = realm2.getAuthenticationExecutionById(realm1ExecutionId);
-                    Assert.assertNull(execution);
+                    Assertions.assertNull(execution);
 
                 }),
                 // Try to update some object in realm1 through the realm2
@@ -267,7 +236,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm1, realm1ExecutionId) -> {
 
                     AuthenticationExecutionModel execution = realm1.getAuthenticationExecutionById(realm1ExecutionId);
-                    Assert.assertNotEquals(1234, execution.getPriority());
+                    Assertions.assertNotEquals(1234, execution.getPriority());
 
                 }),
                 // Try remove object from realm1 in the context of realm2
@@ -282,15 +251,13 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session,realm1, realm1ExecutionId) -> {
 
                     AuthenticationExecutionModel execution = realm1.getAuthenticationExecutionById(realm1ExecutionId);
-                    Assert.assertNotNull(execution);
+                    Assertions.assertNotNull(execution);
 
                 })
         );
     }
 
-
-    @Test
-    @ModelTest
+    @TestOnServer
     public void authenticationConfigsTest(KeycloakSession session1) {
         doTest(session1,
                 // Get ID of some object from realm1
@@ -299,7 +266,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm2, realm1AuthConfigId) -> {
 
                     AuthenticatorConfigModel config = realm2.getAuthenticatorConfigById(realm1AuthConfigId);
-                    Assert.assertNull(config);
+                    Assertions.assertNull(config);
 
                 }),
                 // Try to update some object in realm1 through the realm2
@@ -315,7 +282,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm1, realm1AuthConfigId) -> {
 
                     AuthenticatorConfigModel config = realm1.getAuthenticatorConfigById(realm1AuthConfigId);
-                    Assert.assertNull(config.getConfig().get("key1"));
+                    Assertions.assertNull(config.getConfig().get("key1"));
 
                 }),
                 // Try remove object from realm1 in the context of realm2
@@ -330,15 +297,13 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm1, realm1AuthConfigId) -> {
 
                     AuthenticatorConfigModel config = realm1.getAuthenticatorConfigById(realm1AuthConfigId);
-                    Assert.assertNotNull(config);
+                    Assertions.assertNotNull(config);
 
                 })
         );
     }
 
-
-    @Test
-    @ModelTest
+    @TestOnServer
     public void clientInitialAccessTest(KeycloakSession session1) {
         doTest(session1,
                 // Get ID of some object from realm1
@@ -352,7 +317,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm2, realm1ClientInitialAccessId) -> {
 
                     ClientInitialAccessModel clientInitialAccess = session.getProvider(RealmProvider.class).getClientInitialAccessModel(realm2, realm1ClientInitialAccessId);
-                    Assert.assertNull(clientInitialAccess);
+                    Assertions.assertNull(clientInitialAccess);
 
                 }),
                 // Try to update some object in realm1 through the realm2
@@ -377,14 +342,13 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm1, realm1ClientInitialAccessId) -> {
 
                     ClientInitialAccessModel clientInitialAccess = session.getProvider(RealmProvider.class).getClientInitialAccessModel(realm1, realm1ClientInitialAccessId);
-                    Assert.assertNotNull(clientInitialAccess);
+                    Assertions.assertNotNull(clientInitialAccess);
 
                 })
         );
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void rolesTest(KeycloakSession session1) {
         doTest(session1,
                 // Get ID of some object from realm1
@@ -398,7 +362,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm2, realm1RoleId) -> {
 
                     RoleModel role = session.getProvider(RoleProvider.class).getRoleById(realm2, realm1RoleId);
-                    Assert.assertNull(role);
+                    Assertions.assertNull(role);
 
                 }),
                 // Try to update some object in realm1 through the realm2
@@ -428,8 +392,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
         );
     }
 
-    @Test
-    @ModelTest
+    @TestOnServer
     public void userSessionsTest(KeycloakSession session1) {
         doTest(session1,
                 // Get ID of some object from realm1
@@ -444,7 +407,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm2, realm1SessionId) -> {
 
                     UserSessionModel userSession = session.sessions().getUserSession(realm2, realm1SessionId);
-                    Assert.assertNull(userSession);
+                    Assertions.assertNull(userSession);
 
                 }),
                 // Try to update some object in realm1 through the realm2
@@ -471,7 +434,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm1, realm1SessionId) -> {
 
                     UserSessionModel userSession = session.sessions().getUserSession(realm1, realm1SessionId);
-                    Assert.assertNotNull(userSession);
+                    Assertions.assertNotNull(userSession);
 
                 })
         );
@@ -547,4 +510,16 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
     public interface TetraConsumer<T, U, V, W> {
         void accept(T var1, U var2, V var3, W var4);
     }
+
+    private static final class FooRealm implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            realm.name("foo").id("foo");
+            realm.addUser("foo@user").email("foo@user.com")
+                    .password("password");
+            return realm;
+        }
+    }
+
 }
