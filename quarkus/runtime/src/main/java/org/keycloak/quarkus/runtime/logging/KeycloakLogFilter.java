@@ -31,6 +31,7 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 
 import io.quarkus.bootstrap.logging.InitialConfigurator;
 import io.quarkus.logging.LoggingFilter;
+import org.infinispan.commons.jdkspecific.ThreadCreator;
 
 /**
  * @author Alexander Schwartz
@@ -63,7 +64,7 @@ public final class KeycloakLogFilter implements Filter {
             }
         }
 
-        if (Thread.currentThread().getName().startsWith("non-blocking-thread")) {
+        if (ThreadCreator.isVirtual(Thread.currentThread())) {
             executor.submit(new RecordLogger(record));
             return false;
         }
