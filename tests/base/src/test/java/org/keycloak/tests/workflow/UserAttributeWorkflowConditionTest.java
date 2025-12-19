@@ -22,11 +22,13 @@ import org.keycloak.models.workflow.conditions.UserAttributeWorkflowConditionFac
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowScheduleRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -92,20 +94,23 @@ public class UserAttributeWorkflowConditionTest extends AbstractWorkflowTest {
 
         List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
         assertThat(workflows, hasSize(1));
-        // activate the workflow for all eligible users
-        managedRealm.admin().workflows().workflow(workflows.get(0).getId()).activateAll();
 
-        runOnServer.run((RunOnServer) session -> {
-            // check the same users are now scheduled to run the second step.
-            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
-            List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
-            assertThat(registeredWorkflows, hasSize(1));
-            Workflow workflow = registeredWorkflows.get(0);
-            // check workflow was correctly assigned to the users
-            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
-            assertThat(scheduledSteps, hasSize(10));
-        });
+        Awaitility.await()
+                .timeout(Duration.ofSeconds(15))
+                .pollInterval(Duration.ofSeconds(1))
+                .untilAsserted(() -> {
+                    runOnServer.run((RunOnServer) session -> {
+                        // check the same users are now scheduled to run the second step.
+                        WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+                        List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
+                        assertThat(registeredWorkflows, hasSize(1));
+                        Workflow workflow = registeredWorkflows.get(0);
+                        // check workflow was correctly assigned to the users
+                        WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+                        List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
+                        assertThat(scheduledSteps, hasSize(10));
+                    });
+                });
     }
 
     private void assertUserAttribute(String username, boolean shouldExist, String... values) {
@@ -155,6 +160,7 @@ public class UserAttributeWorkflowConditionTest extends AbstractWorkflowTest {
 
         WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
                 .onEvent(ResourceOperationType.USER_CREATED.name())
+                .schedule(WorkflowScheduleRepresentation.create().after("1s").build())
                 .onCondition(attributeCondition)
                 .withSteps(
                         WorkflowStepRepresentation.create()

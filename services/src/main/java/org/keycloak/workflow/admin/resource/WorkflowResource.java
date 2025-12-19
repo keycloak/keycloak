@@ -92,17 +92,6 @@ public class WorkflowResource {
         provider.activate(workflow, type, resourceId);
     }
 
-    @POST
-    @Path("activate-all")
-    public void activateAll(@QueryParam("notBefore") String notBefore) {
-
-        if (notBefore != null) {
-            workflow.setNotBefore(notBefore);
-        }
-
-        provider.activateForAllEligibleResources(workflow);
-    }
-
     /**
      * Deactivate the workflow for the resource.
      *
