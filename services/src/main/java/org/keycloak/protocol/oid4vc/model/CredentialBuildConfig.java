@@ -88,17 +88,24 @@ public class CredentialBuildConfig {
     public static CredentialBuildConfig parse(KeycloakSession keycloakSession,
                                               SupportedCredentialConfiguration credentialConfiguration,
                                               CredentialScopeModel credentialModel) {
-        final String credentialIssuer = Optional.ofNullable(credentialModel.getIssuerDid()).orElse(
-                OID4VCIssuerWellKnownProvider.getIssuer(keycloakSession.getContext()));
+
+        String modelIssuerDid = credentialModel.getIssuerDid();
+        String modelSigningKey = credentialModel.getSigningKeyId();
+        String modelSigningAlg = credentialModel.getSigningAlg();
+
+        String credentialIssuer = Optional.ofNullable(modelIssuerDid)
+                .orElse(OID4VCIssuerWellKnownProvider.getIssuer(keycloakSession.getContext()));
+
+        String signingAlg = Optional.ofNullable(modelSigningAlg)
+                .orElse(credentialConfiguration.getCredentialSigningAlgValuesSupported().get(0));
 
         return new CredentialBuildConfig().setCredentialIssuer(credentialIssuer)
                                           .setCredentialId(credentialConfiguration.getId())
                                           .setCredentialType(credentialConfiguration.getVct())
                                           .setTokenJwsType(credentialModel.getTokenJwsType())
                                           .setNumberOfDecoys(credentialModel.getSdJwtNumberOfDecoys())
-                                          .setSigningKeyId(credentialModel.getSigningKeyId())
-                                          .setSigningAlgorithm(credentialConfiguration.getCredentialSigningAlgValuesSupported()
-                                                                                      .get(0))
+                                          .setSigningKeyId(modelSigningKey)
+                                          .setSigningAlgorithm(signingAlg)
                                           .setHashAlgorithm(credentialModel.getHashAlgorithm())
                                           .setSdJwtVisibleClaims(credentialModel.getSdJwtVisibleClaims());
     }
