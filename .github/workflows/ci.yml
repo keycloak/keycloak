@@ -508,41 +508,6 @@ jobs:
           ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "clean install -B -DskipTests -Pdistribution -DskipProtoLock=true"
           ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus -Pdb-aurora-postgres -Dmaven.build.cache.enabled=true"
 
-      - name: Run Aurora new database tests on EC2
-        id: aurora-new-integration-tests
-        run: |
-          EC2_CLUSTER_NAME=${{ steps.ec2-create.outputs.ec2_cluster }}
-          AWS_REGION=${{ steps.aurora-init.outputs.region }}
-
-          PROPS="-Dkc.test.database=remote -Dkc.test.database.vendor=postgres"
-          PROPS+=" -Dkc.test.database.user=keycloak"
-          PROPS+=" -Dkc.test.database.password=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
-          PROPS+=" -Dkc.test.database.url=\"jdbc:aws-wrapper:postgresql://${{ steps.aurora-create.outputs.endpoint }}/keycloak${{ steps.aurora-init.outputs.jdbc_params }}\""
-          PROPS+=" -Dkc.test.database.driver=software.amazon.jdbc.Driver"
-          PROPS+=" -Dkc.test.database.driver.artifact=software.amazon.jdbc:aws-advanced-jdbc-wrapper"
-
-          cd .github/scripts/ansible
-          ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "$PROPS package -f tests/pom.xml -Dtest=DatabaseTestSuite"
-
-          # Copy returned surefire-report directories to workspace root to ensure they're discovered
-          results=(files/keycloak/results/*)
-          rsync -a $results/* ../../../
-          rm -rf $results
-
-      - uses: ./.github/actions/upload-flaky-tests
-        name: Upload flaky tests
-        env:
-          GH_TOKEN: ${{ github.token }}
-        with:
-          job-name: AuroraDB IT
-
-      - name: EC2 Maven Logs
-        if: failure()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
-        with:
-          name: aurora-new-integration-tests-mvn-logs
-          path: .github/scripts/ansible/files
-
       - name: Run Aurora migration tests on EC2
         id: aurora-migration-tests
         env:
@@ -609,6 +574,45 @@ jobs:
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: aurora-integration-tests-mvn-logs
+          path: .github/scripts/ansible/files
+
+      - name: Run Aurora new database tests on EC2
+        id: aurora-new-integration-tests
+        run: |
+          EC2_CLUSTER_NAME=${{ steps.ec2-create.outputs.ec2_cluster }}
+          AWS_REGION=${{ steps.aurora-init.outputs.region }}
+
+          PROPS="-Dkc.test.database=remote -Dkc.test.database.vendor=postgres"
+          PROPS+=" -Dkc.test.database.user=keycloak"
+          PROPS+=" -Dkc.test.database.password=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
+          PROPS+=" -Dkc.test.database.url=\"jdbc:aws-wrapper:postgresql://${{ steps.aurora-create.outputs.endpoint }}/keycloak${{ steps.aurora-init.outputs.jdbc_params }}\""
+          PROPS+=" -Dkc.test.database.driver=software.amazon.jdbc.Driver"
+          PROPS+=" -Dkc.test.database.driver.artifact=software.amazon.jdbc:aws-advanced-jdbc-wrapper"
+
+          PROPS+=" -Dkc.test.server.bootstrap=user"
+          PROPS+=" -Dkc.test.server.bootstrap.user.create=false -Dkc.test.server.bootstrap.username=admin -Dkc.test.server.bootstrap.password=admin"
+          PROPS+=" -Dkc.test.server.bootstrap.client.create=false -Dkc.test.server.bootstrap.client.id=admin-cli"
+
+          cd .github/scripts/ansible
+          ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "$PROPS package -f tests/pom.xml -Dtest=DatabaseTestSuite"
+
+          # Copy returned surefire-report directories to workspace root to ensure they're discovered
+          results=(files/keycloak/results/*)
+          rsync -a $results/* ../../../
+          rm -rf $results
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: AuroraDB IT
+
+      - name: EC2 Maven Logs
+        if: failure()
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: aurora-new-integration-tests-mvn-logs
           path: .github/scripts/ansible/files
 
       - name: Delete EC2 Instance

@@ -27,7 +27,16 @@ public class AdminClientSupplier implements Supplier<Keycloak, InjectAdminClient
                 .grantType(OAuth2Constants.CLIENT_CREDENTIALS);
 
         if (mode.equals(InjectAdminClient.Mode.BOOTSTRAP)) {
-            adminBuilder.realm("master").clientId(Config.getAdminClientId()).clientSecret(Config.getAdminClientSecret());
+            adminBuilder.realm("master").clientId(Config.getAdminClientId());
+
+            String bootstrapGrantType = Config.getAdminClientGrantType();
+            if ("client".equals(bootstrapGrantType)) {
+                adminBuilder.clientSecret(Config.getAdminClientSecret());
+            } else if ("user".equals(bootstrapGrantType)) {
+                adminBuilder.username(Config.getAdminUsername()).password(Config.getAdminPassword()).grantType(OAuth2Constants.PASSWORD);
+            } else {
+                throw new TestFrameworkException("Invalid bootstrap grant type");
+            }
         } else if (mode.equals(InjectAdminClient.Mode.MANAGED_REALM)) {
             ManagedRealm managedRealm = instanceContext.getDependency(ManagedRealm.class);
             adminBuilder.realm(managedRealm.getName());

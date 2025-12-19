@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.Optional;
 
 import org.keycloak.testframework.injection.ValueTypeAlias;
+import org.keycloak.testframework.server.KeycloakServer;
 
 import io.quarkus.runtime.configuration.CharsetConverter;
 import io.quarkus.runtime.configuration.InetSocketAddressConverter;
@@ -67,20 +68,32 @@ public class Config {
         return config;
     }
 
+    public static String getAdminClientGrantType() {
+        return getValueTypeConfig(KeycloakServer.class, "bootstrap", "client", String.class);
+    }
+
+    public static boolean getCreateBootstrapClient() {
+        return Boolean.parseBoolean(getValueTypeConfig(KeycloakServer.class, "bootstrap.client.create", "true", String.class));
+    }
+
+    public static boolean getCreateBootstrapUser() {
+        return Boolean.parseBoolean(getValueTypeConfig(KeycloakServer.class, "bootstrap.user.create", "true", String.class));
+    }
+
     public static String getAdminClientId() {
-        return "temp-admin";
+        return getValueTypeConfig(KeycloakServer.class, "bootstrap.client.id", "temp-admin", String.class);
     }
 
     public static String getAdminClientSecret() {
-        return "mysecret";
+        return getValueTypeConfig(KeycloakServer.class, "bootstrap.client.secret", "mysecret", String.class);
     }
 
     public static String getAdminUsername() {
-        return "admin";
+        return getValueTypeConfig(KeycloakServer.class, "bootstrap.username", "admin", String.class);
     }
 
     public static String getAdminPassword() {
-        return "admin";
+        return getValueTypeConfig(KeycloakServer.class, "bootstrap.password", "admin", String.class);
     }
 
     public static SmallRyeConfig initConfig() {
