@@ -175,6 +175,36 @@ See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to 
 For each expired user session there is a new user event `USER_SESSION_DELETED` fired.
 As part of this change, the process now deletes rows from the table in small batches, instead of issuing a delete statements that affects the whole table. This should allow for better response times when there are a lot of sessions in the table.
 
+=== Truststore initialization moved to the server
+
+Keycloak now automatically discovers and trusts cluster certificate authorities when running on Kubernetes or OpenShift, without relying on the Operator to preconfigure the truststore. Specifically, if present in the container filesystem, the following files are added to the system truststore at runtime:
+
+* `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt` (Kubernetes service account CA)
+* `/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt` (OpenShift service CA)
+
+This behavior is enabled by default and can be controlled with the server option:
+
+* `--truststore-kubernetes-enabled=true|false` (default: `true`)
+
+No changes are required for most deployments. If you previously relied on the Operator to manage these truststore entries, the server now performs the same function directly. For details, see the server guide section "Cluster CA certificates (Kubernetes and OpenShift)" in the Truststore guide.
+
+If you are deploying {project_name} by using the {project_name} Operator and your deployment relies on trusting the Kubernetes CA, upgrade the Keycloak image first. This ensures that the Kubernetes CAs remain trusted for the entire duration of the upgrade.
+
+If you cannot upgrade the image first, it is recommended to explicitly configure the truststore path in the Keycloak Custom Resource prior to changing the Operator version. This ensures that older pods continue to trust the cluster CA during the upgrade procedure:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: keycloak
+spec:
+  automountServiceAccountToken: true
+  additionalOptions:
+    - name: truststore-paths
+      value: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt,/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+----
+
 === Organization custom attribute named 'id' behavior change
 
 Organizations can have custom attributes named `id`. When both organization attributes and organization ID are included in tokens via the organization membership mapper configuration,

@@ -88,6 +88,10 @@ public class KeycloakRecorder {
         String[] truststores = Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
                 .map(s -> s.split(",")).orElse(new String[0]);
 
+        boolean includeKubernetesCa = Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_KUBERNETES_CA_ENABLED.getKey())
+                .map(Boolean::parseBoolean).orElse(true);
+        truststores = TruststoreBuilder.includeKubernetesTrustStorePaths(truststores, includeKubernetesCa);
+
         Optional<String> dataDir = Environment.getDataDir();
 
         File truststoresDir = Environment.getHomePath().map(p -> p.resolve("conf").resolve("truststores").toFile()).orElse(null);
@@ -98,6 +102,7 @@ public class KeycloakRecorder {
             return; // nothing to configure, we'll just use the system default
         }
 
+        // Always invoke the truststore configuration so that default Kubernetes CAs can be included
         TruststoreBuilder.setSystemTruststore(truststores, true, dataDir.orElseThrow());
     }
 
