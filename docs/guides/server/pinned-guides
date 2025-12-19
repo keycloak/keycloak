@@ -24,3 +24,4 @@ vault
 all-config
 all-provider-config
 update-compatibility
+windows-service

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,11 +19,11 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import picocli.CommandLine.Command;
 
-@Command(name = Tools.NAME,
-        description = "Utilities for use and interaction with the server.",
-        subcommands = {Completion.class, WindowsService.class})
-public class Tools {
+@Command(name = WindowsService.NAME,
+        description = "Manage Keycloak as a Windows service.",
+        subcommands = {WindowsServiceInstall.class, WindowsServiceUninstall.class})
+public class WindowsService {
 
-    public static final String NAME = "tools";
+    public static final String NAME = "windows-service";
 
 }

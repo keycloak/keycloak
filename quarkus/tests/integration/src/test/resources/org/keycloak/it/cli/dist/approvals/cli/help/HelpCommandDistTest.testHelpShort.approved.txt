@@ -27,6 +27,9 @@ Commands:
   show-config             Print out the current configuration.
   tools                   Utilities for use and interaction with the server.
     completion            Generate bash/zsh completion script for kc.sh.
+    windows-service       Manage Keycloak as a Windows service.
+      install             Install Keycloak as a Windows service.
+      uninstall           Uninstall Keycloak Windows service.
   bootstrap-admin         Commands for bootstrapping admin access
     user                  Add an admin user with a password
     service               Add an admin service account

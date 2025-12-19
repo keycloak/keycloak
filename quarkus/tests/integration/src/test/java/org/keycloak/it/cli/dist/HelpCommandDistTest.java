@@ -17,16 +17,13 @@
 
 package org.keycloak.it.cli.dist;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Locale;
-import java.util.regex.Pattern;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.BootstrapAdmin;
 import org.keycloak.quarkus.runtime.cli.command.BootstrapAdminService;
 import org.keycloak.quarkus.runtime.cli.command.BootstrapAdminUser;
@@ -39,21 +36,20 @@ import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibility;
 import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilityCheck;
 import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilityMetadata;
 
+import com.spun.util.io.FileUtils;
 import io.quarkus.test.junit.main.Launch;
-import org.apache.commons.io.FileUtils;
 import org.approvaltests.Approvals;
+import org.approvaltests.core.Options;
+import org.approvaltests.core.VerifyResult;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.OS;
 
 import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @DistributionTest
 @RawDistOnly(reason = "Verifying the help message output doesn't need long spin-up of docker dist tests.")
 public class HelpCommandDistTest {
-
-    public static final String REPLACE_EXPECTED = "KEYCLOAK_REPLACE_EXPECTED";
 
     @Test
     @Launch({})
@@ -193,7 +189,7 @@ public class HelpCommandDistTest {
             for (String cmd : List.of("", "start", "start-dev", "build")) {
                 String debugOption = "--debug";
 
-                if (OS.WINDOWS.isCurrentOs()) {
+                if (Environment.isWindows()) {
                     debugOption = "--debug=8787";
                 }
 
@@ -213,29 +209,32 @@ public class HelpCommandDistTest {
                 .replaceAll("((Disables|Enables) a set of one or more features. Possible values are: )[^.]{30,}", "$1<...>")
                 .replaceAll("(create a metric.\\s+Possible values are:)[^.]{30,}.[^.]*.", "$1<...>");
 
-        String osName = System.getProperty("os.name");
-        if(osName.toLowerCase(Locale.ROOT).contains("windows")) {
-            // On Windows, all output should have at least one "kc.bat" in it.
+        if (Environment.isWindows()) {
             MatcherAssert.assertThat(output, Matchers.containsString("kc.bat"));
-            output = output.replaceAll("kc.bat", "kc.sh");
-            output = output.replaceAll(Pattern.quote("data\\log\\"), "data/log/");
-            // line wrap which looks differently due to ".bat" vs. ".sh"
-            output = output.replaceAll("including\nbuild ", "including build\n");
+            output = output
+                    .replace("kc.bat", "kc.sh")
+                    .replace("data\\log\\", "data/log/")
+                    .replace("including\nbuild ", "including build\n");
         }
 
-        try {
-            Approvals.verify(output);
-        } catch (Error cause) {
-            if ("true".equals(System.getenv(REPLACE_EXPECTED))) {
-                try {
-                    FileUtils.write(Approvals.createApprovalNamer().getApprovedFile(".txt"), output,
-                            StandardCharsets.UTF_8);
-                } catch (IOException e) {
-                    throw new RuntimeException("Failed to assert help, and could not replace expected", cause);
-                }
-            } else {
-                throw cause;
+        // Custom comparator that strips Windows-specific lines from the approved file on non-Windows platforms
+        Options options = new Options().withComparator((receivedFile, approvedFile) -> {
+            String received = FileUtils.readFile(receivedFile);
+            String approved = FileUtils.readFile(approvedFile);
+
+            if (!Environment.isWindows()) {
+                approved = stripWindowsServiceLines(approved);
             }
-        }
+            return VerifyResult.from(approved.equals(received));
+        });
+
+        Approvals.verify(output, options);
+    }
+
+    private String stripWindowsServiceLines(String text) {
+        return text
+                .replaceAll("(?m)^ {4}windows-service\\s+Manage Keycloak as a Windows service\\.\\R", "")
+                .replaceAll("(?m)^ {6}install\\s+Install Keycloak as a Windows service\\.\\R", "")
+                .replaceAll("(?m)^ {6}uninstall\\s+Uninstall Keycloak Windows service\\.\\R", "");
     }
 }
