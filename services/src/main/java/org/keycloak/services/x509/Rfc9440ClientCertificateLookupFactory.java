@@ -1,9 +1,10 @@
 package org.keycloak.services.x509;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+
+import org.jboss.logging.Logger;
 
 /**
  * The factory and the corresponding providers extract a client certificate

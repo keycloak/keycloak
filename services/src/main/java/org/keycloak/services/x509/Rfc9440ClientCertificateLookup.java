@@ -1,10 +1,5 @@
 package org.keycloak.services.x509;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.DerUtils;
-import org.keycloak.http.HttpRequest;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +10,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.DerUtils;
+import org.keycloak.http.HttpRequest;
+
+import org.jboss.logging.Logger;
 
 /**
  * The provider allows to extract a client certificate forwarded

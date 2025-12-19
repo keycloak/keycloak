@@ -1,15 +1,5 @@
 package org.keycloak.services.x509;
 
-import com.google.common.base.Splitter;
-import jakarta.ws.rs.core.MultivaluedMap;
-import org.apache.commons.io.IOUtils;
-import org.jboss.resteasy.mock.MockHttpRequest;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.http.HttpRequest;
-import org.keycloak.services.resteasy.HttpRequestImpl;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -18,6 +8,18 @@ import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.function.Consumer;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.services.resteasy.HttpRequestImpl;
+
+import com.google.common.base.Splitter;
+import org.apache.commons.io.IOUtils;
+import org.jboss.resteasy.mock.MockHttpRequest;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
