@@ -18,9 +18,9 @@ When this option is `false` you should block unwanted external traffic to `/heal
 
 {project_name} exposes 4 health endpoints:
 
-* `/health/started` - allows startup probes that are used for initial verification of the application before the liveness probe takes over. This is useful for applications which require additional startup time on their first initialization.
-* `/health/live` - if the application is running. If this procedure fails the application can be discarded (terminated, shutdown).
-* `/health/ready` - if the application is ready to process requests or not. If this procedure fails the application may be made unavailable to serve new requests.
+* `/health/started` - Startup probe used for initial startup of {project_name} before the liveness probe takes over.
+* `/health/live` - Check if {project_name} is running. If this fails the application should discarded (terminated, shutdown) and started again.
+* `/health/ready` - Checks if {project_name} is ready to process requests or not. Only direct traffic to a newly started instance once the readiness probe succeeds. If this procedure fails, the application is temporarily unavailable to serve new requests, and traffic should be directed elsewhere.
 * `/health` - accumulates all health check procedures in the application.
 
 These endpoints respond with HTTP status `200 OK` on success or `503 Service Unavailable` on failure, and a JSON object like the following:
