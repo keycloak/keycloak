@@ -1,4 +1,4 @@
-package org.keycloak.tests.workflow;
+package org.keycloak.tests.workflow.step;
 
 import java.time.Duration;
 
@@ -9,6 +9,8 @@ import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.tests.workflow.AbstractWorkflowTest;
+import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
@@ -20,6 +22,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
+/**
+ * Tests the execution of the 'add-required-action' workflow step.
+ */
 @KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
 public class AddRequiredActionTest extends AbstractWorkflowTest {
 

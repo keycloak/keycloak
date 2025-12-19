@@ -1,4 +1,4 @@
-package org.keycloak.tests.workflow;
+package org.keycloak.tests.workflow.step;
 
 import java.time.Duration;
 import java.util.List;
@@ -26,6 +26,8 @@ import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.RoleConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.workflow.AbstractWorkflowTest;
+import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +40,9 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 
+/**
+ * Tests the execution of the 'grant-role' and 'revoke-role' workflow steps.
+ */
 @KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
 public class RoleBasedStepTest extends AbstractWorkflowTest {
 

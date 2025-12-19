@@ -1,4 +1,4 @@
-package org.keycloak.tests.workflow;
+package org.keycloak.tests.workflow.step;
 
 import java.time.Duration;
 import java.util.List;
@@ -24,6 +24,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.workflow.AbstractWorkflowTest;
+import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +36,9 @@ import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
+/**
+ * Tests the execution of the 'join-group' and 'leave-group' workflow steps.
+ */
 @KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
 public class GroupBasedStepTest extends AbstractWorkflowTest {
 
