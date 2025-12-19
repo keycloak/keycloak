@@ -18,12 +18,10 @@ When this option is `false` you should block unwanted external traffic to `/heal
 
 {project_name} exposes 4 health endpoints:
 
-* `/health/live`
-* `/health/ready`
-* `/health/started`
-* `/health`
-
-See the https://quarkus.io/guides/smallrye-health#running-the-health-check[Quarkus SmallRye Health docs] for information on the meaning of each endpoint.
+* `/health/started` - Startup probe used for initial startup of {project_name} before the liveness probe takes over.
+* `/health/live` - Check if {project_name} is running. If this fails the application should be discarded (terminated, shutdown) and started again.
+* `/health/ready` - Checks if {project_name} is ready to process requests or not. Only direct traffic to a newly started instance once the readiness probe succeeds. If this procedure fails, the application is temporarily unavailable to serve new requests, and traffic should be directed elsewhere.
+* `/health` - accumulates all health check procedures in the application.
 
 These endpoints respond with HTTP status `200 OK` on success or `503 Service Unavailable` on failure, and a JSON object like the following:
 
@@ -53,6 +51,8 @@ These endpoints respond with HTTP status `200 OK` on success or `503 Service Una
     ]
 }
 ----
+
+See the https://github.com/microprofile/microprofile-health/blob/main/spec/src/main/asciidoc/protocol-wireformat.asciidoc[wire format] for a more detailed description.
 
 == Enabling the health checks
 It is possible to enable the health checks using the build time option `health-enabled`:
@@ -96,6 +96,8 @@ The Containerfile `+HEALTHCHECK+` instruction defines a command that will be per
 ----
 
 The above code depends on the values of the {project_name} options such as `http-relative-path` (`http-management-relative-path`) and `http-management-port`. In case those are changed the code needs to be modified accordingly.
+
+NOTE: the `+HEALTHCHECK+` shown is based upon the ready endpoint. This is appropriate for informational purposes or to determine if the container should receive requests. It should not be used to determine if the container needs restarted.
 
 If you enable TLS as shown in <@links.server id="enabletls" />, the management interface will also use TLS. Depending upon how the management interface endpoints are intended to be used you can still have plain HTTP health checks if:
 
