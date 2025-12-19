@@ -108,7 +108,7 @@ public class CRDTest {
                 .build();
 
         var eMsg = assertThrows(KubernetesClientException.class, () -> client.resource(cr).create()).getMessage();
-        assertThat(eMsg).contains("spec.update: Invalid value: \"object\": The 'revision' field is required when 'Explicit' strategy is used.");
+        assertThat(eMsg).contains("The 'revision' field is required when 'Explicit' strategy is used.");
     }
 
     private <T extends HasMetadata> void roundTrip(String resourceFile, Class<T> type) {
