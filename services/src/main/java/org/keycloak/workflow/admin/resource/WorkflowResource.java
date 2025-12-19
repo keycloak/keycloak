@@ -19,10 +19,19 @@ import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 
 import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class WorkflowResource {
 
     private final WorkflowProvider provider;
@@ -34,6 +43,15 @@ public class WorkflowResource {
     }
 
     @DELETE
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.WORKFLOWS)
+    @Operation(
+            summary = "Delete workflow",
+            description = "Delete the workflow and its configuration."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "400", description = "Bad Request")
+    })
     public void delete() {
         try {
             provider.removeWorkflow(workflow);
@@ -47,6 +65,15 @@ public class WorkflowResource {
      */
     @PUT
     @Consumes({YAMLMediaTypes.APPLICATION_JACKSON_YAML, MediaType.APPLICATION_JSON})
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.WORKFLOWS)
+    @Operation(
+            summary = "Update workflow",
+            description = "Update the workflow configuration. This method does not update the workflow steps."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "400", description = "Bad Request")
+    })
     public void update(WorkflowRepresentation rep) {
         try {
             provider.updateWorkflow(workflow, rep);
@@ -57,8 +84,20 @@ public class WorkflowResource {
 
     @GET
     @Produces({YAMLMediaTypes.APPLICATION_JACKSON_YAML, MediaType.APPLICATION_JSON})
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.WORKFLOWS)
+    @Operation(
+            summary = "Get workflow",
+            description = "Get the workflow representation. Optionally exclude the workflow id from the response."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = WorkflowRepresentation.class))),
+            @APIResponse(responseCode = "400", description = "Bad Request")
+    })
     public WorkflowRepresentation toRepresentation(
-            @Parameter(description = "Indicates whether the workflow id should be included in the representation or not - defaults to true") @QueryParam("includeId") Boolean includeId
+            @Parameter(
+                    description = "Indicates whether the workflow id should be included in the representation or not - defaults to true"
+            )
+            @QueryParam("includeId") Boolean includeId
     ) {
         WorkflowRepresentation rep = provider.toRepresentation(workflow);
         if (Boolean.FALSE.equals(includeId)) {
@@ -73,12 +112,33 @@ public class WorkflowResource {
      * @param type the resource type
      * @param resourceId the resource id
      * @param notBefore optional value representing the time to schedule the first workflow step, overriding the first
-     *                 step time configuration (after). The value is either an integer representing the seconds from now,
-     *                 an integer followed by 'ms' representing milliseconds from now, or an ISO-8601 date string.
+     *                  step time configuration (after). The value is either an integer representing the seconds from now,
+     *                  an integer followed by 'ms' representing milliseconds from now, or an ISO-8601 date string.
      */
     @POST
     @Path("activate/{type}/{resourceId}")
-    public void activate(@PathParam("type") ResourceType type, @PathParam("resourceId") String resourceId, @QueryParam("notBefore") String notBefore) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.WORKFLOWS)
+    @Operation(
+            summary = "Activate workflow for resource",
+            description = "Activate the workflow for the given resource type and identifier. Optionally schedule the first step using the notBefore parameter."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "400", description = "Bad Request")
+    })
+    public void activate(
+            @Parameter(description = "Resource type")
+            @PathParam("type") ResourceType type,
+            @Parameter(description = "Resource identifier")
+            @PathParam("resourceId") String resourceId,
+            @Parameter(
+                    description = "Optional value representing the time to schedule the first workflow step. " +
+                            "The value is either an integer representing the seconds from now, " +
+                            "an integer followed by 'ms' representing milliseconds from now, " +
+                            "or an ISO-8601 date string."
+            )
+            @QueryParam("notBefore") String notBefore
+    ) {
         Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
 
         if (resource == null) {
@@ -94,6 +154,12 @@ public class WorkflowResource {
 
     @POST
     @Path("activate-all")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.WORKFLOWS)
+    @Operation(summary = "Activate workflow for all eligible resources", description = "Activate the workflow for all eligible resources; an optional notBefore may schedule the first step for all activations.")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "400", description = "Bad Request")
+    })
     public void activateAll(@QueryParam("notBefore") String notBefore) {
 
         if (notBefore != null) {
@@ -112,7 +178,21 @@ public class WorkflowResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("deactivate/{type}/{resourceId}")
-    public void deactivate(@PathParam("type") ResourceType type, @PathParam("resourceId") String resourceId) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.WORKFLOWS)
+    @Operation(
+            summary = "Deactivate workflow for resource",
+            description = "Deactivate the workflow for the given resource type and identifier."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "400", description = "Bad Request")
+    })
+    public void deactivate(
+            @Parameter(description = "Resource type")
+            @PathParam("type") ResourceType type,
+            @Parameter(description = "Resource identifier")
+            @PathParam("resourceId") String resourceId
+    ) {
         Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
 
         if (resource == null) {
