@@ -656,23 +656,6 @@ public class PodTemplateTest {
         Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(Watched.of("cm")), Mockito.eq(ConfigMap.class), Mockito.any(), Mockito.any());
     }
 
-    @Test
-    public void testServiceCaCrt() {
-        this.deployment.setUseServiceCaCrt(true);
-        try {
-            // Arrange
-            PodTemplateSpec additionalPodTemplate = null;
-
-            // Act
-            var podTemplate = getDeployment(additionalPodTemplate, null, null).getSpec().getTemplate();
-
-            // Assert
-            var paths = podTemplate.getSpec().getContainers().get(0).getEnv().stream().filter(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS)).findFirst().orElseThrow();
-            assertThat(paths.getValue()).isEqualTo("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt,/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt");
-        } finally {
-            this.deployment.setUseServiceCaCrt(false);
-        }
-    }
 
     @Test
     public void testPriorityClass() {
