@@ -779,6 +779,8 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
                 return cachedLDAPGroupMappings.stream();
             }
 
+            cachedLDAPGroupMappings = Set.of();
+
             List<LDAPObject> ldapGroups = getLDAPGroupMappings(ldapUser);
             if (!ldapGroups.isEmpty()) {
                 GroupModel parent = getKcGroupsPathGroup(realm);
