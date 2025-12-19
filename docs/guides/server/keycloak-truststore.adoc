@@ -4,7 +4,7 @@
 <@tmpl.guide
 title="Configuring trusted certificates"
 summary="Configure the {project_name} Truststore to communicate through TLS."
-includedOptions="truststore-paths tls-hostname-verifier">
+includedOptions="truststore-paths truststore-kubernetes-enabled tls-hostname-verifier">
 
 When {project_name} communicates with external services or has an incoming connection through TLS, it has to validate the remote certificate in order to ensure it is connecting to a trusted server. This is necessary in order to prevent man-in-the-middle attacks.
 
@@ -16,13 +16,30 @@ The existing Java default truststore certs will always be trusted.  If you need 
 
 If you need an alternative path, use the `--truststore-paths` option to specify additional files or directories where PEM or PKCS12 files are located. Paths are relative to where you launched {project_name}, so absolute paths are recommended instead. If a directory is specified, it will be recursively scanned for truststore files.
 
-After all applicable certs are included, the truststore will be used as the system default truststore via the `javax.net.ssl` properties, and as the default for internal usage within {project_name}.  
+After all applicable certs are included, the truststore will be used as the system default truststore via the `javax.net.ssl` properties, and as the default for internal usage within {project_name}.
 
 For example:
 
 <@kc.start parameters="--truststore-paths=/opt/truststore/myTrustStore.pfx,/opt/other-truststore/myOtherTrustStore.pem" />
 
 It is still possible to directly set your own `javax.net.ssl` truststore System properties, but it's recommended to use the `--truststore-paths` instead.
+
+== Cluster CA certificates (Kubernetes and OpenShift)
+
+When running {project_name} on Kubernetes or OpenShift, the server will automatically include well-known cluster certificate authorities in the system truststore if they are present on the filesystem:
+
+* Kubernetes service account CA: `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`
+* OpenShift service CA: `/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt`
+
+This behavior is enabled by default and does not require the Operator. It can be controlled with the following option:
+
+* `--truststore-kubernetes-enabled=true|false` (default: `true`)
+
+When `truststore-kubernetes-enabled` is set to `true`, {project_name} will also discover and include the OpenShift Service CA if it is present on the filesystem. To disable automatically trusting the cluster CAs entirely:
+
+<@kc.start parameters="--truststore-kubernetes-enabled=false" />
+
+Note that if the corresponding files are not mounted into the container, they will not be included regardless of the option values.
 
 == Hostname Verification Policy
 

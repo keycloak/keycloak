@@ -773,6 +773,11 @@ Truststore:
                      The TLS hostname verification policy for out-going HTTPS and SMTP requests.
                        ANY should not be used in production. Possible values are: ANY, WILDCARD
                        (deprecated), STRICT (deprecated), DEFAULT. Default: DEFAULT.
+--truststore-kubernetes-enabled <truststore-kubernetes-enabled>
+                     If enabled, the server will automatically include the default Kubernetes
+                       service account CA certificate from "/var/run/secrets/kubernetes.
+                       io/serviceaccount/ca.crt" when running in a container environment. Default:
+                       true.
 --truststore-paths <truststore-paths>
                      List of pkcs12 (p12, pfx, or pkcs12 file extensions), PEM files, or
                        directories containing those files that will be used as a system truststore.
