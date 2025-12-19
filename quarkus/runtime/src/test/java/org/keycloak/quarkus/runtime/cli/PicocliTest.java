@@ -1707,4 +1707,28 @@ public class PicocliTest extends AbstractConfigurationTest {
                 "quarkus.otel.logs.enabled", "true"
         ));
     }
+
+    @Test
+    public void testWindowsServiceHelp() {
+        NonRunningPicocli nonRunningPicocli = new NonRunningPicocli() {
+            @Override
+            protected boolean showAllCommands() {
+                return true;
+            }
+        };
+        KeycloakMain.main(new String[] {"tools", "windows-service", "--help"}, nonRunningPicocli);
+        assertTrue(nonRunningPicocli.getOutString().contains("install"));
+    }
+
+    @Test
+    public void testWindowsServiceArgs() {
+        NonRunningPicocli nonRunningPicocli = new NonRunningPicocli() {
+            @Override
+            protected boolean showAllCommands() {
+                return true;
+            }
+        };
+        KeycloakMain.main(new String[] {"tools", "windows-service", "--db=dev-mem"}, nonRunningPicocli);
+        assertTrue(nonRunningPicocli.getErrString().contains("Unknown option"));
+    }
 }
