@@ -346,7 +346,7 @@ public enum OperatorDeployment {local_apiserver,local,remote}
       // to just a timed foreground deletion
       var roots = List.of(Keycloak.class, KeycloakRealmImport.class);
       roots.forEach(c -> k8sclient.resources(c).delete());
-      // enforce that at least the statefulset / pods are gone
+      // enforce that at least the statefulset are gone
       try {
           k8sclient
                   .apps()
