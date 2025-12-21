@@ -127,8 +127,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         this.useServiceCaCrt = useServiceCaCrt;
     }
 
-    @Override
-    public StatefulSet desired(Keycloak primary, Context<Keycloak> context) {
+    public StatefulSet initialDesired(Keycloak primary, Context<Keycloak> context) {
         Config operatorConfig = ContextUtils.getOperatorConfig(context);
         WatchedResources watchedResources = ContextUtils.getWatchedResources(context);
 
@@ -155,6 +154,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         // default to the new revision - will be overriden to the old one if needed
         UpdateSpec.getRevision(primary).ifPresent(rev -> addUpdateRevisionAnnotation(rev, baseDeployment));
+        addUpdateHashAnnotation(KeycloakUpdateJobDependentResource.keycloakHash(primary), baseDeployment);
 
         var existingDeployment = ContextUtils.getCurrentStatefulSet(context).orElse(null);
 
@@ -169,6 +169,13 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
 
         baseDeployment.getSpec().setServiceName(serviceName);
+        return baseDeployment;
+    }
+
+    @Override
+    public StatefulSet desired(Keycloak primary, Context<Keycloak> context) {
+        StatefulSet baseDeployment = ContextUtils.getDesiredStatefulSet(context);
+        var existingDeployment = ContextUtils.getCurrentStatefulSet(context).orElse(null);
 
         var updateType = ContextUtils.getUpdateType(context);
 
@@ -186,7 +193,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         return switch (updateType.get()) {
             case ROLLING -> handleRollingUpdate(baseDeployment);
-            case RECREATE -> handleRecreateUpdate(existingDeployment, baseDeployment, kcContainer);
+            case RECREATE -> handleRecreateUpdate(existingDeployment, baseDeployment, CRDUtils.firstContainerOf(baseDeployment).orElseThrow());
         };
     }
 
@@ -629,8 +636,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         } else {
             Log.debug("Performing a recreate update - scaling down the stateful set");
 
-            // keep the old revision and image, mark as migrating, and scale down
-            CRDUtils.getRevision(actual).ifPresent(rev -> addUpdateRevisionAnnotation(rev, desired));
+            // keep the old revision, image, and hash, then mark as migrating, and scale down
+            addOrRemoveAnnotation(CRDUtils.getRevision(actual).orElse(null), Constants.KEYCLOAK_UPDATE_REVISION_ANNOTATION, desired);
+            addOrRemoveAnnotation(CRDUtils.getUpdateHash(actual).orElse(null), Constants.KEYCLOAK_UPDATE_HASH_ANNOTATION, desired);
             desired.getMetadata().getAnnotations().put(Constants.KEYCLOAK_MIGRATING_ANNOTATION, Boolean.TRUE.toString());
             desired.getSpec().setReplicas(0);
             var currentImage = RecreateOnImageChangeUpdateLogic.extractImage(actual);
@@ -641,6 +649,14 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     private static void addUpdateRevisionAnnotation(String revision, StatefulSet toUpdate) {
         toUpdate.getMetadata().getAnnotations().put(Constants.KEYCLOAK_UPDATE_REVISION_ANNOTATION, revision);
+    }
+
+    private static void addUpdateHashAnnotation(String hash, StatefulSet toUpdate) {
+        toUpdate.getMetadata().getAnnotations().put(Constants.KEYCLOAK_UPDATE_HASH_ANNOTATION, hash);
+    }
+
+    private static void addOrRemoveAnnotation(String value, String annotation, StatefulSet toUpdate) {
+        toUpdate.getMetadata().getAnnotations().compute(annotation, (k, v) -> value);
     }
 
     record ManagementEndpoint(String relativePath, String protocol, int port, String portName) {}
