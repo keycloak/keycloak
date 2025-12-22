@@ -78,6 +78,7 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         //reduce max expiration to 10 seconds
         realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_MAX_ALLOWED_ASSERTION_EXPIRATION, "10");
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_LIMIT_ACCESS_TOKEN_EXP, "false");
         });
 
         jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 11L));
@@ -273,6 +274,22 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         } finally {
             oAuthClient.openid(true).scope(null);
         }
+    }
+
+    @Test
+    public void textLimitAccessTokenExpiration() {
+        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_LIMIT_ACCESS_TOKEN_EXP, "true");
+        });
+
+        int accessCodeLifeSpan = realm.admin().toRepresentation().getAccessTokenLifespan();
+        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken(accessCodeLifeSpan));
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        MatcherAssert.assertThat(response.getExpiresIn(), Matchers.allOf(Matchers.lessThanOrEqualTo(accessCodeLifeSpan), Matchers.greaterThan(accessCodeLifeSpan - 5)));
+
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken(120L));
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        MatcherAssert.assertThat(response.getExpiresIn(), Matchers.allOf(Matchers.lessThanOrEqualTo(120), Matchers.greaterThan(115)));
     }
 
     @Test

@@ -19,6 +19,8 @@ import { WhoAmI } from "./resources/whoAmI.js";
 import { Credentials, getToken } from "./utils/auth.js";
 import { defaultBaseUrl, defaultRealm } from "./utils/constants.js";
 
+export type RequestOptions = Omit<RequestInit, "signal">;
+
 export interface TokenProvider {
   getAccessToken: () => Promise<string | undefined>;
 }
@@ -26,8 +28,9 @@ export interface TokenProvider {
 export interface ConnectionConfig {
   baseUrl?: string;
   realmName?: string;
-  requestOptions?: RequestInit;
+  requestOptions?: RequestOptions;
   requestArgOptions?: Pick<RequestArgs, "catchNotFound">;
+  timeout?: number;
 }
 
 export class KeycloakAdminClient {
@@ -56,14 +59,16 @@ export class KeycloakAdminClient {
   public scope?: string;
   public accessToken?: string;
   public refreshToken?: string;
+  public timeout?: number;
 
-  #requestOptions?: RequestInit;
+  #requestOptions?: RequestOptions;
   #globalRequestArgOptions?: Pick<RequestArgs, "catchNotFound">;
   #tokenProvider?: TokenProvider;
 
   constructor(connectionConfig?: ConnectionConfig) {
     this.baseUrl = connectionConfig?.baseUrl || defaultBaseUrl;
     this.realmName = connectionConfig?.realmName || defaultRealm;
+    this.timeout = connectionConfig?.timeout;
     this.#requestOptions = connectionConfig?.requestOptions;
     this.#globalRequestArgOptions = connectionConfig?.requestArgOptions;
 
@@ -93,7 +98,10 @@ export class KeycloakAdminClient {
       realmName: this.realmName,
       scope: this.scope,
       credentials,
-      requestOptions: this.#requestOptions,
+      requestOptions: {
+        ...this.#requestOptions,
+        ...(this.timeout ? { signal: AbortSignal.timeout(this.timeout) } : {}),
+      },
     });
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;

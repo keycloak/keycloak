@@ -119,4 +119,11 @@ public interface Details {
 
     String USER_SESSION_EXPIRED_REASON = "user_session_expired";
     String INVALID_USER_SESSION_REMEMBER_ME_REASON = "invalid_user_session_remember_me";
+
+    // OID4VCI (OpenID for Verifiable Credential Issuance) related details
+    String VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED = "verifiable_credential_pre_authorized";
+    String VERIFIABLE_CREDENTIAL_TARGET_CLIENT_ID = "verifiable_credential_target_client_id";
+    String VERIFIABLE_CREDENTIAL_TARGET_USER_ID = "verifiable_credential_target_user_id";
+    String VERIFIABLE_CREDENTIAL_FORMAT = "verifiable_credential_format";
+    String VERIFIABLE_CREDENTIALS_ISSUED = "verifiable_credentials_issued";
 }

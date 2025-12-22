@@ -1,0 +1,228 @@
+{
+    "id": "TestComposites",
+    "realm": "TestComposites",
+    "enabled": true,
+    "accessTokenLifespan": 600,
+    "accessCodeLifespan": 600,
+    "accessCodeLifespanUserAction": 600,
+    "sslRequired": "external",
+    "registrationAllowed": true,
+    "resetPasswordAllowed": true,
+    "requiredCredentials": [ "password" ],
+    "smtpServer": {
+        "from": "auto@keycloak.org",
+        "host": "localhost",
+        "port":"3025"
+    },
+    "users" : [
+        {
+            "username" : "REALM_COMPOSITE_1_USER",
+            "enabled": true,
+            "email" : "test-user1@localhost",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": [ "REALM_COMPOSITE_1" ]
+        },
+        {
+            "username" : "REALM_ROLE_1_USER",
+            "enabled": true,
+            "email" : "test-user2@localhost",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": [ "REALM_ROLE_1"]
+        },
+        {
+            "username" : "REALM_APP_COMPOSITE_USER",
+            "enabled": true,
+            "email" : "test-user3@localhost",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": [ "REALM_APP_COMPOSITE_ROLE" ]
+        },
+        {
+            "username" : "REALM_APP_ROLE_USER",
+            "enabled": true,
+            "email" : "test-user4@localhost",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "applicationRoles": {
+                "APP_ROLE_APPLICATION": [ "APP_ROLE_2" ]
+            }
+        },
+        {
+            "username" : "APP_COMPOSITE_USER",
+            "enabled": true,
+            "email" : "test-user5@localhost",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": ["REALM_APP_COMPOSITE_ROLE", "REALM_COMPOSITE_1"]
+        }
+    ],
+    "oauthClients" : [
+        {
+            "name" : "third-party",
+            "enabled": true,
+            "secret": "password"
+        }
+    ],
+    "scopeMappings": [
+        {
+            "client": "REALM_COMPOSITE_1_APPLICATION",
+            "roles": ["REALM_COMPOSITE_1"]
+        },
+        {
+            "client": "REALM_COMPOSITE_2_APPLICATION",
+            "roles": ["REALM_COMPOSITE_1", "REALM_COMPOSITE_CHILD", "REALM_ROLE_4"]
+        },
+        {
+            "client": "REALM_ROLE_1_APPLICATION",
+            "roles": ["REALM_ROLE_1"]
+        }
+    ],
+    "applications": [
+        {
+            "name": "REALM_COMPOSITE_1_APPLICATION",
+            "fullScopeAllowed": false,
+            "enabled": true,
+            "baseUrl": "http://localhost:8081/app",
+            "adminUrl": "http://localhost:8081/app/logout",
+            "secret": "password"
+        },
+        {
+            "name": "REALM_COMPOSITE_2_APPLICATION",
+            "fullScopeAllowed": false,
+            "enabled": true,
+            "baseUrl": "http://localhost:8081/app",
+            "adminUrl": "http://localhost:8081/app/logout",
+            "secret": "password"
+        },
+        {
+            "name": "REALM_ROLE_1_APPLICATION",
+            "fullScopeAllowed": false,
+            "enabled": true,
+            "baseUrl": "http://localhost:8081/app",
+            "adminUrl": "http://localhost:8081/app/logout",
+            "secret": "password"
+        },
+        {
+            "name": "APP_ROLE_APPLICATION",
+            "fullScopeAllowed": false,
+            "enabled": true,
+            "baseUrl": "http://localhost:8081/app",
+            "adminUrl": "http://localhost:8081/app/logout",
+            "secret": "password"
+        },
+        {
+            "name": "APP_COMPOSITE_APPLICATION",
+            "fullScopeAllowed": false,
+            "enabled": true,
+            "baseUrl": "http://localhost:8081/app",
+            "adminUrl": "http://localhost:8081/app/logout",
+            "secret": "password"
+        }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "REALM_ROLE_1"
+            },
+            {
+                "name": "REALM_ROLE_2"
+            },
+            {
+                "name": "REALM_ROLE_3"
+            },
+            {
+                "name": "REALM_ROLE_4"
+            },
+            {
+                "name": "REALM_COMPOSITE_1",
+                "composites": {
+                    "realm": ["REALM_ROLE_1", "REALM_COMPOSITE_CHILD"]
+                }
+            },
+            {
+                "name": "REALM_COMPOSITE_CHILD",
+                "composites": {
+                    "realm": ["REALM_ROLE_4"]
+                }
+            },
+            {
+                "name": "REALM_APP_COMPOSITE_ROLE",
+                "composites": {
+                    "application": {
+                        "APP_ROLE_APPLICATION" :[
+                            "APP_ROLE_1"
+                        ],
+                        "APP_COMPOSITE_APPLICATION" :[
+                            "APP_COMPOSITE_ROLE"
+                        ]
+                    }
+                }
+            }
+        ],
+        "application" : {
+            "APP_ROLE_APPLICATION" : [
+                {
+                    "name": "APP_ROLE_1"
+                },
+                {
+                    "name": "APP_ROLE_2"
+                }
+            ],
+            "APP_COMPOSITE_APPLICATION" : [
+                {
+                    "name": "APP_COMPOSITE_ROLE",
+                    "composites": {
+                        "realm" : [
+                            "REALM_ROLE_1",
+                            "REALM_ROLE_2",
+                            "REALM_ROLE_3"
+                        ],
+                        "application": {
+                            "APP_ROLE_APPLICATION" :[
+                                "APP_ROLE_1"
+                            ],
+                            "APP_COMPOSITE_APPLICATION" :[
+                                "APP_COMPOSITE_CHILD"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "APP_COMPOSITE_CHILD",
+                    "composites": {
+                        "application": {
+                            "APP_COMPOSITE_APPLICATION" :[
+                                "APP_ROLE_2"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "APP_ROLE_2"
+                }
+            ]
+        }
+
+    },
+
+    "applicationScopeMappings": {
+        "APP_ROLE_APPLICATION": [
+            {
+                "client": "APP_COMPOSITE_APPLICATION",
+                "roles": ["APP_ROLE_1"]
+            }
+        ]
+    }
+}

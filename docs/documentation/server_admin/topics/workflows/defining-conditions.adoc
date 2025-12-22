@@ -1,0 +1,42 @@
+[id="defining-workflow-conditions_{context}"]
+
+[[_workflow_conditions_]]
+= Defining conditions
+
+The optional `if` setting allows you to define the conditions the target resource must meet in order for the workflow to be triggered.
+
+Conditions provide fine-grained control over whether a workflow execution should be created.
+They allow you to inspect the context of the event and the state of the resource.
+For example, you can create conditions to check:
+* If a user has a specific attribute.
+* If a specific role is granted to a user or if the user is joining a specific group.
+
+If the condition evaluates to `true`, the workflow execution is created. If it evaluates to `false`, no workflow execution is created, even though
+the expression from the `on` setting evaluates to `true`.
+
+Just like the `on` setting, the condition is written using an expression that supports a variety of checks on the realm resource associated with the event.
+For instance, considering a `user_created` event, you can define a condition to trigger the workflow only if the user has a specific attribute:
+
+```yaml
+on: user_created
+if: has-user-attribute('plan', 'gold')
+```
+
+In this example, the workflow will only be triggered when a new user is created and that user has an attribute `plan` with the value `gold`.
+
+{project_name} provides a set of built-in conditions that you can use in your workflows.
+The conditions are also based on the realm resource associated with the event.
+
+[[_workflow_user_functions_]]
+== User functions
+
+[cols="3*", options="header"]
+|===
+|Condition
+|Description
+|Parameters
+| `has-user-attribute` | If the user has an attribute set. | The attribute name and optionally the attribute value using a properties format. If multiple values, they should be separated by comma. If the value is omitted, only the presence of the attribute is checked.
+| `has-role` | If the user is granted with a specific role | The name of the role.
+| `has-identity-provider-link` | If the user is linked to an identity provider. | The alias of the identity provider.
+| `is-member-of` | If the user is member of a specific group. | The name or path of the group.
+|===

@@ -22,15 +22,15 @@ public class DistributionKeycloakServer implements KeycloakServer {
     private RawKeycloakDistribution keycloak;
 
     private final boolean debug;
-    private boolean enableTls = false;
+    private boolean tlsEnabled = false;
 
     public DistributionKeycloakServer(boolean debug) {
         this.debug = debug;
     }
 
     @Override
-    public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
-        enableTls = keycloakServerConfigBuilder.tlsEnabled();
+    public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder, boolean tlsEnabled) {
+        this.tlsEnabled = tlsEnabled;
         keycloak = new RawKeycloakDistribution(false, MANUAL_STOP, false, RE_CREATE, REMOVE_BUILD_OPTIONS_AFTER_BUILD, REQUEST_PORT, new LoggingOutputConsumer());
 
         // RawKeycloakDistribution sets "DEBUG_SUSPEND", not "DEBUG" when debug is passed to constructor
@@ -56,7 +56,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
     @Override
     public String getBaseUrl() {
-        if (isTlsEnabled()) {
+        if (tlsEnabled) {
             return "https://localhost:8443";
         } else {
             return "http://localhost:8080";
@@ -65,16 +65,11 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
     @Override
     public String getManagementBaseUrl() {
-        if (isTlsEnabled()) {
+        if (tlsEnabled) {
             return "https://localhost:9000";
         } else {
             return "http://localhost:9000";
         }
-    }
-
-    @Override
-    public boolean isTlsEnabled() {
-        return enableTls;
     }
 
     private static final class LoggingOutputConsumer implements OutputConsumer {

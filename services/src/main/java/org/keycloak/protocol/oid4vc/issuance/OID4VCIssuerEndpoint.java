@@ -25,6 +25,7 @@ import java.security.PublicKey;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -287,7 +288,7 @@ public class OID4VCIssuerEndpoint {
     public Response getCNonce() {
         RealmModel realm = session.getContext().getRealm();
         EventBuilder eventBuilder = new EventBuilder(realm, session, session.getContext().getConnection());
-        eventBuilder.event(EventType.CREDENTIAL_NONCE_REQUEST);
+        eventBuilder.event(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST);
 
         CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
         NonceResponse nonceResponse = new NonceResponse();
@@ -391,7 +392,7 @@ public class OID4VCIssuerEndpoint {
         RealmModel realmModel = clientModel.getRealm();
 
         EventBuilder eventBuilder = new EventBuilder(realmModel, session, session.getContext().getConnection());
-        eventBuilder.event(EventType.CREDENTIAL_OFFER_REQUEST)
+        eventBuilder.event(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
                 .client(clientModel)
                 .user(userModel)
                 .session(clientSession.getUserSession().getId())
@@ -495,13 +496,13 @@ public class OID4VCIssuerEndpoint {
         LOGGER.debugf("Stored credential configuration IDs for token processing: %s", credentialConfigIdsJson);
 
         // Add event details
-        eventBuilder.detail("pre_authorized", String.valueOf(preAuthorized))
-                .detail("response_type", type.toString());
+        eventBuilder.detail(Details.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED, String.valueOf(preAuthorized))
+                .detail(Details.RESPONSE_TYPE, type.toString());
         if (appClientId != null) {
-            eventBuilder.detail("target_client_id", appClientId);
+            eventBuilder.detail(Details.VERIFIABLE_CREDENTIAL_TARGET_CLIENT_ID, appClientId);
         }
         if (userId != null) {
-            eventBuilder.detail("target_user_id", userId);
+            eventBuilder.detail(Details.VERIFIABLE_CREDENTIAL_TARGET_USER_ID, userId);
         }
         eventBuilder.success();
 
@@ -552,8 +553,8 @@ public class OID4VCIssuerEndpoint {
      * Handles CORS preflight requests for credential offer endpoint
      */
     @OPTIONS
-    @Path(CREDENTIAL_OFFER_PATH + "{sessionCode}")
-    public Response getCredentialOfferPreflight(@PathParam("sessionCode") String sessionCode) {
+    @Path(CREDENTIAL_OFFER_PATH + "{nonce}")
+    public Response getCredentialOfferPreflight(@PathParam("nonce") String nonce) {
         configureCors(false);
         cors.preflight();
         return cors.add(Response.ok());
@@ -576,7 +577,7 @@ public class OID4VCIssuerEndpoint {
         RealmModel realm = session.getContext().getRealm();
 
         EventBuilder eventBuilder = new EventBuilder(realm, session, session.getContext().getConnection());
-        eventBuilder.event(EventType.CREDENTIAL_OFFER_REQUEST);
+        eventBuilder.event(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST);
 
         // Retrieve the associated credential offer state
         //
@@ -657,7 +658,7 @@ public class OID4VCIssuerEndpoint {
 
         RealmModel realm = session.getContext().getRealm();
         EventBuilder eventBuilder = new EventBuilder(realm, session, session.getContext().getConnection());
-        eventBuilder.event(EventType.CREDENTIAL_REQUEST);
+        eventBuilder.event(EventType.VERIFIABLE_CREDENTIAL_REQUEST);
 
         if (requestPayload == null || requestPayload.trim().isEmpty()) {
             String errorMessage = "Request payload is null or empty.";
@@ -854,7 +855,7 @@ public class OID4VCIssuerEndpoint {
 
         if (allProofs.isEmpty()) {
             // Single issuance without proof
-            Object theCredential = getCredential(authResult, supportedCredential, credentialRequestVO);
+            Object theCredential = getCredential(authResult, supportedCredential, credentialRequestVO, eventBuilder);
             responseVO.addCredential(theCredential);
         } else {
             // Issue credentials for each proof
@@ -867,7 +868,7 @@ public class OID4VCIssuerEndpoint {
                 proofForIteration.setProofByType(proofType, currentProof);
                 // Creating credential with keybinding to the current proof
                 credentialRequestVO.setProofs(proofForIteration);
-                Object theCredential = getCredential(authResult, supportedCredential, credentialRequestVO);
+                Object theCredential = getCredential(authResult, supportedCredential, credentialRequestVO, eventBuilder);
                 responseVO.addCredential(theCredential);
             }
             credentialRequestVO.setProofs(originalProofs);
@@ -887,8 +888,8 @@ public class OID4VCIssuerEndpoint {
 
         // Mark event as successful
         eventBuilder.detail(Details.SCOPE, supportedCredential.getScope())
-                .detail("credential_format", supportedCredential.getFormat())
-                .detail("credentials_issued", String.valueOf(responseVO.getCredentials().size()));
+                .detail(Details.VERIFIABLE_CREDENTIAL_FORMAT, supportedCredential.getFormat())
+                .detail(Details.VERIFIABLE_CREDENTIALS_ISSUED, String.valueOf(responseVO.getCredentials().size()));
         eventBuilder.success();
 
         return response;
@@ -1366,11 +1367,13 @@ public class OID4VCIssuerEndpoint {
      * @param authResult          authResult containing the userSession to create the credential for
      * @param credentialConfig    the supported credential configuration
      * @param credentialRequestVO the credential request
+     * @param eventBuilder        the event builder for logging events
      * @return the signed credential
      */
     private Object getCredential(AuthenticationManager.AuthResult authResult,
                                  SupportedCredentialConfiguration credentialConfig,
-                                 CredentialRequest credentialRequestVO
+                                 CredentialRequest credentialRequestVO,
+                                 EventBuilder eventBuilder
     ) {
 
         // Get the client scope model from the credential configuration
@@ -1392,7 +1395,7 @@ public class OID4VCIssuerEndpoint {
                 .filter(Objects::nonNull)
                 .toList();
 
-        VCIssuanceContext vcIssuanceContext = getVCToSign(protocolMappers, credentialConfig, authResult, credentialRequestVO, credentialScopeModel);
+        VCIssuanceContext vcIssuanceContext = getVCToSign(protocolMappers, credentialConfig, authResult, credentialRequestVO, credentialScopeModel, eventBuilder);
 
         // Enforce key binding prior to signing if necessary
         enforceKeyBindingIfProofProvided(vcIssuanceContext);
@@ -1447,7 +1450,7 @@ public class OID4VCIssuerEndpoint {
     // builds the unsigned credential by applying all protocol mappers.
     private VCIssuanceContext getVCToSign(List<OID4VCMapper> protocolMappers, SupportedCredentialConfiguration credentialConfig,
                                           AuthenticationManager.AuthResult authResult, CredentialRequest credentialRequestVO,
-                                          CredentialScopeModel credentialScopeModel) {
+                                          CredentialScopeModel credentialScopeModel, EventBuilder eventBuilder) {
 
         // Compute issuance date and apply correlation-mitigation according to realm configuration
         Instant issuance = Instant.ofEpochMilli(timeProvider.currentTimeMillis());
@@ -1467,17 +1470,20 @@ public class OID4VCIssuerEndpoint {
                 .setType(List.of(credentialConfig.getScope()));
 
         Map<String, Object> subjectClaims = new HashMap<>();
+        protocolMappers.forEach(mapper -> mapper.setClaim(subjectClaims, authResult.session()));
+
+        Map<String, Object> subjectClaimsWithMetadataPrefix = new HashMap<>();
         protocolMappers
-                .forEach(mapper -> mapper.setClaimsForSubject(subjectClaims, authResult.session()));
+                .forEach(mapper -> mapper.setClaimWithMetadataPrefix(subjectClaims, subjectClaimsWithMetadataPrefix));
 
         // Validate that requested claims from authorization_details are present
-        validateRequestedClaimsArePresent(subjectClaims, authResult.session(), credentialConfig.getScope());
+        String credentialConfigId = credentialConfig.getId();
+        validateRequestedClaimsArePresent(subjectClaimsWithMetadataPrefix, credentialConfig, authResult.session(), credentialConfigId, eventBuilder);
 
         // Include all available claims
         subjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
 
-        protocolMappers
-                .forEach(mapper -> mapper.setClaimsForCredential(vc, authResult.session()));
+        protocolMappers.forEach(mapper -> mapper.setClaim(vc, authResult.session()));
 
         LOGGER.debugf("The credential to sign is: %s", vc);
 
@@ -1548,68 +1554,81 @@ public class OID4VCIssuerEndpoint {
     /**
      * Validates that all requested claims from authorization_details are present in the available claims.
      *
-     * @param allClaims   all available claims
-     * @param userSession the user session
-     * @param scope       the credential scope
+     * @param allClaims        all available claims. These are the claims including metadata prefix with the resolved path
+     * @param credentialConfig Credential configuration
+     * @param userSession      the user session
+     * @param scope            the credential scope
+     * @param eventBuilder     the event builder for logging error events
      * @throws BadRequestException if mandatory requested claims are missing
      */
-    private void validateRequestedClaimsArePresent(Map<String, Object> allClaims, UserSessionModel userSession, String scope) {
-        try {
-            // Look for stored claims in user session notes
-            String claimsKey = AUTHORIZATION_DETAILS_CLAIMS_PREFIX + scope;
-            String storedClaimsJson = userSession.getNote(claimsKey);
+    private void validateRequestedClaimsArePresent(Map<String, Object> allClaims, SupportedCredentialConfiguration credentialConfig,
+                                                   UserSessionModel userSession, String scope, EventBuilder eventBuilder) {
+        // Protocol mappers from configuration
+        Map<List<Object>, ClaimsDescription> claimsConfig = credentialConfig.getCredentialMetadata().getClaims()
+                .stream()
+                .map(claim -> {
+                    List<Object> pathObj = new ArrayList<>(claim.getPath());
+                    return new ClaimsDescription(pathObj, claim.isMandatory());
+                })
+                .collect(Collectors.toMap(ClaimsDescription::getPath, claimsDescription -> claimsDescription));
 
-            if (storedClaimsJson != null && !storedClaimsJson.isEmpty()) {
-                try {
-                    // Parse the stored claims from JSON
-                    List<ClaimsDescription> storedClaims =
-                            JsonSerialization.readValue(storedClaimsJson,
-                                    new TypeReference<List<ClaimsDescription>>() {
-                                    });
+        List<ClaimsDescription> claimsFromAuthzDetails = getClaimsFromAuthzDetails(scope, userSession);
 
-                    if (storedClaims != null && !storedClaims.isEmpty()) {
-                        // Validate that all requested claims are present in the available claims
-                        // We use filterClaimsByAuthorizationDetails to check if claims can be found
-                        // but we don't actually filter - we just validate presence
-                        try {
-                            ClaimsPathPointer.filterClaimsByAuthorizationDetails(allClaims, storedClaims);
-                            LOGGER.debugf("All requested claims are present for scope %s", scope);
-                        } catch (IllegalArgumentException e) {
-                            // If filtering fails, it means some requested claims are missing
-                            LOGGER.errorf("Requested claims validation failed for scope %s: %s", scope, e.getMessage());
-                            throw new BadRequestException("Credential issuance failed: " + e.getMessage() +
-                                    ". The requested claims are not available in the user profile.");
-                        }
-                    } else {
-                        LOGGER.infof("Stored claims list is null or empty");
-                    }
-                } catch (Exception e) {
-                    LOGGER.errorf(e, "Failed to parse stored claims for scope %s", scope);
+        // Merge claims from both protocolMappers and authorizationDetails. If either source specifies "mandatory" as true, claim is considered mandatory
+        for (ClaimsDescription claimDescription : claimsFromAuthzDetails) {
+            List<Object> path = claimDescription.getPath();
+            ClaimsDescription existing = claimsConfig.get(path);
+            if (existing == null) {
+                claimsConfig.put(path, claimDescription);
+            } else {
+                if (claimDescription.isMandatory()) {
+                    existing.setMandatory(true);
                 }
-            } else {
-                LOGGER.infof("No stored claims found for scope %s", scope);
             }
-            // No claims filtering requested, all claims are valid
-
-        } catch (IllegalArgumentException e) {
-            // Mandatory claim missing - this should fail credential issuance
-            String errorMessage = e.getMessage();
-            if (errorMessage.contains("Mandatory claim not found:")) {
-                LOGGER.errorf("Mandatory claim missing during claims filtering for scope %s: %s", scope, errorMessage);
-                throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_REQUEST,
-                        "Credential issuance failed: " + errorMessage +
-                                ". The requested mandatory claim is not available in the user profile."));
-            } else {
-                LOGGER.errorf("Claims filtering error for scope %s: %s", scope, errorMessage);
-                throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_REQUEST,
-                        "Credential issuance failed: " + errorMessage));
-            }
-        } catch (BadRequestException e) {
-            // Re-throw BadRequestException to ensure client receives proper error response
-            throw e;
-        } catch (Exception e) {
-            // Log error but continue with all claims to avoid breaking existing functionality
-            LOGGER.errorf(e, "Unexpected error during claims validation for scope %s, continuing with all claims", scope);
         }
+
+        List<ClaimsDescription> claimsDescriptions = new ArrayList<>(claimsConfig.values());
+
+        // Validate that all requested claims are present in the available claims
+        // We use filterClaimsByAuthorizationDetails to check if claims can be found
+        // but we don't actually filter - we just validate presence
+        try {
+            ClaimsPathPointer.filterClaimsByAuthorizationDetails(allClaims, claimsDescriptions);
+            LOGGER.debugf("All requested claims are present for scope %s", scope);
+        } catch (IllegalArgumentException e) {
+            // If filtering fails, it means some requested claims are missing
+            String errorMessage = "Credential issuance failed: " + e.getMessage() +
+                    ". The requested claims are not available in the user profile.";
+            LOGGER.warnf("Requested claims validation failed for scope '%s', user '%s', client '%s': %s"
+                    , scope, userSession.getUser().getUsername(), session.getContext().getClient().getClientId(), e.getMessage());
+            // Add error event details with information about which mandatory claim is missing
+            eventBuilder.detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
+            throw new BadRequestException(errorMessage);
+        }
+    }
+
+
+    private List<ClaimsDescription> getClaimsFromAuthzDetails(String scope, UserSessionModel userSession) {
+        String username = userSession.getUser().getUsername();
+        String clientId = session.getContext().getClient().getClientId();
+
+        // Look for stored claims in user session notes
+        String claimsKey = AUTHORIZATION_DETAILS_CLAIMS_PREFIX + scope;
+        String storedClaimsJson = userSession.getNote(claimsKey);
+
+        if (storedClaimsJson != null && !storedClaimsJson.isEmpty()) {
+            try {
+                // Parse the stored claims from JSON
+                return JsonSerialization.readValue(storedClaimsJson,
+                        new TypeReference<>() {
+                        });
+            } catch (Exception e) {
+                LOGGER.warnf(e, "Failed to parse stored claims for scope '%s', user '%s', client '%s'", scope, username, clientId);
+            }
+        } else {
+            LOGGER.debugf("No stored claims found for scope '%s', user '%s', client '%s'", scope, username, clientId);
+        }
+
+        return Collections.emptyList();
     }
 }

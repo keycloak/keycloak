@@ -19,6 +19,7 @@ package org.keycloak.protocol.oid4vc.issuance.mappers;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -149,13 +150,43 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     /**
      * Set the claims to credential, like f.e. the context
      */
-    public abstract void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                                UserSessionModel userSessionModel);
+    public abstract void setClaim(VerifiableCredential verifiableCredential,
+                                  UserSessionModel userSessionModel);
 
     /**
      * Set the claims to the credential subject.
      */
-    public abstract void setClaimsForSubject(Map<String, Object> claims,
-                                             UserSessionModel userSessionModel);
+    public abstract void setClaim(Map<String, Object> claims,
+                                  UserSessionModel userSessionModel);
+
+    /**
+     * Creates new map "claimsWithPrefix" with the resolved claims including path prefix
+     *
+     * @param claimsOrig Map with the original claims, which were returned by {@link #setClaim(Map, UserSessionModel)} . This method usually just reads from this map
+     * @param claimsWithPrefix Map with the claims including path prefix. This method might write to this map
+     */
+    public void setClaimWithMetadataPrefix(Map<String, Object> claimsOrig, Map<String, Object> claimsWithPrefix) {
+        List<String> attributePath = getMetadataAttributePath();
+        String propertyName = attributePath.get(attributePath.size() - 1);
+        if (claimsOrig.get(propertyName) != null) {
+            Object claimValue = claimsOrig.get(propertyName);
+            Map<String, Object> current = claimsWithPrefix;
+
+            for (int i = 0; i < attributePath.size() ; i++) {
+                String currentSnippetName = attributePath.get(i);
+                if (i < attributePath.size() - 1) {
+                    Map<String, Object> obj = (Map<String, Object>) current.get(currentSnippetName);
+                    if (obj == null) {
+                         obj = new HashMap<>();
+                         current.put(currentSnippetName, obj);
+                    }
+                    current = obj;
+                } else {
+                    // Last element
+                    current.put(currentSnippetName, claimValue);
+                }
+            }
+        }
+    }
 
 }

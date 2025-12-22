@@ -638,16 +638,15 @@ Telemetry (OpenTelemetry):
 
 --telemetry-endpoint <url>
                      OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
-                       Available only when any of available OpenTelemetry components (Logs, Traces)
-                       is turned on.
+                       Available only when any of available OpenTelemetry components (Logs,
+                       Metrics, Traces) is turned on.
 --telemetry-logs-enabled <true|false>
-                     Enables exporting logs to a destination handling telemetry data (OpenTelemetry
-                       Logs). Default: false. Available only when feature 'opentelemetry-logs:v1'
-                       is enabled.
+                     Enables exporting logs to a destination handling OpenTelemetry logs. Default:
+                       false. Available only when feature 'opentelemetry-logs:v1' is enabled.
 --telemetry-logs-endpoint <url>
-                     Telemetry (OpenTelemetry) endpoint to export logs to. If not given, the value
-                       is inherited from the 'telemetry-endpoint' option. Available only when
-                       Telemetry Logs functionality ('telemetry-logs-enabled') is enabled.
+                     OpenTelemetry endpoint to export logs to. If not given, the value is inherited
+                       from the 'telemetry-endpoint' option. Available only when Telemetry Logs
+                       functionality ('telemetry-logs-enabled') is enabled.
 --telemetry-logs-level <level>
                      The most verbose log level exported to the telemetry endpoint. For more
                        information, check the Telemetry guide. Possible values are (case
@@ -655,24 +654,46 @@ Telemetry (OpenTelemetry):
                        all. Available only when Telemetry Logs functionality
                        ('telemetry-logs-enabled') is enabled.
 --telemetry-logs-protocol <protocol>
-                     Telemetry (OpenTelemetry) protocol used for exporting logs. If not given, the
-                       value is inherited from the 'telemetry-protocol' option. Possible values
-                       are: grpc, http/protobuf. Available only when Telemetry Logs functionality
+                     OpenTelemetry protocol used for exporting logs. If not given, the value is
+                       inherited from the 'telemetry-protocol' option. Possible values are: grpc,
+                       http/protobuf. Available only when Telemetry Logs functionality
                        ('telemetry-logs-enabled') is enabled.
+--telemetry-metrics-enabled <true|false>
+                     Enables exporting metrics to a destination handling OpenTelemetry metrics.
+                       Default: false. Available only when metrics and feature
+                       'opentelemetry-metrics:v1' are enabled.
+--telemetry-metrics-endpoint <url>
+                     OpenTelemetry endpoint to connect to for Metrics. If not given, the value is
+                       inherited from the 'telemetry-endpoint' option. Available only when metrics
+                       ('metrics-enabled') and Telemetry Metrics functionality
+                       ('telemetry-metrics-enabled') are enabled.
+--telemetry-metrics-interval <duration>
+                     The interval between the start of two metric export attempts to the
+                       destination handling OpenTelemetry metrics data. It accepts simplified
+                       format for time units as java.time.Duration (like 5000ms, 30s, 5m, 1h). If
+                       the value is only a number, it represents time in seconds. Default: 60s.
+                       Available only when metrics ('metrics-enabled') and Telemetry Metrics
+                       functionality ('telemetry-metrics-enabled') are enabled.
+--telemetry-metrics-protocol <protocol>
+                     OpenTelemetry protocol used for the metrics telemetry data. If not given, the
+                       value is inherited from the 'telemetry-protocol' option. Possible values
+                       are: grpc, http/protobuf. Available only when metrics ('metrics-enabled')
+                       and Telemetry Metrics functionality ('telemetry-metrics-enabled') are
+                       enabled.
 --telemetry-protocol <protocol>
                      OpenTelemetry protocol used for the communication between server and
                        OpenTelemetry collector. Possible values are: grpc, http/protobuf. Default:
                        grpc. Available only when any of available OpenTelemetry components (Logs,
-                       Traces) is turned on.
+                       Metrics, Traces) is turned on.
 --telemetry-resource-attributes <attributes>
                      OpenTelemetry resource attributes characterize the telemetry producer. Values
                        in format 'key1=val1,key2=val2'. Available only when any of available
-                       OpenTelemetry components (Logs, Traces) is turned on.
+                       OpenTelemetry components (Logs, Metrics, Traces) is turned on.
 --telemetry-service-name <name>
                      OpenTelemetry service name. Takes precedence over 'service.name' defined in
                        the 'telemetry-resource-attributes' property. Default: keycloak. Available
-                       only when any of available OpenTelemetry components (Logs, Traces) is turned
-                       on.
+                       only when any of available OpenTelemetry components (Logs, Metrics, Traces)
+                       is turned on.
 
 Tracing:
 

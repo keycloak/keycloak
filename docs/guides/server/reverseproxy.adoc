@@ -198,6 +198,9 @@ The server supports some of the most commons TLS termination proxies such as:
 |nginx
 |===
 
+Besides the providers for particular proxies from the table above, there is also an implementation for proxies that are compliant to link:https://datatracker.ietf.org/doc/rfc9440/[RFC 9440].
+Please refer to the provider by the name `rfc9440`.
+
 To configure how client certificates are retrieved from the requests you need to:
 
 .Enable the corresponding proxy provider
@@ -213,24 +216,35 @@ The available options for configuring a provider are:
 
 [%autowidth]
 |===
-|Option|Description
+|Option|Description|Supporting Providers
 
 |ssl-client-cert
 | The name of the header holding the client certificate
+| all
 
 |ssl-cert-chain-prefix
 | The prefix of the headers holding additional certificates in the chain and used to retrieve individual
 certificates accordingly to the length of the chain. For instance, a value `CERT_CHAIN` will tell the server
 to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if `certificate-chain-length` is set to `10`.
+| all but `rfc9440`
+
+|ssl-cert-chain
+| The name of the header holding additional certificates in the chain. This is not a prefix but the full name of the header
+  because RFC 9440 mandates that the chain certificates are contained in one header.
+| `rfc9440`
 
 |certificate-chain-length
 | The maximum length of the certificate chain.
+| all
 
 |trust-proxy-verification
 | Enable trusting NGINX proxy certificate verification, instead of forwarding the certificate to {project_name} and verifying it in {project_name}.
+| `nginx`
 
 |cert-is-url-encoded
 | Whether the forwarded certificate is url-encoded or not. In NGINX, this corresponds to the `$ssl_client_cert` and `$ssl_client_escaped_cert` variables. This can also be used for the Traefik PassTlsClientCert middleware, as it sends the client certficate unencoded.
+| `nginx`
+
 |===
 
 === Configuring the NGINX provider
@@ -241,3 +255,26 @@ If you are using this provider, see <@links.server id="keycloak-truststore"/> fo
 to configure a {project_name} Truststore.
 
 </@tmpl.guide>
+
+=== Configuring the rfc9440 provider
+
+If you stick to the header names mentioned in RFC 9440, you do not need to configure any additional options after selecting the `rfc9440` provider.
+The default values of the options are as follows:
+
+[%autowidth]
+|===
+|Option|Default
+
+|ssl-client-cert
+| Client-Cert
+
+|ssl-cert-chain
+| Client-Cert-Chain
+
+|certificate-chain-length
+| 1
+
+|===
+
+If your certificate chain is longer than the given default, you must define the option with an appropriate number.
+Otherwise, the provider will discard the request.

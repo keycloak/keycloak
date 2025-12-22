@@ -42,7 +42,7 @@ public class FipsNonStrictTestSuite {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.FIPS).tlsEnabled(true)
+            return config.features(Profile.Feature.FIPS)
                 .option("fips-mode", "non-strict")
                 .dependency("org.bouncycastle", "bc-fips")
                 .dependency("org.bouncycastle", "bctls-fips")
@@ -55,7 +55,7 @@ public class FipsNonStrictTestSuite {
 
         @Override
         public CertificatesConfigBuilder configure(CertificatesConfigBuilder config) {
-            return config.keystoreFormat(KeystoreUtil.KeystoreFormat.PKCS12);
+            return config.tlsEnabled(true).keystoreFormat(KeystoreUtil.KeystoreFormat.PKCS12);
         }
     }
 }

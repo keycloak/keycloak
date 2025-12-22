@@ -125,6 +125,42 @@
                         </span>
                       </div>
                     </div>
+                    <div class="pf-v5-c-form__group">
+                      <div class="pf-v5-c-form__group-label">
+                        <label class="pf-v5-c-form__label" for="email">
+                          <span class="pf-v5-c-form__label-text">Email</span>
+                        </label>
+                      </div>
+                      <div class="pf-v5-c-form__group-control">
+                        <span class="pf-v5-c-form-control">
+                          <input id="email" type="email" name="email" autocomplete="email">
+                        </span>
+                      </div>
+                    </div>
+                    <div class="pf-v5-c-form__group">
+                      <div class="pf-v5-c-form__group-label">
+                        <label class="pf-v5-c-form__label" for="firstName">
+                          <span class="pf-v5-c-form__label-text">First name</span>
+                        </label>
+                      </div>
+                      <div class="pf-v5-c-form__group-control">
+                        <span class="pf-v5-c-form-control">
+                          <input id="firstName" type="text" name="firstName" autocomplete="given-name">
+                        </span>
+                      </div>
+                    </div>
+                    <div class="pf-v5-c-form__group">
+                      <div class="pf-v5-c-form__group-label">
+                        <label class="pf-v5-c-form__label" for="lastName">
+                          <span class="pf-v5-c-form__label-text">Last name</span>
+                        </label>
+                      </div>
+                      <div class="pf-v5-c-form__group-control">
+                        <span class="pf-v5-c-form-control">
+                          <input id="lastName" type="text" name="lastName" autocomplete="family-name">
+                        </span>
+                      </div>
+                    </div>
                     <input name="stateChecker" type="hidden" value="${stateChecker}">
                     <div class="pf-v5-c-form__group pf-m-action">
                       <button class="pf-v5-c-button pf-m-primary pf-m-block" type="submit">Create user</button>

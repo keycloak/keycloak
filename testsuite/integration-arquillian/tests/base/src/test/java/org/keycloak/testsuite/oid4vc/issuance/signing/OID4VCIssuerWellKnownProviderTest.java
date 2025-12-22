@@ -59,7 +59,9 @@ import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.JWTVCIssuerMetadata;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
+import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -154,9 +156,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                 assertEquals("nonce_endpoint should be correct",
                         expectedIssuer + "/protocol/oid4vc/nonce",
                         issuer.getNonceEndpoint());
-                assertEquals("deferred_credential_endpoint should be correct",
-                        expectedIssuer + "/protocol/oid4vc/deferred_credential",
-                        issuer.getDeferredCredentialEndpoint());
+                assertNull("deferred_credential_endpoint should be omitted", issuer.getDeferredCredentialEndpoint());
                 assertNotNull("authorization_servers should be present", issuer.getAuthorizationServers());
                 assertNotNull("credential_response_encryption should be present", issuer.getCredentialResponseEncryption());
                 assertNotNull("batch_credential_issuance should be present", issuer.getBatchCredentialIssuance());
@@ -216,9 +216,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                 assertEquals("nonce_endpoint should be correct",
                         expectedIssuer + "/protocol/oid4vc/nonce",
                         claims.get("nonce_endpoint"));
-                assertEquals("deferred_credential_endpoint should be correct",
-                        expectedIssuer + "/protocol/oid4vc/deferred_credential",
-                        claims.get("deferred_credential_endpoint"));
+                assertFalse("deferred_credential_endpoint should be omitted",
+                        claims.containsKey("deferred_credential_endpoint"));
                 assertNotNull("authorization_servers should be present", claims.get("authorization_servers"));
                 assertNotNull("credential_response_encryption should be present", claims.get("credential_response_encryption"));
                 assertNotNull("batch_credential_issuance should be present", claims.get("batch_credential_issuance"));
@@ -239,6 +238,57 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to process JWT metadata response: " + e.getMessage(), e);
+        }
+    }
+
+    @Test
+    public void shouldServeJwtVcMetadataAtSpecCompliantEndpoint() {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            String realm = TEST_REALM_NAME;
+            String wellKnownUri = getSpecCompliantRealmMetadataPath(realm);
+            String expectedIssuer = getRealmPath(realm);
+
+            HttpGet get = new HttpGet(wellKnownUri);
+            get.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+
+            try (CloseableHttpResponse response = httpClient.execute(get)) {
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+                String json = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+
+                JWTVCIssuerMetadata metadata = JsonSerialization.readValue(json, JWTVCIssuerMetadata.class);
+                assertNotNull(metadata);
+                assertEquals(expectedIssuer, metadata.getIssuer());
+                assertNotNull("JWKS must be present", metadata.getJwks());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to process spec-compliant JWT VC issuer metadata response: " + e.getMessage(), e);
+        }
+    }
+
+    @Test
+    public void shouldKeepLegacyJwtVcEndpointWithDeprecationHeaders() {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            String realm = TEST_REALM_NAME;
+            String wellKnownUri = getLegacyJwtVcRealmMetadataPath(realm); // legacy JWT VC path
+
+            HttpGet get = new HttpGet(wellKnownUri);
+            get.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+
+            try (CloseableHttpResponse response = httpClient.execute(get)) {
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+                Header warning = response.getFirstHeader("Warning");
+                Header deprecation = response.getFirstHeader("Deprecation");
+                Header link = response.getFirstHeader("Link");
+                assertNotNull("Warning header should be present", warning);
+                assertTrue("Warning header should mention deprecated endpoint", warning.getValue().contains("Deprecated endpoint"));
+                assertNotNull("Deprecation header should be present", deprecation);
+                assertEquals("true", deprecation.getValue());
+                assertNotNull("Link header should point to successor", link);
+                assertTrue("Link header should reference spec-compliant endpoint",
+                        link.getValue().contains(getSpecCompliantRealmMetadataPath(realm)));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to process legacy JWT VC issuer metadata response: " + e.getMessage(), e);
         }
     }
 
@@ -536,9 +586,15 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                 Matchers.containsInAnyOrder(credentialDefinitionTypes.toArray()));
 
         List<String> signingAlgsSupported = new ArrayList<>(supportedConfig.getCredentialSigningAlgValuesSupported());
-        String proofTypesSupportedString = supportedConfig.getProofTypesSupported().toJsonString();
+        ProofTypesSupported proofTypesSupported = supportedConfig.getProofTypesSupported();
+        String proofTypesSupportedString = proofTypesSupported.toJsonString();
 
-        KeyAttestationsRequired expectedKeyAttestationsRequired = null;
+        MatcherAssert.assertThat(proofTypesSupported.getSupportedProofTypes().keySet(),
+                Matchers.containsInAnyOrder(ProofType.JWT, ProofType.ATTESTATION));
+
+        List<String> expectedProofSigningAlgs = getAllAsymmetricAlgorithms();
+
+        KeyAttestationsRequired expectedKeyAttestationsRequired;
         if (Boolean.parseBoolean(clientScope.getAttributes().get(CredentialScopeModel.KEY_ATTESTATION_REQUIRED))) {
             expectedKeyAttestationsRequired = new KeyAttestationsRequired();
             expectedKeyAttestationsRequired.setKeyStorage(
@@ -551,30 +607,51 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                                                .get(CredentialScopeModel.KEY_ATTESTATION_REQUIRED_USER_AUTH))
                         .map(s -> Arrays.asList(s.split(",")))
                         .orElse(null));
+        } else {
+            expectedKeyAttestationsRequired = null;
         }
         String expectedKeyAttestationsRequiredString = toJsonString(expectedKeyAttestationsRequired);
 
+        proofTypesSupported.getSupportedProofTypes().values()
+                .forEach(proofTypeData -> {
+                    assertEquals(expectedKeyAttestationsRequired, proofTypeData.getKeyAttestationsRequired());
+                    MatcherAssert.assertThat(proofTypeData.getSigningAlgorithmsSupported(),
+                            Matchers.containsInAnyOrder(expectedProofSigningAlgs.toArray()));
+                });
+
         try {
             withCausePropagation(() -> testingClient.server(TEST_REALM_NAME).run((session -> {
-                KeyAttestationsRequired keyAttestationsRequired = //
-                    Optional.ofNullable(expectedKeyAttestationsRequiredString)
-                            .map(s -> fromJsonString(s, KeyAttestationsRequired.class))
-                            .orElse(null);
-                ProofTypesSupported expectedProofTypesSupported = ProofTypesSupported.parse(session,
-                                                                                            keyAttestationsRequired,
-                                                                                            List.of(Algorithm.RS256));
-                assertEquals(expectedProofTypesSupported,
-                        ProofTypesSupported.fromJsonString(proofTypesSupportedString));
+                ProofTypesSupported actualProofTypesSupported = ProofTypesSupported.fromJsonString(proofTypesSupportedString);
+                List<String> actualProofSigningAlgs = actualProofTypesSupported
+                        .getSupportedProofTypes()
+                        .get(ProofType.JWT)
+                        .getSigningAlgorithmsSupported();
 
-                List<String> expectedSigningAlgs = OID4VCIssuerWellKnownProvider.getSupportedSignatureAlgorithms(session);
+                KeyAttestationsRequired keyAttestationsRequired = //
+                        Optional.ofNullable(expectedKeyAttestationsRequiredString)
+                                .map(s -> fromJsonString(s, KeyAttestationsRequired.class))
+                                .orElse(null);
+
+                ProofTypesSupported expectedProofTypesSupported = ProofTypesSupported.parse(
+                        session, keyAttestationsRequired, actualProofSigningAlgs);
+                assertEquals(expectedProofTypesSupported, actualProofTypesSupported);
+
                 MatcherAssert.assertThat(signingAlgsSupported,
-                        Matchers.containsInAnyOrder(expectedSigningAlgs.toArray()));
+                        Matchers.containsInAnyOrder(getAllAsymmetricAlgorithms().toArray()));
             })));
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
 
         compareClaims(expectedFormat, supportedConfig.getCredentialMetadata().getClaims(), clientScope.getProtocolMappers());
+    }
+
+    private static List<String> getAllAsymmetricAlgorithms() {
+        return List.of(
+                Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
+                Algorithm.RS256, Algorithm.RS384, Algorithm.RS512,
+                Algorithm.ES256, Algorithm.ES384, Algorithm.ES512,
+                Algorithm.EdDSA);
     }
 
     private void compareDisplay(SupportedCredentialConfiguration supportedConfig, ClientScopeRepresentation clientScope) {
@@ -674,7 +751,6 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
     public static void testCredentialConfig(SuiteContext suiteContext, KeycloakTestingClient testingClient) {
         String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
         String expectedCredentialsEndpoint = expectedIssuer + "/protocol/oid4vc/credential";
-        String expectedDeferredEndpoint = expectedIssuer + "/protocol/oid4vc/deferred_credential";
         final String expectedAuthorizationServer = expectedIssuer;
         testingClient
                 .server(TEST_REALM_NAME)
@@ -683,7 +759,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                     CredentialIssuer credentialIssuer = oid4VCIssuerWellKnownProvider.getIssuerMetadata();
                     assertEquals("The correct issuer should be included.", expectedIssuer, credentialIssuer.getCredentialIssuer());
                     assertEquals("The correct credentials endpoint should be included.", expectedCredentialsEndpoint, credentialIssuer.getCredentialEndpoint());
-                    assertEquals("The correct deferred_credential_endpoint should be included.", expectedDeferredEndpoint, credentialIssuer.getDeferredCredentialEndpoint());
+                    assertNull("deferred_credential_endpoint should be omitted.", credentialIssuer.getDeferredCredentialEndpoint());
                     assertEquals("Since the authorization server is equal to the issuer, just 1 should be returned.", 1, credentialIssuer.getAuthorizationServers().size());
                     assertEquals("The expected server should have been returned.", expectedAuthorizationServer, credentialIssuer.getAuthorizationServers().get(0));
                     assertTrue("The test-credential should be supported.", credentialIssuer.getCredentialsSupported().containsKey("test-credential"));
@@ -768,8 +844,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                         expectedIssuer + "/protocol/oid4vc/credential", issuer.getCredentialEndpoint());
                 assertEquals("nonce_endpoint should be correct",
                         expectedIssuer + "/protocol/oid4vc/nonce", issuer.getNonceEndpoint());
-                assertEquals("deferred_credential_endpoint should be correct",
-                        expectedIssuer + "/protocol/oid4vc/deferred_credential", issuer.getDeferredCredentialEndpoint());
+                assertNull("deferred_credential_endpoint should be omitted",
+                        issuer.getDeferredCredentialEndpoint());
 
                 assertNotNull("authorization_servers should be present", issuer.getAuthorizationServers());
                 assertNotNull("credential_response_encryption should be present", issuer.getCredentialResponseEncryption());

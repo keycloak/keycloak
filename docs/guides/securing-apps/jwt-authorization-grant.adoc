@@ -58,6 +58,7 @@ The Identity Provider (both types commented in the introduction) needs to also b
   * **Max allowed assertion expiration**: The maximum expiration the server will allow in the assertion. Default 5 minutes.
   * **Assertion signature algorithm**: The signature algorithm that is valid for assertions. If not specified any signature is valid.
   * **Allowed clock skew**: Clock skew in seconds that is tolerated when validating identity provider tokens. Default value is zero.
+  * **Limit access token expiration**: If enabled the access token lifespan will be limited to the expiration of the JWT assertion but only if the JWT assertion expiration is less than the calculated access token expiration.
 
 .OIDC Identity Provider configuration for JWT Authorization Grant
 image::jwt-authorization-grant-oidc-provider-config.png[Identity Provider configuration for JWT Authorization Grant]

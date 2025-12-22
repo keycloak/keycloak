@@ -43,7 +43,12 @@ public class OID4VCJwtAuthorizationCodeFlowTest extends OID4VCAuthorizationCodeF
 
     @Override
     protected String getExpectedClaimPath() {
-        return "given_name";
+        return "family_name";
+    }
+
+    @Override
+    protected String getFirstNameProtocolMapperName() {
+        return "givenName";
     }
 
     @Override

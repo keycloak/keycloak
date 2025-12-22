@@ -11,11 +11,12 @@ public class RunOnServerRealmResourceProviderFactory implements RealmResourcePro
 
     private static final String ID = "testing-run-on-server";
 
+    private String executionId;
     private ClassLoader testClassLoader;
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
-        return new RunOnServerRealmResourceProvider(session, testClassLoader);
+        return new RunOnServerRealmResourceProvider(session, this);
     }
 
     @Override
@@ -29,6 +30,18 @@ public class RunOnServerRealmResourceProviderFactory implements RealmResourcePro
     @Override
     public String getId() {
         return ID;
+    }
+
+    public ClassLoader getTestClassLoader(String executionId) {
+        if (!executionId.equals(this.executionId)) {
+            try {
+                testClassLoader = new TestClassLoader();
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
+            this.executionId = executionId;
+        }
+        return testClassLoader;
     }
 
     @Override

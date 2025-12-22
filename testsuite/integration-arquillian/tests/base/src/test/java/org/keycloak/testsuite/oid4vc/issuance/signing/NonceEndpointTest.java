@@ -73,7 +73,7 @@ public class NonceEndpointTest extends OID4VCIssuerEndpointTest {
         String cNonce = getCNonce();
 
         // Verify CREDENTIAL_NONCE_REQUEST event was fired (unauthenticated endpoint)
-        events.expect(EventType.CREDENTIAL_NONCE_REQUEST)
+        events.expect(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST)
                 .client((String) null)
                 .user((String) null)
                 .session((String) null)
@@ -131,7 +131,7 @@ public class NonceEndpointTest extends OID4VCIssuerEndpointTest {
 
             try (Response response = requestBuilder.post(null)) {
                 // Verify CREDENTIAL_NONCE_REQUEST event was fired (unauthenticated endpoint)
-                events.expect(EventType.CREDENTIAL_NONCE_REQUEST)
+                events.expect(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST)
                         .client((String) null)
                         .user((String) null)
                         .session((String) null)

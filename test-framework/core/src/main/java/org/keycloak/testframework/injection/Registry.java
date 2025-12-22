@@ -2,6 +2,7 @@ package org.keycloak.testframework.injection;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -9,7 +10,17 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.keycloak.testframework.TestFrameworkExecutor;
+import org.keycloak.testframework.injection.predicates.DependencyPredicates;
+import org.keycloak.testframework.injection.predicates.InstanceContextPredicates;
+import org.keycloak.testframework.injection.predicates.RequestedInstancePredicates;
+import org.keycloak.testframework.injection.predicates.TestFrameworkExecutorPredicates;
+import org.keycloak.testframework.server.KeycloakServer;
+
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.InvocationInterceptor;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class Registry implements ExtensionContext.Store.CloseableResource {
@@ -30,6 +41,10 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         return logger;
     }
 
+    Extensions getExtensions() {
+        return extensions;
+    }
+
     public ExtensionContext getCurrentContext() {
         return currentContext;
     }
@@ -40,6 +55,12 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
 
     public <T> T getDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
         ref = StringUtil.convertEmptyToNull(ref);
+
+        List<Dependency> declaredDependencies = dependent.getDeclaredDependencies();
+        if (declaredDependencies.stream().noneMatch(DependencyPredicates.matches(typeClass, ref))) {
+            throw new RuntimeException("Tried to retrieve non-declared dependency " + typeClass.getSimpleName() + ":" + ref);
+        }
+
         T dependency;
         dependency = getDeployedDependency(typeClass, ref, dependent);
         if (dependency != null) {
@@ -48,11 +69,6 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             dependency = getRequestedDependency(typeClass, ref, dependent);
             if (dependency != null) {
                 return dependency;
-            } else {
-                dependency = getUnConfiguredDependency(typeClass, ref, dependent);
-                if (dependency != null) {
-                    return dependency;
-                }
             }
         }
 
@@ -70,7 +86,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     private <T> T getDeployedDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
         InstanceContext dependency = getDeployedInstance(typeClass, ref);
         if (dependency != null) {
-            dependency.registerDependency(dependent);
+            dependency.registerDependent(dependent);
 
             logger.logDependencyInjection(dependent, dependency, RegistryLogger.InjectionType.EXISTING);
 
@@ -82,9 +98,9 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     private <T> T getRequestedDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
         RequestedInstance requestedDependency = getRequestedInstance(typeClass, ref);
         if (requestedDependency != null) {
-            InstanceContext dependency = new InstanceContext<Object, Annotation>(requestedDependency.getInstanceId(), this, requestedDependency.getSupplier(), requestedDependency.getAnnotation(), requestedDependency.getValueType());
+            InstanceContext dependency = new InstanceContext<Object, Annotation>(requestedDependency.getInstanceId(), this, requestedDependency.getSupplier(), requestedDependency.getAnnotation(), requestedDependency.getValueType(), requestedDependency.getDeclaredDependencies());
             dependency.setValue(requestedDependency.getSupplier().getValue(dependency));
-            dependency.registerDependency(dependent);
+            dependency.registerDependent(dependent);
             deployedInstances.add(dependency);
 
             requestedInstances.remove(requestedDependency);
@@ -96,24 +112,8 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         return null;
     }
 
-    private <T> T getUnConfiguredDependency(Class<T> typeClass, String ref, InstanceContext dependent) {
-        InstanceContext dependency;
-        Supplier<?, ?> supplier = extensions.findSupplierByType(typeClass);
-        Annotation defaultAnnotation = DefaultAnnotationProxy.proxy(supplier.getAnnotationClass(), ref);
-        dependency = new InstanceContext(-1, this, supplier, defaultAnnotation, typeClass);
-
-        dependency.registerDependency(dependent);
-        dependency.setValue(supplier.getValue(dependency));
-
-        deployedInstances.add(dependency);
-
-        logger.logDependencyInjection(dependent, dependency, RegistryLogger.InjectionType.UN_CONFIGURED);
-
-        return (T) dependency.getValue();
-    }
-
-    public void beforeEach(Object testInstance) {
-        findRequestedInstances(testInstance);
+    public void beforeEach(Object testInstance, Method testMethod) {
+        findRequestedInstances(testInstance, testMethod);
         destroyIncompatibleInstances();
         matchDeployedInstancesWithRequestedInstances();
         deployRequestedInstances();
@@ -121,7 +121,27 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         invokeBeforeEachOnSuppliers();
     }
 
-    private void findRequestedInstances(Object testInstance) {
+    public void intercept(InvocationInterceptor.Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext) throws Throwable {
+        Class<?> testClass = invocationContext.getTargetClass();
+        Method testMethod = invocationContext.getExecutable();
+
+        TestFrameworkExecutor testFrameworkExecutor = getExecutor(testMethod);
+        if (testFrameworkExecutor != null) {
+            testFrameworkExecutor.execute(this, testClass, testMethod);
+            invocation.skip();
+        } else {
+            invocation.proceed();
+        }
+    }
+
+    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
+        Method testMethod = (Method) parameterContext.getParameter().getDeclaringExecutable();
+        Class<?> parameterType = parameterContext.getParameter().getType();
+        TestFrameworkExecutor testFrameworkExecutor = getExecutor(testMethod);
+        return testFrameworkExecutor != null && testFrameworkExecutor.supportsParameter(testMethod, parameterType);
+    }
+
+    private void findRequestedInstances(Object testInstance, Method testMethod) {
         List<Class<?>> alwaysEnabledValueTypes = extensions.getAlwaysEnabledValueTypes();
         for (Class<?> valueType : alwaysEnabledValueTypes) {
             RequestedInstance requestedInstance = createRequestedInstance(null, valueType);
@@ -130,8 +150,16 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             }
         }
 
+        List<Class<?>> methodValueTypes = extensions.getMethodValueTypes(testMethod);
+        for (Class<?> valueType : methodValueTypes) {
+            RequestedInstance requestedInstance = createRequestedInstance(null, valueType);
+            if (requestedInstance != null) {
+                requestedInstances.add(requestedInstance);
+            }
+        }
+
         Class testClass = testInstance.getClass();
-        RequestedInstance requestedServerInstance = createRequestedInstance(testClass.getAnnotations(), null);
+        RequestedInstance requestedServerInstance = createRequestedInstance(testClass.getAnnotations(), KeycloakServer.class);
         if (requestedServerInstance != null) {
             requestedInstances.add(requestedServerInstance);
         }
@@ -142,6 +170,10 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
                 requestedInstances.add(requestedInstance);
             }
         }
+
+        DependencyGraphResolver dependencyGraphResolver = new DependencyGraphResolver(this);
+        List<RequestedInstance<?, ?>> missingInstances = dependencyGraphResolver.getMissingInstances();
+        requestedInstances.addAll(missingInstances);
 
         logger.logRequestedInstances(requestedInstances);
     }
@@ -179,13 +211,13 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             RequestedInstance requestedInstance = requestedInstances.remove(0);
 
             if (getDeployedInstance(requestedInstance) == null) {
-                InstanceContext instance = new InstanceContext(requestedInstance.getInstanceId(), this, requestedInstance.getSupplier(), requestedInstance.getAnnotation(), requestedInstance.getValueType());
+                InstanceContext instance = new InstanceContext(requestedInstance.getInstanceId(), this, requestedInstance.getSupplier(), requestedInstance.getAnnotation(), requestedInstance.getValueType(), requestedInstance.getDeclaredDependencies());
                 instance.setValue(requestedInstance.getSupplier().getValue(instance));
                 deployedInstances.add(instance);
 
-                if (!requestedInstance.getDependencies().isEmpty()) {
-                    Set<InstanceContext<?,?>> dependencies = requestedInstance.getDependencies();
-                    dependencies.forEach(instance::registerDependency);
+                if (!requestedInstance.getDependents().isEmpty()) {
+                    Set<InstanceContext<?,?>> dependencies = requestedInstance.getDependents();
+                    dependencies.forEach(instance::registerDependent);
                 }
 
                 logger.logCreatedInstance(requestedInstance, instance);
@@ -205,16 +237,16 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
 
     public void afterAll() {
         logger.logAfterAll();
-        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.CLASS)).toList();
+        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(InstanceContextPredicates.hasLifeCycle(LifeCycle.CLASS)).toList();
         destroy.forEach(this::destroy);
     }
 
     public void afterEach() {
         logger.logAfterEach();
-        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(i -> i.getLifeCycle().equals(LifeCycle.METHOD)).toList();
+        List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(InstanceContextPredicates.hasLifeCycle(LifeCycle.METHOD)).toList();
         destroy.forEach(this::destroy);
 
-        List<InstanceContext<?, ?>> cleanup = deployedInstances.stream().filter(i -> i.getValue() instanceof ManagedTestResource).toList();
+        List<InstanceContext<?, ?>> cleanup = deployedInstances.stream().filter(InstanceContextPredicates.isInstanceof(ManagedTestResource.class)).toList();
         for (InstanceContext<?, ?> c : cleanup) {
             ManagedTestResource managedTestResource = (ManagedTestResource) c.getValue();
             if (managedTestResource.isDirty()) {
@@ -237,7 +269,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         return extensions.getSuppliers();
     }
 
-    private RequestedInstance<?, ?> createRequestedInstance(Annotation[] annotations, Class<?> valueType) {
+    RequestedInstance<?, ?> createRequestedInstance(Annotation[] annotations, Class<?> valueType) {
         if (annotations != null) {
             for (Annotation annotation : annotations) {
                 Supplier<?, ?> supplier = extensions.findSupplierByAnnotation(annotation);
@@ -248,7 +280,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         } else {
             Supplier<?, ?> supplier = extensions.findSupplierByType(valueType);
             if (supplier != null) {
-                Annotation defaultAnnotation = DefaultAnnotationProxy.proxy(supplier.getAnnotationClass(), "");
+                Annotation defaultAnnotation = DefaultAnnotationProxy.proxy(supplier.getAnnotationClass(), null);
                 return new RequestedInstance(supplier, defaultAnnotation, valueType);
             }
         }
@@ -272,7 +304,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     private void destroy(InstanceContext instanceContext) {
         boolean removed = deployedInstances.remove(instanceContext);
         if (removed) {
-            Set<InstanceContext> dependencies = instanceContext.getDependencies();
+            Set<InstanceContext> dependencies = instanceContext.getDependents();
             dependencies.forEach(this::destroy);
             instanceContext.getSupplier().close(instanceContext);
 
@@ -301,13 +333,13 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
 
     private InstanceContext getDeployedInstance(Class typeClass, String ref) {
         return deployedInstances.stream()
-                .filter(i -> i.getSupplier().getValueType().equals(typeClass) && Objects.equals(i.getRef(), ref))
+                .filter(InstanceContextPredicates.matches(typeClass, ref))
                 .findFirst().orElse(null);
     }
 
     private RequestedInstance getRequestedInstance(Class typeClass, String ref) {
         return requestedInstances.stream()
-                .filter(i -> i.getSupplier().getValueType().equals(typeClass) && Objects.equals(i.getRef(), ref))
+                .filter(RequestedInstancePredicates.matches(typeClass, ref))
                 .findFirst().orElse(null);
     }
 
@@ -315,6 +347,10 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         for (InstanceContext i : deployedInstances) {
             i.getSupplier().onBeforeEach(i);
         }
+    }
+
+    private TestFrameworkExecutor getExecutor(Method testMethod) {
+        return extensions.getTestFrameworkExecutors().stream().filter(TestFrameworkExecutorPredicates.shouldExecute(testMethod)).findFirst().orElse(null);
     }
 
     private static class RequestedInstanceComparator implements Comparator<RequestedInstance> {

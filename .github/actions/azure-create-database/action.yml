@@ -8,9 +8,6 @@ inputs:
   region:
     description: 'The Azure region used to host the SQL server'
     required: true
-  azure-credentials:
-    description: 'Azure service principal credentials JSON'
-    required: true
   admin-user:
     description: 'The admin username for the SQL server'
     required: false

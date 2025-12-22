@@ -323,12 +323,12 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
      * @return the authorization details response if generation was successful, null otherwise
      */
     private List<AuthorizationDetailsResponse> generateAuthorizationDetailsFromCredentialOffer(AuthenticatedClientSessionModel clientSession) {
-        logger.info("Processing authorization_details from credential offer");
+        logger.debug("Processing authorization_details from credential offer");
 
         // Get supported credentials
         Map<String, SupportedCredentialConfiguration> supportedCredentials = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
         if (supportedCredentials == null || supportedCredentials.isEmpty()) {
-            logger.info("No supported credentials found, cannot generate authorization_details from credential offer");
+            logger.debug("No supported credentials found, cannot generate authorization_details from credential offer");
             return null;
         }
 
@@ -336,7 +336,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         List<String> credentialConfigurationIds = extractCredentialConfigurationIds(clientSession);
 
         if (credentialConfigurationIds == null || credentialConfigurationIds.isEmpty()) {
-            logger.info("No credential_configuration_ids found in credential offer, cannot generate authorization_details");
+            logger.debug("No credential_configuration_ids found in credential offer, cannot generate authorization_details");
             return null;
         }
 

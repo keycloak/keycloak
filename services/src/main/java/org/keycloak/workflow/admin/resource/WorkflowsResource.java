@@ -23,11 +23,20 @@ import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class WorkflowsResource {
 
     private final KeycloakSession session;
@@ -45,6 +54,15 @@ public class WorkflowsResource {
 
     @POST
     @Consumes({YAMLMediaTypes.APPLICATION_JACKSON_YAML, MediaType.APPLICATION_JSON})
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.WORKFLOWS)
+    @Operation(
+            summary = "Create workflow",
+            description = "Create a new workflow from the provided representation."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "201", description = "Created"),
+            @APIResponse(responseCode = "400", description = "Bad Request")
+    })
     public Response create(WorkflowRepresentation rep) {
         auth.realm().requireManageRealm();
 
@@ -57,7 +75,19 @@ public class WorkflowsResource {
     }
 
     @Path("{id}")
-    public WorkflowResource get(@PathParam("id") String id) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.WORKFLOWS)
+    @Operation(
+            summary = "Get workflow sub-resource",
+            description = "Locate the workflow sub-resource for the given identifier."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "Workflow sub-resource located"),
+            @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public WorkflowResource get(
+            @Parameter(description = "Workflow identifier")
+            @PathParam("id") String id
+    ) {
         auth.realm().requireManageRealm();
 
         Workflow workflow = provider.getWorkflow(id);
@@ -71,11 +101,24 @@ public class WorkflowsResource {
 
     @GET
     @Produces({YAMLMediaTypes.APPLICATION_JACKSON_YAML, MediaType.APPLICATION_JSON})
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.WORKFLOWS)
+    @Operation(
+            summary = "List workflows",
+            description = "List workflows filtered by name and paginated using first and max parameters."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = WorkflowRepresentation.class))),
+            @APIResponse(responseCode = "400", description = "Bad Request")
+    })
     public List<WorkflowRepresentation> list(
-            @Parameter(description = "A String representing the workflow name - either partial or exact") @QueryParam("search") String search,
-            @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
-            @Parameter(description = "The position of the first result to be processed (pagination offset)") @QueryParam("first") @DefaultValue("0") Integer firstResult,
-            @Parameter(description = "The maximum number of results to be returned - defaults to 10") @QueryParam("max") @DefaultValue("10") Integer maxResults
+            @Parameter(description = "A String representing the workflow name - either partial or exact")
+            @QueryParam("search") String search,
+            @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not")
+            @QueryParam("exact") Boolean exact,
+            @Parameter(description = "The position of the first result to be processed (pagination offset)")
+            @QueryParam("first") @DefaultValue("0") Integer firstResult,
+            @Parameter(description = "The maximum number of results to be returned - defaults to 10")
+            @QueryParam("max") @DefaultValue("10") Integer maxResults
     ) {
         auth.realm().requireManageRealm();
 
@@ -87,7 +130,17 @@ public class WorkflowsResource {
     @Path("scheduled/{resource-id}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.WORKFLOWS)
+    @Operation(
+            summary = "List scheduled workflows for resource",
+            description = "Return workflows that have scheduled steps for the given resource identifier."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = WorkflowRepresentation.class))),
+            @APIResponse(responseCode = "400", description = "Bad Request")
+    })
     public List<WorkflowRepresentation> getScheduledSteps(
+            @Parameter(description = "Identifier of the resource associated with the scheduled workflows")
             @PathParam("resource-id") String resourceId
     ) {
         auth.realm().requireManageRealm();

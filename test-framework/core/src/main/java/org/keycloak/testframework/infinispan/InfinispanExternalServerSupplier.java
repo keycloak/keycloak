@@ -34,7 +34,7 @@ public class InfinispanExternalServerSupplier implements Supplier<InfinispanServ
 
     @Override
     public boolean compatible(InstanceContext<InfinispanServer, InjectInfinispanServer> a, RequestedInstance<InfinispanServer, InjectInfinispanServer> b) {
-        return a.getSupplier().getRef(a.getAnnotation()).equals(b.getSupplier().getRef(a.getAnnotation()));
+        return true;
     }
 
     @Override

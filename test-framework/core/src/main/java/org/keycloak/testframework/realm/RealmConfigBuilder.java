@@ -37,6 +37,11 @@ public class RealmConfigBuilder {
         return new RealmConfigBuilder(rep);
     }
 
+    public RealmConfigBuilder id(String id) {
+        rep.setId(id);
+        return this;
+    }
+
     public RealmConfigBuilder name(String name) {
         rep.setRealm(name);
         return this;

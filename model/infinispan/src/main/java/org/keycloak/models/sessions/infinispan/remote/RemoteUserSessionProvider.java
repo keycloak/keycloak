@@ -168,7 +168,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
 
     @Override
     public Map<String, Long> getActiveClientSessionStats(RealmModel realm, boolean offline) {
-        var query = ClientSessionQueries.activeClientCount(getClientSessionTransaction(offline).getCache());
+        var query = ClientSessionQueries.activeClientCount(getClientSessionTransaction(offline).getCache(), realm.getId());
         return QueryHelper.streamAll(query, batchSize, QueryHelper.PROJECTION_TO_STRING_LONG_ENTRY)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }

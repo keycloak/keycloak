@@ -19,6 +19,10 @@ Read on to learn more about each new feature. If you are upgrading from a previo
 
 The client logout configuration now includes an option to show a logout confirmation page. When enabled, users will see a "`You are logged out`" confirmation page upon successful logout.
 
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/slaskawi[Sebastian Łaskawiec] for the contribution.
+endif::[]
+
 == CORS enhancements
 // https://github.com/keycloak/keycloak/pull/43767
 // https://github.com/keycloak/keycloak/issues/8863
@@ -113,6 +117,16 @@ endif::[]
 
 For more details, see the https://www.keycloak.org/server/configuration-production[Configuring Keycloak for production] guide.
 
+== Ability to configure retry behavior for outgoing HTTP requests
+
+{project_name} has now more flexibility how to configure retrying of outgoing HTTP requests. This is useful for handling transient network errors or temporary unavailability
+of the service where {project_name} needs to send HTTP request. Retry behavior is disabled by default and must be explicitly enabled.
+More details are available in the link:{server_guide_base_link}/outgoinghttp[Outgoing HTTP requests documentation].
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/chance-coleman[Chance Coleman] for the contribution.
+endif::[]
+
 == Enable/disable features via a single option
 
 You can now enable or disable individual features using the `feature-<name>` option (like `feature-spiffe=enabled`).
@@ -122,6 +136,20 @@ This provides a more fine-grained way to manage features and eliminates the need
 The `feature-<name>` option takes precedence over both `features` and `features-disabled`.
 
 For more details, see the https://www.keycloak.org/server/features[Enabling and disabling features] guide.
+
+== Client certificate lookup compliant with RFC 9440
+
+You can now use a new client certificate lookup provider that is compliant with https://datatracker.ietf.org/doc/html/rfc9440[RFC 9440].
+This enables native support e.g. for Caddy and other reverse proxies that follow the RFC.
+For details, navigate to link:{server_guide_base_link}/reverseproxy#_enabling_client_certificate_lookup[Enabling Client Certificate Lookup] section of the documentation.
+
+== Running Keycloak as a Windows service
+
+{project_name} can now be installed and run as a Windows service using Apache Commons Daemon (Procrun). The new `tools windows-service` CLI subcommand simplifies service installation and uninstallation.
+
+The service runs `kc.bat start` as an external process, ensuring all environment variables and configuration files are respected. This provides seamless integration with the Windows Services management console and enables automatic startup on system boot without requiring a user to be logged on.
+
+For more information, see the https://www.keycloak.org/server/windows-service[Running Keycloak as a Windows Service] guide.
 
 = Observability
 
@@ -156,6 +184,13 @@ For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guid
 == OpenTelemetry Logs (preview)
 
 {project_name} now supports exporting logs to OpenTelemetry collectors, enabling centralized log management.
-This preview feature allows you to export {project_name} logs to any OpenTelemetry-compatible backend and use the same OpenTelemetry collector for logs and traces.
+This preview feature allows you to export {project_name} logs to any OpenTelemetry-compatible backend and use the same OpenTelemetry collector for logs, metrics and traces.
+
+For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+== OpenTelemetry Metrics (experimental)
+
+{project_name} now provides the experimental support for exporting metrics to OpenTelemetry collectors by using the https://quarkus.io/guides/telemetry-micrometer-to-opentelemetry[Micrometer-to-OpenTelemetry bridge].
+This experimental feature allows you to export {project_name} metrics to any OpenTelemetry-compatible backend and use the same OpenTelemetry collector for logs, metrics and traces.
 
 For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.

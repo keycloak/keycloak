@@ -1,0 +1,20 @@
+[role="_abstract"]
+{project_name} Workflows is a powerful engine to automate and orchestrate realm administrative tasks, bringing key
+capabilities of Identity Governance and Administration (IGA) to your identity and access management infrastructure.
+By using workflows, you can implement policies and processes that govern the lifecycle of realm resources, such as users and clients,
+helping you to improve security, meet compliance requirements, and reduce administrative costs.
+
+As a core component of IGA, identity lifecycle management is fully supported by workflows so that you can easily automate
+onboarding and offboarding processes, and other recurring administrative tasks. For example, you can define workflows to:
+
+* Provision and de-provision realm resources, such as users, automatically based on specific events or conditions.
+* Automate Joiner-Mover-Leaver (JML) processes to ensure that users are granted the appropriate access rights based on their roles and responsibilities.
+* Enforce access reviews and certifications to ensure that users have the appropriate access rights.
+* Enforce Just-In-Time and Least Privilege access by automating role assignments and revocations.
+* Enforce strong authentication policies for realm users.
+* Prevent insider data breaches by automating the removal of inactive or obsolete users.
+
+By leveraging workflows, realm administrators can ensure that security policies are consistently enforced and based on
+the least privilege principle, reduce the risk of human error, and free up valuable time to focus on other important administrative tasks.
+This guide will walk you through the process of creating and managing workflows to automate your administrative tasks
+and implement IGA best practices when managing realms.
