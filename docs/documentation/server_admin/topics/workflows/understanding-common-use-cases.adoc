@@ -12,13 +12,13 @@ When a new user is created, a workflow can automatically send a welcome email, a
 
 ```yaml
 name: Onboarding gold members
-on: user_created
+on: user-created
 if: has-user-attribute('membership','gold')
 steps:
   - uses: notify-user
     with:
       message: "Welcome to the Gold Membership program!"
-  - uses: assign-user-role
+  - uses: grant-role
     with:
       role: gold-member
 ```
