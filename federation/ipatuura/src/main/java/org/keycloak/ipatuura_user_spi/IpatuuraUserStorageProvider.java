@@ -284,7 +284,7 @@ public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLoo
 
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult,
-            Integer maxResults) {
+            Integer maxResults, String sortBy) {
         String search = params.get(UserModel.SEARCH);
         /* only supports searching by username */
         if (search == null)
