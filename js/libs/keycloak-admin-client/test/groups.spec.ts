@@ -39,6 +39,17 @@ describe("Groups", () => {
     expect(group).to.be.null;
   });
 
+  it("create group with attributes", async () => {
+    const group = await kcAdminClient.groups.create({
+      name: "basic-group",
+      attributes: {
+        accessLevel: ["internal"],
+        project: ["alpha"],
+      },
+    });
+    expect(group.id).to.be.ok;
+  });
+
   it("list groups", async () => {
     const groups = await kcAdminClient.groups.find();
     expect(groups).to.be.ok;
@@ -46,7 +57,7 @@ describe("Groups", () => {
 
   it("count groups", async () => {
     const result = await kcAdminClient.groups.count();
-    expect(result.count).to.eq(1);
+    expect(result.count).to.eq(2);
   });
 
   it("count groups with filter", async () => {
