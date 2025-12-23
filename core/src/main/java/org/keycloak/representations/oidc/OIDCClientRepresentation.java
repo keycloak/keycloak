@@ -115,9 +115,9 @@ public class OIDCClientRepresentation {
     private String software_version;
 
     // OIDC Dynamic Client Registration Response
-    private Integer client_id_issued_at;
+    private Long client_id_issued_at;
 
-    private Integer client_secret_expires_at;
+    private Long client_secret_expires_at;
 
     private String registration_client_uri;
 
@@ -438,19 +438,19 @@ public class OIDCClientRepresentation {
         this.software_version = softwareVersion;
     }
 
-    public Integer getClientIdIssuedAt() {
+    public Long getClientIdIssuedAt() {
         return client_id_issued_at;
     }
 
-    public void setClientIdIssuedAt(Integer clientIdIssuedAt) {
+    public void setClientIdIssuedAt(Long clientIdIssuedAt) {
         this.client_id_issued_at = clientIdIssuedAt;
     }
 
-    public Integer getClientSecretExpiresAt() {
+    public Long getClientSecretExpiresAt() {
         return client_secret_expires_at;
     }
 
-    public void setClientSecretExpiresAt(Integer client_secret_expires_at) {
+    public void setClientSecretExpiresAt(Long client_secret_expires_at) {
         this.client_secret_expires_at = client_secret_expires_at;
     }
 
