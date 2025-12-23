@@ -38,6 +38,7 @@ import org.keycloak.protocol.AbstractLoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
+import org.keycloak.protocol.saml.mappers.AuthnContextClassRefMapper;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
 import org.keycloak.representations.idm.CertificateRepresentation;
@@ -54,6 +55,7 @@ import org.keycloak.saml.validators.DestinationValidator;
 public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
 
     public static final String SCOPE_ROLE_LIST = "role_list";
+    public static final String SCOPE_AUTHN_CONTEXT_CLASS_REF = "AuthnContextClassRef";
     private static final String ROLE_LIST_CONSENT_TEXT = "${samlRoleListScopeConsentText}";
 
     private DestinationValidator destinationValidator;
@@ -97,6 +99,11 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
         model = RoleListMapper.create("role list", "Role", AttributeStatementHelper.BASIC, null, false);
         builtins.put("role list", model);
         defaultBuiltins.add(model);
+        if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION_SAML)) {
+            model = AuthnContextClassRefMapper.create(SCOPE_AUTHN_CONTEXT_CLASS_REF);
+            builtins.put(SCOPE_AUTHN_CONTEXT_CLASS_REF, model);
+            defaultBuiltins.add(model);
+        }
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
             model = OrganizationMembershipMapper.create();
             builtins.put("organization", model);
@@ -127,6 +134,15 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
         roleListScope.setProtocol(getId());
         roleListScope.addProtocolMapper(builtins.get("role list"));
         newRealm.addDefaultClientScope(roleListScope, true);
+
+        if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION_SAML)) {
+            ClientScopeModel authnContextClassRefScope = newRealm.addClientScope(SCOPE_AUTHN_CONTEXT_CLASS_REF);
+            authnContextClassRefScope.setDescription("AuthnContextClassRef Level of Authentiation");
+            authnContextClassRefScope.setProtocol(getId());
+            authnContextClassRefScope.addProtocolMapper(builtins.get(SCOPE_AUTHN_CONTEXT_CLASS_REF));
+            newRealm.addDefaultClientScope(authnContextClassRefScope, true);
+        }
+
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
             ClientScopeModel organizationScope = newRealm.addClientScope("saml_organization");
             organizationScope.setDescription("Organization Membership");
