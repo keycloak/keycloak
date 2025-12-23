@@ -9,9 +9,9 @@ public class SessionRepresentation {
 
     private String id;
     private String ipAddress;
-    private int started;
-    private int lastAccess;
-    private int expires;
+    private long started;
+    private long lastAccess;
+    private long expires;
     private List<ClientRepresentation> clients;
     private String browser;
     private Boolean current;
@@ -37,27 +37,27 @@ public class SessionRepresentation {
         this.ipAddress = ipAddress;
     }
 
-    public int getStarted() {
+    public long getStarted() {
         return started;
     }
 
-    public void setStarted(int started) {
+    public void setStarted(long started) {
         this.started = started;
     }
 
-    public int getLastAccess() {
+    public long getLastAccess() {
         return lastAccess;
     }
 
-    public void setLastAccess(int lastAccess) {
+    public void setLastAccess(long lastAccess) {
         this.lastAccess = lastAccess;
     }
 
-    public int getExpires() {
+    public long getExpires() {
         return expires;
     }
 
-    public void setExpires(int expires) {
+    public void setExpires(long expires) {
         this.expires = expires;
     }
 

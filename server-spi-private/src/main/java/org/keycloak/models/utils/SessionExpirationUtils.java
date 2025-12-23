@@ -36,9 +36,9 @@ public class SessionExpirationUtils {
      * configuration.
      * @param offline is the session offline?
      * @param isRememberMe is the session remember me?
-     * @param created timestamp when the session was created
+     * @param created timestamp when the session was created in milliseconds
      * @param realm The realm model
-     * @return The time when the user session is expired or -1 if does not expire
+     * @return The time in milliseconds when the user session is expired or -1 if does not expire
      */
     public static long calculateUserSessionMaxLifespanTimestamp(boolean offline, boolean isRememberMe, long created, RealmModel realm) {
         RealmExpiration expiration = RealmExpiration.fromRealm(realm);
@@ -52,9 +52,9 @@ public class SessionExpirationUtils {
      * configuration.
      * @param offline is the session offline?
      * @param isRememberMe is the session remember me?
-     * @param lastRefreshed The last time the session was refreshed
+     * @param lastRefreshed The last time the session was refreshed in milliseconds
      * @param realm The realm model
-     * @return The time in which the user session is expired by idle timeout
+     * @return The time in milliseconds in which the user session is expired by idle timeout
      */
     public static long calculateUserSessionIdleTimestamp(boolean offline, boolean isRememberMe, long lastRefreshed, RealmModel realm) {
         RealmExpiration expiration = RealmExpiration.fromRealm(realm);
@@ -68,11 +68,11 @@ public class SessionExpirationUtils {
      * configuration in the realm and client.
      * @param offline is the session offline?
      * @param isRememberMe is the session remember me?
-     * @param clientSessionCreated timestamp when the client session was created
-     * @param userSessionCreated timestamp when the user session was created
+     * @param clientSessionCreated timestamp in milliseconds when the client session was created
+     * @param userSessionCreated timestamp in milliseconds when the user session was created
      * @param realm The realm model
      * @param client The client model
-     * @return The time when the client session is expired or -1 if does not expire
+     * @return The time in milliseconds when the client session is expired or -1 if does not expire
      */
     public static long calculateClientSessionMaxLifespanTimestamp(boolean offline, boolean isRememberMe,
             long clientSessionCreated, long userSessionCreated, RealmModel realm, ClientModel client) {
@@ -119,10 +119,10 @@ public class SessionExpirationUtils {
      * configuration in the realm and client.
      * @param offline is the session offline?
      * @param isRememberMe is the session remember me?
-     * @param lastRefreshed the last time the client session was refreshed
+     * @param lastRefreshed the last time in milliseconds the client session was refreshed
      * @param realm the realm model
      * @param client the client model
-     * @return The time in which the client session is expired by idle timeout
+     * @return The time in milliseconds in which the client session is expired by idle timeout
      */
     public static long calculateClientSessionIdleTimestamp(boolean offline, boolean isRememberMe, long lastRefreshed,
             RealmModel realm, ClientModel client) {
