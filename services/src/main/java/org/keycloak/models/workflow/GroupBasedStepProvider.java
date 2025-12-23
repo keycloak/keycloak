@@ -45,15 +45,8 @@ public abstract class GroupBasedStepProvider implements WorkflowStepProvider {
     }
 
     private Stream<GroupModel> getGroups() {
-        return model.getConfig().getOrDefault(CONFIG_GROUP, List.of()).stream().map(this::getGroup);
-    }
-
-    private GroupModel getGroup(String name) {
-        GroupModel group = KeycloakModelUtils.findGroupByPath(session, getRealm(), name);
-        if (group == null) {
-            throw new IllegalStateException("Could not find group for name or path: " + name);
-        }
-        return group;
+        return model.getConfig().getOrDefault(CONFIG_GROUP, List.of()).stream()
+                .map(name -> KeycloakModelUtils.findGroupByPath(session, getRealm(), name));
     }
 
     private RealmModel getRealm() {
