@@ -117,14 +117,13 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
     @Override
     public boolean putIfAbsent(String key, long lifespanInSeconds) {
-        if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
-            throw new ModelException("Revoked tokens can't be used in putIfAbsent");
-        }
-
         SingleUseObjectValueEntity tokenValue = new SingleUseObjectValueEntity(null);
 
         try {
             SingleUseObjectValueEntity existing = singleUseObjectCache.putIfAbsent(key, tokenValue, Time.toMillis(lifespanInSeconds), TimeUnit.MILLISECONDS);
+            if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
+                session.getProvider(RevokedTokenPersisterProvider.class).revokeToken(key.substring(0, key.length() - REVOKED_KEY.length()), lifespanInSeconds);
+            }
             return existing == null;
         } catch (HotRodClientException re) {
             // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
