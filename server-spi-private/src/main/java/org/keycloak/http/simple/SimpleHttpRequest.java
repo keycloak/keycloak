@@ -120,6 +120,10 @@ public class SimpleHttpRequest {
         return entity;
     }
 
+    public SimpleHttpMethod getMethod() {
+        return method;
+    }
+
     public SimpleHttpRequest json(Object entity) {
         this.entity = entity;
         return this;
