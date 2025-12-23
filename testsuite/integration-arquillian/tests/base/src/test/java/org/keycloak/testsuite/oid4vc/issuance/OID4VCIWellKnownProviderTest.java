@@ -61,6 +61,8 @@ public class OID4VCIWellKnownProviderTest extends OID4VCTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.setVerifiableCredentialsEnabled(true);
+        
         if (testRealm.getComponents() != null) {
             testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
                     getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100));

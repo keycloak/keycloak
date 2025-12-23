@@ -248,6 +248,28 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
+     * Validates whether OID4VCI functionality is enabled for the realm.
+     * <p>
+     * If the realm setting is disabled, this method logs the status and throws a
+     * {@link CorsErrorResponseException} with an appropriate error message.
+     * </p>
+     *
+     * @throws CorsErrorResponseException if OID4VCI is disabled for the realm.
+     */
+    private void checkRealmEnabled() {
+        RealmModel realm = session.getContext().getRealm();
+        if (!realm.isVerifiableCredentialsEnabled()) {
+            LOGGER.debugf("OID4VCI functionality is disabled for realm '%s'. Verifiable Credentials switch is off.", realm.getName());
+            throw new CorsErrorResponseException(
+                    cors != null ? cors : Cors.builder().allowAllOrigins(),
+                    Errors.INVALID_CLIENT,
+                    "OID4VCI functionality is disabled for this realm",
+                    Response.Status.FORBIDDEN
+            );
+        }
+    }
+
+    /**
      * Validates whether the authenticated client is enabled for OID4VCI features.
      * <p>
      * If the client is not enabled, this method logs the status and throws a
@@ -286,6 +308,7 @@ public class OID4VCIssuerEndpoint {
     @Produces({MediaType.APPLICATION_JSON})
     @Path(NONCE_PATH)
     public Response getCNonce() {
+        checkRealmEnabled();
         CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
         NonceResponse nonceResponse = new NonceResponse();
         String sourceEndpoint = OID4VCIssuerWellKnownProvider.getNonceEndpoint(session.getContext());
@@ -378,6 +401,7 @@ public class OID4VCIssuerEndpoint {
             @QueryParam("width") @DefaultValue("200") int width,
             @QueryParam("height") @DefaultValue("200") int height
     ) {
+        checkRealmEnabled();
         configureCors(true);
 
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
@@ -536,6 +560,7 @@ public class OID4VCIssuerEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Path(CREDENTIAL_OFFER_PATH + "{nonce}")
     public Response getCredentialOffer(@PathParam("nonce") String nonce) {
+        checkRealmEnabled();
         configureCors(false);
 
         if (nonce == null) {
@@ -610,6 +635,7 @@ public class OID4VCIssuerEndpoint {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     @Path(CREDENTIAL_PATH)
     public Response requestCredential(String requestPayload) {
+        checkRealmEnabled();
         LOGGER.debugf("Received credentials request with payload: %s", requestPayload);
 
         if (requestPayload == null || requestPayload.trim().isEmpty()) {
