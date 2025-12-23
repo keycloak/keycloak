@@ -20,6 +20,7 @@ package org.keycloak.tests.keys;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.keycloak.common.Profile;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -32,6 +33,7 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.common.BasicRealmWithUserConfig;
 import org.keycloak.tests.utils.Assert;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
@@ -73,6 +75,7 @@ public class FallbackKeyProviderTest {
     }
 
     @Test
+    @EnableFeature(Profile.Feature.PQC_ML_DSA)
     public void differentAlgorithms() {
         String realmId = realm.admin().toRepresentation().getId();
 
@@ -84,7 +87,10 @@ public class FallbackKeyProviderTest {
                 Algorithm.PS512,
                 Algorithm.ES256,
                 Algorithm.ES384,
-                Algorithm.ES512
+                Algorithm.ES512,
+                Algorithm.ML_DSA_44,
+                Algorithm.ML_DSA_65,
+                Algorithm.ML_DSA_87
         };
 
         oauth.doLogin(BasicRealmWithUserConfig.USERNAME, BasicRealmWithUserConfig.PASSWORD);
@@ -105,6 +111,7 @@ public class FallbackKeyProviderTest {
         expected.add("rsa-enc-generated");
         expected.add("hmac-generated-hs512");
         expected.add("aes-generated");
+        expected.add("mldsa-generated");
 
         for (String a : algorithmsToTest) {
             expected.add("fallback-" + a);
