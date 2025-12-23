@@ -743,8 +743,8 @@ public class OID4VCIssuerEndpoint {
             }
 
             // Find the configured scope in the login client
-            //
-            ClientScopeModel clientScope = clientModel.getClientScopes(false).get(credConfig.getScope());
+            // Check both Default and Optional client scopes
+            ClientScopeModel clientScope = getOid4vciClientScopes(clientModel).get(credConfig.getScope());
             if (clientScope == null) {
                 var errorMessage = String.format("Client scope not found: %s", credConfig.getScope());
                 throw new BadRequestException(getErrorResponse(UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
@@ -1321,7 +1321,8 @@ public class OID4VCIssuerEndpoint {
         ClientModel clientModel = session.getContext().getClient();
 
         // Get the client scope that matches the credentialConfig scope
-        Map<String, ClientScopeModel> clientScopes = clientModel.getClientScopes(false);
+        // Check both Default and Optional client scopes
+        Map<String, ClientScopeModel> clientScopes = getOid4vciClientScopes(clientModel);
         ClientScopeModel clientScopeModel = clientScopes.get(credentialConfig.getScope());
 
         if (clientScopeModel == null) {
@@ -1329,6 +1330,34 @@ public class OID4VCIssuerEndpoint {
         }
 
         return new CredentialScopeModel(clientScopeModel);
+    }
+
+    /**
+     * Returns all OID4VCI client scopes (both Default and Optional) assigned to the client.
+     * This combines scopes from both getClientScopes(true) for Default scopes
+     * and getClientScopes(false) for Optional scopes, filtering to only include
+     * scopes with the OID4VC protocol.
+     *
+     * @param clientModel the client model
+     * @return a map of OID4VCI client scopes (scope name -> ClientScopeModel)
+     */
+    private Map<String, ClientScopeModel> getOid4vciClientScopes(ClientModel clientModel) {
+        Map<String, ClientScopeModel> allScopes = new HashMap<>();
+
+        if (clientModel == null) {
+            return allScopes;
+        }
+
+        clientModel.getClientScopes(true).values().stream()
+                .filter(scope -> OID4VC_PROTOCOL.equals(scope.getProtocol()))
+                .forEach(scope -> allScopes.put(scope.getName(), scope));
+
+        // Optional scopes override defaults
+        clientModel.getClientScopes(false).values().stream()
+                .filter(scope -> OID4VC_PROTOCOL.equals(scope.getProtocol()))
+                .forEach(scope -> allScopes.put(scope.getName(), scope));
+
+        return allScopes;
     }
 
     private Response getErrorResponse(ErrorType errorType) {
