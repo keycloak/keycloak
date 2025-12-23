@@ -986,4 +986,29 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
     private RealmResource testRealm() {
         return adminClient.realm(bc.consumerRealmName());
     }
+
+    @Test
+    public void testSsoLoginWithCustomAttributeWithDefaultValue() {
+        updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
+
+        String userProfileConfig = "{\"attributes\": ["
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"usertype\", \"defaultValue\": \"daily\", " + PERMISSIONS_ADMIN_EDITABLE + "}"
+                + "]}";
+        setUserProfileConfiguration(userProfileConfig);
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        logInWithBroker(bc);
+
+        waitForPage(driver, "update account information", false);
+        Assert.assertTrue("Should be on update profile page", updateAccountInformationPage.isCurrent());
+
+        updateAccountInformationPage.updateAccountInformation("Test", "User");
+
+        Assert.assertTrue("User should be logged in successfully after profile update", appPage.isCurrent());
+    }
 }
