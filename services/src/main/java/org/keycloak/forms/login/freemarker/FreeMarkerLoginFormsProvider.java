@@ -35,6 +35,8 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
+import org.jboss.logging.Logger;
+import org.jboss.logging.MDC;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
@@ -92,6 +94,7 @@ import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.services.util.RequestIdUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
@@ -105,10 +108,10 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.MediaTypeMatcher;
 
-import org.jboss.logging.Logger;
-
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
 import static org.keycloak.organization.utils.Organizations.resolveOrganization;
+import static org.keycloak.services.error.KeycloakErrorHandler.ERROR_ATTRIBUTE_ID;
+import static org.keycloak.services.error.KeycloakErrorHandler.ERROR_ID;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -336,6 +339,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case LOGOUT_CONFIRM:
                 attributes.put("logoutConfirm", new LogoutConfirmBean(accessCode, authenticationSession));
+                break;
+            case LOGIN_PAGE_EXPIRED, ERROR, ERROR_WEBAUTHN:
+                String errorId = RequestIdUtil.getCurrentRequestId(); //ErrorIdGenerator.generate();
+                MDC.put(ERROR_ID, errorId);
+                attributes.put(ERROR_ATTRIBUTE_ID, errorId);
+                logger.infof("Rendering following errorId: '%s' to the user.", errorId);
                 break;
         }
 
