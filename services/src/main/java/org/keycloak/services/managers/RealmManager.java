@@ -42,6 +42,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
@@ -303,11 +304,20 @@ public class RealmManager {
                 authSessions.onRealmRemoved(realm);
             }
 
+            // Capture the factory before the callback
+            // The session might be a context-injected proxy that becomes unavailable in afterCompletion
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+
             session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
                 @Override
                 protected void commitImpl() {
                     // Refresh periodic sync tasks for configured storageProviders
-                    StoreSyncEvent.fire(session, realm, true);
+                    // Create a fresh session to avoid context-injection proxy issues
+                    try (KeycloakSession newSession = sessionFactory.create()) {
+                        // Publish the event with the new session
+                        // The realm object is still valid even though it's deleted from the database
+                        sessionFactory.publish(StoreSyncEvent.create(newSession, realm, true));
+                    }
                 }
 
                 @Override
