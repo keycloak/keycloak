@@ -544,6 +544,21 @@ The {project_name} Operator automatically generates a `ServiceMonitor` resource 
 `ServiceMonitor` resource to be created, the `monitoring.coreos.com/v1:ServiceMonitor` Custom Resource Definition (CRD)
 must be installed on your {kubernetes} cluster.
 
+A ServiceMonitor is only created if the `metrics-enabled` option is set.
+
+.Enable Keycloak metrics
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  additionalOptions:
+    - name: metrics-enabled
+      value: "true"
+----
+
 The Operator generates a `ServiceMonitor` with the following spec:
 
 .Default ServiceMonitor
