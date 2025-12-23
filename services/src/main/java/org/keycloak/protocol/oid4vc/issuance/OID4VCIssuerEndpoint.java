@@ -1383,7 +1383,7 @@ public class OID4VCIssuerEndpoint {
 
         protocolMappers.forEach(mapper -> mapper.setClaim(vc, authResult.session()));
 
-        LOGGER.debugf("The credential to sign is: %s", vc);
+        LOGGER.debugf("The credential to sign is: %s", JsonSerialization.valueAsString(vc));
 
         // Build format-specific credential
         CredentialBody credentialBody = this.findCredentialBuilder(credentialConfig)

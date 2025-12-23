@@ -27,14 +27,16 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.TimeClaimNormalizer;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
+import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+
 public class JwtCredentialBuilder implements CredentialBuilder {
 
     private static final String VC_CLAIM_KEY = "vc";
-    private static final String ID_CLAIM_KEY = "id";
 
     private final TimeProvider timeProvider;
     private final UnaryOperator<Instant> issuanceTimeNormalizer;
@@ -90,12 +92,9 @@ public class JwtCredentialBuilder implements CredentialBuilder {
         Optional.ofNullable(verifiableCredential.getExpirationDate())
                 .ifPresent(d -> jsonWebToken.exp(d.getEpochSecond()));
 
-        // subject id should only be set if the credential subject has an id.
-        Optional.ofNullable(
-                        verifiableCredential
-                                .getCredentialSubject()
-                                .getClaims()
-                                .get(ID_CLAIM_KEY))
+        // sub should only be set if the credential subject has an id.
+        CredentialSubject subject = verifiableCredential.getCredentialSubject();
+        Optional.ofNullable(subject.getClaims().get(CLAIM_NAME_SUBJECT_ID))
                 .map(Object::toString)
                 .ifPresent(jsonWebToken::subject);
 

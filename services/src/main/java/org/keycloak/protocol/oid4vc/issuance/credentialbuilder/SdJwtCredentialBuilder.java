@@ -17,12 +17,15 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
+import java.net.URI;
+import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
-import org.keycloak.OID4VCConstants;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.Format;
@@ -35,10 +38,15 @@ import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public class SdJwtCredentialBuilder implements CredentialBuilder {
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_ISSUER;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_JTI;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUB;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
 
-    public static final String ISSUER_CLAIM = "iss";
-    public static final String VERIFIABLE_CREDENTIAL_TYPE_CLAIM = "vct";
+public class SdJwtCredentialBuilder implements CredentialBuilder {
 
     public SdJwtCredentialBuilder() {
     }
@@ -49,16 +57,34 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
     }
 
     @Override
-    public SdJwtCredentialBody buildCredentialBody(VerifiableCredential verifiableCredential,
-                                                   CredentialBuildConfig credentialBuildConfig)
-        throws CredentialBuilderException {
-        // Retrieve claims
+    public SdJwtCredentialBody buildCredentialBody(
+            VerifiableCredential verifiableCredential,
+            CredentialBuildConfig credentialBuildConfig
+    ) throws CredentialBuilderException {
+
+        URI vcId = verifiableCredential.getId();
+        Instant issuanceDate = verifiableCredential.getIssuanceDate();
+        Instant expirationDate = verifiableCredential.getExpirationDate();
+
+        // Retrieve subject claims
         CredentialSubject credentialSubject = verifiableCredential.getCredentialSubject();
-        Map<String, Object> claimSet = credentialSubject.getClaims();
+        Map<String, Object> claims = new LinkedHashMap<>(credentialSubject.getClaims());
+
+        // Map subject id => sub
+        Optional.ofNullable(claims.remove(CLAIM_NAME_SUBJECT_ID)).ifPresent(it ->
+                claims.put(CLAIM_NAME_SUB, it)
+        );
+
+        // Always add a jti (the credential id)
+        claims.put(CLAIM_NAME_JTI, vcId != null ? vcId : UUID.randomUUID().toString());
+
+        Optional.ofNullable(issuanceDate).ifPresent(it ->
+                claims.put(CLAIM_NAME_IAT, it.getEpochSecond())
+        );
 
         // Put all claims into the disclosure spec, except the one to be kept visible
         DisclosureSpec.Builder disclosureSpecBuilder = DisclosureSpec.builder();
-        claimSet.entrySet()
+        claims.entrySet()
                 .stream()
                 .filter(entry -> !credentialBuildConfig.getSdJwtVisibleClaims().contains(entry.getKey()))
                 .forEach(entry -> {
@@ -77,16 +103,15 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
                 });
 
         // Populate configured fields (necessarily visible)
-        claimSet.put(ISSUER_CLAIM, credentialBuildConfig.getCredentialIssuer());
-        claimSet.put(VERIFIABLE_CREDENTIAL_TYPE_CLAIM, credentialBuildConfig.getCredentialType());
+        claims.put(CLAIM_NAME_ISSUER, credentialBuildConfig.getCredentialIssuer());
+        claims.put(CLAIM_NAME_VCT, credentialBuildConfig.getCredentialType());
 
         // Set exp claim from verifiable credential expiration date
         // expiry is optional, but should be set if available to comply with HAIP
         // see: https://openid.github.io/OpenID4VC-HAIP/openid4vc-high-assurance-interoperability-profile-wg-draft.html#section-6.1
         // Only set if not already set by a protocol mapper
-        if (!claimSet.containsKey(OID4VCConstants.CLAIM_NAME_EXP)) {
-            Optional.ofNullable(verifiableCredential.getExpirationDate())
-                    .ifPresent(d -> claimSet.put(OID4VCConstants.CLAIM_NAME_EXP, d.getEpochSecond()));
+        if (!claims.containsKey(CLAIM_NAME_EXP) && expirationDate != null) {
+            claims.put(CLAIM_NAME_EXP, expirationDate.getEpochSecond());
         }
 
         // jti, nbf, and iat are all optional. So need to be set by a protocol mapper if needed.
@@ -98,7 +123,7 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
                     .forEach(i -> disclosureSpecBuilder.withDecoyClaim(SdJwtUtils.randomSalt()));
         }
 
-        ObjectNode claimsNode = JsonSerialization.mapper.convertValue(claimSet, ObjectNode.class);
+        ObjectNode claimsNode = JsonSerialization.mapper.convertValue(claims, ObjectNode.class);
         IssuerSignedJWT issuerSignedJWT = IssuerSignedJWT.builder()
                                                          .withClaims(claimsNode,
                                                                      disclosureSpecBuilder.build())

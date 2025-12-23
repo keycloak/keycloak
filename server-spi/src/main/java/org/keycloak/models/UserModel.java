@@ -31,6 +31,7 @@ import static org.keycloak.utils.StringUtil.isNotBlank;
  * @version $Revision: 1 $
  */
 public interface UserModel extends RoleMapperModel {
+    String ID = "id";
     String USERNAME = "username";
     String FIRST_NAME = "firstName";
     String LAST_NAME = "lastName";
