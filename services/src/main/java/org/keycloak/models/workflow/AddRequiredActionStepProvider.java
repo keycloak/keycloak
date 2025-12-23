@@ -32,7 +32,7 @@ public class AddRequiredActionStepProvider implements WorkflowStepProvider {
                 log.debugv("Adding required action {0} to user {1})", action, user.getId());
                 user.addRequiredAction(action);
             } catch (IllegalArgumentException e) {
-                log.warnv("Invalid required action {0} configured in AddRequiredActionProvider", stepModel.getConfig().getFirst(REQUIRED_ACTION_KEY));
+                log.warnv("Invalid required action {0} configured in AddRequiredActionStepProvider", stepModel.getConfig().getFirst(REQUIRED_ACTION_KEY));
             }
         }
     }

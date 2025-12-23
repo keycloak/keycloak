@@ -66,6 +66,7 @@ import com.fasterxml.jackson.jakarta.rs.yaml.JacksonYAMLProvider;
 import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.models.workflow.ResourceOperationType.USER_AUTHENTICATED;
 import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -238,6 +239,33 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
             assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
             assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Step 'after' configuration cannot be negative."));
         }
+    }
+
+    @Test
+    public void testFailCreateWorkflowWithDuplicateName() {
+        // create first workflow
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(USER_CREATED.name())
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .withConfig("key", "value")
+                                .build())
+                .build()).close();
+
+        // try to create second workflow with same name
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(USER_AUTHENTICATED.name())
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build())
+                .build())) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(),
+                    equalTo("Workflow name must be unique. A workflow with name 'myworkflow' already exists."));
+        }
+
     }
 
     @Test
@@ -497,18 +525,18 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
 
             String workflowId;
             try (Response response =
-            managedRealm.admin().workflows().create(WorkflowRepresentation.withName(name)
-                    .withSteps(
-                            WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
-                                    .after(Duration.ofDays(5))
-                                    .build(),
-                            WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
-                                    .withConfig("key", "value")
-                                    .build(),
-                            WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
-                                    .after(Duration.ofDays(15))
-                                    .build()
-                    ).build())) {
+                         managedRealm.admin().workflows().create(WorkflowRepresentation.withName(name)
+                                 .withSteps(
+                                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                                 .after(Duration.ofDays(5))
+                                                 .build(),
+                                         WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
+                                                 .withConfig("key", "value")
+                                                 .build(),
+                                         WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                                 .after(Duration.ofDays(15))
+                                                 .build()
+                                 ).build())) {
                 workflowId = ApiUtil.getCreatedId(response);
             }
 

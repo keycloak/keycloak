@@ -18,8 +18,10 @@ import static java.util.Optional.ofNullable;
 
 public class WorkflowValidator {
 
-    public static void validateWorkflow(KeycloakSession session, WorkflowRepresentation rep) throws WorkflowInvalidStateException {
-        validateField(rep, "name", rep.getName());
+    public static void validateWorkflow(KeycloakSession session, WorkflowProvider provider, WorkflowRepresentation rep) throws WorkflowInvalidStateException {
+
+        validateWorkflowName(provider, rep);
+
         //TODO: validate event and resource conditions (`on` and `if` properties) using the providers with a custom evaluator that calls validate on
         // each condition provider used in the expression once we have the event condition providers implemented
         if (StringUtil.isNotBlank(rep.getOn())) {
@@ -119,9 +121,15 @@ public class WorkflowValidator {
         }
     }
 
-    private static void validateField(Object obj, String fieldName, String value) throws WorkflowInvalidStateException {
-        if (StringUtil.isBlank(value)) {
-            throw new WorkflowInvalidStateException("%s field '%s' cannot be null or empty.".formatted(obj.getClass().getCanonicalName(), fieldName));
+    private static void validateWorkflowName(WorkflowProvider provider, WorkflowRepresentation representation) throws WorkflowInvalidStateException {
+        String name = representation.getName();
+        if (StringUtil.isBlank(name)) {
+            throw new WorkflowInvalidStateException("Workflow name cannot be null or empty.");
+        }
+
+        // validate name uniqueness
+        if (provider.getWorkflows().anyMatch(wf -> wf.getName().equals(name) && !wf.getId().equals(representation.getId()))) {
+            throw new WorkflowInvalidStateException("Workflow name must be unique. A workflow with name '" + name + "' already exists.");
         }
     }
 }
