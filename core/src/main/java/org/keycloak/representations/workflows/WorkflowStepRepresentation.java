@@ -72,6 +72,7 @@ public class WorkflowStepRepresentation extends AbstractWorkflowComponentReprese
         setConfig(CONFIG_AFTER, after);
     }
 
+    @JsonIgnore
     public String getPriority() {
         return getConfigValue(CONFIG_PRIORITY, String.class);
     }

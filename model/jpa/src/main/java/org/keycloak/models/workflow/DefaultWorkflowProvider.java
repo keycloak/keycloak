@@ -89,6 +89,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                 }
                 // set the id of the step to match the existing one, so we can update the config
                 newStep.setId(currentStep.getId());
+                newStep.setPriority(Long.parseLong(currentStep.getPriority()));
             }
 
             // finally, update the workflow's config along with the steps' configs

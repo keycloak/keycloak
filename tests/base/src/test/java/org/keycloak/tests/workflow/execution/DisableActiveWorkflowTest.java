@@ -90,7 +90,9 @@ public class DisableActiveWorkflowTest extends AbstractWorkflowTest {
 
         // disable the workflow - scheduled steps should be paused and workflow should not activate for new users
         workflow.setEnabled(false);
-        managedRealm.admin().workflows().workflow(workflowId).update(workflow).close();
+        try (Response response = managedRealm.admin().workflows().workflow(workflowId).update(workflow)) {
+            assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
 
         // create another user - should NOT bind the user to the workflow as it is disabled
         managedRealm.admin().users().create(UserConfigBuilder.create().username("anotheruser").build()).close();
@@ -119,8 +121,10 @@ public class DisableActiveWorkflowTest extends AbstractWorkflowTest {
         });
 
         // re-enable the workflow - scheduled steps should resume and new users should be bound to the workflow
-        workflow.getConfig().putSingle("enabled", "true");
-        managedRealm.admin().workflows().workflow(workflowId).update(workflow).close();
+        workflow.setEnabled(true);
+        try (Response response = managedRealm.admin().workflows().workflow(workflowId).update(workflow)) {
+            assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
 
         // create a third user - should bind the user to the workflow as it is enabled again
         managedRealm.admin().users().create(UserConfigBuilder.create().username("thirduser").email("thirduser@example.com").build()).close();
