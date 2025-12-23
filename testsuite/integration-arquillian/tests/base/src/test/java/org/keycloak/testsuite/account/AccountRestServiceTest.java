@@ -46,6 +46,8 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.UserModel;
@@ -55,6 +57,7 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
@@ -72,6 +75,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.representations.idm.UserProfileAttributeMetadata;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
@@ -1142,6 +1146,101 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertEquals(200, status);
         sessions = SimpleHttpDefault.doGet(getAccountUrl("sessions"), httpClient).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
         assertEquals(1, sessions.size());
+    }
+
+
+    @Test
+    public void testDeletionOfAllUserSessionsWillFireLogoutEvents() throws IOException {
+        String username = "manage-account-access";
+        String password = "password";
+        String firstToken = new TokenUtil(username, password).getToken();
+        String secondToken = new TokenUtil(username, password).getToken();
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        List<UserSessionRepresentation> userSessions = user.getUserSessions();
+        assertEquals(2, userSessions.size());
+
+        // skip the two direct access grant logins
+        events.poll();
+        events.poll();
+
+        int status = SimpleHttpDefault.doDelete(getAccountUrl("sessions?current=true"), httpClient).acceptJson().auth(firstToken).asStatus();
+        assertEquals(204, status);
+        assertEquals(0, user.getUserSessions().size());
+
+        userSessions.forEach(session -> {
+            events.expectAccount(EventType.LOGOUT)
+                .user(user.toRepresentation().getId())
+                .session(session.getId())
+                .assertEvent();
+        });
+
+        events.assertEmpty();
+    }
+
+    @Test
+    public void testDeletionOfAllUserSessionsExceptTheCurrentWillFireLogoutEvents() throws IOException, JWSInputException {
+        String username = "manage-account-access";
+        String password = "password";
+        String firstToken = new TokenUtil(username, password).getToken();
+        String secondToken = new TokenUtil(username, password).getToken();
+        String thirdToken = new TokenUtil(username, password).getToken();
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        List<UserSessionRepresentation> userSessions = user.getUserSessions();
+        assertEquals(3, userSessions.size());
+
+        // skip the three direct access grant logins
+        events.poll();
+        events.poll();
+        events.poll();
+
+        int status = SimpleHttpDefault.doDelete(getAccountUrl("sessions?current=false"), httpClient).acceptJson().auth(firstToken).asStatus();
+        assertEquals(204, status);
+        assertEquals(1, user.getUserSessions().size());
+
+        JWSInput input = new JWSInput(firstToken);
+        AccessToken token = input.readJsonContent(AccessToken.class);
+
+        userSessions = userSessions.stream().filter(session -> !session.getId().equals(token.getSessionId())).toList();
+
+        userSessions.forEach(session -> {
+            events.expectAccount(EventType.LOGOUT)
+                .user(user.toRepresentation().getId())
+                .session(session.getId())
+                .assertEvent();
+        });
+
+        events.assertEmpty();
+    }
+
+
+    @Test
+    public void testDeletionOfSpecificSessionWillFireLogoutEvent() throws IOException, JWSInputException {
+        String username = "manage-account-access";
+        String password = "password";
+        String firstToken = new TokenUtil(username, password).getToken();
+        String secondToken = new TokenUtil(username, password).getToken();
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        List<UserSessionRepresentation> userSessions = user.getUserSessions();
+        assertEquals(2, userSessions.size());
+
+        // skip the two direct access grant logins
+        events.poll();
+        events.poll();
+
+        JWSInput input = new JWSInput(firstToken);
+        AccessToken token = input.readJsonContent(AccessToken.class);
+
+        int status = SimpleHttpDefault.doDelete(getAccountUrl(String.format("sessions/%s", token.getSessionId())), httpClient)
+            .acceptJson().auth(firstToken).asStatus();
+        assertEquals(204, status);
+        assertEquals(1, user.getUserSessions().size());
+
+        events.expectAccount(EventType.LOGOUT)
+            .user(user.toRepresentation().getId())
+            .session(token.getSessionId())
+            .assertEvent();
+
+        events.assertEmpty();
     }
 
     @Test

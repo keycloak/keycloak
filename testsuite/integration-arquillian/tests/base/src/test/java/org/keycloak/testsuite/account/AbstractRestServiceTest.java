@@ -87,6 +87,7 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
         testRealm.getUsers().add(UserBuilder.create().username("view-applications-access").addRoles("user", "offline_access").role("account", "view-applications").role("account", "manage-consent").password("password").build());
         testRealm.getUsers().add(UserBuilder.create().username("view-consent-access").role("account", "view-consent").password("password").build());
         testRealm.getUsers().add(UserBuilder.create().username("manage-consent-access").role("account", "manage-consent").role("account", "view-profile").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("manage-account-access").role("account", "view-profile").role("account", "manage-account").password("password").build());
 
         org.keycloak.representations.idm.ClientRepresentation inUseApp = ClientBuilder.create().clientId("in-use-client")
                 .id(KeycloakModelUtils.generateId())
