@@ -602,7 +602,7 @@ public class DefaultAuthenticationFlows {
         accountVerificationOptions.setTopLevel(false);
         accountVerificationOptions.setBuiltIn(true);
         accountVerificationOptions.setAlias("Account verification options");
-        accountVerificationOptions.setDescription("Method with which to verity the existing account");
+        accountVerificationOptions.setDescription("Method with which to verify the existing account");
         accountVerificationOptions.setProviderId("basic-flow");
         accountVerificationOptions = realm.addAuthenticationFlow(accountVerificationOptions);
         execution = new AuthenticationExecutionModel();
