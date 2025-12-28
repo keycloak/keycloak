@@ -54,6 +54,13 @@ public class GeneratedAesKeyProviderFactory extends AbstractGeneratedSecretKeyPr
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = SecretKeyProviderUtils.configurationBuilder()
             .property(AES_KEY_SIZE_PROPERTY)
+            .property(Attributes.AUTO_ROTATION_ENABLED_PROPERTY)
+            .property(Attributes.ROTATION_PERIOD_PROPERTY)
+            .property(Attributes.PASSIVE_KEY_EXPIRATION_PROPERTY)
+            .property(Attributes.LAST_ROTATION_TIME_PROPERTY)
+            .property(Attributes.AUTO_DELETE_DISABLED_KEYS_PROPERTY)
+            .property(Attributes.DELETION_GRACE_PERIOD_PROPERTY)
+            .property(Attributes.DISABLED_TIME_PROPERTY)
             .build();
 
     @Override

@@ -54,7 +54,15 @@ public abstract class AbstractGeneratedRsaKeyProviderFactory extends AbstractRsa
     protected ProviderConfigurationBuilder generatedRsaKeyConfigurationBuilder() {
         ProviderConfigProperty prop = Attributes.KEY_SIZE_PROPERTY.get();
         prop.setDefaultValue(defaultKeySize);
-        return rsaKeyConfigurationBuilder().property(prop);
+        return rsaKeyConfigurationBuilder()
+                .property(prop)
+                .property(Attributes.AUTO_ROTATION_ENABLED_PROPERTY)
+                .property(Attributes.ROTATION_PERIOD_PROPERTY)
+                .property(Attributes.PASSIVE_KEY_EXPIRATION_PROPERTY)
+                .property(Attributes.LAST_ROTATION_TIME_PROPERTY)
+                .property(Attributes.AUTO_DELETE_DISABLED_KEYS_PROPERTY)
+                .property(Attributes.DELETION_GRACE_PERIOD_PROPERTY)
+                .property(Attributes.DISABLED_TIME_PROPERTY);
     }
 
     @Override
