@@ -39,8 +39,10 @@ only the basic attributes in representations or all of them.
 The `UserProfile` interface is a private API and should not be implemented by custom code. However, if you have extensions that
 implement this interface, you will need to update your code to accommodate this new method.
 
-Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
-In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+=== LOGOUT events when logging out sessions via the Account Console
+
+When logging out sessions via the Account Console {project_name} now creates LOGOUT user events to track this activity.
+The events are connected to the `account` client.
 
 === Identity Provider refactoring
 

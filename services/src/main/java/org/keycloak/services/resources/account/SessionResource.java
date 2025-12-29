@@ -33,6 +33,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.device.DeviceActivityManager;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -56,12 +58,14 @@ public class SessionResource {
     private final Auth auth;
     private final RealmModel realm;
     private final UserModel user;
+    private final EventBuilder event;
 
-    public SessionResource(KeycloakSession session, Auth auth) {
+    public SessionResource(KeycloakSession session, Auth auth, EventBuilder event) {
         this.session = session;
         this.auth = auth;
         this.realm = auth.getRealm();
         this.user = auth.getUser();
+        this.event = event;
     }
 
     /**
@@ -129,8 +133,14 @@ public class SessionResource {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
         session.sessions().getUserSessionsStream(realm, user).filter(s -> removeCurrent || !isCurrentSession(s))
                 .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
-                .forEach(s -> AuthenticationManager.backchannelLogout(session, s, true));
-
+                .forEach(s -> {
+                    AuthenticationManager.backchannelLogout(session, s, true);
+                    event.clone()
+                        .event(EventType.LOGOUT)
+                        .user(user)
+                        .session(s)
+                        .success();
+                });
         return Response.noContent().build();
     }
 
@@ -149,6 +159,10 @@ public class SessionResource {
         UserSessionModel userSession = session.sessions().getUserSession(realm, id);
         if (userSession != null && userSession.getUser().equals(user)) {
             AuthenticationManager.backchannelLogout(session, userSession, true);
+            event.event(EventType.LOGOUT)
+                .user(user)
+                .session(id)
+                .success();
         }
         return Response.noContent().build();
     }
