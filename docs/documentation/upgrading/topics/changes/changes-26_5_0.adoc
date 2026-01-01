@@ -59,6 +59,10 @@ Additionally, both `IdentityProviderModel` and `IdentityProviderRepresentation` 
 configuration like `isHideOnLogin` to be null in order to not include these in Identity Provider types that do
 not need these configurations.
 
+=== Realm default locale attempted for translation fallbacks
+
+When localization for a realm is enabled and a translation for a message key is unavailable for the language the user selected, {project_name} now attempts to find a matching message key with the realm's default locale before defaulting to English.
+
 === SPIFFE Identity Provider configuration changed
 
 The SPIFFE Identity Provider preview feature now uses the `trustDomain` configuration instead of `issuer`. This change

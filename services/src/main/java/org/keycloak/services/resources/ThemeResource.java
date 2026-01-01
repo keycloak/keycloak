@@ -221,7 +221,7 @@ public class ThemeResource {
                     new KeySource((String) e.getKey(), (String) e.getValue(), Source.THEME)).collect(toSet());
 
             Map<Locale, Properties> realmLocalizationMessages = LocaleUtil.getRealmLocalizationTexts(realm, locale);
-            for (Locale currentLocale = locale; currentLocale != null; currentLocale = LocaleUtil.getParentLocale(currentLocale)) {
+            for (Locale currentLocale = locale; currentLocale != null; currentLocale = LocaleUtil.getParentLocale(currentLocale, realm)) {
                 final List<KeySource> realmOverride = realmLocalizationMessages.get(currentLocale).entrySet().stream().map(e ->
                         new KeySource((String) e.getKey(), (String) e.getValue(), Source.REALM)).collect(toList());
                 resultSet.addAll(realmOverride);
