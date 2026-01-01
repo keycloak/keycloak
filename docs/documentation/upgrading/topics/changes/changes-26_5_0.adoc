@@ -39,10 +39,12 @@ only the basic attributes in representations or all of them.
 The `UserProfile` interface is a private API and should not be implemented by custom code. However, if you have extensions that
 implement this interface, you will need to update your code to accommodate this new method.
 
-=== LOGOUT events when logging out sessions via the Account Console
+=== Additional LOGOUT events
 
 When logging out sessions via the Account Console {project_name} now creates LOGOUT user events to track this activity.
 The events are connected to the `account` client.
+
+When the number of sessions for a user is limited, and you have configured the oldest session to be logged out once the limit is reached, {project_name} now creates LOGOUT user events to track this. The events are connected to the client that triggered the new login.
 
 === Identity Provider refactoring
 
