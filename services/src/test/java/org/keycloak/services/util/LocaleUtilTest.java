@@ -8,10 +8,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
-import org.junit.Test;
-
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.RealmModelDelegate;
+
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -21,6 +21,41 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * @author <a href="mailto:daniel.fesenmeyer@bosch.com">Daniel Fesenmeyer</a>
  */
 public class LocaleUtilTest {
+    RealmModel REALM_ITALIAN = new RealmModelDelegate(null) {
+        @Override
+        public boolean isInternationalizationEnabled() {
+            return true;
+        }
+
+        @Override
+        public String getDefaultLocale() {
+            return "it";
+        }
+    };
+
+    RealmModel REALM_ITALIAN_SWITZERLAND = new RealmModelDelegate(null) {
+        @Override
+        public boolean isInternationalizationEnabled() {
+            return true;
+        }
+
+        @Override
+        public String getDefaultLocale() {
+            return "it-CH";
+        }
+    };
+
+    RealmModel REALM_ENGLISH = new RealmModelDelegate(null) {
+        @Override
+        public boolean isInternationalizationEnabled() {
+            return true;
+        }
+
+        @Override
+        public String getDefaultLocale() {
+            return "en";
+        }
+    };
 
     private static final Locale LOCALE_DE_CH = Locale.forLanguageTag("de-CH");
     private static final Locale LOCALE_DE_CH_1996 = Locale.forLanguageTag("de-CH-1996");
@@ -36,20 +71,11 @@ public class LocaleUtilTest {
 
     @Test
     public void getParentLocaleWithRealmDefaultLocaleFallback() {
-        RealmModel realm = new RealmModelDelegate(null) {
-            @Override
-            public boolean isInternationalizationEnabled() {
-                return true;
-            }
-            @Override
-            public String getDefaultLocale() {return "it";}
-
-        };
-
-        assertThat(LocaleUtil.getParentLocale(LOCALE_DE_CH_1996, realm), equalTo(LOCALE_DE_CH));
-        assertThat(LocaleUtil.getParentLocale(LOCALE_DE_CH, realm), equalTo(Locale.GERMAN));
-        assertThat(LocaleUtil.getParentLocale(Locale.GERMAN, realm), equalTo(Locale.ITALIAN));
-        assertThat(LocaleUtil.getParentLocale(Locale.ITALIAN, realm), nullValue());
+        assertThat(LocaleUtil.getParentLocale(LOCALE_DE_CH_1996, REALM_ITALIAN), equalTo(LOCALE_DE_CH));
+        assertThat(LocaleUtil.getParentLocale(LOCALE_DE_CH, REALM_ITALIAN), equalTo(Locale.GERMAN));
+        assertThat(LocaleUtil.getParentLocale(Locale.GERMAN, REALM_ITALIAN), equalTo(Locale.ITALIAN));
+        assertThat(LocaleUtil.getParentLocale(Locale.ITALIAN, REALM_ITALIAN), equalTo(Locale.ENGLISH));
+        assertThat(LocaleUtil.getParentLocale(Locale.ENGLISH, REALM_ITALIAN), nullValue());
     }
 
     @Test
@@ -59,6 +85,12 @@ public class LocaleUtilTest {
         assertThat(LocaleUtil.getApplicableLocales(LOCALE_DE_CH, null),
                 equalTo(Arrays.asList(LOCALE_DE_CH, Locale.GERMAN, Locale.ENGLISH)));
         assertThat(LocaleUtil.getApplicableLocales(Locale.GERMAN, null),
+                equalTo(Arrays.asList(Locale.GERMAN, Locale.ENGLISH)));
+        assertThat(LocaleUtil.getApplicableLocales(Locale.GERMAN, REALM_ITALIAN),
+                equalTo(Arrays.asList(Locale.GERMAN, Locale.ITALIAN, Locale.ENGLISH)));
+        assertThat(LocaleUtil.getApplicableLocales(Locale.GERMAN, REALM_ITALIAN_SWITZERLAND),
+                equalTo(Arrays.asList(Locale.GERMAN, Locale.forLanguageTag("it-CH"), Locale.ITALIAN, Locale.ENGLISH)));
+        assertThat(LocaleUtil.getApplicableLocales(Locale.GERMAN, REALM_ENGLISH),
                 equalTo(Arrays.asList(Locale.GERMAN, Locale.ENGLISH)));
 
         assertThat(LocaleUtil.getApplicableLocales(Locale.ENGLISH, null), equalTo(Collections.singletonList(Locale.ENGLISH)));

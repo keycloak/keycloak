@@ -62,19 +62,25 @@ public class LocaleUtil {
     /**
      * Returns the parent locale of the given {@code locale}. If the locale just contains a language (e.g. "de"),
      * returns the fallback locale "en". For "en" no parent exists, {@code null} is returned.
-     * 
+     *
      * @param locale the locale
+     * @return the parent locale, may be {@code null}
+     * @deprecated use {@link LocaleUtil#getParentLocale(Locale, RealmModel)} instead.
+     */
+    @Deprecated(since = "26.5", forRemoval = true)
+    public static Locale getParentLocale(Locale locale) {
+        return getParentLocale(locale, null);
+    }
+
+    /**
+     * Returns the parent locale of the given {@code locale}. If the locale just contains a language (e.g. "de"),
+     * returns the fallback default locale of the realm or if that does not exist "en".
+     * For "en" no parent exists, {@code null} is returned.
+     *
      * @return the parent locale, may be {@code null}
      */
     public static Locale getParentLocale(Locale locale, RealmModel realm) {
         if (Locale.ENGLISH.equals(locale)) {
-            return null;
-        }
-
-        if (realm != null
-                && realm.isInternationalizationEnabled()
-                && realm.getDefaultLocale() != null
-                && Locale.forLanguageTag(realm.getDefaultLocale()).equals(locale)) {
             return null;
         }
 
@@ -84,6 +90,13 @@ public class LocaleUtil {
 
         if (locale.getCountry() != null && !locale.getCountry().isEmpty()) {
             return new Locale(locale.getLanguage());
+        }
+
+        if (realm != null
+                && realm.isInternationalizationEnabled()
+                && realm.getDefaultLocale() != null
+                && Locale.forLanguageTag(realm.getDefaultLocale()).getLanguage().equals(locale.getLanguage())) {
+            return Locale.ENGLISH;
         }
 
         if (realm != null
