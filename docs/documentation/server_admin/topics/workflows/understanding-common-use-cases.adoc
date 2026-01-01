@@ -42,7 +42,10 @@ When a user has been inactive for a certain period, a workflow can send reminder
 
 ```yaml
 name: Track inactive users
-on: user_authenticated
+on: user-authenticated
+schedule:
+  after: 5s
+  batch-size: 2
 concurrency:
   restart-in-progress: true
 steps:

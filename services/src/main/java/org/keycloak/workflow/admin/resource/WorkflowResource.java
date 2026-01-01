@@ -76,6 +76,7 @@ public class WorkflowResource {
     })
     public void update(WorkflowRepresentation rep) {
         try {
+            rep.setId(workflow.getId());
             provider.updateWorkflow(workflow, rep);
         } catch (ModelException me) {
             throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
@@ -150,23 +151,6 @@ public class WorkflowResource {
         }
 
         provider.activate(workflow, type, resourceId);
-    }
-
-    @POST
-    @Path("activate-all")
-    @Tag(name = KeycloakOpenAPI.Admin.Tags.WORKFLOWS)
-    @Operation(summary = "Activate workflow for all eligible resources", description = "Activate the workflow for all eligible resources; an optional notBefore may schedule the first step for all activations.")
-    @APIResponses(value = {
-            @APIResponse(responseCode = "204", description = "No Content"),
-            @APIResponse(responseCode = "400", description = "Bad Request")
-    })
-    public void activateAll(@QueryParam("notBefore") String notBefore) {
-
-        if (notBefore != null) {
-            workflow.setNotBefore(notBefore);
-        }
-
-        provider.activateForAllEligibleResources(workflow);
     }
 
     /**

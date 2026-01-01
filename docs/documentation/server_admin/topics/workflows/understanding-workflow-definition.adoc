@@ -53,6 +53,12 @@ This setting is mandatory.
 `on`::
 Define a condition that determines the event that will trigger the workflow.
 The condition is written using an expression language that supports a variety of checks on the event.
+See <<_workflow_events_>> for more details.
+This setting is optional.
+
+`schedule`::
+Define a schedule that will trigger the workflow at defined intervals.
+See <<_scheduling_workflows_>> for more details.
 This setting is optional.
 
 `if`::
@@ -61,10 +67,12 @@ The condition is written using an expression language that supports a variety of
 associated with the event.
 A workflow execution is only created if the expression evaluates to `true`.
 If this setting is omitted, the event defined in the `on` setting will always create the workflow execution.
+See <<_workflow_conditions_>> for more details.
 This setting is optional.
 
 `steps`::
 Define the step chain consisting of one or more steps to be sequentially executed during the lifetime of a workflow.
+See <<_workflow_steps_>> for more details.
 This setting is mandatory.
 
 `concurrency`::
