@@ -499,4 +499,14 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
     public void setMinimumAcrValue(String minimumAcrValue) {
         setAttribute(Constants.MINIMUM_ACR_VALUE, minimumAcrValue);
     }
+
+    public boolean isAllowUserDeselectOptionalScopes() {
+        String allowDeselectOptionalScopes = getAttribute(OIDCConfigAttributes.ALLOW_USER_DESELECT_OPTIONAL_SCOPES, "false");
+        return Boolean.parseBoolean(allowDeselectOptionalScopes);
+    }
+
+    public void setAllowUserDeselectOptionalScopes(boolean allowDeselectOptionalScopes) {
+        String val = String.valueOf(allowDeselectOptionalScopes);
+        setAttribute(OIDCConfigAttributes.ALLOW_USER_DESELECT_OPTIONAL_SCOPES, val);
+    }
 }
