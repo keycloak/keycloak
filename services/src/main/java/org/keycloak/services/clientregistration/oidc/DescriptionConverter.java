@@ -153,6 +153,13 @@ public class DescriptionConverter {
                 throw new ClientRegistrationException("Not found clientAuthenticator for requested token_endpoint_auth_method");
             }
             client.setClientAuthenticatorType(clientAuthFactory.getId());
+
+            // Store the requested token_endpoint_auth_method to return it in the response
+            if (authMethod != null) {
+                Map<String, String> attr = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
+                attr.put(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_METHOD, authMethod);
+                client.setAttributes(attr);
+            }
         }
 
         boolean publicKeySet = setPublicKey(clientOIDC, client);
@@ -356,12 +363,22 @@ public class DescriptionConverter {
         if ("none".equals(client.getClientAuthenticatorType())) {
             response.setTokenEndpointAuthMethod("none");
         } else {
-            ClientAuthenticatorFactory clientAuth = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, client.getClientAuthenticatorType());
-            Set<String> oidcClientAuthMethods = clientAuth.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL);
-            if (oidcClientAuthMethods != null && !oidcClientAuthMethods.isEmpty()) {
-                response.setTokenEndpointAuthMethod(oidcClientAuthMethods.iterator().next());
+            // First try to retrieve the stored token_endpoint_auth_method that was requested during registration
+            String storedAuthMethod = client.getAttributes() != null ?
+                client.getAttributes().get(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_METHOD) : null;
+
+            if (storedAuthMethod != null) {
+                response.setTokenEndpointAuthMethod(storedAuthMethod);
+            } else {
+                // Fallback to the old behavior for clients registered before this fix
+                ClientAuthenticatorFactory clientAuth = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, client.getClientAuthenticatorType());
+                Set<String> oidcClientAuthMethods = clientAuth.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL);
+                if (oidcClientAuthMethods != null && !oidcClientAuthMethods.isEmpty()) {
+                    response.setTokenEndpointAuthMethod(oidcClientAuthMethods.iterator().next());
+                }
             }
 
+            ClientAuthenticatorFactory clientAuth = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, client.getClientAuthenticatorType());
             if (clientAuth.supportsSecret()) {
                 response.setClientSecret(client.getSecret());
                 response.setClientSecretExpiresAt(

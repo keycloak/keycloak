@@ -350,6 +350,46 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void testClientSecretPostAuthMethod() throws ClientRegistrationException {
+        // Test that client_secret_post is properly stored and returned
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.CLIENT_SECRET_POST);
+
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_POST, response.getTokenEndpointAuthMethod());
+        Assert.assertNotNull(response.getClientSecret());
+
+        ClientRepresentation kcClientRep = getKeycloakClient(response.getClientId());
+        Assert.assertFalse(kcClientRep.isPublicClient());
+        Assert.assertNotNull(kcClientRep.getSecret());
+
+        // Verify that retrieving the client returns client_secret_post
+        reg.auth(Auth.token(response));
+        OIDCClientRepresentation retrieved = reg.oidc().get(response.getClientId());
+        Assert.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_POST, retrieved.getTokenEndpointAuthMethod());
+    }
+
+    @Test
+    public void testClientSecretBasicAuthMethod() throws ClientRegistrationException {
+        // Test that client_secret_basic is properly stored and returned
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.CLIENT_SECRET_BASIC);
+
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, response.getTokenEndpointAuthMethod());
+        Assert.assertNotNull(response.getClientSecret());
+
+        ClientRepresentation kcClientRep = getKeycloakClient(response.getClientId());
+        Assert.assertFalse(kcClientRep.isPublicClient());
+        Assert.assertNotNull(kcClientRep.getSecret());
+
+        // Verify that retrieving the client returns client_secret_basic
+        reg.auth(Auth.token(response));
+        OIDCClientRepresentation retrieved = reg.oidc().get(response.getClientId());
+        Assert.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, retrieved.getTokenEndpointAuthMethod());
+    }
+
+    @Test
     public void createClientFrontchannelLogoutSettings() throws ClientRegistrationException {
         // When frontchannelLogutSessionRequired is not set, it should be false by default per OIDC Client registration specification
         OIDCClientRepresentation clientRep = createRep();
