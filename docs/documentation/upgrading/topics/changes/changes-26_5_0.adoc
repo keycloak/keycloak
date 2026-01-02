@@ -59,6 +59,11 @@ Additionally, both `IdentityProviderModel` and `IdentityProviderRepresentation` 
 configuration like `isHideOnLogin` to be null in order to not include these in Identity Provider types that do
 not need these configurations.
 
+=== Account UI shows and manages offline sessions
+
+The Account UI and its REST API now shows offline sessions of a user together with regular sessions in the *Device Activity* tab.
+A user can log out of those sessions like any other session, including the option *Sign out all devices*.
+
 === Realm default locale attempted for translation fallbacks
 
 When localization for a realm is enabled and a translation for a message key is unavailable for the language the user selected, {project_name} now attempts to find a matching message key with the realm's default locale before defaulting to English.

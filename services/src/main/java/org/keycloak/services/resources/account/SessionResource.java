@@ -20,7 +20,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -92,6 +92,11 @@ public class SessionResource {
     @NoCache
     public Collection<DeviceRepresentation> devices() {
         Map<String, DeviceRepresentation> reps = new HashMap<>();
+
+        // While we avoid it, there can be both an online and an offline session with the same ID.
+        // The user wouldn't know the difference between online and offline sessions, so we don't differentiate between them
+        // in the UI.
+
         Stream.concat(
             session.sessions().getUserSessionsStream(realm, user),
             session.sessions().getOfflineUserSessionsStream(realm, user))
@@ -163,16 +168,21 @@ public class SessionResource {
     @NoCache
     public Response logout(@PathParam("id") String id) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-        UserSessionModel userSession = Optional.ofNullable(session.sessions().getUserSession(realm, id))
-            .orElseGet(() -> session.sessions().getOfflineUserSession(realm, id));
 
-        if (userSession != null && userSession.getUser().equals(user)) {
-            AuthenticationManager.backchannelLogout(session, userSession, true);
-            event.event(EventType.LOGOUT)
-                .user(user)
-                .session(id)
-                .success();
-        }
+        // While we avoid it, there can be both an online and an offline session with the same ID.
+        // As those have been created from the same device, it is OK to log out both of them.
+        Stream.concat(
+                        Stream.ofNullable(session.sessions().getUserSession(realm, id)),
+                        Stream.ofNullable(session.sessions().getOfflineUserSession(realm, id))).
+                filter(userSession -> userSession.getUser().equals(user))
+                .forEach(userSession -> {
+                    AuthenticationManager.backchannelLogout(session, userSession, true);
+                    event.event(EventType.LOGOUT)
+                            .user(user)
+                            .session(id)
+                            .success();
+                });
+
         return Response.noContent().build();
     }
 
@@ -220,7 +230,7 @@ public class SessionResource {
 
     private boolean isCurrentSession(UserSessionModel session) {
         if (auth.getSession() == null) return false;
-        return session.getId().equals(auth.getSession().getId());
+        return session.getId().equals(auth.getSession().getId()) && Objects.equals(session.isOffline(), auth.getSession().isOffline());
     }
 
     private SessionRepresentation toRepresentation(UserSessionModel s) {
