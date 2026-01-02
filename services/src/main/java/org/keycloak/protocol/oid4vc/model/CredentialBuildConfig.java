@@ -46,7 +46,7 @@ public class CredentialBuildConfig {
 
     private String credentialIssuer;
 
-    private String credentialId;
+    private String credentialConfigId;
 
     //-- Proper building configuration fields --//
 
@@ -92,7 +92,7 @@ public class CredentialBuildConfig {
                 OID4VCIssuerWellKnownProvider.getIssuer(keycloakSession.getContext()));
 
         return new CredentialBuildConfig().setCredentialIssuer(credentialIssuer)
-                                          .setCredentialId(credentialConfiguration.getId())
+                                          .setCredentialConfigId(credentialConfiguration.getId())
                                           .setCredentialType(credentialConfiguration.getVct())
                                           .setTokenJwsType(credentialModel.getTokenJwsType())
                                           .setNumberOfDecoys(credentialModel.getSdJwtNumberOfDecoys())
@@ -112,12 +112,12 @@ public class CredentialBuildConfig {
         return this;
     }
 
-    public String getCredentialId() {
-        return credentialId;
+    public String getCredentialConfigId() {
+        return credentialConfigId;
     }
 
-    public CredentialBuildConfig setCredentialId(String credentialId) {
-        this.credentialId = credentialId;
+    public CredentialBuildConfig setCredentialConfigId(String credentialConfigId) {
+        this.credentialConfigId = credentialConfigId;
         return this;
     }
 
@@ -211,7 +211,7 @@ public class CredentialBuildConfig {
             return false;
         }
         CredentialBuildConfig that = (CredentialBuildConfig) o;
-        return Objects.equals(credentialId, that.credentialId) && Objects.equals(credentialType,
+        return Objects.equals(credentialConfigId, that.credentialConfigId) && Objects.equals(credentialType,
                                                                                  that.credentialType) && Objects.equals(
                 tokenJwsType,
                 that.tokenJwsType) && Objects.equals(hashAlgorithm, that.hashAlgorithm) && Objects.equals(
@@ -226,7 +226,7 @@ public class CredentialBuildConfig {
 
     @Override
     public int hashCode() {
-        return Objects.hash(credentialId,
+        return Objects.hash(credentialConfigId,
                             credentialType,
                             tokenJwsType,
                             hashAlgorithm,
