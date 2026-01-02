@@ -103,6 +103,11 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     @Override
     public Object getConfig() {
+        RealmModel realm = keycloakSession.getContext().getRealm();
+        if (!realm.isVerifiableCredentialsEnabled()) {
+            LOGGER.debugf("OID4VCI functionality is disabled for realm '%s'. Verifiable Credentials switch is off.", realm.getName());
+            throw new jakarta.ws.rs.NotFoundException("OID4VCI functionality is disabled for this realm");
+        }
         CredentialIssuer issuer = getIssuerMetadata();
         return getMetadataResponse(issuer, keycloakSession);
     }

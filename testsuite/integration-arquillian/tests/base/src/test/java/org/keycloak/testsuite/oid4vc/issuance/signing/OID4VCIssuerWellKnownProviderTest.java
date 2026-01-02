@@ -771,6 +771,33 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                 }));
     }
 
+    /**
+     * When verifiable credentials are disabled for the realm, the OID4VCI well-known
+     * endpoint must not be exposed.
+     */
+    @Test
+    public void testWellKnownEndpointDisabledWhenVerifiableCredentialsOff() {
+        try (Client client = AdminClientUtil.createResteasyClient()) {
+            // Disable verifiable credentials for the test realm
+            RealmRepresentation realmRep = adminClient.realm(TEST_REALM_NAME).toRepresentation();
+            realmRep.setVerifiableCredentialsEnabled(false);
+            adminClient.realm(TEST_REALM_NAME).update(realmRep);
+
+            String metadataUrl = getRealmMetadataPath(TEST_REALM_NAME);
+            WebTarget target = client.target(metadataUrl);
+
+            try (Response response = target.request().get()) {
+                assertEquals("OID4VCI well-known endpoint should be hidden when verifiable credentials are disabled",
+                        Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+            }
+        } finally {
+            // Re-enable verifiable credentials to avoid side effects on other tests
+            RealmRepresentation realmRep = adminClient.realm(TEST_REALM_NAME).toRepresentation();
+            realmRep.setVerifiableCredentialsEnabled(true);
+            adminClient.realm(TEST_REALM_NAME).update(realmRep);
+        }
+    }
+
     @Test
     public void testBatchCredentialIssuanceValidation() {
         KeycloakTestingClient testingClient = this.testingClient;

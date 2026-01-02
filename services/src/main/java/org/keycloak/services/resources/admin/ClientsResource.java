@@ -46,6 +46,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -205,6 +206,14 @@ public class ClientsResource {
 
     public ClientModel createClientModel(final ClientRepresentation rep) {
         auth.clients().requireManage();
+
+        // Validate that OID4VC protocol cannot be used when Verifiable Credentials is disabled for the realm
+        if (OID4VCLoginProtocolFactory.PROTOCOL_ID.equals(rep.getProtocol()) && !realm.isVerifiableCredentialsEnabled()) {
+            throw new ErrorResponseException(
+                    Errors.INVALID_INPUT,
+                    "OID4VC protocol cannot be used when Verifiable Credentials is disabled for this realm",
+                    Response.Status.BAD_REQUEST);
+        }
 
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(rep, auth.adminAuth()));

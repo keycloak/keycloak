@@ -55,6 +55,7 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
@@ -204,6 +205,34 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     public void registerClientAsAdminWithCreateOnly() throws ClientRegistrationException {
         authCreateClients();
         registerClient();
+    }
+
+    /**
+     * OID4VC protocol clients must not be creatable via admin APIs when
+     * verifiable credentials are disabled for the realm.
+     */
+    @Test
+    public void registerOid4vcClientWhenVerifiableCredentialsDisabled() {
+        authManageClients();
+
+        // Ensure verifiable credentials are disabled for this realm
+        RealmRepresentation realmRep = adminClient.realm(REALM_NAME).toRepresentation();
+        realmRep.setVerifiableCredentialsEnabled(false);
+        adminClient.realm(REALM_NAME).update(realmRep);
+
+        try {
+            ClientRepresentation client = buildClient();
+            client.setProtocol("oid4vc");
+
+            Response response = adminClient.realm(REALM_NAME).clients().create(client);
+            assertEquals("Creating an OID4VC client should be rejected when verifiable credentials are disabled.",
+                    400, response.getStatus());
+        } finally {
+            // Re-enable verifiable credentials so other tests see the default behavior
+            RealmRepresentation resetRealm = adminClient.realm(REALM_NAME).toRepresentation();
+            resetRealm.setVerifiableCredentialsEnabled(true);
+            adminClient.realm(REALM_NAME).update(resetRealm);
+        }
     }
 
     @Test
