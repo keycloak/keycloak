@@ -197,8 +197,6 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
                         jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
                 assertNotNull("VerifiableCredential should not be null", vc);
                 assertNotNull("Credential subject should not be null", vc.getCredentialSubject());
-
-                LOGGER.infof("Successfully issued credential with attestation proof");
             } catch (Exception e) {
                 LOGGER.error("Test failed with exception", e);
                 fail("Test should not throw exception: " + e.getMessage());
