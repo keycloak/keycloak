@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -91,7 +92,10 @@ public class SessionResource {
     @NoCache
     public Collection<DeviceRepresentation> devices() {
         Map<String, DeviceRepresentation> reps = new HashMap<>();
-        session.sessions().getUserSessionsStream(realm, user).forEach(s -> {
+        Stream.concat(
+            session.sessions().getUserSessionsStream(realm, user),
+            session.sessions().getOfflineUserSessionsStream(realm, user))
+            .forEach(s -> {
                 DeviceRepresentation device = getAttachedDevice(s);
                 DeviceRepresentation rep = reps
                         .computeIfAbsent(device.getOs() + device.getOsVersion(), key -> {
@@ -131,16 +135,19 @@ public class SessionResource {
     @NoCache
     public Response logout(@QueryParam("current") boolean removeCurrent) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-        session.sessions().getUserSessionsStream(realm, user).filter(s -> removeCurrent || !isCurrentSession(s))
-                .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
-                .forEach(s -> {
-                    AuthenticationManager.backchannelLogout(session, s, true);
-                    event.clone()
-                        .event(EventType.LOGOUT)
-                        .user(user)
-                        .session(s)
-                        .success();
-                });
+        Stream.concat(
+                session.sessions().getUserSessionsStream(realm, user),
+                session.sessions().getOfflineUserSessionsStream(realm, user))
+            .filter(s -> removeCurrent || !isCurrentSession(s))
+            .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
+            .forEach(s -> {
+                AuthenticationManager.backchannelLogout(session, s, true);
+                event.clone()
+                    .event(EventType.LOGOUT)
+                    .user(user)
+                    .session(s)
+                    .success();
+            });
         return Response.noContent().build();
     }
 
@@ -156,7 +163,9 @@ public class SessionResource {
     @NoCache
     public Response logout(@PathParam("id") String id) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-        UserSessionModel userSession = session.sessions().getUserSession(realm, id);
+        UserSessionModel userSession = Optional.ofNullable(session.sessions().getUserSession(realm, id))
+            .orElseGet(() -> session.sessions().getOfflineUserSession(realm, id));
+
         if (userSession != null && userSession.getUser().equals(user)) {
             AuthenticationManager.backchannelLogout(session, userSession, true);
             event.event(EventType.LOGOUT)
