@@ -10,7 +10,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.representations.admin.v2.ClientRepresentation;
+import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -21,20 +21,20 @@ public interface ClientApi {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    ClientRepresentation getClient();
+    BaseClientRepresentation getClient();
 
     /**
-     * @return {@link ClientRepresentation} of created/updated client
+     * @return {@link BaseClientRepresentation} of created/updated client
      */
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    Response createOrUpdateClient(@Valid ClientRepresentation client);
+    Response createOrUpdateClient(@Valid BaseClientRepresentation client);
 
     @PATCH
     @Consumes(CONTENT_TYPE_MERGE_PATCH)
     @Produces(MediaType.APPLICATION_JSON)
-    ClientRepresentation patchClient(JsonNode patch);
+    BaseClientRepresentation patchClient(JsonNode patch);
 
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
