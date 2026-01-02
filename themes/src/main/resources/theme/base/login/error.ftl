@@ -11,6 +11,9 @@
                     <p><a id="backToApplication" href="${client.baseUrl}">${msg("backToApplication")}</a></p>
                 </#if>
             </#if>
+            <#if errorId??>
+            <p class="errorId">${msg("errorIdMessage")?no_esc}: <strong>${errorId?no_esc}</strong></p>
+            </#if>
         </div>
     </#if>
 </@layout.registrationLayout>
