@@ -109,7 +109,7 @@ public class ClientSecretRotationExecutor implements
         } else {
 
             if (adminContext instanceof DynamicClientUpdatedContext) {
-                int startRemainingWindow = clientConfigWrapper.getClientSecretExpirationTime()
+                long startRemainingWindow = clientConfigWrapper.getClientSecretExpirationTime()
                         - configuration.remainExpirationPeriod;
 
                 debugDynamicInfo(clientConfigWrapper, startRemainingWindow);
@@ -122,7 +122,7 @@ public class ClientSecretRotationExecutor implements
         }
     }
 
-    private void debugDynamicInfo(OIDCClientSecretConfigWrapper clientConfigWrapper, int startRemainingWindow) {
+    private void debugDynamicInfo(OIDCClientSecretConfigWrapper clientConfigWrapper, long startRemainingWindow) {
         if (logger.isDebugEnabled()) {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
             logger.debugv("client expiration time: {0}, remaining time: {1}, current time: {2}, Time offset: {3}", clientConfigWrapper.getClientSecretExpirationTime(), startRemainingWindow, Time.currentTime(), Time.getOffset());
@@ -189,11 +189,11 @@ public class ClientSecretRotationExecutor implements
     public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
 
         @JsonProperty(ClientSecretRotationExecutorFactory.SECRET_EXPIRATION_PERIOD)
-        protected Integer expirationPeriod;
+        protected Long expirationPeriod;
         @JsonProperty(ClientSecretRotationExecutorFactory.SECRET_REMAINING_ROTATION_PERIOD)
-        protected Integer remainExpirationPeriod;
+        protected Long remainExpirationPeriod;
         @JsonProperty(ClientSecretRotationExecutorFactory.SECRET_ROTATED_EXPIRATION_PERIOD)
-        private Integer rotatedExpirationPeriod;
+        private Long rotatedExpirationPeriod;
 
         @Override
         public boolean validateConfig() {
@@ -216,27 +216,27 @@ public class ClientSecretRotationExecutor implements
             return true;
         }
 
-        public Integer getExpirationPeriod() {
+        public Long getExpirationPeriod() {
             return expirationPeriod;
         }
 
-        public void setExpirationPeriod(Integer expirationPeriod) {
+        public void setExpirationPeriod(Long expirationPeriod) {
             this.expirationPeriod = expirationPeriod;
         }
 
-        public Integer getRemainExpirationPeriod() {
+        public Long getRemainExpirationPeriod() {
             return remainExpirationPeriod;
         }
 
-        public void setRemainExpirationPeriod(Integer remainExpirationPeriod) {
+        public void setRemainExpirationPeriod(Long remainExpirationPeriod) {
             this.remainExpirationPeriod = remainExpirationPeriod;
         }
 
-        public Integer getRotatedExpirationPeriod() {
+        public Long getRotatedExpirationPeriod() {
             return rotatedExpirationPeriod;
         }
 
-        public void setRotatedExpirationPeriod(Integer rotatedExpirationPeriod) {
+        public void setRotatedExpirationPeriod(Long rotatedExpirationPeriod) {
             this.rotatedExpirationPeriod = rotatedExpirationPeriod;
         }
 
