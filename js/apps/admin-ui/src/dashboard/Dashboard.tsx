@@ -14,15 +14,15 @@ import {
   DescriptionListDescription,
   DescriptionListGroup,
   DescriptionListTerm,
+  Divider,
   EmptyState,
   EmptyStateBody,
   EmptyStateHeader,
+  Flex,
+  FlexItem,
   Grid,
   GridItem,
   Label,
-  List,
-  ListItem,
-  ListVariant,
   PageSection,
   Tab,
   TabTitleText,
@@ -30,6 +30,7 @@ import {
   TextContent,
   TextVariants,
   Title,
+  Tooltip,
 } from "@patternfly/react-core";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -76,29 +77,89 @@ type FeatureItemProps = {
 };
 
 const FeatureItem = ({ feature }: FeatureItemProps) => {
-  const { t } = useTranslation();
-  return (
-    <ListItem className="pf-v5-u-mb-sm">
-      {feature.name}&nbsp;
-      {feature.type === FeatureType.Experimental && (
-        <Label color="orange">{t("experimental")}</Label>
+  const content = (
+    <Label color="grey" className="pf-v5-u-font-size-sm">
+      {feature.name}
+    </Label>
+  );
+
+  return feature.label ? (
+    <Tooltip content={<div>{feature.label}</div>}>{content}</Tooltip>
+  ) : (
+    content
+  );
+};
+
+type FeatureTypeColumnProps = {
+  typeName: string;
+  typeColor: "orange" | "blue" | "green" | "grey";
+  features: FeatureRepresentation[];
+  showLabel?: boolean;
+  layoutDirection?: "horizontal" | "vertical";
+  showWhenEmpty?: boolean;
+  typeDescription?: string;
+  flex?: "flex_1" | "flex_2" | undefined;
+};
+
+const FeatureTypeColumn = ({
+  typeName,
+  typeColor,
+  features,
+  showLabel = true,
+  layoutDirection = "horizontal",
+  showWhenEmpty = false,
+  typeDescription,
+  flex,
+}: FeatureTypeColumnProps) => {
+  if (features.length === 0 && !showWhenEmpty) return null;
+
+  const typeLabel = (
+    <Label color={typeColor} className="pf-v5-u-font-weight-bold">
+      {typeName}
+    </Label>
+  );
+
+  const content = (
+    <Flex
+      direction={{ default: "column" }}
+      spaceItems={{ default: "spaceItemsSm" }}
+    >
+      {showLabel && (
+        <FlexItem className="pf-v5-u-text-align-center">
+          {typeDescription ? (
+            <Tooltip content={<div>{typeDescription}</div>}>
+              {typeLabel}
+            </Tooltip>
+          ) : (
+            typeLabel
+          )}
+        </FlexItem>
       )}
-      {feature.type === FeatureType.Preview && (
-        <Label color="blue">{t("preview")}</Label>
-      )}
-      {feature.type === FeatureType.PreviewDisabledByDefault && (
-        <Label color="blue">{t("preview")}</Label>
-      )}
-      {feature.type === FeatureType.Default && (
-        <Label color="green">{t("supported")}</Label>
-      )}
-      {feature.type === FeatureType.DisabledByDefault && (
-        <Label color="green">{t("supported")}</Label>
-      )}
-      {feature.type === FeatureType.Deprecated && (
-        <Label color="grey">{t("deprecated")}</Label>
-      )}
-    </ListItem>
+      <FlexItem>
+        <Flex
+          direction={{
+            default: layoutDirection === "vertical" ? "column" : "row",
+          }}
+          spaceItems={{ default: "spaceItemsSm" }}
+          flexWrap={{
+            default: layoutDirection === "horizontal" ? "wrap" : "nowrap",
+          }}
+          justifyContent={{ default: "justifyContentCenter" }}
+        >
+          {features.map((feature) => (
+            <FlexItem key={feature.name}>
+              <FeatureItem feature={feature} />
+            </FlexItem>
+          ))}
+        </Flex>
+      </FlexItem>
+    </Flex>
+  );
+
+  return flex ? (
+    <FlexItem flex={{ default: flex }}>{content}</FlexItem>
+  ) : (
+    <FlexItem>{content}</FlexItem>
   );
 };
 
@@ -122,6 +183,65 @@ const Dashboard = () => {
     () => sortedFeatures.filter((f) => f.enabled) || [],
     [serverInfo.features],
   );
+
+  // Group enabled features by type
+  const enabledFeaturesByType = useMemo(() => {
+    return {
+      experimental: enabledFeatures.filter(
+        (f) => f.type === FeatureType.Experimental,
+      ),
+      preview: enabledFeatures.filter(
+        (f) =>
+          f.type === FeatureType.Preview ||
+          f.type === FeatureType.PreviewDisabledByDefault,
+      ),
+      default: enabledFeatures.filter(
+        (f) =>
+          f.type === FeatureType.Default ||
+          f.type === FeatureType.DisabledByDefault,
+      ),
+      deprecated: enabledFeatures.filter(
+        (f) => f.type === FeatureType.Deprecated,
+      ),
+    };
+  }, [enabledFeatures]);
+
+  // Determine if small categories should be combined
+  const shouldCombineSmallCategories = useMemo(() => {
+    const smallCategories = [
+      enabledFeaturesByType.preview,
+      enabledFeaturesByType.deprecated,
+      enabledFeaturesByType.experimental,
+    ];
+
+    const allSmall = smallCategories.every((cat) => cat.length <= 3);
+    const hasMultipleCategories =
+      smallCategories.filter((cat) => cat.length > 0).length >= 2;
+
+    return allSmall && hasMultipleCategories;
+  }, [enabledFeaturesByType]);
+
+  // Group disabled features by type
+  const disabledFeaturesByType = useMemo(() => {
+    return {
+      experimental: disabledFeatures.filter(
+        (f) => f.type === FeatureType.Experimental,
+      ),
+      preview: disabledFeatures.filter(
+        (f) =>
+          f.type === FeatureType.Preview ||
+          f.type === FeatureType.PreviewDisabledByDefault,
+      ),
+      supported: disabledFeatures.filter(
+        (f) =>
+          f.type === FeatureType.Default ||
+          f.type === FeatureType.DisabledByDefault,
+      ),
+      deprecated: disabledFeatures.filter(
+        (f) => f.type === FeatureType.Deprecated,
+      ),
+    };
+  }, [disabledFeatures]);
 
   const useTab = (tab: DashboardTab) =>
     useRoutableTab(
@@ -302,14 +422,104 @@ const Dashboard = () => {
                             />
                           </DescriptionListTerm>
                           <DescriptionListDescription>
-                            <List variant={ListVariant.inline}>
-                              {enabledFeatures.map((feature) => (
-                                <FeatureItem
-                                  key={feature.name}
-                                  feature={feature}
+                            {shouldCombineSmallCategories ? (
+                              <Flex spaceItems={{ default: "spaceItemsMd" }}>
+                                <FeatureTypeColumn
+                                  typeName={t("supported")}
+                                  typeColor="green"
+                                  features={enabledFeaturesByType.default}
+                                  layoutDirection="horizontal"
+                                  typeDescription={t(
+                                    "featureTypeSupportedHelp",
+                                  )}
+                                  flex="flex_2"
                                 />
-                              ))}
-                            </List>
+                                <FlexItem flex={{ default: "flex_1" }}>
+                                  <Flex
+                                    direction={{ default: "column" }}
+                                    spaceItems={{ default: "spaceItemsSm" }}
+                                    className="pf-v5-u-p-sm"
+                                  >
+                                    <FeatureTypeColumn
+                                      typeName={t("preview")}
+                                      typeColor="blue"
+                                      features={enabledFeaturesByType.preview}
+                                      layoutDirection="horizontal"
+                                      typeDescription={t(
+                                        "featureTypePreviewHelp",
+                                      )}
+                                    />
+                                    {enabledFeaturesByType.preview.length >
+                                      0 && <Divider />}
+                                    <FeatureTypeColumn
+                                      typeName={t("deprecated")}
+                                      typeColor="grey"
+                                      features={
+                                        enabledFeaturesByType.deprecated
+                                      }
+                                      layoutDirection="horizontal"
+                                      typeDescription={t(
+                                        "featureTypeDeprecatedHelp",
+                                      )}
+                                    />
+                                    {enabledFeaturesByType.deprecated.length >
+                                      0 && <Divider />}
+                                    <FeatureTypeColumn
+                                      typeName={t("experimental")}
+                                      typeColor="orange"
+                                      features={
+                                        enabledFeaturesByType.experimental
+                                      }
+                                      layoutDirection="horizontal"
+                                      typeDescription={t(
+                                        "featureTypeExperimentalHelp",
+                                      )}
+                                    />
+                                  </Flex>
+                                </FlexItem>
+                              </Flex>
+                            ) : (
+                              <Flex spaceItems={{ default: "spaceItemsMd" }}>
+                                <FeatureTypeColumn
+                                  typeName={t("supported")}
+                                  typeColor="green"
+                                  features={enabledFeaturesByType.default}
+                                  layoutDirection="horizontal"
+                                  typeDescription={t(
+                                    "featureTypeSupportedHelp",
+                                  )}
+                                  flex="flex_2"
+                                />
+                                <FeatureTypeColumn
+                                  typeName={t("preview")}
+                                  typeColor="blue"
+                                  features={enabledFeaturesByType.preview}
+                                  layoutDirection="horizontal"
+                                  typeDescription={t("featureTypePreviewHelp")}
+                                  flex="flex_1"
+                                />
+                                <FeatureTypeColumn
+                                  typeName={t("deprecated")}
+                                  typeColor="grey"
+                                  features={enabledFeaturesByType.deprecated}
+                                  layoutDirection="horizontal"
+                                  typeDescription={t(
+                                    "featureTypeDeprecatedHelp",
+                                  )}
+                                  flex="flex_1"
+                                />
+                                <FeatureTypeColumn
+                                  typeName={t("experimental")}
+                                  typeColor="orange"
+                                  features={enabledFeaturesByType.experimental}
+                                  layoutDirection="horizontal"
+                                  typeDescription={t(
+                                    "featureTypeExperimentalHelp",
+                                  )}
+                                  flex="flex_1"
+                                />
+                              </Flex>
+                            )}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                         <DescriptionListGroup>
@@ -321,14 +531,42 @@ const Dashboard = () => {
                             />
                           </DescriptionListTerm>
                           <DescriptionListDescription>
-                            <List variant={ListVariant.inline}>
-                              {disabledFeatures.map((feature) => (
-                                <FeatureItem
-                                  key={feature.name}
-                                  feature={feature}
-                                />
-                              ))}
-                            </List>
+                            <Flex spaceItems={{ default: "spaceItemsMd" }}>
+                              <FeatureTypeColumn
+                                typeName={t("supported")}
+                                typeColor="green"
+                                features={disabledFeaturesByType.supported}
+                                layoutDirection="horizontal"
+                                typeDescription={t("featureTypeSupportedHelp")}
+                                flex="flex_1"
+                              />
+                              <FeatureTypeColumn
+                                typeName={t("preview")}
+                                typeColor="blue"
+                                features={disabledFeaturesByType.preview}
+                                layoutDirection="horizontal"
+                                typeDescription={t("featureTypePreviewHelp")}
+                                flex="flex_1"
+                              />
+                              <FeatureTypeColumn
+                                typeName={t("deprecated")}
+                                typeColor="grey"
+                                features={disabledFeaturesByType.deprecated}
+                                layoutDirection="horizontal"
+                                typeDescription={t("featureTypeDeprecatedHelp")}
+                                flex="flex_1"
+                              />
+                              <FeatureTypeColumn
+                                typeName={t("experimental")}
+                                typeColor="orange"
+                                features={disabledFeaturesByType.experimental}
+                                layoutDirection="horizontal"
+                                typeDescription={t(
+                                  "featureTypeExperimentalHelp",
+                                )}
+                                flex="flex_1"
+                              />
+                            </Flex>
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                       </DescriptionList>
