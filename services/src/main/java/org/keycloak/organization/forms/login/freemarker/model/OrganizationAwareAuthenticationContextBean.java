@@ -19,8 +19,11 @@ package org.keycloak.organization.forms.login.freemarker.model;
 
 import java.util.List;
 
+import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationSelectionOption;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
+import org.keycloak.models.UserModel;
 
 public class OrganizationAwareAuthenticationContextBean extends AuthenticationContextBean {
 
@@ -53,7 +56,36 @@ public class OrganizationAwareAuthenticationContextBean extends AuthenticationCo
         return delegate.showResetCredentials();
     }
 
+    @Override
     public String getAttemptedUsername() {
-        return delegate.getAttemptedUsername();
+        if (delegate.getContext() == null) {
+            return null;
+        }
+        
+        AuthenticationFlowContext context = delegate.getContext();
+        String username = context.getAuthenticationSession().getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
+
+        if (username == null) {
+            // Fall back to delegate's behavior when no attempted username is stored
+            return delegate.getAttemptedUsername();
+        }
+        
+        UserModel user = context.getUser();
+        if (user == null) {
+            return username;
+        }
+
+        String userEmail = user.getEmail();
+        String userUsername = user.getUsername();
+        
+        if (userEmail != null && userEmail.equalsIgnoreCase(username)) {
+            // User entered their email - show what they entered
+            return username;
+        } else if (userUsername != null && userUsername.equalsIgnoreCase(username)) {
+            // User entered their username - show what they entered
+            return username;
+        }
+
+        return username;
     }
 }
