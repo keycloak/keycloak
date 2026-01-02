@@ -5,10 +5,10 @@ import java.util.stream.Stream;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
-import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import org.jboss.logging.Logger;
 
@@ -45,27 +45,8 @@ public abstract class GroupBasedStepProvider implements WorkflowStepProvider {
     }
 
     private Stream<GroupModel> getGroups() {
-        return model.getConfig().getOrDefault(CONFIG_GROUP, List.of()).stream().map(this::getGroup);
-    }
-
-    private GroupModel getGroup(String name) {
-        GroupProvider groups = session.groups();
-        String[] paths = name.split("/");
-        RealmModel realm = getRealm();
-        GroupModel group = null;
-
-        for (String part : paths) {
-            if (part.isEmpty()) {
-                continue;
-            }
-            group = groups.getGroupByName(realm, group, part);
-        }
-
-        if (group == null) {
-            throw new IllegalStateException("Could not find group for name or path: " + name);
-        }
-
-        return group;
+        return model.getConfig().getOrDefault(CONFIG_GROUP, List.of()).stream()
+                .map(name -> KeycloakModelUtils.findGroupByPath(session, getRealm(), name));
     }
 
     private RealmModel getRealm() {

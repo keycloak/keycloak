@@ -11,7 +11,7 @@ In its simplest form, a workflow definition can be defined as follows:
 
 ```yaml
 name: Onboarding new users
-on: user_added
+on: user-created
 steps:
   - uses: notify-user
     with:

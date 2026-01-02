@@ -39,8 +39,12 @@ only the basic attributes in representations or all of them.
 The `UserProfile` interface is a private API and should not be implemented by custom code. However, if you have extensions that
 implement this interface, you will need to update your code to accommodate this new method.
 
-Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
-In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+=== Additional LOGOUT events
+
+When logging out sessions via the Account Console {project_name} now creates LOGOUT user events to track this activity.
+The events are connected to the `account` client.
+
+When the number of sessions for a user is limited, and you have configured the oldest session to be logged out once the limit is reached, {project_name} now creates LOGOUT user events to track this. The events are connected to the client that triggered the new login.
 
 === Identity Provider refactoring
 
@@ -54,6 +58,10 @@ the new `UserAuthenticationIdentityProvider` interface (all methods remain the s
 Additionally, both `IdentityProviderModel` and `IdentityProviderRepresentation` are now using Boolean values to allow
 configuration like `isHideOnLogin` to be null in order to not include these in Identity Provider types that do
 not need these configurations.
+
+=== Realm default locale attempted for translation fallbacks
+
+When localization for a realm is enabled and a translation for a message key is unavailable for the language the user selected, {project_name} now attempts to find a matching message key with the realm's default locale before defaulting to English.
 
 === SPIFFE Identity Provider configuration changed
 

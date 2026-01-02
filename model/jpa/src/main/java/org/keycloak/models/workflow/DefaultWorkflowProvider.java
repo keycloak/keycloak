@@ -59,7 +59,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
     @Override
     public void updateWorkflow(Workflow workflow, WorkflowRepresentation representation) {
         // first step - ensure the updated workflow is valid
-        WorkflowValidator.validateWorkflow(session, representation);
+        WorkflowValidator.validateWorkflow(session, this, representation);
 
         // check if there are scheduled steps for this workflow - if there aren't, we can update freely
         if (!stateProvider.hasScheduledSteps(workflow.getId())) {
@@ -89,6 +89,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                 }
                 // set the id of the step to match the existing one, so we can update the config
                 newStep.setId(currentStep.getId());
+                newStep.setPriority(Long.parseLong(currentStep.getPriority()));
             }
 
             // finally, update the workflow's config along with the steps' configs
@@ -197,7 +198,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
 
     @Override
     public Workflow toModel(WorkflowRepresentation rep) {
-        WorkflowValidator.validateWorkflow(session, rep);
+        WorkflowValidator.validateWorkflow(session, this, rep);
 
         MultivaluedHashMap<String, String> config = ofNullable(rep.getConfig()).orElse(new MultivaluedHashMap<>());
         if (rep.getCancelInProgress() != null) {

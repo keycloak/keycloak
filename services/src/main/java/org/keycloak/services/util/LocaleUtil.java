@@ -62,11 +62,28 @@ public class LocaleUtil {
     /**
      * Returns the parent locale of the given {@code locale}. If the locale just contains a language (e.g. "de"),
      * returns the fallback locale "en". For "en" no parent exists, {@code null} is returned.
-     * 
+     *
      * @param locale the locale
      * @return the parent locale, may be {@code null}
+     * @deprecated use {@link LocaleUtil#getParentLocale(Locale, RealmModel)} instead.
      */
+    @Deprecated(since = "26.5", forRemoval = true)
     public static Locale getParentLocale(Locale locale) {
+        return getParentLocale(locale, null);
+    }
+
+    /**
+     * Returns the parent locale of the given {@code locale}. If the locale just contains a language (e.g. "de"),
+     * returns the fallback default locale of the realm or if that does not exist "en".
+     * For "en" no parent exists, {@code null} is returned.
+     *
+     * @return the parent locale, may be {@code null}
+     */
+    public static Locale getParentLocale(Locale locale, RealmModel realm) {
+        if (Locale.ENGLISH.equals(locale)) {
+            return null;
+        }
+
         if (locale.getVariant() != null && !locale.getVariant().isEmpty()) {
             return new Locale(locale.getLanguage(), locale.getCountry());
         }
@@ -75,11 +92,20 @@ public class LocaleUtil {
             return new Locale(locale.getLanguage());
         }
 
-        if (!Locale.ENGLISH.equals(locale)) {
+        if (realm != null
+                && realm.isInternationalizationEnabled()
+                && realm.getDefaultLocale() != null
+                && Locale.forLanguageTag(realm.getDefaultLocale()).getLanguage().equals(locale.getLanguage())) {
             return Locale.ENGLISH;
         }
 
-        return null;
+        if (realm != null
+                && realm.isInternationalizationEnabled()
+                && realm.getDefaultLocale() != null) {
+            return Locale.forLanguageTag(realm.getDefaultLocale());
+        }
+
+        return Locale.ENGLISH;
     }
 
     /**
@@ -90,10 +116,10 @@ public class LocaleUtil {
      * @param locale the locale
      * @return the applicable locales
      */
-    static List<Locale> getApplicableLocales(Locale locale) {
+    static List<Locale> getApplicableLocales(Locale locale, RealmModel realm) {
         List<Locale> applicableLocales = new ArrayList<>();
 
-        for (Locale currentLocale = locale; currentLocale != null; currentLocale = getParentLocale(currentLocale)) {
+        for (Locale currentLocale = locale; currentLocale != null; currentLocale = getParentLocale(currentLocale, realm)) {
             applicableLocales.add(currentLocale);
         }
 
@@ -107,10 +133,10 @@ public class LocaleUtil {
      * @param locale the locale
      * @param messages the (locale-)grouped messages
      * @return the merged properties
-     * @see #mergeGroupedMessages(Locale, Map, Map)
+     * @see #mergeGroupedMessages(RealmModel, Locale, Map, Map)
      */
-    public static Properties mergeGroupedMessages(Locale locale, Map<Locale, Properties> messages) {
-        return mergeGroupedMessages(locale, messages, null);
+    public static Properties mergeGroupedMessages(RealmModel realm, Locale locale, Map<Locale, Properties> messages) {
+        return mergeGroupedMessages(realm, locale, messages, null);
     }
 
     /**
@@ -147,11 +173,11 @@ public class LocaleUtil {
      * @param secondMessages may be {@code null}, the second (locale-)grouped messages, having lower priority (per
      *        locale) than {@code firstMessages}
      * @return the merged properties
-     * @see #mergeGroupedMessages(Locale, Map)
+     * @see #mergeGroupedMessages(RealmModel, Locale, Map)
      */
-    public static Properties mergeGroupedMessages(Locale locale, Map<Locale, Properties> firstMessages,
+    public static Properties mergeGroupedMessages(RealmModel realm, Locale locale, Map<Locale, Properties> firstMessages,
             Map<Locale, Properties> secondMessages) {
-        List<Locale> applicableLocales = getApplicableLocales(locale);
+        List<Locale> applicableLocales = getApplicableLocales(locale, realm);
 
         Properties mergedProperties = new Properties();
 
@@ -186,7 +212,7 @@ public class LocaleUtil {
      * the theme properties, but only when defined for the same locale. In general, texts for a more specific locale
      * take precedence over texts for a less specific locale.
      * <p>
-     * For implementation details, see {@link #mergeGroupedMessages(Locale, Map, Map)}.
+     * For implementation details, see {@link #mergeGroupedMessages(RealmModel, Locale, Map, Map)}.
      * 
      * @param realm the realm from which the localization texts should be used
      * @param locale the locale for which the relevant texts should be retrieved
@@ -197,13 +223,13 @@ public class LocaleUtil {
             Map<Locale, Properties> themeMessages) {
         Map<Locale, Properties> realmLocalizationMessages = getRealmLocalizationTexts(realm, locale);
 
-        return mergeGroupedMessages(locale, realmLocalizationMessages, themeMessages);
+        return mergeGroupedMessages(realm, locale, realmLocalizationMessages, themeMessages);
     }
 
     public static Map<Locale, Properties> getRealmLocalizationTexts(RealmModel realm, Locale locale) {
         LinkedHashMap<Locale, Properties> groupedMessages = new LinkedHashMap<>();
 
-        List<Locale> applicableLocales = getApplicableLocales(locale);
+        List<Locale> applicableLocales = getApplicableLocales(locale, realm);
         for (Locale applicableLocale : applicableLocales) {
             Map<String, String> currentRealmLocalizationTexts =
                     realm.getRealmLocalizationTextsByLocale(applicableLocale.toLanguageTag());

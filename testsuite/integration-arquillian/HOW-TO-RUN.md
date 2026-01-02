@@ -165,7 +165,7 @@ The `MigrationTest` test will:
 - Perform a couple of tests to verify data after the update are correct.
 - Stop MariaDB docker container. In case of a test failure, the MariaDB container is not stopped, so you can manually inspect the database.
 
-The first version of Keycloak on Quarkus is version `17.0.0`, but the initial versions have a complete different set of boot options that make co-existance impossible.
+The first version of Keycloak on Quarkus is version `17.0.0`, but the initial versions have a complete different set of boot options that make co-existence impossible.
 Therefore the first version that can be tested is `19.0.3`.
 You can execute those tests as follows:
 ```
