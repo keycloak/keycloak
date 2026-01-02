@@ -30,6 +30,9 @@ import jakarta.ws.rs.core.HttpHeaders;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
@@ -44,6 +47,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -57,6 +61,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
+import org.hamcrest.Matchers;
+import org.junit.Rule;
 import org.junit.Test;
 
 import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
@@ -71,6 +77,9 @@ import static org.junit.Assert.assertNotNull;
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
 public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEndpointTest {
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     /**
      * Test context for OID4VC tests
@@ -173,11 +182,23 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         String credentialIdentifier = assertTokenResponse(tokenResponse);
         String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
 
+        // Clear events before credential request
+        events.clear();
+
         // Request the actual credential using the identifier
         HttpPost postCredential = getCredentialRequest(ctx, credRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
 
         try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
             assertErrorCredentialResponse(credentialResponse);
+            
+            // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired with details about missing mandatory claim
+            events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                    .client(client.getClientId())
+                    .user(AssertEvents.isUUID())
+                    .session(AssertEvents.isSessionId())
+                    .error(Errors.INVALID_REQUEST)
+                    .detail(Details.REASON, Matchers.containsString("The requested claims are not available in the user profile"))
+                    .assertEvent();
         }
 
         // 3 - Update user to add "lastName"
@@ -229,11 +250,23 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
             String credentialIdentifier = assertTokenResponse(tokenResponse);
             String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
 
+            // Clear events before credential request
+            events.clear();
+
             // Request the actual credential using the identifier
             HttpPost postCredential = getCredentialRequest(ctx, credRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
 
             try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
                 assertErrorCredentialResponse(credentialResponse);
+                
+                // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired with details about missing mandatory claim
+                events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                        .client(client.getClientId())
+                        .user(AssertEvents.isUUID())
+                        .session(AssertEvents.isSessionId())
+                        .error(Errors.INVALID_REQUEST)
+                        .detail(Details.REASON, Matchers.containsString("The requested claims are not available in the user profile"))
+                        .assertEvent();
             }
 
             // 3 - Update user to add "lastName", but keep "firstName" missing. Credential request should still fail
@@ -241,8 +274,20 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
             userRep.setFirstName(null);
             user.update(userRep);
 
+            // Clear events before credential request
+            events.clear();
+
             try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
                 assertErrorCredentialResponse(credentialResponse);
+                
+                // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
+                events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                        .client(client.getClientId())
+                        .user(AssertEvents.isUUID())
+                        .session(AssertEvents.isSessionId())
+                        .error(Errors.INVALID_REQUEST)
+                        .detail(Details.REASON, Matchers.containsString("The requested claims are not available in the user profile"))
+                        .assertEvent();
             }
 
             // 4 - Update user to add "firstName", but missing "lastName"
@@ -250,8 +295,20 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
             userRep.setFirstName("John");
             user.update(userRep);
 
+            // Clear events before credential request
+            events.clear();
+
             try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
                 assertErrorCredentialResponse(credentialResponse);
+                
+                // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
+                events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                        .client(client.getClientId())
+                        .user(AssertEvents.isUUID())
+                        .session(AssertEvents.isSessionId())
+                        .error(Errors.INVALID_REQUEST)
+                        .detail(Details.REASON, Matchers.containsString("The requested claims are not available in the user profile"))
+                        .assertEvent();
             }
 
             // 5 - Update user to both "firstName" and "lastName". Credential request should be successful

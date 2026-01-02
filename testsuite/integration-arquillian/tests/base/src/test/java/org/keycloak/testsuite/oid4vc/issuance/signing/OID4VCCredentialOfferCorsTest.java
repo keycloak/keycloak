@@ -19,14 +19,24 @@ package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Time;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.testsuite.AssertEvents;
@@ -40,6 +50,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
+import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -89,6 +100,8 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
     public void testCredentialOfferUriCorsValidOrigin() throws Exception {
 
         AccessTokenResponse tokenResponse = getAccessToken();
+        // Clear events from token retrieval
+        events.clear();
 
         // Test credential offer URI endpoint with valid origin
         String offerUriUrl = getCredentialOfferUriUrl();
@@ -102,6 +115,14 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
             CredentialOfferURI offerUri = JsonSerialization.readValue(responseBody, CredentialOfferURI.class);
             assertNotNull("Credential offer URI should not be null", offerUri.getIssuer());
             assertNotNull("Nonce should not be null", offerUri.getNonce());
+
+            // Verify CREDENTIAL_OFFER_REQUEST event was fired
+            events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
+                    .client(clientId)
+                    .user(AssertEvents.isUUID())
+                    .session(AssertEvents.isSessionId())
+                    .detail(Details.USERNAME, "john")
+                    .assertEvent();
         }
     }
 
@@ -149,6 +170,9 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         AccessTokenResponse tokenResponse = getAccessToken();
         String nonce = getNonceFromOfferUri(tokenResponse.getAccessToken());
 
+        // Clear events before credential offer request
+        events.clear();
+
         // Test credential offer endpoint with valid origin
         String offerUrl = getCredentialOfferUrl(nonce);
 
@@ -161,6 +185,17 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
             CredentialsOffer offer = JsonSerialization.readValue(responseBody, CredentialsOffer.class);
             assertNotNull("Credential offer should not be null", offer.getCredentialIssuer());
             assertNotNull("Credential configuration IDs should not be null", offer.getCredentialConfigurationIds());
+
+            // The credential_type detail contains the credential configuration ID from the offer
+            // We already assert that credentialConfigurationIds is not null and not empty above
+            String expectedCredentialType = offer.getCredentialConfigurationIds().get(0);
+
+            events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
+                    .client(clientId)
+                    .user(AssertEvents.isUUID())
+                    .session((String) null) // No session for unauthenticated endpoint
+                    .detail(Details.CREDENTIAL_TYPE, expectedCredentialType)
+                    .assertEvent();
         }
     }
 
@@ -242,6 +277,73 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
             assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
             // Should still include CORS headers for error responses
             assertCorsHeaders(response, VALID_CORS_URL);
+        }
+    }
+
+    @Test
+    public void testCredentialOfferUriWithInvalidCredentialConfig() throws Exception {
+        AccessTokenResponse tokenResponse = getAccessToken();
+        events.clear();
+
+        // Test credential offer URI endpoint with invalid credential configuration ID
+        String offerUriUrl = getCredentialOfferUriUrl("invalid-credential-config-id");
+
+        try (CloseableHttpResponse response = makeCorsRequest(offerUriUrl, VALID_CORS_URL, tokenResponse.getAccessToken())) {
+            // Should return 400 Bad Request
+            assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
+
+            // Verify VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR event was fired
+            events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR)
+                    .client(clientId)
+                    .user(AssertEvents.isUUID())
+                    .session(AssertEvents.isSessionId())
+                    .error(Errors.INVALID_REQUEST)
+                    .assertEvent();
+        }
+    }
+
+    @Test
+    public void testCredentialOfferWithExpiredNonce() throws Exception {
+        events.clear();
+
+        // Create an expired credential offer using testing client
+        // Use AtomicReference to avoid serialization issues with lambda captures
+        AtomicReference<String> nonceHolder = new AtomicReference<>();
+        final String issuerPath = getRealmPath(TEST_REALM_NAME);
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            CredentialsOffer credOffer = new CredentialsOffer()
+                    .setCredentialIssuer(issuerPath)
+                    .setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(new PreAuthorizedCode().setPreAuthorizedCode("test-code")))
+                    .setCredentialConfigurationIds(List.of(jwtTypeCredentialConfigurationIdName));
+
+            CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+            // Create offer with expiration time just 1 second in the past
+            // This ensures it's still findable in storage but marked as expired
+            CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, Time.currentTime() - 1);
+            offerStorage.putOfferState(session, offerState);
+            session.getTransactionManager().commit();
+            nonceHolder.set(offerState.getNonce());
+        });
+
+        String nonce = nonceHolder.get();
+
+        events.clear();
+
+        // Try to fetch the expired credential offer
+        String offerUrl = getCredentialOfferUrl(nonce);
+        try (CloseableHttpResponse response = makeCorsRequest(offerUrl, VALID_CORS_URL, null)) {
+            // Should return 400 Bad Request
+            assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
+
+            // Verify VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR event was fired
+            events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR)
+                    .client((String) null)
+                    .user((String) null)
+                    .session((String) null)
+                    // Storage prunes expired single-use entries before lookup; lookup failure yields INVALID_REQUEST
+                    .error(Errors.INVALID_REQUEST)
+                    .detail(Details.REASON, Matchers.containsString("No credential offer state"))
+                    .assertEvent();
         }
     }
 
