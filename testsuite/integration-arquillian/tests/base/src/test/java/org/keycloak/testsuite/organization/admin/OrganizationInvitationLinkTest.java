@@ -35,6 +35,7 @@ import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
@@ -48,6 +49,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.OrganizationAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
@@ -184,6 +186,52 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
 
             acceptInvitation(organization, user, "AUTH_RESPONSE");
+        }
+    }
+
+    @Test
+    public void testInviteWithAccountClientCustomBaseUrl() throws IOException, MessagingException {
+        UserRepresentation user = createUser("invited", "invited@myemail.com");
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        try (
+            ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
+                .setBaseUrl(OAuthClient.APP_AUTH_ROOT)
+                .update();
+            Response response = organization.members().inviteExistingUser(user.getId());
+        ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            acceptInvitation(organization, user, "AUTH_RESPONSE");
+        }
+    }
+
+    @Test
+    public void testInviteNewUserRegistrationWithAccountClientCustomBaseUrl() throws IOException, MessagingException {
+        String email = "inviteduser@email";
+        String firstName = "Homer";
+        String lastName = "Simpson";
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        try (
+            ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
+                .setBaseUrl(OAuthClient.APP_AUTH_ROOT)
+                .update();
+        ) {
+            organization.members().inviteUser(email, firstName, lastName).close();
+
+            registerUser(organization, email);
+
+            List<UserRepresentation> users = testRealm().users().searchByEmail(email, true);
+            assertThat(users, not(empty()));
+            MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
+            Assert.assertNotNull(member);
+            assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
+            getCleanup().addCleanup(() -> testRealm().users().get(users.get(0).getId()).remove());
+
+            assertThat(driver.getTitle(), containsString("AUTH_RESPONSE"));
         }
     }
 

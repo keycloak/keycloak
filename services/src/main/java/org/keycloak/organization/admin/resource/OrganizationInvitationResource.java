@@ -39,6 +39,7 @@ import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationInvitationModel;
@@ -58,6 +59,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.storage.adapter.InMemoryUserAdapter;
 import org.keycloak.utils.StringUtil;
@@ -203,12 +205,25 @@ public class OrganizationInvitationResource {
         token.id(invitation.getId());
 
         if (organization.getRedirectUrl() == null || organization.getRedirectUrl().isBlank()) {
-            token.setRedirectUri(Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString());
+            token.setRedirectUri(resolveAccountClientBaseUrl());
         } else {
             token.setRedirectUri(organization.getRedirectUrl());
         }
 
         return token.serialize(session, realm, session.getContext().getUri());
+    }
+
+    private String resolveAccountClientBaseUrl() {
+        ClientModel accountClient = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+
+        if (accountClient != null) {
+            String baseUrl = accountClient.getBaseUrl();
+            if (baseUrl != null && !baseUrl.isBlank()) {
+                return ResolveRelative.resolveRelativeUri(session, accountClient.getRootUrl(), baseUrl);
+            }
+        }
+
+        return Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString();
     }
 
     @GET
