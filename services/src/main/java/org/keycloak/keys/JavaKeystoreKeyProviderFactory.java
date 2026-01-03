@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.component.ComponentModel;
@@ -168,6 +169,10 @@ public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
                         GeneratedEcdhKeyProviderFactory.ECDH_ALGORITHM_PROPERTY.getOptions())
                 .flatMap(Collection::stream)
                 .toList();
+        if (Profile.isFeatureEnabled(Profile.Feature.PQC_ML_DSA)) {
+            algorithms = Stream.of(algorithms, List.of(Algorithm.ML_DSA_44, Algorithm.ML_DSA_65, Algorithm.ML_DSA_87))
+                    .flatMap(Collection::stream).toList();
+        }
         return new ProviderConfigProperty(Attributes.RS_ALGORITHM_PROPERTY.getName(), Attributes.RS_ALGORITHM_PROPERTY.getLabel(),
                 Attributes.RS_ALGORITHM_PROPERTY.getHelpText(), Attributes.RS_ALGORITHM_PROPERTY.getType(),
                 Attributes.RS_ALGORITHM_PROPERTY.getDefaultValue(), algorithms.toArray(String[]::new));
