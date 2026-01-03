@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -42,6 +43,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
@@ -193,10 +195,20 @@ public class SessionResource {
         sessionRep.setIpAddress(s.getIpAddress());
         sessionRep.setStarted(s.getStarted());
         sessionRep.setLastAccess(s.getLastSessionRefresh());
-        int maxLifespan = s.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0
-                ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
-        int expires = s.getStarted() + maxLifespan;
-        sessionRep.setExpires(expires);
+        long expires = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(
+                        s.isOffline(),
+                        s.isRememberMe(),
+                        TimeUnit.SECONDS.toMillis(s.getStarted()),
+                        realm);
+        if (expires == -1) {
+            // Offline sessions can have no expiry time. If that is the case, use the idle timestamp instead
+            expires = SessionExpirationUtils.calculateUserSessionIdleTimestamp(
+                    s.isOffline(),
+                    s.isRememberMe(),
+                    TimeUnit.SECONDS.toMillis(s.getStarted()),
+                    realm);
+        }
+        sessionRep.setExpires((int) TimeUnit.MILLISECONDS.toSeconds(expires));
         sessionRep.setBrowser(device.getBrowser());
 
         if (isCurrentSession(s)) {
