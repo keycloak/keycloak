@@ -72,7 +72,13 @@ public class SAMLRequestParser {
 
     public static SAMLDocumentHolder parseRequestPostBinding(String samlMessage) {
         InputStream is;
-        byte[] samlBytes = PostBindingUtil.base64Decode(samlMessage);
+        byte[] samlBytes;
+        try {
+            samlBytes = PostBindingUtil.base64Decode(samlMessage);
+        } catch (IllegalArgumentException e) {
+            logger.samlBase64DecodingError(e);
+            return null;
+        }
         if (log.isDebugEnabled()) {
             String str = new String(samlBytes, GeneralConstants.SAML_CHARSET);
             log.debug("SAML POST Binding");
@@ -88,7 +94,13 @@ public class SAMLRequestParser {
     }
 
     public static SAMLDocumentHolder parseResponsePostBinding(String samlMessage) {
-        byte[] samlBytes = PostBindingUtil.base64Decode(samlMessage);
+        byte[] samlBytes;
+        try {
+            samlBytes = PostBindingUtil.base64Decode(samlMessage);
+        } catch (IllegalArgumentException e) {
+            logger.samlBase64DecodingError(e);
+            return null;
+        }
         log.debug("SAML POST Binding");
         return parseResponseDocument(samlBytes);
     }
