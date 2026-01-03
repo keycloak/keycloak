@@ -46,6 +46,7 @@
     <span class="${properties.kcInputClass} <#if error?has_content>${properties.kcError}</#if>">
         <input id="${name}" name="${name}" value="${value}" type="text" autocomplete="${autocomplete}" <#if autofocus>autofocus</#if>
                 <#if autocomplete == "one-time-code">inputmode="numeric"</#if>
+                <#if required>required</#if>
                 aria-invalid="<#if error?has_content>true</#if>"/>
         <@errorIcon error=error/>
     </span>
@@ -58,6 +59,7 @@
       <div class="${properties.kcInputGroupItemClass} ${properties.kcFill}">
         <span class="${properties.kcInputClass} <#if error?has_content>${properties.kcError}</#if>">
           <input id="${name}" name="${name}" value="${value}" type="password" autocomplete="${autocomplete}" <#if autofocus>autofocus</#if>
+                  <#if required>required</#if>
                   aria-invalid="<#if error?has_content>true</#if>"/>
           <@errorIcon error=error/>
         </span>
