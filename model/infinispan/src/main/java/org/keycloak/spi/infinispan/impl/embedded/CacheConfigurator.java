@@ -253,6 +253,8 @@ public final class CacheConfigurator {
             builder.clustering().hash().numOwners(1);
             if (sessionCaches.contains(name)) {
                 configureSessionExpirationReaper(builder);
+                // Disable state-transfer to reduce the overhead of new nodes joining
+                builder.clustering().stateTransfer().fetchInMemoryState(false);
             }
         }
     }
@@ -304,6 +306,8 @@ public final class CacheConfigurator {
                 builder.clustering().hash().numOwners(1);
             }
             configureSessionExpirationReaper(builder);
+            // Disable state-transfer to reduce the overhead of new nodes joining
+            builder.clustering().stateTransfer().fetchInMemoryState(false);
         }
     }
 

@@ -54,9 +54,6 @@ To avoid losing service availability when a whole cluster is unavailable, see th
 
 Horizontal autoscaling allows for adding or removing {project_name} instances on demand. Keep in mind that startup times will not be instantaneous and that optimized images should be used to minimize the start time.
 
-When using the embedded Infinispan cache cluster, dynamically adding or removing cluster members requires Infinispan to perform a rebalancing of the Infinispan caches, which can get expensive if many entries exist in those caches.
-To minimize this time we limit number of entries in session related caches to 10000 by default. Note, this optimization is possible only if `persistent-user-sessions` feature is not explicitly disabled in your configuration.
-
 On Kubernetes, the Keycloak custom resource is scalable meaning that it can be targeted by the https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/[built-in autoscaler]. For example to scale on average CPU utilization:
 
 [source,yaml]
