@@ -51,6 +51,14 @@ public class StoreSyncEvent implements ProviderEvent {
         session.getKeycloakSessionFactory().publish(new StoreSyncEvent(session, realm, model, removed));
     }
 
+    /**
+     * Fire the event using an explicit factory instance.
+     * This is useful when the session might be a context-injected proxy.
+     */
+    public static StoreSyncEvent create(KeycloakSession session, RealmModel realm, boolean removed) {
+        return new StoreSyncEvent(session, realm, removed);
+    }
+
     public KeycloakSession getSession() {
         return session;
     }
