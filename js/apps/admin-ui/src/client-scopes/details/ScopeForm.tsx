@@ -77,6 +77,15 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     [serverInfo],
   );
 
+  // Get available hash algorithms from server info
+  const hashAlgorithms = useMemo(
+    () =>
+      serverInfo?.providers?.hash?.providers
+        ? Object.keys(serverInfo.providers.hash.providers)
+        : [],
+    [serverInfo],
+  );
+
   // Fetch realm keys for signing_key_id dropdown
   const [realmKeys, setRealmKeys] = useState<KeyMetadataRepresentation[]>([]);
 
@@ -374,6 +383,26 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               label={t("credentialSigningAlgorithm")}
               labelIcon={t("credentialSigningAlgorithmHelp")}
             />
+            {hashAlgorithms.length > 0 && (
+              <SelectControl
+                id="kc-hash-algorithm"
+                name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                  "attributes.vc.credential_build_config.hash_algorithm",
+                )}
+                label={t("hashAlgorithm")}
+                labelIcon={t("hashAlgorithmHelp")}
+                controller={{
+                  defaultValue:
+                    clientScope?.attributes?.[
+                      "vc.credential_build_config.hash_algorithm"
+                    ] ?? "SHA-256",
+                }}
+                options={hashAlgorithms.map((alg) => ({
+                  key: alg,
+                  value: alg,
+                }))}
+              />
+            )}
             <TextAreaControl
               name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
                 "attributes.vc.display",
