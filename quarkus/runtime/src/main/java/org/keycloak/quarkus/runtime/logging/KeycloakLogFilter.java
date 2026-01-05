@@ -45,7 +45,16 @@ public final class KeycloakLogFilter implements Filter {
 
     // Use this thread pool to asynchronously log from non-blocking threads, which could otherwise be pinned and lead to deadlocks.
     // A single thread ensures that all log entries appear in the correct order.
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor;
+
+    public KeycloakLogFilter() {
+        // The class ThreadCreator needs to be called and initialized here as when we do this in isLoggable() we'll have a recursive logging
+        if (ThreadCreator.useVirtualThreads()) {
+            executor = Executors.newSingleThreadExecutor();
+        } else {
+            executor = null;
+        }
+    }
 
     @Override
     public boolean isLoggable(LogRecord record) {
@@ -64,12 +73,9 @@ public final class KeycloakLogFilter implements Filter {
             }
         }
 
-        if (Boolean.getBoolean("org.infinispan.threads.virtual")) {
-            // Do not call ThreadCreator as it initializes the INSTANCE only once, and the code might set the system property only later.
-            if (ThreadCreator.isVirtual(Thread.currentThread())) {
-                executor.submit(new RecordLogger(record));
-                return false;
-            }
+        if (ThreadCreator.isVirtual(Thread.currentThread())) {
+            executor.submit(new RecordLogger(record));
+            return false;
         }
 
         return true;
