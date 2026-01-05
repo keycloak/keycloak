@@ -19,23 +19,59 @@ package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 import java.util.Map;
 import java.util.Optional;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JsonSerialization;
 
-class InMemoryCredentialOfferStorage implements CredentialOfferStorage {
+/**
+ * Default implementation of {@link CredentialOfferStorage} that uses Keycloak's
+ * {@link org.keycloak.models.SingleUseObjectProvider} for storage.
+ * 
+ * <p>This implementation is cluster-aware and cross-DC aware, as it relies on
+ * Infinispan's distributed cache infrastructure through the singleUseObjects API.
+ * The storage automatically handles expiration and prevents memory leaks through
+ * the underlying cache's expiration mechanisms.
+ */
+class DefaultCredentialOfferStorage implements CredentialOfferStorage {
 
     private static final String ENTRY_KEY = "json";
 
+    /**
+     * Calculates the lifespan in seconds from the current time to the expiration timestamp.
+     * 
+     * @param expirationTimestamp Absolute expiration timestamp in seconds
+     * @return Lifespan in seconds, or 0 if the entry is already expired
+     */
+    private long calculateLifespanSeconds(int expirationTimestamp) {
+        int currentTime = Time.currentTime();
+        long lifespan = expirationTimestamp - currentTime;
+        
+        // If already expired or about to expire immediately, skip storage
+        // This prevents storing entries that won't be usable
+        if (lifespan <= 0) {
+            return 0;
+        }
+        
+        return lifespan;
+    }
+
     @Override
     public void putOfferState(KeycloakSession session, CredentialOfferState entry) {
+        long lifespanSeconds = calculateLifespanSeconds(entry.getExpiration());
+        
+        // Skip storing if already expired (following pattern from InfinispanSingleUseObjectProviderFactory)
+        if (lifespanSeconds <= 0) {
+            return;
+        }
+        
         String entryJson = JsonSerialization.valueAsString(entry);
-        session.singleUseObjects().put(entry.getNonce(), entry.getExpiration(), Map.of(ENTRY_KEY, entryJson));
+        session.singleUseObjects().put(entry.getNonce(), lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
         entry.getPreAuthorizedCode().ifPresent(it -> {
-            session.singleUseObjects().put(it, entry.getExpiration(), Map.of(ENTRY_KEY, entryJson));
+            session.singleUseObjects().put(it, lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
         });
         Optional.ofNullable(entry.getAuthorizationDetails()).ifPresent(it -> {
             it.getCredentialIdentifiers().forEach( cid -> {
-                session.singleUseObjects().put(cid, entry.getExpiration(), Map.of(ENTRY_KEY, entryJson));
+                session.singleUseObjects().put(cid, lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
             });
         });
     }
@@ -74,11 +110,13 @@ class InMemoryCredentialOfferStorage implements CredentialOfferStorage {
             session.singleUseObjects().replace(it, Map.of(ENTRY_KEY, entryJson));
         });
         Optional.ofNullable(entry.getAuthorizationDetails()).ifPresent(it -> {
+            long lifespanSeconds = calculateLifespanSeconds(entry.getExpiration());
             it.getCredentialIdentifiers().forEach( cid -> {
                 if (session.singleUseObjects().contains(cid)) {
                     session.singleUseObjects().replace(cid, Map.of(ENTRY_KEY, entryJson));
-                } else {
-                    session.singleUseObjects().put(cid, entry.getExpiration(), Map.of(ENTRY_KEY, entryJson));
+                } else if (lifespanSeconds > 0) {
+                    // Only put if not already expired
+                    session.singleUseObjects().put(cid, lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
                 }
             });
         });
