@@ -812,7 +812,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     @SuppressWarnings("unchecked")
-    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults, String sortBy) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<UserEntity> queryBuilder = builder.createQuery(UserEntity.class);
         Root<UserEntity> root = queryBuilder.from(UserEntity.class);
@@ -824,7 +824,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, root));
 
-        queryBuilder.distinct(true).where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(root.get(UserModel.USERNAME)));
+        if (sortBy == null) {
+            sortBy = UserModel.USERNAME;
+        }
+
+        queryBuilder.distinct(true).where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(root.get(sortBy)));
 
         TypedQuery<UserEntity> query = em.createQuery(queryBuilder);
 

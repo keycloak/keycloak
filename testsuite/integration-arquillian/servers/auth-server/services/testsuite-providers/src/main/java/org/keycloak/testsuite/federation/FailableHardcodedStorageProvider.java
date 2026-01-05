@@ -246,7 +246,7 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults, String sortBy) {
         checkForceFail();
         if (!username.equals(params.get("username")))return Stream.empty();
         UserModel model = getUserByUsername(realm, username);
