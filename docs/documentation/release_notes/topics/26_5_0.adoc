@@ -61,6 +61,13 @@ You can now prevent this by disabling *Include in OpenID Provider Metadata*.
 
 = Administration
 
+== Workflows (preview)
+
+{project_name} introduces a new preview feature called Workflows, which allows administrators to
+automate administrative tasks and process within a realm, introducing a key capability for Identity Governance and Administration (IGA).
+
+For more details, see the link:{adminguide_link}#_managing_workflows[{adminguide_name}].
+
 == Federated client authentication (preview)
 
 Federated client authentication remains preview due to receiving a number of enhancements and fixes.
@@ -68,13 +75,6 @@ Federated client authentication remains preview due to receiving a number of enh
 There is now preview support to use Kubernetes service accounts tokens as credentials for clients, which avoids static secrets for OpenID Connect clients.
 
 See https://www.keycloak.org/docs/latest/server_admin/index.html#_identity_broker_kubernetes[Kubernetes identity providers] in the {adminguide_name} for details.
-
-== Workflows (preview)
-
-{project_name} introduces a new preview feature called Workflows, which allows administrators to
-automate administrative tasks and process within a realm, introducing a key capability for Identity Governance and Administration (IGA).
-
-For more details, see link:{adminguide_link}#_managing_workflows[{adminguide_name}].
 
 == Organization invitation management
 
