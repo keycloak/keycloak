@@ -3,7 +3,7 @@
 
 This release features new capabilities for users and administrators of {project_name}. The highlights of this release are:
 
-// * Workflows // TODO
+* Workflows to automate administrative tasks and process within a realm.
 * JWT Authorization Grants, our recommended alternative to external to internal token exchange.
 * Guide for using Keycloak as an authorization server for Model Context Protocol (MCP) servers.
 * Authenticating clients with Kubernetes service account tokens to avoid static client secrets.
@@ -68,6 +68,13 @@ Federated client authentication remains preview due to receiving a number of enh
 There is now preview support to use Kubernetes service accounts tokens as credentials for clients, which avoids static secrets for OpenID Connect clients.
 
 See https://www.keycloak.org/docs/latest/server_admin/index.html#_identity_broker_kubernetes[Kubernetes identity providers] in the {adminguide_name} for details.
+
+== Keycloak Workflows (preview)
+
+{project_name} introduces a new preview feature called {project_name} Workflows, which allows administrators to
+automate administrative tasks and process within a realm, introducing a key capability for Identity Governance and Administration (IGA).
+
+For more details, see link:{adminguide_link}#_managing_workflows[{adminguide_name}].
 
 == Organization invitation management
 
