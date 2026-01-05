@@ -78,13 +78,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   );
 
   // Get available hash algorithms from server info
-  const hashAlgorithms = useMemo(
-    () =>
-      serverInfo?.providers?.hash?.providers
-        ? Object.keys(serverInfo.providers.hash.providers)
-        : [],
-    [serverInfo],
-  );
+  const hashAlgorithms = serverInfo?.providers?.hash?.providers
+    ? Object.keys(serverInfo.providers.hash.providers)
+    : [];
 
   // Fetch realm keys for signing_key_id dropdown
   const [realmKeys, setRealmKeys] = useState<KeyMetadataRepresentation[]>([]);
