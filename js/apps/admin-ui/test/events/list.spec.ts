@@ -16,6 +16,7 @@ import {
   clickSearchPanel,
   enableSaveEvents,
   fillSearchPanel,
+  fillAdminEventsSearchPanel,
   goToAdminEventsTab,
   goToEventsConfig,
 } from "./list.ts";
@@ -119,6 +120,32 @@ test.describe.serial("Events tests", () => {
     test("Check accessibility on admin events tab", async ({ page }) => {
       await goToAdminEventsTab(page);
       await assertAxeViolations(page);
+    });
+
+    test("creating user", async ({ page }) => {
+      const userToCreate = {
+        username: `my-user`,
+        enabled: true,
+        credentials: [{ value: "events-test" }],
+        realm: realmName,
+        email: "some-other@email.com",
+        firstName: "My",
+        lastName: "User",
+      };
+
+      await adminClient.createUser(userToCreate);
+
+      await goToAdminEventsTab(page);
+
+      await clickSearchPanel(page);
+      await assertSearchButtonDisabled(page);
+      await fillAdminEventsSearchPanel(page, {
+        resourceType: "USER",
+      });
+      await clickSearchButton(page);
+
+      await assertRowExists(page, "users/");
+      await assertRowExists(page, "users//", false); // Assert no trailing slash
     });
   });
 });
