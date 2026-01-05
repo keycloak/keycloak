@@ -71,7 +71,7 @@ See https://www.keycloak.org/docs/latest/server_admin/index.html#_identity_broke
 
 == Workflows (preview)
 
-{project_name} introduces a new preview feature called {project_name} Workflows, which allows administrators to
+{project_name} introduces a new preview feature called Workflows, which allows administrators to
 automate administrative tasks and process within a realm, introducing a key capability for Identity Governance and Administration (IGA).
 
 For more details, see link:{adminguide_link}#_managing_workflows[{adminguide_name}].
