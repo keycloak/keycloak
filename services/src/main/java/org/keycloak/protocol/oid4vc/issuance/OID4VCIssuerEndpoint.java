@@ -703,7 +703,9 @@ public class OID4VCIssuerEndpoint {
         if (isEncryptionRequired && encryptionParams == null) {
             String errorMessage = "Response encryption is required by the Credential Issuer, but no encryption parameters were provided.";
             LOGGER.debug(errorMessage);
-            eventBuilder.detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
+            eventBuilder.detail(Details.REASON, errorMessage)
+                    .detail("error_type", ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
+                    .error(Errors.INVALID_REQUEST);
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
         }
 
@@ -717,7 +719,9 @@ public class OID4VCIssuerEndpoint {
                 String errorMessage = String.format("No supported key management algorithm (alg) for provided JWK (kty=%s)",
                         encryptionParams.getJwk().getKeyType());
                 LOGGER.debug(errorMessage);
-                eventBuilder.detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
+                eventBuilder.detail(Details.REASON, errorMessage)
+                        .detail("error_type", ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
+                        .error(Errors.INVALID_REQUEST);
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
 
@@ -726,7 +730,9 @@ public class OID4VCIssuerEndpoint {
                 String errorMessage = String.format("Unsupported content encryption algorithm: enc=%s",
                         encryptionParams.getEnc());
                 LOGGER.debug(errorMessage);
-                eventBuilder.detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
+                eventBuilder.detail(Details.REASON, errorMessage)
+                        .detail("error_type", ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
+                        .error(Errors.INVALID_REQUEST);
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
 
@@ -736,7 +742,9 @@ public class OID4VCIssuerEndpoint {
                 String errorMessage = String.format("Unsupported compression parameter: zip=%s",
                         encryptionParams.getZip());
                 LOGGER.debug(errorMessage);
-                eventBuilder.detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
+                eventBuilder.detail(Details.REASON, errorMessage)
+                        .detail("error_type", ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
+                        .error(Errors.INVALID_REQUEST);
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
         }
@@ -914,7 +922,9 @@ public class OID4VCIssuerEndpoint {
                 String errorMessage = "Received JWT content-type request, but credential_request_encryption is not supported.";
                 LOGGER.debug(errorMessage);
                 if (eventBuilder != null) {
-                    eventBuilder.detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
+                    eventBuilder.detail(Details.REASON, errorMessage)
+                            .detail("error_type", ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
+                            .error(Errors.INVALID_REQUEST);
                 }
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
@@ -926,7 +936,9 @@ public class OID4VCIssuerEndpoint {
                     String errorMessage = "Encryption is required but request is not a valid JWE: " + e.getMessage();
                     LOGGER.debug(errorMessage);
                     if (eventBuilder != null) {
-                        eventBuilder.detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
+                        eventBuilder.detail(Details.REASON, errorMessage)
+                                .detail("error_type", ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
+                                .error(Errors.INVALID_REQUEST);
                     }
                     throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
                 }
@@ -934,7 +946,9 @@ public class OID4VCIssuerEndpoint {
                     String errorMessage = "Request has JWT content-type but is not a valid JWE: " + e.getMessage();
                     LOGGER.debug(errorMessage);
                     if (eventBuilder != null) {
-                        eventBuilder.detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
+                        eventBuilder.detail(Details.REASON, errorMessage)
+                                .detail("error_type", ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
+                                .error(Errors.INVALID_REQUEST);
                     }
                     throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
                 }
