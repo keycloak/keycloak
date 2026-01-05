@@ -42,11 +42,11 @@ export async function populateSessionsPage(page: Page) {
     "#kc-sso-session-max-remember-me-select-menu",
   );
 
-  await page.getByTestId("client-session-idle-input").fill("5");
-  await changeTimeUnit(page, "Hours", "#kc-client-session-idle-select-menu");
+  await page.getByTestId("client-session-idle-input").fill("1");
+  await changeTimeUnit(page, "Minutes", "#kc-client-session-idle-select-menu");
 
-  await page.getByTestId("client-session-max-input").fill("6");
-  await changeTimeUnit(page, "Days", "#kc-client-session-max-select-menu");
+  await page.getByTestId("client-session-max-input").fill("2");
+  await changeTimeUnit(page, "Hours", "#kc-client-session-max-select-menu");
 
   await page.getByTestId("offline-session-idle-input").fill("7");
   await switchOn(page, "#kc-offline-session-max");
