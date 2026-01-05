@@ -64,9 +64,12 @@ public final class KeycloakLogFilter implements Filter {
             }
         }
 
-        if (ThreadCreator.isVirtual(Thread.currentThread())) {
-            executor.submit(new RecordLogger(record));
-            return false;
+        if (Boolean.getBoolean("org.infinispan.threads.virtual")) {
+            // Do not call ThreadCreator as it initializes the INSTANCE only once, and the code might set the system property only later.
+            if (ThreadCreator.isVirtual(Thread.currentThread())) {
+                executor.submit(new RecordLogger(record));
+                return false;
+            }
         }
 
         return true;
