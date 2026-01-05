@@ -94,56 +94,59 @@ export const RealmSettingsSessionsTab = ({
               )}
             />
           </FormGroup>
-
-          <FormGroup
-            label={t("SSOSessionIdleRememberMe")}
-            fieldId="SSOSessionIdleRememberMe"
-            labelIcon={
-              <HelpItem
-                helpText={t("ssoSessionIdleRememberMe")}
-                fieldLabelId="SSOSessionIdleRememberMe"
-              />
-            }
-          >
-            <Controller
-              name="ssoSessionIdleTimeoutRememberMe"
-              control={control}
-              render={({ field }) => (
-                <TimeSelector
-                  className="kc-sso-session-idle-remember-me"
-                  data-testid="sso-session-idle-remember-me-input"
-                  value={field.value!}
-                  onChange={field.onChange}
-                  units={["minute", "hour", "day"]}
+          {realm.rememberMe && (
+            <>
+              <FormGroup
+                label={t("SSOSessionIdleRememberMe")}
+                fieldId="SSOSessionIdleRememberMe"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("ssoSessionIdleRememberMe")}
+                    fieldLabelId="SSOSessionIdleRememberMe"
+                  />
+                }
+              >
+                <Controller
+                  name="ssoSessionIdleTimeoutRememberMe"
+                  control={control}
+                  render={({ field }) => (
+                    <TimeSelector
+                      className="kc-sso-session-idle-remember-me"
+                      data-testid="sso-session-idle-remember-me-input"
+                      value={field.value!}
+                      onChange={field.onChange}
+                      units={["minute", "hour", "day"]}
+                    />
+                  )}
                 />
-              )}
-            />
-          </FormGroup>
+              </FormGroup>
 
-          <FormGroup
-            label={t("SSOSessionMaxRememberMe")}
-            fieldId="SSOSessionMaxRememberMe"
-            labelIcon={
-              <HelpItem
-                helpText={t("ssoSessionMaxRememberMe")}
-                fieldLabelId="SSOSessionMaxRememberMe"
-              />
-            }
-          >
-            <Controller
-              name="ssoSessionMaxLifespanRememberMe"
-              control={control}
-              render={({ field }) => (
-                <TimeSelector
-                  className="kc-sso-session-max-remember-me"
-                  data-testid="sso-session-max-remember-me-input"
-                  value={field.value!}
-                  onChange={field.onChange}
-                  units={["minute", "hour", "day"]}
+              <FormGroup
+                label={t("SSOSessionMaxRememberMe")}
+                fieldId="SSOSessionMaxRememberMe"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("ssoSessionMaxRememberMe")}
+                    fieldLabelId="SSOSessionMaxRememberMe"
+                  />
+                }
+              >
+                <Controller
+                  name="ssoSessionMaxLifespanRememberMe"
+                  control={control}
+                  render={({ field }) => (
+                    <TimeSelector
+                      className="kc-sso-session-max-remember-me"
+                      data-testid="sso-session-max-remember-me-input"
+                      value={field.value!}
+                      onChange={field.onChange}
+                      units={["minute", "hour", "day"]}
+                    />
+                  )}
                 />
-              )}
-            />
-          </FormGroup>
+              </FormGroup>
+            </>
+          )}
         </FormAccess>
       </FormPanel>
       <FormPanel
