@@ -12,14 +12,21 @@ Setups on Windows that previously relied on custom machine names or non-standard
 
 === Validation of client session timeouts
 
-Previous versions did not validate client specific settings against the realm settings for SSO session idle and max lifetime, including the remember me settings of the realm.
+Previous versions did not validate client settings against the realm settings for SSO session idle and max lifetime, including the remember me settings of the realm.
 This leads to those settings either not being effective with unexpected results to administrators,
 or to refresh tokens issued where the user session might have already expired when the client was trying to refresh the token.
 
-{project_name} now validates that a client specific settings for Client Session Idle and Client Session Max does not exceed the realm settings when a client is created or updated, and will show a validation error when the validation fails.
-It does currently not validate the client settings when the realm SSO settings or remember me changes, though this might change in future releases.
+{project_name} now validates when creating or updating realms that on the realm level the Client session settings do not exceed the SSO session settings.
 
-You are only affected by the change if you have configured a client-specific Client Session Idle and Client Session Max setting in the Advanced tab of the client configuration that exceeds the realm settings.
+It also validates that a client specific settings for Client Session Idle and Client Session Max does not exceed the realm settings when a client is created or updated, and will show a validation error when the validation fails.
+It does currently not validate an individual's client settings when the realm SSO settings or remember me changes, though this might change in future releases.
+
+You are only affected by the change:
+
+* if you have configured a client-specific Client Session Idle and Client Session Max setting in the Advanced tab of the client configuration that exceeds the realm settings, or
+* if you configured on the realm level client session settings that exceed the realm session settings.
+
+If you are affected by the change, you will see error messages the next time you update or import an affected client or realm.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes

@@ -1465,52 +1465,6 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void refreshTokenUserClientMaxLifespanGreaterThanSession() throws Exception {
-        RealmResource realmResource = adminClient.realm("test");
-        getTestingClient().testing().setTestingInfinispanTimeService();
-        try (Closeable ignored = new RealmAttributeUpdater(realmResource)
-                .updateWith(r -> {
-                    r.setSsoSessionMaxLifespan(3600);
-                    r.setSsoSessionIdleTimeout(7200);
-                    r.setClientSessionMaxLifespan(5000);
-                    r.setClientSessionIdleTimeout(7200);
-                }).update()) {
-
-            oauth.doLogin("test-user@localhost", "password");
-            EventRepresentation loginEvent = events.expectLogin().assertEvent();
-
-            String sessionId = loginEvent.getSessionId();
-
-            String code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
-            assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 3600);
-            String clientSessionId = getClientSessionUuid(sessionId, loginEvent.getClientId());
-            assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
-
-            events.poll();
-
-            setTimeOffset(1800);
-            String refreshId = oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getId();
-            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
-            assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 1800);
-            assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
-            events.expectRefresh(refreshId, sessionId).assertEvent();
-
-            setTimeOffset(3700);
-            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
-            assertEquals(400, tokenResponse.getStatusCode());
-            assertNull(tokenResponse.getAccessToken());
-            assertNull(tokenResponse.getRefreshToken());
-            events.expect(EventType.REFRESH_TOKEN).error(Errors.INVALID_TOKEN).user((String) null).assertEvent();
-            assertEquals(0, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
-        } finally {
-            getTestingClient().testing().revertTestingInfinispanTimeService();
-            events.clear();
-            resetTimeOffset();
-        }
-    }
-
-    @Test
     public void refreshTokenUserSessionMaxLifespanModifiedAfterTokenRefresh() throws Exception {
         RealmResource realmResource = adminClient.realm("test");
         getTestingClient().testing().setTestingInfinispanTimeService();
@@ -1537,6 +1491,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             RealmRepresentation rep = realmResource.toRepresentation();
             rep.setSsoSessionMaxLifespan(3600);
+            rep.setClientSessionMaxLifespan(3600);
             realmResource.update(rep);
 
             setTimeOffset(3700);
