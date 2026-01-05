@@ -225,7 +225,10 @@ public class ExportImportTest extends AbstractKeycloakTest {
     private static void assertExportContainsGoogleClientSecret(String targetFilePath) throws IOException {
         assertTrue("Expected an export file to exist", new File(targetFilePath).exists());
 
-        Map<String, RealmRepresentation> realms = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, new FileInputStream(new File(targetFilePath)));
+        Map<String, RealmRepresentation> realms;
+        try (FileInputStream fis = new FileInputStream(targetFilePath)) {
+            realms = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, fis);
+        }
         List<IdentityProviderRepresentation> idps = realms.get("test-realm").getIdentityProviders();
         IdentityProviderRepresentation googleIdp = idps.stream().filter(idp -> idp.getAlias().equals("google1")).findFirst().get();
         assertNotNull(googleIdp);
@@ -351,7 +354,10 @@ public class ExportImportTest extends AbstractKeycloakTest {
         exportImport.runExport();
         
         // Verify the exported file contains the role
-        Map<String, RealmRepresentation> exportedRealms = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, new FileInputStream(targetFilePath));
+        Map<String, RealmRepresentation> exportedRealms;
+        try (FileInputStream fis = new FileInputStream(targetFilePath)) {
+            exportedRealms = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, fis);
+        }
         RealmRepresentation exportedRealm = exportedRealms.get(testRealmName);
         assertNotNull("Exported realm should exist", exportedRealm);
         assertTrue("Exported realm should contain credential-offer-create role",
