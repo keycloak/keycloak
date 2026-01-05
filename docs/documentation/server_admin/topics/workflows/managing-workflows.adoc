@@ -37,5 +37,26 @@ From the workflows list, you can perform the following actions:
 *   **Copy**: Click on the *Copy* button next to a workflow to create a copy of it. This is useful if you want to create a new workflow based on an existing one.
 *   **Delete**: Click on the *Delete* button next to a workflow to delete it.
 
+=== Updating a workflow
+
+To update a workflow, click on its name in the workflows list. This will open the workflow in edit mode, where you can modify its YAML definition.
+After making your changes, click *Save* to apply the updates.
+
+There are limitations when updating workflows if they have scheduled steps. In such cases, you are not able to change the step chain of a workflow
+if there are active instances of the workflow being updated. This limitation is in place to ensure the integrity of ongoing workflow instances
+where updates to the step chain could lead to an expensive operation of migrating existing instances to the new step chain,
+which could impact system performance as well as lead to inconsistencies and an unexpected behavior.
+
+In future releases, we plan to introduce a more flexible approach to updating workflows with scheduled steps, so that administrators
+are going to be allowed to migrate realm resources scheduled for a specific step to a different step in the updated workflow.
+
+For now, the only option is to either wait for all active instances to complete or to delete the workflow and create a new one.
+Note that deleting a workflow will also delete all its active instances, therefore, realm resources associated with those instances
+will not be processed further, and they would need to be re-associated with a new workflow instance if needed.
+
+
+
+
+
 
 
