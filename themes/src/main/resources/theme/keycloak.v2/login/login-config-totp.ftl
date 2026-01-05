@@ -65,11 +65,11 @@
                            inputmode="numeric"
                     />
 
-                    <@field.errorIcon error=kcSanitize(messagesPerField.get('totp'))?no_esc/>
+                    <@field.errorIcon error=messagesPerField.get('totp')/>
                 </div>
                 <#if messagesPerField.existsError('totp')>
                     <span id="input-error-otp-code" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                        ${kcSanitize(messagesPerField.get('totp'))?no_esc}
+                        ${messagesPerField.get('totp')}
                     </span>
                 </#if>
                 <input type="hidden" id="totpSecret" name="totpSecret" value="${totp.totpSecret}" />
@@ -87,11 +87,11 @@
                            aria-invalid="<#if messagesPerField.existsError('userLabel')>true</#if>"
                     />
 
-                    <@field.errorIcon error=kcSanitize(messagesPerField.get('userLabel'))?no_esc/>
+                    <@field.errorIcon error=messagesPerField.get('userLabel')/>
                 </div>
                 <#if messagesPerField.existsError('userLabel')>
                     <span id="input-error-otp-label" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                        ${kcSanitize(messagesPerField.get('userLabel'))?no_esc}
+                        ${messagesPerField.get('userLabel')}
                     </span>
                 </#if>
             </div>
