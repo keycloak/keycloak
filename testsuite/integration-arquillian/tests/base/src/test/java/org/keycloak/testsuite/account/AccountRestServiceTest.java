@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.account;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,6 +62,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
+import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
@@ -1242,6 +1244,102 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         events.assertEmpty();
     }
+
+    @Test
+    public void testListingAllSignedInDevicesEvenOfflineSessionsThenTerminatingAllSessions() throws IOException, JWSInputException {
+        String username = "manage-account-access";
+        String password = "password";
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        // first direct access grant login
+        String firstToken = new TokenUtil(username, password).getToken();
+        events.expect(EventType.LOGIN)
+            .client("direct-grant")
+            .user(user.toRepresentation().getId())
+            .session(new JWSInput(firstToken).readJsonContent(AccessToken.class).getSessionId())
+            .detail(Details.SCOPE, "openid profile email")
+            .assertEvent();
+
+        // second direct access grant login
+        String secondToken = new TokenUtil(username, password).getToken();
+        events.expect(EventType.LOGIN)
+            .client("direct-grant")
+            .user(user.toRepresentation().getId())
+            .session(new JWSInput(secondToken).readJsonContent(AccessToken.class).getSessionId())
+            .detail(Details.SCOPE, "openid profile email")
+            .assertEvent();
+
+        // Login with scope 'offline_access'
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest(username, password);
+        assertNull(offlineTokenResponse.getErrorDescription());
+        events.expect(EventType.LOGIN)
+            .client("offline-client")
+            .user(user.toRepresentation().getId())
+            .session(offlineTokenResponse.getSessionState())
+            .detail(Details.SCOPE, "openid email profile offline_access")
+            .assertEvent();
+
+        // Get all logged in 'devices'
+        Collection<DeviceRepresentation> devices = SimpleHttpDefault
+            .doGet(getAccountUrl("sessions/devices"), httpClient)
+            .header("Accept", "application/json")
+            .auth(firstToken)
+            .asJson(new TypeReference<Collection<DeviceRepresentation>>() {
+            });
+        assertFalse(devices.isEmpty());
+        List<SessionRepresentation> allSessions = devices.stream().flatMap(device -> device.getSessions().stream()).toList();
+        assertEquals(3, allSessions.size());
+
+        // User deletes all of his sessions
+        int status = SimpleHttpDefault.doDelete(getAccountUrl("sessions?current=true"), httpClient)
+            .acceptJson().auth(firstToken).asStatus();
+        assertEquals(204, status);
+
+        allSessions.forEach(session -> {
+            events.expectAccount(EventType.LOGOUT)
+                .user(user.toRepresentation().getId())
+                .session(session.getId())
+                .assertEvent();
+        });
+    }
+
+    @Test
+    public void testDeletionOfOfflineSessionWillFireLogoutEvent() throws IOException, JWSInputException {
+        String username = "manage-account-access";
+        String password = "password";
+        String firstToken = new TokenUtil(username, password).getToken();
+
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest(username, password);
+        assertNull(offlineTokenResponse.getErrorDescription());
+
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        Collection<DeviceRepresentation> devices = SimpleHttpDefault
+            .doGet(getAccountUrl("sessions/devices"), httpClient)
+            .header("Accept", "application/json")
+            .auth(firstToken)
+            .asJson(new TypeReference<Collection<DeviceRepresentation>>() {
+            });
+        assertEquals(2, devices.stream().flatMap(device -> device.getSessions().stream()).toList().size());
+
+        // skip direct access login and offline_access scoped login
+        events.poll();
+        events.poll();
+
+        int status = SimpleHttpDefault.doDelete(getAccountUrl(String.format("sessions/%s", offlineTokenResponse.getSessionState())), httpClient)
+            .acceptJson().auth(firstToken).asStatus();
+        assertEquals(204, status);
+
+        events.expectAccount(EventType.LOGOUT)
+            .user(user.toRepresentation().getId())
+            .session(offlineTokenResponse.getSessionState())
+            .assertEvent();
+
+        events.assertEmpty();
+    }
+
 
     @Test
     public void listApplications() throws Exception {
