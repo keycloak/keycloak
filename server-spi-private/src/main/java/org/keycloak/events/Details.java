@@ -126,4 +126,5 @@ public interface Details {
     String VERIFIABLE_CREDENTIAL_TARGET_USER_ID = "verifiable_credential_target_user_id";
     String VERIFIABLE_CREDENTIAL_FORMAT = "verifiable_credential_format";
     String VERIFIABLE_CREDENTIALS_ISSUED = "verifiable_credentials_issued";
+    String ERROR_TYPE = "error_type";
 }

@@ -704,7 +704,7 @@ public class OID4VCIssuerEndpoint {
             String errorMessage = "Response encryption is required by the Credential Issuer, but no encryption parameters were provided.";
             LOGGER.debug(errorMessage);
             eventBuilder.detail(Details.REASON, errorMessage)
-                    .detail("error_type", ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
+                    .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
                     .error(Errors.INVALID_REQUEST);
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
         }
@@ -720,7 +720,7 @@ public class OID4VCIssuerEndpoint {
                         encryptionParams.getJwk().getKeyType());
                 LOGGER.debug(errorMessage);
                 eventBuilder.detail(Details.REASON, errorMessage)
-                        .detail("error_type", ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
+                        .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
                         .error(Errors.INVALID_REQUEST);
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
@@ -731,7 +731,7 @@ public class OID4VCIssuerEndpoint {
                         encryptionParams.getEnc());
                 LOGGER.debug(errorMessage);
                 eventBuilder.detail(Details.REASON, errorMessage)
-                        .detail("error_type", ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
+                        .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
                         .error(Errors.INVALID_REQUEST);
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
@@ -743,7 +743,7 @@ public class OID4VCIssuerEndpoint {
                         encryptionParams.getZip());
                 LOGGER.debug(errorMessage);
                 eventBuilder.detail(Details.REASON, errorMessage)
-                        .detail("error_type", ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
+                        .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
                         .error(Errors.INVALID_REQUEST);
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
@@ -923,7 +923,7 @@ public class OID4VCIssuerEndpoint {
                 LOGGER.debug(errorMessage);
                 if (eventBuilder != null) {
                     eventBuilder.detail(Details.REASON, errorMessage)
-                            .detail("error_type", ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
+                            .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
                             .error(Errors.INVALID_REQUEST);
                 }
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
@@ -937,7 +937,7 @@ public class OID4VCIssuerEndpoint {
                     LOGGER.debug(errorMessage);
                     if (eventBuilder != null) {
                         eventBuilder.detail(Details.REASON, errorMessage)
-                                .detail("error_type", ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
+                                .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
                                 .error(Errors.INVALID_REQUEST);
                     }
                     throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
@@ -947,7 +947,7 @@ public class OID4VCIssuerEndpoint {
                     LOGGER.debug(errorMessage);
                     if (eventBuilder != null) {
                         eventBuilder.detail(Details.REASON, errorMessage)
-                                .detail("error_type", ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
+                                .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
                                 .error(Errors.INVALID_REQUEST);
                     }
                     throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
