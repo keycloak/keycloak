@@ -205,7 +205,9 @@ public class Keycloak {
             AugmentAction action = curated.createAugmentor();
             Environment.setHomeDir(homeDir);
             ConfigArgsConfigSource.setCliArgs(args.toArray(new String[0]));
+            System.setProperty(Environment.KC_TEST_REBUILD, "true");
             StartupAction startupAction = action.createInitialRuntimeApplication();
+            System.getProperties().remove(Environment.KC_TEST_REBUILD);
 
             application = startupAction.runMainClass(args.toArray(new String[0]));
 
