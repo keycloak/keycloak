@@ -69,7 +69,7 @@ There is now preview support to use Kubernetes service accounts tokens as creden
 
 See https://www.keycloak.org/docs/latest/server_admin/index.html#_identity_broker_kubernetes[Kubernetes identity providers] in the {adminguide_name} for details.
 
-== Keycloak Workflows (preview)
+== Workflows (preview)
 
 {project_name} introduces a new preview feature called {project_name} Workflows, which allows administrators to
 automate administrative tasks and process within a realm, introducing a key capability for Identity Governance and Administration (IGA).
