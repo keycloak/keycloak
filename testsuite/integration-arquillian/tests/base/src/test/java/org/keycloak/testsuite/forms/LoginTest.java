@@ -80,8 +80,10 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebElement;
 
 import static org.keycloak.common.Profile.Feature.DYNAMIC_SCOPES;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
@@ -1111,4 +1113,15 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
            Assert.assertNotNull(session.authenticationSessions().getRootAuthenticationSession(session.getContext().getRealm(), authSessionId));
         });
    }
+
+    @Test
+    public void testLoginFieldsHaveRequiredAttribute() {
+        loginPage.open();
+
+        WebElement usernameInput = driver.findElement(By.id("username"));
+        assertNotNull("Username field should have required attribute", usernameInput.getDomAttribute("required"));
+
+        WebElement passwordInput = driver.findElement(By.id("password"));
+        assertNotNull("Password field should have required attribute", passwordInput.getDomAttribute("required"));
+    }
 }

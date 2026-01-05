@@ -19,7 +19,7 @@
                                 <#assign label>
                                     <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
                                 </#assign>
-                                <@field.input name="username" label=label value=login.username!'' autofocus=true autocomplete="${(enableWebAuthnConditionalUI?has_content)?then('username webauthn', 'username')}" />
+                                <@field.input name="username" label=label value=login.username!'' autofocus=true autocomplete="${(enableWebAuthnConditionalUI?has_content)?then('username webauthn', 'username')}" required=true />
                             </div>
                         </#if>
 
