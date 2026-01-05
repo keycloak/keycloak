@@ -38,6 +38,16 @@ It also lists significant changes to internal APIs.
 
 The Welcome Page, used to create the initial administrative user, now includes optional fields for *First name*, *Last name*, and *Email*. These fields allow administrators to provide additional profile information when creating the initial admin user. All new fields are optional and do not affect the existing functionality.
 
+== PostgreSQL version updates
+
+The latest major release of PostgreSQL 18 is now supported.
+
+We also updated the docs on how to use a TLS certificate for the JDBC-connection when connecting to a PostgreSQL database.
+
+== EnterpriseDB Advanced 18 support
+
+EDB 18 is now tested and supported in addition to the existing EDB 17 support.
+
 === Method `UserProfile#toRepresentation(boolean)` added
 
 The `UserProfile` interface has a new method `toRepresentation(boolean)`. This method allows clients to specify whether to include
@@ -216,6 +226,22 @@ If you have a custom organization attribute named `id` and rely on its value in 
 == Deprecated features
 
 The following sections provide details on deprecated features.
+
+=== New centralized OpenTelementry options
+
+{project_name} now provides centralized telemetry configuration options that can be shared across all telemetry (OpenTelemetry) components - traces and logs, with future support planned for metrics.
+Individual components can override these global settings when needed.
+
+New options: `telemetry-endpoint`, `telemetry-protocol`, `telemetry-service-name`, and `telemetry-resource-attributes`.
+
+*Deprecation:* The `tracing-service-name` and `tracing-resource-attributes` options are now deprecated in favor of `telemetry-service-name` and `telemetry-resource-attributes`.
+
+For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+=== Fine-Grained Admin Permissions (FGAP) v1 (deprecated)
+
+Fine-Grained Admin Permissions (FGAP) v1 is now deprecated. This version no longer receives enhancements and improvements  and will be removed in future
+release. Please migrate to FGAP v2 to ensure continued support.
 
 === `AuthenticationManager.AuthResult` is now a record
 
