@@ -24,3 +24,4 @@ org.keycloak.models.workflow.GrantRoleStepProviderFactory
 org.keycloak.models.workflow.RevokeRoleStepProviderFactory
 org.keycloak.models.workflow.JoinGroupStepProviderFactory
 org.keycloak.models.workflow.LeaveGroupStepProviderFactory
+org.keycloak.models.workflow.RemoveRequiredActionStepProviderFactory
