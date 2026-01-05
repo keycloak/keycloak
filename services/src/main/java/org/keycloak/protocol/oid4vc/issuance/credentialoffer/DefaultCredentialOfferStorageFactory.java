@@ -20,14 +20,21 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
-public class InMemoryCredentialOfferStorageFactory implements CredentialOfferStorageFactory {
+/**
+ * Factory for {@link DefaultCredentialOfferStorage}.
+ * 
+ * <p>This factory provides the default cluster-aware implementation of credential offer storage.
+ * The storage uses Keycloak's distributed cache infrastructure, making it suitable for
+ * clustered and cross-DC deployments.
+ */
+public class DefaultCredentialOfferStorageFactory implements CredentialOfferStorageFactory {
 
     private static CredentialOfferStorage INSTANCE;
 
     @Override
     public CredentialOfferStorage create(KeycloakSession session) {
         if (INSTANCE == null) {
-            INSTANCE = new InMemoryCredentialOfferStorage();
+            INSTANCE = new DefaultCredentialOfferStorage();
         }
         return INSTANCE;
     }
@@ -42,6 +49,6 @@ public class InMemoryCredentialOfferStorageFactory implements CredentialOfferSto
 
     @Override
     public String getId() {
-        return "in_memory";
+        return "default";
     }
 }
