@@ -55,4 +55,12 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.6.0-org-domain-wildcard">
+        <addColumn tableName="ORG_DOMAIN">
+            <column name="MATCH_SUBDOMAINS" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

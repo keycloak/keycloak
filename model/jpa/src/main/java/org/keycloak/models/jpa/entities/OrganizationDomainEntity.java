@@ -52,6 +52,9 @@ public class OrganizationDomainEntity {
     @Column(name="VERIFIED")
     protected Boolean verified;
 
+    @Column(name="MATCH_SUBDOMAINS")
+    protected Boolean matchSubdomains;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ORG_ID")
     private OrganizationEntity organization;
@@ -78,6 +81,14 @@ public class OrganizationDomainEntity {
 
     public void setVerified(Boolean verified) {
         this.verified = verified;
+    }
+
+    public Boolean isMatchSubdomains() {
+        return this.matchSubdomains;
+    }
+
+    public void setMatchSubdomains(Boolean matchSubdomains) {
+        this.matchSubdomains = matchSubdomains;
     }
 
     public OrganizationEntity getOrganization() {

@@ -164,6 +164,34 @@ public class Organizations {
         return TokenVerifier.create(tokenFromQuery, InviteOrgActionToken.class).getToken();
     }
 
+    /**
+     * Check if an email domain matches an organization domain, considering wildcard subdomain matching.
+     *
+     * @param emailDomain the domain from the user's email address
+     * @param orgDomain the organization domain model to match against
+     * @return true if the email domain matches (exactly or as a subdomain when wildcards are enabled)
+     */
+    public static boolean domainMatches(String emailDomain, OrganizationDomainModel orgDomain) {
+        if (emailDomain == null || orgDomain == null || orgDomain.getName() == null) {
+            return false;
+        }
+
+        String email = emailDomain.toLowerCase();
+        String pattern = orgDomain.getName().toLowerCase();
+
+        // Exact match always works
+        if (email.equals(pattern)) {
+            return true;
+        }
+
+        // If wildcards enabled, check if it's a subdomain
+        if (orgDomain.isMatchSubdomains()) {
+            return email.endsWith(\".\" + pattern);
+        }
+
+        return false;
+    }
+
     public static String getEmailDomain(String email) {
         if (email == null) {
             return null;
@@ -297,7 +325,7 @@ public class Organizations {
 
         Stream<OrganizationDomainModel> domains = organization.getDomains();
 
-        return domains.map(OrganizationDomainModel::getName).anyMatch(emailDomain::equals);
+        return domains.anyMatch(orgDomain -> domainMatches(emailDomain, orgDomain));
     }
 
     private static OrganizationModel resolveOrganizationByDomain(UserModel user, String domain, OrganizationProvider provider) {

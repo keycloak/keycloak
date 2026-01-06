@@ -102,28 +102,36 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
         AttributeContext attributeContext = upContext.getAttributeContext();
         UserModel user = attributeContext.getUser();
         String emailDomain = email.substring(email.indexOf('@') + 1);
-        Set<String> expectedDomains = organization.getDomains().map(OrganizationDomainModel::getName).collect(Collectors.toSet());
-
-        if (expectedDomains.isEmpty()) {
-            // no domain to check
-            return;
-        }
 
         if (UserProfileContext.IDP_REVIEW.equals(attributeContext.getContext())) {
-            expectedDomains = resolveExpectedDomainsWhenReviewingFederatedUserProfile(organization, attributeContext);
+            Set<String> expectedDomains = resolveExpectedDomainsWhenReviewingFederatedUserProfile(organization, attributeContext);
+            if (expectedDomains.isEmpty() || validateEmailDomainMatch(emailDomain, organization, expectedDomains)) {
+                return;
+            }
         } else if (organization.isManaged(user)) {
-            expectedDomains = resolveExpectedDomainsForManagedUser(organization, context, user);
+            Set<String> expectedDomains = resolveExpectedDomainsForManagedUser(organization, context, user);
+            if (expectedDomains.isEmpty() || validateEmailDomainMatch(emailDomain, organization, expectedDomains)) {
+                return;
+            }
         } else {
             // no validation happens for unmanaged users as they are realm users linked to an organization
             return;
         }
 
-        if (expectedDomains.isEmpty() || expectedDomains.contains(emailDomain)) {
-            // valid email domain
-            return;
-        }
-
         context.addError(new ValidationError(ID, inputHint, "Email domain does not match any domain from the organization"));
+    }
+
+    private static boolean validateEmailDomainMatch(String emailDomain, OrganizationModel organization, Set<String> expectedDomains) {
+        // Check if the email domain matches any expected domain with wildcard support
+        for (String expectedDomain : expectedDomains) {
+            boolean matches = organization.getDomains()
+                    .filter(d -> d.getName().equals(expectedDomain))
+                    .anyMatch(orgDomain -> Organizations.domainMatches(emailDomain, orgDomain));
+            if (matches) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Set<String> resolveExpectedDomainsForManagedUser(OrganizationModel organization, ValidationContext context, UserModel user) {

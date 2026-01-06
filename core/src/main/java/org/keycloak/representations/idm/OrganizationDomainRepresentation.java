@@ -26,6 +26,7 @@ public class OrganizationDomainRepresentation {
 
     private String name;
     private boolean verified;
+    private boolean matchSubdomains;
 
     public OrganizationDomainRepresentation() {
         // for reflection
@@ -49,6 +50,14 @@ public class OrganizationDomainRepresentation {
 
     public void setVerified(boolean verified) {
         this.verified = verified;
+    }
+
+    public boolean isMatchSubdomains() {
+        return this.matchSubdomains;
+    }
+
+    public void setMatchSubdomains(boolean matchSubdomains) {
+        this.matchSubdomains = matchSubdomains;
     }
 
     @Override

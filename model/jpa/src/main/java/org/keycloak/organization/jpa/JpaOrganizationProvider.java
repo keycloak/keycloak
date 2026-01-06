@@ -225,16 +225,46 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
     @Override
     public OrganizationModel getByDomainName(String domain) {
-        TypedQuery<OrganizationEntity> query = em.createNamedQuery("getByDomainName", OrganizationEntity.class);
+        if (domain == null) {
+            return null;
+        }
+        
+        String emailDomain = domain.toLowerCase();
         RealmModel realm = getRealm();
+        TypedQuery<OrganizationEntity> query = em.createNamedQuery("getByDomainName", OrganizationEntity.class);
         query.setParameter("realmId", realm.getId());
-        query.setParameter("name", domain.toLowerCase());
+        query.setParameter("name", emailDomain);
+        
+        // Try exact match first (covers both exact domains and exact matches when wildcards are enabled)
         try {
             OrganizationEntity entity = query.getSingleResult();
             return new OrganizationAdapter(session, realm, entity, this);
         } catch (NoResultException nre) {
-            return null;
+            // Continue to wildcard check
         }
+        
+        // Check for parent domains with wildcard subdomain matching enabled
+        // For "sub.example.com", check "example.com", etc.
+        String[] parts = emailDomain.split("\\\\.");
+        for (int i = 1; i < parts.length; i++) {
+            String parentDomain = String.join(".", java.util.Arrays.copyOfRange(parts, i, parts.length));
+            
+            query.setParameter("name", parentDomain);
+            try {
+                OrganizationEntity entity = query.getSingleResult();
+                OrganizationAdapter org = new OrganizationAdapter(session, realm, entity, this);
+                // Check if this org has the domain with wildcards enabled
+                boolean hasWildcardDomain = org.getDomains()
+                        .anyMatch(d -> d.getName().equals(parentDomain) && d.isMatchSubdomains());
+                if (hasWildcardDomain) {
+                    return org;
+                }
+            } catch (NoResultException nre) {
+                // Try next parent domain
+            }
+        }
+        
+        return null;
     }
 
     @Override

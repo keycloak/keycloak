@@ -747,6 +747,107 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     }
 
     @Test
+    public void testRedirectToIdentityProviderWithWildcardSubdomainMatching() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+        
+        // Update the organization domain to enable wildcard subdomain matching
+        orgRep.getDomains().iterator().next().setMatchSubdomains(true);
+        try (Response response = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        
+        // Configure IdP with ANY_DOMAIN to match any org domain
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
+        
+        // Test with subdomain - should automatically redirect
+        String subdomainEmail = "user@sub.neworg.org";
+        openIdentityFirstLoginPage(subdomainEmail, true, idp.getAlias(), false, false);
+        
+        loginOrgIdp(subdomainEmail, subdomainEmail, true, true);
+        
+        assertIsMember(subdomainEmail, organization);
+        UserRepresentation user = testRealm().users().search(subdomainEmail).get(0);
+        List<FederatedIdentityRepresentation> federatedIdentities = testRealm().users().get(user.getId()).getFederatedIdentity();
+        assertEquals(1, federatedIdentities.size());
+        assertEquals(bc.getIDPAlias(), federatedIdentities.get(0).getIdentityProvider());
+    }
+
+    @Test
+    public void testRedirectToIdentityProviderWithDeepSubdomain() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+        
+        // Enable wildcard subdomain matching
+        orgRep.getDomains().iterator().next().setMatchSubdomains(true);
+        try (Response response = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
+        
+        // Test with deep subdomain (multiple levels)
+        String deepSubdomainEmail = "user@deep.sub.neworg.org";
+        openIdentityFirstLoginPage(deepSubdomainEmail, true, idp.getAlias(), false, false);
+        
+        loginOrgIdp(deepSubdomainEmail, deepSubdomainEmail, true, true);
+        
+        assertIsMember(deepSubdomainEmail, organization);
+    }
+
+    @Test
+    public void testNoRedirectWithoutWildcardSubdomainMatching() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+        
+        // Explicitly disable wildcard subdomain matching (should be default)
+        orgRep.getDomains().iterator().next().setMatchSubdomains(false);
+        try (Response response = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.setHideOnLogin(false);
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, "neworg.org");
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
+        
+        // Test with subdomain - should NOT automatically redirect since wildcard is disabled
+        String subdomainEmail = "user@sub.neworg.org";
+        openIdentityFirstLoginPage(subdomainEmail, false, idp.getAlias(), false, false);
+        
+        // Should show login page without redirect because subdomain doesn't match exactly
+        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        // The domain doesn't match, so user should see an error or registration page
+    }
+
+    @Test
+    public void testExactDomainStillWorksWithWildcardEnabled() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+        
+        // Enable wildcard subdomain matching
+        orgRep.getDomains().iterator().next().setMatchSubdomains(true);
+        try (Response response = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, "neworg.org");
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
+        
+        // Test with exact domain match - should still work
+        openIdentityFirstLoginPage(bc.getUserEmail(), true, idp.getAlias(), false, false);
+        
+        loginOrgIdp(bc.getUserEmail(), bc.getUserEmail(), true, true);
+        
+        assertIsMember(bc.getUserEmail(), organization);
+    }
+
+    @Test
     public void testOnlyShowBrokersAssociatedWithResolvedOrganization() {
         String org0Name = "org-0";
         OrganizationResource org0 = testRealm().organizations().get(createOrganization(org0Name).getId());
@@ -883,6 +984,71 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         updateAccountInformationPage.updateAccountInformation("external@other.org", "external@other.org", "Firstname", "Lastname");
         appPage.assertCurrent();
         assertIsMember("external@other.org", organization);
+    }
+
+    @Test
+    public void testEmailDomainValidationWithWildcardSubdomains() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+        
+        // Enable wildcard subdomain matching for the organization domain
+        orgRep.getDomains().iterator().next().setMatchSubdomains(true);
+        organization.update(orgRep).close();
+        
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, "neworg.org");
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
+        
+        // Test that subdomain email is accepted with wildcard enabled
+        String subdomainEmail = "user@sub.neworg.org";
+        openIdentityFirstLoginPage(subdomainEmail, true, idp.getAlias(), false, false);
+        loginOrgIdp(subdomainEmail, subdomainEmail, true, true);
+        
+        // Should successfully create member with subdomain email
+        assertIsMember(subdomainEmail, organization);
+    }
+
+    @Test
+    public void testEmailDomainValidationRejectsSubdomainWithoutWildcard() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+        
+        // Explicitly disable wildcard subdomain matching
+        orgRep.getDomains().iterator().next().setMatchSubdomains(false);
+        organization.update(orgRep).close();
+        
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.setHideOnLogin(false);
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, "neworg.org");
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
+        
+        // Test that subdomain email is rejected when wildcard is disabled
+        String subdomainEmail = "user@sub.neworg.org";
+        openIdentityFirstLoginPage(subdomainEmail, false, idp.getAlias(), false, false);
+        
+        // Should not match organization, showing it's not a valid domain
+        Assert.assertFalse(loginPage.isPasswordInputPresent());
+    }
+
+    @Test
+    public void testDeepSubdomainValidationWithWildcard() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+        
+        // Enable wildcard subdomain matching
+        orgRep.getDomains().iterator().next().setMatchSubdomains(true);
+        organization.update(orgRep).close();
+        
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, "neworg.org");
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
+        
+        // Test with multiple subdomain levels
+        String deepSubdomainEmail = "user@team.dev.neworg.org";
+        openIdentityFirstLoginPage(deepSubdomainEmail, true, idp.getAlias(), false, false);
+        loginOrgIdp(deepSubdomainEmail, deepSubdomainEmail, true, true);
+        
+        assertIsMember(deepSubdomainEmail, organization);
     }
 
     @Test

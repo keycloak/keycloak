@@ -184,9 +184,11 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
                 .collect(Collectors.toMap(OrganizationDomainModel::getName, Function.identity()));
 
         for (OrganizationDomainEntity domainEntity : new HashSet<>(this.entity.getDomains())) {
-            // update the existing domain (for now, only the verified flag can be changed).
+            // update the existing domain (for now, only the verified and matchSubdomains flags can be changed).
             if (modelMap.containsKey(domainEntity.getName())) {
-                domainEntity.setVerified(modelMap.get(domainEntity.getName()).isVerified());
+                OrganizationDomainModel model = modelMap.get(domainEntity.getName());
+                domainEntity.setVerified(model.isVerified());
+                domainEntity.setMatchSubdomains(model.isMatchSubdomains());
                 modelMap.remove(domainEntity.getName());
             } else {
                 // remove domain that is not found in the new set.
@@ -207,6 +209,7 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
             domainEntity.setId(KeycloakModelUtils.generateId());
             domainEntity.setName(model.getName());
             domainEntity.setVerified(model.isVerified());
+            domainEntity.setMatchSubdomains(model.isMatchSubdomains());
             domainEntity.setOrganization(this.entity);
             this.entity.addDomain(domainEntity);
         }
@@ -263,7 +266,8 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     }
 
     private OrganizationDomainModel toModel(OrganizationDomainEntity entity) {
-        return new OrganizationDomainModel(entity.getName(), entity.isVerified());
+        return new OrganizationDomainModel(entity.getName(), entity.isVerified(), 
+                entity.isMatchSubdomains() != null ? entity.isMatchSubdomains() : false);
     }
 
     /**
