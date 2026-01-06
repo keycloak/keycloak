@@ -113,7 +113,7 @@ public class StartCommandDistTest {
     @Test
     @Launch({ "--profile=dev", "start",  "--db=dev-file" })
     void failUsingDevProfile(CLIResult cliResult) {
-        assertTrue(cliResult.getErrorOutput().contains("You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."),
+        assertTrue(cliResult.getErrorOutput().contains("You can not 'start' the server in development mode. Please re-build the server first, using '" + KeycloakDistribution.SCRIPT_CMD + " build' for the default production mode."),
                 () -> "The Output:\n" + cliResult.getErrorOutput() + "doesn't contains the expected string.");
     }
 
@@ -127,7 +127,7 @@ public class StartCommandDistTest {
     @Test
     @Launch({ "--profile=dev", "start", "--http-enabled=true", "--hostname-strict=false" })
     void failIfAutoBuildUsingDevProfile(CLIResult cliResult) {
-        assertThat(cliResult.getErrorOutput(), containsString("You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."));
+        assertThat(cliResult.getErrorOutput(), containsString("You can not 'start' the server in development mode. Please re-build the server first, using '" + KeycloakDistribution.SCRIPT_CMD + " build' for the default production mode."));
         assertEquals(4, cliResult.getErrorStream().size());
     }
 

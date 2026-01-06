@@ -46,7 +46,7 @@ public final class Messages {
     }
 
     public static String devProfileNotAllowedError(String cmd) {
-        return String.format("You can not '%s' the server in %s mode. Please re-build the server first, using 'kc.sh build' for the default production mode.%n", cmd, Environment.getKeycloakModeFromProfile(org.keycloak.common.util.Environment.DEV_PROFILE_VALUE));
+        return String.format("You can not '%s' the server in %s mode. Please re-build the server first, using '%s build' for the default production mode.%n", cmd, Environment.getKeycloakModeFromProfile(org.keycloak.common.util.Environment.DEV_PROFILE_VALUE), Environment.getCommand());
     }
 
     public static String optimizedUsedForFirstStartup() {
