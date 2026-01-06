@@ -22,6 +22,7 @@ import { CapabilityConfig } from "./CapabilityConfig";
 import { GeneralSettings } from "./GeneralSettings";
 import { LoginSettings } from "./LoginSettings";
 import { useState } from "react";
+import { findTideComponent } from "../../identity-providers/utils/SignSettingsUtil";
 
 const NewClientFooter = (newClientForm: any) => {
   const { t } = useTranslation();
@@ -89,6 +90,23 @@ export default function NewClientForm() {
         clientId: client.clientId?.trim(),
       });
       addAlert(t("createClientSuccess"), AlertVariant.success);
+
+      // TIDE IMPLEMENTATION
+      const signSettings = async () => {
+        const tideComponent = await findTideComponent(adminClient, realm);
+  
+        if (tideComponent) {
+          try {
+            await adminClient.tideAdmin.signIdpSettings();
+          } catch (error) {
+            addError("SignSettingsError", error);
+          }
+        }
+  
+      }
+    
+      signSettings();
+
       navigate(toClient({ realm, clientId: newClient.id, tab: "settings" }));
     } catch (error) {
       addError("createClientError", error);
