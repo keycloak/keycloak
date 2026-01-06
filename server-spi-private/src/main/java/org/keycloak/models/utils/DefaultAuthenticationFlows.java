@@ -825,6 +825,11 @@ public class DefaultAuthenticationFlows {
         if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
             return;
         }
+
+        if (isOrganizationAuthenticatorPresent(realm, flow.getId())) {
+            return;
+        }
+
         if (!Config.getAdminRealm().equals(realm.getName())) {
             // do not add the org flows to the master realm for now.
             AuthenticationFlowModel organizations = new AuthenticationFlowModel();
@@ -872,5 +877,18 @@ public class DefaultAuthenticationFlows {
             execution.setAuthenticatorFlow(false);
             realm.addAuthenticatorExecution(execution);
         }
+    }
+
+    private static boolean isOrganizationAuthenticatorPresent(RealmModel realm, String flowId) {
+        return flowId != null && realm.getAuthenticationExecutionsStream(flowId)
+                .anyMatch((e) -> isOrganizationAuthenticatorPresent(realm, e));
+    }
+
+    private static boolean isOrganizationAuthenticatorPresent(RealmModel realm, AuthenticationExecutionModel execution) {
+        if ("organization".equals(execution.getAuthenticator())) {
+            return true;
+        }
+
+        return isOrganizationAuthenticatorPresent(realm, execution.getFlowId());
     }
 }
