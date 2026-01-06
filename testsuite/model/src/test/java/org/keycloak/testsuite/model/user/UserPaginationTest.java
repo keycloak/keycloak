@@ -134,9 +134,10 @@ public class UserPaginationTest extends KeycloakModelTest {
 
         assertThat(list, hasSize(3));
 
+        // https://github.com/keycloak/keycloak/issues/44860 brings an optimization where the count method is not invoked.
         expectedStorageCalls(
-                Collections.singletonList(new UserPropertyFileStorageCall(UserPropertyFileStorage.COUNT_SEARCH_METHOD, null, null)),
-                Arrays.asList(new UserPropertyFileStorageCall(UserPropertyFileStorage.COUNT_SEARCH_METHOD, null, null), new UserPropertyFileStorageCall(UserPropertyFileStorage.SEARCH_METHOD, 1, 6))
+                List.of(new UserPropertyFileStorageCall(UserPropertyFileStorage.COUNT_SEARCH_METHOD, null, null)),
+                List.of(new UserPropertyFileStorageCall(UserPropertyFileStorage.SEARCH_METHOD, 1, 6))
         );
     }
 
