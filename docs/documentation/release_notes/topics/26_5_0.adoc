@@ -1,19 +1,46 @@
 // Release notes should contain only headline-worthy new features,
 // assuming that people who migrate will read the upgrading guide anyway.
 
-////
+This release features new capabilities for users and administrators of {project_name}. The highlights of this release are:
 
-// TODO
-This release features new capabilities focused on ... The highlights of this release are:
-
-// TODO
-// ...
+* Workflows to automate administrative tasks and process within a realm.
+* JWT Authorization Grants, our recommended alternative to external to internal token exchange.
+* Guide for using Keycloak as an authorization server for Model Context Protocol (MCP) servers.
+* Authenticating clients with Kubernetes service account tokens to avoid static client secrets.
+* OpenTelemetry support for metrics and logging, combining all observability information in this popular standard.
 
 Read on to learn more about each new feature. If you are upgrading from a previous release, https://www.keycloak.org/docs/latest/upgrading/index.html[review also the changes listed in the upgrading guide].
 
-////
-
 = Security and Standards
+
+== JWT Authorization Grant (preview)
+
+{project_name} 26.5 introduces a new feature called JWT Authorization Grant, which adds support for https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523] to use external signed JWT assertions to request OAuth 2.0 access tokens.
+
+To accept signed JWT assertions, a trust relationship must be established between the external provider and {project_name}. This trust relationship can be configured through an identity provider in a dedicated section of the OpenID Connect v1.0 identity provider, or through the new JWT Authorization Grant identity provider.
+
+JWT Authorization Grant is recommended as an alternative to link:{securing_apps_base_link}/token-exchange#_external-token-to-internal-token-exchange[External to internal token exchange V1].
+This feature is in preview, and additional details are available in the link:{securing_apps_base_link}/jwt-authorization-grant[dedicated documentation].
+
+== Using Keycloak as an authorization server for Model Context Protocol (MCP) servers
+
+Using {project_name} as an authorization server for Model Context Protocol (MCP) servers is becoming popular, so this release ships additional documentation on how to do this.
+
+See link:{securing_apps_base_link}/mcp-authz-server[Integrating with Model Context Protocol (MCP)] for the new guide.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
+endif::[]
+
+== CORS enhancements
+// https://github.com/keycloak/keycloak/pull/43767
+// https://github.com/keycloak/keycloak/issues/8863
+
+CORS (Cross Origin Resource Sharing) is a browser security feature that controls how web pages on one domain can request resources from a different domain.
+
+For the OpenID Connect Dynamic Client Registration, you can now specify which CORS headers are allowed via the client registration access policies.
+
+For the overall CORS configuration, you can now allow environment specific headers to be allowed using the SPI option `+spi-cors--default--allowed-headers+`.
 
 == Logout confirmation page
 
@@ -22,14 +49,6 @@ The client logout configuration now includes an option to show a logout confirma
 ifeval::[{project_community}==true]
 Many thanks to https://github.com/slaskawi[Sebastian Łaskawiec] for the contribution.
 endif::[]
-
-== CORS enhancements
-// https://github.com/keycloak/keycloak/pull/43767
-// https://github.com/keycloak/keycloak/issues/8863
-
-For the OpenID Connect Dynamic Client Registration, you can now specify which CORS headers are allowed via the client registration access policies.
-
-For the overall CORS configuration, you can now allow environment specific headers to be allowed using the SPI option `+spi-cors--default--allowed-headers+`.
 
 == Hiding OpenID Connect scopes from the discovery endpoint
 // https://github.com/keycloak/keycloak/issues/10388
@@ -40,21 +59,22 @@ In some situation you might want to avoid it, as the calling client, for example
 
 You can now prevent this by disabling *Include in OpenID Provider Metadata*.
 
-== JWT Authorization Grant new feature
-
-{project_name} 26.5 introduces a new feature called JWT Authorization Grant, which adds support for https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523] to use external signed JWT assertions to request OAuth 2.0 access tokens.
-
-To accept signed JWT assertions, a trust relationship must be established between the external provider and {project_name}. This trust relationship can be configured through an identity provider in a dedicated section of the OpenID Connect v1.0 identity provider, or through the new JWT Authorization Grant identity provider.
-
-JWT Authorization Grant is recommended as an alternative to link:{securing_apps_base_link}/token-exchange#_external-token-to-internal-token-exchange[External to internal token exchange V1].
-This feature is in preview, and additional details are available in the link:{securing_apps_base_link}/jwt-authorization-grant[dedicated documentation].
-
 = Administration
 
-////
-// TODO
-= Federated client authentication (preview)
-////
+== Workflows (preview)
+
+{project_name} introduces a new preview feature called Workflows, which allows administrators to
+automate administrative tasks and process within a realm, introducing a key capability for Identity Governance and Administration (IGA).
+
+For more details, see the link:{adminguide_link}#_managing_workflows[{adminguide_name}].
+
+== Federated client authentication (preview)
+
+Federated client authentication remains preview due to receiving a number of enhancements and fixes.
+
+There is now preview support to use Kubernetes service accounts tokens as credentials for clients, which avoids static secrets for OpenID Connect clients.
+
+See https://www.keycloak.org/docs/latest/server_admin/index.html#_identity_broker_kubernetes[Kubernetes identity providers] in the {adminguide_name} for details.
 
 == Organization invitation management
 
@@ -75,9 +95,6 @@ For each expired user session there is a new user event `USER_SESSION_DELETED` f
 This event is published approximately 3-10 minutes after the session has expired depending on job scheduling and load on the system.
 By default, this event is not persisted.
 
-As part of this change, the process now deletes rows from the table in small batches, instead of issuing a delete statements that affects the whole table.
-This should allow for better response times when there are a lot of sessions in the table.
-
 = Configuring and Running
 
 == Containers for PowerPC 64-bit Little Endian architecture
@@ -86,22 +103,13 @@ The containers for both the {project_name} and its operator are not available as
 
 We expect this to allow users to optimize their usage of open hardware and power consumption.
 
-== Session cache affinity
+== Improved server response times
 
 Authentication, user, and client sessions are now created on the respective {project_name} node and avoid extra remote calls to neighbors when reading or writing them to the embedded caches.
-
 When you have sticky sessions enabled in your loadbalancer, you will benefit from this feature automatically, and you should see reduced response times when authenticating users.
 
-== PostgreSQL version updates
-
-The latest major release of PostgreSQL 18 is now supported.
-As PostgreSQL 13 is end-of-life it is now longer supported.
-
-We also updated the docs on how to use a TLS certificate for the JDBC-connection when connecting to a PostgreSQL database.
-
-== EnterpriseDB Advanced 18 support
-
-EDB 18 is now tested and supported in addition to the existing EDB 17 support.
+Expired user sessions are now deleted from the database in small batches, instead of issuing a delete statements that affects the whole table.
+This should allow for better response times when there are a lot of sessions in the table.
 
 == Enhanced HTTP performance (preview)
 
@@ -117,7 +125,7 @@ endif::[]
 
 For more details, see the https://www.keycloak.org/server/configuration-production[Configuring Keycloak for production] guide.
 
-== Ability to configure retry behavior for outgoing HTTP requests
+== Configure retry behavior for outgoing HTTP requests
 
 {project_name} has now more flexibility how to configure retrying of outgoing HTTP requests. This is useful for handling transient network errors or temporary unavailability
 of the service where {project_name} needs to send HTTP request. Retry behavior is disabled by default and must be explicitly enabled.
@@ -153,9 +161,25 @@ For more information, see the https://www.keycloak.org/server/windows-service[Ru
 
 = Observability
 
-== Export traces with custom request headers
+== OpenTelemetry enhancements
 
-It is now possible to set request headers for exporting traces via Open Telemetry Protocol (OTLP).
+=== OpenTelemetry Logs (preview)
+
+{project_name} now supports exporting logs to OpenTelemetry collectors, enabling centralized log management.
+This preview feature allows you to export {project_name} logs to any OpenTelemetry-compatible backend and use the same OpenTelemetry collector for logs, metrics and traces.
+
+For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+=== OpenTelemetry Metrics (experimental)
+
+{project_name} now provides the experimental support for exporting metrics to OpenTelemetry collectors by using the https://quarkus.io/guides/telemetry-micrometer-to-opentelemetry[Micrometer-to-OpenTelemetry bridge].
+This experimental feature allows you to export {project_name} metrics to any OpenTelemetry-compatible backend and use the same OpenTelemetry collector for logs, metrics and traces.
+
+For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+=== Export traces with custom request headers
+
+It is now possible to set request headers for exporting traces via OpenTelemetry Protocol (OTLP).
 It is mainly useful for providing tokens in the request.
 
 You can specify these headers via the `tracing-header-<header>` wildcard option, accepting any custom header name.
@@ -168,29 +192,5 @@ The `log-mdc:v1` feature has been promoted from a preview feature to a supported
 
 MDC enables Keycloak to enrich log entries with contextual information such as realm, client, user ID and IP address, significantly improving debugging and observability.
 
-For more details, see the https://www.keycloak.org/server/logging#_adding_context_for_log_messages[Adding context for log messages] guide.
+For more details, see the https://www.keycloak.org/server/logging#mdc[Adding context for log messages] guide.
 
-== New centralized telemetry options
-
-{project_name} now provides centralized telemetry configuration options that can be shared across all telemetry (OpenTelemetry) components - traces and logs, with future support planned for metrics.
-Individual components can override these global settings when needed.
-
-New options: `telemetry-endpoint`, `telemetry-protocol`, `telemetry-service-name`, and `telemetry-resource-attributes`.
-
-*Deprecation:* The `tracing-service-name` and `tracing-resource-attributes` options are now deprecated in favor of `telemetry-service-name` and `telemetry-resource-attributes`.
-
-For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
-
-== OpenTelemetry Logs (preview)
-
-{project_name} now supports exporting logs to OpenTelemetry collectors, enabling centralized log management.
-This preview feature allows you to export {project_name} logs to any OpenTelemetry-compatible backend and use the same OpenTelemetry collector for logs, metrics and traces.
-
-For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
-
-== OpenTelemetry Metrics (experimental)
-
-{project_name} now provides the experimental support for exporting metrics to OpenTelemetry collectors by using the https://quarkus.io/guides/telemetry-micrometer-to-opentelemetry[Micrometer-to-OpenTelemetry bridge].
-This experimental feature allows you to export {project_name} metrics to any OpenTelemetry-compatible backend and use the same OpenTelemetry collector for logs, metrics and traces.
-
-For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.

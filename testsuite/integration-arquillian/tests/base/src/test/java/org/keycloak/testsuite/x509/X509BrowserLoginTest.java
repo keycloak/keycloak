@@ -103,7 +103,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         oauth.openLoginForm();
 
-        assertThat(loginPage.getError(), containsString("Certificate validation's failed.\n" +
+        assertThat(loginPage.getError(), containsString("Certificate validation's failed. " +
                 "Certificate revoked or incorrect."));
     }
 
@@ -456,7 +456,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
             Assert.assertNotNull(loginPage.getError());
 
-            assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed.\nUser is disabled"));
+            assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed. User is disabled"));
 
             events.expectLogin()
                     .user(userId)

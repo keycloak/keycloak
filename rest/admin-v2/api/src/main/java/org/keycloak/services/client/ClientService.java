@@ -4,7 +4,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.admin.v2.ClientRepresentation;
+import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.Service;
 import org.keycloak.services.ServiceException;
 
@@ -25,14 +25,14 @@ public interface ClientService extends Service {
         // NOTE: this is not always the most desirable way to do pagination
     }
 
-    record CreateOrUpdateResult(ClientRepresentation representation, boolean created) {}
+    record CreateOrUpdateResult(BaseClientRepresentation representation, boolean created) {}
 
-    Optional<ClientRepresentation> getClient(RealmModel realm, String clientId, ClientProjectionOptions projectionOptions);
+    Optional<BaseClientRepresentation> getClient(RealmModel realm, String clientId, ClientProjectionOptions projectionOptions);
 
-    Stream<ClientRepresentation> getClients(RealmModel realm, ClientProjectionOptions projectionOptions, ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions);
+    Stream<BaseClientRepresentation> getClients(RealmModel realm, ClientProjectionOptions projectionOptions, ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions);
 
-    Stream<ClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions);
+    Stream<BaseClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions);
 
-    CreateOrUpdateResult createOrUpdate(RealmModel realm, ClientRepresentation client, boolean allowUpdate) throws ServiceException;
+    CreateOrUpdateResult createOrUpdate(RealmModel realm, BaseClientRepresentation client, boolean allowUpdate) throws ServiceException;
 
 }

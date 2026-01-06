@@ -70,7 +70,7 @@ image:images/organizations-edit-identity-provider.png[alt="Editing linked identi
 
 == Unlinking an identity provider from an organization
 
-When an identity provider is unlinked from an organization, it remains available as a realm-level provider that is no longer ssociated with an organization. To delete the unlinked provider, use the *Identity Providers* section in the menu.
+When an identity provider is unlinked from an organization, it remains available as a realm-level provider that is no longer associated with an organization. To delete the unlinked provider, use the *Identity Providers* section in the menu.
 
 .Procedure
 

@@ -110,7 +110,7 @@
         <log4j2-api.version>2.25.1</log4j2-api.version> <!-- Odd name needs to align with Quarkus -->
         <resteasy.version>6.2.12.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
-        <owasp.html.sanitizer.version>20240325.1</owasp.html.sanitizer.version>
+        <owasp.html.sanitizer.version>20260101.1</owasp.html.sanitizer.version>
         <slf4j.version>2.0.6</slf4j.version>
         <sun.istack.version>3.0.10</sun.istack.version>
         <sun.saaj.version>2.0.1</sun.saaj.version>
@@ -225,8 +225,6 @@
 
         <!-- Used to test SAML Galleon feature-pack layers discovery -->
         <version.org.wildfly.glow>1.0.0.Alpha8</version.org.wildfly.glow>
-
-        <org.mapstruct.version>1.6.3</org.mapstruct.version>
 
         <!-- Galleon -->
         <galleon.fork.embedded>true</galleon.fork.embedded>
@@ -398,11 +396,6 @@
                 <groupId>org.glassfish.jaxb</groupId>
                 <artifactId>xsom</artifactId>
                 <version>${org.glassfish.jaxb.xsom.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.mapstruct</groupId>
-                <artifactId>mapstruct</artifactId>
-                <version>${org.mapstruct.version}</version>
             </dependency>
 
             <dependency>
