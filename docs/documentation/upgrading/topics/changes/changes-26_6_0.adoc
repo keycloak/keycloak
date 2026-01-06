@@ -1,0 +1,36 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== <TODO>
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== New database indexes on the `BROKER_LINK` table
+
+The `BROKER_LINK` table now contains two additional indexes `IDX_EVENT_BROKER_LINK_USER_ID` and `IDX_EVENT_BROKER_LINK_USER_FEDERATION`.
+`IDX_EVENT_BROKER_LINK_USER_ID` improves performance when querying Identity Providers associated with a given user.
+Whilst `IDX_EVENT_BROKER_LINK_USER_FEDERATION` improves performance when retrieving the {project_name} identity associated
+with the external Identity Provider identity.
+
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== <TODO>
+
+// ------------------------ Removed features ------------------------ //
+== Removed features
+
+The following features have been removed from this release.
+
+=== <TODO>
+
