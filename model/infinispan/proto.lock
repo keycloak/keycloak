@@ -72,6 +72,10 @@
           "optional" : true
         } ]
       }, {
+        "name" : "CollectionToStreamMapper",
+        "type_id" : 65609,
+        "fields" : [ ]
+      }, {
         "name" : "GroupListPredicate",
         "type_id" : 65568,
         "fields" : [ {
@@ -80,6 +84,10 @@
           "type" : "string",
           "optional" : true
         } ]
+      }, {
+        "name" : "AuthClientSessionSetMapper",
+        "type_id" : 65608,
+        "fields" : [ ]
       }, {
         "name" : "RemoveUserSessionsEvent",
         "type_id" : 65564,
@@ -94,11 +102,6 @@
           "type" : "string",
           "optional" : true
         }, {
-          "id" : 3,
-          "name" : "resendingEvent",
-          "type" : "bool",
-          "optional" : true
-        }, {
           "id" : 4,
           "name" : "siteId",
           "type" : "string",
@@ -108,7 +111,9 @@
           "name" : "nodeId",
           "type" : "string",
           "optional" : true
-        } ]
+        } ],
+        "reserved_ids" : [ 3 ],
+        "reserved_names" : [ "resendingEvent" ]
       }, {
         "name" : "ResourceServerUpdatedEvent",
         "type_id" : 65550,
@@ -116,25 +121,6 @@
           "id" : 1,
           "name" : "id",
           "type" : "string",
-          "optional" : true
-        } ]
-      }, {
-        "name" : "InitializerState",
-        "type_id" : 65554,
-        "fields" : [ {
-          "id" : 1,
-          "name" : "realmId",
-          "type" : "string",
-          "optional" : true
-        }, {
-          "id" : 2,
-          "name" : "segmentsCount",
-          "type" : "int32",
-          "optional" : true
-        }, {
-          "id" : 3,
-          "name" : "segments",
-          "type" : "org.infinispan.protostream.commons.BitSet",
           "optional" : true
         } ]
       }, {
@@ -208,11 +194,6 @@
           "type" : "string",
           "optional" : true
         }, {
-          "id" : 3,
-          "name" : "resendingEvent",
-          "type" : "bool",
-          "optional" : true
-        }, {
           "id" : 4,
           "name" : "siteId",
           "type" : "string",
@@ -222,7 +203,9 @@
           "name" : "nodeId",
           "type" : "string",
           "optional" : true
-        } ]
+        } ],
+        "reserved_ids" : [ 3 ],
+        "reserved_names" : [ "resendingEvent" ]
       }, {
         "name" : "SessionData",
         "type_id" : 65558,
@@ -498,6 +481,25 @@
           "optional" : true
         } ]
       }, {
+        "name" : "LoginFailuresLifespanUpdate",
+        "type_id" : 65620,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "maxDeltaTimeMillis",
+          "type" : "int64",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "maxTemporaryLockouts",
+          "type" : "int32",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "permanentLockout",
+          "type" : "bool",
+          "optional" : true
+        } ]
+      }, {
         "name" : "ScopeRemovedEvent",
         "type_id" : 65553,
         "fields" : [ {
@@ -527,6 +529,45 @@
             "name" : "notes",
             "type" : "string"
           }
+        } ]
+      }, {
+        "name" : "PermissionTicketRemovedEvent",
+        "type_id" : 65613,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "owner",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "requester",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "resource",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "resourceName",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 6,
+          "name" : "scope",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 7,
+          "name" : "serverId",
+          "type" : "string",
+          "optional" : true
         } ]
       }, {
         "name" : "SessionPredicate",
@@ -663,6 +704,25 @@
           "optional" : true
         } ]
       }, {
+        "name" : "UserStorageProviderClusterEvent",
+        "type_id" : 65540,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "removed",
+          "type" : "bool",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "storageProvider",
+          "type" : "UserStorageProviderModel",
+          "optional" : true
+        } ]
+      }, {
         "name" : "AuthenticatedClientSessionEntity",
         "type_id" : 65596,
         "fields" : [ {
@@ -691,9 +751,19 @@
           "type" : "string",
           "optional" : true
         }, {
-          "id" : 7,
-          "name" : "id",
-          "type" : "org.infinispan.protostream.commons.UUID",
+          "id" : 8,
+          "name" : "userSessionId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 9,
+          "name" : "clientId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 10,
+          "name" : "userId",
+          "type" : "string",
           "optional" : true
         } ],
         "maps" : [ {
@@ -703,7 +773,9 @@
             "name" : "notes",
             "type" : "string"
           }
-        } ]
+        } ],
+        "reserved_ids" : [ 7 ],
+        "reserved_names" : [ "id" ]
       }, {
         "name" : "LoginFailureKey",
         "type_id" : 65599,
@@ -716,25 +788,6 @@
           "id" : 2,
           "name" : "userId",
           "type" : "string",
-          "optional" : true
-        } ]
-      }, {
-        "name" : "UserStorageProviderClusterEvent",
-        "type_id" : 65540,
-        "fields" : [ {
-          "id" : 1,
-          "name" : "removed",
-          "type" : "bool",
-          "optional" : true
-        }, {
-          "id" : 2,
-          "name" : "realmId",
-          "type" : "string",
-          "optional" : true
-        }, {
-          "id" : 3,
-          "name" : "storageProvider",
-          "type" : "UserStorageProviderModel",
           "optional" : true
         } ]
       }, {
@@ -751,11 +804,6 @@
           "type" : "string",
           "optional" : true
         }, {
-          "id" : 3,
-          "name" : "resendingEvent",
-          "type" : "bool",
-          "optional" : true
-        }, {
           "id" : 4,
           "name" : "siteId",
           "type" : "string",
@@ -765,19 +813,9 @@
           "name" : "nodeId",
           "type" : "string",
           "optional" : true
-        } ]
-      }, {
-        "name" : "LastSessionRefreshEvent",
-        "type_id" : 65557,
-        "fields" : [ ],
-        "maps" : [ {
-          "key_type" : "string",
-          "field" : {
-            "id" : 1,
-            "name" : "lastSessionRefreshes",
-            "type" : "SessionData"
-          }
-        } ]
+        } ],
+        "reserved_ids" : [ 3 ],
+        "reserved_names" : [ "resendingEvent" ]
       }, {
         "name" : "ResourceUpdatedEvent",
         "type_id" : 65548,
@@ -840,6 +878,10 @@
           }
         } ]
       }, {
+        "name" : "ReloadCertificateFunction",
+        "type_id" : 65615,
+        "fields" : [ ]
+      }, {
         "name" : "GroupMovedEvent",
         "type_id" : 65581,
         "fields" : [ {
@@ -883,6 +925,10 @@
           "optional" : true
         } ]
       }, {
+        "name" : "RemoveKeyConsumer",
+        "type_id" : 65618,
+        "fields" : [ ]
+      }, {
         "name" : "InResourceServerPredicate",
         "type_id" : 65560,
         "fields" : [ {
@@ -920,6 +966,24 @@
         "fields" : [ {
           "id" : 1,
           "name" : "id",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "MapEntryToKeyMapper",
+        "type_id" : 65611,
+        "fields" : [ ]
+      }, {
+        "name" : "EmbeddedClientSessionKey",
+        "type_id" : 65616,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "userSessionId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "clientId",
           "type" : "string",
           "optional" : true
         } ]
@@ -971,6 +1035,45 @@
           "optional" : true
         } ]
       }, {
+        "name" : "PermissionTicketUpdatedEvent",
+        "type_id" : 65614,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "owner",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "requester",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "resource",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "resourceName",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 6,
+          "name" : "scope",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 7,
+          "name" : "serverId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
         "name" : "AuthenticatedClientSessionStore",
         "type_id" : 65595,
         "fields" : [ ],
@@ -981,6 +1084,20 @@
             "name" : "authenticatedClientSessionIds",
             "type" : "org.infinispan.protostream.commons.UUID"
           }
+        } ]
+      }, {
+        "name" : "ClientSessionFilterByUser",
+        "type_id" : 65617,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "userId",
+          "type" : "string",
+          "optional" : true
         } ]
       }, {
         "name" : "RoleUpdatedEvent",
@@ -1053,6 +1170,11 @@
           "name" : "containerId",
           "type" : "string",
           "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "roleName",
+          "type" : "string",
+          "optional" : true
         } ]
       }, {
         "name" : "GroupAddedEvent",
@@ -1102,6 +1224,10 @@
           "type" : "string",
           "optional" : true
         } ]
+      }, {
+        "name" : "GroupAndCountCollectorSupplier",
+        "type_id" : 65610,
+        "fields" : [ ]
       }, {
         "name" : "ReplaceFunction",
         "type_id" : 65656,
@@ -1165,11 +1291,6 @@
           "type" : "int32",
           "optional" : true
         }, {
-          "id" : 11,
-          "name" : "authenticatedClientSessions",
-          "type" : "AuthenticatedClientSessionStore",
-          "optional" : true
-        }, {
           "id" : 12,
           "name" : "state",
           "type" : "State",
@@ -1184,6 +1305,11 @@
           "name" : "brokerUserId",
           "type" : "string",
           "optional" : true
+        }, {
+          "id" : 15,
+          "name" : "clientSessions",
+          "type" : "string",
+          "is_repeated" : true
         } ],
         "maps" : [ {
           "key_type" : "string",
@@ -1192,7 +1318,9 @@
             "name" : "notes",
             "type" : "string"
           }
-        } ]
+        } ],
+        "reserved_ids" : [ 11 ],
+        "reserved_names" : [ "authenticatedClientSessions" ]
       }, {
         "name" : "RealmRemovedEvent",
         "type_id" : 65585,
@@ -1268,6 +1396,10 @@
           "optional" : true
         } ]
       }, {
+        "name" : "SessionUnwrapMapper",
+        "type_id" : 65612,
+        "fields" : [ ]
+      }, {
         "name" : "InIdentityProviderPredicate",
         "type_id" : 65572,
         "fields" : [ {
@@ -1342,6 +1474,10 @@
           "type" : "string",
           "optional" : true
         } ]
+      }, {
+        "name" : "ValueIdentityBiFunction",
+        "type_id" : 65619,
+        "fields" : [ ]
       }, {
         "name" : "SessionEntityWrapper",
         "type_id" : 65555,
