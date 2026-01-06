@@ -471,6 +471,58 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testDomainWithWildcardSubdomains() {
+        // Create organization with a domain that has wildcard subdomain matching enabled
+        OrganizationRepresentation org = createOrganization();
+        OrganizationResource organization = testRealm().organizations().get(org.getId());
+        
+        // Add a domain with wildcard subdomain matching
+        OrganizationDomainRepresentation wildcardDomain = new OrganizationDomainRepresentation();
+        wildcardDomain.setName("example.com");
+        wildcardDomain.setVerified(true);
+        wildcardDomain.setMatchSubdomains(true);
+        org.addDomain(wildcardDomain);
+        
+        try (Response response = organization.update(org)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        
+        // Verify the wildcard domain was saved correctly
+        OrganizationRepresentation updated = organization.toRepresentation();
+        assertEquals(2, updated.getDomains().size());
+        
+        OrganizationDomainRepresentation savedDomain = updated.getDomain("example.com");
+        assertNotNull(savedDomain);
+        assertTrue(savedDomain.isVerified());
+        assertTrue(savedDomain.isMatchSubdomains());
+        
+        // Verify that matchSubdomains defaults to false for existing domain
+        OrganizationDomainRepresentation defaultDomain = updated.getDomain("neworg.org");
+        assertNotNull(defaultDomain);
+        assertFalse(defaultDomain.isMatchSubdomains());
+        
+        // Test updating the matchSubdomains flag
+        wildcardDomain.setMatchSubdomains(false);
+        try (Response response = organization.update(org)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        
+        updated = organization.toRepresentation();
+        savedDomain = updated.getDomain("example.com");
+        assertFalse(savedDomain.isMatchSubdomains());
+        
+        // Re-enable wildcard matching
+        wildcardDomain.setMatchSubdomains(true);
+        try (Response response = organization.update(org)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        
+        updated = organization.toRepresentation();
+        savedDomain = updated.getDomain("example.com");
+        assertTrue(savedDomain.isMatchSubdomains());
+    }
+
+    @Test
     public void testWithoutDomains() {
         // test create organization without any domains
         OrganizationRepresentation orgWithoutDomains = new OrganizationRepresentation();

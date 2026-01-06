@@ -34,14 +34,20 @@ public class OrganizationDomainModel implements Serializable {
 
     private final String name;
     private final boolean verified;
+    private final boolean matchSubdomains;
 
     public OrganizationDomainModel(String name) {
         this(name, false);
     }
 
     public OrganizationDomainModel(String name, boolean verified) {
+        this(name, verified, false);
+    }
+
+    public OrganizationDomainModel(String name, boolean verified, boolean matchSubdomains) {
         this.name = name == null ? null : name.trim().toLowerCase();
         this.verified = verified;
+        this.matchSubdomains = matchSubdomains;
     }
 
     public String getName() {
@@ -50,6 +56,10 @@ public class OrganizationDomainModel implements Serializable {
 
     public boolean isVerified() {
         return this.verified;
+    }
+
+    public boolean isMatchSubdomains() {
+        return this.matchSubdomains;
     }
 
     @Override
