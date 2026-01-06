@@ -8,9 +8,14 @@ import { RoleMapping, Row } from "../components/role-mapping/RoleMapping";
 type GroupRoleMappingProps = {
   id: string;
   name: string;
+  canManageGroup: boolean;
 };
 
-export const GroupRoleMapping = ({ id, name }: GroupRoleMappingProps) => {
+export const GroupRoleMapping = ({
+  id,
+  name,
+  canManageGroup,
+}: GroupRoleMappingProps) => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
@@ -43,5 +48,13 @@ export const GroupRoleMapping = ({ id, name }: GroupRoleMappingProps) => {
     }
   };
 
-  return <RoleMapping name={name} id={id} type="groups" save={assignRoles} />;
+  return (
+    <RoleMapping
+      isManager={canManageGroup}
+      name={name}
+      id={id}
+      type="groups"
+      save={assignRoles}
+    />
+  );
 };
