@@ -12,7 +12,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.admin.v2.ClientRepresentation;
+import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.ClientService;
@@ -52,13 +52,13 @@ public class DefaultClientApi implements ClientApi {
     }
 
     @Override
-    public ClientRepresentation getClient() {
+    public BaseClientRepresentation getClient() {
         return clientService.getClient(realm, client.getClientId(), null)
                 .orElseThrow(() -> new NotFoundException("Cannot find the specified client"));
     }
 
     @Override
-    public Response createOrUpdateClient(ClientRepresentation client) {
+    public Response createOrUpdateClient(BaseClientRepresentation client) {
         try {
             if (!Objects.equals(clientId, client.getClientId())) {
                 throw new WebApplicationException("cliendId in payload does not match the clientId in the path", Response.Status.BAD_REQUEST);
@@ -72,8 +72,8 @@ public class DefaultClientApi implements ClientApi {
     }
 
     @Override
-    public ClientRepresentation patchClient(JsonNode patch) {
-        ClientRepresentation client = getClient();
+    public BaseClientRepresentation patchClient(JsonNode patch) {
+        BaseClientRepresentation client = getClient();
         try {
             String contentType = session.getContext().getHttpRequest().getHttpHeaders().getHeaderString(HttpHeaders.CONTENT_TYPE);
             MediaType mediaType = contentType == null ? null : MediaType.valueOf(contentType);
@@ -83,7 +83,7 @@ public class DefaultClientApi implements ClientApi {
             }
 
             final ObjectReader objectReader = objectMapper.readerForUpdating(client);
-            ClientRepresentation updated = objectReader.readValue(patch);
+            BaseClientRepresentation updated = objectReader.readValue(patch);
 
             validateUnknownFields(updated);
             return clientService.createOrUpdate(realm, updated, true).representation();
@@ -104,8 +104,8 @@ public class DefaultClientApi implements ClientApi {
         clientResource.deleteClient();
     }
 
-    static void validateUnknownFields(ClientRepresentation rep) {
-        if (!rep.getAdditionalFields().isEmpty()) {
+    static void validateUnknownFields(BaseClientRepresentation rep) {
+        if (rep.getAdditionalFields().keySet().stream().anyMatch(k -> !k.equals(BaseClientRepresentation.DISCRIMINATOR_FIELD))) {
             throw new WebApplicationException("Payload contains unknown fields: " + rep.getAdditionalFields().keySet(), Response.Status.BAD_REQUEST);
         }
     }
