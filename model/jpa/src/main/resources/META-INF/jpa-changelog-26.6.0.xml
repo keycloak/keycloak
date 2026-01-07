@@ -17,11 +17,13 @@
   -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-    <changeSet author="keycloak" id="26.6.0-45009">
+    <changeSet author="keycloak" id="26.6.0-45009-user-id">
         <createIndex tableName="BROKER_LINK" indexName="IDX_EVENT_BROKER_LINK_USER_ID">
             <column name="USER_ID" type="VARCHAR(255)" />
         </createIndex>
+    </changeSet>
 
+    <changeSet author="keycloak" id="26.6.0-45009-user-federation">
         <createIndex tableName="BROKER_LINK" indexName="IDX_EVENT_BROKER_LINK_USER_FEDERATION">
             <column name="REALM_ID" type="VARCHAR(36)" />
             <column name="IDENTITY_PROVIDER" type="VARCHAR(255)" />
