@@ -19,7 +19,7 @@ import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 /**
  * @since Keycloak server 26.4.0. All the child endpoints are also available since that version<p>
  *
- * This endpoint including all the child endpoints require feature {@link org.keycloak.common.Profile.Feature#WORKFLOWS} to be enabled. Note that feature is experimental in 26.4.0 and there might be
+ * This endpoint including all the child endpoints require feature {@link org.keycloak.common.Profile.Feature#WORKFLOWS} to be enabled. Note that feature is preview in 26.5.0 and there might be
  * backwards incompatible changes in the future versions of admin-client and Keycloak server<p>
  */
 public interface WorkflowsResource {
