@@ -38,13 +38,13 @@ It also lists significant changes to internal APIs.
 
 The Welcome Page, used to create the initial administrative user, now includes optional fields for *First name*, *Last name*, and *Email*. These fields allow administrators to provide additional profile information when creating the initial admin user. All new fields are optional and do not affect the existing functionality.
 
-== PostgreSQL version updates
+=== PostgreSQL version updates
 
 The latest major release of PostgreSQL 18 is now supported.
 
 We also updated the docs on how to use a TLS certificate for the JDBC-connection when connecting to a PostgreSQL database.
 
-== EnterpriseDB Advanced 18 support
+=== EnterpriseDB Advanced 18 support
 
 EDB 18 is now tested and supported in addition to the existing EDB 17 support.
 
