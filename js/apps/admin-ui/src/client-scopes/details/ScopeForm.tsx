@@ -82,6 +82,12 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     ? Object.keys(serverInfo.providers.hash.providers)
     : [];
 
+  // Get available asymmetric signature algorithms from server info
+  const asymmetricSigAlgOptions = useMemo(
+    () => serverInfo?.cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? [],
+    [serverInfo],
+  );
+
   // Fetch realm keys for signing_key_id dropdown
   const [realmKeys, setRealmKeys] = useState<KeyMetadataRepresentation[]>([]);
 
@@ -372,13 +378,25 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                 options={keyOptions}
               />
             )}
-            <TextControl
-              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                "attributes.vc.credential_signing_alg",
-              )}
-              label={t("credentialSigningAlgorithm")}
-              labelIcon={t("credentialSigningAlgorithmHelp")}
-            />
+            {asymmetricSigAlgOptions.length > 0 && (
+              <SelectControl
+                id="kc-credential-signing-alg"
+                name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                  "attributes.vc.credential_signing_alg",
+                )}
+                label={t("credentialSigningAlgorithm")}
+                labelIcon={t("credentialSigningAlgorithmHelp")}
+                controller={{
+                  defaultValue:
+                    clientScope?.attributes?.["vc.credential_signing_alg"] ??
+                    "",
+                }}
+                options={asymmetricSigAlgOptions.map((alg) => ({
+                  key: alg,
+                  value: alg,
+                }))}
+              />
+            )}
             {hashAlgorithms.length > 0 && (
               <SelectControl
                 id="kc-hash-algorithm"
