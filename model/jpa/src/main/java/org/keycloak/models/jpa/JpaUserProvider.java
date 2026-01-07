@@ -1062,7 +1062,6 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                     break;
                 case UserModel.EXACT:
                     break;
-                // All unknown attributes will be assumed as custom attributes
                 case UserModel.INCLUDE_SERVICE_ACCOUNT: {
                     if (!attributes.containsKey(UserModel.INCLUDE_SERVICE_ACCOUNT)
                             || !Boolean.parseBoolean(attributes.get(UserModel.INCLUDE_SERVICE_ACCOUNT))) {
@@ -1071,6 +1070,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                     break;
                 }
                 default:
+                    // All unknown attributes will be assumed as custom attributes
                     Join<UserEntity, UserAttributeEntity> attributesJoin = root.join("attributes", JoinType.LEFT);
                     if (value.length() > 255) {
                         customLongValueSearchAttributes.put(key, value);
@@ -1119,6 +1119,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     }
 
     private static CriteriaQuery<Long> countQuery(CriteriaQuery<Long> query, CriteriaBuilder builder, From<?, UserEntity> from, List<Predicate> predicates) {
+        // When joining multiple tables, issuing a "distinct" is required to get the correct result.
+        // At the same time it is more expensive than a regular count as it would need to sort/keep all keys in memory at the database for the duration of the query.
+        // Therefore, we use a standard count where possible.
         return query.select(from.getJoins().isEmpty() ? builder.count(from) : builder.countDistinct(from))
                 .where(predicates);
     }
