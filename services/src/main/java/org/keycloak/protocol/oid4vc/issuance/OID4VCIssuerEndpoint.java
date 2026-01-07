@@ -110,6 +110,7 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.saml.processing.api.util.DeflateUtil;
@@ -794,8 +795,8 @@ public class OID4VCIssuerEndpoint {
 
         if (credentialIdentifier != null) {
 
-            // Retrieve the associated credential offer state
-            //
+            // First check if the credential identifier exists
+            // This allows proper error reporting for unknown identifiers
             CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
             CredentialOfferState offerState = offerStorage.findOfferStateByCredentialId(session, credentialIdentifier);
             if (offerState == null) {
@@ -805,8 +806,39 @@ public class OID4VCIssuerEndpoint {
             }
 
             // Get the credential_configuration_id from AuthorizationDetails
-            //
+            // First check if offer state has authorization_details (for pre-authorized flows)
             OID4VCAuthorizationDetailsResponse authDetails = offerState.getAuthorizationDetails();
+
+            // Validate authorization_details: either in token or in offer state
+            // For pre-authorized flows, offer state is the source of truth
+            // For authorization code flows, token must contain authorization_details
+            AccessToken accessToken = authResult.token();
+            Object tokenAuthDetails = accessToken.getOtherClaims().get(OAuth2Constants.AUTHORIZATION_DETAILS);
+            if (tokenAuthDetails == null && authDetails == null) {
+                var errorMessage = "Access token does not contain authorization_details and offer state has no authorization_details. " +
+                        "Only tokens issued with authorization_details can be used for credential requests with credential_identifier.";
+                LOGGER.debugf(errorMessage);
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+            }
+
+            // Use authorization_details from offer state if available, otherwise from token
+            // For pre-authorized flows, offer state is authoritative
+            if (authDetails == null) {
+                // Extract from token if offer state doesn't have it
+                // This should be rare but handle it for robustness
+                if (tokenAuthDetails instanceof List) {
+                    List<AuthorizationDetailsResponse> tokenAuthDetailsList = (List<AuthorizationDetailsResponse>) tokenAuthDetails;
+                    if (!tokenAuthDetailsList.isEmpty() && tokenAuthDetailsList.get(0) instanceof OID4VCAuthorizationDetailsResponse) {
+                        authDetails = (OID4VCAuthorizationDetailsResponse) tokenAuthDetailsList.get(0);
+                    }
+                }
+            }
+
+            if (authDetails == null) {
+                var errorMessage = "No authorization_details found in offer state or token";
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+            }
+            
             String credConfigId = authDetails.getCredentialConfigurationId();
             if (credConfigId == null) {
                 var errorMessage = "No credential_configuration_id in AuthorizationDetails";
