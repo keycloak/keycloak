@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.admin.client.v2;
 
+import java.util.List;
 import java.util.Set;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -25,7 +26,9 @@ import jakarta.ws.rs.core.MediaType;
 import org.keycloak.admin.api.client.ClientApi;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
+import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
+import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
@@ -37,6 +40,7 @@ import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpMessage;
 import org.apache.http.client.methods.HttpDelete;
@@ -221,6 +225,86 @@ public class ClientApiV2Test {
 
         try (var response = client.execute(getRequest)) {
             assertEquals(404, response.getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    public void getClientsMixedProtocols() throws Exception {
+        // Create an OIDC client
+        HttpPost oidcRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
+        setAuthHeader(oidcRequest);
+        oidcRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        OIDCClientRepresentation oidcRep = new OIDCClientRepresentation();
+        oidcRep.setEnabled(true);
+        oidcRep.setClientId("mixed-test-oidc");
+        oidcRep.setDescription("OIDC client for mixed protocol test");
+
+        oidcRequest.setEntity(new StringEntity(mapper.writeValueAsString(oidcRep)));
+
+        try (var response = client.execute(oidcRequest)) {
+            assertEquals(201, response.getStatusLine().getStatusCode());
+        }
+
+        // Create a SAML client
+        HttpPost samlRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
+        setAuthHeader(samlRequest);
+        samlRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        SAMLClientRepresentation samlRep = new SAMLClientRepresentation();
+        samlRep.setEnabled(true);
+        samlRep.setClientId("mixed-test-saml");
+        samlRep.setDescription("SAML client for mixed protocol test");
+
+        samlRequest.setEntity(new StringEntity(mapper.writeValueAsString(samlRep)));
+
+        try (var response = client.execute(samlRequest)) {
+            assertEquals(201, response.getStatusLine().getStatusCode());
+        }
+
+        // Get all clients - this should work with mixed protocols
+        HttpGet getRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
+        setAuthHeader(getRequest);
+
+        try (var response = client.execute(getRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+
+            List<BaseClientRepresentation> clients = mapper.readValue(response.getEntity().getContent(),
+                    new TypeReference<List<BaseClientRepresentation>>() {});
+
+            // Should contain both our created clients
+            boolean foundOidc = clients.stream()
+                    .anyMatch(c -> "mixed-test-oidc".equals(c.getClientId()) && c instanceof OIDCClientRepresentation);
+            boolean foundSaml = clients.stream()
+                    .anyMatch(c -> "mixed-test-saml".equals(c.getClientId()) && c instanceof SAMLClientRepresentation);
+
+            assertThat("OIDC client should be in the list", foundOidc, is(true));
+            assertThat("SAML client should be in the list", foundSaml, is(true));
+        }
+
+        // Get individual SAML client
+        HttpGet getSamlRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/mixed-test-saml");
+        setAuthHeader(getSamlRequest);
+
+        try (var response = client.execute(getSamlRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            SAMLClientRepresentation samlClient = mapper.createParser(response.getEntity().getContent())
+                    .readValueAs(SAMLClientRepresentation.class);
+            assertEquals("mixed-test-saml", samlClient.getClientId());
+            assertEquals("SAML client for mixed protocol test", samlClient.getDescription());
+        }
+
+        // Cleanup
+        HttpDelete deleteOidc = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/mixed-test-oidc");
+        setAuthHeader(deleteOidc);
+        try (var response = client.execute(deleteOidc)) {
+            assertEquals(204, response.getStatusLine().getStatusCode());
+        }
+
+        HttpDelete deleteSaml = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/mixed-test-saml");
+        setAuthHeader(deleteSaml);
+        try (var response = client.execute(deleteSaml)) {
+            assertEquals(204, response.getStatusLine().getStatusCode());
         }
     }
 

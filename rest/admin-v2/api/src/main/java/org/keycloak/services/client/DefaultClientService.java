@@ -60,7 +60,9 @@ public class DefaultClientService implements ClientService {
                                                    ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions) {
         // TODO: is the access map on the representation needed
         return clientsResource.getClientModels(null, true, false, null, null, null)
-                .map(model -> session.getProvider(ClientModelMapper.class, model.getProtocol()).fromModel(model));
+                .filter(model -> model.getProtocol() != null) // Skip clients with null protocol
+                .map(model -> session.getProvider(ClientModelMapper.class, model.getProtocol()).fromModel(model))
+                .filter(java.util.Objects::nonNull);
     }
 
     @Override
