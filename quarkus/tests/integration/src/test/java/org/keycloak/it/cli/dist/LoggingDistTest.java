@@ -34,9 +34,9 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.test.junit.main.Launch;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 

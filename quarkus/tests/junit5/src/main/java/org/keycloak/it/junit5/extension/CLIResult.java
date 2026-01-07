@@ -25,14 +25,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.main.LaunchResult;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.testcontainers.shaded.org.hamcrest.MatcherAssert.assertThat;
-import static org.testcontainers.shaded.org.hamcrest.Matchers.containsString;
-import static org.testcontainers.shaded.org.hamcrest.Matchers.equalTo;
-import static org.testcontainers.shaded.org.hamcrest.Matchers.is;
-import static org.testcontainers.shaded.org.hamcrest.Matchers.not;
 
 public interface CLIResult extends LaunchResult {
 
