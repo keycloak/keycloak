@@ -315,12 +315,24 @@ Telemetry (OpenTelemetry):
                      OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
                        Available only when any of available OpenTelemetry components (Logs,
                        Metrics, Traces) is turned on.
+--telemetry-header-<header> <value>
+                     General OpenTelemetry header that will be part of the exporter request (mainly
+                       useful for providing Authorization header). Check the documentation on how
+                       to set environment variables for headers containing special characters or
+                       custom case-sensitive headers. Available only when any of available
+                       OpenTelemetry components (Logs, Metrics, Traces) is turned on.
 --telemetry-logs-enabled <true|false>
                      Enables exporting logs to a destination handling OpenTelemetry logs. Default:
                        false. Available only when feature 'opentelemetry-logs:v1' is enabled.
 --telemetry-logs-endpoint <url>
                      OpenTelemetry endpoint to export logs to. If not given, the value is inherited
                        from the 'telemetry-endpoint' option. Available only when Telemetry Logs
+                       functionality ('telemetry-logs-enabled') is enabled.
+--telemetry-logs-header-<header> <value>
+                     OpenTelemetry header that will be part of the log exporter request (mainly
+                       useful for providing Authorization header). Check the documentation on how
+                       to set environment variables for headers containing special characters or
+                       custom case-sensitive headers. Available only when Telemetry Logs
                        functionality ('telemetry-logs-enabled') is enabled.
 --telemetry-logs-level <level>
                      The most verbose log level exported to the telemetry endpoint. For more
@@ -340,6 +352,13 @@ Telemetry (OpenTelemetry):
 --telemetry-metrics-endpoint <url>
                      OpenTelemetry endpoint to connect to for Metrics. If not given, the value is
                        inherited from the 'telemetry-endpoint' option. Available only when metrics
+                       ('metrics-enabled') and Telemetry Metrics functionality
+                       ('telemetry-metrics-enabled') are enabled.
+--telemetry-metrics-header-<header> <value>
+                     OpenTelemetry header that will be part of the metrics exporter request (mainly
+                       useful for providing Authorization header). Check the documentation on how
+                       to set environment variables for headers containing special characters or
+                       custom case-sensitive headers. Available only when metrics
                        ('metrics-enabled') and Telemetry Metrics functionality
                        ('telemetry-metrics-enabled') are enabled.
 --telemetry-metrics-interval <duration>
