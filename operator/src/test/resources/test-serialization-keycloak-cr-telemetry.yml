@@ -29,3 +29,23 @@ spec:
         key: token
     - name: tracing-header-X-Org-Id
       value: my-org-id
+    - name: telemetry-header-Some-key
+      secret:
+        name: telemetry-header-secret
+        key: token
+    - name: telemetry-header-Org-name
+      value: Keycloak123
+    # OTel Logs
+    - name: telemetry-logs-header-Authorization
+      secret:
+        name: telemetry-logs-secret
+        key: token
+    - name: telemetry-logs-header-X-Org-Id
+      value: my-org-id-logs
+    # OTel Metrics
+    - name: telemetry-metrics-header-Authorization
+      secret:
+        name: telemetry-metrics-secret
+        key: token
+    - name: telemetry-metrics-header-X-Org-Id
+      value: my-org-id-metrics
