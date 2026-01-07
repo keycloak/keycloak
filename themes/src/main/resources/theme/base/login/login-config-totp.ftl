@@ -52,7 +52,7 @@
 
         <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-totp-settings-form" method="post">
             <div class="${properties.kcFormGroupClass!}">
-                <div class="${properties.kcInputWrapperClass!}">
+                <div class="${properties.kcLabelWrapperClass!}">
                     <label for="totp" class="control-label">${msg("authenticatorCode")}</label> <span class="required">*</span>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
@@ -74,7 +74,7 @@
             </div>
 
             <div class="${properties.kcFormGroupClass!}">
-                <div class="${properties.kcInputWrapperClass!}">
+                <div class="${properties.kcLabelWrapperClass!}">
                     <label for="userLabel" class="control-label">${msg("loginTotpDeviceName")}</label> <#if totp.otpCredentials?size gte 1><span class="required">*</span></#if>
                 </div>
 
