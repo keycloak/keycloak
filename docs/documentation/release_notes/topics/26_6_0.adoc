@@ -1,0 +1,12 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+= Custom request headers for OpenTelemetry
+
+It is now possible to set request headers for exporting telemetry via OpenTelemetry Protocol (OTLP).
+It is mainly useful for providing tokens in the request.
+
+You can specify these headers via the general parent option `telemetry-header-<header>` wildcard option, accepting any custom header name.
+Or you can use the `telemetry-logs-header-<header>` for OpenTelemetry Logs, or `telemetry-metrics-header-<header>` for OpenTelemetry Metrics.
+
+For more details, see the  link:{telemetryguide_link}[{telemetryguide_name}] guide.
