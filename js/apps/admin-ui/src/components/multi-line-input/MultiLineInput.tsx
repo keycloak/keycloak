@@ -10,6 +10,7 @@ import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { Fragment, useEffect, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { FormErrorText } from "@keycloak/keycloak-ui-shared";
 
 function stringToMultiline(value?: string): string[] {
   return typeof value === "string" ? value.split("##") : [value || ""];
@@ -39,7 +40,13 @@ export const MultiLineInput = ({
   ...rest
 }: MultiLineInputProps) => {
   const { t } = useTranslation();
-  const { register, setValue, control } = useFormContext();
+  const {
+    register,
+    getValues,
+    setValue,
+    control,
+    formState: { errors },
+  } = useFormContext();
   const value = useWatch({
     name,
     control,
@@ -84,14 +91,23 @@ export const MultiLineInput = ({
     });
   };
 
+  if (typeof getValues(name) === "undefined") {
+    update(fields); // set initial default values
+  }
+
   useEffect(() => {
     register(name, {
       validate: (value) =>
-        isRequired && toStringValue(value || []).length === 0
+        isRequired &&
+        (stringify ? value : toStringValue(value || [])).length === 0
           ? t("required")
           : undefined,
     });
   }, [register]);
+
+  const getError = () => {
+    return name.split(".").reduce((record: any, key) => record?.[key], errors);
+  };
 
   return (
     <div id={id}>
@@ -122,16 +138,19 @@ export const MultiLineInput = ({
             </InputGroupItem>
           </InputGroup>
           {index === fields.length - 1 && (
-            <Button
-              variant={ButtonVariant.link}
-              onClick={append}
-              tabIndex={-1}
-              aria-label={t("add")}
-              data-testid={`${name}-addValue`}
-              isDisabled={!value || isDisabled}
-            >
-              <PlusCircleIcon /> {t(addButtonLabel || "add")}
-            </Button>
+            <>
+              {getError() && <FormErrorText message={t("required")} />}
+              <Button
+                variant={ButtonVariant.link}
+                onClick={append}
+                tabIndex={-1}
+                aria-label={t("add")}
+                data-testid={`${name}-addValue`}
+                isDisabled={!value || isDisabled}
+              >
+                <PlusCircleIcon /> {t(addButtonLabel || "add")}
+              </Button>
+            </>
           )}
         </Fragment>
       ))}
