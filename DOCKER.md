@@ -8,6 +8,7 @@
 
     docker build --build-arg KEYCLOAK_VERSION=999.0.0-SNAPSHOT --build-arg KEYCLOAK_DIST=keycloak.tar.gz \
         -t keycloak/keycloak:999.0.0-SNAPSHOT ./quarkus/container
+    docker tag keycloak/keycloak:999.0.0-SNAPSHOT zeta/devops/keycloak:999.0.0-SNAPSHOT
 
 # Test image
 
