@@ -264,6 +264,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                         newResponse.setAccessTokenExpiration(accessTokenExpiration);
                     }
                     identity.setToken(JsonSerialization.writeValueAsString(newResponse));
+
+                    if (getConfig().isStoreToken()) {
+                        RealmModel realm = session.getContext().getRealm();
+                        UserModel user = session.users().getUserById(realm, identity.getUserId());
+                        session.users().updateFederatedIdentity(realm, user, identity);
+                    }
                 }
             }
         } catch (IOException e) {
