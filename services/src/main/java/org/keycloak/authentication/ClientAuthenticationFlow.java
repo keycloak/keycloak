@@ -166,6 +166,9 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
             return sendChallenge(result, execution);
         } else if (status == FlowStatus.FAILURE_CHALLENGE) {
             return sendChallenge(result, execution);
+        } else if (status == FlowStatus.ATTEMPTED) {
+            logger.warnv("Client authentication was attempted but failed for {0}", execution.getAuthenticator());
+            throw new AuthenticationFlowException(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR);
         } else {
             ServicesLogger.LOGGER.unknownResultStatus();
             throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);

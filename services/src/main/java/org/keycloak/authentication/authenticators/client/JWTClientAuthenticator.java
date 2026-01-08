@@ -49,21 +49,21 @@ import static org.keycloak.models.TokenManager.DEFAULT_VALIDATOR;
 /**
  * Client authentication based on JWT signed by client private key .
  * See <a href="https://tools.ietf.org/html/rfc7519">specs</a> for more details.
- *
+ * <p>
  * This is server side, which verifies JWT from client_assertion parameter, where the assertion was created on adapter side by
  * org.keycloak.adapters.authentication.JWTClientCredentialsProvider
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class JWTClientAuthenticator extends AbstractClientAuthenticator {
-
     public static final String PROVIDER_ID = "client-jwt";
     public static final String ATTR_PREFIX = "jwt.credential";
     public static final String CERTIFICATE_ATTR = "jwt.credential.certificate";
 
-
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
+        context.attempted();
+
         try {
             ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
             JsonWebToken jwt = clientAssertionState.getToken();
@@ -86,7 +86,11 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             context.success();
         } catch (Exception e) {
             ServicesLogger.LOGGER.errorValidatingAssertion(e);
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), OAuthErrorException.INVALID_CLIENT, "Client authentication with signed JWT failed: " + e.getMessage());
+            Response challengeResponse = ClientAuthUtil.errorResponse(
+                    Response.Status.BAD_REQUEST.getStatusCode(),
+                    OAuthErrorException.INVALID_CLIENT,
+                    "Client authentication with signed JWT failed: " + e.getMessage()
+            );
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
         }
     }
@@ -104,17 +108,20 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
 
         boolean signatureValid;
         try {
-            JsonWebToken jwt = context.getSession().tokens().decodeClientJWT(validator.getClientAssertion(), client, (jose, validatedClient) -> {
-                DEFAULT_VALIDATOR.accept(jose, validatedClient);
-                String signatureAlgorithm = jose.getHeader().getRawAlgorithm();
-                ClientSignatureVerifierProvider signatureProvider = context.getSession().getProvider(ClientSignatureVerifierProvider.class, signatureAlgorithm);
-                if (signatureProvider == null) {
-                    throw new RuntimeException("Algorithm not supported");
-                }
-                if (!signatureProvider.isAsymmetricAlgorithm()) {
-                    throw new RuntimeException("Algorithm is not asymmetric");
-                }
-            }, JsonWebToken.class);
+            JsonWebToken jwt = context.getSession().tokens().decodeClientJWT(
+                    validator.getClientAssertion(), client, (jose, validatedClient) -> {
+                        DEFAULT_VALIDATOR.accept(jose, validatedClient);
+                        String signatureAlgorithm = jose.getHeader().getRawAlgorithm();
+                        ClientSignatureVerifierProvider signatureProvider =
+                                context.getSession().getProvider(ClientSignatureVerifierProvider.class, signatureAlgorithm);
+                        if (signatureProvider == null) {
+                            throw new RuntimeException("Algorithm not supported");
+                        }
+                        if (!signatureProvider.isAsymmetricAlgorithm()) {
+                            throw new RuntimeException("Algorithm is not asymmetric");
+                        }
+                    }, JsonWebToken.class
+            );
             signatureValid = jwt != null;
         } catch (RuntimeException e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
@@ -129,7 +136,11 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     protected PublicKey getSignatureValidationKey(ClientModel client, ClientAuthenticationFlowContext context, JWSInput jws) {
         PublicKey publicKey = PublicKeyStorageManager.getClientPublicKey(context.getSession(), client, jws);
         if (publicKey == null) {
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), OAuthErrorException.INVALID_CLIENT, "Unable to load public key");
+            Response challengeResponse = ClientAuthUtil.errorResponse(
+                    Response.Status.BAD_REQUEST.getStatusCode(),
+                    OAuthErrorException.INVALID_CLIENT,
+                    "Unable to load public key"
+            );
             context.failure(AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED, challengeResponse);
             return null;
         } else {
