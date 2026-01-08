@@ -80,7 +80,7 @@ public class DefaultActionTokenKey extends JsonWebToken implements SingleUseObje
 
         String userId;
         try {
-            userId = new String(Base64.getDecoder().decode(parsed[0]), StandardCharsets.UTF_8);
+            userId = new String(Base64.getMimeDecoder().decode(parsed[0]), StandardCharsets.UTF_8);
         } catch (IllegalArgumentException ex) {
             userId = parsed[0];
         }

@@ -30,7 +30,7 @@ public class SerializationUtil {
 
     public static Object decode(String encoded, ClassLoader classLoader) {
         try {
-            byte[] bytes = Base64.getDecoder().decode(encoded);
+            byte[] bytes = Base64.getMimeDecoder().decode(encoded);
             ByteArrayInputStream is = new ByteArrayInputStream(bytes);
             ObjectInputStream ois = new ObjectInputStream(is) {
                 @Override
@@ -68,7 +68,7 @@ public class SerializationUtil {
     public static Throwable decodeException(String result) {
         try {
             result = result.substring("EXCEPTION:".length());
-            byte[] bytes = Base64.getDecoder().decode(result);
+            byte[] bytes = Base64.getMimeDecoder().decode(result);
             ByteArrayInputStream is = new ByteArrayInputStream(bytes);
             ObjectInputStream ois = new ObjectInputStream(is);
             return (Throwable) ois.readObject();
