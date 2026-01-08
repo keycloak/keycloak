@@ -186,7 +186,7 @@ public class Organizations {
 
         // If wildcards enabled, check if it's a subdomain
         if (orgDomain.isMatchSubdomains()) {
-            return email.endsWith(\".\" + pattern);
+            return email.endsWith("." + pattern);
         }
 
         return false;
