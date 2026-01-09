@@ -230,7 +230,7 @@ public class ClientApiV2Test {
 
     @Test
     public void getClientsMixedProtocols() throws Exception {
-        // Create an OIDC client
+        // Create an OIDC client with OIDC-specific fields
         HttpPost oidcRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
         setAuthHeader(oidcRequest);
         oidcRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
@@ -239,6 +239,9 @@ public class ClientApiV2Test {
         oidcRep.setEnabled(true);
         oidcRep.setClientId("mixed-test-oidc");
         oidcRep.setDescription("OIDC client for mixed protocol test");
+        // OIDC-specific fields
+        oidcRep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.STANDARD, OIDCClientRepresentation.Flow.DIRECT_GRANT));
+        oidcRep.setWebOrigins(Set.of("http://localhost:3000", "http://localhost:4000"));
 
         oidcRequest.setEntity(new StringEntity(mapper.writeValueAsString(oidcRep)));
 
@@ -246,7 +249,7 @@ public class ClientApiV2Test {
             assertEquals(201, response.getStatusLine().getStatusCode());
         }
 
-        // Create a SAML client
+        // Create a SAML client with SAML-specific fields
         HttpPost samlRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
         setAuthHeader(samlRequest);
         samlRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
@@ -255,6 +258,12 @@ public class ClientApiV2Test {
         samlRep.setEnabled(true);
         samlRep.setClientId("mixed-test-saml");
         samlRep.setDescription("SAML client for mixed protocol test");
+        // SAML-specific fields
+        samlRep.setNameIdFormat("email");
+        samlRep.setSignDocuments(true);
+        samlRep.setSignAssertions(true);
+        samlRep.setForcePostBinding(true);
+        samlRep.setFrontChannelLogout(false);
 
         samlRequest.setEntity(new StringEntity(mapper.writeValueAsString(samlRep)));
 
@@ -272,17 +281,46 @@ public class ClientApiV2Test {
             List<BaseClientRepresentation> clients = mapper.readValue(response.getEntity().getContent(),
                     new TypeReference<List<BaseClientRepresentation>>() {});
 
-            // Should contain both our created clients
-            boolean foundOidc = clients.stream()
-                    .anyMatch(c -> "mixed-test-oidc".equals(c.getClientId()) && c instanceof OIDCClientRepresentation);
-            boolean foundSaml = clients.stream()
-                    .anyMatch(c -> "mixed-test-saml".equals(c.getClientId()) && c instanceof SAMLClientRepresentation);
+            // Verify OIDC client with protocol-specific fields
+            OIDCClientRepresentation foundOidc = clients.stream()
+                    .filter(c -> "mixed-test-oidc".equals(c.getClientId()) && c instanceof OIDCClientRepresentation)
+                    .map(c -> (OIDCClientRepresentation) c)
+                    .findFirst()
+                    .orElse(null);
 
-            assertThat("OIDC client should be in the list", foundOidc, is(true));
-            assertThat("SAML client should be in the list", foundSaml, is(true));
+            assertThat("OIDC client should be in the list", foundOidc, is(notNullValue()));
+            assertThat(foundOidc.getLoginFlows(), is(Set.of(OIDCClientRepresentation.Flow.STANDARD, OIDCClientRepresentation.Flow.DIRECT_GRANT)));
+            assertThat(foundOidc.getWebOrigins(), is(Set.of("http://localhost:3000", "http://localhost:4000")));
+
+            // Verify SAML client with protocol-specific fields
+            SAMLClientRepresentation foundSaml = clients.stream()
+                    .filter(c -> "mixed-test-saml".equals(c.getClientId()) && c instanceof SAMLClientRepresentation)
+                    .map(c -> (SAMLClientRepresentation) c)
+                    .findFirst()
+                    .orElse(null);
+
+            assertThat("SAML client should be in the list", foundSaml, is(notNullValue()));
+            assertThat(foundSaml.getNameIdFormat(), is("email"));
+            assertThat(foundSaml.getSignDocuments(), is(true));
+            assertThat(foundSaml.getSignAssertions(), is(true));
+            assertThat(foundSaml.getForcePostBinding(), is(true));
+            assertThat(foundSaml.getFrontChannelLogout(), is(false));
         }
 
-        // Get individual SAML client
+        // Get individual OIDC client and verify OIDC-specific fields
+        HttpGet getOidcRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/mixed-test-oidc");
+        setAuthHeader(getOidcRequest);
+
+        try (var response = client.execute(getOidcRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            OIDCClientRepresentation oidcClient = mapper.createParser(response.getEntity().getContent())
+                    .readValueAs(OIDCClientRepresentation.class);
+            assertEquals("mixed-test-oidc", oidcClient.getClientId());
+            assertThat(oidcClient.getLoginFlows(), is(Set.of(OIDCClientRepresentation.Flow.STANDARD, OIDCClientRepresentation.Flow.DIRECT_GRANT)));
+            assertThat(oidcClient.getWebOrigins(), is(Set.of("http://localhost:3000", "http://localhost:4000")));
+        }
+
+        // Get individual SAML client and verify SAML-specific fields
         HttpGet getSamlRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/mixed-test-saml");
         setAuthHeader(getSamlRequest);
 
@@ -292,6 +330,11 @@ public class ClientApiV2Test {
                     .readValueAs(SAMLClientRepresentation.class);
             assertEquals("mixed-test-saml", samlClient.getClientId());
             assertEquals("SAML client for mixed protocol test", samlClient.getDescription());
+            assertThat(samlClient.getNameIdFormat(), is("email"));
+            assertThat(samlClient.getSignDocuments(), is(true));
+            assertThat(samlClient.getSignAssertions(), is(true));
+            assertThat(samlClient.getForcePostBinding(), is(true));
+            assertThat(samlClient.getFrontChannelLogout(), is(false));
         }
 
         // Cleanup
