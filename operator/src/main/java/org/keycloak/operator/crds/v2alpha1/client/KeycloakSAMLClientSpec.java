@@ -20,6 +20,6 @@ package org.keycloak.operator.crds.v2alpha1.client;
 import io.sundr.builder.annotations.Buildable;
 
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder", lazyCollectionInitEnabled = false)
-public class KeycloakOIDCClientSpec extends KeycloakClientSpec<KeycloakOIDCClientRepresentation> {
+public class KeycloakSAMLClientSpec extends KeycloakClientSpec<KeycloakSAMLClientRepresentation> {
 
 }

@@ -3,8 +3,8 @@ package org.keycloak.operator.crds.v2alpha1.client;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonSetter;
-
 import io.fabric8.crd.generator.annotation.SchemaSwap;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.sundr.builder.annotations.Buildable;
@@ -12,13 +12,14 @@ import io.sundr.builder.annotations.Buildable;
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder", lazyCollectionInitEnabled = false)
 public class KeycloakOIDCClientRepresentation extends OIDCClientRepresentation {
 
-    // hide the secret field for CRD generation
+    // hide the secret field for CRD generation - but it will still be there for serialization
     @SchemaSwap(originalType = AuthWithSecretRef.class, fieldName = "secret")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class AuthWithSecretRef extends OIDCClientRepresentation.Auth {
 
         private SecretKeySelector secretRef;
 
+        @JsonPropertyDescription("Secret containing the client secret")
         public SecretKeySelector getSecretRef() {
             return secretRef;
         }

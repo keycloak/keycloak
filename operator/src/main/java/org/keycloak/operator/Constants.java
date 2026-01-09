@@ -16,8 +16,6 @@
  */
 package org.keycloak.operator;
 
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +23,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 
 public final class Constants {
     public static final String CRDS_GROUP = "k8s.keycloak.org";
