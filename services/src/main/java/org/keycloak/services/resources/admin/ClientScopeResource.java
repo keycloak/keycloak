@@ -126,6 +126,11 @@ public class ClientScopeResource {
     })
     public Response update(final ClientScopeRepresentation rep) {
         auth.clients().requireManageClientScopes();
+        // Validate oid4vc protocol: check if protocol is being set to oid4vc or if existing scope uses oid4vc
+        String protocolToValidate = rep.getProtocol() != null ? rep.getProtocol() : clientScope.getProtocol();
+        if (OID4VCLoginProtocolFactory.PROTOCOL_ID.equals(protocolToValidate)) {
+            ClientScopeResource.validateOid4vcProtocol(session, protocolToValidate);
+        }
         validateDynamicScopeUpdate(rep);
         try {
             LoginProtocolFactory loginProtocolFactory = //
@@ -252,6 +257,25 @@ public class ClientScopeResource {
 
         if (protocol == null || !acceptedProtocols.contains(protocol)) {
             throw ErrorResponse.error("Unexpected protocol", Response.Status.BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Validates that if the protocol is oid4vc, verifiable credentials must be enabled for the realm.
+     *
+     * @param session  the Keycloak session
+     * @param protocol the protocol to validate
+     * @throws ErrorResponseException if oid4vc protocol is used but verifiable credentials is disabled
+     */
+    public static void validateOid4vcProtocol(KeycloakSession session, String protocol)
+            throws ErrorResponseException {
+        if (OID4VCLoginProtocolFactory.PROTOCOL_ID.equals(protocol)) {
+            RealmModel realm = session.getContext().getRealm();
+            if (!realm.isVerifiableCredentialsEnabled()) {
+                throw ErrorResponse.error(
+                        "OID4VC protocol cannot be used when Verifiable Credentials is disabled for the realm",
+                        Response.Status.BAD_REQUEST);
+            }
         }
     }
 

@@ -55,6 +55,7 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.HashProvider;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.events.Details;
@@ -697,6 +698,11 @@ public class TokenManager {
     /**
      * Check that all the ClientScopes that have been parsed into authorization_resources are actually in the requested scopes
      * otherwise, the scope wasn't parsed correctly
+     * <p>
+     * Note: OID4VCI scopes (protocol "oid4vc") are validated like any other client scope. If an OID4VCI scope is assigned
+     * to a client, it will pass validation and be included in the token, provided that verifiable credentials are enabled
+     * for the realm. If verifiable credentials are disabled, OID4VCI scopes are rejected.
+     *
      * @param scopes
      * @param authorizationRequestContext
      * @param client
@@ -756,6 +762,16 @@ public class TokenManager {
             if (!clientScopes.contains(requestedScope) && client.getDynamicClientScope(requestedScope) == null) {
                 return false;
             }
+        }
+
+        // Check if any OID4VCI scopes are requested and if verifiable credentials are enabled
+        if (authorizationRequestContext == null) {
+            // Check if any requested scope is an OID4VCI scope
+            Stream<ClientScopeModel> requestedClientScopes = getRequestedClientScopes(session, scopes, client, user);
+            boolean hasOid4vcScope = requestedClientScopes
+                    .anyMatch(scope -> OID4VCIConstants.OID4VC_PROTOCOL.equals(scope.getProtocol()));
+
+            return !hasOid4vcScope || session.getContext().getRealm().isVerifiableCredentialsEnabled();
         }
 
         return true;

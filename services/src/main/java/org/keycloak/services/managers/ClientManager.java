@@ -33,6 +33,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
@@ -85,6 +86,9 @@ public class ClientManager {
 
         if (rep.getProtocol() != null) {
             LoginProtocolFactory providerFactory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, rep.getProtocol());
+            if (providerFactory == null) {
+                throw new ModelValidationException("Invalid protocol: " + rep.getProtocol());
+            }
             providerFactory.setupClientDefaults(rep, client);
         }
 
