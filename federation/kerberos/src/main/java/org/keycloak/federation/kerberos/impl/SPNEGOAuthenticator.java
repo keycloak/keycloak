@@ -164,7 +164,7 @@ public class SPNEGOAuthenticator {
         GSSCredential gssCredential = manager.createCredential(null, GSSCredential.INDEFINITE_LIFETIME, supportedMechs, GSSCredential.ACCEPT_ONLY);
         GSSContext gssContext = manager.createContext(gssCredential);
 
-        byte[] inputToken = Base64.getDecoder().decode(spnegoToken);
+        byte[] inputToken = Base64.getMimeDecoder().decode(spnegoToken);
         byte[] respToken = gssContext.acceptSecContext(inputToken, 0, inputToken.length);
         responseToken = Base64.getEncoder().encodeToString(respToken);
 
