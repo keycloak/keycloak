@@ -691,7 +691,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
 
         try {
             //byte[] decodedSignature = RedirectBindingUtil.urlBase64Decode(signature);
-            byte[] decodedSignature = Base64.getDecoder().decode(signature);
+            byte[] decodedSignature = Base64.getMimeDecoder().decode(signature);
             byte[] rawQueryBytes = rawQuery.getBytes(StandardCharsets.UTF_8);
 
             SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.getFromXmlMethod(decodedAlgorithm);

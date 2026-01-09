@@ -962,8 +962,8 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         // It seems that PemUtils.decodePrivateKey, decodePublicKey can only treat RSA type keys, not EC type keys. Therefore, these are not used.
         String privateKeyBase64 = generatedKeys.get(TestingOIDCEndpointsApplicationResource.PRIVATE_KEY);
         String publicKeyBase64 =  generatedKeys.get(TestingOIDCEndpointsApplicationResource.PUBLIC_KEY);
-        PrivateKey privateKey = decodePrivateKey(Base64.getDecoder().decode(privateKeyBase64), algorithm, curve);
-        PublicKey publicKey = decodePublicKey(Base64.getDecoder().decode(publicKeyBase64), algorithm, curve);
+        PrivateKey privateKey = decodePrivateKey(Base64.getMimeDecoder().decode(privateKeyBase64), algorithm, curve);
+        PublicKey publicKey = decodePublicKey(Base64.getMimeDecoder().decode(publicKeyBase64), algorithm, curve);
         return new KeyPair(publicKey, privateKey);
     }
 

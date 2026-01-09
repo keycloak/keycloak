@@ -107,7 +107,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     protected static RequestToken base64DecodeRequestToken(String serialized) throws IOException, ClassNotFoundException {
-        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(Base64.getDecoder().decode(serialized)))) {
+        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(Base64.getMimeDecoder().decode(serialized)))) {
             return (RequestToken) in.readObject();
         }
     }
