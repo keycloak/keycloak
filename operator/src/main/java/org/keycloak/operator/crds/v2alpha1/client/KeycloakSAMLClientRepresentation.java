@@ -5,6 +5,6 @@ import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import io.sundr.builder.annotations.Buildable;
 
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder", lazyCollectionInitEnabled = false)
-public class KeycloakSamlClientRepresentation extends SAMLClientRepresentation {
+public class KeycloakSAMLClientRepresentation extends SAMLClientRepresentation {
 
 }
