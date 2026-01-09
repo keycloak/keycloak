@@ -95,21 +95,23 @@
                 <@passwordCommons.logoutOtherSessions/>
             </div>
 
-            <#if isAppInitiatedAction??>
-                <input type="submit"
-                       class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}"
-                       id="saveTOTPBtn" value="${msg("doSubmit")}"
-                />
-                <button type="submit"
-                        class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} ${properties.kcButtonLargeClass!}"
-                        id="cancelTOTPBtn" name="cancel-aia" value="true" />${msg("doCancel")}
-                </button>
-            <#else>
-                <input type="submit"
-                       class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                       id="saveTOTPBtn" value="${msg("doSubmit")}"
-                />
-            </#if>
+            <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
+                <#if isAppInitiatedAction??>
+                    <input type="submit"
+                           class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}"
+                           id="saveTOTPBtn" value="${msg("doSubmit")}"
+                    />
+                    <button type="submit"
+                            class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} ${properties.kcButtonLargeClass!}"
+                            id="cancelTOTPBtn" name="cancel-aia" value="true" />${msg("doCancel")}
+                    </button>
+                <#else>
+                    <input type="submit"
+                           class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
+                           id="saveTOTPBtn" value="${msg("doSubmit")}"
+                    />
+                </#if>
+            </div>
         </form>
     </#if>
 </@layout.registrationLayout>
