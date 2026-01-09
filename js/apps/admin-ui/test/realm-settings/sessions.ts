@@ -22,17 +22,17 @@ function getSsoSessionMaxRememberMe(page: Page) {
 }
 
 export async function populateSessionsPageRememberMeDisabled(page: Page) {
-  await page.getByTestId("sso-session-idle-input").fill("10");
-  await changeTimeUnit(page, "Minutes", "#kc-sso-session-idle-select-menu");
+  await page.getByTestId("sso-session-idle-input").fill("5");
+  await changeTimeUnit(page, "Hours", "#kc-sso-session-idle-select-menu");
 
   await page.getByTestId("sso-session-max-input").fill("2");
   await changeTimeUnit(page, "Hours", "#kc-sso-session-max-select-menu");
 
-  await page.getByTestId("client-session-idle-input").fill("5");
+  await page.getByTestId("client-session-idle-input").fill("4");
   await changeTimeUnit(page, "Hours", "#kc-client-session-idle-select-menu");
 
-  await page.getByTestId("client-session-max-input").fill("6");
-  await changeTimeUnit(page, "Days", "#kc-client-session-max-select-menu");
+  await page.getByTestId("client-session-max-input").fill("1");
+  await changeTimeUnit(page, "Hours", "#kc-client-session-max-select-menu");
 }
 
 export async function populateSessionsPageRememberMeEnabled(page: Page) {
