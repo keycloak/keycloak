@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderFactory;
 
 /**
@@ -50,6 +51,25 @@ public class CryptoUtils {
                 .filter(entry -> entry.getValue() != null)
                 .filter(entry -> entry.getValue().isAsymmetricAlgorithm())
                 .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the asymmetric signature algorithms supported given the keys in the realm.
+     *
+     * @param session The Keycloak session
+     * @param realm   The realm model
+     * @return List of asymmetric signature algorithm names
+     */
+    public static List<String> getSupportedAsymmetricSignatureAlgorithms(
+            KeycloakSession session, RealmModel realm
+    ) {
+        List<String> globalAsymmetricSignAlgs = getSupportedAsymmetricSignatureAlgorithms(session);
+        return session.keys().getKeysStream(realm)
+                .filter(key -> KeyUse.SIG.equals(key.getUse()))
+                .map(KeyWrapper::getAlgorithm)
+                .filter(globalAsymmetricSignAlgs::contains)
+                .distinct()
                 .collect(Collectors.toList());
     }
 

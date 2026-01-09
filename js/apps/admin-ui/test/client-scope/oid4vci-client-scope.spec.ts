@@ -159,7 +159,6 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await page
       .getByTestId(OID4VCI_FIELDS.TOKEN_JWS_TYPE)
       .fill(TEST_VALUES.TOKEN_JWS_TYPE);
-
     await selectItem(
       page,
       OID4VCI_FIELDS.SIGNING_ALGORITHM,
@@ -423,6 +422,35 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await expect(page.locator("#kc-vc-format")).toContainText(
       "SD-JWT VC (dc+sd-jwt)",
     );
+  });
+
+  test("should omit optional OID4VCI fields when left blank", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed();
+    const testClientScopeName = `oid4vci-blank-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    await createClientScopeAndSelectProtocolAndFormat(
+      page,
+      testBed,
+      "SD-JWT VC (dc+sd-jwt)",
+    );
+
+    await page.getByTestId("name").fill(testClientScopeName);
+
+    await clickSaveButton(page);
+    await expect(page.getByText("Client scope created")).toBeVisible();
+
+    await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
+
+    await expect(page.getByTestId(OID4VCI_FIELDS.ISSUER_DID)).toHaveValue("");
+    await expect(page.locator(OID4VCI_FIELDS.SIGNING_ALGORITHM)).toHaveValue(
+      "",
+    );
+    await expect(page.locator(OID4VCI_FIELDS.HASH_ALGORITHM)).toContainText(
+      "SHA-256",
+    );
+    await expect(page.getByTestId(OID4VCI_FIELDS.DISPLAY)).toHaveValue("");
   });
 
   test("should conditionally show/hide fields when format changes", async ({
