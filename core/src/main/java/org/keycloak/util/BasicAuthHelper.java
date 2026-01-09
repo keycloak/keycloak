@@ -44,7 +44,7 @@ public class BasicAuthHelper {
 
         String val;
         try {
-            val = new String(Base64.getDecoder().decode(header.substring(6)));
+            val = new String(Base64.getMimeDecoder().decode(header.substring(6)));
         } catch (IllegalArgumentException e) {
             return null;
         }

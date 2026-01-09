@@ -597,7 +597,7 @@ public class LDAPIdentityStore implements IdentityStore {
             }
 
             try {
-                byte[] bytes = Base64.getDecoder().decode(value);
+                byte[] bytes = Base64.getMimeDecoder().decode(value);
                 attr.add(bytes);
             } catch (IllegalArgumentException iae) {
                 logger.warnf("Wasn't able to Base64 decode the attribute value. Ignoring attribute update. Attribute: %s, Attribute value: %s", attrName, attrValue);
