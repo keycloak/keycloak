@@ -43,7 +43,7 @@ test.describe.serial("Sessions", () => {
     await populateSessionsPageRememberMeDisabled(page);
     await clickSaveSessionsButton(page);
     await assertNotificationMessage(page, "Realm successfully updated");
-    await assertSsoSessionIdleInput(page, "1");
+    await assertSsoSessionIdleInput(page, "10");
     await assertSsoSessionMaxInput(page, "2");
   });
   test("Add session data when Remember Me is enabled", async ({ page }) => {
@@ -55,7 +55,7 @@ test.describe.serial("Sessions", () => {
     await populateSessionsPageRememberMeEnabled(page);
     await clickSaveSessionsButton(page);
     await assertNotificationMessage(page, "Realm successfully updated");
-    await assertSsoSessionIdleInput(page, "1");
+    await assertSsoSessionIdleInput(page, "10");
     await assertSsoSessionMaxInput(page, "2");
     await assertSsoSessionIdleRememberMe(page, "3");
     await assertSsoSessionMaxRememberMe(page, "4");

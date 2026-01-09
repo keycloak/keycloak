@@ -22,7 +22,7 @@ function getSsoSessionMaxRememberMe(page: Page) {
 }
 
 export async function populateSessionsPageRememberMeDisabled(page: Page) {
-  await page.getByTestId("sso-session-idle-input").fill("1");
+  await page.getByTestId("sso-session-idle-input").fill("10");
   await changeTimeUnit(page, "Minutes", "#kc-sso-session-idle-select-menu");
 
   await page.getByTestId("sso-session-max-input").fill("2");
