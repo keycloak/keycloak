@@ -23,7 +23,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 
 @ControllerConfiguration
-public class KeycloakSAMLClientController extends KeycloakClientBaseController<KeycloakSAMLClientRepresentation, KeycloakSAMLClient> {
+public class KeycloakSAMLClientController extends KeycloakClientBaseController<KeycloakSAMLClient, KeycloakSAMLClientRepresentation> {
 
     @Override
     Representation<KeycloakSAMLClientRepresentation> prepareRepresentation(
