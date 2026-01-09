@@ -1,7 +1,6 @@
 package org.keycloak.representations.admin.v2;
 
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -9,7 +8,6 @@ import jakarta.validation.constraints.NotBlank;
 
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
@@ -113,14 +111,11 @@ public abstract class BaseClientRepresentation extends BaseRepresentation {
     @JsonIgnore
     public abstract String getProtocol();
 
-    @JsonAnyGetter
-    public Map<String, Object> getAdditionalFields() {
-        return additionalFields;
-    }
-
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof BaseClientRepresentation that)) return false;
+        if (!(o instanceof BaseClientRepresentation that)) {
+            return false;
+        }
         return Objects.equals(clientId, that.clientId) && Objects.equals(displayName, that.displayName) && Objects.equals(description, that.description) && Objects.equals(enabled, that.enabled) && Objects.equals(appUrl, that.appUrl) && Objects.equals(redirectUris, that.redirectUris) && Objects.equals(roles, that.roles) && Objects.equals(additionalFields, that.additionalFields);
     }
 

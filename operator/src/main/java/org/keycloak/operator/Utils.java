@@ -75,6 +75,14 @@ public final class Utils {
         return labels;
     }
 
+    /*
+    public static <T extends HasMetadata, P extends HasMetadata> Optional<T> getByName(Class<T> clazz, Function<P, String> nameFunction, P primary, Context<P> context) {
+        InformerEventSource<T, Keycloak> ies = (InformerEventSource<T, Keycloak>) context
+                .eventSourceRetriever().getEventSourceFor(clazz);
+
+        return ies.get(new ResourceID(nameFunction.apply(primary), primary.getMetadata().getNamespace()));
+    }*/
+
     /**
      * Set resources requests/limits for Keycloak container
      * </p>

@@ -1,0 +1,275 @@
+/*
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.keycloak.operator.controllers;
+
+import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
+
+import java.lang.reflect.Field;
+import java.net.HttpURLConnection;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+
+import org.keycloak.admin.api.AdminRootV2;
+import org.keycloak.admin.api.client.ClientApi;
+import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.operator.Config;
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.Utils;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatus;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusCondition;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientRepresentation;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientRepresentation.AuthWithSecretRef;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientRepresentationBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
+
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretKeySelector;
+import io.fabric8.kubernetes.client.ResourceNotFoundException;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.quarkus.logging.Log;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.client.WebTarget;
+
+@ControllerConfiguration
+public class KeycloakClientController
+        implements Reconciler<KeycloakOIDCClient>, Cleaner<KeycloakOIDCClient> {
+
+    static class KeycloakClientStatusAggregator {
+
+        KeycloakOIDCClient resource;
+        KeycloakClientStatus existingStatus;
+        Map<String, KeycloakClientStatusCondition> existingConditions;
+        Map<String, KeycloakClientStatusCondition> newConditions;
+
+        KeycloakClientStatusAggregator(KeycloakOIDCClient resource) {
+            this.resource = resource;
+            existingStatus = Optional.ofNullable(resource.getStatus()).orElse(new KeycloakClientStatus());
+            existingConditions = KeycloakStatusAggregator.getConditionMap(existingStatus.getConditions());
+        }
+
+        void setCondition(String type, Boolean status, String message) {
+            KeycloakClientStatusCondition condition = new KeycloakClientStatusCondition();
+            condition.setStatus(status);
+            condition.setMessage(message);
+            newConditions.put(type, condition); // No aggregation yet
+        }
+
+        KeycloakClientStatus build() {
+            KeycloakClientStatusBuilder statusBuilder = new KeycloakClientStatusBuilder();
+            String now = Utils.iso8601Now();
+            statusBuilder.withObservedGeneration(resource.getMetadata().getGeneration());
+            newConditions.values().forEach(c -> KeycloakStatusAggregator.updateConditionFromExisting(c, existingConditions, now));
+            existingConditions.putAll(newConditions);
+            statusBuilder.withConditions(new ArrayList<>(existingConditions.values().stream().sorted(Comparator.comparing(KeycloakClientStatusCondition::getType)).toList()));
+            return statusBuilder.build();
+        }
+
+        public KeycloakClientStatus getExistingStatus() {
+            return existingStatus;
+        }
+
+    }
+
+    @Inject
+    Config config;
+
+    @Override
+    public UpdateControl<KeycloakOIDCClient> reconcile(KeycloakOIDCClient resource, Context<KeycloakOIDCClient> context)
+            throws Exception {
+
+        String kcName = resource.getSpec().getKeycloakCrName();
+
+        // TODO: this should be obtained from an informer instead
+        // they can't be shared directly across controllers, so we'd have to inject the
+        // KeycloakController
+        // and access via a reference to a saved context
+        Keycloak keycloak = context.getClient().resources(Keycloak.class)
+                .inNamespace(resource.getMetadata().getNamespace()).withName(kcName).require();
+
+        KeycloakClientStatusAggregator statusAggregator = new KeycloakClientStatusAggregator(resource);
+
+        boolean poll = false;
+        // create the payload via inlining of the secret
+        KeycloakOIDCClientRepresentation rep = new KeycloakOIDCClientRepresentationBuilder(resource.getSpec().getClient()).build();
+        AuthWithSecretRef auth = resource.getSpec().getClient().getAuth();
+        if (auth != null) {
+            rep.getAuth().setSecretRef(null); // remove operator specific fields
+            SecretKeySelector secretSelector = auth.getSecretRef();
+            if (secretSelector != null) {
+                poll = true;
+
+                boolean optional = Boolean.TRUE.equals(secretSelector.getOptional());
+
+                Secret secret = context.getClient().resources(Secret.class)
+                        .inNamespace(resource.getMetadata().getNamespace()).withName(secretSelector.getName()).get();
+
+                if (secret == null) {
+                    if (!optional) {
+                        throw new ResourceNotFoundException(String.format("Secret %s/%s not found", resource.getMetadata().getNamespace(), secretSelector.getName()));
+                    }
+                } else {
+                    String value = secret.getData().get(secretSelector.getKey());
+
+                    if (value == null) {
+                        if (!optional) {
+                            throw new ResourceNotFoundException(String.format("Secret key %s in %s/%s not found", secretSelector.getKey(), resource.getMetadata().getNamespace(), secretSelector.getName()));
+                        }
+                    } else {
+                        rep.getAuth().setSecret(value);
+                    }
+                }
+            }
+        }
+
+        String hash = Utils.hash(List.of(rep));
+
+        if (!hash.equals(statusAggregator.getExistingStatus().getHash())) {
+            var response = invoke(resource, context, keycloak, client -> {
+                return client.createOrUpdateClient(rep);
+            });
+
+            // if not ok response, then could throw exception to allow the retry loop
+            // however not all errors likely should get retried every 10 seconds
+            if (response.getStatus() != HttpURLConnection.HTTP_OK || response.getStatus() != HttpURLConnection.HTTP_CREATED) {
+
+            }
+        }
+
+        KeycloakClientStatus status = statusAggregator.build();
+        status.setHash(hash);
+        statusAggregator.setCondition(KeycloakClientStatusCondition.HAS_ERRORS, false, null);
+        UpdateControl<KeycloakOIDCClient> updateControl;
+
+        if (status.equals(resource.getStatus())) {
+            updateControl = UpdateControl.noUpdate();
+        } else {
+            resource.setStatus(status);
+            updateControl = UpdateControl.patchStatus(resource);
+        }
+
+        if (poll) {
+            updateControl.rescheduleAfter(config.keycloak().pollIntervalSeconds(), TimeUnit.SECONDS);
+        }
+
+        return updateControl;
+    }
+
+    private WebTarget getWebTarget(org.keycloak.admin.client.Keycloak kcAdmin) {
+        // TODO: change the api
+        try {
+            Field field = kcAdmin.getClass().getDeclaredField("target");
+            field.setAccessible(true);
+            return (WebTarget)field.get(kcAdmin);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private org.keycloak.admin.client.Keycloak getAdminClient(KeycloakOIDCClient resource, Context<KeycloakOIDCClient> context,
+            Keycloak keycloak) {
+        Secret secret = context.getClient().resources(Secret.class)
+                .inNamespace(resource.getMetadata().getNamespace()).withName(keycloak.getMetadata().getName() + "-admin").require();
+
+        return KeycloakBuilder.builder()
+                .serverUrl(getAdminUrl(keycloak, context))
+                .realm("master") // TODO: could be configured differently
+                .clientId(secret.getData().get("clientId")) // TODO: validate these fields
+                .clientSecret(secret.getData().get("clientSecret")).build();
+    }
+
+    private String getAdminUrl(Keycloak keycloak, Context<KeycloakOIDCClient> context) {
+        boolean httpEnabled = KeycloakServiceDependentResource.isHttpEnabled(keycloak);
+        boolean https = isTlsConfigured(keycloak) && !httpEnabled;
+        String protocol = https?"https":"http";
+        int port = https?HttpSpec.httpsPort(keycloak):HttpSpec.httpPort(keycloak);
+        var relativePath = KeycloakDeploymentDependentResource.readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, keycloak, context)
+                .map(path -> !path.endsWith("/") ? path + "/" : path)
+                .orElse("/");
+        // TODO: if https trust needs to be configured - for now preferring to use http if available
+        return String.format("%s://%s.%s:%s/%s", protocol, KeycloakServiceDependentResource.getServiceName(keycloak),
+                keycloak.getMetadata().getNamespace(), port, relativePath);
+    }
+
+    /**
+     * Uses a finalizer to ensure clients are not orphaned unless a user goes out of
+     * their way to do so
+     */
+    @Override
+    public DeleteControl cleanup(KeycloakOIDCClient resource, Context<KeycloakOIDCClient> context) {
+        String kcName = resource.getSpec().getKeycloakCrName();
+
+        Keycloak keycloak = context.getClient().resources(Keycloak.class)
+                .inNamespace(resource.getMetadata().getNamespace()).withName(kcName).get();
+
+        if (keycloak == null) {
+            return DeleteControl.defaultDelete();
+        }
+
+        invoke(resource, context, keycloak, client -> {
+            try {
+                client.deleteClient();
+            } catch (WebApplicationException e) {
+                if (e.getResponse().getStatus() != 404) {
+                    throw e;
+                }
+            }
+            return null;
+        });
+
+        return DeleteControl.defaultDelete();
+    }
+
+    private <T> T invoke(KeycloakOIDCClient resource, Context<KeycloakOIDCClient> context, Keycloak keycloak,
+            Function<ClientApi, T> action) {
+        try (var kcAdmin = getAdminClient(resource, context, keycloak)) {
+            var target = getWebTarget(kcAdmin);
+            AdminRootV2 root = org.keycloak.admin.client.Keycloak.getClientProvider().targetProxy(target,
+                    AdminRootV2.class);
+            return action.apply(root.adminApi().realms().realm(resource.getSpec().getRealm()).clients()
+                    .client(resource.getMetadata().getName()));
+        }
+    }
+
+    @Override
+    public ErrorStatusUpdateControl<KeycloakOIDCClient> updateErrorStatus(KeycloakOIDCClient resource,
+            Context<KeycloakOIDCClient> context, Exception e) {
+        Log.error("--- Error reconciling", e);
+
+        KeycloakClientStatusAggregator status = new KeycloakClientStatusAggregator(resource);
+        status.setCondition(KeycloakClientStatusCondition.HAS_ERRORS, true, "Error performing operations:\n" + e.getMessage());
+        resource.setStatus(status.build());
+
+        return ErrorStatusUpdateControl.patchStatus(resource).rescheduleAfter(Constants.RETRY_DURATION);
+    }
+
+}
