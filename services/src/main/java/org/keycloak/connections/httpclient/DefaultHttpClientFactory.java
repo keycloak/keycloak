@@ -43,6 +43,7 @@ import org.apache.http.impl.client.AbstractResponseHandler;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.StringUtil.isBlank;
@@ -66,6 +67,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     private static final String HTTP_PROXY = "http_proxy";
     private static final String NO_PROXY = "no_proxy";
     public static final String MAX_CONSUMED_RESPONSE_SIZE = "max-consumed-response-size";
+    public static final String METRICS_ENABLED = "metrics-enabled";
 
     private volatile CloseableHttpClient httpClient;
     private Config.Scope config;
@@ -207,7 +209,11 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
                     HttpClientBuilder builder = newHttpClientBuilder();
 
+                    boolean enableMetrics = ConfigProvider.getConfig().getOptionalValue("quarkus.micrometer.enabled", Boolean.class).orElse(false) &&
+                          config.getBoolean(METRICS_ENABLED, true);
+
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
+                            .metrics(enableMetrics)
                             .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
                             .connectionRequestTimeout(connectionRequestTimeout, TimeUnit.MILLISECONDS)
                             .maxPooledPerRoute(maxPooledPerRoute)
@@ -433,6 +439,12 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 .helpText(
                         "Jitter factor to apply to backoff times. A value of 0.5 means the actual backoff time will be between 50% and 150% of the calculated exponential backoff time.")
                 .defaultValue("0.5")
+                .add()
+                .property()
+                .name(METRICS_ENABLED)
+                .type("boolean")
+                .helpText("Whether to register client metrics when metrics are enabled on the server.")
+                .defaultValue(true)
                 .add()
                 .build();
     }

@@ -24,6 +24,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.TestProvider;
+import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
@@ -41,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
         requestPort = 9000,
         containerExposedPorts = {8080, 9000})
 @Tag(DistributionTest.SLOW)
+@RawDistOnly(reason = "Containers are immutable")
 public class MetricsDistTest {
 
     @Test
@@ -59,9 +63,14 @@ public class MetricsDistTest {
 
     @Test
     @Launch({ "start-dev", "--metrics-enabled=true" })
+    @TestProvider(TestRealmResourceTestProvider.class)
     void testMetricsEndpoint(CLIResult cliResult) {
         // See https://github.com/keycloak/keycloak/issues/36927
         cliResult.assertNoMessage("A MeterFilter is being configured after a Meter has been registered to this registry.");
+
+        // Initialize a HttpClient to ensure that client metrics are registered
+        given().port(8080).when().get("/realms/master/test-resources/init-http-client")
+              .then().statusCode(204);
 
         // Send one request to populate some of the HTTP metrics that are not available on an instance on startup
         when().get("/metrics").then()
@@ -115,10 +124,43 @@ public class MetricsDistTest {
                 .body(containsString("TYPE cache_evictions summary"))
 
                 // Test histograms are not available without explicitly enabling the option
-                .body(not(containsString("vendor_statistics_miss_times_seconds_bucket")));
+                .body(not(containsString("vendor_statistics_miss_times_seconds_bucket")))
+
+                // Test HttpClient metrics http.client.
+                .body(containsString("TYPE http_client_pool_total_connections"))
+                .body(containsString("TYPE http_client_pool_total_pending"))
+                .body(containsString("TYPE http_client_pool_total_max"))
+                .body(containsString("TYPE http_client_pool_route_max_default"))
+                .body(containsString("TYPE http_client_request_seconds"));
 
         when().get("/health").then()
                 .statusCode(404);
+    }
+
+    @Test
+    @Launch({ "start-dev", "--metrics-enabled=true", "--spi-connections-http-client-default-metrics-enabled=false" })
+    @TestProvider(TestRealmResourceTestProvider.class)
+    void testHttpClientMetricsDisabled() {
+        // Initialize a HttpClient to ensure that client metrics are registered
+        given().port(8080).when().get("/realms/master/test-resources/init-http-client")
+              .then().statusCode(204);
+
+        // Send one request to populate some of the HTTP metrics that are not available on an instance on startup
+        when().get("/metrics").then()
+              .statusCode(200);
+
+        when().get("/metrics").then()
+              .statusCode(200)
+
+              // Test at least one metric is enabled
+              .body(containsString("TYPE http_server_requests_seconds summary"))
+
+              // Test HttpClient metrics are not enabled
+              .body(not(containsString("TYPE http_client_pool_total_connections")))
+              .body(not(containsString("TYPE http_client_pool_total_pending")))
+              .body(not(containsString("TYPE http_client_pool_total_max")))
+              .body(not(containsString("TYPE http_client_pool_route_max_default")))
+              .body(not(containsString("TYPE http_client_request_seconds")));
     }
 
     @Test
@@ -225,5 +267,4 @@ public class MetricsDistTest {
             distribution.stop();
         }
     }
-
 }

@@ -33,7 +33,13 @@ import javax.net.ssl.X509TrustManager;
 
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.binder.httpcomponents.MicrometerHttpRequestExecutor;
+import io.micrometer.core.instrument.binder.httpcomponents.PoolingHttpClientConnectionManagerMetricsBinder;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -43,6 +49,7 @@ import org.apache.http.conn.util.PublicSuffixMatcherLoader;
 import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
 
 /**
@@ -98,6 +105,7 @@ public class HttpClientBuilder {
     protected boolean disableCookies = false;
     protected ProxyMappings proxyMappings;
     protected boolean expectContinueEnabled = false;
+    protected boolean metrics = false;
 
     /**
      * Socket inactivity timeout
@@ -230,6 +238,11 @@ public class HttpClientBuilder {
         return this;
     }
 
+    public HttpClientBuilder metrics(boolean enable) {
+        this.metrics = enable;
+        return this;
+    }
+
     public CloseableHttpClient build() {
         HostnameVerifier verifier = null;
         switch (policy) {
@@ -266,6 +279,21 @@ public class HttpClientBuilder {
                 sslsf = new SSLConnectionSocketFactory(tlsContext, verifier);
             }
 
+            @SuppressWarnings("resource")
+            PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager(
+                  RegistryBuilder.<ConnectionSocketFactory>create()
+                        .register("http", PlainConnectionSocketFactory.getSocketFactory())
+                        .register("https", sslsf)
+                        .build(),
+                  null,
+                  null,
+                  null,
+                  connectionTTL,
+                  connectionTTLUnit
+            );
+            connectionManager.setMaxTotal(connectionPoolSize);
+            connectionManager.setDefaultMaxPerRoute(maxPooledPerRoute);
+
             RequestConfig requestConfig = RequestConfig.custom()
                     .setConnectTimeout((int) TimeUnit.MILLISECONDS.convert(establishConnectionTimeout, establishConnectionTimeoutUnits))
                     .setSocketTimeout((int) TimeUnit.MILLISECONDS.convert(socketTimeout, socketTimeoutUnits))
@@ -273,11 +301,18 @@ public class HttpClientBuilder {
                     .setExpectContinueEnabled(expectContinueEnabled).build();
 
             org.apache.http.impl.client.HttpClientBuilder builder = getApacheHttpClientBuilder()
-                    .setDefaultRequestConfig(requestConfig)
-                    .setSSLSocketFactory(sslsf)
-                    .setMaxConnTotal(connectionPoolSize)
-                    .setMaxConnPerRoute(maxPooledPerRoute)
-                    .setConnectionTimeToLive(connectionTTL, connectionTTLUnit);
+                    .setConnectionManager(connectionManager)
+                    .setDefaultRequestConfig(requestConfig);
+
+            if (metrics) {
+                new PoolingHttpClientConnectionManagerMetricsBinder(connectionManager, "default")
+                      .bindTo(Metrics.globalRegistry);
+
+                builder.setRequestExecutor(
+                      MicrometerHttpRequestExecutor.builder(Metrics.globalRegistry)
+                            .build()
+                );
+            }
 
             if (!reuseConnections) {
                 builder.setConnectionReuseStrategy(new NoConnectionReuseStrategy());

@@ -17,14 +17,7 @@
 
 package org.keycloak.it.resource.realm;
 
-import org.infinispan.Cache;
-import org.infinispan.commons.configuration.io.ConfigurationWriter;
-import org.infinispan.commons.io.StringBuilderWriter;
-import org.infinispan.configuration.parsing.ParserRegistry;
-import org.jboss.logging.Logger;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.resource.RealmResourceProvider;
+import java.io.IOException;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -32,6 +25,18 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.resource.RealmResourceProvider;
+
+import org.infinispan.Cache;
+import org.infinispan.commons.configuration.io.ConfigurationWriter;
+import org.infinispan.commons.io.StringBuilderWriter;
+import org.infinispan.configuration.parsing.ParserRegistry;
+import org.jboss.logging.Logger;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -90,6 +95,19 @@ public class TestRealmResource implements RealmResourceProvider {
             new ParserRegistry().serialize(writer, cacheName, cache.getCacheConfiguration());
         }
         return Response.ok(out.toString(), MediaType.APPLICATION_JSON).build();
+    }
+
+    @Path("init-http-client")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response initHttpClient() {
+        // Execute a single request so that at least one metric is created
+        try (var ignore = SimpleHttp.create(session).doGet("http://localhost:8080").asResponse()){
+            // no-op
+        } catch (IOException e) {
+            logger.error(e);
+        }
+        return Response.noContent().build();
     }
 
     @Override

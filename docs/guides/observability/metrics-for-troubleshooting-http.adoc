@@ -77,6 +77,30 @@ m| http_server_bytes_read_sum
 
 include::partials/histogram_note_http.adoc[]
 
+=== Client
+
+The metrics below helps to monitor the performance of the client used by the {project_name} server to make HTTP requests.
+
+|===
+|Metric |Description
+
+m| http_client_request_seconds
+| Duration of HttpClient request execution
+
+m| http_client_pool_total_connections
+| The number of persistent and available connections for all routes
+
+m| http_client_pool_total_pending
+| The number of connection requests being blocked awaiting a free connection for all routes.
+
+m| http_client_pool_total_max
+| The configured maximum number of allowed persistent connections for all routes
+
+m| http_client_pool_route_max_default
+| The configured default maximum number of allowed persistent connections per route
+
+|===
+
 
 == Next steps
 
