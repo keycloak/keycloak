@@ -667,7 +667,9 @@ export const RealmSettingsTokensTab = ({
     },
     {
       title: t("oid4vciAttributes"),
-      isHidden: !isFeatureEnabled(Feature.OpenId4VCI),
+      isHidden:
+        !isFeatureEnabled(Feature.OpenId4VCI) ||
+        !realm.verifiableCredentialsEnabled,
       panel: (
         <FormAccess
           isHorizontal

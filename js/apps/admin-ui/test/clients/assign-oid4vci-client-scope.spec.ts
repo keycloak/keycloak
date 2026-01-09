@@ -9,7 +9,9 @@ import { toClients } from "../../src/clients/routes/Clients.tsx";
 import { createClient, continueNext, save as saveClient } from "./utils.ts";
 
 test("OIDC client can assign OID4VCI client scopes", async ({ page }) => {
-  await using testBed = await createTestBed();
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
 
   await login(page, { to: toClients({ realm: testBed.realm }) });
   await goToRealm(page, testBed.realm);

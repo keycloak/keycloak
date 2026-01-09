@@ -122,6 +122,7 @@ public class ClientScopesResource {
         auth.clients().requireManageClientScopes();
         ClientScopeResource.validateClientScopeName(rep.getName());
         ClientScopeResource.validateClientScopeProtocol(session, rep.getProtocol());
+        ClientScopeResource.validateOid4vcProtocol(session, rep.getProtocol());
         ClientScopeResource.validateDynamicClientScope(rep);
         try {
             LoginProtocolFactory loginProtocolFactory = //

@@ -7,10 +7,36 @@ import { SERVER_URL, ROOT_PATH } from "../utils/constants.ts";
 import { login } from "../utils/login.js";
 import { selectItem } from "../utils/form.ts";
 
-test("OID4VCI section visibility and jump link in Tokens tab", async ({
+test("OID4VCI section is hidden in Tokens tab when verifiable credentials are disabled", async ({
   page,
 }) => {
   await using testBed = await createTestBed();
+
+  await adminClient.updateRealm(testBed.realm, {
+    verifiableCredentialsEnabled: false,
+  });
+
+  try {
+    await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+    const tokensTab = page.getByTestId("rs-tokens-tab");
+    await tokensTab.click();
+
+    const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+    await expect(oid4vciJumpLink).toBeHidden();
+  } finally {
+    await adminClient.updateRealm(testBed.realm, {
+      verifiableCredentialsEnabled: true,
+    });
+  }
+});
+
+test("OID4VCI section visibility and jump link in Tokens tab", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
   await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
@@ -29,7 +55,9 @@ test("OID4VCI section visibility and jump link in Tokens tab", async ({
 test("should render fields and save values with correct attribute keys", async ({
   page,
 }) => {
-  await using testBed = await createTestBed();
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
   await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
@@ -63,7 +91,9 @@ test("should render fields and save values with correct attribute keys", async (
 });
 
 test("should persist values after page refresh", async ({ page }) => {
-  await using testBed = await createTestBed();
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
   await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
@@ -115,7 +145,9 @@ test("should persist values after page refresh", async ({ page }) => {
 });
 
 test("should validate form fields and save valid values", async ({ page }) => {
-  await using testBed = await createTestBed();
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
   await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
@@ -173,7 +205,9 @@ test("should validate form fields and save valid values", async ({ page }) => {
 test("should show validation error for values below minimum threshold", async ({
   page,
 }) => {
-  await using testBed = await createTestBed();
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
   await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
@@ -205,7 +239,9 @@ test("should show validation error for values below minimum threshold", async ({
 test("should save signed metadata, encryption, and batch issuance settings", async ({
   page,
 }) => {
-  await using testBed = await createTestBed();
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
   await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
@@ -262,7 +298,9 @@ test("should save signed metadata, encryption, and batch issuance settings", asy
 test("should save time-based correlation mitigation settings", async ({
   page,
 }) => {
-  await using testBed = await createTestBed();
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
   await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
@@ -308,7 +346,9 @@ test("should save time-based correlation mitigation settings", async ({
 });
 
 test("should save Deflate Compression setting", async ({ page }) => {
-  await using testBed = await createTestBed();
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
   await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
@@ -352,7 +392,9 @@ test("should save Deflate Compression setting", async ({ page }) => {
 test("should save Attestation Trust settings (Trusted Keys and IDs)", async ({
   page,
 }) => {
-  await using testBed = await createTestBed();
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
   await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");

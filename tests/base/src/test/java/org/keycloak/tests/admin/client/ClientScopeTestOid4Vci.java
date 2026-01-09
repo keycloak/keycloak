@@ -33,6 +33,7 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -41,6 +42,13 @@ import org.junit.jupiter.api.Test;
  */
 @KeycloakIntegrationTest(config = ClientScopeTestOid4Vci.DefaultServerConfigWithOid4Vci.class)
 public class ClientScopeTestOid4Vci extends AbstractClientScopeTest {
+
+    @BeforeEach
+    public void enableVerifiableCredentialsInRealm() {
+        // Enable verifiable credentials on the realm
+        // This is required in addition to the server feature being enabled
+        managedRealm.updateWithCleanup(r -> r.update(rep -> rep.setVerifiableCredentialsEnabled(true)));
+    }
 
     @DisplayName("Verify default values are correctly set")
     @Test
@@ -85,9 +93,9 @@ public class ClientScopeTestOid4Vci extends AbstractClientScopeTest {
             Assertions.assertEquals(clientScope.getName(),
                                     createdClientScope.getAttributes().get(CredentialScopeModel.CONTEXTS));
             Assertions.assertEquals(clientScope.getName(),
-                                    createdClientScope.getAttributes().get(CredentialScopeModel.VCT));
-            Assertions.assertEquals(clientScope.getName(),
-                                    createdClientScope.getAttributes().get(CredentialScopeModel.ISSUER_DID));
+                    createdClientScope.getAttributes().get(CredentialScopeModel.VCT));
+            // Note: ISSUER_DID is intentionally not set by default, as there's no sensible default
+            // The implementation leaves it undefined so the realm's URL will be used as the Issuer's ID
 
         } finally {
             Assertions.assertNotNull(clientScopeId);

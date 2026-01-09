@@ -61,7 +61,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const form = useForm<ClientScopeDefaultOptionalType>({ mode: "onChange" });
   const { control, handleSubmit, setValue, formState } = form;
   const { isDirty, isValid } = formState;
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
 
   const providers = useLoginProviders();
   const serverInfo = useServerInfo();
@@ -151,7 +151,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   });
 
   const isOid4vcProtocol = selectedProtocol === OID4VC_PROTOCOL;
-  const isOid4vcEnabled = isFeatureEnabled(Feature.OpenId4VCI);
+  const isOid4vcEnabled =
+    isFeatureEnabled(Feature.OpenId4VCI) &&
+    realmRepresentation?.verifiableCredentialsEnabled;
   const isNotSaml = selectedProtocol != "saml";
 
   const setDynamicRegex = (value: string, append: boolean) =>

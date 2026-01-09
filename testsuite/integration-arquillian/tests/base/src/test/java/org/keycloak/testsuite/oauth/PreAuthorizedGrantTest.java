@@ -97,6 +97,33 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
         assertEquals("If no code is provided, no access token should be returned.", HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode());
     }
 
+    /**
+     * When verifiable credentials are disabled for the realm, the pre-authorized code
+     * grant (used by OID4VCI flows) must be rejected with 403 Forbidden.
+     */
+    @Test
+    public void testPreAuthorizedGrantRealmDisabled() throws Exception {
+        // Disable verifiable credentials for the test realm
+        RealmRepresentation realmRep = adminClient.realm(TEST_REALM_NAME).toRepresentation();
+        realmRep.setVerifiableCredentialsEnabled(false);
+        adminClient.realm(TEST_REALM_NAME).update(realmRep);
+
+        try {
+            String userSessionId = getUserSession();
+            String preAuthorizedCode = getTestingClient().testing()
+                    .getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() + 30);
+
+            AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
+            assertEquals("Pre-authorized grant should be forbidden when verifiable credentials are disabled.",
+                    HttpStatus.SC_FORBIDDEN, accessTokenResponse.getStatusCode());
+        } finally {
+            // Re-enable verifiable credentials so other tests see the default behavior
+            RealmRepresentation realmRepReset = adminClient.realm(TEST_REALM_NAME).toRepresentation();
+            realmRepReset.setVerifiableCredentialsEnabled(true);
+            adminClient.realm(TEST_REALM_NAME).update(realmRepReset);
+        }
+    }
+
     private AccessTokenResponse postCode(String preAuthorizedCode) throws Exception {
         HttpPost post = new HttpPost(getTokenEndpoint());
         List<NameValuePair> parameters = new LinkedList<>();
@@ -123,6 +150,8 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.setVerifiableCredentialsEnabled(true);
+        
         UserRepresentation user = UserBuilder.create()
                 .id("user-id")
                 .username("john")
