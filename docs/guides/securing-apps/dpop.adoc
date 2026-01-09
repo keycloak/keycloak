@@ -6,8 +6,6 @@ title="Securing applications with DPoP"
 priority=140
 summary="Guide for securing applications with DPoP using Keycloak">
 
-== Introduction
-
 Standard OAuth 2.0 access tokens are typically **Bearer** tokens. Any party in possession of the token can use it to access protected resources, regardless of whether they are the legitimate client. If a Bearer token is leaked (e.g., via server logs, network interception, or browser storage), it is vulnerable to unauthorized reuse, known as a replay attack.
 
 **OAuth 2.0 Demonstrating Proof-of-Possession (DPoP)**, defined in https://datatracker.ietf.org/doc/html/rfc9449[RFC 9449], mitigates this risk by making tokens **Sender-Constrained**.
@@ -100,7 +98,7 @@ When the client sends a token request to {project_name}, it must first generate 
 
 {project_name} validates the proof and issues an access token. {project_name} takes the public key from the proof, calculates its "thumbprint" (base64url encoded SHA-256 hash of the JWK), and embeds it directly into the access token in a claim called `cnf` (confirmation).
 
-[source,http]f
+[source,http]
 ----
 POST /realms/myrealm/protocol/openid-connect/token HTTP/1.1
 DPoP: <DPoP-Proof-JWT>
