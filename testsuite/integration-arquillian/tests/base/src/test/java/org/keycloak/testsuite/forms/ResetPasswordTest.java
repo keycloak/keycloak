@@ -414,10 +414,14 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         // Update the password update in a second browser.
         driver2.navigate().to(changePasswordUrl.trim());
         changePasswordOnUpdatePage(driver2);
+        assertThat(driver2.getCurrentUrl(), Matchers.containsString("client_id=test-app"));
+        assertThat(driver2.getPageSource(), Matchers.containsString("Your account has been updated."));
+        assertThat(driver2.getPageSource(), Matchers.containsString("Back to Application"));
 
         // Updating the password in the first browser should now fail.
         updatePasswordPage.changePassword(password, password);
         errorPage.assertCurrent();
+        assertEquals("Action expired. Please continue with login now.", errorPage.getError());
     }
 
     public void assertSecondPasswordResetFails(String changePasswordUrl, String clientId) {
