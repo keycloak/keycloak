@@ -177,6 +177,8 @@ public class Messages {
 
     public static final String IDENTITY_PROVIDER_ALREADY_LINKED = "identityProviderAlreadyLinkedMessage";
 
+    public static final String IDENTITY_PROVIDER_ALREADY_LINKED_TO_CURRENT_USER = "identityProviderAlreadyLinkedToCurrentUserMessage";
+
     public static final String INSUFFICIENT_PERMISSION = "insufficientPermissionMessage";
 
     public static final String COULD_NOT_PROCEED_WITH_AUTHENTICATION_REQUEST = "couldNotProceedWithAuthenticationRequestMessage";
