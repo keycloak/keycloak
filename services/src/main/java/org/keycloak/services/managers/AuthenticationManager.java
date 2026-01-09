@@ -103,6 +103,7 @@ import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
@@ -137,6 +138,7 @@ public class AuthenticationManager {
     public static final String SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS= "SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS";
     public static final String END_AFTER_REQUIRED_ACTIONS = "END_AFTER_REQUIRED_ACTIONS";
     public static final String INVALIDATE_ACTION_TOKEN = "INVALIDATE_ACTION_TOKEN";
+    private final static long CLOCK_SKEW_SECONDS = 60;
 
     /**
      * Auth session note, which indicates if user session will be persistent (Saved to real persistent store) or
@@ -1060,6 +1062,11 @@ public class AuthenticationManager {
 
     }
 
+    private static Response handleActionTokenVerificationException(KeycloakSession session, EventBuilder event, String eventError, String errorMessage) {
+        event.error(eventError);
+        return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, errorMessage == null ? Messages.INVALID_CODE : errorMessage);
+    }
+
 
     public static Response finishedRequiredActions(KeycloakSession session, AuthenticationSessionModel authSession, UserSessionModel userSession,
                                                    ClientConnection clientConnection, HttpRequest request, UriInfo uriInfo, EventBuilder event) {
@@ -1067,8 +1074,15 @@ public class AuthenticationManager {
         if (actionTokenKeyToInvalidate != null) {
             SingleUseObjectKeyModel actionTokenKey = DefaultActionTokenKey.from(actionTokenKeyToInvalidate);
             if (actionTokenKey != null) {
+                // Token has expired. We must not accept it, as it will have been removed from the single use provider already
+                if (Time.currentTime() > actionTokenKey.getExp()) {
+                    return handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
+                }
+
                 SingleUseObjectProvider singleUseObjectProvider = session.singleUseObjects();
-                singleUseObjectProvider.put(actionTokenKeyToInvalidate, actionTokenKey.getExp() - Time.currentTime(), null); // Token is invalidated
+                if (!singleUseObjectProvider.putIfAbsent(actionTokenKeyToInvalidate + SingleUseObjectProvider.REVOKED_KEY, actionTokenKey.getExp() - Time.currentTime() + CLOCK_SKEW_SECONDS)) {
+                    return handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
+                }
             }
         }
 

@@ -171,7 +171,7 @@ public class TokenSignatureUtil {
             if (rep.getKid().equals(activeKid)) {
                 X509EncodedKeySpec publicKeySpec = null;
                 try {
-                    publicKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(rep.getPublicKey()));
+                    publicKeySpec = new X509EncodedKeySpec(Base64.getMimeDecoder().decode(rep.getPublicKey()));
                 } catch (IllegalArgumentException e1) {
                     e1.printStackTrace();
                 }
