@@ -80,7 +80,11 @@ public class RemoteInfinispanSingleUseObjectProvider implements SingleUseObjectP
     @Override
     public boolean putIfAbsent(String key, long lifespanInSeconds) {
         try {
-            return withReturnValue().putIfAbsent(key, wrap(null), lifespanInSeconds, TimeUnit.SECONDS) == null;
+            boolean result = withReturnValue().putIfAbsent(key, wrap(null), lifespanInSeconds, TimeUnit.SECONDS) == null;
+            if (key.endsWith(REVOKED_KEY)) {
+                revokeToken(key, lifespanInSeconds);
+            }
+            return result;
         } catch (HotRodClientException re) {
             // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
             // In case of lock conflict, we don't want to retry anyway as there was likely an attempt to use the token from different place.

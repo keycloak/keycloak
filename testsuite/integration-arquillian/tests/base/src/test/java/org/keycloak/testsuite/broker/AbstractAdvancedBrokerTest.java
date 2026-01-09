@@ -279,6 +279,8 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
+        waitForPage(driver, "sign in to", true);
+        errorPage.assertCurrent();
         assertEquals("Account is disabled, contact your administrator.", errorPage.getError());
     }
 

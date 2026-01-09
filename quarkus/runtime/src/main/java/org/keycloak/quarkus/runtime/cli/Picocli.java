@@ -45,6 +45,9 @@ import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Main;
+import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
+import org.keycloak.quarkus.runtime.cli.command.Tools;
+import org.keycloak.quarkus.runtime.cli.command.WindowsService;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
@@ -91,7 +94,7 @@ public class Picocli {
     public static final String ARG_SHORT_PREFIX = "-";
     public static final String NO_PARAM_LABEL = "none";
 
-    private record IncludeOptions(boolean includeRuntime, boolean includeBuildTime) {
+    private record IncludeOptions(boolean includeRuntime, boolean includeBuildTime, boolean allowUnrecognized) {
     }
 
     private final ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
@@ -99,6 +102,7 @@ public class Picocli {
     private boolean warnedTimestampChanged;
 
     private Ansi colorMode = hasColorSupport() ? Ansi.ON : Ansi.OFF;
+    private IncludeOptions options;
 
     public static boolean hasColorSupport() {
         return QuarkusConsole.hasColorSupport();
@@ -137,7 +141,7 @@ public class Picocli {
             }
             initConfig(currentCommand);
 
-            if (!unrecognizedArgs.isEmpty()) {
+            if (!unrecognizedArgs.isEmpty() && options.allowUnrecognized) {
                 // TODO: further refactor this as these args should be the source for ConfigArgsConfigSource
                 unrecognizedArgs.removeIf(arg -> {
                     boolean hasArg = false;
@@ -155,10 +159,11 @@ public class Picocli {
                     }
                     return false;
                 });
-                if (!unrecognizedArgs.isEmpty()) {
-                    addCommandOptions(cl, currentCommand);
-                    throw new KcUnmatchedArgumentException(cl, unrecognizedArgs);
-                }
+            }
+
+            if (!unrecognizedArgs.isEmpty()) {
+                addCommandOptions(cl, currentCommand);
+                throw new KcUnmatchedArgumentException(cl, unrecognizedArgs);
             }
 
             if (isHelpRequested(result)) {
@@ -219,8 +224,6 @@ public class Picocli {
             throw new PropertyException(Messages.optimizedUsedForFirstStartup());
         }
         warnOnDuplicatedOptionsInCli();
-
-        IncludeOptions options = getIncludeOptions(abstractCommand);
 
         if (!options.includeBuildTime && !options.includeRuntime) {
             return;
@@ -627,7 +630,37 @@ public class Picocli {
         cmd.getHelpSectionMap().put(SECTION_KEY_COMMAND_LIST, new SubCommandListRenderer());
         cmd.setErr(getErrWriter());
         cmd.setOut(getOutWriter());
+
+        removePlatformSpecificCommands(cmd);
+
         return cmd;
+    }
+
+    /**
+     * Removes platform-specific commands on non-applicable platforms
+     */
+    private void removePlatformSpecificCommands(CommandLine cmd) {
+        if (getCommandMode() == CommandMode.UNIX) {
+            CommandLine toolsCmd = cmd.getSubcommands().get(Tools.NAME);
+            if (toolsCmd != null) {
+                CommandLine windowsServiceCmd = toolsCmd.getSubcommands().get(WindowsService.NAME);
+                if (windowsServiceCmd != null) {
+                    toolsCmd.getCommandSpec().removeSubcommand(WindowsService.NAME);
+                }
+            }
+        }
+    }
+
+    enum CommandMode {
+        ALL,
+        WIN,
+        UNIX
+    }
+
+    protected CommandMode getCommandMode() {
+        // not an official option, just a way for integration tests to produce the same output regardless of OS
+        return Optional.ofNullable(System.getenv("KEYCLOAK_COMMAND_MODE")).map(CommandMode::valueOf)
+                .orElse(Environment.isWindows() ? CommandMode.WIN : CommandMode.UNIX);
     }
 
     public PrintWriter getErrWriter() {
@@ -640,16 +673,14 @@ public class Picocli {
 
     private IncludeOptions getIncludeOptions(AbstractCommand abstractCommand) {
         if (abstractCommand == null) {
-            return new IncludeOptions(false, false);
+            return new IncludeOptions(false, false, false);
         }
         boolean autoBuild = abstractCommand instanceof AbstractAutoBuildCommand;
         boolean includeBuildTime = abstractCommand instanceof Build || (autoBuild && !abstractCommand.isOptimized());
-        return new IncludeOptions(autoBuild, includeBuildTime);
+        return new IncludeOptions(autoBuild, includeBuildTime, autoBuild || includeBuildTime || abstractCommand instanceof ShowConfig);
     }
 
     private void addCommandOptions(CommandLine command, AbstractCommand ac) {
-        IncludeOptions options = getIncludeOptions(ac);
-
         if (!options.includeBuildTime && !options.includeRuntime) {
             return;
         }
@@ -890,6 +921,7 @@ public class Picocli {
             throw new IllegalStateException("Config should not be initialized until profile is determined");
         }
         this.parsedCommand = Optional.ofNullable(command);
+        options = getIncludeOptions(command);
 
         if (!Environment.isRebuilt() && command instanceof AbstractAutoBuildCommand
                 && !command.isOptimized()) {

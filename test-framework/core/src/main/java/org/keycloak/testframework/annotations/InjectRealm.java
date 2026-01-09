@@ -15,6 +15,8 @@ public @interface InjectRealm {
 
     Class<? extends RealmConfig> config() default DefaultRealmConfig.class;
 
+    String fromJson() default "";
+
     LifeCycle lifecycle() default LifeCycle.CLASS;
 
     String ref() default "";

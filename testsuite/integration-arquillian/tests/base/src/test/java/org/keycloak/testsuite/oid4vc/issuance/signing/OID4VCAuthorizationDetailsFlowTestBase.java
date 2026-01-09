@@ -30,6 +30,9 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
 import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
@@ -43,6 +46,7 @@ import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -55,6 +59,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
+import org.junit.Rule;
 import org.junit.Test;
 
 import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
@@ -72,6 +77,9 @@ import static org.junit.Assert.fail;
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
 public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssuerEndpointTest {
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     protected static class Oid4vcTestContext {
         CredentialsOffer credentialsOffer;
@@ -104,6 +112,10 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         Oid4vcTestContext ctx = new Oid4vcTestContext();
 
         String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+
+        // Clear events before credential offer URI request
+        events.clear();
+
         HttpGet getCredentialOfferURI = new HttpGet(getCredentialOfferUriUrl(credentialConfigurationId));
         getCredentialOfferURI.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
 
@@ -113,13 +125,33 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
             assertEquals(HttpStatus.SC_OK, status);
             String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
             credentialOfferURI = JsonSerialization.readValue(s, CredentialOfferURI.class);
+
+            // Verify CREDENTIAL_OFFER_REQUEST event was fired
+            events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
+                    .client(client.getClientId())
+                    .user(AssertEvents.isUUID())
+                    .session(AssertEvents.isSessionId())
+                    .detail(Details.USERNAME, "john")
+                    .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
+                    .assertEvent();
         }
+
+        // Clear events before credential offer request
+        events.clear();
 
         HttpGet getCredentialOffer = new HttpGet(credentialOfferURI.getIssuer() + "/" + credentialOfferURI.getNonce());
         try (CloseableHttpResponse response = httpClient.execute(getCredentialOffer)) {
             assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
             String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
             ctx.credentialsOffer = JsonSerialization.readValue(s, CredentialsOffer.class);
+
+            // Verify CREDENTIAL_OFFER_REQUEST event was fired (unauthenticated endpoint)
+            events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
+                    .client(client.getClientId())
+                    .user(AssertEvents.isUUID())
+                    .session((String) null)
+                    .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
+                    .assertEvent();
         }
 
         HttpGet getIssuerMetadata = new HttpGet(ctx.credentialsOffer.getIssuerMetadataUrl());
@@ -550,6 +582,9 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         //      * It does not assume the caller already has an authenticated session.
         //      * It must guarantee isolation of state tied to the VC issuance flow.
         {
+            // Clear events before credential request
+            events.clear();
+
             HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
             postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
             postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -562,6 +597,15 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
             try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
                 assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusLine().getStatusCode());
+
+                // Verify CREDENTIAL_REQUEST event was fired
+                events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST)
+                        .client(client.getClientId())
+                        .user(AssertEvents.isUUID())
+                        .session(AssertEvents.isSessionId())
+                        .detail(Details.USERNAME, "john")
+                        .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
+                        .assertEvent();
                 String responseBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
 
                 // Parse the credential response
@@ -586,6 +630,9 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         // Step 3: Request a credential using the credentialConfigurationId
         //
         {
+            // Clear events before credential request
+            events.clear();
+
             HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
             postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
             postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -597,6 +644,16 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
             postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));
 
             try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+                assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusLine().getStatusCode());
+
+                // Verify CREDENTIAL_REQUEST event was fired
+                events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST)
+                        .client(client.getClientId())
+                        .user(AssertEvents.isUUID())
+                        .session(AssertEvents.isSessionId())
+                        .detail(Details.USERNAME, "john")
+                        .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
+                        .assertEvent();
                 assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusLine().getStatusCode());
                 String responseBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
 
@@ -742,6 +799,9 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         }
 
         // Step 2: Request the actual credential using the identifier and config id
+        // Clear events before credential request
+        events.clear();
+
         HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
         postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -754,6 +814,15 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
             assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusLine().getStatusCode());
+
+            // Verify CREDENTIAL_REQUEST event was fired
+            events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST)
+                    .client(client.getClientId())
+                    .user(AssertEvents.isUUID())
+                    .session(AssertEvents.isSessionId())
+                    .detail(Details.USERNAME, "john")
+                    .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
+                    .assertEvent();
             String responseBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
 
             // Parse the credential response
@@ -775,6 +844,64 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         }
     }
 
+    @Test
+    public void testCredentialRequestWithEmptyPayload() throws Exception {
+        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
+
+        events.clear();
+
+        // Request credential with empty payload
+        HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
+        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+        postCredential.setEntity(new StringEntity("", StandardCharsets.UTF_8));
+
+        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusLine().getStatusCode());
+
+            // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
+            // Note: When payload is empty, error is thrown before authentication, so user/session are null
+            events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                    .client((String) null)
+                    .user((String) null)
+                    .session((String) null)
+                    .error(Errors.INVALID_REQUEST)
+                    .detail(Details.REASON, "Request payload is null or empty.")
+                    .assertEvent();
+        }
+    }
+
+    @Test
+    public void testCredentialRequestWithInvalidCredentialIdentifier() throws Exception {
+        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
+
+        events.clear();
+
+        // Request credential with invalid credential identifier
+        HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
+        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+
+        CredentialRequest credentialRequest = new CredentialRequest();
+        credentialRequest.setCredentialIdentifier("invalid-credential-identifier");
+
+        String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
+        postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));
+
+        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusLine().getStatusCode());
+
+            // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
+            events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                    .client(client.getClientId())
+                    .user(AssertEvents.isUUID())
+                    .session(AssertEvents.isSessionId())
+                    .error(Errors.INVALID_REQUEST)
+                    .assertEvent();
+        }
+    }
 
     /**
      * Verify the credential structure based on the format.

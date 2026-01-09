@@ -16,6 +16,9 @@ updates:
       actions-dependencies: # This name will be used in the PR title
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: npm
     directory: js
@@ -46,3 +49,6 @@ updates:
       npm-dependencies: # This name will be used in the PR title
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"

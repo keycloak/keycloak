@@ -12,14 +12,21 @@ Setups on Windows that previously relied on custom machine names or non-standard
 
 === Validation of client session timeouts
 
-Previous versions did not validate client specific settings against the realm settings for SSO session idle and max lifetime, including the remember me settings of the realm.
+Previous versions did not validate client settings against the realm settings for SSO session idle and max lifetime, including the remember me settings of the realm.
 This leads to those settings either not being effective with unexpected results to administrators,
 or to refresh tokens issued where the user session might have already expired when the client was trying to refresh the token.
 
-{project_name} now validates that a client specific settings for Client Session Idle and Client Session Max does not exceed the realm settings when a client is created or updated, and will show a validation error when the validation fails.
-It does currently not validate the client settings when the realm SSO settings or remember me changes, though this might change in future releases.
+{project_name} now validates when creating or updating realms that on the realm level the Client session settings do not exceed the SSO session settings.
 
-You are only affected by the change if you have configured a client-specific Client Session Idle and Client Session Max setting in the Advanced tab of the client configuration that exceeds the realm settings.
+It also validates that a client specific settings for Client Session Idle and Client Session Max does not exceed the realm settings when a client is created or updated, and will show a validation error when the validation fails.
+It does currently not validate an individual's client settings when the realm SSO settings or remember me changes, though this might change in future releases.
+
+You are only affected by the change:
+
+* if you have configured a client-specific Client Session Idle and Client Session Max setting in the Advanced tab of the client configuration that exceeds the realm settings, or
+* if you configured on the realm level client session settings that exceed the realm session settings.
+
+If you are affected by the change, you will see error messages the next time you update or import an affected client or realm.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
@@ -31,6 +38,16 @@ It also lists significant changes to internal APIs.
 
 The Welcome Page, used to create the initial administrative user, now includes optional fields for *First name*, *Last name*, and *Email*. These fields allow administrators to provide additional profile information when creating the initial admin user. All new fields are optional and do not affect the existing functionality.
 
+=== PostgreSQL version updates
+
+The latest major release of PostgreSQL 18 is now supported.
+
+We also updated the docs on how to use a TLS certificate for the JDBC-connection when connecting to a PostgreSQL database.
+
+=== EnterpriseDB Advanced 18 support
+
+EDB 18 is now tested and supported in addition to the existing EDB 17 support.
+
 === Method `UserProfile#toRepresentation(boolean)` added
 
 The `UserProfile` interface has a new method `toRepresentation(boolean)`. This method allows clients to specify whether to include
@@ -39,8 +56,12 @@ only the basic attributes in representations or all of them.
 The `UserProfile` interface is a private API and should not be implemented by custom code. However, if you have extensions that
 implement this interface, you will need to update your code to accommodate this new method.
 
-Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
-In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+=== Additional LOGOUT events
+
+When logging out sessions via the Account Console {project_name} now creates LOGOUT user events to track this activity.
+The events are connected to the `account` client.
+
+When the number of sessions for a user is limited, and you have configured the oldest session to be logged out once the limit is reached, {project_name} now creates LOGOUT user events to track this. The events are connected to the client that triggered the new login.
 
 === Identity Provider refactoring
 
@@ -54,6 +75,15 @@ the new `UserAuthenticationIdentityProvider` interface (all methods remain the s
 Additionally, both `IdentityProviderModel` and `IdentityProviderRepresentation` are now using Boolean values to allow
 configuration like `isHideOnLogin` to be null in order to not include these in Identity Provider types that do
 not need these configurations.
+
+=== Account UI shows and manages offline sessions
+
+The Account UI and its REST API now shows offline sessions of a user together with regular sessions in the *Device Activity* tab.
+A user can log out of those sessions like any other session, including the option *Sign out all devices*.
+
+=== Realm default locale attempted for translation fallbacks
+
+When localization for a realm is enabled and a translation for a message key is unavailable for the language the user selected, {project_name} now attempts to find a matching message key with the realm's default locale before defaulting to English.
 
 === SPIFFE Identity Provider configuration changed
 
@@ -86,11 +116,13 @@ The `log-console-color` previously defaulted to `false`, but it will now instead
 
 You may still explicitly disable color support by setting the option to `false`.
 
-=== Some message keys no longer support HTML entities
+=== Message keys no longer support HTML or HTML entities in the login theme
 
-The following message keys in translations no longer support HTML entities: `backToLogin`, `backToApplication`, `proceedWithAction`.
+Message keys in translations and error messages generated in the backend no longer support HTML or HTML entities for the login theme.
+The only exception is the message key `termsText` which is used to display the terms and conditions for the respective required action that still allows for a limited set of HTML as before.
+For the Legacy Login Theme, HTML and HTML entities are still partially supported for backward compatibility.
 
-The default themes have already been updated. If you used them in your translations, please update your translation to use the UTF-8 equivalent.
+The default login themes have already been updated. If you used them in your translations, please update your translation to use the UTF-8 equivalent if you used HTML entities, and replace HTML with plain text.
 
 === Permissions of the database user for PostgreSQL
 
@@ -175,7 +207,14 @@ See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to 
 For each expired user session there is a new user event `USER_SESSION_DELETED` fired.
 As part of this change, the process now deletes rows from the table in small batches, instead of issuing a delete statements that affects the whole table. This should allow for better response times when there are a lot of sessions in the table.
 
-=== Organization custom attribute named 'id' behavior change
+=== Embedded cache state-transfer disabled for session caches with persistence
+
+When persistent sessions are enabled, session data is available in the database and Infinispan session caches are configured to have `num_owners=1`.
+Consequently, state-transfer for embedded caches provides no additional availability for session data, whilst adding significant overhead when {project_name} nodes leave or join the cluster.
+Therefore, we now disable state-transfer when the persistent-user-session feature is enabled.
+Similarly, we now also disable state-transfer for offline session caches when the persistent-user-session feature is disabled.
+
+=== Organization custom attribute named `id` behavior change
 
 Organizations can have custom attributes named `id`. When both organization attributes and organization ID are included in tokens via the organization membership mapper configuration,
 the organization ID will override any custom `id` attribute value. Previously, the organization ID was added first and could be overridden by custom attributes.
@@ -187,6 +226,22 @@ If you have a custom organization attribute named `id` and rely on its value in 
 == Deprecated features
 
 The following sections provide details on deprecated features.
+
+=== New centralized OpenTelementry options
+
+{project_name} now provides centralized telemetry configuration options that can be shared across all telemetry (OpenTelemetry) components - traces and logs, with future support planned for metrics.
+Individual components can override these global settings when needed.
+
+New options: `telemetry-endpoint`, `telemetry-protocol`, `telemetry-service-name`, and `telemetry-resource-attributes`.
+
+*Deprecation:* The `tracing-service-name` and `tracing-resource-attributes` options are now deprecated in favor of `telemetry-service-name` and `telemetry-resource-attributes`.
+
+For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+=== Fine-Grained Admin Permissions (FGAP) v1 (deprecated)
+
+Fine-Grained Admin Permissions (FGAP) v1 is now deprecated. This version no longer receives enhancements and improvements  and will be removed in future
+release. Please migrate to FGAP v2 to ensure continued support.
 
 === `AuthenticationManager.AuthResult` is now a record
 

@@ -277,6 +277,11 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
+      - id: prunsrv-setup
+        name: Setup Apache Commons Daemon (Procrun) for Windows service tests
+        if: runner.os == 'Windows'
+        uses: ./.github/actions/prunsrv-setup
+
       # Smoke tests should cover scenarios that could be broken by changes in other modules that quarkus
       # test classes and even individual tests are included in the following suites by junit tags
       # kc.quarkus.tests.groups acts as the tag filter

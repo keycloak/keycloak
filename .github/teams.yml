@@ -5,7 +5,7 @@ team/cloud-native:
   - area/observability
   - area/welcome/ui
 
-team/continuous-testing:
+team/continuous-delivery:
   - area/ci
   - area/testsuite
 

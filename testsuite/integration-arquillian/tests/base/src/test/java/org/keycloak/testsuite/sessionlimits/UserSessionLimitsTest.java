@@ -46,6 +46,7 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
@@ -171,14 +172,24 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             // Login and verify login was successful
             loginPage.open();
             loginPage.login("test-user@localhost", "password");
-            events.expectLogin().assertEvent();
+            EventRepresentation initialLoginEvent = events.expectLogin().assertEvent();
+            String userId = initialLoginEvent.getUserId();
+            String initialLoginSessionID = initialLoginEvent.getSessionId();
 
             // Delete the cookies, while maintaining the server side session active
             super.deleteCookies();
 
             loginPage.open();
             loginPage.login("test-user@localhost", "password");
-            events.expectLogin().assertEvent();
+            // assert we have a logout session event, as the authenticator should have deleted the first session.
+            events.expect(EventType.LOGOUT)
+                .user(userId)
+                .session(initialLoginSessionID)
+                .assertEvent();
+            // User is first logged out, then logged in with a fresh sessionId
+            events.expectLogin()
+                .session(Matchers.not(initialLoginSessionID))
+                .assertEvent();
             testingClient.server(realmName).run(assertSessionCount(realmName, username, 1));
         } finally {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
@@ -217,14 +228,24 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
             loginPage.open();
             loginPage.login("test-user@localhost", "password");
-            events.expectLogin().assertEvent();
+            EventRepresentation initialLoginEvent = events.expectLogin().assertEvent();
+            String userId = initialLoginEvent.getUserId();
+            String initialLoginSessionID = initialLoginEvent.getSessionId();
 
             // Delete the cookies, while maintaining the server side session active
             super.deleteCookies();
 
             loginPage.open();
             loginPage.login("test-user@localhost", "password");
-            events.expectLogin().assertEvent();
+            // assert we have a logout session event, as the authenticator should have deleted the first session.
+            events.expect(EventType.LOGOUT)
+                .user(userId)
+                .session(initialLoginSessionID)
+                .assertEvent();
+            // User is first logged out, then logged in with a fresh sessionId
+            events.expectLogin()
+                .session(Matchers.not(initialLoginSessionID))
+                .assertEvent();
             testingClient.server(realmName).run(assertSessionCount(realmName, username, 1));
         } finally {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);

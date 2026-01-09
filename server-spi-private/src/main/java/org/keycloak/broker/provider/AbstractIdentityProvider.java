@@ -192,10 +192,10 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
             if (Boolean.parseBoolean(authSession.getAuthNote(UPDATE_PROFILE_EMAIL_CHANGED))) {
                 // user updated the email and needs verification
                 user.setEmailVerified(false);
-                return;
+            } else {
+                setEmailVerified(user, context);
             }
 
-            setEmailVerified(user, context);
             user.setEmail(email);
         }
     }

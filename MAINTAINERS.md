@@ -5,6 +5,7 @@
 * [Pedro Igor](https://github.com/pedroigor)
 * [Sebastian Schuster](https://github.com/sschu)
 * [Stan Silvert](https://github.com/ssilvert)
+* [Steven Hawkins](https://github.com/shawkins)
 * [Stian Thorgersen](https://github.com/stianst) (project lead)
 * [Takashi Norimatsu](https://github.com/tnorimat)
 * [Thomas Darimont](https://github.com/thomasdarimont)

@@ -120,16 +120,16 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         String error = "<p><a href=\"javascript&amp;colon;alert(document.domain);\">Back to application</a></p>";
         installedAppPage.open("test", null, error, null);
 
-        // Assert text escaped and not "a" link present
+        // Assert text escaped
         installedAppPage.assertLinkBackToApplicationNotPresent();
-        Assert.assertEquals("Error code: <p>Back to application</p>", installedAppPage.getPageTitleText());
+        Assert.assertEquals("Error code: <p><a href=\"javascript&amp;colon;alert(document.domain);\">Back to application</a></p>", installedAppPage.getPageTitleText());
 
         error = "<p><a href=\"http://foo.com\">Back to application</a></p>";
         installedAppPage.open("test", null, error, null);
 
-        // In this case, link is not sanitized as it is valid link, however it is escaped and not shown as a link
+        // Assert text is escaped
         installedAppPage.assertLinkBackToApplicationNotPresent();
-        Assert.assertEquals("Error code: <p><a href=\"http://foo.com\" rel=\"nofollow\">Back to application</a></p>", installedAppPage.getPageTitleText());
+        Assert.assertEquals("Error code: <p><a href=\"http://foo.com\">Back to application</a></p>", installedAppPage.getPageTitleText());
     }
 
     @Test

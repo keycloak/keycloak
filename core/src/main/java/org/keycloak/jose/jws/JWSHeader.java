@@ -20,6 +20,7 @@ package org.keycloak.jose.jws;
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -132,10 +133,16 @@ public class JWSHeader implements JOSEHeader {
     }
 
     public void addX5c(String x5c) {
+        if (this.x5c == null) {
+            this.x5c = new ArrayList<>();
+        }
         this.x5c.add(x5c);
     }
 
     public void addX5c(Certificate x5c) {
+        if (this.x5c == null) {
+            this.x5c = new ArrayList<>();
+        }
         try {
             this.x5c.add(Base64.getEncoder().encodeToString(x5c.getEncoded()));
         } catch (CertificateEncodingException e) {

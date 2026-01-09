@@ -1707,4 +1707,39 @@ public class PicocliTest extends AbstractConfigurationTest {
                 "quarkus.otel.logs.enabled", "true"
         ));
     }
+
+    @Test
+    public void testWindowsServiceOnWin() {
+        NonRunningPicocli nonRunningPicocli = new NonRunningPicocli() {
+            @Override
+            protected CommandMode getCommandMode() {
+                return CommandMode.WIN;
+            }
+        };
+        KeycloakMain.main(new String[] {"tools", "windows-service", "--help"}, nonRunningPicocli);
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getOutString().contains("install"));
+        onAfter();
+        KeycloakMain.main(new String[] {"tools", "windows-service"}, nonRunningPicocli);
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getErrString().contains("Missing required subcommand"));
+    }
+
+    @Test
+    public void testWindowsServiceOnUnix() {
+        NonRunningPicocli nonRunningPicocli = new NonRunningPicocli() {
+            @Override
+            protected CommandMode getCommandMode() {
+                return CommandMode.UNIX;
+            }
+        };
+        KeycloakMain.main(new String[] {"tools", "windows-service", "--help"}, nonRunningPicocli);
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertFalse(nonRunningPicocli.getOutString().contains("install"));
+        onAfter();
+        KeycloakMain.main(new String[] {"tools", "windows-service"}, nonRunningPicocli);
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getErrString().contains("Unknown option"));
+    }
+
 }

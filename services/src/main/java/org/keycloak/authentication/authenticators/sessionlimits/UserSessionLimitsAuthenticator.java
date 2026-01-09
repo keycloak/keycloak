@@ -14,6 +14,8 @@ import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -179,7 +181,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
 
             case UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION:
                 logger.info("Terminating oldest session");
-                var removedSessions = logoutOldestSessions(userSessions, limit);
+                var removedSessions = logoutOldestSessions(userSessions, limit, context.getEvent());
                 context.success();
                 return removedSessions;
         }
@@ -190,7 +192,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
     /**
      * @return A list of logged-out user sessions, if any.
      */
-    private List<UserSessionModel> logoutOldestSessions(List<UserSessionModel> userSessions, long limit) {
+    private List<UserSessionModel> logoutOldestSessions(List<UserSessionModel> userSessions, long limit, EventBuilder eventBuilder) {
         long numberOfSessionsThatNeedToBeLoggedOut = getNumberOfSessionsThatNeedToBeLoggedOut(userSessions.size(), limit);
         if (numberOfSessionsThatNeedToBeLoggedOut == 1) {
             logger.info("Logging out oldest session");
@@ -206,6 +208,11 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
 
         for (UserSessionModel userSession : userSessionsToBeRemoved) {
             AuthenticationManager.backchannelLogout(session, userSession, true);
+            eventBuilder.clone()
+                .event(EventType.LOGOUT)
+                .user(userSession.getUser())
+                .session(userSession.getId())
+                .success();
         }
 
         return userSessionsToBeRemoved;

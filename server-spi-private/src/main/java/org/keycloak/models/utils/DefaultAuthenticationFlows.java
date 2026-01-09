@@ -602,7 +602,7 @@ public class DefaultAuthenticationFlows {
         accountVerificationOptions.setTopLevel(false);
         accountVerificationOptions.setBuiltIn(true);
         accountVerificationOptions.setAlias("Account verification options");
-        accountVerificationOptions.setDescription("Method with which to verity the existing account");
+        accountVerificationOptions.setDescription("Method with which to verify the existing account");
         accountVerificationOptions.setProviderId("basic-flow");
         accountVerificationOptions = realm.addAuthenticationFlow(accountVerificationOptions);
         execution = new AuthenticationExecutionModel();
@@ -825,6 +825,11 @@ public class DefaultAuthenticationFlows {
         if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
             return;
         }
+
+        if (isOrganizationAuthenticatorPresent(realm, flow.getId())) {
+            return;
+        }
+
         if (!Config.getAdminRealm().equals(realm.getName())) {
             // do not add the org flows to the master realm for now.
             AuthenticationFlowModel organizations = new AuthenticationFlowModel();
@@ -872,5 +877,18 @@ public class DefaultAuthenticationFlows {
             execution.setAuthenticatorFlow(false);
             realm.addAuthenticatorExecution(execution);
         }
+    }
+
+    private static boolean isOrganizationAuthenticatorPresent(RealmModel realm, String flowId) {
+        return flowId != null && realm.getAuthenticationExecutionsStream(flowId)
+                .anyMatch((e) -> isOrganizationAuthenticatorPresent(realm, e));
+    }
+
+    private static boolean isOrganizationAuthenticatorPresent(RealmModel realm, AuthenticationExecutionModel execution) {
+        if ("organization".equals(execution.getAuthenticator())) {
+            return true;
+        }
+
+        return isOrganizationAuthenticatorPresent(realm, execution.getFlowId());
     }
 }

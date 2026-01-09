@@ -1,5 +1,6 @@
 package org.keycloak.models.workflow;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,6 +25,8 @@ import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.representations.workflows.WorkflowConstants;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
+import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
+import org.keycloak.timer.TimerProvider;
 
 import org.jboss.logging.Logger;
 
@@ -59,7 +62,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
     @Override
     public void updateWorkflow(Workflow workflow, WorkflowRepresentation representation) {
         // first step - ensure the updated workflow is valid
-        WorkflowValidator.validateWorkflow(session, representation);
+        WorkflowValidator.validateWorkflow(session, this, representation);
 
         // check if there are scheduled steps for this workflow - if there aren't, we can update freely
         if (!stateProvider.hasScheduledSteps(workflow.getId())) {
@@ -89,11 +92,15 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                 }
                 // set the id of the step to match the existing one, so we can update the config
                 newStep.setId(currentStep.getId());
+                newStep.setPriority(Long.parseLong(currentStep.getPriority()));
             }
 
             // finally, update the workflow's config along with the steps' configs
             workflow.updateConfig(representation.getConfig(), newSteps);
         }
+
+        cancelScheduledWorkflow(workflow);
+        scheduleWorkflow(workflow);
     }
 
     @Override
@@ -103,6 +110,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
         realm.getComponentsStream(workflow.getId(), WorkflowStepProvider.class.getName()).forEach(realm::removeComponent);
         realm.removeComponent(component);
         stateProvider.removeByWorkflow(workflow.getId());
+        cancelScheduledWorkflow(workflow);
     }
 
     @Override
@@ -197,7 +205,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
 
     @Override
     public Workflow toModel(WorkflowRepresentation rep) {
-        WorkflowValidator.validateWorkflow(session, rep);
+        WorkflowValidator.validateWorkflow(session, this, rep);
 
         MultivaluedHashMap<String, String> config = ofNullable(rep.getConfig()).orElse(new MultivaluedHashMap<>());
         if (rep.getCancelInProgress() != null) {
@@ -340,6 +348,29 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
             model.setConfig(config);
         }
 
-        return new Workflow(session, realm.addComponentModel(model));
+        workflow = new Workflow(session, realm.addComponentModel(model));
+
+        scheduleWorkflow(workflow);
+
+        return workflow;
+    }
+
+    private void scheduleWorkflow(Workflow workflow) {
+        String scheduled = workflow.getConfig().getFirst(WorkflowConstants.CONFIG_SCHEDULE_AFTER);
+
+        if (scheduled != null) {
+            Duration duration = DurationConverter.parseDuration(scheduled);
+            TimerProvider timer = session.getProvider(TimerProvider.class);
+            timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ScheduledWorkflowRunner(workflow.getId(), realm.getId()), duration.toMillis()), duration.toMillis());
+        }
+    }
+
+    void cancelScheduledWorkflow(Workflow workflow) {
+        session.getProvider(TimerProvider.class).cancelTask(new ScheduledWorkflowRunner(workflow.getId(), realm.getId()).getTaskName());
+    }
+
+    void rescheduleWorkflow(Workflow workflow) {
+        cancelScheduledWorkflow(workflow);
+        scheduleWorkflow(workflow);
     }
 }
