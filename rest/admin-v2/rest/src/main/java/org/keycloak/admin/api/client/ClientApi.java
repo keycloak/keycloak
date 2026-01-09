@@ -35,6 +35,7 @@ public interface ClientApi {
     @Produces(MediaType.APPLICATION_JSON)
     BaseClientRepresentation patchClient(JsonNode patch);
 
+    // TODO marked as producing json, but does not return anything
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     void deleteClient();

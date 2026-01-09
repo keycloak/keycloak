@@ -606,7 +606,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         return keycloak.getMetadata().getName();
     }
 
-    static Optional<String> readConfigurationValue(String key, Keycloak keycloakCR, Context<Keycloak> context) {
+    static Optional<String> readConfigurationValue(String key, Keycloak keycloakCR, Context<?> context) {
         return Optional.ofNullable(keycloakCR.getSpec()).map(KeycloakSpec::getAdditionalOptions)
                 .flatMap(l -> l.stream().filter(sc -> sc.getName().equals(key)).findFirst().map(serverConfigValue -> {
             if (serverConfigValue.getValue() != null) {
