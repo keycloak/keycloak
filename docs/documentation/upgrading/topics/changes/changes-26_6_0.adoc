@@ -14,16 +14,10 @@ It also lists significant changes to internal APIs.
 
 === New database indexes on the `BROKER_LINK` table
 
-The `BROKER_LINK` table now contains two additional indexes `IDX_EVENT_BROKER_LINK_USER_ID` and `IDX_EVENT_BROKER_LINK_USER_FEDERATION`.
+The `BROKER_LINK` table now contains two additional indexes `IDX_BROKER_LINK_USER_ID` and `IDX_BROKER_LINK_IDENTITY_PROVIDER` to improve performance.
 
-`IDX_EVENT_BROKER_LINK_USER_ID` improves performance when querying Identity Providers associated with a given user.
-Whilst `IDX_EVENT_BROKER_LINK_USER_FEDERATION` improves performance when retrieving the {project_name} identity associated
-with the external Identity Provider identity.
-
-By default, neither of these indexes will be created automatically during migration
-if the number of entries in the `BROKER_LINK` table exceeds `300000`. See the link:{upgradingguide_link}[{upgradingguide_name}]
-for more details.
-
+If the table contains more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features

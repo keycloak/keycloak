@@ -17,14 +17,24 @@
   -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-    <changeSet author="keycloak" id="26.6.0-45009-user-id">
-        <createIndex tableName="BROKER_LINK" indexName="IDX_EVENT_BROKER_LINK_USER_ID">
+    <changeSet author="keycloak" id="26.6.0-45009-broker-link-user-id">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <indexExists tableName="BROKER_LINK" indexName="IDX_BROKER_LINK_USER_ID" />
+            </not>
+        </preConditions>
+        <createIndex tableName="BROKER_LINK" indexName="IDX_BROKER_LINK_USER_ID">
             <column name="USER_ID" type="VARCHAR(255)" />
         </createIndex>
     </changeSet>
 
-    <changeSet author="keycloak" id="26.6.0-45009-user-federation">
-        <createIndex tableName="BROKER_LINK" indexName="IDX_EVENT_BROKER_LINK_USER_FEDERATION">
+    <changeSet author="keycloak" id="26.6.0-45009-broker-link-identity-provider">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <indexExists tableName="BROKER_LINK" indexName="IDX_BROKER_LINK_IDENTITY_PROVIDER" />
+            </not>
+        </preConditions>
+        <createIndex tableName="BROKER_LINK" indexName="IDX_BROKER_LINK_IDENTITY_PROVIDER">
             <column name="REALM_ID" type="VARCHAR(36)" />
             <column name="IDENTITY_PROVIDER" type="VARCHAR(255)" />
             <column name="BROKER_USER_ID" type="VARCHAR(255)" />
