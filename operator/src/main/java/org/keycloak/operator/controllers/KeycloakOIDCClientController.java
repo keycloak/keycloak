@@ -28,7 +28,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 
 @ControllerConfiguration
-public class KeycloakOIDCClientController extends KeycloakClientBaseController<KeycloakOIDCClientRepresentation, KeycloakOIDCClient> {
+public class KeycloakOIDCClientController extends KeycloakClientBaseController<KeycloakOIDCClient, KeycloakOIDCClientRepresentation> {
 
     @Override
     Representation<KeycloakOIDCClientRepresentation> prepareRepresentation(

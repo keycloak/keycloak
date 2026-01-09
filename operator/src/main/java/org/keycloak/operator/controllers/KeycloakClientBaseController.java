@@ -57,7 +57,7 @@ import io.quarkus.logging.Log;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
-public abstract class KeycloakClientBaseController<T extends BaseClientRepresentation, R extends CustomResource<? extends KeycloakClientSpec<T>, KeycloakClientStatus>>
+public abstract class KeycloakClientBaseController<R extends CustomResource<? extends KeycloakClientSpec<T>, KeycloakClientStatus>, T extends BaseClientRepresentation>
         implements Reconciler<R>, Cleaner<R> {
 
     class KeycloakClientStatusAggregator {
@@ -122,10 +122,11 @@ public abstract class KeycloakClientBaseController<T extends BaseClientRepresent
                 return client.createOrUpdateClient(rep.rep());
             });
 
-            // if not ok response, then could throw exception to allow the retry loop
-            // however not all errors likely should get retried every 10 seconds
+            // if not ok response, throw exception to allow the retry loop
+            // TODO however not all errors (something not validating) should get retried every 10 seconds
+            // that should instead get captured in the status
             if (response.getStatus() != HttpURLConnection.HTTP_OK || response.getStatus() != HttpURLConnection.HTTP_CREATED) {
-
+                throw new RuntimeException("Client update operation not sucessful with status code " + response.getStatus());
             }
         }
 
