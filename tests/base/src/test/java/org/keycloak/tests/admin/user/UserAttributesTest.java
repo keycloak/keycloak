@@ -9,14 +9,17 @@ import java.util.UUID;
 
 import jakarta.ws.rs.BadRequestException;
 
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -142,6 +145,74 @@ public class UserAttributesTest extends AbstractUserTest {
         managedRealm.admin().users().get(user1Id).update(user1);
         user1 = managedRealm.admin().users().get(user1Id).toRepresentation();
         assertEquals(1, user1.getAttributes().size());
+    }
+
+    @Test
+    public void unmanagedAttributes() {
+        UserProfileResource userProfileRes = managedRealm.admin().users().userProfile();
+        UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
+        adminEvents.poll();
+
+        UserRepresentation user1 = new UserRepresentation();
+        user1.setUsername("user1");
+        user1.singleAttribute("attr1", "value1");
+        user1.singleAttribute("unmanaged1", "value2");
+        String user1Id = createUser(user1);
+
+        //check visibility of attributes depending on unmanaged attribute policy
+
+        //with unmanaged attributes enabled, managed and unmanaged attributes are visible
+        user1 = managedRealm.admin().users().get(user1Id).toRepresentation();
+        assertEquals(2, user1.getAttributes().size());
+        assertAttributeValue("value1", user1.getAttributes().get("attr1"));
+        assertAttributeValue("value2", user1.getAttributes().get("unmanaged1"));
+
+        //with unmanaged attributes disabled, only managed attributes are visible
+        UserProfileUtil.disableUnmanagedAttributes(userProfileRes);
+        adminEvents.poll();
+        user1 = managedRealm.admin().users().get(user1Id).toRepresentation();
+        assertEquals(1, user1.getAttributes().size());
+        assertAttributeValue("value1", user1.getAttributes().get("attr1"));
+
+        //with ADMIN_EDIT policy, managed and unmanaged attributes are visible
+        UserProfileUtil.setUnmanagedAttributesPolicy(userProfileRes, UPConfig.UnmanagedAttributePolicy.ADMIN_EDIT);
+        adminEvents.poll();
+        user1 = managedRealm.admin().users().get(user1Id).toRepresentation();
+        assertEquals(2, user1.getAttributes().size());
+        assertAttributeValue("value1", user1.getAttributes().get("attr1"));
+        assertAttributeValue("value2", user1.getAttributes().get("unmanaged1"));
+
+        //with ADMIN_VIEW policy, managed and unmanaged attributes are visible
+        UserProfileUtil.setUnmanagedAttributesPolicy(userProfileRes, UPConfig.UnmanagedAttributePolicy.ADMIN_VIEW);
+        adminEvents.poll();
+        user1 = managedRealm.admin().users().get(user1Id).toRepresentation();
+        assertEquals(2, user1.getAttributes().size());
+        assertAttributeValue("value1", user1.getAttributes().get("attr1"));
+        assertAttributeValue("value2", user1.getAttributes().get("unmanaged1"));
+
+        //check updating of attributes depending on unmanaged attribute policy
+
+        //with ADMIN_VIEW policy, only managed attributes can be updated
+        user1.singleAttribute("attr1", "updated1");
+        user1.singleAttribute("unmanaged1", "updated2");
+        user1.singleAttribute("unmanaged2", "value3");
+        updateUser(managedRealm.admin().users().get(user1Id), user1);
+        user1 = managedRealm.admin().users().get(user1Id).toRepresentation();
+        assertEquals(2, user1.getAttributes().size());
+        assertAttributeValue("updated1", user1.getAttributes().get("attr1"));
+        assertAttributeValue("value2", user1.getAttributes().get("unmanaged1"));
+
+        //with ADMIN_EDIT policy, managed and unmanaged attributes can be updated
+        UserProfileUtil.setUnmanagedAttributesPolicy(userProfileRes, UPConfig.UnmanagedAttributePolicy.ADMIN_EDIT);
+        adminEvents.poll();
+        user1.singleAttribute("unmanaged1", "updated2");
+        user1.singleAttribute("unmanaged2", "value3");
+        updateUser(managedRealm.admin().users().get(user1Id), user1);
+        user1 = managedRealm.admin().users().get(user1Id).toRepresentation();
+        assertEquals(3, user1.getAttributes().size());
+        assertAttributeValue("updated1", user1.getAttributes().get("attr1"));
+        assertAttributeValue("updated2", user1.getAttributes().get("unmanaged1"));
+        assertAttributeValue("value3", user1.getAttributes().get("unmanaged2"));
     }
 
     @Test
