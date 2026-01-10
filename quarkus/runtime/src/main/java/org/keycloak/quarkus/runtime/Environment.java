@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -119,7 +120,7 @@ public final class Environment {
     public static Map<String, File> getProviderFiles() {
         Path providersPath = Environment.getProvidersPath().orElse(null);
 
-        if (providersPath == null) {
+        if (providersPath == null || !Files.exists(providersPath)) {
             return Collections.emptyMap();
         }
 

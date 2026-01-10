@@ -48,7 +48,7 @@ public final class PropertyMappers {
     private final static List<PropertyMapperGrouping> GROUPINGS;
     static {
         GROUPINGS = List.of(new CachingPropertyMappers(), new DatabasePropertyMappers(),
-                new ConfigKeystorePropertyMappers(), new EventPropertyMappers(), new ClassLoaderPropertyMappers(),
+                new ConfigKeystorePropertyMappers(), new EventPropertyMappers(),
                 new ExportPropertyMappers(), new BootstrapAdminPropertyMappers(), new HostnameV2PropertyMappers(),
                 new HttpPropertyMappers(), new HttpAccessLogPropertyMappers(), new HealthPropertyMappers(),
                 new FeaturePropertyMappers(), new ImportPropertyMappers(), new ManagementPropertyMappers(),
