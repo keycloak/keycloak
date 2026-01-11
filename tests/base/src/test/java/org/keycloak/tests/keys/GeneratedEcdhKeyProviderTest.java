@@ -309,7 +309,7 @@ public class GeneratedEcdhKeyProviderTest {
 
     private String getCurveFromPublicKey(String publicEcKeyBase64Encoded) throws Exception {
         KeyFactory kf = KeyFactory.getInstance("EC");
-        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(publicEcKeyBase64Encoded));
+        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getMimeDecoder().decode(publicEcKeyBase64Encoded));
         ECPublicKey ecKey = (ECPublicKey) kf.generatePublic(publicKeySpec);
         return "P-" + ecKey.getParams().getCurve().getField().getFieldSize();
     }

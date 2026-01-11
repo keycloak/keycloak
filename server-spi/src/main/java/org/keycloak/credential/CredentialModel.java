@@ -176,7 +176,7 @@ public class CredentialModel implements Serializable {
     @JsonIgnore
     public byte[] getSalt() {
         String saltStr = readString("salt", true);
-        return saltStr == null ? null : Base64.getDecoder().decode(saltStr);
+        return saltStr == null ? null : Base64.getMimeDecoder().decode(saltStr);
     }
 
     /**
