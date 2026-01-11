@@ -238,6 +238,26 @@ public class LoginActionsService {
 
         AuthenticationSessionModel authSession = checks.initialVerifyAuthSession();
         if (authSession == null) {
+            ClientModel client = clientId != null ? realm.getClientByClientId(clientId) : null;
+            if (client != null) {
+                AuthenticationSessionManager authSessionManager = new AuthenticationSessionManager(session);
+                UserSessionModel userSession = authSessionManager.getUserSessionFromAuthenticationCookie(realm);
+
+                if (userSession != null && userSession.getUser() != null) {
+                    logger.debugf("Authentication session was completed in another tab. User session %s exists. Redirecting to client.", userSession.getId());
+                    event.detail(Details.REASON, "auth_session_completed_elsewhere");
+                    event.success();
+
+                    String redirect = userSession.getNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL);
+                    if (redirect == null) {
+                        redirect = client.getBaseUrl();
+                    }
+                    if (redirect != null && !redirect.isEmpty()) {
+                        return Response.status(Response.Status.FOUND).location(URI.create(redirect)).build();
+                    }
+                }
+            }
+
             return checks.getResponse();
         }
 
