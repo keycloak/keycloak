@@ -652,6 +652,9 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
                     session.sessions().removeUserSession(realm, userSession));
             });
 
+            // Delete cookies again to ensure clean state for third login
+            super.deleteCookies();
+
             // Third login attempt - should succeed (proves no brute force lockout occurred)
             loginPage.open();
             loginPage.login("test-user@localhost", "password");
