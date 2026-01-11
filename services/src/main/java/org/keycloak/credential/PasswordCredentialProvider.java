@@ -346,9 +346,7 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
         UserModel user = metadataContext.getUser();
         if (user != null) {
             // Check if the user can update password
-            boolean canUpdatePassword = canUserUpdatePassword(user);
-
-            if (canUpdatePassword) {
+            if (canUserUpdatePassword(user)) {
                 if (user.credentialManager().isConfiguredFor(getType())) {
                     metadataBuilder.updateAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
                 } else {
