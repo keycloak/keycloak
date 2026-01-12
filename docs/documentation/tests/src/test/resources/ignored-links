@@ -44,6 +44,7 @@ https://saml.xml.org*
 # To be removed once KC 26.5.0 is released
 https://www.keycloak.org/observability/telemetry
 https://www.keycloak.org/securing-apps/jwt-authorization-grant
+https://www.keycloak.org/securing-apps/dpop
 https://www.keycloak.org/server/windows-service
 https://www.keycloak.org/server/db#multiple-datasources
 https://www.keycloak.org/server/logging#http-access-logging

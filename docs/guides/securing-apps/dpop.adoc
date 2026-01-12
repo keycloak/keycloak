@@ -23,6 +23,7 @@ Typical use cases include:
 * *Public clients*: Single Page Applications (SPAs) or native mobile apps where client secrets cannot be securely stored.
 * *Browser-based applications*: Where tokens might be exposed via XSS, browser storage, or malicious extensions.
 * *High-security environments*: Where preventing token replay is a strict compliance requirement (e.g., Financial Grade API).
+* *Avoid chaining of services*: Application authenticated with Keycloak invokes the REST service service1 with the access token. The service1 should be able to consume the access token, but it should not be able to use that token to invoke further services on behalf of the original application.
 
 == DPoP Concepts
 
@@ -90,7 +91,7 @@ The **Body** binds the proof to the specific HTTP request to prevent replay atta
 Implementing DPoP changes the interaction between the client application and {project_name}. The following section and diagram illustrate the end-to-end lifecycle of a DPoP-bound session.
 
 .DPoP flow
-image::dpop-flow-diagram.png[DPoP flow]
+image::dpop-flow.dio.svg[DPoP flow]
 
 === 1. Token Binding
 
@@ -154,7 +155,7 @@ Note that this {project_name} switch maps to the `dpop_bound_access_tokens` clie
 
 The behavior for refresh tokens differs slightly depending on the client type:
 
-* **Public Clients**: Since these clients cannot hold secrets safely, DPoP is critical. Both the access token and the Refresh Token are bound to the key. The client must send the DPoP proof signed with the same private key also for the refresh request.
+* **Public Clients**: Since these clients cannot hold secrets safely, DPoP is critical. Both the access token and the refresh token are bound to the key. The client must send the DPoP proof signed with the same private key also for the refresh request.
 * **Confidential Clients**: These clients are already authenticated for example with Client ID and Secret. Therefore, {project_name} binds only the access token to the DPoP key, relying on the client credentials to secure the refresh token.
 
 === Other {project_name} Endpoints
