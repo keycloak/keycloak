@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import org.keycloak.Config;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.config.MetricsOptions;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -43,7 +44,6 @@ import org.apache.http.impl.client.AbstractResponseHandler;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.StringUtil.isBlank;
@@ -209,7 +209,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
                     HttpClientBuilder builder = newHttpClientBuilder();
 
-                    boolean enableMetrics = ConfigProvider.getConfig().getOptionalValue("quarkus.micrometer.enabled", Boolean.class).orElse(false) &&
+                    boolean enableMetrics = config.root().getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), false) &&
                           config.getBoolean(METRICS_ENABLED, true);
 
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
