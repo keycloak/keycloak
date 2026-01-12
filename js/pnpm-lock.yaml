@@ -87,8 +87,8 @@ importers:
         specifier: ^25.7.3
         version: 25.7.3(typescript@5.9.3)
       i18next-fetch-backend:
-        specifier: ^6.0.0
-        version: 6.0.0
+        specifier: ^7.0.0
+        version: 7.0.0
       keycloak-js:
         specifier: ^26.2.2
         version: 26.2.2
@@ -187,8 +187,8 @@ importers:
         specifier: ^25.7.3
         version: 25.7.3(typescript@5.9.3)
       i18next-fetch-backend:
-        specifier: ^6.0.0
-        version: 6.0.0
+        specifier: ^7.0.0
+        version: 7.0.0
       jszip:
         specifier: ^3.10.1
         version: 3.10.1
@@ -2807,9 +2807,9 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  i18next-fetch-backend@6.0.0:
-    resolution: {integrity: sha512-kVqnydqLVMZfVlOuP2nf71cREydlxEKLH43jUXAFdOku/GF+6b9fBg31anoos5XncdhdtiYgL9fheqMrtXRwng==}
-    engines: {node: '>=18'}
+  i18next-fetch-backend@7.0.0:
+    resolution: {integrity: sha512-BUS/xzHDXNwGKKBQTaNWxY3xvgC40jcYw+4nSpTlaxcGenAubgIgBFuq4CIeeYcs3UkAQs8mf5y6iLnHhd01vw==}
+    engines: {node: '>=20'}
 
   i18next@25.7.3:
     resolution: {integrity: sha512-2XaT+HpYGuc2uTExq9TVRhLsso+Dxym6PWaKpn36wfBmTI779OQ7iP/XaZHzrnGyzU4SHpFrTYLKfVyBfAhVNA==}
@@ -5032,7 +5032,7 @@ snapshots:
       file-saver: 2.0.5
       flat: 6.0.1
       i18next: 25.7.3(typescript@5.9.3)
-      i18next-fetch-backend: 6.0.0
+      i18next-fetch-backend: 7.0.0
       jszip: 3.10.1
       keycloak-js: 26.2.2
       lodash-es: 4.17.22
@@ -7058,7 +7058,7 @@ snapshots:
 
   husky@9.1.7: {}
 
-  i18next-fetch-backend@6.0.0: {}
+  i18next-fetch-backend@7.0.0: {}
 
   i18next@25.7.3(typescript@5.9.3):
     dependencies:
