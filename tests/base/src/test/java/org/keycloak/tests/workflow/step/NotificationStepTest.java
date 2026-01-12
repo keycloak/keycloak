@@ -260,4 +260,33 @@ public class NotificationStepTest extends AbstractWorkflowTest {
             mailServer.runCleanup();
         }
     }
+
+    @Test
+    public void testNotifyUserStepWithSendToConfiguration() throws Exception {
+        // Create workflow: notify immediately with send_to
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(USER_CREATED.name())
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .withConfig("send_to", "admin@example.com")
+                                .withConfig("reason", "manual-review")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(7))
+                                .build()
+                ).build()).close();
+
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("userXYZ").email("user@example.com").name("User", "XYZ").build()).close();
+
+        // Verify email was sent to admin@example.com
+        MimeMessage message = mailServer.getLastReceivedMessage();
+        assertNotNull(message, "Email should be sent");
+
+        assertEquals("admin@example.com", message.getRecipients(jakarta.mail.Message.RecipientType.TO)[0].toString());
+
+        // Use helper to verify content - note that we pass admin email as recipient check
+        verifyEmailContent(message, "admin@example.com", "Disable", "User", "7", "manual-review");
+
+        mailServer.runCleanup();
+    }
 }
