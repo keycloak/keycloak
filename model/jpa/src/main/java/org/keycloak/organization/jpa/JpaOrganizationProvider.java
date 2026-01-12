@@ -245,7 +245,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         
         // Check for parent domains with wildcard subdomain matching enabled
         // For "sub.example.com", check "example.com", etc.
-        String[] parts = emailDomain.split("\\\\.");
+        String[] parts = emailDomain.split("\\.");
         for (int i = 1; i < parts.length; i++) {
             String parentDomain = String.join(".", java.util.Arrays.copyOfRange(parts, i, parts.length));
             
