@@ -21,8 +21,10 @@ import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.provider.ConfiguredPerClientProvider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.idm.ClientRepresentation;
 
 /**
  * Factory for creating ClientAuthenticator instances.  This is a singleton and created when Keycloak boots.
@@ -59,6 +61,30 @@ public interface ClientAuthenticatorFactory extends ProviderFactory<ClientAuthen
      * @return name of supported client authenticator methods in the protocol specific "language"
      */
     Set<String> getProtocolAuthenticatorMethods(String loginProtocol);
+
+    /**
+     * Get protocol authentication method, which is set on the specified client.
+     *
+     * @param client client whose authentication method will be returned
+     * @return Client authentication method as specified in the related protocol specification.
+     *         For example "client_secret_basic", "client_secret_post" or "private_key_jwt" might be used as returned values.
+     */
+    default String getProtocolAuthenticatorMethod(ClientRepresentation client) {
+        String loginProtocol = client.getProtocol() == null ? Constants.OIDC_PROTOCOL : client.getProtocol();
+        Set<String> protocolAuthMethods = getProtocolAuthenticatorMethods(loginProtocol);
+        return protocolAuthMethods == null || protocolAuthMethods.isEmpty() ? null : protocolAuthMethods.iterator().next();
+    }
+
+    /**
+     * Set specified client authentication method to the specified client
+     *
+     * @param client client to update
+     * @param protocolAuthMethod Client authentication method as specified in the related protocol specification.
+     *                           For example "client_secret_basic", "client_secret_post" or "private_key_jwt" might be used as values of this parameter.
+     */
+    default void setClientAuthenticationMethod(ClientRepresentation client, String protocolAuthMethod) {
+        client.setClientAuthenticatorType(getId());
+    }
 
     /**
      * Is this authenticator supports client secret?
