@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Empty changeset to avoid
+2026-01-12 14:13:36,500 traceId=, parentId=, spanId=, sampled= ERROR [org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler] (main) ERROR: Incorrect state of migration. You are trying to run nightly server version '999.0.0' against a database, which was previously migrated to version '26.4.7'. This indicates that you are trying to run development server version against production database, which can result in a loss or corruption of data, and also does not allow upgrading. If it is intended, use the option spi-datastore-legacy-allow-migrate-existing-database-to-snapshot of the datastore provider when starting the server and explicitly set it to true.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet author="keycloak" id="refresh-token-mapper-45260">
+    </changeSet>
+</databaseChangeLog>
