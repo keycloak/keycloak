@@ -42,6 +42,10 @@ public interface CredentialOfferStorage extends Provider {
         private String nonce;
         private int expiration;
         private OID4VCAuthorizationDetailResponse authorizationDetails;
+        /**
+         * Flag indicating whether this credential offer has been consumed (accessed via the credential offer URL).
+         */
+        private boolean consumed;
 
         public CredentialOfferState(CredentialsOffer credOffer, String clientId, String userId, int expiration) {
             this.credentialsOffer = credOffer;
@@ -49,6 +53,7 @@ public interface CredentialOfferStorage extends Provider {
             this.userId = userId;
             this.expiration = expiration;
             this.nonce = Base64Url.encode(RandomSecret.createRandomSecret(64));
+            this.consumed = false;
         }
 
         // For json serialization
@@ -115,6 +120,14 @@ public interface CredentialOfferStorage extends Provider {
         void setExpiration(int expiration) {
             this.expiration = expiration;
         }
+
+        public boolean isConsumed() {
+            return consumed;
+        }
+
+        public void setConsumed(boolean consumed) {
+            this.consumed = consumed;
+        }
     }
 
     void putOfferState(KeycloakSession session, CredentialOfferState entry);
@@ -126,6 +139,19 @@ public interface CredentialOfferStorage extends Provider {
     CredentialOfferState findOfferStateByCredentialId(KeycloakSession session, String credId);
 
     void replaceOfferState(KeycloakSession session, CredentialOfferState entry);
+
+    /**
+     * Atomically marks a credential offer as consumed if it is not already consumed.
+     * This method provides thread-safe replay protection by ensuring only one thread
+     * can successfully mark an offer as consumed.
+     *
+     * @param session the Keycloak session
+     * @param nonce   the nonce identifying the credential offer
+     * @return true if the offer was successfully marked as consumed (was not consumed before),
+     * false if the offer was already consumed (replay attempt) or does not exist.
+     * The caller should verify the offer exists before calling this method.
+     */
+    boolean markAsConsumedIfNotConsumed(KeycloakSession session, String nonce);
 
     void removeOfferState(KeycloakSession session, CredentialOfferState entry);
 

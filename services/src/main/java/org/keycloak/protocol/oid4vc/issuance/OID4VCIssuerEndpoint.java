@@ -620,6 +620,15 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_OFFER_REQUEST, errorMessage));
         }
 
+        boolean isFirstConsumption = offerStorage.markAsConsumedIfNotConsumed(session, nonce);
+        if (!isFirstConsumption) {
+            var errorMessage = "Credential offer has already been consumed";
+            LOGGER.debugf("Credential offer with nonce %s has already been consumed", nonce);
+            eventBuilder.detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
+            throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_OFFER_REQUEST, errorMessage));
+        }
+        LOGGER.debugf("Marked credential offer with nonce %s as consumed", nonce);
+
         // Add event details
         if (offerState.getClientId() != null) {
             eventBuilder.client(offerState.getClientId());
