@@ -42,6 +42,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
@@ -61,6 +63,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERS;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERSHIP;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW_MEMBERS;
@@ -526,5 +530,46 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         // Assert only permitted users are returned as role members
         assertThat(roleMembers, hasSize(allowedUsers.size()));
         assertThat(roleMembers, hasItems(allowedUsers.toArray(new String[0])));
+    }
+
+    @Test
+    public void testViewGroupMembersPolicyUsingAggregatedPolicy() {
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
+        assertTrue(search.isEmpty());
+
+        GroupRepresentation fooGroup = createGroup(KeycloakModelUtils.generateId());
+        UserRepresentation fooUser = createUser(KeycloakModelUtils.generateId());
+        realm.admin().users().get(fooUser.getId()).joinGroup(fooGroup.getId());
+        GroupRepresentation fooGroupManager = createGroup(KeycloakModelUtils.generateId());
+
+        UserRepresentation barUser = createUser(KeycloakModelUtils.generateId());
+        GroupRepresentation barGroup = createGroup(KeycloakModelUtils.generateId());
+        realm.admin().users().get(barUser.getId()).joinGroup(barGroup.getId());
+        GroupRepresentation barGroupManager = createGroup(KeycloakModelUtils.generateId());
+
+        GroupPolicyRepresentation fooGroupManagerPolicy = createGroupPolicy(realm, client, "Foo Group Policy", Logic.POSITIVE, fooGroupManager.getId());
+        GroupPolicyRepresentation barGroupManagerPolicy = createGroupPolicy(realm, client, "Bar Group Policy", Logic.POSITIVE, barGroupManager.getId());
+        AggregatePolicyRepresentation aggregatedPolicy = createAggregatedPolicy(client, "Foo and Bar Group Policy", Logic.POSITIVE, DecisionStrategy.AFFIRMATIVE, fooGroupManagerPolicy.getName(), barGroupManagerPolicy.getName());
+
+        search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
+        assertTrue(search.isEmpty());
+
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        createAllPermission(client, GROUPS_RESOURCE_TYPE, aggregatedPolicy, Set.of(VIEW_MEMBERS, MANAGE_MEMBERSHIP, MANAGE_MEMBERS));
+
+        realm.admin().users().get(myadmin.getId()).joinGroup(fooGroupManager.getId());
+        search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
+        assertEquals(3, search.size());
+        assertTrue(search.stream().map(UserRepresentation::getUsername).anyMatch(fooUser.getUsername()::equals));
+        assertTrue(search.stream().map(UserRepresentation::getUsername).anyMatch(barUser.getUsername()::equals));
+
+        aggregatedPolicy.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
+        client.admin().authorization().policies().aggregate().findById(aggregatedPolicy.getId()).update(aggregatedPolicy);
+        search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
+        assertTrue(search.isEmpty());
+
+        realm.admin().users().get(myadmin.getId()).joinGroup(barGroupManager.getId());
+        search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
+        assertEquals(3, search.size());
     }
 }

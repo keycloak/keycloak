@@ -31,8 +31,11 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
@@ -43,6 +46,8 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.util.ApiUtil;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -193,6 +198,17 @@ public abstract class AbstractPermissionTest {
         return policy;
     }
 
+    protected AggregatePolicyRepresentation createAggregatedPolicy(ManagedClient client, String name, Logic logic, DecisionStrategy decisionStrategy, String... policies) {
+        AggregatePolicyRepresentation aggregatedPolicy = new AggregatePolicyRepresentation();
+        aggregatedPolicy.setName(name);
+        aggregatedPolicy.setLogic(logic);
+        aggregatedPolicy.setDecisionStrategy(decisionStrategy);
+        aggregatedPolicy.setPolicies(Set.of(policies));
+        try (Response response = client.admin().authorization().policies().aggregate().create(aggregatedPolicy)) {
+            return response.readEntity(AggregatePolicyRepresentation.class);
+        }
+    }
+
     protected ScopePermissionRepresentation createAllPermission(ManagedClient client, String resourceType, AbstractPolicyRepresentation policy, Set<String> scopes) {
         ScopePermissionRepresentation permission = PermissionBuilder.create()
                 .resourceType(resourceType)
@@ -227,5 +243,27 @@ public abstract class AbstractPermissionTest {
     }
     protected ScopePermissionRepresentation createGroupPermission(Set<GroupRepresentation> groups, Set<String> scopes, AbstractPolicyRepresentation... policies) {
         return createPermission(client, groups.stream().map(GroupRepresentation::getId).collect(Collectors.toSet()), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, scopes, policies);
+    }
+
+    protected UserRepresentation createUser(String username) {
+        UserRepresentation user = UserConfigBuilder.create()
+                .username(username)
+                .build();
+
+        try (Response response = realm.admin().users().create(user)) {
+            user.setId(ApiUtil.getCreatedId(response));
+            return user;
+        }
+    }
+
+    protected GroupRepresentation createGroup(String name) {
+        GroupRepresentation group = new GroupRepresentation();
+
+        group.setName(name);
+
+        try (Response response = realm.admin().groups().add(group)) {
+            group.setId(ApiUtil.getCreatedId(response));
+            return group;
+        }
     }
 }

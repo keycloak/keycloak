@@ -339,29 +339,41 @@ public class JPAPolicyStore implements PolicyStore {
         String dbProductName = entityManager.unwrap(Session.class).doReturningWork(connection -> connection.getMetaData().getDatabaseProductName());
 
         if (dbProductName.equals("Oracle")) {
-            Stream<Policy> result = Stream.empty();
+            TypedQuery<String> query;
 
-            for (String value : configValues) {
-                TypedQuery<String> query = entityManager.createNamedQuery("findDependentPolicyByResourceTypeAndConfig", String.class);
-
-                query.setParameter("serverId", resourceServer.getId());
-                query.setParameter("resourceType", resourceType);
-                query.setParameter("associatedPolicyType", associatedPolicyType);
-                query.setParameter("configKey", configKey);
-                query.setParameter("configValue", "%" + value + "%");
-
-                if (AdminPermissionsSchema.GROUPS.getType().equals(groupResourceType)) {
-                    query.setParameter("scopeName", AdminPermissionsSchema.VIEW_MEMBERS);
-                } else {
-                    query.setParameter("scopeName", AdminPermissionsSchema.VIEW);
-                }
-
-                PolicyStore policyStore = provider.getStoreFactory().getPolicyStore();
-
-                result = Stream.concat(result, query.getResultStream().map((id) -> policyStore.findById(resourceServer, id)).filter(Objects::nonNull));
+            if (configKey == null) {
+                query = entityManager.createNamedQuery("findDependentPolicyByResourceType", String.class);
+            } else {
+                query = entityManager.createNamedQuery("findDependentPolicyByResourceTypeAndConfig", String.class);
             }
 
-            return result;
+            query.setParameter("serverId", resourceServer.getId());
+            query.setParameter("resourceType", resourceType);
+            query.setParameter("associatedPolicyType", associatedPolicyType);
+
+            if (AdminPermissionsSchema.GROUPS.getType().equals(groupResourceType)) {
+                query.setParameter("scopeName", AdminPermissionsSchema.VIEW_MEMBERS);
+            } else {
+                query.setParameter("scopeName", AdminPermissionsSchema.VIEW);
+            }
+
+            if (configKey == null) {
+                PolicyStore policyStore = provider.getStoreFactory().getPolicyStore();
+                return query.getResultStream().map((id) -> policyStore.findById(resourceServer, id)).filter(Objects::nonNull);
+            } else {
+                Stream<Policy> result = Stream.empty();
+
+                for (String value : configValues) {
+                    query.setParameter("configKey", configKey);
+                    query.setParameter("configValue", "%" + value + "%");
+
+                    PolicyStore policyStore = provider.getStoreFactory().getPolicyStore();
+
+                    result = Stream.concat(result, query.getResultStream().map((id) -> policyStore.findById(resourceServer, id)).filter(Objects::nonNull));
+                }
+
+                return result;
+            }
         }
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
@@ -373,7 +385,6 @@ public class JPAPolicyStore implements PolicyStore {
         Join<Object, Object> scope = from.join("scopes");
         MapJoin<Object, Object, Object> config = from.joinMap("config");
         Join<Object, Object> associatedPolicy = from.join("associatedPolicies");
-        MapJoin<Object, Object, Object> associatedPolicyConfig = associatedPolicy.joinMap("config");
 
         List<Predicate> predicates = new LinkedList<>();
 
@@ -389,15 +400,18 @@ public class JPAPolicyStore implements PolicyStore {
         predicates.add(cb.equal(config.key(), "defaultResourceType"));
         predicates.add(cb.equal(config.value(), resourceType));
 
-        List<Predicate> configValuePredicates = new LinkedList<>();
+        if (configKey != null) {
+            MapJoin<Object, Object, Object> associatedPolicyConfig = associatedPolicy.joinMap("config");
+            List<Predicate> configValuePredicates = new LinkedList<>();
 
-        predicates.add(cb.equal(associatedPolicyConfig.key(), configKey));
+            predicates.add(cb.equal(associatedPolicyConfig.key(), configKey));
 
-        for (String value : configValues) {
-            configValuePredicates.add(cb.like(associatedPolicyConfig.value().as(String.class), "%" + value + "%"));
+            for (String value : configValues) {
+                configValuePredicates.add(cb.like(associatedPolicyConfig.value().as(String.class), "%" + value + "%"));
+            }
+
+            predicates.add(cb.or(configValuePredicates.toArray(new Predicate[0])));
         }
-
-        predicates.add(cb.or(configValuePredicates.toArray(new Predicate[0])));
 
         query.where(predicates.toArray(new Predicate[0]));
 
