@@ -16,15 +16,17 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULED_AT;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STATUS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 
-@JsonPropertyOrder({CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH, CONFIG_SCHEDULED_AT})
+@JsonPropertyOrder({CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH, CONFIG_SCHEDULED_AT, CONFIG_STATUS})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class WorkflowStepRepresentation extends AbstractWorkflowComponentRepresentation {
 
     private final String uses;
     private Long scheduledAt;
+    private StepExecutionStatus executionStatus;
 
     public static Builder create() {
         return new Builder();
@@ -88,6 +90,15 @@ public class WorkflowStepRepresentation extends AbstractWorkflowComponentReprese
 
     public void setScheduledAt(Long scheduledAt) {
         this.scheduledAt = scheduledAt;
+    }
+
+    @JsonProperty(CONFIG_STATUS)
+    public StepExecutionStatus getExecutionStatus() {
+        return this.executionStatus;
+    }
+
+    public void setExecutionStatus(StepExecutionStatus executionStatus) {
+        this.executionStatus = executionStatus;
     }
 
     @Override

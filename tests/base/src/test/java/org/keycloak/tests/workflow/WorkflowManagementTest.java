@@ -43,6 +43,7 @@ import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.workflow.conditions.IdentityProviderWorkflowConditionFactory;
 import org.keycloak.models.workflow.conditions.RoleWorkflowConditionFactory;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.workflows.StepExecutionStatus;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -554,11 +555,12 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
             try (Response response =
                          managedRealm.admin().workflows().create(WorkflowRepresentation.withName(name)
                                  .withSteps(
-                                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                         WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
+                                                 .withConfig("key", "value")
                                                  .after(Duration.ofDays(5))
                                                  .build(),
                                          WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
-                                                 .withConfig("key", "value")
+                                                 .withConfig("another-key", "another-value")
                                                  .build(),
                                          WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
                                                  .after(Duration.ofDays(15))
@@ -590,6 +592,23 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
             // it should be precisely 15 days after the second step
             long expectedThirdStepScheduledAt = workflow.getSteps().get(1).getScheduledAt() + Duration.ofDays(15).toMillis();
             assertThat(workflow.getSteps().get(2).getScheduledAt(), is(expectedThirdStepScheduledAt));
+            // all steps should be pending execution
+            assertTrue(workflow.getSteps().stream().map(WorkflowStepRepresentation::getExecutionStatus)
+                    .allMatch(status -> status == StepExecutionStatus.PENDING));
+        }
+
+        // advance time so that the first and second steps in each workflow run
+        runScheduledSteps(Duration.ofDays(6));
+
+        // fetch the active workflows again
+        scheduledWorkflows = managedRealm.admin().workflows().getScheduledWorkflows(userAlice.getId());
+        assertThat(scheduledWorkflows, hasSize(3));
+        // now all first and second steps should be executed, while the third should be pending
+        for (WorkflowRepresentation workflow : scheduledWorkflows) {
+            assertThat(workflow.getSteps(), hasSize(3));
+            assertThat(workflow.getSteps().get(0).getExecutionStatus(), is(StepExecutionStatus.COMPLETED));
+            assertThat(workflow.getSteps().get(1).getExecutionStatus(), is(StepExecutionStatus.COMPLETED));
+            assertThat(workflow.getSteps().get(2).getExecutionStatus(), is(StepExecutionStatus.PENDING));
         }
     }
 

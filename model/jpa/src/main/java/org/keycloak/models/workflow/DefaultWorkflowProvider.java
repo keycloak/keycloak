@@ -22,6 +22,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
+import org.keycloak.representations.workflows.StepExecutionStatus;
 import org.keycloak.representations.workflows.WorkflowConstants;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
@@ -128,16 +129,28 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
     public Stream<WorkflowRepresentation> getScheduledWorkflowsByResource(String resourceId) {
         return stateProvider.getScheduledStepsByResource(resourceId).map(scheduledStep -> {
             Workflow workflow = getWorkflow(scheduledStep.workflowId());
-            // get the steps starting from the scheduled step, then add their scheduledAt
-            List<WorkflowStepRepresentation> steps = workflow.getSteps(scheduledStep.stepId()).map(this::toRepresentation).toList();
+            // get the steps, then set the status (completed/pending) and scheduledAt for each pending step
+            List<WorkflowStepRepresentation> steps = workflow.getSteps().map(this::toRepresentation).toList();
+            boolean scheduledStepFound = false;
             Long scheduledAt = null;
             for (WorkflowStepRepresentation step : steps) {
-                if (scheduledAt == null) {
-                    scheduledAt = scheduledStep.scheduledAt();
-                } else if (step.getAfter() != null) {
-                    scheduledAt += DurationConverter.parseDuration(step.getAfter()).toMillis();
+                if (!scheduledStepFound) {
+                    // check if we found the scheduled step
+                    if (step.getId().equals(scheduledStep.stepId())) {
+                        scheduledStepFound = true;
+                    } else {
+                        step.setExecutionStatus(StepExecutionStatus.COMPLETED);
+                    }
                 }
-                step.setScheduledAt(scheduledAt);
+                if (scheduledStepFound) {
+                    if (scheduledAt == null) {
+                        scheduledAt = scheduledStep.scheduledAt();
+                    } else if (step.getAfter() != null) {
+                        scheduledAt += DurationConverter.parseDuration(step.getAfter()).toMillis();
+                    }
+                    step.setScheduledAt(scheduledAt);
+                    step.setExecutionStatus(StepExecutionStatus.PENDING);
+                }
             }
             return new WorkflowRepresentation(workflow.getId(), workflow.getName(), workflow.getConfig(), steps);
         });
