@@ -78,7 +78,11 @@ public class NotifyUserStepProviderFactory implements WorkflowStepProviderFactor
 
             new ProviderConfigProperty("custom_message", "Custom Message", 
                 "Override default message with custom text (optional)", 
-                ProviderConfigProperty.TEXT_TYPE, "")
+                ProviderConfigProperty.TEXT_TYPE, ""),
+
+            new ProviderConfigProperty("send_to", "Send To", 
+                "Send the email to this address instead of the workflow user (optional)", 
+                ProviderConfigProperty.STRING_TYPE, "")
         );
     }
 }
