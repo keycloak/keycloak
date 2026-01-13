@@ -17,13 +17,8 @@
 
 package org.keycloak.models.workflow;
 
-import java.util.List;
-
-import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.ProviderConfigProperty;
 
 public class DisableUserStepProviderFactory implements WorkflowStepProviderFactory<DisableUserStepProvider> {
 
@@ -32,21 +27,6 @@ public class DisableUserStepProviderFactory implements WorkflowStepProviderFacto
     @Override
     public DisableUserStepProvider create(KeycloakSession session, ComponentModel model) {
         return new DisableUserStepProvider(session, model);
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-        // no-op
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        // no-op
-    }
-
-    @Override
-    public void close() {
-        // no-op
     }
 
     @Override
@@ -61,11 +41,6 @@ public class DisableUserStepProviderFactory implements WorkflowStepProviderFacto
 
     @Override
     public String getHelpText() {
-        return "";
-    }
-
-    @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        return List.of();
+        return "Disables the user";
     }
 }
