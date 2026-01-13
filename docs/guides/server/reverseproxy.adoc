@@ -247,6 +247,13 @@ to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if
 
 |===
 
+[NOTE]
+====
+Consult the <@links.server id="configuration-provider"/> guide for details on the format of the options. For example you can use:
+
+<@kc.start parameters="--spi-x509cert-lookup--nginx--ssl-client-cert=SSL_CLIENT_CERT"/>
+====
+
 === Configuring the NGINX provider
 
 The NGINX SSL/TLS module does not expose the client certificate chain. {project_name}'s NGINX certificate lookup provider rebuilds it by using the {project_name} truststore.
