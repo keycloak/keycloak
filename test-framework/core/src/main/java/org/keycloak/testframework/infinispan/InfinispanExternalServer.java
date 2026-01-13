@@ -5,7 +5,7 @@ import java.util.Map;
 import org.keycloak.testframework.logging.JBossLogConsumer;
 import org.keycloak.testframework.util.ContainerImages;
 
-import org.infinispan.server.test.core.InfinispanContainer;
+import org.infinispan.testcontainers.InfinispanContainer;
 import org.jboss.logging.Logger;
 
 public class InfinispanExternalServer extends InfinispanContainer implements InfinispanServer {

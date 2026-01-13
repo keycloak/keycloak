@@ -34,7 +34,7 @@ import org.keycloak.sessions.StickySessionEncoderProvider;
 import org.keycloak.sessions.StickySessionEncoderProviderFactory;
 
 import org.infinispan.Cache;
-import org.infinispan.remoting.transport.jgroups.JGroupsAddress;
+import org.infinispan.remoting.transport.Address;
 import org.jboss.logging.Logger;
 import org.jgroups.util.NameCache;
 
@@ -153,6 +153,6 @@ public class InfinispanStickySessionEncoderProviderFactory implements StickySess
         // Return null if the logical name is not available yet.
         // The following request may be redirected to the wrong instance, but that's ok.
         // In a healthy/stable cluster, the name cache is correctly populated.
-        return primaryOwner instanceof JGroupsAddress jgrpAddr ? NameCache.get(jgrpAddr.getJGroupsAddress()) : null;
+        return primaryOwner == null ? null : NameCache.get(Address.toExtendedUUID(primaryOwner));
     }
 }

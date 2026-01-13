@@ -27,7 +27,6 @@ import org.keycloak.testframework.clustering.LoadBalancer;
 import org.keycloak.testframework.infinispan.CacheType;
 import org.keycloak.testframework.logging.JBossLogConsumer;
 
-import org.infinispan.server.test.core.CountdownLatchLoggingConsumer;
 import org.jboss.logging.Logger;
 import org.testcontainers.images.RemoteDockerImage;
 import org.testcontainers.utility.DockerImageName;
