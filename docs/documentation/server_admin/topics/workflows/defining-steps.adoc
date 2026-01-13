@@ -68,6 +68,7 @@ on the realm resource associated with the event, so that each realm resource typ
 | `notify-user` | Notify the user by email a|
 - `subject`: The email subject
 - `message`: The email message in plain text or HTML format
+- `to`: The recipient email address. If not provided, the user's email address will be used
 | `set-user-attribute` | Set an attribute to the user. Allows providing multiple `<name>`/`<value>` pairs a|
 - `<name>`: The attribute name
 - `<value>`: The value of the attribute
