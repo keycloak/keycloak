@@ -520,6 +520,16 @@ public class OrganizationTest extends AbstractOrganizationTest {
         updated = organization.toRepresentation();
         savedDomain = updated.getDomain("example.com");
         assertTrue(savedDomain.isMatchSubdomains());
+
+        OrganizationRepresentation fooOrg = createOrganization("foo-org");
+        OrganizationDomainRepresentation conflictingDomain = new OrganizationDomainRepresentation();
+        conflictingDomain.setName("sub.example.com");
+        fooOrg.addDomain(conflictingDomain);
+
+        try (Response response = testRealm().organizations().get(fooOrg.getId()).update(fooOrg)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
     }
 
     @Test

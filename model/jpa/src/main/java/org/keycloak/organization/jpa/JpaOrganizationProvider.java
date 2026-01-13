@@ -232,38 +232,36 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         String emailDomain = domain.toLowerCase();
         RealmModel realm = getRealm();
         TypedQuery<OrganizationEntity> query = em.createNamedQuery("getByDomainName", OrganizationEntity.class);
+
         query.setParameter("realmId", realm.getId());
         query.setParameter("name", emailDomain);
-        
-        // Try exact match first (covers both exact domains and exact matches when wildcards are enabled)
-        try {
-            OrganizationEntity entity = query.getSingleResult();
-            return new OrganizationAdapter(session, realm, entity, this);
-        } catch (NoResultException nre) {
-            // Continue to wildcard check
-        }
-        
-        // Check for parent domains with wildcard subdomain matching enabled
-        // For "sub.example.com", check "example.com", etc.
+
+        List<String> names = new ArrayList<>();
+
+        // Also consider wildcard domains by stripping subdomains
         String[] parts = emailDomain.split("\\.");
-        for (int i = 1; i < parts.length; i++) {
+
+        for (int i = 1; i < parts.length - 1; i++) {
             String parentDomain = String.join(".", java.util.Arrays.copyOfRange(parts, i, parts.length));
-            
-            query.setParameter("name", parentDomain);
-            try {
-                OrganizationEntity entity = query.getSingleResult();
-                OrganizationAdapter org = new OrganizationAdapter(session, realm, entity, this);
-                // Check if this org has the domain with wildcards enabled
-                boolean hasWildcardDomain = org.getDomains()
-                        .anyMatch(d -> d.getName().equals(parentDomain) && d.isMatchSubdomains());
-                if (hasWildcardDomain) {
-                    return org;
-                }
-            } catch (NoResultException nre) {
-                // Try next parent domain
+            names.add(parentDomain);
+        }
+
+        query.setParameter("names", names);
+
+        List<OrganizationEntity> result = query.getResultList();
+
+        for (OrganizationEntity org : result) {
+            // Check if this org has the exact domain
+            if (org.getDomains().stream()
+                    .anyMatch(d -> d.getName().equals(emailDomain) && !d.isMatchSubdomains())) {
+                return new OrganizationAdapter(session, realm, org, this);
             }
         }
-        
+
+        if (result.size() == 1) {
+            return new OrganizationAdapter(session, realm, result.get(0), this);
+        }
+
         return null;
     }
 
