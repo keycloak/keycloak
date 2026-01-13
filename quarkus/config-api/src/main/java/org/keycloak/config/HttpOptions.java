@@ -151,4 +151,15 @@ public class HttpOptions {
             .defaultValue(Boolean.FALSE)
             .build();
 
+    public static final Option<Boolean> HTTP_CLIENT_METRICS_HISTOGRAMS_ENABLED = new OptionBuilder<>("http-client-metrics-histograms-enabled", Boolean.class)
+          .category(OptionCategory.HTTP)
+          .description("Enables a histogram with default buckets for the duration of client HTTP requests.")
+          .defaultValue(Boolean.FALSE)
+          .build();
+
+    public static final Option<String> HTTP_CLIENT_METRICS_SLOS = new OptionBuilder<>("http-client-metrics-slos", String.class)
+          .category(OptionCategory.HTTP)
+          .description("Service level objectives for client HTTP requests. Use this instead of the default histogram, or use it in combination to add additional buckets. " +
+                "Specify a list of comma-separated values defined in milliseconds. Example with buckets from 5ms to 10s: 5,10,25,50,250,500,1000,2500,5000,10000")
+          .build();
 }

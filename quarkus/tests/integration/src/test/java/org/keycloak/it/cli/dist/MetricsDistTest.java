@@ -127,11 +127,12 @@ public class MetricsDistTest {
                 .body(not(containsString("vendor_statistics_miss_times_seconds_bucket")))
 
                 // Test HttpClient metrics http.client.
-                .body(containsString("TYPE http_client_pool_total_connections"))
-                .body(containsString("TYPE http_client_pool_total_pending"))
-                .body(containsString("TYPE http_client_pool_total_max"))
-                .body(containsString("TYPE http_client_pool_route_max_default"))
-                .body(containsString("TYPE http_client_request_seconds"));
+                .body(containsString("TYPE httpcomponents_httpclient_pool_total_connections"))
+                .body(containsString("TYPE httpcomponents_httpclient_pool_total_pending"))
+                .body(containsString("TYPE httpcomponents_httpclient_pool_total_max"))
+                .body(containsString("TYPE httpcomponents_httpclient_pool_route_max_default"))
+                .body(containsString("TYPE httpcomponents_httpclient_request_seconds"))
+                .body(not(containsString("TYPE httpcomponents_httpclient_request_seconds_bucket")));
 
         when().get("/health").then()
                 .statusCode(404);
@@ -156,16 +157,21 @@ public class MetricsDistTest {
               .body(containsString("TYPE http_server_requests_seconds summary"))
 
               // Test HttpClient metrics are not enabled
-              .body(not(containsString("TYPE http_client_pool_total_connections")))
-              .body(not(containsString("TYPE http_client_pool_total_pending")))
-              .body(not(containsString("TYPE http_client_pool_total_max")))
-              .body(not(containsString("TYPE http_client_pool_route_max_default")))
-              .body(not(containsString("TYPE http_client_request_seconds")));
+              .body(not(containsString("TYPE httpcomponents_httpclient_pool_total_connections")))
+              .body(not(containsString("TYPE httpcomponents_httpclient_pool_total_pending")))
+              .body(not(containsString("TYPE httpcomponents_httpclient_pool_total_max")))
+              .body(not(containsString("TYPE httpcomponents_httpclient_pool_route_max_default")))
+              .body(not(containsString("TYPE httpcomponents_httpclient_request_seconds")));
     }
 
     @Test
-    @Launch({ "start-dev", "--metrics-enabled=true", "--cache-metrics-histograms-enabled=true", "--http-metrics-slos=5,10,25,50,250,500", "--http-metrics-histograms-enabled=true" })
+    @Launch({ "start-dev", "--metrics-enabled=true", "--cache-metrics-histograms-enabled=true", "--http-metrics-slos=5,10,25,50,250,500", "--http-metrics-histograms-enabled=true", "--http-client-metrics-histograms-enabled=true", "--http-client-metrics-slos=5,10,25,50,250,500"})
+    @TestProvider(TestRealmResourceTestProvider.class)
     void testMetricsEndpointWithCacheMetricsHistograms() {
+        // Initialize a HttpClient to ensure that client metrics are registered
+        given().port(8080).when().get("/realms/master/test-resources/init-http-client")
+              .then().statusCode(204);
+
         when().get("/metrics").then()
                 .statusCode(200)
                 .body(containsString("vendor_statistics_miss_times_seconds_bucket"));
@@ -173,9 +179,10 @@ public class MetricsDistTest {
         // histograms are only available at the second request as they then contain the metrics of the first request
         when().get("/metrics").then()
                 .statusCode(200)
+                .body(containsString("httpcomponents_httpclient_request_seconds_bucket{method=\"GET\",outcome=\"SUCCESS\",status=\"200\",uri=\"\",le=\"0.001\"}"))
+                .body(containsString("httpcomponents_httpclient_request_seconds_bucket{method=\"GET\",outcome=\"SUCCESS\",status=\"200\",uri=\"\",le=\"0.005\"}"))
                 .body(containsString("http_server_requests_seconds_bucket{method=\"GET\",outcome=\"SUCCESS\",status=\"200\",uri=\"/metrics\",le=\"0.005\"}"))
                 .body(containsString("http_server_requests_seconds_bucket{method=\"GET\",outcome=\"SUCCESS\",status=\"200\",uri=\"/metrics\",le=\"0.005592405\"}"));
-
     }
 
     @Test

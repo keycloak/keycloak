@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.httpclient;
 
+import java.net.URI;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -25,6 +26,7 @@ import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -310,6 +312,17 @@ public class HttpClientBuilder {
 
                 builder.setRequestExecutor(
                       MicrometerHttpRequestExecutor.builder(Metrics.globalRegistry)
+                            .uriMapper(request -> {
+                                // Only include the scheme, host and port to prevent cardinality explosion
+                                URI uri = URI.create(request.getRequestLine().getUri());
+                                String scheme = Objects.requireNonNullElse(uri.getScheme(), "");
+                                String host = Objects.requireNonNullElse(uri.getHost(), "");
+                                StringBuilder sb = new StringBuilder(scheme).append(host);
+                                if (uri.getPort() != -1) {
+                                    sb.append(":").append(uri.getPort());
+                                }
+                                return sb.toString();
+                            })
                             .build()
                 );
             }

@@ -81,11 +81,19 @@ include::partials/histogram_note_http.adoc[]
 
 The metrics below helps to monitor the performance of the client used by the {project_name} server to make HTTP requests.
 
+Client metrics are enabled by default when `--metrics-enabled=true`, however you can disable them by specifying `--spi-connections-http-client-default-metrics-enabled=false`.
+
 |===
 |Metric |Description
 
-m| http_client_request_seconds
-| Duration of HttpClient request execution
+m| http_client_request_seconds_count
+| The total number HttpClient requests for a given URI
+
+m| http_client_request_seconds_max
+| Duration of the longest HttpClient request for a given URI
+
+m| http_client_request_seconds_sum
+| Duration of all HttpClient requests for a given URI
 
 m| http_client_pool_total_connections
 | The number of persistent and available connections for all routes
@@ -101,6 +109,13 @@ m| http_client_pool_route_max_default
 
 |===
 
+A `http_client_request_seconds` metric is recorded for each unique `uri`, however in order to prevent cardinality explosion
+we disregard a request's path and only include the schema, host and port.
+
+You can enable histograms for the `http_client_request_seconds` metric by setting `http-client-metrics-histograms-enabled`
+to `true`, and add additional buckets for service level objectives using the option `http-client-metrics-slos`.
+
+include::partials/histogram_note_http.adoc[]
 
 == Next steps
 
