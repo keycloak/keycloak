@@ -34,12 +34,6 @@ public class DefaultAdminApi implements AdminApi {
         this.realmAdminResource = realmsAdminResource.getRealmAdmin(realmName);
     }
 
-    @Path("clients")
-    @Override
-    public ClientsApi clientsDefault() {
-        return clients("v2");
-    }
-
     @Path("clients/{version:v\\d+}")
     @Override
     public ClientsApi clients(@PathParam("version") String version) {
