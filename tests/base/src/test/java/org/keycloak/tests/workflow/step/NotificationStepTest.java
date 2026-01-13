@@ -268,7 +268,7 @@ public class NotificationStepTest extends AbstractWorkflowTest {
                 .onEvent(USER_CREATED.name())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
-                                .withConfig("send_to", "admin@example.com")
+                                .withConfig("to", "admin@example.com")
                                 .withConfig("reason", "manual-review")
                                 .build(),
                         WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
