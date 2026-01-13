@@ -9,14 +9,15 @@ tileVisible="false" >
 == {project_name} upgrades
 
 In order to update to a new major or minor version of {project_name}, it is expected that the {project_name} deployment
-on each site is taken offline during the duration of the upgrade. Deploying different {project_name} major/minor versions
-on each of the sites is not supported. Neither site should be exposed to user requests via the load balancer until both
-{project_name} deployments have been upgraded and their {jdgserver_name} clusters synchronized.
+on each site is link:{links_high-availability_operate_site_offline_url}[taken offline] during the upgrade procedure.
+Deploying different {project_name} major/minor versions on each of the sites is not supported. Neither site should be
+exposed to user requests via the load balancer until both {project_name} deployments have been upgraded and their
+{jdgserver_name} clusters synchronized.
 
-Patch upgrades can be deployed with zero-downtime, using the `rolling-updates:v2` Feature. It is technically
+Patch upgrades can be deployed with zero-downtime, using the `rolling-updates:v2` feature. It is technically
 possible for upgrades to be rolled out to both sites simultaneously, however we recommend that upgrades be rolled out to one
-site at a time, i.e. all nodes in site A should be upgraded to the new {project_name} version before the upgrade is
-rolled out to nodes in site B.
+site at a time in order to simplify monitoring and debugging. For example, all nodes in site A should be upgraded to the
+new {project_name} version before the upgrade is rolled out to nodes in site B.
 
 See the <@links.operator id="rolling-updates" /> guide for more details on how to use the `rolling-updates:v2` Feature.
 
@@ -39,7 +40,7 @@ with zero-downtime, it is necessary for the upgrade to be applied as follows:
 
 1. Take site B offline
 2. Shutdown site B
-3. Perform an in-place upgrade of {jdgserver_name} on Site A and wait for it to complete
+3. Perform an in-place upgrade of {jdgserver_name} on site A and wait for it to complete
 4. Deploy the new {jdgserver_name} version to site B
 5. Bring site B online
 
