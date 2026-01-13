@@ -7,7 +7,6 @@ import org.keycloak.Keycloak;
 import org.keycloak.common.Version;
 import org.keycloak.it.utils.Maven;
 
-import io.quarkus.maven.dependency.Dependency;
 import org.eclipse.aether.artifact.Artifact;
 
 public class EmbeddedKeycloakServer implements KeycloakServer {
@@ -20,7 +19,7 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
         Keycloak.Builder builder = Keycloak.builder().setVersion(Version.VERSION);
         this.tlsEnabled = tlsEnabled;
 
-        for(Dependency dependency : keycloakServerConfigBuilder.toDependencies()) {
+        for(KeycloakDependency dependency : keycloakServerConfigBuilder.toDependencies()) {
             var version = Optional.ofNullable(Maven.getArtifact(dependency.getGroupId(), dependency.getArtifactId()))
                     .map(Artifact::getVersion)
                     .orElse("");

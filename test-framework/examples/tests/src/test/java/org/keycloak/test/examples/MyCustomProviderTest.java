@@ -46,7 +46,7 @@ public class MyCustomProviderTest {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.dependency("org.keycloak.testframework", "keycloak-test-framework-example-providers");
+            return config.dependency("org.keycloak.testframework", "keycloak-test-framework-example-providers", true);
         }
 
     }
