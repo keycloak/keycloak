@@ -98,7 +98,7 @@
     "file-saver": "^2.0.5",
     "flat": "^6.0.1",
     "i18next": "^25.7.3",
-    "i18next-fetch-backend": "^6.0.0",
+    "i18next-fetch-backend": "^7.0.0",
     "jszip": "^3.10.1",
     "keycloak-js": "^26.2.2",
     "lodash-es": "^4.17.22",
@@ -133,7 +133,7 @@
     "vite": "^7.3.0",
     "vite-plugin-checker": "^0.12.0",
     "vite-plugin-dts": "^4.5.4",
-    "vitest": "^3.2.4"
+    "vitest": "^4.0.16"
   },
   "author": {
     "name": "Red Hat, Inc.",

@@ -19,6 +19,8 @@ These are:
 Users with the `admin` role are superusers and have full access to manage any realm on the server.  Users with the `create-realm` role
 are allowed to create new realms.  They will be granted full access to any new realm they create.
 
+IMPORTANT: Admins with the `create-realm` role who do not have the `admin` role will also need the realm-specific `query-realms` role to be able to create and list realms in the Admin Console.
+
 ==== Realm specific roles
 
 Admin users within the `master` realm can be granted management privileges to one or more other realms in the system.

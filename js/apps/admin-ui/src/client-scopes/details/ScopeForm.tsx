@@ -29,6 +29,7 @@ import {
 import { convertAttributeNameToForm, convertToFormValues } from "../../util";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { toClientScopes } from "../routes/ClientScopes";
+import { removeEmptyOid4vcAttributes } from "./oid4vciAttributes";
 
 const OID4VC_PROTOCOL = "oid4vc";
 const VC_FORMAT_JWT_VC = "jwt_vc";
@@ -167,10 +168,19 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     convertToFormValues(clientScope ?? {}, setValue);
   }, [clientScope, setValue]);
 
+  /* Form-level validation handles correctness; here we only prune known optional
+     OID4VC fields when empty. If new attributes are added, extend
+     OID4VC_ATTRIBUTE_KEYS (and related validation) so they participate in cleanup. */
+  const onSubmit = (values: ClientScopeDefaultOptionalType) => {
+    const isOid4vc = values.protocol === OID4VC_PROTOCOL;
+    const cleaned = isOid4vc ? removeEmptyOid4vcAttributes(values) : values;
+    save(cleaned);
+  };
+
   return (
     <FormAccess
       role="manage-clients"
-      onSubmit={handleSubmit(save)}
+      onSubmit={handleSubmit(onSubmit)}
       isHorizontal
     >
       <FormProvider {...form}>
@@ -331,6 +341,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               labelIcon={t("credentialLifetimeHelp")}
               type="number"
               min={1}
+              defaultValue={
+                clientScope?.attributes?.["vc.expiry_in_seconds"] ?? "31536000"
+              }
             />
             <SelectControl
               id="kc-vc-format"

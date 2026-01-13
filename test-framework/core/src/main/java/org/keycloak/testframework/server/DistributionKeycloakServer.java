@@ -22,16 +22,24 @@ public class DistributionKeycloakServer implements KeycloakServer {
     private RawKeycloakDistribution keycloak;
 
     private final boolean debug;
+    private final long startTimeout;
     private boolean tlsEnabled = false;
 
-    public DistributionKeycloakServer(boolean debug) {
+    public DistributionKeycloakServer(boolean debug, long startTimeout) {
         this.debug = debug;
+        this.startTimeout = startTimeout;
     }
 
     @Override
     public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder, boolean tlsEnabled) {
         this.tlsEnabled = tlsEnabled;
-        keycloak = new RawKeycloakDistribution(false, MANUAL_STOP, false, RE_CREATE, REMOVE_BUILD_OPTIONS_AFTER_BUILD, REQUEST_PORT, new LoggingOutputConsumer());
+        keycloak = new RawKeycloakDistribution(false, MANUAL_STOP, false, RE_CREATE, REMOVE_BUILD_OPTIONS_AFTER_BUILD, REQUEST_PORT, new LoggingOutputConsumer())
+                .withThreadDump(false)
+                .withThrowErrorIfFailedToStart(true);
+
+        if (startTimeout > 0) {
+            keycloak.withStartTimeout(startTimeout);
+        }
 
         // RawKeycloakDistribution sets "DEBUG_SUSPEND", not "DEBUG" when debug is passed to constructor
         if (debug) {

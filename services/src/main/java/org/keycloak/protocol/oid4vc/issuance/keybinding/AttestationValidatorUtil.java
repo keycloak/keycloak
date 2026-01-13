@@ -320,7 +320,7 @@ public class AttestationValidatorUtil {
 
             for (String certBase64 : x5cList) {
                 // Use Keycloak's Base64 implementation for decoding x5c certificates
-                byte[] certBytes = Base64.getDecoder().decode(certBase64);
+                byte[] certBytes = Base64.getMimeDecoder().decode(certBase64);
                 try (InputStream in = new ByteArrayInputStream(certBytes)) {
                     certChain.add((X509Certificate) cf.generateCertificate(in));
                 }

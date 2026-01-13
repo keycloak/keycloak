@@ -97,6 +97,9 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private boolean inited = false;
     private final Map<String, String> envVars = new HashMap<>();
     private final OutputConsumer outputConsumer;
+    private long startTimeout = TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 120L));
+    private boolean throwErrorIfFailedToStart = false;
+    private boolean threadDump = true;
 
     public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild, int requestPort) {
         this(debug, manualStop, enableTls, reCreate, removeBuildOptionsAfterBuild, requestPort, new DefaultOutputConsumer());
@@ -111,6 +114,21 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         this.requestPort = requestPort;
         this.distPath = prepareDistribution();
         this.outputConsumer = outputConsumer;
+    }
+
+    public RawKeycloakDistribution withThrowErrorIfFailedToStart(boolean throwErrorIfFailedToStart) {
+        this.throwErrorIfFailedToStart = throwErrorIfFailedToStart;
+        return this;
+    }
+
+    public RawKeycloakDistribution withThreadDump(boolean threadDump) {
+        this.threadDump = threadDump;
+        return this;
+    }
+
+    public RawKeycloakDistribution withStartTimeout(long startTimeout) {
+        this.startTimeout = startTimeout;
+        return this;
     }
 
     public CLIResult kcadm(String... arguments) throws IOException {
@@ -351,7 +369,11 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             }
 
             if (!keycloak.isAlive()) {
-                return;
+                if (throwErrorIfFailedToStart) {
+                    throw new RuntimeException("Keycloak failed to start: process terminated");
+                } else {
+                    return;
+                }
             }
 
             try {
@@ -386,6 +408,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private void threadDump() {
+        if (!threadDump) {
+            return;
+        }
+
         if (Environment.isWindows()) {
             return;
         }
@@ -402,7 +428,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private long getStartTimeout() {
-        return TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 120L));
+        return startTimeout;
     }
 
     private HostnameVerifier createInsecureHostnameVerifier() {

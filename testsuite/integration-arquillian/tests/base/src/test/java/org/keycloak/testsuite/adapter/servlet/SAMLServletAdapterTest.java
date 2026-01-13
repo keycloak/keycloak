@@ -1502,7 +1502,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         Document doc = DocumentUtil.getDocument(new StringReader(xml));
         String certBase64 = DocumentUtil.getElement(doc, new QName("http://www.w3.org/2000/09/xmldsig#", "X509Certificate")).getTextContent();
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(certBase64)));
+        Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.getMimeDecoder().decode(certBase64)));
         PublicKey pubkey = cert.getPublicKey();
         Assert.assertTrue(AssertionUtil.isSignatureValid(doc.getDocumentElement(), pubkey));
 
