@@ -16,28 +16,10 @@
  */
 package org.keycloak.testsuite.actions;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
-
 import jakarta.mail.Address;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import jakarta.ws.rs.core.Response.Status;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -71,6 +53,23 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+import static org.keycloak.testsuite.util.oauth.OAuthClient.updateAppRootRealm;
+
 public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractRequiredActionUpdateEmailTest {
 
 	@Rule
@@ -92,12 +91,22 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 	@Override
 	public void configureTestRealm(RealmRepresentation testRealm) {
 		testRealm.setVerifyEmail(true);
+		
+		// Ensure APP_AUTH_ROOT points to test realm instead of master
+		updateAppRootRealm("test");
+		
+		// test-app client baseUrl should match expected APP_AUTH_ROOT
+		testRealm.getClients().stream()
+			.filter(client -> "test-app".equals(client.getClientId()))
+			.findFirst()
+			.ifPresent(client -> {
+				String authServerBaseUrl = getAuthServerContextRoot() + "/auth";
+				client.setBaseUrl(authServerBaseUrl + "/realms/test/app/auth");
+			});
 	}
 
 	@Override
 	protected void changeEmailUsingRequiredAction(String newEmail, boolean logoutOtherSessions, boolean newEmailAsUsername) throws Exception {
-		String redirectUri = OAuthClient.APP_ROOT + "/auth?nonce=" + UUID.randomUUID();
-		oauth.redirectUri(redirectUri);
 		loginPage.open();
 
 		loginPage.login("test-user@localhost", "password");
@@ -127,7 +136,9 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		assertEquals("The account email has been successfully updated to new@localhost.", infoPage.getInfo());
 		infoPage.clickBackToApplicationLink();
 		WaitUtils.waitForPageToLoad();
-		assertEquals(redirectUri, driver.getCurrentUrl());
+		// "Back to Application" uses client baseUrl instead of redirect URI
+		String expectedUrl = getAuthServerContextRoot() + "/auth/realms/test/app/auth";
+		assertEquals(expectedUrl, driver.getCurrentUrl());
 
         if (newEmailAsUsername) {
             user = ActionUtil.findUserWithAdminClient(adminClient, newEmail);
@@ -146,7 +157,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
 		OAuthClient oauth2 = oauth.newConfig().driver(driver2);
 		oauth2.doLogin("test-user@localhost", "password");
-		EventRepresentation event1 = events.expectLogin().assertEvent();
+		EventRepresentation event1 = events.expectLogin().detail(Details.REDIRECT_URI, getAuthServerContextRoot() + "/auth/realms/test/app/auth").assertEvent();
 		assertEquals(1, testUser.getUserSessions().size());
 
 		// add action and change email
