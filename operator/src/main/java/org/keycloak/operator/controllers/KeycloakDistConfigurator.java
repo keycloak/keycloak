@@ -42,6 +42,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TelemetrySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
@@ -70,6 +71,7 @@ public class KeycloakDistConfigurator {
         // register the configuration mappers for the various parts of the keycloak cr
         configureHostname();
         configureFeatures();
+        configureTelemetry();
         configureTracing();
         configureTransactions();
         configureHttp();
@@ -125,6 +127,14 @@ public class KeycloakDistConfigurator {
         optionMapper(keycloakCR -> keycloakCR.getSpec().getFeatureSpec())
                 .mapOptionFromCollection("features", FeatureSpec::getEnabledFeatures)
                 .mapOptionFromCollection("features-disabled", FeatureSpec::getDisabledFeatures);
+    }
+
+    void configureTelemetry() {
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getTelemetrySpec())
+                .mapOption("telemetry-endpoint", TelemetrySpec::getEndpoint)
+                .mapOption("telemetry-service-name", TelemetrySpec::getServiceName)
+                .mapOption("telemetry-protocol", TelemetrySpec::getProtocol)
+                .mapOption("telemetry-resource-attributes", TelemetrySpec::getResourceAttributesString);
     }
 
     void configureTracing() {

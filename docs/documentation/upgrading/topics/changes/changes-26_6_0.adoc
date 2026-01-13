@@ -44,7 +44,10 @@ Specific sensitive information is omitted from the HTTP Access log, such as the 
 
 The following sections provide details on deprecated features.
 
-=== <TODO>
+=== Deprecation of specific tracing properties in Keycloak CR
+
+The `tracing.serviceName`, and `tracing.resourceAttributes`, first-class citizens of the Keycloak CR, are now deprecated.
+You should use the new `telemetry.serviceName`, and `telemetry.resourceAttributes` first class citizens that are shared among all OpenTelemetry components - logs, metrics, and traces.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

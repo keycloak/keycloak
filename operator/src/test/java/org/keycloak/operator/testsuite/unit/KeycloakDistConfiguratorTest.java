@@ -169,6 +169,18 @@ public class KeycloakDistConfiguratorTest {
     }
 
     @Test
+    public void telemetry() {
+        final Map<String, String> expectedValues = Map.of(
+                "telemetry-endpoint", "http://my-telemetry:4317",
+                "telemetry-service-name", "my-best-keycloak-telemetry",
+                "telemetry-protocol", "http/protobuf",
+                "telemetry-resource-attributes", "service.namespace=keycloak-namespace-telemetry,service.name=custom-service-name-telemetry"
+        );
+
+        testFirstClassCitizen(expectedValues);
+    }
+
+    @Test
     public void tracing() {
         final Map<String, String> expectedValues = Map.of(
                 "tracing-enabled", "true",
