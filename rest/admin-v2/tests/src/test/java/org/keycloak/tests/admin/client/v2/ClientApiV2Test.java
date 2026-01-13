@@ -235,7 +235,7 @@ public class ClientApiV2Test {
     @Test
     public void getClientsMixedProtocols() throws Exception {
         // Create an OIDC client with OIDC-specific fields
-        HttpPost oidcRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
+        HttpPost oidcRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN);
         setAuthHeader(oidcRequest);
         oidcRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -254,7 +254,7 @@ public class ClientApiV2Test {
         }
 
         // Create a SAML client with SAML-specific fields
-        HttpPost samlRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
+        HttpPost samlRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN);
         setAuthHeader(samlRequest);
         samlRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -276,7 +276,7 @@ public class ClientApiV2Test {
         }
 
         // Get all clients - this should work with mixed protocols
-        HttpGet getRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
+        HttpGet getRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN);
         setAuthHeader(getRequest);
 
         try (var response = client.execute(getRequest)) {
@@ -312,7 +312,7 @@ public class ClientApiV2Test {
         }
 
         // Get individual OIDC client and verify OIDC-specific fields
-        HttpGet getOidcRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/mixed-test-oidc");
+        HttpGet getOidcRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/mixed-test-oidc");
         setAuthHeader(getOidcRequest);
 
         try (var response = client.execute(getOidcRequest)) {
@@ -325,7 +325,7 @@ public class ClientApiV2Test {
         }
 
         // Get individual SAML client and verify SAML-specific fields
-        HttpGet getSamlRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/mixed-test-saml");
+        HttpGet getSamlRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/mixed-test-saml");
         setAuthHeader(getSamlRequest);
 
         try (var response = client.execute(getSamlRequest)) {
@@ -342,13 +342,13 @@ public class ClientApiV2Test {
         }
 
         // Cleanup
-        HttpDelete deleteOidc = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/mixed-test-oidc");
+        HttpDelete deleteOidc = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/mixed-test-oidc");
         setAuthHeader(deleteOidc);
         try (var response = client.execute(deleteOidc)) {
             assertEquals(204, response.getStatusLine().getStatusCode());
         }
 
-        HttpDelete deleteSaml = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/mixed-test-saml");
+        HttpDelete deleteSaml = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/mixed-test-saml");
         setAuthHeader(deleteSaml);
         try (var response = client.execute(deleteSaml)) {
             assertEquals(204, response.getStatusLine().getStatusCode());
@@ -584,14 +584,14 @@ public class ClientApiV2Test {
         HttpGet request = new HttpGet(ADMIN_API_URL + "/clients");
         setAuthHeader(request);
         try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(405)); // 405 for now due to the preflight check (needs to be fixed)
+            assertThat(response.getStatusLine().getStatusCode(), is(200));
         }
 
         // v2 specified
         request = new HttpGet(ADMIN_API_URL + "/clients/v2");
         setAuthHeader(request);
         try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(400)); // should be 200, but there's a bug that will be done in a follow-up
+            assertThat(response.getStatusLine().getStatusCode(), is(200));
             EntityUtils.consumeQuietly(response.getEntity());
         }
 
@@ -606,7 +606,7 @@ public class ClientApiV2Test {
         request = new HttpGet(ADMIN_API_URL + "/clients/4");
         setAuthHeader(request);
         try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(405)); // 405 for now due to the preflight check (needs to be fixed)
+            assertThat(response.getStatusLine().getStatusCode(), is(404));
         }
     }
 
