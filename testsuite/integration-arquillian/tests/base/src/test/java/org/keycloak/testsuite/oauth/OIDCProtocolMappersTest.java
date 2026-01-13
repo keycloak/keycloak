@@ -215,13 +215,13 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             ProtocolMapperRepresentation addressMapper = createAddressMapper(true, true, true, true);
             ProtocolMapperRepresentation addressTypeMapper = createClaimMapper("additional-address-field",
-                                                                               "address_type",
-                                                                               "address.type",
-                                                                               "String",
-                                                                               true,
-                                                                               true,
-                                                                               true,
-                                                                               false);
+                    "address_type",
+                    "address.type",
+                    "String",
+                    true,
+                    true,
+                    true,
+                    false);
 
 
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
@@ -276,13 +276,13 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             userResource.update(user);
 
             ProtocolMapperRepresentation addressTypeMapper = createClaimMapper("additional-address-field",
-                                                                               "address_type",
-                                                                               "address.type",
-                                                                               "String",
-                                                                               true,
-                                                                               true,
-                                                                               true,
-                                                                               false);
+                    "address_type",
+                    "address.type",
+                    "String",
+                    true,
+                    true,
+                    true,
+                    false);
             ProtocolMapperRepresentation addressMapper = createAddressMapper(true, true, true, true);
 
 
@@ -331,13 +331,13 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             userResource.update(user);
 
             ProtocolMapperRepresentation addressTypeMapper = createClaimMapper("additional-address-field",
-                                                                               "address_type",
-                                                                               "address.type",
-                                                                               "String",
-                                                                               true,
-                                                                               true,
-                                                                               true,
-                                                                               false);
+                    "address_type",
+                    "address.type",
+                    "String",
+                    true,
+                    true,
+                    true,
+                    false);
             ProtocolMapperRepresentation addressMapper = createAddressMapper(true, true, true, true);
 
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
@@ -525,7 +525,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
                         || model.getName().equals("hard-app")
                         || model.getName().equals("test-script-mapper")
                         || model.getName().equals("json-attribute-mapper")
-                        ) {
+                ) {
                     app.getProtocolMappers().delete(model.getId());
                 }
             }
@@ -746,7 +746,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             for (ProtocolMapperRepresentation model : clientRepresentation.getProtocolMappers()) {
                 if (model.getName().equals("empty")
                         || model.getName().equals("null")
-                        ) {
+                ) {
                     app.getProtocolMappers().delete(model.getId());
                 }
             }
@@ -1044,17 +1044,17 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
         List<String> testAppMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(realmRoleMappings,
-          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
-          "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
-          "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.sample-realm-role"          // from realm role realm-composite-role
+                "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+                "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
+                "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.sample-realm-role"          // from realm role realm-composite-role
         );
         assertRolesString(testAppMappings,
-          "ta.customer-user",                  // from direct assignment to /roleRichGroup/level2group
-          "ta.customer-admin-composite-role",  // from direct assignment to /roleRichGroup/level2group
-          "ta.customer-admin",                 // from client role customer-admin-composite-role - client role for test-app
-          "ta.sample-client-role"              // from realm role realm-composite-role - client role for test-app
+                "ta.customer-user",                  // from direct assignment to /roleRichGroup/level2group
+                "ta.customer-admin-composite-role",  // from direct assignment to /roleRichGroup/level2group
+                "ta.customer-admin",                 // from client role customer-admin-composite-role - client role for test-app
+                "ta.sample-client-role"              // from realm role realm-composite-role - client role for test-app
         );
 
         // Revert
@@ -1089,11 +1089,11 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
         List<String> testAppAuthzMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(realmRoleMappings,
-          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
-          "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
-          "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.sample-realm-role"          // from realm role realm-composite-role
+                "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+                "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
+                "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.sample-realm-role"          // from realm role realm-composite-role
         );
         assertNull(testAppAuthzMappings);  // There is no client role defined for test-app-authz
 
@@ -1122,12 +1122,12 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
         List<String> testAppScopeMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(realmRoleMappings,
-          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
-          "pref.user",                       // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.customer-user-premium"
+                "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+                "pref.user",                       // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.customer-user-premium"
         );
         assertRolesString(testAppScopeMappings,
-          "test-app-allowed-by-scope",       // from direct assignment to roleRichUser, present as scope allows it
+                "test-app-allowed-by-scope",       // from direct assignment to roleRichUser, present as scope allows it
                 "test-app-disallowed-by-scope"
         );
 
@@ -1156,15 +1156,15 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
         List<String> testAppScopeMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(realmRoleMappings,
-          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
-          "pref.user",  // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.customer-user-premium"
+                "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+                "pref.user",  // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.customer-user-premium"
         );
         assertRolesString(testAppScopeMappings,
-          "test-app-allowed-by-scope",      // from direct assignment to roleRichUser, present as scope allows it
-          "test-app-disallowed-by-scope",   // from direct assignment to /roleRichGroup/level2group, present as scope allows it
-          "customer-admin-composite-role",  // from the other application
-          "customer-admin"
+                "test-app-allowed-by-scope",      // from direct assignment to roleRichUser, present as scope allows it
+                "test-app-disallowed-by-scope",   // from direct assignment to /roleRichGroup/level2group, present as scope allows it
+                "customer-admin-composite-role",  // from the other application
+                "customer-admin"
         );
 
         // Revert
