@@ -27,7 +27,9 @@ import java.util.logging.LogRecord;
 import java.util.regex.Pattern;
 
 import org.keycloak.common.util.MultiSiteUtils;
+import org.keycloak.config.LoggingOptions;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.quarkus.bootstrap.logging.InitialConfigurator;
 import io.quarkus.logging.LoggingFilter;
@@ -36,8 +38,7 @@ import org.infinispan.commons.jdkspecific.ThreadCreator;
 /**
  * @author Alexander Schwartz
  */
-@LoggingFilter(name = "keycloak-filter")
-public final class KeycloakLogFilter implements Filter {
+public abstract class KeycloakLogFilter implements Filter {
 
     // avoid logging ISPN000312 for sessions, offlineSessions, clientSessions and offlineClientSessions caches only.
     private static final Pattern ISPN000312_PATTERN = Pattern.compile(
@@ -49,12 +50,22 @@ public final class KeycloakLogFilter implements Filter {
 
     public KeycloakLogFilter() {
         // The class ThreadCreator needs to be called and initialized here as when we do this in isLoggable() we'll have a recursive logging
-        if (ThreadCreator.useVirtualThreads()) {
+        if (ThreadCreator.useVirtualThreads() && isHandlerEnabled() && !isAsyncLoggingEnabled()) {
             executor = Executors.newSingleThreadExecutor();
         } else {
             executor = null;
         }
     }
+
+    /**
+     * Whether the logging is enabled for specific handler
+     */
+    public abstract boolean isHandlerEnabled();
+
+    /**
+     * Whether the async logging is enabled for specific handler
+     */
+    public abstract boolean isAsyncLoggingEnabled();
 
     @Override
     public boolean isLoggable(LogRecord record) {
@@ -73,7 +84,7 @@ public final class KeycloakLogFilter implements Filter {
             }
         }
 
-        if (ThreadCreator.isVirtual(Thread.currentThread())) {
+        if (executor != null && ThreadCreator.isVirtual(Thread.currentThread())) {
             executor.submit(new RecordLogger(record));
             return false;
         }
@@ -90,4 +101,42 @@ public final class KeycloakLogFilter implements Filter {
         }
     }
 
+    @LoggingFilter(name = "keycloak-filter-console")
+    private static final class KeycloakConsoleLogFilter extends KeycloakLogFilter {
+        @Override
+        public boolean isHandlerEnabled() {
+            return Configuration.isTrue(LoggingOptions.LOG_CONSOLE_ENABLED);
+        }
+
+        @Override
+        public boolean isAsyncLoggingEnabled() {
+            return Configuration.isTrue(LoggingOptions.LOG_CONSOLE_ASYNC);
+        }
+    }
+
+    @LoggingFilter(name = "keycloak-filter-file")
+    private static final class KeycloakFileLogFilter extends KeycloakLogFilter {
+        @Override
+        public boolean isHandlerEnabled() {
+            return Configuration.isTrue(LoggingOptions.LOG_FILE_ENABLED);
+        }
+
+        @Override
+        public boolean isAsyncLoggingEnabled() {
+            return Configuration.isTrue(LoggingOptions.LOG_FILE_ASYNC);
+        }
+    }
+
+    @LoggingFilter(name = "keycloak-filter-syslog")
+    private static final class KeycloakSyslogLogFilter extends KeycloakLogFilter {
+        @Override
+        public boolean isHandlerEnabled() {
+            return Configuration.isTrue(LoggingOptions.LOG_SYSLOG_ENABLED);
+        }
+
+        @Override
+        public boolean isAsyncLoggingEnabled() {
+            return Configuration.isTrue(LoggingOptions.LOG_SYSLOG_ASYNC);
+        }
+    }
 }
