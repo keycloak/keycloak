@@ -18,6 +18,7 @@ import org.keycloak.models.workflow.conditions.IdentityProviderWorkflowCondition
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.workflows.StepExecutionStatus;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStateRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
@@ -310,14 +311,18 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
 
     }
 
-    private void assertScheduledWorkflows(String resourceId, String nextScheduledStep, int expectedSteps) {
+    private void assertScheduledWorkflows(String resourceId, String nextScheduledStep, int expectedScheduledSteps) {
         List<WorkflowRepresentation> scheduledWorkflows = consumerRealm.admin().workflows().getScheduledWorkflows(resourceId);
         assertThat(scheduledWorkflows, hasSize(1));
         WorkflowRepresentation scheduledWorkflow = scheduledWorkflows.get(0);
         assertThat(scheduledWorkflow.getName(), is("myworkflow"));
-        assertThat(scheduledWorkflow.getSteps(), hasSize(expectedSteps));
+
+        // get only the steps that are still pending - the expected scheduled steps
+        List<WorkflowStepRepresentation> steps = scheduledWorkflow.getSteps().stream()
+                .filter(step -> StepExecutionStatus.PENDING.equals(step.getExecutionStatus())).toList();
+        assertThat(steps, hasSize(expectedScheduledSteps));
         if (nextScheduledStep != null) {
-            assertThat(scheduledWorkflow.getSteps().get(0).getUses(), is(nextScheduledStep));
+            assertThat(steps.get(0).getUses(), is(nextScheduledStep));
         }
     }
 
