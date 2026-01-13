@@ -1437,6 +1437,7 @@ public class ModelToRepresentation {
         OrganizationDomainRepresentation representation = new OrganizationDomainRepresentation();
         representation.setName(model.getName());
         representation.setVerified(model.isVerified());
+        representation.setMatchSubdomains(model.isMatchSubdomains());
         return representation;
     }
 }

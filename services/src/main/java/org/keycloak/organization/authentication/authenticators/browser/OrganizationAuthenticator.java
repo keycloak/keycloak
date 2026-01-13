@@ -294,11 +294,28 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return true;
         }
 
-        // look for an idp that can match any of the org domains (including wildcards)
+        // look for an idp that can match any of the org domains
         idp = organization.getIdentityProviders().filter(IdentityProviderRedirectMode.EMAIL_MATCH::isSet)
                 .filter(broker -> ANY_DOMAIN.equals(broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE)))
-                .filter(broker -> organization.getDomains().anyMatch(orgDomain -> Organizations.domainMatches(domain, orgDomain)))
+                .filter(broker -> organization.getDomains().map(OrganizationDomainModel::getName).anyMatch(domain::equals))
                 .findFirst().orElse(null);
+
+        if (idp == null) {
+            idp = organization.getIdentityProviders().filter(IdentityProviderRedirectMode.EMAIL_MATCH::isSet)
+                    .filter(broker -> {
+                        String brokerDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+
+                        if (ANY_DOMAIN.equals(brokerDomain)) {
+                            return organization.getDomains()
+                                    .anyMatch(orgDomain -> Organizations.domainMatches(domain, orgDomain));
+                        }
+
+                        return organization.getDomains()
+                                .filter((d) -> d.getName().equals(brokerDomain))
+                                .anyMatch(orgDomain -> Organizations.domainMatches(domain, orgDomain));
+                    })
+                    .findFirst().orElse(null);
+        }
 
         if (idp != null) {
             redirect(context, idp.getAlias(), username);

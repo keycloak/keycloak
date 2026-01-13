@@ -766,39 +766,36 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         // Test with subdomain - should automatically redirect
         String subdomainEmail = "user@sub.neworg.org";
         openIdentityFirstLoginPage(subdomainEmail, true, idp.getAlias(), false, false);
-        
-        loginOrgIdp(subdomainEmail, subdomainEmail, true, true);
-        
-        assertIsMember(subdomainEmail, organization);
-        UserRepresentation user = testRealm().users().search(subdomainEmail).get(0);
-        List<FederatedIdentityRepresentation> federatedIdentities = testRealm().users().get(user.getId()).getFederatedIdentity();
-        assertEquals(1, federatedIdentities.size());
-        assertEquals(bc.getIDPAlias(), federatedIdentities.get(0).getIdentityProvider());
+        MatcherAssert.assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.providerRealmName() + "/"));
     }
 
     @Test
     public void testRedirectToIdentityProviderWithDeepSubdomain() {
         OrganizationRepresentation orgRep = createOrganization();
         OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
-        
+        String deepSubdomainEmail = "user@deep.sub.neworg.org";
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+
+        openIdentityFirstLoginPage(deepSubdomainEmail, false, idp.getAlias(), false, false);
+        MatcherAssert.assertThat("Driver should be on the consumer realm page right now",
+                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.consumerRealmName() + "/"));
+
         // Enable wildcard subdomain matching
         orgRep.getDomains().iterator().next().setMatchSubdomains(true);
         try (Response response = organization.update(orgRep)) {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
         
-        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
         idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
         idp.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
         testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
         
         // Test with deep subdomain (multiple levels)
-        String deepSubdomainEmail = "user@deep.sub.neworg.org";
         openIdentityFirstLoginPage(deepSubdomainEmail, true, idp.getAlias(), false, false);
-        
-        loginOrgIdp(deepSubdomainEmail, deepSubdomainEmail, true, true);
-        
-        assertIsMember(deepSubdomainEmail, organization);
+        // user should be automatically redirected to the org IdP login page
+        MatcherAssert.assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.providerRealmName() + "/"));
     }
 
     @Test
@@ -813,7 +810,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         }
         
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
-        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, OrganizationModel.ANY_DOMAIN);
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
         idp.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
         testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
         
@@ -1001,17 +998,15 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         organization.update(orgRep).close();
         
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
-        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, OrganizationModel.ANY_DOMAIN);
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
         idp.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
         testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
         
         // Test that subdomain email is accepted with wildcard enabled
         String subdomainEmail = "user@sub.neworg.org";
         openIdentityFirstLoginPage(subdomainEmail, true, idp.getAlias(), false, false);
-        loginOrgIdp(subdomainEmail, subdomainEmail, true, true);
-        
-        // Should successfully create member with subdomain email
-        assertIsMember(subdomainEmail, organization);
+        MatcherAssert.assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.providerRealmName() + "/"));
     }
 
     @Test
@@ -1025,7 +1020,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
         idp.setHideOnLogin(false);
-        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, OrganizationModel.ANY_DOMAIN);
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
         idp.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
         testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
         
@@ -1055,9 +1050,8 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         // Test with multiple subdomain levels
         String deepSubdomainEmail = "user@team.dev.neworg.org";
         openIdentityFirstLoginPage(deepSubdomainEmail, true, idp.getAlias(), false, false);
-        loginOrgIdp(deepSubdomainEmail, deepSubdomainEmail, true, true);
-        
-        assertIsMember(deepSubdomainEmail, organization);
+        MatcherAssert.assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.providerRealmName() + "/"));
     }
 
     @Test

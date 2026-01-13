@@ -286,7 +286,7 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         }
         OrganizationModel orgModel = provider.getByDomainName(domainName);
         if (orgModel != null && !Objects.equals(getId(), orgModel.getId())) {
-            throw new ModelValidationException("Domain " + domainName + " is already linked to another organization in realm " + realm.getName());
+            throw new ModelValidationException("Domain " + domainName + " is already linked to organization " + orgModel.getName() + " in realm " + realm.getName());
         }
         return domainModel;
     }
