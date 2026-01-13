@@ -62,14 +62,14 @@ public class NotifyUserStepProvider implements WorkflowStepProvider {
             emailProvider.setUser(user);
         }
 
-        String sendTo = stepModel.getConfig().getFirst("send_to");
+        String targetEmail = stepModel.getConfig().getFirst("to");
 
-        if (sendTo != null && !sendTo.trim().isEmpty()) {
+        if (targetEmail != null && !targetEmail.trim().isEmpty()) {
             try {
-                emailProvider.send(subjectKey, bodyTemplate, bodyAttributes, sendTo);
-                log.debugv("Notification email sent to {0}", sendTo);
+                emailProvider.send(subjectKey, bodyTemplate, bodyAttributes, targetEmail);
+                log.debugv("Notification email sent to {0}", targetEmail);
             } catch (EmailException e) {
-                log.errorv(e, "Failed to send notification email to {0}", sendTo);
+                log.errorv(e, "Failed to send notification email to {0}", targetEmail);
             }
         } else if (user != null && user.getEmail() != null) {
             try {

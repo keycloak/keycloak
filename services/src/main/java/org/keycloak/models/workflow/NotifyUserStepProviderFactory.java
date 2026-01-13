@@ -80,7 +80,7 @@ public class NotifyUserStepProviderFactory implements WorkflowStepProviderFactor
                 "Override default message with custom text (optional)", 
                 ProviderConfigProperty.TEXT_TYPE, ""),
 
-            new ProviderConfigProperty("send_to", "Send To", 
+            new ProviderConfigProperty("to", "Target Email",
                 "Send the email to this address instead of the workflow user (optional)", 
                 ProviderConfigProperty.STRING_TYPE, "")
         );
