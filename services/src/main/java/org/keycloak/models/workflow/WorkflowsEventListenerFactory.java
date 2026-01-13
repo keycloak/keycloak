@@ -21,6 +21,7 @@ import java.time.Duration;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.DurationConverter;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
@@ -48,7 +49,8 @@ public class WorkflowsEventListenerFactory implements EventListenerProviderFacto
 
     @Override
     public void init(Scope config) {
-        stepRunnerTaskInterval = config.getLong("stepRunnerTaskInterval", DEFAULT_STEP_RUNNER_TASK_INTERVAL);
+        String taskIntervalStr = config.get("stepRunnerTaskInterval");
+        this.stepRunnerTaskInterval = taskIntervalStr == null ? DEFAULT_STEP_RUNNER_TASK_INTERVAL : DurationConverter.parseDuration(taskIntervalStr).toMillis();
     }
 
     @Override
