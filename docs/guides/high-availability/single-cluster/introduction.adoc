@@ -34,7 +34,7 @@ We regularly test {project_name} with the following configuration:
 using ROSA HCP.
 
 ** At least one worker node for each availability-zone
-** OpenShift version 4.17.
+** OpenShift version 4.18.
 
 * Amazon Aurora PostgreSQL database
 ** High availability with a primary DB instance in one availability zone, and synchronously replicated readers in the other availability zones

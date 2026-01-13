@@ -38,7 +38,7 @@ We regularly test {project_name} with the following configuration:
 using ROSA HCP.
 
 ** All worker nodes reside in a single Availability Zone.
-** OpenShift version 4.17.
+** OpenShift version 4.18.
 
 * Amazon Aurora PostgreSQL database
 ** High availability with a primary DB instance in one availability zone, and a synchronously replicated reader in the second availability zone
@@ -60,7 +60,7 @@ either ROSA HCP or ROSA classic.
 ** Each {kubernetes} cluster has all its workers in a single Availability Zone.
 <@profile.ifProduct>
 ** OpenShift version
-4.17 (or later).
+4.18 (or later).
 </@profile.ifProduct>
 <@profile.ifCommunity>
 ** Kubernetes version 1.30
