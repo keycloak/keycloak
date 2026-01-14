@@ -1,0 +1,9 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+= HTTP access logs in a dedicated file
+
+HTTP access logs can now be written to a dedicated file, separate from the server logs.
+This makes it easier to process and archive access logs independently for security auditing and compliance monitoring.
+
+For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
