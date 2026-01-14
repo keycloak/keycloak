@@ -60,6 +60,8 @@ The Identity Provider (both types commented in the introduction) needs to also b
   * **Allowed clock skew**: Clock skew in seconds that is tolerated when validating identity provider tokens. Default value is zero.
   * **Limit access token expiration**: If enabled the access token lifespan will be limited to the expiration of the JWT assertion but only if the JWT assertion expiration is less than the calculated access token expiration.
 
+NOTE: The OpenID Connect Identity Provider types have one extra configuration switch **Allows Client ID as audience for assertions**, placed in the **Advance settings** section. This option, when enabled, sets the the Client ID of the provider configuration as the only valid audience for assertions used in Federated client authentication and in JWT Authorization Grants. The client ID is used instead of the token-url/issuer-url defined in the respective specifications. This behavior is not covered by any standard.
+
 .OIDC Identity Provider configuration for JWT Authorization Grant
 image::jwt-authorization-grant-oidc-provider-config.png[Identity Provider configuration for JWT Authorization Grant]
 
