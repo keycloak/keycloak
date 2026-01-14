@@ -131,10 +131,6 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         for (var dependency : configBuilder.toDependencies()) {
             container.copyProvider(dependency.getGroupId(), dependency.getArtifactId());
         }
-
-        for(var config : configBuilder.toConfigFiles()) {
-            container.copyConfigFile(config);
-        }
     }
 
     @Override
