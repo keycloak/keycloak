@@ -155,6 +155,14 @@ export const LinkIdentityProviderModal = ({
           />
           <DefaultSwitchControl
             name={convertAttributeNameToForm(
+              "config.kc.org.broker.login.hide-when-org-unknown",
+            )}
+            label={t("hideOnLoginWhenOrgNotResolved")}
+            labelIcon={t("hideOnLoginWhenOrgNotResolvedHelp")}
+            stringify
+          />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm(
               "config.kc.org.broker.redirect.mode.email-matches",
             )}
             label={t("redirectWhenEmailMatches")}
