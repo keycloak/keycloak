@@ -72,7 +72,9 @@ import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.core.JsonParser;
 import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Before;
@@ -198,6 +200,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
     @Test
     public void testAddressMappingWithAdditionalMapper() {
+        //throws an exception if the json contains a duplicate claim
+        JsonSerialization.mapper.enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
         // prepare test
         {
             UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
@@ -256,6 +260,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         }
 
         events.clear();
+        JsonSerialization.mapper.disable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
     }
 
     @Test
