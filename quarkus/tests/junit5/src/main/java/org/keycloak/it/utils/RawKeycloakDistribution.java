@@ -49,7 +49,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import javax.net.ssl.HostnameVerifier;
@@ -499,7 +498,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private Path inDistZipDirectory(File distFile) throws Exception{
-        Supplier<RuntimeException> noDirectories = () -> new RuntimeException(String.format("ZIP file %s doesn't contain any directories", distPath));
+      
         try (ZipFile zipFile = new ZipFile(distFile)) {
             Optional<? extends ZipEntry> e = zipFile.stream().filter(ZipEntry::isDirectory).findFirst();
             if (e.isPresent()) {
@@ -510,7 +509,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 return Path.of(dirName);
             }
         };
-        throw noDirectories.get();
+        throw new RuntimeException(String.format("ZIP file '%s' doesn't contain any directories", distPath));
     }
 
     private Path prepareDistribution() {
