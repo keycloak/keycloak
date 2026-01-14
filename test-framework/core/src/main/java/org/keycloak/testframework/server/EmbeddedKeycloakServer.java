@@ -1,21 +1,15 @@
 package org.keycloak.testframework.server;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
 import org.keycloak.Keycloak;
 import org.keycloak.common.Version;
-import org.keycloak.platform.Platform;
 
 import io.quarkus.maven.dependency.Dependency;
 
 public class EmbeddedKeycloakServer implements KeycloakServer {
 
     private Keycloak keycloak;
-    private Path homeDir;
     private boolean tlsEnabled = false;
 
     @Override
@@ -27,29 +21,6 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
             builder.addDependency(dependency.getGroupId(), dependency.getArtifactId(), "");
         }
 
-        Set<Path> configFiles = keycloakServerConfigBuilder.toConfigFiles();
-        if (!configFiles.isEmpty()) {
-            if (homeDir == null) {
-                homeDir = Platform.getPlatform().getTmpDirectory().toPath();
-            }
-
-            Path conf = homeDir.resolve("conf");
-
-            if (!conf.toFile().exists()) {
-                conf.toFile().mkdirs();
-            }
-
-            for (Path configFile : configFiles) {
-                try {
-                    Files.copy(configFile, conf.resolve(configFile.getFileName()));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-        }
-
-        builder.setHomeDir(homeDir);
         keycloak = builder.start(keycloakServerConfigBuilder.toArgs());
     }
 
