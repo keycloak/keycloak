@@ -372,17 +372,13 @@ HTTP Access log:
 --http-access-log-masked-cookies <cookies>
                      Set of HTTP Cookie headers whose values must be masked when the 'long' pattern
                        or '%{ALL_REQUEST_HEADERS}' format is enabled with the
-                       'http-access-log-pattern' option. The default values are always present, so
-                       you can only append what cookies will be masked. Default: AUTH_SESSION_ID,
-                       KC_AUTH_SESSION_HASH,KEYCLOAK_IDENTITY,KEYCLOAK_SESSION,
-                       AUTH_SESSION_ID_LEGACY,KEYCLOAK_IDENTITY_LEGACY,KEYCLOAK_SESSION_LEGACY.
-                       Available only when HTTP Access log is enabled.
+                       'http-access-log-pattern' option. Selected security sensitive cookies are
+                       always masked. Available only when HTTP Access log is enabled.
 --http-access-log-masked-headers <headers>
                      Set of HTTP headers whose values must be masked when the 'long' pattern or '%
                        {ALL_REQUEST_HEADERS}' format is enabled with the 'http-access-log-pattern'
-                       option. The default values are always present, so you can only append what
-                       headers will be masked. Default: Authorization. Available only when HTTP
-                       Access log is enabled.
+                       option. Selected security sensitive headers are always masked. Available
+                       only when HTTP Access log is enabled.
 --http-access-log-pattern <pattern>
                      The HTTP access log pattern. You can use the available named formats, or use
                        custom format described in Quarkus documentation. Possible values are:
