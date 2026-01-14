@@ -1,17 +1,16 @@
 package org.keycloak.services.x509;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.DerUtils;
 import org.keycloak.http.HttpRequest;
 
@@ -168,8 +167,8 @@ public class Rfc9440ClientCertificateLookup implements X509ClientCertificateLook
 
         byte[] certificateBytes;
         try {
-            certificateBytes = Base64.decode(base64EncodedByteSequence);
-        } catch (IOException e) {
+            certificateBytes = Base64.getMimeDecoder().decode(base64EncodedByteSequence);
+        } catch (IllegalArgumentException e) {
             throw new Rfc9440ViolationException("2.1", "value does not contain base64 encoded content", e);
         }
 

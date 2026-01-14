@@ -99,7 +99,7 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
 
     private int keySize(PasswordCredentialModel credential) {
         try {
-            byte[] bytes = Base64.getDecoder().decode(credential.getPasswordSecretData().getValue());
+            byte[] bytes = Base64.getMimeDecoder().decode(credential.getPasswordSecretData().getValue());
             return bytes.length * 8;
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Credential could not be decoded", e);

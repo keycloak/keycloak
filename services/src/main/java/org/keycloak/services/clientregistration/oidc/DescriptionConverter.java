@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -152,7 +151,7 @@ public class DescriptionConverter {
             if (clientAuthFactory == null) {
                 throw new ClientRegistrationException("Not found clientAuthenticator for requested token_endpoint_auth_method");
             }
-            client.setClientAuthenticatorType(clientAuthFactory.getId());
+            clientAuthFactory.setClientAuthenticationMethod(client, authMethod);
         }
 
         boolean publicKeySet = setPublicKey(clientOIDC, client);
@@ -357,9 +356,9 @@ public class DescriptionConverter {
             response.setTokenEndpointAuthMethod("none");
         } else {
             ClientAuthenticatorFactory clientAuth = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, client.getClientAuthenticatorType());
-            Set<String> oidcClientAuthMethods = clientAuth.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL);
-            if (oidcClientAuthMethods != null && !oidcClientAuthMethods.isEmpty()) {
-                response.setTokenEndpointAuthMethod(oidcClientAuthMethods.iterator().next());
+            String oidcClientAuthMethod = clientAuth.getProtocolAuthenticatorMethod(client);
+            if (oidcClientAuthMethod != null) {
+                response.setTokenEndpointAuthMethod(oidcClientAuthMethod);
             }
 
             if (clientAuth.supportsSecret()) {

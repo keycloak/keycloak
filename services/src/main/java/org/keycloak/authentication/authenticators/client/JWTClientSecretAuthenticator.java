@@ -55,6 +55,8 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
+        context.attempted();
+
         try {
             ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
             JsonWebToken jwt = clientAssertionState.getToken();

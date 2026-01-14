@@ -219,6 +219,14 @@
             --add-opens=java.base/java.util=ALL-UNNAMED
         </surefire.system.args>
 
+        <!-- Testframework Settings -->
+        <testframework.surefire.args>
+            -XX:+ExitOnOutOfMemoryError
+            -XX:+HeapDumpOnOutOfMemoryError
+            -Djava.util.logging.manager=org.jboss.logmanager.LogManager
+            -Djava.util.concurrent.ForkJoinPool.common.threadFactory=io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory
+        </testframework.surefire.args>
+
         <!-- webauthn support -->
         <webauthn4j.version>0.29.3.RELEASE</webauthn4j.version>
         <org.apache.kerby.kerby-asn1.version>2.0.3</org.apache.kerby.kerby-asn1.version>
