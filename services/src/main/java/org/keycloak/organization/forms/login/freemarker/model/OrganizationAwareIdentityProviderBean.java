@@ -33,6 +33,8 @@ import static org.keycloak.models.IdentityProviderStorageProvider.FetchMode.REAL
 
 public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean {
 
+    private static final String ORGANIZATIONS_SHOW_ALL_IDPS_WHEN_NO_ORG_ATTR = "organizations.login.showAllEnabledIdpsWhenNoOrg";
+
     private final OrganizationModel organization;
     private final boolean onlyRealmBrokers;
     private final boolean onlyOrganizationBrokers;
@@ -70,11 +72,16 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
                         .map(idp -> createIdentityProvider(super.realm, super.baseURI, idp))
                         .sorted(IDP_COMPARATOR_INSTANCE).toList();
             }
-            // we don't have a specific organization - fetch public enabled IDPs linked to any org.
-            return session.identityProviders().getForLogin(ORG_ONLY, null)
-                    .filter(idp -> idp.isEnabled() && !Objects.equals(existingIDP, idp.getAlias())) // re-check isEnabled as idp might have been wrapped.
-                    .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
-                    .sorted(IDP_COMPARATOR_INSTANCE).toList();
+            // no org detected:
+            // - toggle ON (default): show all enabled IDPs
+            // - toggle OFF: show none
+            if (Boolean.TRUE.equals(realm.getAttribute(ORGANIZATIONS_SHOW_ALL_IDPS_WHEN_NO_ORG_ATTR, Boolean.TRUE))) {
+                return session.identityProviders().getForLogin(ALL, null)
+                        .filter(idp -> idp.isEnabled() && !Objects.equals(existingIDP, idp.getAlias())) // re-check isEnabled as idp might have been wrapped.
+                        .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
+                        .sorted(IDP_COMPARATOR_INSTANCE).toList();
+            }
+            return List.of();
         }
         return session.identityProviders().getForLogin(ALL, this.organization != null ? this.organization.getId() : null)
                 .filter(idp -> idp.isEnabled() && !Objects.equals(existingIDP, idp.getAlias())) // re-check isEnabled as idp might have been wrapped.
