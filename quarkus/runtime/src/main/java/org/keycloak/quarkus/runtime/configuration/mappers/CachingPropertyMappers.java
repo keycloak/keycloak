@@ -2,6 +2,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +57,11 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                         .transformer(CachingPropertyMappers::resolveConfigFile)
                         .validator(s -> {
                             if (!Files.exists(Paths.get(resolveConfigFile(s, null)))) {
-                                throw new PropertyException("Cache config file '%s' does not exist in the conf directory".formatted(s));
+                                if (Path.of(s).isAbsolute()) {
+                                    throw new PropertyException("Cache config file '%s' does not exist".formatted(s));
+                                } else {
+                                    throw new PropertyException("Cache config file '%s' does not exist in the conf directory".formatted(s));
+                                }
                             }
                         })
                         .paramLabel("file")
@@ -203,7 +208,12 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
     }
 
     private static String resolveConfigFile(String value, ConfigSourceInterceptorContext context) {
-        return Environment.getHomeDir().map(f -> Paths.get(f, "conf", value).toString()).orElse(null);
+        Path p = Path.of(value);
+        if (p.isAbsolute()) {
+            return p.toString();
+        } else {
+            return Environment.getHomeDir().map(f -> Paths.get(f, "conf", value).toString()).orElse(null);
+        }
     }
 
     private static String getConfPathValue(String file) {
