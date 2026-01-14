@@ -19,6 +19,7 @@ package org.keycloak.operator.crds.v2alpha1.client;
 
 import org.keycloak.operator.Constants;
 
+import io.fabric8.generator.annotation.Required;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
@@ -39,5 +40,11 @@ import io.sundr.builder.annotations.BuildableReference;
             @BuildableReference(io.fabric8.kubernetes.client.CustomResource.class),
     })
 public class KeycloakOIDCClient extends CustomResource<KeycloakOIDCClientSpec, KeycloakClientStatus> implements Namespaced {
+
+    @Required
+    @Override
+    public KeycloakOIDCClientSpec getSpec() {
+        return super.getSpec();
+    }
 
 }
