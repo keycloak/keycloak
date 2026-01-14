@@ -159,4 +159,36 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>execute-sql</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>sql-maven-plugin</artifactId>
+                        <version>3.0.0</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>software.amazon.jdbc</groupId>
+                                <artifactId>aws-advanced-jdbc-wrapper</artifactId>
+                                <version>${aws-jdbc-wrapper.version}</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <id>clear-schema</id>
+                                <configuration>
+                                    <srcFiles>
+                                        <srcFile>../../.github/scripts/aws/rds/aurora_clear.sql</srcFile>
+                                    </srcFiles>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

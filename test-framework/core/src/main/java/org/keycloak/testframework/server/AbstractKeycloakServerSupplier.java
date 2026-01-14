@@ -24,13 +24,9 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
         KeycloakIntegrationTest annotation = instanceContext.getAnnotation();
         KeycloakServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
 
-        KeycloakServerConfigBuilder command = KeycloakServerConfigBuilder.startDev();
-        if (Config.getCreateBootstrapClient()) {
-            command.bootstrapAdminClient(Config.getAdminClientId(), Config.getAdminClientSecret());
-        }
-        if (Config.getCreateBootstrapUser()) {
-            command.bootstrapAdminUser(Config.getAdminUsername(), Config.getAdminPassword());
-        }
+        KeycloakServerConfigBuilder command = KeycloakServerConfigBuilder.startDev()
+                .bootstrapAdminClient(Config.getAdminClientId(), Config.getAdminClientSecret())
+                .bootstrapAdminUser(Config.getAdminUsername(), Config.getAdminPassword());
 
         command.log().handlers(KeycloakServerConfigBuilder.LogHandlers.CONSOLE);
 
