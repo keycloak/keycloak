@@ -57,6 +57,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DistributionTest(keepAlive = true)
@@ -288,23 +289,29 @@ public class LoggingDistTest {
     }
 
     protected static String readDefaultFileLog(RawDistRootPath path) {
-        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
+        return readFile(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH, "Default log");
+    }
+
+    protected static String readHttpAccessLogFile(RawDistRootPath path, String logName) {
+        return readFile(path.getDistRootPath() + File.separator + "data" + File.separator + logName, "HTTP Access log");
+    }
+
+    protected static String readFile(String path, String fileType) {
+        Path logFilePath = Paths.get(path);
         File logFile = new File(logFilePath.toString());
-        assertTrue(logFile.isFile(), "Log file does not exist!");
+        assertTrue(logFile.isFile(), "%s file does not exist!".formatted(fileType));
 
         try {
             return FileUtils.readFileToString(logFile, Charset.defaultCharset());
         } catch (IOException e) {
-            throw new AssertionError("Cannot read default file log", e);
+            throw new AssertionError("Cannot read file %s".formatted(fileType), e);
         }
     }
 
     // HTTP Access log
     @Test
-    @Launch({"start-dev", "--http-access-log-enabled=true", "--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'", "--http-access-log-exclude='/realms/master/clients/.*'"})
-    void httpAccessLogNotNamedPattern(CLIResult cliResult) {
-        cliResult.assertStartedDevMode();
-
+    @Launch({"start-dev", "--http-access-log-enabled=true", "--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'", "--http-access-log-exclude=/realms/master/clients/.*"})
+    void httpAccessLogNotNamedPattern(CLIResult cliResult, KeycloakDistribution dist, RawDistRootPath path) {
         when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
                 .statusCode(200);
         cliResult.assertMessage("[org.keycloak.http.access-log]");
@@ -312,7 +319,42 @@ public class LoggingDistTest {
 
         when().get("http://127.0.0.1:8080/realms/master/clients/account/redirect").then()
                 .statusCode(200);
+        cliResult.assertNoMessage("127.0.0.1 GET /realms/master/clients/account/redirect");
+
+        // file
+        cliResult = dist.run("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-enabled=true", "--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'", "--http-access-log-exclude=/realms/master/clients/.*");
+        cliResult.assertStartedDevMode();
+        when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
+                .statusCode(200);
+        cliResult.assertNoMessage("[org.keycloak.http.access-log]");
+        cliResult.assertNoMessage("127.0.0.1 GET /realms/master/.well-known/openid-configuration");
+
+        when().get("http://127.0.0.1:8080/realms/master/clients/account/redirect").then()
+                .statusCode(200);
+        cliResult.assertNoMessage("127.0.0.1 GET /realms/master/clients/account/redirect");
+
+        String data = readHttpAccessLogFile(path, "keycloak-http-access.log");
+        assertNotNull(data);
+        assertThat(data, containsString("127.0.0.1 GET /realms/master/.well-known/openid-configuration"));
+        assertThat(data, not(containsString("127.0.0.1 GET /realms/master/clients/account/redirect")));
+    }
+
+    @Test
+    @Launch({"start-dev", "--http-access-log-enabled=true", "--http-access-log-file-enabled=true", "--http-access-log-file-name=my-custom-http-access", "--http-access-log-file-suffix=.txt", "--http-access-log-file-rotate=false"})
+    void httpAccessLogFile(CLIResult cliResult, RawDistRootPath path) {
+        when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
+                .statusCode(200);
+        cliResult.assertNoMessage("[org.keycloak.http.access-log]");
+        cliResult.assertNoMessage("127.0.0.1 GET /realms/master/.well-known/openid-configuration");
+
+        when().get("http://127.0.0.1:8080/realms/master/clients/account/redirect").then()
+                .statusCode(200);
         cliResult.assertNoMessage("http://127.0.0.1:8080/realms/master/clients/account/redirect");
+
+        String data = readHttpAccessLogFile(path, "my-custom-http-access.txt");
+        assertNotNull(data);
+        assertThat(data, containsString("GET /realms/master/.well-known/openid-configuration HTTP/1.1"));
+        assertThat(data, containsString("GET /realms/master/clients/account/redirect"));
     }
 
     // Telemetry Logs
