@@ -17,26 +17,19 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import picocli.CommandLine;
 
 import static org.keycloak.quarkus.runtime.Environment.isDevMode;
 import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
-import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
 
 public abstract class AbstractAutoBuildCommand extends AbstractCommand {
 
@@ -94,7 +87,7 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
         directBuild();
 
         if(!isDevMode()) {
-            spec.commandLine().getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s%n%n", Environment.getCommand(), String.join(" ", getSanitizedRuntimeCliOptions()), OPTIMIZED_BUILD_OPTION_LONG);
+            spec.commandLine().getOut().printf("Next time you run the server, just add %s to the command to ensure this build is used.\n", OPTIMIZED_BUILD_OPTION_LONG);
         }
     }
 
@@ -104,26 +97,6 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
         build.setPicocli(picocli);
         build.spec = spec;
         build.runCommand();
-    }
-
-    /**
-     * checks the raw cli input for possible credentials / properties which should be masked,
-     * and masks them.
-     * @return a list of potentially masked properties in CLI format, e.g. `--db-password=*******`
-     * instead of the actual passwords value.
-     */
-    private static List<String> getSanitizedRuntimeCliOptions() {
-        List<String> properties = new ArrayList<>();
-
-        parseConfigArgs(ConfigArgsConfigSource.getAllCliArgs(), (key, value) -> {
-            PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(key);
-
-            if (mapper == null || mapper.isRunTime()) {
-                properties.add(key + "=" + maskValue(value, mapper));
-            }
-        }, properties::add);
-
-        return properties;
     }
 
     @Override
