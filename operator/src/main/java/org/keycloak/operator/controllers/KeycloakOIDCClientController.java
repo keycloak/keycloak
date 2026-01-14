@@ -19,7 +19,7 @@ package org.keycloak.operator.controllers;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientRepresentation;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientRepresentation.AuthWithSecretRef;
-import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientRepresentationBuilder;
+import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
@@ -28,17 +28,21 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 
 @ControllerConfiguration
-public class KeycloakOIDCClientController extends KeycloakClientBaseController<KeycloakOIDCClient, KeycloakOIDCClientRepresentation> {
+public class KeycloakOIDCClientController extends KeycloakClientBaseController<KeycloakOIDCClient, OIDCClientRepresentation, KeycloakOIDCClientRepresentation> {
 
     @Override
-    Representation<KeycloakOIDCClientRepresentation> prepareRepresentation(
-            KeycloakOIDCClientRepresentation representation, Context<?> context) {
+    Class<OIDCClientRepresentation> getTargetRepresentation() {
+        return OIDCClientRepresentation.class;
+    }
+
+    @Override
+    boolean prepareRepresentation(
+            KeycloakOIDCClientRepresentation crRepresentation, OIDCClientRepresentation targetRepresentation,
+            Context<?> context) {
         boolean poll = false;
         // create the payload via inlining of the secret
-        KeycloakOIDCClientRepresentation rep = new KeycloakOIDCClientRepresentationBuilder(representation).build();
-        AuthWithSecretRef auth = representation.getAuth();
+        AuthWithSecretRef auth = crRepresentation.getAuth();
         if (auth != null) {
-            rep.getAuth().setSecretRef(null); // remove operator specific fields
             SecretKeySelector secretSelector = auth.getSecretRef();
             if (secretSelector != null) {
                 poll = true;
@@ -61,12 +65,12 @@ public class KeycloakOIDCClientController extends KeycloakClientBaseController<K
                             throw new ResourceNotFoundException(String.format("Secret key %s in %s/%s not found", secretSelector.getKey(), namespace, secretSelector.getName()));
                         }
                     } else {
-                        rep.getAuth().setSecret(value);
+                        targetRepresentation.getAuth().setSecret(value);
                     }
                 }
             }
         }
-        return new Representation<KeycloakOIDCClientRepresentation>(rep, poll);
+        return poll;
     }
 
 }

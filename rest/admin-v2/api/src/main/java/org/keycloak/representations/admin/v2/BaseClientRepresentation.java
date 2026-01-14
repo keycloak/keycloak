@@ -8,7 +8,6 @@ import jakarta.validation.constraints.NotBlank;
 
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -16,13 +15,13 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.hibernate.validator.constraints.URL;
 
 @JsonTypeInfo(
-    use = JsonTypeInfo.Id.SIMPLE_NAME,
-    include = JsonTypeInfo.As.PROPERTY,
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.EXISTING_PROPERTY,
     property = BaseClientRepresentation.DISCRIMINATOR_FIELD
 )
 @JsonSubTypes({
-    @JsonSubTypes.Type(value = OIDCClientRepresentation.class, name = "openid-connect"),
-    @JsonSubTypes.Type(value = SAMLClientRepresentation.class, name = "saml")
+    @JsonSubTypes.Type(value = OIDCClientRepresentation.class, name = OIDCClientRepresentation.PROTOCOL),
+    @JsonSubTypes.Type(value = SAMLClientRepresentation.class, name = SAMLClientRepresentation.PROTOCOL)
 })
 public abstract class BaseClientRepresentation extends BaseRepresentation {
     public static final String DISCRIMINATOR_FIELD = "protocol";
@@ -108,8 +107,13 @@ public abstract class BaseClientRepresentation extends BaseRepresentation {
         this.roles = roles;
     }
 
-    @JsonIgnore
     public abstract String getProtocol();
+
+    void setProtocol(String protocol) {
+        if (!getProtocol().equals(protocol)) {
+            throw new IllegalArgumentException();
+        }
+    }
 
     @Override
     public boolean equals(Object o) {

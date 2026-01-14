@@ -18,17 +18,24 @@ package org.keycloak.operator.controllers;
 
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakSAMLClient;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakSAMLClientRepresentation;
+import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 
 @ControllerConfiguration
-public class KeycloakSAMLClientController extends KeycloakClientBaseController<KeycloakSAMLClient, KeycloakSAMLClientRepresentation> {
+public class KeycloakSAMLClientController extends KeycloakClientBaseController<KeycloakSAMLClient, SAMLClientRepresentation, KeycloakSAMLClientRepresentation> {
 
     @Override
-    Representation<KeycloakSAMLClientRepresentation> prepareRepresentation(
-            KeycloakSAMLClientRepresentation representation, Context<?> context) {
-        return new Representation<>(representation, false);
+    Class<SAMLClientRepresentation> getTargetRepresentation() {
+        return SAMLClientRepresentation.class;
+    }
+
+    @Override
+    boolean prepareRepresentation(KeycloakSAMLClientRepresentation crRepresentation,
+            SAMLClientRepresentation targetRepresentation, Context<?> context) {
+        // Nothing to do, and no polling
+        return false;
     }
 
 }

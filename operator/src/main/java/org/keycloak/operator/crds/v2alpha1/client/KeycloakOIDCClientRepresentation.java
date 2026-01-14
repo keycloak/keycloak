@@ -1,20 +1,19 @@
 package org.keycloak.operator.crds.v2alpha1.client;
 
+import org.keycloak.representations.admin.v2.BaseOIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import com.fasterxml.jackson.annotation.JsonSetter;
-import io.fabric8.crd.generator.annotation.SchemaSwap;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.sundr.builder.annotations.Buildable;
 
+@JsonTypeInfo(use = Id.NONE)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder", lazyCollectionInitEnabled = false)
-public class KeycloakOIDCClientRepresentation extends OIDCClientRepresentation {
+public class KeycloakOIDCClientRepresentation extends BaseOIDCClientRepresentation<KeycloakOIDCClientRepresentation.AuthWithSecretRef> {
 
-    // hide the secret field for CRD generation - but it will still be there for serialization
-    @SchemaSwap(originalType = AuthWithSecretRef.class, fieldName = "secret")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class AuthWithSecretRef extends OIDCClientRepresentation.Auth {
 
         private SecretKeySelector secretRef;
@@ -28,21 +27,25 @@ public class KeycloakOIDCClientRepresentation extends OIDCClientRepresentation {
             this.secretRef = secretRef;
         }
 
+        @JsonIgnore
+        @Override
+        public String getSecret() {
+            return super.getSecret();
+        }
+
     }
 
+    @JsonIgnore
     @Override
-    public AuthWithSecretRef getAuth() {
-        return (AuthWithSecretRef)super.getAuth();
+    public String getProtocol() {
+        return super.getProtocol();
     }
 
+    @JsonIgnore
     @Override
-    public void setAuth(OIDCClientRepresentation.Auth auth) {
-        throw new IllegalArgumentException();
-    }
-
-    @JsonSetter
-    public void setAuth(AuthWithSecretRef auth) {
-        super.setAuth(auth);
+    public String getClientId() {
+        // TODO Auto-generated method stub
+        return super.getClientId();
     }
 
 }
