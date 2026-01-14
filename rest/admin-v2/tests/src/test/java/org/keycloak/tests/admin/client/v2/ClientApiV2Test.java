@@ -269,6 +269,9 @@ public class ClientApiV2Test {
         samlRep.setForcePostBinding(true);
         samlRep.setFrontChannelLogout(false);
 
+        String rep = mapper.writeValueAsString(samlRep);
+        System.out.println(rep);
+
         samlRequest.setEntity(new StringEntity(mapper.writeValueAsString(samlRep)));
 
         try (var response = client.execute(samlRequest)) {

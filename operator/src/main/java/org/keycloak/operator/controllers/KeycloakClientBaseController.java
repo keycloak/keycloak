@@ -16,21 +16,39 @@
  */
 package org.keycloak.operator.controllers;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.WebTarget;
 
-import org.keycloak.admin.api.AdminRootV2;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.api.AdminApi;
 import org.keycloak.admin.api.client.ClientApi;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.operator.Config;
@@ -57,14 +75,19 @@ import io.quarkus.logging.Log;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
-public abstract class KeycloakClientBaseController<R extends CustomResource<? extends KeycloakClientSpec<T>, KeycloakClientStatus>, T extends BaseClientRepresentation>
+public abstract class KeycloakClientBaseController<R extends CustomResource<? extends KeycloakClientSpec<S>, KeycloakClientStatus>, T extends BaseClientRepresentation, S extends BaseClientRepresentation>
         implements Reconciler<R>, Cleaner<R> {
+
+    private static final String CLIENT_API_VERSION = "v2";
+    private static final String HTTPS = "https";
+    // TODO allows for local testing - could be promoted in some way to the CR if needed
+    public static final String KEYCLOAK_TEST_ADDRESS = "KEYCLOAK_TEST_ADDRESS";
 
     class KeycloakClientStatusAggregator {
         R resource;
         KeycloakClientStatus existingStatus;
         Map<String, KeycloakClientStatusCondition> existingConditions;
-        Map<String, KeycloakClientStatusCondition> newConditions;
+        Map<String, KeycloakClientStatusCondition> newConditions = new LinkedHashMap<String, KeycloakClientStatusCondition>();
 
         KeycloakClientStatusAggregator(R resource) {
             this.resource = resource;
@@ -95,15 +118,12 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
 
     }
 
-    record Representation<T extends BaseClientRepresentation>(T rep, boolean shouldPoll) {
-    }
-
     @Inject
     Config config;
 
     @Override
     public UpdateControl<R> reconcile(R resource, Context<R> context) throws Exception {
-        String kcName = resource.getSpec().getKeycloakCrName();
+        String kcName = resource.getSpec().getKeycloakCRName();
 
         // TODO: this should be obtained from an informer instead
         // they can't be shared directly across controllers, so we'd have to inject the
@@ -113,19 +133,26 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
 
         KeycloakClientStatusAggregator statusAggregator = new KeycloakClientStatusAggregator(resource);
 
-        Representation<T> rep = prepareRepresentation(resource.getSpec().getClient(), context);
+        S client = resource.getSpec().getClient();
+        // first convert to the target representation - the spec representation is specialized
+        var map = context.getClient().getKubernetesSerialization().convertValue(client, Map.class);
+        map.put(BaseClientRepresentation.DISCRIMINATOR_FIELD, client.getProtocol());
+        T rep = context.getClient().getKubernetesSerialization().convertValue(map, getTargetRepresentation());
+        // then let the controller subclass apply specific handling
+        boolean poll = prepareRepresentation(client, rep, context);
+        rep.setClientId(resource.getMetadata().getName());
 
-        String hash = Utils.hash(List.of(resource));
+        String hash = Utils.hash(List.of(rep));
 
         if (!hash.equals(statusAggregator.getExistingStatus().getHash())) {
-            var response = invoke(resource, context, keycloak, client -> {
-                return client.createOrUpdateClient(rep.rep());
+            var response = invoke(resource, context, keycloak, clientApi -> {
+                return clientApi.createOrUpdateClient(rep);
             });
 
             // if not ok response, throw exception to allow the retry loop
             // TODO however not all errors (something not validating) should get retried every 10 seconds
             // that should instead get captured in the status
-            if (response.getStatus() != HttpURLConnection.HTTP_OK || response.getStatus() != HttpURLConnection.HTTP_CREATED) {
+            if (response.getStatus() != HttpURLConnection.HTTP_OK && response.getStatus() != HttpURLConnection.HTTP_CREATED) {
                 throw new RuntimeException("Client update operation not sucessful with status code " + response.getStatus());
             }
         }
@@ -142,14 +169,16 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
             updateControl = UpdateControl.patchStatus(resource);
         }
 
-        if (rep.shouldPoll) {
+        if (poll) {
             updateControl.rescheduleAfter(config.keycloak().pollIntervalSeconds(), TimeUnit.SECONDS);
         }
 
         return updateControl;
     }
 
-    abstract Representation<T> prepareRepresentation(T representation, Context<?> context);
+    abstract boolean prepareRepresentation(S crRepresentation, T targetRepresentation, Context<?> context);
+
+    abstract Class<T> getTargetRepresentation();
 
     /**
      * Uses a finalizer to ensure clients are not orphaned unless a user goes out of
@@ -157,7 +186,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
      */
     @Override
     public DeleteControl cleanup(R resource, Context<R> context) throws Exception {
-        String kcName = resource.getSpec().getKeycloakCrName();
+        String kcName = resource.getSpec().getKeycloakCRName();
 
         Keycloak keycloak = context.getClient().resources(Keycloak.class)
                 .inNamespace(resource.getMetadata().getNamespace()).withName(kcName).get();
@@ -191,13 +220,21 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         return ErrorStatusUpdateControl.patchStatus(resource).rescheduleAfter(Constants.RETRY_DURATION);
     }
 
+    @Path("admin/api")
+    public interface AdminRootV2 {
+
+        @Path("{realmName}")
+        AdminApi adminApi(@PathParam("realmName") String realmName);
+
+    }
+
     private <T> T invoke(R resource, Context<?> context, Keycloak keycloak,
             Function<ClientApi, T> action) {
         try (var kcAdmin = getAdminClient(resource, context, keycloak)) {
             var target = getWebTarget(kcAdmin);
             AdminRootV2 root = org.keycloak.admin.client.Keycloak.getClientProvider().targetProxy(target,
                     AdminRootV2.class);
-            return action.apply(root.adminApi().realms().realm(resource.getSpec().getRealm()).clients()
+            return action.apply(root.adminApi(resource.getSpec().getRealm()).clients(CLIENT_API_VERSION)
                     .client(resource.getMetadata().getName()));
         }
     }
@@ -215,27 +252,80 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
 
     private org.keycloak.admin.client.Keycloak getAdminClient(R resource, Context<?> context,
             Keycloak keycloak) {
-        Secret secret = context.getClient().resources(Secret.class)
-                .inNamespace(resource.getMetadata().getNamespace()).withName(keycloak.getMetadata().getName() + "-admin").require();
+        Secret adminSecret = context.getClient().resources(Secret.class)
+                .inNamespace(resource.getMetadata().getNamespace())
+                .withName(keycloak.getMetadata().getName() + "-admin").require();
+
+        String adminUrl = getAdminUrl(keycloak, context);
+
+        Client restEasyClient = null;
+
+        // create a custom client if using https
+        if (adminUrl.startsWith(HTTPS)) {
+            // TODO: support for mtls
+            restEasyClient = createRestEasyClient(resource, context, keycloak, restEasyClient);
+        }
 
         return KeycloakBuilder.builder()
-                .serverUrl(getAdminUrl(keycloak, context))
+                .serverUrl(adminUrl)
                 .realm("master") // TODO: could be configured differently
-                .clientId(secret.getData().get("clientId")) // TODO: validate these fields
-                .clientSecret(secret.getData().get("clientSecret")).build();
+                // TODO: validate these fields
+                .clientId(new String(Base64.getDecoder().decode(adminSecret.getData().get(Constants.CLIENT_ID_KEY)),
+                        StandardCharsets.UTF_8))
+                .clientSecret(new String(Base64.getDecoder().decode(adminSecret.getData().get(Constants.CLIENT_SECRET_KEY)),
+                                StandardCharsets.UTF_8))
+                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+                .resteasyClient(restEasyClient)
+                .build();
+    }
+
+    private Client createRestEasyClient(R resource, Context<?> context, Keycloak keycloak, Client restEasyClient) {
+        // add server cert trust
+        String tlsSecretName = keycloak.getSpec().getHttpSpec().getTlsSecret();
+        Secret tlsSecret = context.getClient().resources(Secret.class)
+                .inNamespace(resource.getMetadata().getNamespace()).withName(tlsSecretName).require();
+        byte[] certBytes = Base64.getDecoder().decode(tlsSecret.getData().get("tls.crt"));
+
+        try {
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            X509Certificate cert = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(certBytes));
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+            ks.load(null);
+            ks.setCertificateEntry("cert", cert);
+            tmf.init(ks);
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, tmf.getTrustManagers(), null);
+
+            restEasyClient = org.keycloak.admin.client.Keycloak.getClientProvider().newRestEasyClient(null,
+                    sslContext, false);
+        } catch (CertificateException | NoSuchAlgorithmException | KeyStoreException | IOException
+                | KeyManagementException e) {
+            throw new RuntimeException(e);
+        }
+        return restEasyClient;
     }
 
     private String getAdminUrl(Keycloak keycloak, Context<?> context) {
         boolean httpEnabled = KeycloakServiceDependentResource.isHttpEnabled(keycloak);
-        // TODO: if https trust needs to be configured - for now preferring to use http if available
+        // for now preferring to use http if available
         boolean https = isTlsConfigured(keycloak) && !httpEnabled;
-        String protocol = https?"https":"http";
+        String protocol = https?HTTPS:"http";
+        String address = System.getProperty(KEYCLOAK_TEST_ADDRESS);
+
         int port = https?HttpSpec.httpsPort(keycloak):HttpSpec.httpPort(keycloak);
+
+        if (address == null) {
+            // uses the service host - TODO: assumes the operator and the keycloak instance are in the same cluster
+            // this may not eventually hold if we are flexible about where the kube client can target
+            address = String.format("%s.%s:%s", KeycloakServiceDependentResource.getServiceName(keycloak),
+                    keycloak.getMetadata().getNamespace(), port);
+        }
+
         var relativePath = KeycloakDeploymentDependentResource.readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, keycloak, context)
-                .map(path -> !path.endsWith("/") ? path + "/" : path)
-                .orElse("/");
-        return String.format("%s://%s.%s:%s/%s", protocol, KeycloakServiceDependentResource.getServiceName(keycloak),
-                keycloak.getMetadata().getNamespace(), port, relativePath);
+                .map(path -> !path.isEmpty() && !path.startsWith("/") ? "/" + path : path)
+                .orElse("");
+        return String.format("%s://%s%s", protocol, address, relativePath);
     }
 
 }

@@ -366,7 +366,7 @@ public enum OperatorDeployment {local_apiserver,local,remote}
       // this can be simplified to just the root deletion after we pick up the fix
       // it can be further simplified after https://github.com/fabric8io/kubernetes-client/issues/5838
       // to just a timed foreground deletion
-      var roots = List.of(Keycloak.class, KeycloakRealmImport.class);
+      var roots = List.of(Keycloak.class, KeycloakRealmImport.class, KeycloakOIDCClient.class, KeycloakSAMLClient.class);
       roots.forEach(c -> k8sclient.resources(c).delete());
       // enforce that at least the statefulset are gone
       try {

@@ -30,7 +30,7 @@ public class KeycloakClientSpec<T extends BaseClientRepresentation> {
     @Required
     @JsonPropertyDescription("The name of the Keycloak CR to reference, in the same namespace.")
     @ValidationRule(value = "self == oldSelf", message = "keycloakCrName is immutable")
-    private String keycloakCrName;
+    private String keycloakCRName;
 
     @Required
     @JsonPropertyDescription("The realm of the Client")
@@ -56,12 +56,12 @@ public class KeycloakClientSpec<T extends BaseClientRepresentation> {
         this.client = client;
     }
 
-    public String getKeycloakCrName() {
-        return keycloakCrName;
+    public String getKeycloakCRName() {
+        return keycloakCRName;
     }
 
-    public void setKeycloakCrName(String keycloakCrName) {
-        this.keycloakCrName = keycloakCrName;
+    public void setKeycloakCRName(String keycloakCRName) {
+        this.keycloakCRName = keycloakCRName;
     }
 
 }

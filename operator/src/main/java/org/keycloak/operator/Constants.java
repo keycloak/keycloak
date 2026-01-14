@@ -42,6 +42,8 @@ public final class Constants {
     public static final String KEYCLOAK_UPDATE_REVISION_ANNOTATION = "operator.keycloak.org/update-revision";
     public static final String KEYCLOAK_UPDATE_HASH_ANNOTATION = "operator.keycloak.org/update-hash";
     public static final String APP_LABEL = "app";
+    public static final String CLIENT_ID_KEY = "client-id";
+    public static final String CLIENT_SECRET_KEY = "client-secret";
 
     public static final String DEFAULT_LABELS_AS_STRING = "app=keycloak,app.kubernetes.io/managed-by=keycloak-operator";
 
