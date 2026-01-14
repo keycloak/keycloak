@@ -94,7 +94,6 @@ See the <@links.ha id="multi-cluster-concepts-memory-and-cpu-sizing" /> {section
 Even with the additional redundancy of the two sites, downtimes can still occur:
 </@profile.ifCommunity>
 
-* During upgrades of {project_name} or {jdgserver_name} both sites needs to be taken offline for the duration of the upgrade.
 * During certain failure scenarios, there may be downtime of up to 5 minutes.
 * After certain failure scenarios, manual intervention may be required to restore redundancy by bringing the failed site back online.
 * During certain switchover scenarios, there may be downtime of up to 5 minutes.
@@ -131,6 +130,7 @@ Additional performance tuning and security hardening are still recommended when 
 * <@links.ha id="multi-cluster-operate-site-offline" />
 * <@links.ha id="multi-cluster-operate-site-online" />
 * <@links.ha id="multi-cluster-health-checks" />
+* <@links.ha id="multi-cluster-upgrades" />
 
 </@profile.ifCommunity>
 
