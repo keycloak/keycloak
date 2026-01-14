@@ -85,6 +85,7 @@ import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
+import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerException;
 import org.keycloak.protocol.oid4vc.model.AttestationProof;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
@@ -704,8 +705,7 @@ public class OID4VCIssuerEndpoint {
             String errorMessage = "Response encryption is required by the Credential Issuer, but no encryption parameters were provided.";
             LOGGER.debug(errorMessage);
             eventBuilder.detail(Details.REASON, errorMessage)
-                    .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
-                    .error(Errors.INVALID_REQUEST);
+                    .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
         }
 
@@ -720,8 +720,7 @@ public class OID4VCIssuerEndpoint {
                         encryptionParams.getJwk().getKeyType());
                 LOGGER.debug(errorMessage);
                 eventBuilder.detail(Details.REASON, errorMessage)
-                        .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
-                        .error(Errors.INVALID_REQUEST);
+                        .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
 
@@ -731,8 +730,7 @@ public class OID4VCIssuerEndpoint {
                         encryptionParams.getEnc());
                 LOGGER.debug(errorMessage);
                 eventBuilder.detail(Details.REASON, errorMessage)
-                        .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
-                        .error(Errors.INVALID_REQUEST);
+                        .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
 
@@ -743,8 +741,7 @@ public class OID4VCIssuerEndpoint {
                         encryptionParams.getZip());
                 LOGGER.debug(errorMessage);
                 eventBuilder.detail(Details.REASON, errorMessage)
-                        .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
-                        .error(Errors.INVALID_REQUEST);
+                        .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
         }
@@ -923,8 +920,7 @@ public class OID4VCIssuerEndpoint {
                 LOGGER.debug(errorMessage);
                 if (eventBuilder != null) {
                     eventBuilder.detail(Details.REASON, errorMessage)
-                            .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
-                            .error(Errors.INVALID_REQUEST);
+                            .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                 }
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
@@ -937,8 +933,7 @@ public class OID4VCIssuerEndpoint {
                     LOGGER.debug(errorMessage);
                     if (eventBuilder != null) {
                         eventBuilder.detail(Details.REASON, errorMessage)
-                                .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
-                                .error(Errors.INVALID_REQUEST);
+                                .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                     }
                     throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
                 }
@@ -947,8 +942,7 @@ public class OID4VCIssuerEndpoint {
                     LOGGER.debug(errorMessage);
                     if (eventBuilder != null) {
                         eventBuilder.detail(Details.REASON, errorMessage)
-                                .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
-                                .error(Errors.INVALID_REQUEST);
+                                .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                     }
                     throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
                 }
@@ -1419,17 +1413,30 @@ public class OID4VCIssuerEndpoint {
                 credentialConfig.getFormat());
 
         return Optional.ofNullable(credentialSigner)
-                .map(signer -> signer.signCredential(
-                        vcIssuanceContext.getCredentialBody(),
-                        credentialConfig.getCredentialBuildConfig()
-                ))
+                .map(signer -> {
+                    try {
+                        return signer.signCredential(
+                                vcIssuanceContext.getCredentialBody(),
+                                credentialConfig.getCredentialBuildConfig()
+                        );
+                    } catch (CredentialSignerException cse) {
+                        throw badRequestException(ErrorType.INVALID_CREDENTIAL_REQUEST, "Signing of credential failed: " + cse.getMessage(), eventBuilder);
+                    }
+                })
                 .orElseThrow(() -> {
                     String message = String.format("No signer found for format '%s'.", credentialConfig.getFormat());
-                    return new BadRequestException(
-                            message,
-                            getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, message)
-                    );
+                    return badRequestException(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, message, eventBuilder);
                 });
+    }
+
+    // Throw the error event and return corresponding BadRequestException
+    private BadRequestException badRequestException(ErrorType errorType, String errorMessage, EventBuilder eventBuilder) {
+        eventBuilder.detail(Details.REASON, errorMessage)
+                .error(errorType.getValue());
+        return new BadRequestException(
+                errorMessage,
+                getErrorResponse(errorType, errorMessage)
+        );
     }
 
     private CredentialScopeModel getClientScopeModel(SupportedCredentialConfiguration credentialConfig) {
