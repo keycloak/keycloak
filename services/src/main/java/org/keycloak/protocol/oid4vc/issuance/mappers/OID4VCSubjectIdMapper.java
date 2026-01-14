@@ -32,12 +32,13 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 
 /**
- * Sets an ID for the credential subject, either by attribute mapping or statically configured
+ * Sets an ID for the credential subject, either from User ID or by attribute mapping
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
@@ -50,8 +51,8 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
     static {
         ProviderConfigProperty idPropertyNameConfig = new ProviderConfigProperty();
         idPropertyNameConfig.setName(CLAIM_NAME);
-        idPropertyNameConfig.setLabel("ID Property Name");
-        idPropertyNameConfig.setHelpText("Name of the property to contain the subject id.");
+        idPropertyNameConfig.setLabel(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME_LABEL);
+        idPropertyNameConfig.setHelpText("Name of the claim to insert into the token. This can be a fully qualified name such as 'address.street'. In case that 'id' is used as a value of this configuration property, it would be mapped into sd-jwt credential as claim 'sub'.");
         idPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
         idPropertyNameConfig.setDefaultValue(CLAIM_NAME_SUBJECT_ID);
         CONFIG_PROPERTIES.add(idPropertyNameConfig);
@@ -59,7 +60,7 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         ProviderConfigProperty userAttributeConfig = new ProviderConfigProperty();
         userAttributeConfig.setName(USER_ATTRIBUTE_KEY);
         userAttributeConfig.setLabel("User attribute");
-        userAttributeConfig.setHelpText("The user attribute that maps to the subject id.");
+        userAttributeConfig.setHelpText("The name of the user attribute that maps to the subject id.");
         userAttributeConfig.setType(ProviderConfigProperty.LIST_TYPE);
         userAttributeConfig.setOptions(List.of(UserModel.USERNAME, UserModel.EMAIL, UserModel.ID));
         userAttributeConfig.setDefaultValue(UserModel.ID);
@@ -111,7 +112,7 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
 
     @Override
     public String getHelpText() {
-        return "Assigns a subject ID to the credentials subject. The default is the user's id, others can be selected.";
+        return "Sets an ID for the credential subject, either from User ID or by attribute mapping.";
     }
 
     @Override
