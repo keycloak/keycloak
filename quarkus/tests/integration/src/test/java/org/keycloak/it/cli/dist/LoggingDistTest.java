@@ -22,8 +22,8 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import org.hamcrest.Matchers;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.keycloak.config.HttpAccessLogOptions;
 import org.keycloak.config.LoggingOptions;
@@ -44,7 +44,7 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.util.EntityUtils;
-import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -338,12 +338,17 @@ public class LoggingDistTest {
     }
 
     private void assertHttpAccessLogMaskedCookies(CLIResult cliResult) {
-        assertThat(HttpAccessLogOptions.DEFAULT_HIDDEN_COOKIES, Matchers.contains(
-                CookieType.AUTH_SESSION_ID.getName(),
-                CookieType.AUTH_SESSION_ID_HASH.getName(),
-                CookieType.IDENTITY.getName(),
-                CookieType.SESSION.getName()
-        ));
+        var defaultMaskedCookies = new ArrayList<>(List.of(CookieType.OLD_UNUSED_COOKIES));
+        defaultMaskedCookies.add(CookieType.AUTH_SESSION_ID);
+        defaultMaskedCookies.add(CookieType.AUTH_SESSION_ID_HASH);
+        defaultMaskedCookies.add(CookieType.IDENTITY);
+        defaultMaskedCookies.add(CookieType.SESSION);
+
+        assertThat(HttpAccessLogOptions.DEFAULT_HIDDEN_COOKIES, Matchers.containsInAnyOrder(
+                        defaultMaskedCookies.stream()
+                                .map(CookieType::getName)
+                                .toArray(String[]::new))
+        );
 
         cliResult.assertStartedDevMode();
 
