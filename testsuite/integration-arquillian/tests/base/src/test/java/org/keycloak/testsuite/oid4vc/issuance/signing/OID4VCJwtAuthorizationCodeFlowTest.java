@@ -17,8 +17,12 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -62,5 +66,17 @@ public class OID4VCJwtAuthorizationCodeFlowTest extends OID4VCAuthorizationCodeF
 
         // Verify it looks like a JWT (contains dots)
         assertTrue("JWT should contain dots", jwtString.contains("."));
+    }
+
+    @Override
+    protected JWSHeader verifyCredentialSignature(Object vcCredential, String expectedSignatureAlgorithm) throws Exception {
+        String vcCredentialString = vcCredential.toString();
+        JWSInput jwsInput = new JWSInput(vcCredentialString);
+        JWSHeader header = jwsInput.getHeader();
+
+        assertEquals(expectedSignatureAlgorithm, header.getRawAlgorithm());
+        oauth.verifyToken(vcCredentialString, JsonWebToken.class);
+
+        return header;
     }
 }
