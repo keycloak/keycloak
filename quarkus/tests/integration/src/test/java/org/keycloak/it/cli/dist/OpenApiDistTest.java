@@ -99,13 +99,13 @@ public class OpenApiDistTest {
                 .get(OPENAPI_ENDPOINT)
             .then();
 
-      assertOpenAPISpecPolymorphicPaths(response, "paths.'/admin/api/v2/realms/{name}/clients/{id}'.put.requestBody.content.'application/json'.schema"); // request
-      assertOpenAPISpecPolymorphicPaths(response, "paths.'/admin/api/v2/realms/{name}/clients/{id}'.get.responses.'200'.content.'application/json'.schema"); // response
-      assertOpenAPISpecPolymorphicPaths(response, "paths.'/admin/api/v2/realms/{name}/clients'.get.responses.'200'.content.'application/json'.schema.items"); // arrays
+      assertOpenAPISpecPolymorphicPaths(response, "paths.'/admin/api/{realmName}/clients/{version}/{id}'.put.requestBody.content.'application/json'.schema"); // request
+      assertOpenAPISpecPolymorphicPaths(response, "paths.'/admin/api/{realmName}/clients/{version}/{id}'.get.responses.'200'.content.'application/json'.schema"); // response
+      assertOpenAPISpecPolymorphicPaths(response, "paths.'/admin/api/{realmName}/clients/{version}'.get.responses.'200'.content.'application/json'.schema.items"); // arrays
 
       response
           .body("components.schemas.OIDCClientRepresentation.properties.protocol.type", equalTo("string")) // the generated discriminator field
-          .body("paths.'/admin/api/v2/realms/{name}/clients'.get.responses.'200'.content.'application/json'.schema.type", equalTo("array"));
+          .body("paths.'/admin/api/{realmName}/clients/{version}'.get.responses.'200'.content.'application/json'.schema.type", equalTo("array"));
     }
 
     private void assertOpenAPISpecPolymorphicPaths(ValidatableResponse response, String schemaPath) {
