@@ -113,6 +113,18 @@ public final class InfinispanUtils {
             if (getParallelism() < MIN_VT_POOL_SIZE) {
                 throw new RuntimeException("To be able to use Infinispan/JGroups virtual threads, you need to set the Java system property jdk.virtualThreadScheduler.parallelism to at least " + MIN_VT_POOL_SIZE);
             }
+            if (getMaxPoolSize() < MIN_VT_POOL_SIZE) {
+                throw new RuntimeException("To be able to use Infinispan/JGroups virtual threads, you need to set the Java system property jdk.virtualThreadScheduler.maxPoolSize to at least " + MIN_VT_POOL_SIZE);
+            }
+        }
+    }
+
+    private static int getMaxPoolSize() {
+        String maxPoolSizeValue = System.getProperty("jdk.virtualThreadScheduler.maxPoolSize");
+        if (maxPoolSizeValue != null) {
+            return Integer.parseInt(maxPoolSizeValue);
+        } else {
+            return Integer.MAX_VALUE;
         }
     }
 
