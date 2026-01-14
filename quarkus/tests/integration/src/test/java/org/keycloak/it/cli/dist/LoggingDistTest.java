@@ -23,6 +23,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.hamcrest.Matchers;
+
 import org.keycloak.config.HttpAccessLogOptions;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.connections.httpclient.HttpClientBuilder;
@@ -336,10 +338,12 @@ public class LoggingDistTest {
     }
 
     private void assertHttpAccessLogMaskedCookies(CLIResult cliResult) {
-        assertThat(HttpAccessLogOptions.DEFAULT_HIDDEN_COOKIES.contains(CookieType.AUTH_SESSION_ID.getName()), CoreMatchers.is(true));
-        assertThat(HttpAccessLogOptions.DEFAULT_HIDDEN_COOKIES.contains(CookieType.AUTH_SESSION_ID_HASH.getName()), CoreMatchers.is(true));
-        assertThat(HttpAccessLogOptions.DEFAULT_HIDDEN_COOKIES.contains(CookieType.IDENTITY.getName()), CoreMatchers.is(true));
-        assertThat(HttpAccessLogOptions.DEFAULT_HIDDEN_COOKIES.contains(CookieType.SESSION.getName()), CoreMatchers.is(true));
+        assertThat(HttpAccessLogOptions.DEFAULT_HIDDEN_COOKIES, Matchers.contains(
+                CookieType.AUTH_SESSION_ID.getName(),
+                CookieType.AUTH_SESSION_ID_HASH.getName(),
+                CookieType.IDENTITY.getName(),
+                CookieType.SESSION.getName()
+        ));
 
         cliResult.assertStartedDevMode();
 
