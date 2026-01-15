@@ -223,6 +223,10 @@ make them available from queries:
 * `User`
 * `Group`
 * `Role`
+* `Aggregated`
+
+In case of using an `Aggregated` policy, all the underlying policies must be of type `User`, `Group`, or `Role`. Otherwise,
+the policy will always evaluate to `DENY` when performing partial evaluation.
 
 By using any of the policies above, {project_name} can pre-calculate the set of resources that a realm administration can view
 by looking for a direct (if using a user policy) or indirect (if using a role or group policy) reference to the realm administrator.

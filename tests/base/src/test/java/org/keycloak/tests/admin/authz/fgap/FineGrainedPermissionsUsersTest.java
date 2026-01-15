@@ -261,13 +261,4 @@ public class FineGrainedPermissionsUsersTest extends AbstractPermissionTest {
 
         return groups;
     }
-
-    private GroupRepresentation createGroup(String name) {
-        GroupRepresentation grp = new GroupRepresentation();
-        grp.setName(name);
-        String groupId = ApiUtil.getCreatedId(realm.admin().groups().add(grp));
-        grp.setId(groupId);
-        realm.cleanup().add(r -> r.groups().group(groupId).remove());
-        return grp;
-    }
 }
