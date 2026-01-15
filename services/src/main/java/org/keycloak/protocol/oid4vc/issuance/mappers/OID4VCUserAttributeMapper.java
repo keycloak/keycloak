@@ -97,12 +97,12 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
         }
     }
 
-    public static ProtocolMapperModel create(String mapperName, String userAttribute, String propertyName,
+    public static ProtocolMapperModel create(String mapperName, String claimName, String userAttribute,
                                              boolean aggregateAttributes) {
         ProtocolMapperModel mapperModel = new ProtocolMapperModel();
         mapperModel.setName(mapperName);
         Map<String, String> configMap = new HashMap<>();
-        configMap.put(CLAIM_NAME, propertyName);
+        configMap.put(CLAIM_NAME, claimName);
         configMap.put(USER_ATTRIBUTE_KEY, userAttribute);
         configMap.put(AGGREGATE_ATTRIBUTES_KEY, Boolean.toString(aggregateAttributes));
         mapperModel.setConfig(configMap);
