@@ -17,6 +17,8 @@
 
 package org.keycloak.models.workflow;
 
+import java.util.Set;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 
@@ -35,8 +37,8 @@ public class DisableUserStepProviderFactory implements WorkflowStepProviderFacto
     }
 
     @Override
-    public ResourceType getType() {
-        return ResourceType.USERS;
+    public Set<ResourceType> getTypes() {
+        return Set.of(ResourceType.USERS);
     }
 
     @Override

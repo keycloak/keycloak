@@ -1,6 +1,5 @@
 package org.keycloak.models.workflow.conditions.expression;
 
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.WorkflowEvent;
 
@@ -8,7 +7,7 @@ public class EventEvaluator extends AbstractBooleanEvaluator {
 
     private final WorkflowEvent event;
 
-    public EventEvaluator(KeycloakSession session, WorkflowEvent event) {
+    public EventEvaluator(WorkflowEvent event) {
         this.event = event;
     }
 

@@ -1,6 +1,7 @@
 package org.keycloak.models.workflow;
 
 import java.util.List;
+import java.util.Set;
 
 import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
@@ -38,8 +39,8 @@ public class RemoveUserAttributeStepProviderFactory implements WorkflowStepProvi
     }
 
     @Override
-    public ResourceType getType() {
-        return ResourceType.USERS;
+    public Set<ResourceType> getTypes() {
+        return Set.of(ResourceType.USERS);
     }
 
     @Override
