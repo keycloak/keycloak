@@ -119,9 +119,4 @@ class EmptyCredentialManager implements SubjectCredentialManager {
         return null;
     }
 
-    @Override
-    public List<String> getFirstFactorCredentialTypes() {
-        return List.of();
-    }
-
 }
