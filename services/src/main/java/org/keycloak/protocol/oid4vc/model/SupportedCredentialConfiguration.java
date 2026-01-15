@@ -57,6 +57,7 @@ public class SupportedCredentialConfiguration {
     @JsonIgnore
     private static final String CREDENTIAL_METADATA_KEY = "credential_metadata";
 
+    @JsonIgnore
     private String id;
 
     @JsonProperty(FORMAT_KEY)
