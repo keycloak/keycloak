@@ -1,0 +1,26 @@
+{
+  "name": "@keycloak/keycloak-admin-client-v2",
+  "version": "999.0.0-SNAPSHOT",
+  "description": "Keycloak Admin Client v2 - Generated with Microsoft Kiota",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "generate": "tsx scripts/generate.ts",
+    "generate:file": "OPENAPI_FILE=openapi.yaml tsx scripts/generate.ts",
+    "build": "tsc",
+    "test": "tsx test/test-app.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@microsoft/kiota": "^1.29.0",
+    "@types/node": "^25.0.8",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@microsoft/kiota-abstractions": "1.0.0-preview.99",
+    "@microsoft/kiota-bundle": "^1.0.0-preview.99",
+    "@microsoft/kiota-http-fetchlibrary": "^1.0.0-preview.99"
+  }
+}

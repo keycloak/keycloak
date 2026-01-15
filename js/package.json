@@ -13,6 +13,7 @@
         "./apps/account-ui:build",
         "./apps/admin-ui:build",
         "./libs/keycloak-admin-client:build",
+        "./libs/keycloak-admin-client-v2:generate:file",
         "./libs/ui-shared:build",
         "./themes-vendor:build"
       ]
