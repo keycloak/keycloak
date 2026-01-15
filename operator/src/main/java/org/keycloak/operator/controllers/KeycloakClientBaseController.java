@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
@@ -37,7 +38,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
 
 import jakarta.inject.Inject;
@@ -45,11 +49,15 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
+import org.apache.http.conn.util.PublicSuffixMatcherLoader;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.api.AdminApi;
 import org.keycloak.admin.api.client.ClientApi;
+import org.keycloak.admin.client.ClientBuilderWrapper;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
@@ -60,6 +68,7 @@ import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusBuilder;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 
@@ -82,6 +91,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
     private static final String HTTPS = "https";
     // TODO allows for local testing - could be promoted in some way to the CR if needed
     public static final String KEYCLOAK_TEST_ADDRESS = "KEYCLOAK_TEST_ADDRESS";
+    private DefaultHostnameVerifier verifier = new DefaultHostnameVerifier(PublicSuffixMatcherLoader.getDefault());
 
     class KeycloakClientStatusAggregator {
         R resource;
@@ -297,13 +307,44 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, tmf.getTrustManagers(), null);
 
-            restEasyClient = org.keycloak.admin.client.Keycloak.getClientProvider().newRestEasyClient(null,
-                    sslContext, false);
+            ClientBuilder clientBuilder = ClientBuilderWrapper.create(sslContext, false);
+
+            configureHostnameVerifier(context, keycloak, clientBuilder);
+
+            restEasyClient = clientBuilder.build();
         } catch (CertificateException | NoSuchAlgorithmException | KeyStoreException | IOException
                 | KeyManagementException e) {
             throw new RuntimeException(e);
         }
         return restEasyClient;
+    }
+
+    private void configureHostnameVerifier(Context<?> context, Keycloak keycloak, ClientBuilder clientBuilder) {
+        Optional<String> adminHostname = Optional.ofNullable(keycloak.getSpec().getHostnameSpec())
+                .map(HostnameSpec::getAdmin)
+                .or(() -> Optional.ofNullable(keycloak.getSpec().getHostnameSpec()).map(HostnameSpec::getHostname))
+                .map(hostname -> {
+                    try {
+                        return URI.create("http://"+hostname).getHost();
+                    } catch (IllegalArgumentException e) {
+                        return hostname;
+                    }
+                });
+        clientBuilder.hostnameVerifier(new HostnameVerifier() {
+
+            @Override
+            public boolean verify(String hostname, SSLSession session) {
+                // TODO: validate this approach
+
+                // if we're configured for passthrough, and adminHostname is present
+                if (adminHostname.isPresent() && verifier.verify(adminHostname.get(), session)) {
+                    return true;
+                }
+                // otherwise we expect the cert to be valid against the svc hostname - which
+                // should happen with service serving certificates
+                return verifier.verify(hostname, session);
+            }
+        });
     }
 
     private String getAdminUrl(Keycloak keycloak, Context<?> context) {
@@ -318,13 +359,14 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         if (address == null) {
             // uses the service host - TODO: assumes the operator and the keycloak instance are in the same cluster
             // this may not eventually hold if we are flexible about where the kube client can target
-            address = String.format("%s.%s:%s", KeycloakServiceDependentResource.getServiceName(keycloak),
+            address = String.format("%s.%s.svc:%s", KeycloakServiceDependentResource.getServiceName(keycloak),
                     keycloak.getMetadata().getNamespace(), port);
         }
 
         var relativePath = KeycloakDeploymentDependentResource.readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, keycloak, context)
                 .map(path -> !path.isEmpty() && !path.startsWith("/") ? "/" + path : path)
                 .orElse("");
+
         return String.format("%s://%s%s", protocol, address, relativePath);
     }
 

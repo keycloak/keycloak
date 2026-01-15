@@ -66,8 +66,9 @@ public class KeycloakClientTest extends BaseOperatorTest {
 
     @Test
     public void testBasicClientCreationAndDeletion() throws InterruptedException {
-        boolean https = false;
+        boolean https = true;
         var kc = getTestKeycloakDeployment(false);
+        kc.getSpec().getHostnameSpec().setHostname("example.com");
         // TODO will need validation that this is enabled
         kc.getSpec().setFeatureSpec(new FeatureSpecBuilder().withEnabledFeatures("client-admin-api:v2").build());
         if (!https) {
