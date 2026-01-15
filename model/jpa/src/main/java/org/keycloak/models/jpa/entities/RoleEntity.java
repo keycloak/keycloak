@@ -17,21 +17,15 @@
 
 package org.keycloak.models.jpa.entities;
 
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
@@ -95,13 +89,6 @@ public class RoleEntity {
     @Column(name="CLIENT_REALM_CONSTRAINT", length = 36)
     private String clientRealmConstraint;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {})
-    @JoinTable(name = "COMPOSITE_ROLE", joinColumns = @JoinColumn(name = "COMPOSITE"), inverseJoinColumns = @JoinColumn(name = "CHILD_ROLE"))
-    private Set<RoleEntity> compositeRoles;
-
-    @ManyToMany(mappedBy = "compositeRoles", fetch = FetchType.LAZY, cascade = {})
-    private Set<RoleEntity> parentRoles;
-
     // Explicitly not using OrphanRemoval as we're handling the removal manually through HQL but at the same time we still
     // want to remove elements from the entity's collection in a manual way. Without this, Hibernate would do a duplicit
     // delete query.
@@ -152,28 +139,6 @@ public class RoleEntity {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Set<RoleEntity> getCompositeRoles() {
-        if (compositeRoles == null) {
-            compositeRoles = new HashSet<>();
-        }
-        return compositeRoles;
-    }
-
-    public Set<RoleEntity> getParentRoles() {
-        if (parentRoles == null) {
-            parentRoles = new HashSet<>();
-        }
-        return parentRoles;
-    }
-
-    public void setParentRoles(Set<RoleEntity> parentRoles) {
-        this.parentRoles = parentRoles;
-    }
-
-    public void setCompositeRoles(Set<RoleEntity> compositeRoles) {
-        this.compositeRoles = compositeRoles;
     }
 
     public boolean isClientRole() {
