@@ -434,7 +434,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 //move to next
                 return null;
             }
-            model = finalSelectionOptions.get(0).getAuthenticationExecution();
+            model = resolveSelectedExecution(finalSelectionOptions);
             factory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
             if (factory == null) {
                 throw new RuntimeException("Unable to find factory for AuthenticatorFactory: " + model.getAuthenticator() + " did you forget to declare it in a META-INF/services file?");
@@ -472,6 +472,15 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         authenticator.authenticate(context);
 
         return processResult(context, false);
+    }
+
+    private AuthenticationExecutionModel resolveSelectedExecution(List<AuthenticationSelectionOption> finalSelectionOptions) {
+        String currentExecutionId = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+        return  finalSelectionOptions.stream()
+                .filter(option -> Objects.equals(option.getAuthExecId(), currentExecutionId))
+                .map(AuthenticationSelectionOption::getAuthenticationExecution)
+                .findFirst()
+                .orElseGet(() -> finalSelectionOptions.get(0).getAuthenticationExecution());
     }
 
     // Used for debugging purpose only. Log alias of authenticator (for non-flow executions) or alias of authenticationFlow (for flow executions)
