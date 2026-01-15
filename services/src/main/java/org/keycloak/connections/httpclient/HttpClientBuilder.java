@@ -17,7 +17,6 @@
 
 package org.keycloak.connections.httpclient;
 
-import java.net.URI;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -26,7 +25,6 @@ import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -38,6 +36,8 @@ import org.keycloak.common.enums.HostnameVerificationPolicy;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.binder.httpcomponents.MicrometerHttpRequestExecutor;
 import io.micrometer.core.instrument.binder.httpcomponents.PoolingHttpClientConnectionManagerMetricsBinder;
+import io.micrometer.core.instrument.config.MeterFilter;
+import io.micrometer.core.instrument.internal.OnlyOnceLoggingDenyMeterFilter;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
@@ -310,19 +310,14 @@ public class HttpClientBuilder {
                 new PoolingHttpClientConnectionManagerMetricsBinder(connectionManager, "default")
                       .bindTo(Metrics.globalRegistry);
 
+                String meterName = "httpcomponents.httpclient.request";
+                limitNumberOfTagsForMeter(meterName, "target.host");
+                limitNumberOfTagsForMeter(meterName, "target.port");
+                limitNumberOfTagsForMeter(meterName, "uri");
+
                 builder.setRequestExecutor(
                       MicrometerHttpRequestExecutor.builder(Metrics.globalRegistry)
-                            .uriMapper(request -> {
-                                // Only include the scheme, host and port to prevent cardinality explosion
-                                URI uri = URI.create(request.getRequestLine().getUri());
-                                String scheme = Objects.requireNonNullElse(uri.getScheme(), "");
-                                String host = Objects.requireNonNullElse(uri.getHost(), "");
-                                StringBuilder sb = new StringBuilder(scheme).append(host);
-                                if (uri.getPort() != -1) {
-                                    sb.append(":").append(uri.getPort());
-                                }
-                                return sb.toString();
-                            })
+                            .exportTagsForRoute(true)
                             .build()
                 );
             }
@@ -346,6 +341,13 @@ public class HttpClientBuilder {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void limitNumberOfTagsForMeter(String meterName, String tagKey) {
+        MeterFilter denyFilter = new OnlyOnceLoggingDenyMeterFilter(() ->
+                String.format("Reached the maximum number of '%s' tags for '%s', denying new metric.", tagKey, meterName));
+        Metrics.globalRegistry.config()
+                .meterFilter(MeterFilter.maximumAllowableTags(meterName, tagKey, 100, denyFilter));
     }
 
     protected org.apache.http.impl.client.HttpClientBuilder getApacheHttpClientBuilder() {
