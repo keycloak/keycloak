@@ -53,6 +53,9 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
     // Set if nested firstBrokerLogin is detected, allowing to report a detailed error
     public static final String NESTED_FIRST_BROKER_CONTEXT = "NESTED_FIRST_BROKER_CONTEXT";
 
+    // Set if federated identity link should not be created after first broker login
+    public static final String SKIP_FEDERATED_IDENTITY_LINK = "SKIP_FEDERATED_IDENTITY_LINK";
+
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
