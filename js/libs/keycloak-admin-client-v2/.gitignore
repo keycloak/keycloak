@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Kiota workspace files (regenerated on each run)
+.kiota/
+.openapi-temp.yaml
+src/
+
+# Logs
+*.log
+src/.kiota.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
