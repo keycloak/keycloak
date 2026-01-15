@@ -80,7 +80,9 @@ public class ManagementDistTest {
         when().get("/").then()
                 .statusCode(200)
                 .and()
-                .body(is("Keycloak Management Interface"));
+                .body(containsString("Keycloak Management Interface"),
+                        containsString("/health</a> - Health endpoint"),
+                        containsString("/metrics</a> - Metrics endpoint"));
         when().get("/health").then()
                 .statusCode(200);
         when().get("/health/live").then()
@@ -88,6 +90,35 @@ public class ManagementDistTest {
         when().get("/health/ready").then()
                 .statusCode(200);
         when().get("/metrics").then()
+                .statusCode(200);
+    }
+
+    @Test
+    @Launch({"start-dev", "--features=openapi,client-admin-api:v2", "--openapi-enabled=true", "--openapi-ui-enabled=true"})
+    void testManagementMultipleEndpoints(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertMessage("Management interface listening on http://0.0.0.0:9000");
+
+        when().get("/").then()
+                .statusCode(200)
+                .and()
+                .body(containsString("Keycloak Management Interface"),
+                        containsString("/health</a> - Health endpoint"),
+                        containsString("/metrics</a> - Metrics endpoint"),
+                        containsString("/openapi</a> - OpenAPI specification"),
+                        containsString("/openapi/ui</a> - OpenAPI UI specification (Swagger)")
+                );
+        when().get("/health").then()
+                .statusCode(200);
+        when().get("/health/live").then()
+                .statusCode(200);
+        when().get("/health/ready").then()
+                .statusCode(200);
+        when().get("/metrics").then()
+                .statusCode(200);
+        when().get("/openapi.json").then()
+                .statusCode(200);
+        when().get("/openapi/ui").then()
                 .statusCode(200);
     }
 
@@ -102,7 +133,7 @@ public class ManagementDistTest {
         when().get("/").then()
                 .statusCode(200)
                 .and()
-                .body(is("Keycloak Management Interface"));
+                .body(containsString("Keycloak Management Interface"));
         when().get("/health").then()
                 .statusCode(200);
         when().get("/health/live").then()
@@ -148,11 +179,11 @@ public class ManagementDistTest {
         when().get("/").then()
                 .statusCode(200)
                 .and()
-                .body(is("Keycloak Management Interface"));
+                .body(containsString("Keycloak Management Interface"));
         when().get(relativePath).then()
                 .statusCode(200)
                 .and()
-                .body(is("Keycloak Management Interface"));
+                .body(containsString("Keycloak Management Interface"));
         when().get(relativePath + "/health").then()
                 .statusCode(200);
         when().get("/health").then()
@@ -181,7 +212,7 @@ public class ManagementDistTest {
         when().get("/").then()
                 .statusCode(200)
                 .and()
-                .body(is("Keycloak Management Interface"));
+                .body(containsString("Keycloak Management Interface"));
         when().get("/health").then()
                 .statusCode(200);
         when().get("/health/live").then()

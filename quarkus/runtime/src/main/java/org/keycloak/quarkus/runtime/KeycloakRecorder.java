@@ -22,6 +22,8 @@ import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
@@ -30,7 +32,10 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.HealthOptions;
 import org.keycloak.config.HttpOptions;
+import org.keycloak.config.MetricsOptions;
+import org.keycloak.config.OpenApiOptions;
 import org.keycloak.config.TruststoreOptions;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.provider.Provider;
@@ -75,9 +80,32 @@ public class KeycloakRecorder {
         return routingContext -> routingContext.redirect(redirectPath);
     }
 
+    private static final List<ManagementInterfaceItem> MANAGEMENT_INTERFACE_ENDPOINTS = List.of(
+            new ManagementInterfaceItem("/health", "Health endpoint", () -> Configuration.isTrue(HealthOptions.HEALTH_ENABLED)),
+            new ManagementInterfaceItem("/metrics", "Metrics endpoint", () -> Configuration.isTrue(MetricsOptions.METRICS_ENABLED)),
+            new ManagementInterfaceItem("/openapi", "OpenAPI specification", () -> Configuration.isTrue(OpenApiOptions.OPENAPI_ENABLED)),
+            new ManagementInterfaceItem("/openapi/ui", "OpenAPI UI specification (Swagger)", () -> Configuration.isTrue(OpenApiOptions.OPENAPI_UI_ENABLED))
+    );
+
     // default handler for the management interface
     public Handler<RoutingContext> getManagementHandler() {
-        return routingContext -> routingContext.response().end("Keycloak Management Interface");
+        String itemsHtml = "<ul>%s</ul>".formatted(MANAGEMENT_INTERFACE_ENDPOINTS.stream()
+                .filter(f -> f.isEnabled.getAsBoolean())
+                .map(ManagementInterfaceItem::getListItem)
+                .collect(Collectors.joining("\n")));
+
+        return routingContext -> routingContext.response().end("""
+                <html>
+                <h2>Keycloak Management Interface</h2>
+                %s
+                </html>
+                """.formatted(itemsHtml));
+    }
+
+    private record ManagementInterfaceItem(String path, String description, BooleanSupplier isEnabled) {
+        String getListItem() {
+            return "<li><a href=\"%s\">%s</a> - %s</li>".formatted(path, path, description);
+        }
     }
 
     public Handler<RoutingContext> getRejectNonNormalizedPathFilter() {

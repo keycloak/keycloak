@@ -29,6 +29,12 @@ it is required to authenticate the client really with the client secret sent as 
 
 It is still possible to make the OIDC client to allow both methods and clients migrated from previous versions are set by default to allow authentication with both methods.
 
+=== Usage of virtual threads for embedded caches
+
+Previously virtual threads were used when at least two CPU cores were available.
+Starting with this version, virtual threads are only used when at least four CPU cores are available.
+This change should prevent deadlocks due to pinned virtual threads.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
