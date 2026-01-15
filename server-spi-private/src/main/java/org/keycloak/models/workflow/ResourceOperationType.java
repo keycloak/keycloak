@@ -6,6 +6,7 @@ import java.util.function.BiPredicate;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.models.ClientModel.ClientCreationEvent;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.FederatedIdentityModel.FederatedIdentityCreatedEvent;
 import org.keycloak.models.FederatedIdentityModel.FederatedIdentityRemovedEvent;
@@ -22,47 +23,63 @@ import static org.keycloak.models.utils.KeycloakModelUtils.GROUP_PATH_SEPARATOR;
 
 public enum ResourceOperationType {
 
-    USER_CREATED(List.of(OperationType.CREATE, EventType.REGISTER)),
-    USER_AUTHENTICATED(List.of(EventType.LOGIN), userLoginPredicate()),
-    USER_FEDERATED_IDENTITY_ADDED(List.of(FederatedIdentityCreatedEvent.class), fedIdentityPredicate()),
-    USER_FEDERATED_IDENTITY_REMOVED(List.of(FederatedIdentityRemovedEvent.class), fedIdentityPredicate()),
-    USER_GROUP_MEMBERSHIP_ADDED(List.of(GroupMemberJoinEvent.class), groupMembershipPredicate()),
-    USER_GROUP_MEMBERSHIP_REMOVED(List.of(GroupModel.GroupMemberLeaveEvent.class), groupMembershipPredicate()),
-    USER_ROLE_GRANTED(List.of(RoleGrantedEvent.class), roleMembershipPredicate()),
-    USER_ROLE_REVOKED(List.of(RoleModel.RoleRevokedEvent.class), roleMembershipPredicate()),
-    AD_HOC(List.of(new Class[] {}));
+    USER_CREATED(ResourceType.USERS, List.of(OperationType.CREATE, EventType.REGISTER)),
+    USER_AUTHENTICATED(ResourceType.USERS,List.of(EventType.LOGIN), userLoginPredicate()),
+    USER_FEDERATED_IDENTITY_ADDED(ResourceType.USERS,List.of(FederatedIdentityCreatedEvent.class), fedIdentityPredicate()),
+    USER_FEDERATED_IDENTITY_REMOVED(ResourceType.USERS,List.of(FederatedIdentityRemovedEvent.class), fedIdentityPredicate()),
+    USER_GROUP_MEMBERSHIP_ADDED(ResourceType.USERS,List.of(GroupMemberJoinEvent.class), groupMembershipPredicate()),
+    USER_GROUP_MEMBERSHIP_REMOVED(ResourceType.USERS,List.of(GroupModel.GroupMemberLeaveEvent.class), groupMembershipPredicate()),
+    USER_ROLE_GRANTED(ResourceType.USERS,List.of(RoleGrantedEvent.class), roleMembershipPredicate()),
+    USER_ROLE_REVOKED(ResourceType.USERS,List.of(RoleModel.RoleRevokedEvent.class), roleMembershipPredicate()),
 
-    private final List<Object> types;
+    CLIENT_ADDED(ResourceType.CLIENTS, List.of(OperationType.CREATE, ClientCreationEvent.class)),
+    CLIENT_LOGGED_IN(ResourceType.CLIENTS, List.of(EventType.CLIENT_LOGIN)),
+
+    AD_HOC(ResourceType.USERS, List.of(new Class[] {}));
+
+    private final ResourceType resourceType;
+    private final List<Object> eventTypes;
     private final List<Object> deactivationTypes;
     private final BiPredicate<WorkflowEvent, String> conditionPredicate;
 
-    ResourceOperationType(List<Object> types) {
-        this.types = types;
+    ResourceOperationType(ResourceType resourceType, List<Object> eventTypes) {
+        this.resourceType = resourceType;
+        this.eventTypes = eventTypes;
         this.deactivationTypes = List.of();
         this.conditionPredicate = defaultPredicate();
     }
 
-    ResourceOperationType(List<Object> types, BiPredicate<WorkflowEvent, String> conditionPredicate) {
-        this.types = types;
+    ResourceOperationType(ResourceType resourceType, List<Object> eventTypes, BiPredicate<WorkflowEvent, String> conditionPredicate) {
+        this.resourceType = resourceType;
+        this.eventTypes = eventTypes;
         this.deactivationTypes = List.of();
         this.conditionPredicate = defaultPredicate().and(conditionPredicate);
     }
 
+    public ResourceType getResourceType() {
+        return resourceType;
+    }
+
     public static ResourceOperationType toOperationType(Enum<?> from) {
-        return toOperationType((Object) from);
+        return toOperationType(null, from);
     }
 
     public static ResourceOperationType toOperationType(Class<?> from) {
-        return toOperationType((Object) from);
+        return toOperationType(null, from);
     }
 
-    private static ResourceOperationType toOperationType(Object from) {
+    public static ResourceOperationType toOperationType(ResourceType resourceType, Object from) {
         for (ResourceOperationType value : values()) {
-            if (value.types.contains(from)) {
+            if (resourceType != null && !resourceType.equals(value.resourceType)) {
+                continue;
+            }
+
+            if (value.eventTypes.contains(from)) {
                 return value;
             }
-            for (Object type : value.types) {
-                if (type instanceof Class<?> cls && cls.isAssignableFrom((Class<?>) from)) {
+            for (Object type : value.eventTypes) {
+                Class<?> fromClass = from instanceof Class ? (Class<?>) from : from.getClass();
+                if (type instanceof Class<?> cls && cls.isAssignableFrom(fromClass)) {
                     return value;
                 }
             }
@@ -91,15 +108,6 @@ public enum ResourceOperationType {
             return rre.getUser().getId();
         }
         return null;
-    }
-
-    public boolean isDeactivationEvent(Class<?> eventType) {
-        for (Object deactivationType : deactivationTypes) {
-            if (deactivationType instanceof Class<?> cls && cls.isAssignableFrom(eventType)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public boolean test(WorkflowEvent event, String detail) {
