@@ -49,6 +49,7 @@ import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserSessions } from "./UserSessions";
 import { UserEvents } from "../events/UserEvents";
+import { UserWorkflows } from "./UserWorkflows";
 import {
   UIUserRepresentation,
   UserFormFields,
@@ -118,6 +119,7 @@ export default function EditUser() {
   );
   const sessionsTab = useRoutableTab(toTab("sessions"));
   const eventsTab = useRoutableTab(toTab("events"));
+  const workflowsTab = useRoutableTab(toTab("workflows"));
 
   useFetch(
     async () =>
@@ -453,6 +455,15 @@ export default function EditUser() {
                       <AdminEvents resourcePath={`users/${user.id}`} />
                     </Tab>
                   </Tabs>
+                </Tab>
+              )}
+              {isFeatureEnabled(Feature.Workflows) && (
+                <Tab
+                  data-testid="workflows-tab"
+                  title={<TabTitleText>{t("workflows")}</TabTitleText>}
+                  {...workflowsTab}
+                >
+                  <UserWorkflows user={user.id} />
                 </Tab>
               )}
             </RoutableTabs>
