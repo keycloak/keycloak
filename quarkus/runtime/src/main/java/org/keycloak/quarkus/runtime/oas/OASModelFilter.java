@@ -3,6 +3,7 @@ package org.keycloak.quarkus.runtime.oas;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -58,6 +59,9 @@ public class OASModelFilter implements OASFilter {
         newPaths.forEach(paths::addPathItem);
         openAPI.setPaths(paths);
 
+        // Remove dangling allOf references (references to schemas that don't exist, e.g. hidden schemas)
+        removeDanglingAllOfReferences(openAPI);
+
         Map<String, Set<Schema>> discriminatorPropertiesToBeAdded = new HashMap<>();
 
         // Reflect Jackson annotations in OpenAPI spec
@@ -108,6 +112,42 @@ public class OASModelFilter implements OASFilter {
                     schema.addProperty(propertyName, discriminatorPropertySchema);
                 }
             });
+        });
+    }
+
+    /**
+     * Removes allOf references that point to schemas that don't exist in the OpenAPI document.
+     * This can happen when a parent class is marked with @Schema(hidden = true).
+     */
+    private void removeDanglingAllOfReferences(OpenAPI openAPI) {
+        if (openAPI.getComponents() == null || openAPI.getComponents().getSchemas() == null) {
+            return;
+        }
+
+        Set<String> existingSchemaNames = openAPI.getComponents().getSchemas().keySet();
+
+        openAPI.getComponents().getSchemas().values().forEach(schema -> {
+            if (schema.getAllOf() != null && !schema.getAllOf().isEmpty()) {
+                List<Schema> filteredAllOf = schema.getAllOf().stream()
+                        .filter(allOfSchema -> {
+                            if (allOfSchema.getRef() != null) {
+                                String refName = allOfSchema.getRef().substring(REF_PREFIX.length());
+                                boolean isDangling = !existingSchemaNames.contains(refName);
+                                if (isDangling) {
+                                    log.debugf("Removing dangling allOf reference to: %s", refName);
+                                }
+                                return !isDangling;
+                            }
+                            return true;
+                        })
+                        .collect(Collectors.toList());
+
+                if (filteredAllOf.isEmpty()) {
+                    schema.setAllOf(null);
+                } else if (filteredAllOf.size() != schema.getAllOf().size()) {
+                    schema.setAllOf(filteredAllOf);
+                }
+            }
         });
     }
 
