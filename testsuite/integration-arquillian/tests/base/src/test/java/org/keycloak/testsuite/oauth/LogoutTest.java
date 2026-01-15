@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.resource.ClientResource;
@@ -503,5 +504,45 @@ public class LogoutTest extends AbstractKeycloakTest {
         loginPage.assertCurrent();
 
         return tokenResponse;
+    }
+
+    @Test
+    public void backchannelLogoutOnUserDeletion() throws Exception {
+        String testUserName = "backchannel-deletion-test-user";
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername(testUserName);
+        user.setEmail(testUserName + "@localhost");
+        user.setEnabled(true);
+        Response response = adminClient.realm("test").users().create(user);
+        String testUserId = ApiUtil.getCreatedId(response);
+        response.close();
+        ApiUtil.resetUserPassword(adminClient.realm("test").users().get(testUserId), "password", false);
+
+        ClientsResource clients = adminClient.realm("test").clients();
+        ClientRepresentation clientRep = clients.findByClientId("test-app").get(0);
+        clientRep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, oauth.APP_ROOT + "/admin/backchannelLogout");
+        ClientResource clientResource = clients.get(clientRep.getId());
+        clientResource.update(clientRep);
+
+        try {
+            oauth.doLogin(testUserName, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
+                    .param(AdapterConstants.CLIENT_SESSION_STATE, "client-session")
+                    .send();
+            assertNotNull(tokenResponse.getAccessToken());
+
+            adminClient.realm("test").users().get(testUserId).remove();
+
+            String rawLogoutToken = testingClient.testApp().getBackChannelRawLogoutToken();
+            assertNotNull("Backchannel logout token should be received when user is deleted", rawLogoutToken);
+
+            JWSInput jwsInput = new JWSInput(rawLogoutToken);
+            LogoutToken logoutToken = jwsInput.readJsonContent(LogoutToken.class);
+            validateLogoutToken(logoutToken);
+        } finally {
+            clientRep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
+            clientResource.update(clientRep);
+        }
     }
 }

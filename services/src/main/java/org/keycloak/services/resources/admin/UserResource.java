@@ -114,6 +114,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.userprofile.UserProfile;
@@ -709,6 +710,8 @@ public class UserResource {
         UserRepresentation userRepresentation = new UserRepresentation();
         userRepresentation.setId(user.getId());
         userRepresentation.setUsername(user.getUsername());
+
+        UserSessionUtil.logoutAllUserSessions(session, realm, user);
 
         boolean removed = new UserManager(session).removeUser(realm, user);
         if (removed) {
