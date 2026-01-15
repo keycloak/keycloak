@@ -33,9 +33,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.jpa.entities.CompositeRoleEntity;
 import org.keycloak.models.jpa.entities.RoleAttributeEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.utils.StreamsUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -46,12 +48,14 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
     protected EntityManager em;
     protected RealmModel realm;
     protected KeycloakSession session;
+    private boolean newEntity;
 
-    public RoleAdapter(KeycloakSession session, RealmModel realm, EntityManager em, RoleEntity role) {
+    public RoleAdapter(KeycloakSession session, RealmModel realm, EntityManager em, RoleEntity role, boolean newEntity) {
         this.em = em;
         this.realm = realm;
         this.role = role;
         this.session = session;
+        this.newEntity = newEntity;
     }
 
     @Override
@@ -90,34 +94,53 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public boolean isComposite() {
-        return getCompositesStream().count() > 0;
+        return getChildRoles().findAny().isPresent();
     }
 
     @Override
     public void addCompositeRole(RoleModel role) {
-        RoleEntity entity = toRoleEntity(role);
-        for (RoleEntity composite : getEntity().getCompositeRoles()) {
-            if (composite.equals(entity)) return;
+        if (em.find(CompositeRoleEntity.class, new CompositeRoleEntity.Key(this.getId(), role.getId())) == null) {
+            CompositeRoleEntity compositeRoleEntity = new CompositeRoleEntity(getId(), role.getId());
+            if (role instanceof RoleAdapter roleAdapter) {
+                roleAdapter.flushNewEntity();
+            }
+            flushNewEntity(); // ensure that role is stored to the database first
+            em.persist(compositeRoleEntity);
         }
-        getEntity().getCompositeRoles().add(entity);
+    }
+
+    private void flushNewEntity() {
+        if (newEntity) {
+            // flush the current role to the database to ensure that we can join with it later
+            em.createQuery("select 1 from RoleEntity r where r.id = :id").setParameter("id", getId()).getResultList();
+            newEntity = false;
+        }
     }
 
     @Override
     public void removeCompositeRole(RoleModel role) {
-        RoleEntity entity = toRoleEntity(role);
-        getEntity().getCompositeRoles().remove(entity);
+        CompositeRoleEntity compositeRoleEntity = em.find(CompositeRoleEntity.class, new CompositeRoleEntity.Key(this.getId(), role.getId()));
+        if (compositeRoleEntity != null) {
+            em.remove(compositeRoleEntity);
+        }
     }
 
     @Override
     public Stream<RoleModel> getCompositesStream() {
-        Stream<RoleModel> composites = getEntity().getCompositeRoles().stream().map(c -> new RoleAdapter(session, realm, em, c));
+        Stream<RoleModel> composites = getChildRoles().map(c -> new RoleAdapter(session, realm, em, c, false));
         return composites.filter(Objects::nonNull);
+    }
+
+
+    private Stream<RoleEntity> getChildRoles() {
+        return StreamsUtil.closing(em.createNamedQuery("getChildRoles", RoleEntity.class)
+                .setParameter("parentRoleId", getId()).getResultStream());
     }
 
     @Override
     public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) {
         return session.roles().getRolesStream(realm,
-                getEntity().getCompositeRoles().stream().map(RoleEntity::getId),
+                getChildRoles().map(RoleEntity::getId),
                 search, first, max);
     }
 
