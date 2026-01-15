@@ -18,10 +18,10 @@ image:images/sessions-tab.png[Sessions Tab]
 |The maximum time before a user session expires.
 
 |SSO Session Idle Remember Me
-|This setting is similar to the standard SSO Session Idle configuration but specific to logins with *Remember Me* enabled. Users can specify longer session idle timeouts when they click *Remember Me* when logging in. This setting is an optional configuration and, if its value is not greater than zero, it uses the same idle timeout as the SSO Session Idle configuration.
+|This setting is only available when *Remember me* is enabled and is similar to the standard SSO Session Idle configuration. Users can specify longer session idle timeouts when they click *Remember Me* when logging in. This setting is an optional configuration and, if its value is not greater than zero, it uses the same idle timeout as the SSO Session Idle configuration.
 
 |SSO Session Max Remember Me
-|This setting is similar to the standard SSO Session Max but specific to *Remember Me* logins. Users can specify longer sessions when they click *Remember Me* when logging in. This setting is an optional configuration and, if its value is not greater than zero, it uses the same session lifespan as the SSO Session Max configuration.
+|This setting is only available when *Remember me* is enabled and is similar to the standard SSO Session Max. Users can specify longer sessions when they click *Remember Me* when logging in. This setting is an optional configuration and, if its value is not greater than zero, it uses the same session lifespan as the SSO Session Max configuration.
 
 |Client Session Idle
 |Idle timeout for the client session. If the user is inactive for longer than this timeout, the client session is invalidated and the refresh token requests bump the idle timeout. This setting never affects the general SSO user session, which is unique. Note the SSO user session is the parent of zero or more client sessions, one client session is created for every different client app the user logs in. This value should specify a shorter idle timeout than the *SSO Session Idle*. Users can override it for individual clients in the *Advanced Settings* client tab. This setting is an optional configuration and, when set to zero, uses the same idle timeout in the SSO Session Idle configuration.
