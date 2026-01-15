@@ -272,7 +272,8 @@ public class LoggingDistTest {
 
         when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
                 .statusCode(200);
-        assertThat(cliResult.getOutput(), containsString("{kc.realmName=master} DEBUG [org.keycloak."));
+        assertThat(cliResult.getOutput(), containsString("{kc.realmName=master}"));
+        assertThat(cliResult.getOutput(), containsString("{kc.requestId="));
         cliResult.assertStartedDevMode();
     }
 
