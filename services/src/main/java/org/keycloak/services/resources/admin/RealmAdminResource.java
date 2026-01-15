@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -1361,16 +1361,27 @@ public class RealmAdminResource {
     })
     public Response partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
                                   @QueryParam("exportClients") Boolean exportClients) {
-        auth.realm().requireManageRealm();
+        
+        // Need either manage-realm or export-realm role
+        try {
+            auth.realm().requireManageRealm();
+        } catch (ForbiddenException e) {
+            auth.realm().requireExportRealm();
+        }
+        
 
         boolean groupsAndRolesExported = exportGroupsAndRoles != null && exportGroupsAndRoles;
         boolean clientsExported = exportClients != null && exportClients;
 
-        if (groupsAndRolesExported) {
-            auth.groups().requireList();
-        }
-        if (clientsExported) {
-            auth.clients().requireView();
+        // export-realm includes permission to export groups and clients. 
+        // If the token does not have export-realm role, check for explicit permissions for groups and clients
+        if (!auth.realm().canExportRealm()) {
+            if (groupsAndRolesExported) {
+                auth.groups().requireList();
+            }
+            if (clientsExported) {
+                auth.clients().requireView();
+            }
         }
 
         // service accounts are exported if the clients are exported
