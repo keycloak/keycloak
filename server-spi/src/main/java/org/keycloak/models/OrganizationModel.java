@@ -30,6 +30,7 @@ public interface OrganizationModel {
     String ORGANIZATION_NAME_ATTRIBUTE = "kc.org.name";
     String ORGANIZATION_DOMAIN_ATTRIBUTE = "kc.org.domain";
     String ALIAS = "alias";
+    String HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN = "kc.org.broker.login.hide-when-org-unknown";
 
     enum IdentityProviderRedirectMode {
         EMAIL_MATCH("kc.org.broker.redirect.mode.email-matches");
