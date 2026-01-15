@@ -722,6 +722,92 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     }
 
     @Test
+    public void testRedirectToIdentityProviderAssociatedWithOrganizationDomainUsingAnyMatchCaseInsensitive() {
+        String userEmail = bc.getUserEmail().toUpperCase();
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
+
+        idp.setAlias("second-idp");
+        idp.setInternalId(null);
+        testRealm().identityProviders().create(idp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
+        organization.identityProviders().addIdentityProvider(idp.getAlias()).close();
+
+        openIdentityFirstLoginPage(userEmail, true, idp.getAlias(), false, false);
+
+        loginOrgIdp(userEmail, userEmail, true, true);
+
+        assertIsMember(userEmail, organization);
+        UserRepresentation user = testRealm().users().search(userEmail).get(0);
+        List<FederatedIdentityRepresentation> federatedIdentities = testRealm().users().get(user.getId()).getFederatedIdentity();
+        assertEquals(1, federatedIdentities.size());
+        assertEquals(bc.getIDPAlias(), federatedIdentities.get(0).getIdentityProvider());
+    }
+
+    @Test
+    public void testRedirectToIdentityProviderAssociatedWithOrganizationDomainUsingAnyMatchFirstLetterCapital() {
+        String userEmail = bc.getUserEmail().substring(0, 1).toUpperCase() + bc.getUserEmail().substring(1);
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
+
+        idp.setAlias("second-idp");
+        idp.setInternalId(null);
+        testRealm().identityProviders().create(idp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
+        organization.identityProviders().addIdentityProvider(idp.getAlias()).close();
+
+        openIdentityFirstLoginPage(userEmail, true, idp.getAlias(), false, false);
+
+        loginOrgIdp(userEmail, userEmail, true, true);
+
+        assertIsMember(userEmail, organization);
+        UserRepresentation user = testRealm().users().search(userEmail).get(0);
+        List<FederatedIdentityRepresentation> federatedIdentities = testRealm().users().get(user.getId()).getFederatedIdentity();
+        assertEquals(1, federatedIdentities.size());
+        assertEquals(bc.getIDPAlias(), federatedIdentities.get(0).getIdentityProvider());
+    }
+
+    @Test
+    public void testRedirectToIdentityProviderAssociatedWithOrganizationDomainUsingAnyMatchMixedCase() {
+        String originalEmail = bc.getUserEmail();
+        // Create mixed case email: capitalize every other character in the domain part
+        int atIndex = originalEmail.indexOf('@');
+        String localPart = originalEmail.substring(0, atIndex);
+        String domainPart = originalEmail.substring(atIndex + 1);
+        StringBuilder mixedCaseDomain = new StringBuilder();
+        for (int i = 0; i < domainPart.length(); i++) {
+            char c = domainPart.charAt(i);
+            mixedCaseDomain.append(i % 2 == 0 ? Character.toUpperCase(c) : Character.toLowerCase(c));
+        }
+        String userEmail = localPart + "@" + mixedCaseDomain;
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
+
+        idp.setAlias("second-idp");
+        idp.setInternalId(null);
+        testRealm().identityProviders().create(idp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
+        organization.identityProviders().addIdentityProvider(idp.getAlias()).close();
+
+        openIdentityFirstLoginPage(userEmail, true, idp.getAlias(), false, false);
+
+        loginOrgIdp(userEmail, userEmail, true, true);
+
+        assertIsMember(userEmail, organization);
+        UserRepresentation user = testRealm().users().search(userEmail).get(0);
+        List<FederatedIdentityRepresentation> federatedIdentities = testRealm().users().get(user.getId()).getFederatedIdentity();
+        assertEquals(1, federatedIdentities.size());
+        assertEquals(bc.getIDPAlias(), federatedIdentities.get(0).getIdentityProvider());
+    }
+
+    @Test
     public void testDoNotRedirectToIdentityProviderAssociatedWithOrganizationDomain() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
