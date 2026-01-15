@@ -1,0 +1,10 @@
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== Usage of virtual threads for embedded caches
+
+Previously virtual threads were used when at least two CPU cores were available.
+Starting with this version, virtual threads are only used when at least four CPU cores are available.
+This change should prevent deadlocks due to pinned virtual threads.
