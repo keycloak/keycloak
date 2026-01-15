@@ -1,10 +1,12 @@
 package org.keycloak.testsuite.broker;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -688,6 +690,29 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         waitForPage(driver, "we are sorry...", false);
         assertEquals("User with username consumer already exists. Please login to account management to link the account.", errorPage.getError());
+    }
+
+    @Test
+    public void testUserExistsFirstBrokerLoginFlowUpdateProfileOnAndTermsAccepted() {
+            createUser("consumer");
+
+            updateExecutionsAndEnableTermsAndCondition(AbstractBrokerTest::makeTermsAndCondionRequiredInLogin);
+
+            oauth.clientId("broker-app");
+            loginPage.open(bc.consumerRealmName());
+
+            logInWithBroker(bc);
+
+            Assert.assertTrue(updateAccountInformationPage.isCurrent());
+            Assert.assertTrue("We must be on correct realm right now",
+                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+
+            log.debug("Updating info on updateAccount page");
+            updateAccountInformationPage.acceptTerms("consumer", "consumer-user@redhat.com", "FirstName", "LastName");
+
+            waitForPage(driver, "we are sorry...", false);
+            assertEquals("User with username consumer already exists. Please login to account management to link the account.", errorPage.getError());
+
     }
 
 
@@ -1708,5 +1733,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         consumerRealm.update(realmRepresentation);
 
         return () -> toggleRegistrationAllowed(realmName, genuineValue);
+    }
+
+    private void updateExecutionsAndEnableTermsAndCondition(BiConsumer<AuthenticationExecutionInfoRepresentation, AuthenticationManagementResource> action) {
+        updateExecutions(action);
+        changeRequiredAction(true);
     }
 }
