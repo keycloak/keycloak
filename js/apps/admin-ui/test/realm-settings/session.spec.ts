@@ -25,7 +25,6 @@ test.describe.serial("Sessions", () => {
     await login(page);
     await goToRealm(page, realmName);
     await goToRealmSettings(page);
-    //await goToSessionsTab(page);
   });
 
   test("Add session data when Remember Me is disabled", async ({ page }) => {
