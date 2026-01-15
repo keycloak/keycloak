@@ -305,7 +305,7 @@ In this case, all calls to the `/realms/my-internal-realm/` and subsequent paths
 
 It is possible to export OpenTelemetry logs from your deployment to the OpenTelemetry collector for centralized log management.
 
-For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
+For more details, see the <@links.observability id="telemetry"/> guide.
 
 <@opts.printRelevantOptions includedOptions="log log-*" excludedOptions="log-console-* log-file log-file-* log-syslog-* log-mdc* telemetry-logs-*">
 
