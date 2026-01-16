@@ -3,7 +3,7 @@
     --keycloak-bg-logo-url: url("../img/keycloak-bg-darken.svg");
     --keycloak-logo-height: 63px;
     --keycloak-logo-width: 300px;
-    --keycloak-card-top-color: var(--pf-v5-global--palette--blue-400);
+    --keycloak-card-top-color: var(--pf-v5-global--primary-color--100);
 }
 
 .pf-v5-c-login__container {

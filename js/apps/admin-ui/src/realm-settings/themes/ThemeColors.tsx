@@ -8,6 +8,8 @@ import {
   InputGroup,
   InputGroupItem,
   PageSection,
+  Stack,
+  StackItem,
   Text,
   TextContent,
   TextInputProps,
@@ -25,7 +27,9 @@ import { FormAccess } from "../../components/form/FormAccess";
 import useToggle from "../../utils/useToggle";
 import { FileNameDialog } from "./FileNameDialog";
 import { ImageUpload } from "./ImageUpload";
+import { LoginPreviewWindow } from "./LoginPreviewWindow";
 import { usePreviewLogo } from "./LogoContext";
+import { usePreviewBackground } from "./BackgroundContext";
 import { darkTheme, lightTheme } from "./PatternflyVars";
 import { PreviewWindow } from "./PreviewWindow";
 import { ThemeRealmRepresentation } from "./ThemesTab";
@@ -83,6 +87,7 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
   const { handleSubmit, watch } = form;
   const style = watch();
   const contextLogo = usePreviewLogo();
+  const contextBackground = usePreviewBackground();
   const [open, toggle, setOpen] = useToggle();
 
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -111,6 +116,8 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
     form.setValue("bgimage", values.bgimage);
     form.setValue("favicon", values.favicon);
     form.setValue("logo", values.logo);
+    form.setValue("logoWidth", values.logoWidth);
+    form.setValue("logoHeight", values.logoHeight);
     form.reset(values);
   };
 
@@ -120,6 +127,8 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
       ...realm,
       favicon: values.favicon as File,
       logo: values.logo as File,
+      logoWidth: values.logoWidth as string,
+      logoHeight: values.logoHeight as string,
       bgimage: values.bgimage as File,
       fileName: values.name as string,
       attributes: {
@@ -171,8 +180,23 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
                     onChange={(logo) => contextLogo?.setLogo(logo)}
                   />
                 </FormGroup>
+                <TextControl
+                  name={"logoWidth"}
+                  label={t("logoWidth")}
+                  placeholder="300px"
+                  defaultValue="300px"
+                />
+                <TextControl
+                  name={"logoHeight"}
+                  label={t("logoHeight")}
+                  placeholder="63px"
+                  defaultValue="63px"
+                />
                 <FormGroup label={t("backgroundImage")}>
-                  <ImageUpload name="bgimage" />
+                  <ImageUpload
+                    name="bgimage"
+                    onChange={(bg) => contextBackground?.setBackground(bg)}
+                  />
                 </FormGroup>
                 {mapping.map((m) => (
                   <ColorControl
@@ -186,7 +210,26 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
             </FormAccess>
           </FlexItem>
           <FlexItem grow={{ default: "grow" }} style={{ zIndex: 0 }}>
-            <PreviewWindow cssVars={style?.[theme] || {}} />
+            <Stack hasGutter>
+              <StackItem>
+                <TextContent>
+                  <Text component="h3">{t("loginPagePreview")}</Text>
+                </TextContent>
+                <LoginPreviewWindow
+                  cssVars={{
+                    ...(style?.[theme] || {}),
+                    logoWidth: style?.["logoWidth"],
+                    logoHeight: style?.["logoHeight"],
+                  }}
+                />
+              </StackItem>
+              <StackItem>
+                <TextContent>
+                  <Text component="h3">{t("adminConsolePreview")}</Text>
+                </TextContent>
+                <PreviewWindow cssVars={style?.[theme] || {}} />
+              </StackItem>
+            </Stack>
           </FlexItem>
         </Flex>
         <FixedButtonsGroup
