@@ -104,6 +104,7 @@ import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+import org.keycloak.representations.AuthorizationDetailsResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.LogoutToken;
@@ -129,6 +130,7 @@ import org.keycloak.util.TokenUtil;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OAuth2Constants.ORGANIZATION;
+import static org.keycloak.models.Constants.AUTHORIZATION_DETAILS_RESPONSE;
 import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 import static org.keycloak.representations.IDToken.NONCE;
 
@@ -352,10 +354,11 @@ public class TokenManager {
         AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session,
             validation.userSession, validation.clientSessionCtx).offlineToken( TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType())).accessToken(validation.newToken);
 
-        // Copy authorization_details from refresh token to new access token if present
-        Object authorizationDetails = refreshToken.getOtherClaims().get(OAuth2Constants.AUTHORIZATION_DETAILS);
+        // Copy authorization_details from refresh token to new access token and to acessTokenResponse (if present)
+        List<AuthorizationDetailsResponse> authorizationDetails = refreshToken.getAuthorizationDetails();
         if (authorizationDetails != null) {
-            validation.newToken.setOtherClaims(OAuth2Constants.AUTHORIZATION_DETAILS, authorizationDetails);
+            validation.newToken.setAuthorizationDetails(authorizationDetails);
+            validation.clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetails);
         }
         
         if (clientConfig.isUseRefreshToken()) {
@@ -366,11 +369,6 @@ public class TokenManager {
         if (validation.newToken.getAuthorization() != null
             && clientConfig.isUseRefreshToken()) {
             responseBuilder.getRefreshToken().setAuthorization(validation.newToken.getAuthorization());
-        }
-
-        // Ensure authorization_details are also in the new refresh token if present
-        if (authorizationDetails != null && clientConfig.isUseRefreshToken() && responseBuilder.getRefreshToken() != null) {
-            responseBuilder.getRefreshToken().setOtherClaims(OAuth2Constants.AUTHORIZATION_DETAILS, authorizationDetails);
         }
 
         String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
@@ -1235,11 +1233,7 @@ public class TokenManager {
                         .map(ClientModel::getClientId)
                         .collect(Collectors.toSet()));
             }
-            // Copy authorization_details from access token to refresh token if present
-            Object authorizationDetails = accessToken.getOtherClaims().get(OAuth2Constants.AUTHORIZATION_DETAILS);
-            if (authorizationDetails != null) {
-                refreshToken.getOtherClaims().put(OAuth2Constants.AUTHORIZATION_DETAILS, authorizationDetails);
-            }
+
             Boolean bindOnlyRefreshToken = session.getAttributeOrDefault(DPoPUtil.DPOP_BINDING_ONLY_REFRESH_TOKEN_SESSION_ATTRIBUTE, false);
             if (bindOnlyRefreshToken) {
                 DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
@@ -1409,6 +1403,11 @@ public class TokenManager {
             String responseScope = clientSessionCtx.getScopeString();
             res.setScope(responseScope);
             event.detail(Details.SCOPE, responseScope);
+
+            List<AuthorizationDetailsResponse> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
+            if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
+                res.setAuthorizationDetails(authDetailsResponse);
+            }
 
             response = res;
             return response;

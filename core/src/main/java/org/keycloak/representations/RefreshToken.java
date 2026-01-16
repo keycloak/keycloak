@@ -44,6 +44,7 @@ public class RefreshToken extends AccessToken {
         this.nonce = token.nonce;
         this.audience = new String[] { token.issuer };
         this.scope = token.scope;
+        this.authorizationDetails = token.authorizationDetails;
     }
 
     /**
@@ -54,14 +55,7 @@ public class RefreshToken extends AccessToken {
      *                     always be included in the response
      */
     public RefreshToken(AccessToken token, Confirmation confirmation) {
-        this();
-        this.issuer = token.issuer;
-        this.subject = token.subject;
-        this.issuedFor = token.issuedFor;
-        this.sessionId = token.sessionId;
-        this.nonce = token.nonce;
-        this.audience = new String[] { token.issuer };
-        this.scope = token.scope;
+        this(token);
         this.confirmation = confirmation;
     }
 

@@ -16,13 +16,10 @@
  */
 package org.keycloak.protocol.oid4vc.model;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -30,40 +27,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * 
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
-public class AuthorizationDetail {
-
-    @JsonProperty("type")
-    private String type;
+public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresentation {
 
     @JsonProperty("credential_configuration_id")
     private String credentialConfigurationId;
 
-    @JsonProperty("locations")
-    private List<String> locations;
-
     @JsonProperty("claims")
     private List<ClaimsDescription> claims;
-
-    @JsonIgnore
-    private Map<String, Object> additionalFields = new HashMap<>();
-
-    @JsonAnyGetter
-    public Map<String, Object> getAdditionalFields() {
-        return additionalFields;
-    }
-
-    @JsonAnySetter
-    public void setAdditionalField(String name, Object value) {
-        this.additionalFields.put(name, value);
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
 
     public String getCredentialConfigurationId() {
         return credentialConfigurationId;
@@ -73,19 +43,21 @@ public class AuthorizationDetail {
         this.credentialConfigurationId = credentialConfigurationId;
     }
 
-    public List<String> getLocations() {
-        return locations;
-    }
-
-    public void setLocations(List<String> locations) {
-        this.locations = locations;
-    }
-
     public List<ClaimsDescription> getClaims() {
         return claims;
     }
 
     public void setClaims(List<ClaimsDescription> claims) {
         this.claims = claims;
+    }
+
+    @Override
+    public String toString() {
+        return "OID4VCAuthorizationDetailsResponse{" +
+                "type='" + getType() + '\'' +
+                ", locations='" + getLocations() + '\'' +
+                ", credentialConfigurationId='" + credentialConfigurationId + '\'' +
+                ", claims=" + claims +
+                '}';
     }
 }
