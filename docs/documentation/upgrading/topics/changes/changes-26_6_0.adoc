@@ -35,6 +35,10 @@ Previously virtual threads were used when at least two CPU cores were available.
 Starting with this version, virtual threads are only used when at least four CPU cores are available.
 This change should prevent deadlocks due to pinned virtual threads.
 
+=== HTTP Access log does not contain specific sensitive information
+
+Specific sensitive information is omitted from the HTTP Access log, such as the value of the `Authorization` HTTP header. Moreover, values of specific sensitive {project_name} cookies, such as `KEYCLOAK_SESSION`, `KEYCLOAK_IDENTITY`, or `AUTH_SESSION_ID`, are also omitted.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

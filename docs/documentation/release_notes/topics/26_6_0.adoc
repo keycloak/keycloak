@@ -1,0 +1,9 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+= Sensitive Keycloak information is not displayed in the HTTP Access log
+
+If you are using the HTTP Access logging capability, sensitive information is omitted.
+It means that tokens in the 'Authorization' HTTP header and specific sensitive Keycloak cookies are not shown.
+
+For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring logging].
