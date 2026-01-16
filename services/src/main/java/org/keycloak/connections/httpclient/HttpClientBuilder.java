@@ -17,6 +17,8 @@
 
 package org.keycloak.connections.httpclient;
 
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
+
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -30,6 +32,8 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
+import org.apache.http.Header;
 
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 
@@ -318,6 +322,10 @@ public class HttpClientBuilder {
                 builder.setRequestExecutor(
                       MicrometerHttpRequestExecutor.builder(Metrics.globalRegistry)
                             .exportTagsForRoute(true)
+                            .uriMapper(request -> {
+                                Header header = request.getFirstHeader(METRICS_URI_TEMPLATE_HEADER);
+                                return (header != null) ? header.getValue() : "UNKNOWN";
+                            })
                             .build()
                 );
             }

@@ -68,6 +68,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     private static final String NO_PROXY = "no_proxy";
     public static final String MAX_CONSUMED_RESPONSE_SIZE = "max-consumed-response-size";
     public static final String METRICS_ENABLED = "metrics-enabled";
+    public static final String METRICS_URI_TEMPLATE_HEADER = "X-Metrics-Template";
 
     private volatile CloseableHttpClient httpClient;
     private Config.Scope config;

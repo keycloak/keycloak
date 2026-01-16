@@ -132,7 +132,10 @@ public class MetricsDistTest {
                 .body(containsString("TYPE httpcomponents_httpclient_pool_total_max"))
                 .body(containsString("TYPE httpcomponents_httpclient_pool_route_max_default"))
                 .body(containsString("TYPE httpcomponents_httpclient_request_seconds"))
-                .body(not(containsString("TYPE httpcomponents_httpclient_request_seconds_bucket")));
+                .body(not(containsString("TYPE httpcomponents_httpclient_request_seconds_bucket")))
+                // Test that URI fields are populated as expected when the X-Metrics-Template is defined
+                .body(containsString("httpcomponents_httpclient_request_seconds_max{method=\"GET\",outcome=\"CLIENT_ERROR\",status=\"404\",target_host=\"localhost\",target_port=\"8080\",target_scheme=\"http\",uri=\"/test/users/{id}\"}"))
+        ;
 
         when().get("/health").then()
                 .statusCode(404);
@@ -179,8 +182,8 @@ public class MetricsDistTest {
         // histograms are only available at the second request as they then contain the metrics of the first request
         when().get("/metrics").then()
                 .statusCode(200)
-                .body(containsString("httpcomponents_httpclient_request_seconds_bucket{method=\"GET\",outcome=\"SUCCESS\",status=\"200\",uri=\"\",le=\"0.001\"}"))
-                .body(containsString("httpcomponents_httpclient_request_seconds_bucket{method=\"GET\",outcome=\"SUCCESS\",status=\"200\",uri=\"\",le=\"0.005\"}"))
+                .body(containsString("httpcomponents_httpclient_request_seconds_bucket{method=\"GET\",outcome=\"SUCCESS\",status=\"200\",target_host=\"localhost\",target_port=\"8080\",target_scheme=\"http\",uri=\"UNKNOWN\",le=\"0.001\"}"))
+                .body(containsString("httpcomponents_httpclient_request_seconds_bucket{method=\"GET\",outcome=\"SUCCESS\",status=\"200\",target_host=\"localhost\",target_port=\"8080\",target_scheme=\"http\",uri=\"UNKNOWN\",le=\"0.005\"}"))
                 .body(containsString("http_server_requests_seconds_bucket{method=\"GET\",outcome=\"SUCCESS\",status=\"200\",uri=\"/metrics\",le=\"0.005\"}"))
                 .body(containsString("http_server_requests_seconds_bucket{method=\"GET\",outcome=\"SUCCESS\",status=\"200\",uri=\"/metrics\",le=\"0.005592405\"}"));
     }

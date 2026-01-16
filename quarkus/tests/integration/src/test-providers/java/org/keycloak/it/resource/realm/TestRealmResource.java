@@ -17,6 +17,8 @@
 
 package org.keycloak.it.resource.realm;
 
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
+
 import java.io.IOException;
 
 import jakarta.ws.rs.GET;
@@ -29,6 +31,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resource.RealmResourceProvider;
 
@@ -101,13 +104,23 @@ public class TestRealmResource implements RealmResourceProvider {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response initHttpClient() {
-        // Execute a single request so that at least one metric is created
-        try (var ignore = SimpleHttp.create(session).doGet("http://localhost:8080").asResponse()){
+        // Execute a request so that at least one metric is created with a successful response
+        execHTTP(SimpleHttp.create(session).doGet("http://localhost:8080"));
+        // Execute a request with a custom template to ensure that the uri tag is populated as expected
+        execHTTP(
+              SimpleHttp.create(session)
+                    .doGet("http://localhost:8080/test/users/1")
+                    .header(METRICS_URI_TEMPLATE_HEADER, "/test/users/{id}")
+        );
+        return Response.noContent().build();
+    }
+
+    private void execHTTP(SimpleHttpRequest req) {
+        try (var ignore = req.asResponse()) {
             // no-op
         } catch (IOException e) {
             logger.error(e);
         }
-        return Response.noContent().build();
     }
 
     @Override

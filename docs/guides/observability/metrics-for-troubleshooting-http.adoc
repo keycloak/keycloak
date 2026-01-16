@@ -109,8 +109,10 @@ m| httpcomponents_httpclient_pool_route_max_default
 
 |===
 
-A `httpcomponents_httpclient_request_seconds` metric is recorded for each unique `uri`, however in order to prevent cardinality explosion
-we disregard a request's path and only include the schema, host and port.
+A `httpcomponents_httpclient_request_seconds` metric is recorded for each unique `host` and `port`, however in order to
+prevent cardinality explosion we define the `uri` tag as "UNKNOWN" unless the `X-Metrics-Template` header is explicitly
+configured in the request. This prevents endpoints such as `/users/{id}`, registering a metric for every call to
+`/users/1`, `/users/2` and so forth. For such paths, it is recommended that the `X-Metrics-Template` be defined as `/users/{id}`.
 
 You can enable histograms for the `httpcomponents_httpclient_request_seconds` metric by setting `http-client-metrics-histograms-enabled`
 to `true`, and add additional buckets for service level objectives using the option `http-client-metrics-slos`.
