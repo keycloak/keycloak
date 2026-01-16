@@ -35,8 +35,8 @@ import org.keycloak.representations.AccessToken.Authorization;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
-import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -61,6 +61,7 @@ import static org.junit.Assert.assertTrue;
 public class AuthorizationTest extends AbstractAuthzTest {
 
     private AuthzClient authzClient;
+    private PolicyRepresentation grantPolicy;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -86,18 +87,7 @@ public class AuthorizationTest extends AbstractAuthzTest {
     public void configureAuthorization() throws Exception {
         ClientResource client = getClient();
         AuthorizationResource authorization = client.authorization();
-
-        JSPolicyRepresentation policy = new JSPolicyRepresentation();
-
-        policy.setName("Grant Policy");
-        policy.setType("script-scripts/default-policy.js");
-
-        authorization.policies().js().create(policy).close();
-
-        policy = new JSPolicyRepresentation();
-
-        policy.setName("Deny Policy");
-        policy.setType("script-scripts/always-deny-policy.js");
+        grantPolicy = createAlwaysGrantPolicy(authorization);
     }
 
     @After
@@ -114,11 +104,11 @@ public class AuthorizationTest extends AbstractAuthzTest {
     public void testResourceWithSameNameDifferentOwner() throws JWSInputException {
         ResourceRepresentation koloResource = createResource("Resource A", "kolo", "Scope A", "Scope B");
 
-        createResourcePermission(koloResource, "Grant Policy");
+        createResourcePermission(koloResource, grantPolicy.getName());
 
         ResourceRepresentation martaResource = createResource("Resource A", "marta", "Scope A", "Scope B");
 
-        createResourcePermission(martaResource, "Grant Policy");
+        createResourcePermission(martaResource, grantPolicy.getName());
 
         assertNotEquals(koloResource.getId(), martaResource.getId());
 
@@ -149,11 +139,11 @@ public class AuthorizationTest extends AbstractAuthzTest {
     public void testResourceServerWithSameNameDifferentOwner() {
         ResourceRepresentation koloResource = createResource("Resource A", "kolo", "Scope A", "Scope B");
 
-        createResourcePermission(koloResource, "Grant Policy");
+        createResourcePermission(koloResource, grantPolicy.getName());
 
         ResourceRepresentation serverResource = createResource("Resource A", null, "Scope A", "Scope B");
 
-        createResourcePermission(serverResource, "Grant Policy");
+        createResourcePermission(serverResource, grantPolicy.getName());
 
         AuthorizationRequest request = new AuthorizationRequest();
 
