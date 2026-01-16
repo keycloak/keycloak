@@ -421,7 +421,7 @@ Let's exlude the members of the group itself, so that `test-admins` cannot manag
 - Create a "Role Policy" allowing access to users assigned the `impersonation-admin` role.
 - Assign both policies to the permission.
 
-===== Blacklisting specific users from being impersonated
+===== Preventing specific users from being impersonated
 
 - Create a *User Permission* for the specific users you want to prevent from being impersonated.
 - Create any policy that evaluates to deny (such as a user policy with no users selected).
