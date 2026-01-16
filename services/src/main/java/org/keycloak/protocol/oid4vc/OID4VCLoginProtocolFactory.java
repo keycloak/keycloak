@@ -20,6 +20,8 @@ package org.keycloak.protocol.oid4vc;
 import java.util.HashMap;
 import java.util.Map;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.Config;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.events.EventBuilder;
@@ -40,6 +42,8 @@ import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCUserAttributeMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorResponseException;
 
 import org.jboss.logging.Logger;
 
@@ -161,6 +165,23 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         clientScope.getAttributes().computeIfAbsent(HASH_ALGORITHM, k -> HASH_ALGORITHM_DEFAULT);
         clientScope.getAttributes().computeIfAbsent(TOKEN_JWS_TYPE, k -> TOKEN_TYPE_DEFAULT);
         clientScope.getAttributes().computeIfAbsent(EXPIRY_IN_SECONDS, k -> String.valueOf(EXPIRY_IN_SECONDS_DEFAULT));
+    }
+
+    @Override
+    public void validateClientScope(KeycloakSession session, ClientScopeRepresentation clientScope) throws ErrorResponseException {
+        LoginProtocolFactory.super.validateClientScope(session, clientScope);
+
+        RealmModel realm = session.getContext().getRealm();
+        if (!realm.isVerifiableCredentialsEnabled()) {
+            throw ErrorResponse.error(
+                    "OID4VC protocol cannot be used when Verifiable Credentials is disabled for the realm",
+                    Response.Status.BAD_REQUEST);
+        }
+    }
+
+    @Override
+    public boolean isValidClientScope(KeycloakSession session, ClientModel client, ClientScopeModel clientScope) {
+        return session.getContext().getRealm().isVerifiableCredentialsEnabled();
     }
 
     @Override
