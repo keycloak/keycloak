@@ -29,12 +29,20 @@ public class DefaultAlternativeLookupProvider implements AlternativeLookupProvid
             }
         }
 
-        IdentityProviderModel idp = session.identityProviders().getAllStream(IdentityProviderQuery.any())
+        List<IdentityProviderModel> idps = session.identityProviders().getAllStream(IdentityProviderQuery.any())
                 .filter(i -> issuerUrl.equals(i.getConfig().get(IdentityProviderModel.ISSUER)))
-                .findFirst().orElse(null);
-        if (idp != null && idp.getAlias() != null) {
-            lookupCache.put(alternativeKey, idp.getAlias());
+                .limit(2)
+                .toList();
+        IdentityProviderModel idp = null;
+        if (idps.size() == 1) {
+            idp = idps.get(0);
+            if (idp.getAlias() != null) {
+                lookupCache.put(alternativeKey, idp.getAlias());
+            }
+        } else if (idps.size() > 1) {
+            throw new RuntimeException("Multiple IDPs match the same issuer: " + idps.stream().map(IdentityProviderModel::getAlias).toList());
         }
+
         return idp;
     }
 
