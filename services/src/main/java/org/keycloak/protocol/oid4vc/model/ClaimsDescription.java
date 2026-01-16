@@ -29,10 +29,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class ClaimsDescription {
 
-    @JsonProperty("path")
+    public static final String PATH = "path";
+    public static final String MANDATORY = "mandatory";
+
+    @JsonProperty(PATH)
     private List<Object> path;
 
-    @JsonProperty("mandatory")
+    @JsonProperty(MANDATORY)
     private Boolean mandatory;
 
     public ClaimsDescription() {

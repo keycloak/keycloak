@@ -30,7 +30,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * The JSON representation of a Rich Authorization Request's "authorization_details" object.
  *
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
- * @see {@link <a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-rar#section-2">Request parameter "authorization_details"</a>}
+ * @see {@link <a href="https://datatracker.ietf.org/doc/html/rfc9396#section-2">Request parameter "authorization_details"</a>}
  */
 public class AuthorizationDetailsJSONRepresentation implements Serializable {
 
@@ -156,4 +156,6 @@ public class AuthorizationDetailsJSONRepresentation implements Serializable {
     public int hashCode() {
         return Objects.hash(type, locations, actions, datatypes, identifier, privileges, customData);
     }
+
+
 }

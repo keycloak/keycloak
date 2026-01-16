@@ -34,14 +34,12 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
-import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.AuthorizationDetailsResponse;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
@@ -241,12 +239,8 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             }
         }
 
-        // Only generate authorization_details from credential offer if:
-        // 1. No authorization_details were processed yet, AND
-        // 2. There's a credential offer note in the client session (indicating this is a credential offer flow)
-        // This prevents generating authorization_details for regular SSO logins that don't request OID4VCI
-        if ((authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty())
-                && clientSession.getNote(OID4VCIssuerEndpoint.CREDENTIAL_CONFIGURATION_IDS_NOTE) != null) {
+        // Case when authorization_details response not generated
+        if ((authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty())) {
             authorizationDetailsResponse = handleMissingAuthorizationDetails(clientSession.getUserSession(), clientSessionCtx);
             if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
                 clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
@@ -260,22 +254,14 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             // Add authorization_details to the access token and refresh token if they were processed
             List<AuthorizationDetailsResponse> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
             if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
-                s.getAccessToken().setOtherClaims(AUTHORIZATION_DETAILS, authDetailsResponse);
+                s.getAccessToken().setAuthorizationDetails(authDetailsResponse);
                 // Also add to refresh token if one is generated
                 if (s.getRefreshToken() != null) {
-                    s.getRefreshToken().setOtherClaims(AUTHORIZATION_DETAILS, authDetailsResponse);
+                    s.getRefreshToken().setAuthorizationDetails(authDetailsResponse);
                 }
             }
             return new TokenResponseContext(formParams, parseResult, clientSessionCtx, s);
         });
-    }
-
-    @Override
-    protected void addCustomTokenResponseClaims(AccessTokenResponse res, ClientSessionContext clientSessionCtx) {
-        List<AuthorizationDetailsResponse> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
-        if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
-            res.setOtherClaims(AUTHORIZATION_DETAILS, authDetailsResponse);
-        }
     }
 
     @Override

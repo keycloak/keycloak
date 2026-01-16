@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,18 +35,19 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
-import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.util.JsonSerialization;
 
@@ -176,12 +178,12 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID));
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
-        List<AuthorizationDetail> authDetails = List.of(authDetail);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
         HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
@@ -195,10 +197,10 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
             assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusLine().getStatusCode());
             String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            List<OID4VCAuthorizationDetailsResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
+            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
             assertNotNull("authorization_details should be present in the response", authDetailsResponse);
             assertEquals(1, authDetailsResponse.size());
-            OID4VCAuthorizationDetailsResponse authDetailResponse = authDetailsResponse.get(0);
+            OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(0);
             assertEquals(OPENID_CREDENTIAL, authDetailResponse.getType());
             assertEquals(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID), authDetailResponse.getCredentialConfigurationId());
             assertNotNull(authDetailResponse.getCredentialIdentifiers());
@@ -234,13 +236,13 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         claim.setPath(claimPath);
         claim.setMandatory(true);
 
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID));
         authDetail.setClaims(Arrays.asList(claim));
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
-        List<AuthorizationDetail> authDetails = List.of(authDetail);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
         HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
@@ -254,10 +256,10 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
             assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusLine().getStatusCode());
             String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            List<OID4VCAuthorizationDetailsResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
+            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
             assertNotNull("authorization_details should be present in the response", authDetailsResponse);
             assertEquals(1, authDetailsResponse.size());
-            OID4VCAuthorizationDetailsResponse authDetailResponse = authDetailsResponse.get(0);
+            OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(0);
             assertEquals(OPENID_CREDENTIAL, authDetailResponse.getType());
             assertEquals(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID), authDetailResponse.getCredentialConfigurationId());
             assertNotNull(authDetailResponse.getClaims());
@@ -289,13 +291,13 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         claim.setPath(Arrays.asList("credentialSubject", "unsupportedClaim"));
         claim.setMandatory(false);
 
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID));
         authDetail.setClaims(Arrays.asList(claim));
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
-        List<AuthorizationDetail> authDetails = List.of(authDetail);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
         HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
@@ -308,10 +310,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
             // Should fail because the claim is not supported by the credential configuration
-            assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            assertTrue("Error message should indicate authorization_details processing error",
-                    responseBody.contains("Error when processing authorization_details"));
+            assertInvalidAuthzDetailsError(tokenResponse, "Invalid authorization_details: Unsupported claim: [credentialSubject, unsupportedClaim]. This claim is not supported by the credential configuration.");
         }
     }
 
@@ -325,13 +324,13 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         claim.setPath(Arrays.asList("credentialSubject", "mandatoryClaim"));
         claim.setMandatory(true);
 
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID));
         authDetail.setClaims(Arrays.asList(claim));
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
-        List<AuthorizationDetail> authDetails = List.of(authDetail);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
         HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
@@ -343,11 +342,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         postPreAuthorizedCode.setEntity(formEntity);
 
         try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            // Should fail because the mandatory claim is not supported
-            assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            assertTrue("Error message should indicate authorization_details processing error",
-                    responseBody.contains("Error when processing authorization_details"));
+            assertInvalidAuthzDetailsError(tokenResponse, "Invalid authorization_details: Unsupported claim: [credentialSubject, mandatoryClaim]. This claim is not supported by the credential configuration.");
         }
     }
 
@@ -361,13 +356,13 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         claim.setPath(Arrays.asList("credentialSubject", "address", "street"));
         claim.setMandatory(false);
 
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID));
         authDetail.setClaims(Arrays.asList(claim));
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
-        List<AuthorizationDetail> authDetails = List.of(authDetail);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
         HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
@@ -382,14 +377,12 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
             // Should fail if the complex path is not supported
             int statusCode = tokenResponse.getStatusLine().getStatusCode();
             if (statusCode == HttpStatus.SC_BAD_REQUEST) {
-                String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-                assertTrue("Error message should indicate authorization_details processing error",
-                        responseBody.contains("Error when processing authorization_details"));
+                assertInvalidAuthzDetailsError(tokenResponse, "Invalid authorization_details: Unsupported claim: [credentialSubject, address, street]. This claim is not supported by the credential configuration.");
             } else {
                 // If it succeeds, verify the response structure
                 assertEquals(HttpStatus.SC_OK, statusCode);
                 String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-                List<OID4VCAuthorizationDetailsResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
+                List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
                 assertNotNull("authorization_details should be present in the response", authDetailsResponse);
                 assertEquals(1, authDetailsResponse.size());
             }
@@ -401,12 +394,12 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         // Missing credential_configuration_id - should fail
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
-        List<AuthorizationDetail> authDetails = List.of(authDetail);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
         HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
@@ -418,11 +411,22 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         postPreAuthorizedCode.setEntity(formEntity);
 
         try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            assertTrue("Error message should indicate authorization_details processing error",
-                    responseBody.contains("Error when processing authorization_details"));
+            assertInvalidAuthzDetailsError(tokenResponse, "Invalid authorization_details: credential_configuration_id is required");
         }
+    }
+
+    private void assertInvalidAuthzDetailsError(CloseableHttpResponse tokenResponse, String expectedErrorDescription) throws IOException {
+        events.expectCodeToToken(null, null)
+                .client(client.getClientId())
+                .user(AssertEvents.isUUID())
+                .clearDetails()
+                .detail(Details.REASON, expectedErrorDescription)
+                .error(Errors.INVALID_AUTHORIZATION_DETAILS)
+                .assertEvent();
+        assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusLine().getStatusCode());
+        OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(tokenResponse.getEntity().getContent(), OAuth2ErrorRepresentation.class);
+        assertEquals(Errors.INVALID_AUTHORIZATION_DETAILS, errorRep.getError());
+        assertEquals(expectedErrorDescription, errorRep.getErrorDescription());
     }
 
     @Test
@@ -435,13 +439,13 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         claim.setPath(null); // Invalid: null path
         claim.setMandatory(false);
 
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID));
         authDetail.setClaims(Arrays.asList(claim));
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
-        List<AuthorizationDetail> authDetails = List.of(authDetail);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
         HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
@@ -453,10 +457,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         postPreAuthorizedCode.setEntity(formEntity);
 
         try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            assertTrue("Error message should indicate authorization_details processing error",
-                    responseBody.contains("Error when processing authorization_details"));
+            assertInvalidAuthzDetailsError(tokenResponse, "Invalid authorization_details: Invalid claims description: path is required");
         }
     }
 
@@ -465,7 +466,8 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
 
-        // Send empty authorization_details array - should fail
+        // Send empty authorization_details array - should work the same way like request without "authorization_details" parameter tested in testPreAuthorizedCodeWithCredentialOfferBasedAuthorizationDetails
+        // There is no processor available for empty authorization_details and hence considered as missing "authorization_details"
         String authDetailsJson = "[]";
 
         HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
@@ -477,10 +479,10 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         postPreAuthorizedCode.setEntity(formEntity);
 
         try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusLine().getStatusCode());
+            assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusLine().getStatusCode());
             String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            assertTrue("Error message should indicate authorization_details processing error",
-                    responseBody.contains("Error when processing authorization_details"));
+            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
+            assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         }
     }
 
@@ -504,7 +506,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
             assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusLine().getStatusCode());
             String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
 
-            List<OID4VCAuthorizationDetailsResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
+            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
             assertNotNull("authorization_details should be present in the response", authDetailsResponse);
             assertEquals("Should have authorization_details for each credential configuration in the offer",
                     ctx.credentialsOffer.getCredentialConfigurationIds().size(), authDetailsResponse.size());
@@ -512,7 +514,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
             // Verify each credential configuration from the offer has corresponding authorization_details
             for (int i = 0; i < ctx.credentialsOffer.getCredentialConfigurationIds().size(); i++) {
                 String expectedConfigId = ctx.credentialsOffer.getCredentialConfigurationIds().get(i);
-                OID4VCAuthorizationDetailsResponse authDetailResponse = authDetailsResponse.get(i);
+                OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(i);
 
                 assertEquals(OPENID_CREDENTIAL, authDetailResponse.getType());
                 assertEquals("Credential configuration ID should match the one from the offer",
@@ -550,12 +552,12 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         String credentialIdentifier;
         String credentialConfigurationId;
-        OID4VCAuthorizationDetailsResponse authDetailResponse;
+        OID4VCAuthorizationDetailResponse authDetailResponse;
         try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
             assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusLine().getStatusCode());
             String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
 
-            List<OID4VCAuthorizationDetailsResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
+            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
             assertNotNull("authorization_details should be present in the response", authDetailsResponse);
             assertEquals("Should have authorization_details for each credential configuration in the offer",
                     ctx.credentialsOffer.getCredentialConfigurationIds().size(), authDetailsResponse.size());
@@ -700,7 +702,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
             assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusLine().getStatusCode());
             String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
 
-            List<OID4VCAuthorizationDetailsResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
+            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
             assertNotNull("authorization_details should be present in the response", authDetailsResponse);
 
             // Verify that we have authorization_details for each credential configuration in the offer
@@ -709,7 +711,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
             // Verify each authorization detail
             for (int i = 0; i < authDetailsResponse.size(); i++) {
-                OID4VCAuthorizationDetailsResponse authDetail = authDetailsResponse.get(i);
+                OID4VCAuthorizationDetailResponse authDetail = authDetailsResponse.get(i);
                 String expectedConfigId = ctx.credentialsOffer.getCredentialConfigurationIds().get(i);
 
                 // Verify structure
@@ -760,13 +762,13 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         claim.setPath(claimPath);
         claim.setMandatory(true);
 
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(credConfigId);
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
         authDetail.setClaims(List.of(claim));
 
-        List<AuthorizationDetail> authDetails = List.of(authDetail);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.valueAsString(authDetails);
 
         HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
@@ -779,11 +781,11 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         String credentialIdentifier;
         String credentialConfigurationId;
-        OID4VCAuthorizationDetailsResponse authDetailResponse;
+        OID4VCAuthorizationDetailResponse authDetailResponse;
         try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
             assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusLine().getStatusCode());
             String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            List<OID4VCAuthorizationDetailsResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
+            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
             assertNotNull("authorization_details should be present in the response", authDetailsResponse);
             assertEquals(1, authDetailsResponse.size());
 
@@ -915,7 +917,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
     /**
      * Parse authorization details from the token response.
      */
-    protected List<OID4VCAuthorizationDetailsResponse> parseAuthorizationDetails(String responseBody) {
+    protected List<OID4VCAuthorizationDetailResponse> parseAuthorizationDetails(String responseBody) {
         try {
             // Parse the JSON response to extract authorization_details
             Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, Map.class);
@@ -927,7 +929,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
             // Convert to list of OID4VCAuthorizationDetailsResponse
             return JsonSerialization.readValue(JsonSerialization.writeValueAsString(authDetailsObj),
-                    new TypeReference<List<OID4VCAuthorizationDetailsResponse>>() {
+                    new TypeReference<List<OID4VCAuthorizationDetailResponse>>() {
                     });
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse authorization_details from response", e);
