@@ -8,3 +8,10 @@ It also lists significant changes to internal APIs.
 Previously virtual threads were used when at least two CPU cores were available.
 Starting with this version, virtual threads are only used when at least four CPU cores are available.
 This change should prevent deadlocks due to pinned virtual threads.
+
+=== Permissions of the database user for PostgreSQL
+
+If you are running on PostgreSQL as a database for {project_name}, ensure that the database user has `SELECT` permissions to the following tables to ensure an efficient upgrade: `pg_class`, `pg_namespace`.
+
+This is used during upgrades of {project_name} to determine an estimated number of rows in a table.
+If {project_name} does not have permissions to access these tables, it will log a warning and proceed with the less efficient `+SELECT COUNT(*) ...+` operation during the upgrade to determine the number of rows in tables affected by schema changes.
