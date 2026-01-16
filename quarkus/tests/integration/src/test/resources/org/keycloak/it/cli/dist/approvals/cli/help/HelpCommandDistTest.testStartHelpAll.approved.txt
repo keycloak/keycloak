@@ -307,6 +307,10 @@ HTTP(S):
                        Specify a list of comma-separated values defined in milliseconds. Example
                        with buckets from 5ms to 10s: 5,10,25,50,250,500,1000,2500,5000,10000
                        Available only when metrics are enabled.
+--http-client-metrics-tag-limit <PARAM>
+                     The maximum number of unique client metrics that can be present for the
+                       'host', 'port' and 'uri' tags. Default: 100. Available only when metrics are
+                       enabled.
 --http-enabled <true|false>
                      Enables the HTTP listener. Enabled by default in development mode. Typically
                        not enabled in production unless the server is fronted by a TLS termination

@@ -17,8 +17,6 @@
 
 package org.keycloak.connections.httpclient;
 
-import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
-
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -33,8 +31,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import org.apache.http.Header;
-
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 
 import io.micrometer.core.instrument.Metrics;
@@ -42,6 +38,7 @@ import io.micrometer.core.instrument.binder.httpcomponents.MicrometerHttpRequest
 import io.micrometer.core.instrument.binder.httpcomponents.PoolingHttpClientConnectionManagerMetricsBinder;
 import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.internal.OnlyOnceLoggingDenyMeterFilter;
+import org.apache.http.Header;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
@@ -57,6 +54,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
+
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
 
 /**
  * Abstraction for creating HttpClients. Allows SSL configuration.
@@ -112,6 +111,7 @@ public class HttpClientBuilder {
     protected ProxyMappings proxyMappings;
     protected boolean expectContinueEnabled = false;
     protected boolean metrics = false;
+    protected int metricsTagLimit = 100;
 
     /**
      * Socket inactivity timeout
@@ -249,6 +249,11 @@ public class HttpClientBuilder {
         return this;
     }
 
+    public HttpClientBuilder metricsTagLimit(int limit) {
+        this.metricsTagLimit = limit;
+        return this;
+    }
+
     public CloseableHttpClient build() {
         HostnameVerifier verifier = null;
         switch (policy) {
@@ -351,11 +356,11 @@ public class HttpClientBuilder {
         }
     }
 
-    private static void limitNumberOfTagsForMeter(String meterName, String tagKey) {
+    private void limitNumberOfTagsForMeter(String meterName, String tagKey) {
         MeterFilter denyFilter = new OnlyOnceLoggingDenyMeterFilter(() ->
                 String.format("Reached the maximum number of '%s' tags for '%s', denying new metric.", tagKey, meterName));
         Metrics.globalRegistry.config()
-                .meterFilter(MeterFilter.maximumAllowableTags(meterName, tagKey, 100, denyFilter));
+                .meterFilter(MeterFilter.maximumAllowableTags(meterName, tagKey, metricsTagLimit, denyFilter));
     }
 
     protected org.apache.http.impl.client.HttpClientBuilder getApacheHttpClientBuilder() {

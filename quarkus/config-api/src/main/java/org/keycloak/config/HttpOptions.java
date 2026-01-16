@@ -168,4 +168,10 @@ public class HttpOptions {
           .description("Service level objectives for client HTTP requests. Use this instead of the default histogram, or use it in combination to add additional buckets. " +
                 "Specify a list of comma-separated values defined in milliseconds. Example with buckets from 5ms to 10s: 5,10,25,50,250,500,1000,2500,5000,10000")
           .build();
+
+    public static final Option<Integer> HTTP_CLIENT_METRICS_TAG_LIMIT = new OptionBuilder<>("http-client-metrics-tag-limit", Integer.class)
+          .category(OptionCategory.HTTP)
+          .defaultValue(100)
+          .description("The maximum number of unique client metrics that can be present for the 'host', 'port' and 'uri' tags.")
+          .build();
 }

@@ -210,8 +210,14 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     }
 
                     HttpClientBuilder builder = newHttpClientBuilder();
+
+                    Config.Scope configRoot = config.root();
+                    boolean enableMetrics = configRoot.getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), false) &&
+                          configRoot.getBoolean(HttpOptions.HTTP_CLIENT_METRICS_ENABLED.getKey());
+
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
-                            .metrics(config.getBoolean(HttpOptions.HTTP_CLIENT_METRICS_ENABLED.getKey()))
+                            .metrics(enableMetrics)
+                            .metricsTagLimit(configRoot.getInt(HttpOptions.HTTP_CLIENT_METRICS_TAG_LIMIT.getKey()))
                             .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
                             .connectionRequestTimeout(connectionRequestTimeout, TimeUnit.MILLISECONDS)
                             .maxPooledPerRoute(maxPooledPerRoute)

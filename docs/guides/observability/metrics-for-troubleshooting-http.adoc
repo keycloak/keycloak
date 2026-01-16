@@ -114,6 +114,9 @@ prevent cardinality explosion we define the `uri` tag as "UNKNOWN" unless the `X
 configured in the request. This prevents endpoints such as `/users/{id}`, registering a metric for every call to
 `/users/1`, `/users/2` and so forth. For such paths, it is recommended that the `X-Metrics-Template` be defined as `/users/{id}`.
 
+Similarly, by default we limit the total number of metrics with unique `host`, `port` and `uri` tags to 100. Users can
+define the upper limit by setting `http-client-metrics-tag-limit` with the desired value.
+
 You can enable histograms for the `httpcomponents_httpclient_request_seconds` metric by setting `http-client-metrics-histograms-enabled`
 to `true`, and add additional buckets for service level objectives using the option `http-client-metrics-slos`.
 
