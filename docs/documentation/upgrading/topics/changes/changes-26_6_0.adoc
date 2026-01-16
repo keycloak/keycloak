@@ -39,7 +39,7 @@ This change should prevent deadlocks due to pinned virtual threads.
 
 The HTTP client used by {project_name} now exposes metrics which allow request latency and connection pool status to be monitored.
 These metrics are enabled by default when {project_name} is configured with `--metrics-enabled=true`, but can be disabled
-by configuring `--spi-connections-http-client-default-metrics-enabled=false`.
+by configuring `--http-client-metrics-enabled=false`.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features

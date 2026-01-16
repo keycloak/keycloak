@@ -151,6 +151,12 @@ public class HttpOptions {
             .defaultValue(Boolean.FALSE)
             .build();
 
+    public static final Option<Boolean> HTTP_CLIENT_METRICS_ENABLED = new OptionBuilder<>("http-client-metrics-enabled", Boolean.class)
+          .category(OptionCategory.HTTP)
+          .description("Whether to register client metrics when metrics are enabled on the server.")
+          .defaultValue(Boolean.TRUE)
+          .build();
+
     public static final Option<Boolean> HTTP_CLIENT_METRICS_HISTOGRAMS_ENABLED = new OptionBuilder<>("http-client-metrics-histograms-enabled", Boolean.class)
           .category(OptionCategory.HTTP)
           .description("Enables a histogram with default buckets for the duration of client HTTP requests.")

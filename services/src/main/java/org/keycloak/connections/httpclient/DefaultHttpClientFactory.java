@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import org.keycloak.Config;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.config.HttpOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -209,12 +210,8 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     }
 
                     HttpClientBuilder builder = newHttpClientBuilder();
-
-                    boolean enableMetrics = config.root().getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), false) &&
-                          config.getBoolean(METRICS_ENABLED, true);
-
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
-                            .metrics(enableMetrics)
+                            .metrics(config.getBoolean(HttpOptions.HTTP_CLIENT_METRICS_ENABLED.getKey()))
                             .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
                             .connectionRequestTimeout(connectionRequestTimeout, TimeUnit.MILLISECONDS)
                             .maxPooledPerRoute(maxPooledPerRoute)
@@ -440,12 +437,6 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 .helpText(
                         "Jitter factor to apply to backoff times. A value of 0.5 means the actual backoff time will be between 50% and 150% of the calculated exponential backoff time.")
                 .defaultValue("0.5")
-                .add()
-                .property()
-                .name(METRICS_ENABLED)
-                .type("boolean")
-                .helpText("Whether to register client metrics when metrics are enabled on the server.")
-                .defaultValue(true)
                 .add()
                 .build();
     }

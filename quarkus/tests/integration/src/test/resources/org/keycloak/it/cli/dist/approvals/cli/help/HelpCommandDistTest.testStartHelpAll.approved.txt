@@ -295,6 +295,9 @@ HTTP(S):
                        according to RFC3986 or that contain a double slash ('//'). While accepting
                        those requests might be relevant for legacy applications, it is recommended
                        to disable it to allow for more concise URL filtering. Default: false.
+--http-client-metrics-enabled <true|false>
+                     Whether to register client metrics when metrics are enabled on the server.
+                       Default: true. Available only when metrics are enabled.
 --http-client-metrics-histograms-enabled <true|false>
                      Enables a histogram with default buckets for the duration of client HTTP
                        requests. Default: false. Available only when metrics are enabled.

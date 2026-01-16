@@ -142,7 +142,7 @@ public class MetricsDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--metrics-enabled=true", "--spi-connections-http-client-default-metrics-enabled=false" })
+    @Launch({ "start-dev", "--metrics-enabled=true", "--http-client-metrics-enabled=false" })
     @TestProvider(TestRealmResourceTestProvider.class)
     void testHttpClientMetricsDisabled() {
         // Initialize a HttpClient to ensure that client metrics are registered
