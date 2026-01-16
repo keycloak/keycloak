@@ -39,6 +39,17 @@ This change should prevent deadlocks due to pinned virtual threads.
 
 Specific sensitive information is omitted from the HTTP Access log, such as the value of the `Authorization` HTTP header. Moreover, values of specific sensitive {project_name} cookies, such as `KEYCLOAK_SESSION`, `KEYCLOAK_IDENTITY`, or `AUTH_SESSION_ID`, are also omitted.
 
+=== Accepting URL paths without a semicolon
+
+Previously {project_name} accepted HTTP requests with paths containing a semicolon (`;`).
+When processing them, it handled them as of RFC 3986 as a separator for matrix parameters, which basically ignored those parts.
+As this has led to a hard-to-configure URL filtering, for example, in reverse proxies, this is now disabled, and {project_name} responds with an HTTP 400 response code.
+
+To analyze rejected requests in the server log, enable debug logging for `org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter`.
+
+To revert to the previous behavior and to accept matrix parameters set the option `http-accept-non-normalized-paths` to `true`.
+With this configuration, enable and review the HTTP access log to identify problematic requests.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

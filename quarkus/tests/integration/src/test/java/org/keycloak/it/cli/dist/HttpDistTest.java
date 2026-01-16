@@ -33,6 +33,7 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.Test;
 
+import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.not;
@@ -66,6 +67,8 @@ public class HttpDistTest {
     public void preventNonNormalizedURLs() {
         when().get("/realms/master").then().statusCode(200);
         when().get("/realms/xxx/../master").then().statusCode(400);
+        given().urlEncodingEnabled(false)
+                .when().get("/realms/master;xxx").then().statusCode(400);
     }
 
     @Test
@@ -73,6 +76,8 @@ public class HttpDistTest {
     public void allowNonNormalizedURLs() {
         when().get("/realms/master").then().statusCode(200);
         when().get("/realms/xxx/../master").then().statusCode(200);
+        given().urlEncodingEnabled(false)
+                .when().get("/realms/master;xxx").then().statusCode(200);
     }
 
     @Test
