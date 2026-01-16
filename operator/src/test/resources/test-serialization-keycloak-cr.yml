@@ -107,6 +107,13 @@ spec:
       - step-up-authentication
   transaction:
     xaEnabled: false
+  telemetry:
+    endpoint: http://my-telemetry:4317
+    serviceName: my-best-keycloak-telemetry
+    protocol: http/protobuf
+    resourceAttributes:
+      service.namespace: keycloak-namespace-telemetry
+      service.name: custom-service-name-telemetry
   tracing:
     enabled: true
     endpoint: http://my-tracing:4317
