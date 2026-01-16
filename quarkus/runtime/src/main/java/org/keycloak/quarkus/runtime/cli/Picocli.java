@@ -398,12 +398,13 @@ public class Picocli {
         if (mapper.isBuildTime() && !options.includeBuildTime) {
             return; // no need to validate as we've already checked for changes in the build time state
         }
+        boolean ignoreRuntime = mapper.isRunTime() && !options.includeRuntime;
 
         ConfigValue configValue = getUnmappedValue(mapper.getFrom());
         String configValueStr = configValue.getValue();
 
         if (configValueStr == null) {
-            if (mapper.isRequired()) {
+            if (!ignoreRuntime && mapper.isRequired()) {
                 handleRequired(missingOption, mapper);
             }
             return;
@@ -424,7 +425,7 @@ public class Picocli {
             return;
         }
 
-        if (mapper.isRunTime() && !options.includeRuntime) {
+        if (ignoreRuntime) {
             ignoredRunTime.add(mapper.getFrom());
             return;
         }
