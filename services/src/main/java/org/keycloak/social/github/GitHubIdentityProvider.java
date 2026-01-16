@@ -42,6 +42,8 @@ import org.keycloak.util.BasicAuthHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -166,6 +168,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 		try (SimpleHttpResponse response = SimpleHttp.create(session).doGet(profileUrl)
                         .header("Authorization", "Bearer " + accessToken)
                         .header("Accept", "application/json")
+                        .header(METRICS_URI_TEMPLATE_HEADER, PROFILE_FRAGMENT)
                         .asResponse()) {
 
                     if (Response.Status.fromStatusCode(response.getStatus()).getFamily() != Response.Status.Family.SUCCESSFUL) {
@@ -190,6 +193,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 		try (SimpleHttpResponse response = SimpleHttp.create(session).doGet(emailUrl)
                         .header("Authorization", "Bearer " + accessToken)
                         .header("Accept", "application/json")
+                        .header(METRICS_URI_TEMPLATE_HEADER, EMAIL_FRAGMENT)
                         .asResponse()) {
 
                     if (Response.Status.fromStatusCode(response.getStatus()).getFamily() != Response.Status.Family.SUCCESSFUL) {
@@ -219,8 +223,10 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
     private void verifyToken(String accessToken) throws IOException {
         String tokenUrl = DEFAULT_APPLICATIONS_URL + "/" + getConfig().getClientId() + "/token";
         SimpleHttpResponse response = SimpleHttp.create(session).doPost(tokenUrl)
-                .header("Authorization",  BasicAuthHelper.createHeader(getConfig().getClientId(), getConfig().getClientSecret()))
-                .json(Map.of("access_token", accessToken)).asResponse();
+              .header("Authorization", BasicAuthHelper.createHeader(getConfig().getClientId(), getConfig().getClientSecret()))
+              .header(METRICS_URI_TEMPLATE_HEADER, "/applications/{clientId}/token")
+              .json(Map.of("access_token", accessToken))
+              .asResponse();
 
         JsonNode jsonNodeResponse = response.asJson();
         if (response.getStatus() != 200) {
