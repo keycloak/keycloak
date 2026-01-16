@@ -34,6 +34,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
@@ -227,16 +228,12 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         }
 
         // If no authorization_details were processed from the request, try to process stored authorization_details
+        // (e.g., from PAR flow where authorization_details was in authorization request but not in token request)
         if (authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty()) {
             try {
                 authorizationDetailsResponse = processStoredAuthorizationDetails(userSession, clientSessionCtx);
                 if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
                     clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
-                } else {
-                    authorizationDetailsResponse = handleMissingAuthorizationDetails(clientSession.getUserSession(), clientSessionCtx);
-                    if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
-                        clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
-                    }
                 }
             } catch (CorsErrorResponseException e) {
                 // Re-throw CorsErrorResponseException as it's already properly formatted for HTTP response
@@ -244,10 +241,33 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             }
         }
 
+        // Only generate authorization_details from credential offer if:
+        // 1. No authorization_details were processed yet, AND
+        // 2. There's a credential offer note in the client session (indicating this is a credential offer flow)
+        // This prevents generating authorization_details for regular SSO logins that don't request OID4VCI
+        if ((authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty())
+                && clientSession.getNote(OID4VCIssuerEndpoint.CREDENTIAL_CONFIGURATION_IDS_NOTE) != null) {
+            authorizationDetailsResponse = handleMissingAuthorizationDetails(clientSession.getUserSession(), clientSessionCtx);
+            if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
+                clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
+            }
+        }
+
         // Call hook for post-processing authorization details (e.g., creating state objects)
         afterAuthorizationDetailsProcessed(userSession, clientSessionCtx, authorizationDetailsResponse);
 
-        return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, s -> {return new TokenResponseContext(formParams, parseResult, clientSessionCtx, s);});
+        return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, s -> {
+            // Add authorization_details to the access token and refresh token if they were processed
+            List<AuthorizationDetailsResponse> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
+            if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
+                s.getAccessToken().setOtherClaims(AUTHORIZATION_DETAILS, authDetailsResponse);
+                // Also add to refresh token if one is generated
+                if (s.getRefreshToken() != null) {
+                    s.getRefreshToken().setOtherClaims(AUTHORIZATION_DETAILS, authDetailsResponse);
+                }
+            }
+            return new TokenResponseContext(formParams, parseResult, clientSessionCtx, s);
+        });
     }
 
     @Override

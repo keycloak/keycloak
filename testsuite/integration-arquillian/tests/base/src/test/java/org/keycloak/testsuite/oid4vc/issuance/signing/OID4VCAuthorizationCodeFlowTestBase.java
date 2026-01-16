@@ -75,6 +75,8 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.SIGNING_KEY_ID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Base class for authorization code flow tests with authorization details and claims validation.
@@ -138,6 +140,78 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         }
 
         return ctx;
+    }
+
+    /**
+     * Test that verifies that a second regular SSO login should NOT return authorization_details
+     * from a previous OID4VCI login.
+     */
+    @Test
+    public void testSecondSSOLoginDoesNotReturnAuthorizationDetails() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // ===== STEP 1: First login with OID4VCI (should return authorization_details) =====
+        AccessTokenResponse firstTokenResponse = authzCodeFlow(ctx);
+        String credentialIdentifier = assertTokenResponse(firstTokenResponse);
+        assertNotNull("Credential identifier should be present in first token", credentialIdentifier);
+
+        // ===== STEP 2: Second login - Regular SSO (should NOT return authorization_details) =====
+        // Second login WITHOUT OID4VCI scope and WITHOUT authorization_details.
+        oauth.client(client.getClientId());
+        oauth.scope(OAuth2Constants.SCOPE_OPENID);
+        oauth.openLoginForm();
+
+        String secondCode = oauth.parseLoginResponse().getCode();
+        assertNotNull("Second authorization code should not be null", secondCode);
+
+        // Exchange second code for tokens WITHOUT authorization_details
+        HttpPost postSecondToken = new HttpPost(ctx.openidConfig.getTokenEndpoint());
+        List<NameValuePair> secondTokenParameters = new LinkedList<>();
+        secondTokenParameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
+        secondTokenParameters.add(new BasicNameValuePair(OAuth2Constants.CODE, secondCode));
+        secondTokenParameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
+        secondTokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
+        secondTokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, "password"));
+        // NOTE: NO authorization_details parameter in this request
+
+        UrlEncodedFormEntity secondTokenFormEntity = new UrlEncodedFormEntity(secondTokenParameters, StandardCharsets.UTF_8);
+        postSecondToken.setEntity(secondTokenFormEntity);
+
+        AccessTokenResponse secondTokenResponse;
+        try (CloseableHttpResponse tokenHttpResponse = httpClient.execute(postSecondToken)) {
+            assertEquals("Second token exchange should succeed", HttpStatus.SC_OK, tokenHttpResponse.getStatusLine().getStatusCode());
+            String tokenResponseBody = IOUtils.toString(tokenHttpResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+            secondTokenResponse = JsonSerialization.readValue(tokenResponseBody, AccessTokenResponse.class);
+        }
+
+        // ===== STEP 3: Verify second token does NOT have authorization_details =====
+        Map<String, Object> secondTokenMap = JsonSerialization.readValue(JsonSerialization.writeValueAsString(secondTokenResponse), Map.class);
+        Object secondAuthDetailsObj = secondTokenMap.get(OAuth2Constants.AUTHORIZATION_DETAILS);
+
+        assertNull("Second token (regular SSO) should NOT have authorization_details", secondAuthDetailsObj);
+
+        // ===== STEP 4: Verify second token cannot be used for credential requests =====
+        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        CredentialRequest credentialRequest = new CredentialRequest();
+        credentialRequest.setCredentialIdentifier(credentialIdentifier);
+
+        HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
+        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + secondTokenResponse.getToken());
+        postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+        postCredential.setEntity(new StringEntity(JsonSerialization.writeValueAsString(credentialRequest), StandardCharsets.UTF_8));
+
+        // Credential request with second token should fail
+        // The second token doesn't have the OID4VCI scope, so it should fail at scope check
+        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+            assertEquals("Credential request with token without OID4VCI scope should fail",
+                    HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusLine().getStatusCode());
+
+            String errorBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+
+            assertTrue("Error should indicate scope check failure. Actual error: " + errorBody,
+                    errorBody.contains("Scope check failure"));
+        }
+
     }
 
     // Test for the whole authorization_code flow with the credentialRequest using credential_configuration_id

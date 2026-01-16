@@ -348,6 +348,13 @@ public class TokenManager {
 
         AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session,
             validation.userSession, validation.clientSessionCtx).offlineToken( TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType())).accessToken(validation.newToken);
+
+        // Copy authorization_details from refresh token to new access token if present
+        Object authorizationDetails = refreshToken.getOtherClaims().get(OAuth2Constants.AUTHORIZATION_DETAILS);
+        if (authorizationDetails != null) {
+            validation.newToken.setOtherClaims(OAuth2Constants.AUTHORIZATION_DETAILS, authorizationDetails);
+        }
+        
         if (clientConfig.isUseRefreshToken()) {
             //refresh token must have same scope as old refresh token (type, scope, expiration)
             responseBuilder.generateRefreshToken(refreshToken, clientSession);
@@ -356,6 +363,11 @@ public class TokenManager {
         if (validation.newToken.getAuthorization() != null
             && clientConfig.isUseRefreshToken()) {
             responseBuilder.getRefreshToken().setAuthorization(validation.newToken.getAuthorization());
+        }
+
+        // Ensure authorization_details are also in the new refresh token if present
+        if (authorizationDetails != null && clientConfig.isUseRefreshToken() && responseBuilder.getRefreshToken() != null) {
+            responseBuilder.getRefreshToken().setOtherClaims(OAuth2Constants.AUTHORIZATION_DETAILS, authorizationDetails);
         }
 
         String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
@@ -1205,6 +1217,11 @@ public class TokenManager {
                 refreshToken.getOtherClaims().put(Constants.REQUESTED_AUDIENCE, Arrays.stream(resquestedAudienceClients)
                         .map(ClientModel::getClientId)
                         .collect(Collectors.toSet()));
+            }
+            // Copy authorization_details from access token to refresh token if present
+            Object authorizationDetails = accessToken.getOtherClaims().get(OAuth2Constants.AUTHORIZATION_DETAILS);
+            if (authorizationDetails != null) {
+                refreshToken.getOtherClaims().put(OAuth2Constants.AUTHORIZATION_DETAILS, authorizationDetails);
             }
             Boolean bindOnlyRefreshToken = session.getAttributeOrDefault(DPoPUtil.DPOP_BINDING_ONLY_REFRESH_TOKEN_SESSION_ATTRIBUTE, false);
             if (bindOnlyRefreshToken) {
