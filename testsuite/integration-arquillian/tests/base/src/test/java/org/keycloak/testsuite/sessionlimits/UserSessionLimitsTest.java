@@ -22,7 +22,6 @@ import org.keycloak.authentication.authenticators.browser.CookieAuthenticatorFac
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimitsAuthenticatorFactory;
 import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -146,7 +145,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         // Login the same user again and verify the configured error message is shown
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
-        events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
+        // This prevents brute force protection from being triggered
         errorPage.assertCurrent();
         assertEquals(ERROR_TO_DISPLAY, errorPage.getError());
     }
@@ -211,7 +210,6 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             // Login the same user again and verify the configured error message is shown
             loginPage.open();
             loginPage.login("test-user@localhost", "password");
-            events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
             errorPage.assertCurrent();
             assertEquals(ERROR_TO_DISPLAY, errorPage.getError());
         } finally {
@@ -439,8 +437,6 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             MimeMessage message = greenMail.getReceivedMessages()[0];
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
             driver.navigate().to(changePasswordUrl.trim());
-
-            events.expect(EventType.RESET_PASSWORD_ERROR).client("account").error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
         } finally {
             testRealm().clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0).setDirectAccessGrantsEnabled(false);
             ApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
@@ -526,8 +522,6 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             MimeMessage message = greenMail.getReceivedMessages()[0];
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
             driver.navigate().to(changePasswordUrl.trim());
-
-            events.expect(EventType.RESET_PASSWORD_ERROR).client("account").error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
         } finally {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
@@ -622,12 +616,81 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         // New login should fail due the sessions limit
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
-        events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
         errorPage.assertCurrent();
         assertEquals("There are too many sessions", errorPage.getError()); // Default error message
 
         // Revert config of authenticators
         BrowserFlowTest.revertFlows(adminClient.realm("test"), "browser-session-limits");
+    }
+
+    @Test
+    public void testSessionLimitDoesNotTriggerBruteForceProtection() throws Exception {
+        // Enable brute force detection with max 2 failures
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            realm.setBruteForceProtected(true);
+            realm.setFailureFactor(2);
+            realm.setMaxFailureWaitSeconds(300);
+            realm.setWaitIncrementSeconds(60);
+            realm.setMaxDeltaTimeSeconds(43200);
+        });
+
+        try {
+            // Configure session limit to 1
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
+
+            // First login - should succeed
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+            events.expectLogin().assertEvent();
+
+            // Delete cookies to simulate new browser session
+            super.deleteCookies();
+
+            // Second login attempt - should be denied due to session limit but NOT trigger brute force
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+            errorPage.assertCurrent();
+
+            // Verify brute force counter is NOT incremented
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName("test");
+                org.keycloak.models.UserModel user = session.users().getUserByUsername(realm, "test-user@localhost");
+                org.keycloak.models.UserLoginFailureModel loginFailure = session.loginFailures().getUserLoginFailure(realm, user.getId());
+                // loginFailure should be null or failure count should be 0
+                if (loginFailure != null) {
+                    org.junit.Assert.assertEquals("Brute force counter should not be incremented for session limit denials",
+                        0, loginFailure.getNumFailures());
+                }
+            });
+
+            // Logout the active session
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName("test");
+                org.keycloak.models.UserModel user = session.users().getUserByUsername(realm, "test-user@localhost");
+                session.sessions().getUserSessionsStream(realm, user).forEach(userSession ->
+                    session.sessions().removeUserSession(realm, userSession));
+            });
+
+            // Delete cookies again to ensure clean state for third login
+            super.deleteCookies();
+
+            // Third login attempt - should succeed (proves no brute force lockout occurred)
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+            events.expectLogin().assertEvent();
+            appPage.assertCurrent();
+        } finally {
+            // Disable brute force protection
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName("test");
+                realm.setBruteForceProtected(false);
+            });
+            // Revert session limit config
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+        }
     }
 
     private void setAuthenticatorConfigItem(String alias, String key, String value) {
