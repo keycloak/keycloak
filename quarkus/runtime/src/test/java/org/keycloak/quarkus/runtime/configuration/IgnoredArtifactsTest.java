@@ -30,6 +30,7 @@ import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.config.OpenApiOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.TelemetryOptions;
 
@@ -159,6 +160,16 @@ public class IgnoredArtifactsTest extends AbstractConfigurationTest {
     @Test
     public void otelMetrics(){
         assertIgnoredArtifacts(IgnoredArtifacts.OTEL_METRICS, TelemetryOptions.TELEMETRY_METRICS_ENABLED);
+    }
+
+    @Test
+    public void openApi() {
+        assertIgnoredArtifacts(IgnoredArtifacts.OPENAPI, OpenApiOptions.OPENAPI_ENABLED);
+    }
+
+    @Test
+    public void openApiSwagger() {
+        assertIgnoredArtifacts(IgnoredArtifacts.OPENAPI_SWAGGER, OpenApiOptions.OPENAPI_UI_ENABLED);
     }
 
     private void assertIgnoredArtifacts(Set<String> artifactsSet, Option<Boolean> enabledOption) {

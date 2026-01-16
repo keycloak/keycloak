@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 import org.keycloak.common.Profile;
 import org.keycloak.config.HealthOptions;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.config.OpenApiOptions;
 import org.keycloak.config.TelemetryOptions;
 import org.keycloak.config.database.Database;
 
@@ -43,7 +44,9 @@ public class IgnoredArtifacts {
                         jdbcDrivers(),
                         health(),
                         metrics(),
-                        otelMetrics()
+                        otelMetrics(),
+                        openApi(),
+                        openApiSwagger()
                 )
                 .flatMap(Collection::stream)
                 .collect(Collectors.toUnmodifiableSet());
@@ -184,5 +187,29 @@ public class IgnoredArtifacts {
     private static Set<String> otelMetrics() {
         boolean isOtelMetricsEnabled = Configuration.isTrue(TelemetryOptions.TELEMETRY_METRICS_ENABLED);
         return !isOtelMetricsEnabled ? OTEL_METRICS : emptySet();
+    }
+
+    // OpenAPI
+    public static Set<String> OPENAPI = Set.of(
+            "io.quarkus:quarkus-smallrye-openapi",
+            "io.quarkus:quarkus-smallrye-openapi-deployment",
+            "io.smallrye:smallrye-open-api-core"
+    );
+
+    private static Set<String> openApi() {
+        boolean isEnabled = Configuration.isTrue(OpenApiOptions.OPENAPI_ENABLED);
+        return !isEnabled ? OPENAPI : emptySet();
+    }
+
+    // OpenAPI UI (Swagger)
+    public static Set<String> OPENAPI_SWAGGER = Set.of(
+            "io.quarkus:quarkus-swagger-ui",
+            "io.quarkus:quarkus-swagger-ui-deployment",
+            "io.smallrye:smallrye-open-api-ui"
+    );
+
+    private static Set<String> openApiSwagger() {
+        boolean isEnabled = Configuration.isTrue(OpenApiOptions.OPENAPI_UI_ENABLED);
+        return !isEnabled ? OPENAPI_SWAGGER : emptySet();
     }
 }
