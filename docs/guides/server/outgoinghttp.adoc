@@ -60,9 +60,6 @@ Specify proxy configurations for outgoing HTTP requests. For more details, see <
 *disable-trust-manager*::
 If an outgoing request requires HTTPS and this configuration option is set to true, you do not have to specify a truststore. This setting should be used only during development and *never in production* because it will disable verification of SSL certificates. Default: false.
 
-*metrics-enabled*::
-If HTTP Client metrics should be registered when `--metrics-enabled=true` on the Server. Default: true.
-
 == Configuring retry behavior for outgoing HTTP requests
 IMPORTANT: Do not let outgoing retry duration exceed the caller’s timeout. Otherwise, the caller may time out and see an error while {project_name} continues retrying in the background.
 
