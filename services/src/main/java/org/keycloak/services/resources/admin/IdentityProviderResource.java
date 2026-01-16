@@ -290,7 +290,13 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
-        IdentityProvider<?> identityProviderInstance = createIdentityProviderInstance();
+        IdentityProvider<?> identityProviderInstance;
+        try {
+            identityProviderInstance = createIdentityProviderInstance();
+        } catch (Exception e) {
+            throw ErrorResponse.error("Could not get mapper types for identity provider [" + identityProviderModel.getProviderId() + "]: " + e.getMessage(), Response.Status.BAD_REQUEST);
+        }
+
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         return sessionFactory.getProviderFactoriesStream(IdentityProviderMapper.class)
                 .map(IdentityProviderMapper.class::cast)
