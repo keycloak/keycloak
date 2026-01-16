@@ -225,16 +225,44 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
     @Override
     public OrganizationModel getByDomainName(String domain) {
-        TypedQuery<OrganizationEntity> query = em.createNamedQuery("getByDomainName", OrganizationEntity.class);
-        RealmModel realm = getRealm();
-        query.setParameter("realmId", realm.getId());
-        query.setParameter("name", domain.toLowerCase());
-        try {
-            OrganizationEntity entity = query.getSingleResult();
-            return new OrganizationAdapter(session, realm, entity, this);
-        } catch (NoResultException nre) {
+        if (domain == null) {
             return null;
         }
+        
+        String emailDomain = domain.toLowerCase();
+        RealmModel realm = getRealm();
+        TypedQuery<OrganizationEntity> query = em.createNamedQuery("getByDomainName", OrganizationEntity.class);
+
+        query.setParameter("realmId", realm.getId());
+        query.setParameter("name", emailDomain);
+
+        List<String> names = new ArrayList<>();
+
+        // Also consider wildcard domains by stripping subdomains
+        String[] parts = emailDomain.split("\\.");
+
+        for (int i = 1; i < parts.length - 1; i++) {
+            String parentDomain = String.join(".", java.util.Arrays.copyOfRange(parts, i, parts.length));
+            names.add(parentDomain);
+        }
+
+        query.setParameter("names", names);
+
+        List<OrganizationEntity> result = query.getResultList();
+
+        for (OrganizationEntity org : result) {
+            // Check if this org has the exact domain
+            if (org.getDomains().stream()
+                    .anyMatch(d -> d.getName().equals(emailDomain) && !d.isMatchSubdomains())) {
+                return new OrganizationAdapter(session, realm, org, this);
+            }
+        }
+
+        if (result.size() == 1) {
+            return new OrganizationAdapter(session, realm, result.get(0), this);
+        }
+
+        return null;
     }
 
     @Override
