@@ -146,7 +146,7 @@ public class HttpOptions {
 
     public static final Option<Boolean> HTTP_ACCEPT_NON_NORMALIZED_PATHS = new OptionBuilder<>("http-accept-non-normalized-paths", Boolean.class)
             .category(OptionCategory.HTTP)
-            .description("If the server should accept paths that are not normalized according to RFC3986 or that contain a double slash ('//'). While accepting those requests might be relevant for legacy applications, it is recommended to disable it to allow for more concise URL filtering.")
+            .description("If the server should accept paths that are not normalized according to RFC3986 or that contain a double slash ('//') or semicolon (';'). While accepting those requests might be relevant for legacy applications, it is recommended to disable it to allow for more concise URL filtering.")
             .deprecated()
             .defaultValue(Boolean.FALSE)
             .build();
