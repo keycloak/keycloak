@@ -321,6 +321,14 @@ export default function ClientDetails() {
         ),
       );
     }
+    if (client.attributes?.["pkce.code.challenge.method"]) {
+      form.setValue(
+        convertAttributeNameToForm<FormFields>(
+          "attributes.pkce.code.challenge.method",
+        ),
+        client.attributes["pkce.code.challenge.method"],
+      );
+    }
     // reset dirty as for reason it is not resetting
     form.reset(form.getValues(), { keepDirty: false });
   };
