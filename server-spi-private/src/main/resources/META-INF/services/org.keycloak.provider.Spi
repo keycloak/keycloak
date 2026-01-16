@@ -58,6 +58,7 @@ org.keycloak.executors.ExecutorsSpi
 org.keycloak.theme.ThemeSpi
 org.keycloak.theme.ThemeManagerSpi
 org.keycloak.tracing.TracingSpi
+org.keycloak.keystore.KeyStoreSpi
 org.keycloak.truststore.TruststoreSpi
 org.keycloak.connections.httpclient.HttpClientSpi
 org.keycloak.authentication.AuthenticatorSpi
