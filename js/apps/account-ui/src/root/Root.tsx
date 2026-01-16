@@ -1,7 +1,9 @@
 import {
+  ErrorBoundaryFallback,
   ErrorPage,
-  useEnvironment,
   KeycloakContext,
+  KeycloakSpinner,
+  useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
 import { Page, Spinner } from "@patternfly/react-core";
 import { Suspense, useState } from "react";
@@ -13,10 +15,10 @@ import {
 } from "react-router-dom";
 import fetchContentJson from "../content/fetchContent";
 import { Environment, environment } from "../environment";
+import { routes } from "../routes";
 import { usePromise } from "../utils/usePromise";
 import { Header } from "./Header";
 import { MenuItem, PageNav } from "./PageNav";
-import { routes } from "../routes";
 
 function mapRoutes(
   context: KeycloakContext<Environment>,
@@ -47,22 +49,26 @@ function mapRoutes(
 
 export const Root = () => {
   const context = useEnvironment<Environment>();
-  const [content, setContent] = useState<RouteObject[]>();
+  const [content, setContent] = useState<RouteObject[]>([
+    {
+      path: decodeURIComponent(new URL(environment.baseUrl).pathname),
+      element: (
+        <Page header={<Header />} sidebar={<PageNav />} isManagedSidebar>
+          <Suspense fallback={<Spinner />}>
+            <Outlet />
+          </Suspense>
+        </Page>
+      ),
+      errorElement: <ErrorPage />,
+    },
+  ]);
 
   usePromise(
     (signal) => fetchContentJson({ signal, context }),
     (content) => {
       setContent([
         {
-          path: decodeURIComponent(new URL(environment.baseUrl).pathname),
-          element: (
-            <Page header={<Header />} sidebar={<PageNav />} isManagedSidebar>
-              <Suspense fallback={<Spinner />}>
-                <Outlet />
-              </Suspense>
-            </Page>
-          ),
-          errorElement: <ErrorPage />,
+          ...content[0],
           children: mapRoutes(context, content),
         },
       ]);
@@ -72,5 +78,11 @@ export const Root = () => {
   if (!content) {
     return <Spinner />;
   }
-  return <RouterProvider router={createBrowserRouter(content)} />;
+  return (
+    <ErrorBoundaryFallback fallback={ErrorPage}>
+      <Suspense fallback={<KeycloakSpinner />}>
+        <RouterProvider router={createBrowserRouter(content)} />
+      </Suspense>
+    </ErrorBoundaryFallback>
+  );
 };
