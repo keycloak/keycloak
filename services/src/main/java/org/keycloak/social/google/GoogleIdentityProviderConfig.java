@@ -16,13 +16,15 @@
  */
 package org.keycloak.social.google;
 
+import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.RealmModel;
 
 /**
  * @author Vlastimil Elias (velias at redhat dot com)
  */
-public class GoogleIdentityProviderConfig extends OIDCIdentityProviderConfig {
+public class GoogleIdentityProviderConfig extends OIDCIdentityProviderConfig implements JWTAuthorizationGrantConfig {
 
     public GoogleIdentityProviderConfig(IdentityProviderModel model) {
         super(model);
@@ -58,5 +60,12 @@ public class GoogleIdentityProviderConfig extends OIDCIdentityProviderConfig {
     
     public void setOfflineAccess(boolean offlineAccess) {
         getConfig().put("offlineAccess", String.valueOf(offlineAccess));
+    }
+
+    @Override
+    public void validate(RealmModel realm) {
+        if (!GoogleIdentityProvider.ISSUER_URL.equals(getConfig().get(ISSUER))) {
+           throw new IllegalArgumentException("The issuer url [" + getConfig().get(ISSUER) + "] is invalid");
+        }
     }
 }
