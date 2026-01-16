@@ -558,12 +558,37 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         if (results.isEmpty()) {
             return null;
         } else if (results.size() > 1) {
-            throw new IllegalStateException("More results found for identityProvider=" + identity.getIdentityProvider() +
-                    ", userId=" + identity.getUserId() + ", results=" + results);
+            return resolveMultipleFederatedIdentities(realm, identity, results);
         } else {
             UserEntity user = results.get(0);
             return new UserAdapter(session, realm, em, user);
         }
+    }
+
+    private UserModel resolveMultipleFederatedIdentities(RealmModel realm, FederatedIdentityModel identity, List<UserEntity> results) {
+        UserEntity validUser = null;
+        for (UserEntity userEntity : results) {
+            if (userEntity.getFederationLink() != null) {
+                UserModel resolvedUser = session.users().getUserById(realm, userEntity.getId());
+                if (resolvedUser != null) {
+                    if (validUser != null) {
+                        throw new IllegalStateException("More results found for identityProvider=" + identity.getIdentityProvider() +
+                                ", userId=" + identity.getUserId() + ", results=" + results);
+                    }
+                    validUser = userEntity;
+                } else {
+                    UserModel orphanedUser = new UserAdapter(session, realm, em, userEntity);
+                    removeFederatedIdentity(realm, orphanedUser, identity.getIdentityProvider());
+                }
+            } else {
+                if (validUser != null) {
+                    throw new IllegalStateException("More results found for identityProvider=" + identity.getIdentityProvider() +
+                            ", userId=" + identity.getUserId() + ", results=" + results);
+                }
+                validUser = userEntity;
+            }
+        }
+        return validUser != null ? new UserAdapter(session, realm, em, validUser) : null;
     }
 
     @Override
