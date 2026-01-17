@@ -257,6 +257,10 @@ public class RealmManager {
     }
 
     protected void setupRealmDefaults(RealmModel realm) {
+        setupRealmDefaults(realm, null);
+    }
+
+    protected void setupRealmDefaults(RealmModel realm, RealmRepresentation realmRep) {
         realm.setBrowserSecurityHeaders(BrowserSecurityHeaders.realmDefaultHeaders);
 
         // brute force
@@ -275,7 +279,10 @@ public class RealmManager {
         realm.setLoginWithEmailAllowed(true);
 
         if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) {
-            if (realm.getRole(CREDENTIAL_OFFER_CREATE.getName()) == null) {
+            // Only create the role if it doesn't exist in the realm representation (during import)
+            // or if it doesn't exist in the realm model (during fresh creation)
+            if ((realmRep == null || !hasRealmRole(realmRep, CREDENTIAL_OFFER_CREATE.getName())) 
+                    && realm.getRole(CREDENTIAL_OFFER_CREATE.getName()) == null) {
                 RoleModel roleModel = realm.addRole(CREDENTIAL_OFFER_CREATE.getName());
                 roleModel.setDescription(CREDENTIAL_OFFER_CREATE.getDescription());
             }
@@ -591,7 +598,7 @@ public class RealmManager {
 
             // setup defaults
 
-            setupRealmDefaults(realm);
+            setupRealmDefaults(realm, rep);
 
             if (rep.getDefaultRole() == null) {
                 KeycloakModelUtils.setupDefaultRole(realm, determineDefaultRoleName(rep));

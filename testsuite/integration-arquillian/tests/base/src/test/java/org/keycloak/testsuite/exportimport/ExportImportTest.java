@@ -31,7 +31,9 @@ import java.util.Set;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.dir.DirExportProvider;
@@ -46,10 +48,12 @@ import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.client.resources.TestingExportImportResource;
 import org.keycloak.testsuite.runonserver.RunHelpers;
@@ -221,7 +225,10 @@ public class ExportImportTest extends AbstractKeycloakTest {
     private static void assertExportContainsGoogleClientSecret(String targetFilePath) throws IOException {
         assertTrue("Expected an export file to exist", new File(targetFilePath).exists());
 
-        Map<String, RealmRepresentation> realms = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, new FileInputStream(new File(targetFilePath)));
+        Map<String, RealmRepresentation> realms;
+        try (FileInputStream fis = new FileInputStream(targetFilePath)) {
+            realms = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, fis);
+        }
         List<IdentityProviderRepresentation> idps = realms.get("test-realm").getIdentityProviders();
         IdentityProviderRepresentation googleIdp = idps.stream().filter(idp -> idp.getAlias().equals("google1")).findFirst().get();
         assertNotNull(googleIdp);
@@ -318,6 +325,65 @@ public class ExportImportTest extends AbstractKeycloakTest {
         assertThat(config, notNullValue());
         assertThat(config.size(), equalTo(1));
         JsonTestUtils.assertJsonEquals(config.getFirst(DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY), JsonSerialization.writeValueAsString(persistedConfig), UPConfig.class);
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.OID4VC_VCI, skipRestart = true)
+    public void testRealmImportWithOID4VCICredentialOfferCreateRole() throws Throwable {
+        String testRealmName = "oid4vci-import-test";
+        
+        // Create a realm with OID4VCI enabled - credential-offer-create role will be created automatically
+        RealmRepresentation realmRep = new RealmRepresentation();
+        realmRep.setRealm(testRealmName);
+        realmRep.setEnabled(true);
+        adminClient.realms().create(realmRep);
+        
+        // Verify the role exists after creation
+        RealmResource realmResource = adminClient.realm(testRealmName);
+        RoleRepresentation credentialOfferCreateRole = realmResource.roles().get(OID4VCIConstants.CREDENTIAL_OFFER_CREATE.getName()).toRepresentation();
+        assertNotNull("credential-offer-create role should exist after realm creation", credentialOfferCreateRole);
+        assertEquals("Role name should match", OID4VCIConstants.CREDENTIAL_OFFER_CREATE.getName(), credentialOfferCreateRole.getName());
+        
+        // Export the realm
+        TestingExportImportResource exportImport = testingClient.testing().exportImport();
+        exportImport.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+        exportImport.setAction(ExportImportConfig.ACTION_EXPORT);
+        exportImport.setRealmName(testRealmName);
+        String targetFilePath = exportImport.getExportImportTestDirectory() + File.separator + "oid4vci-realm-export.json";
+        exportImport.setFile(targetFilePath);
+        exportImport.runExport();
+        
+        // Verify the exported file contains the role
+        Map<String, RealmRepresentation> exportedRealms;
+        try (FileInputStream fis = new FileInputStream(targetFilePath)) {
+            exportedRealms = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, fis);
+        }
+        RealmRepresentation exportedRealm = exportedRealms.get(testRealmName);
+        assertNotNull("Exported realm should exist", exportedRealm);
+        assertTrue("Exported realm should contain credential-offer-create role",
+                exportedRealm.getRoles() != null && 
+                exportedRealm.getRoles().getRealm() != null &&
+                exportedRealm.getRoles().getRealm().stream()
+                    .anyMatch(role -> OID4VCIConstants.CREDENTIAL_OFFER_CREATE.getName().equals(role.getName())));
+        
+        // Remove the realm
+        removeRealm(testRealmName);
+        
+        // Import the realm back - this should succeed without ModelDuplicateException
+        exportImport.setAction(ExportImportConfig.ACTION_IMPORT);
+        exportImport.runImport();
+        
+        // Verify the realm was imported successfully
+        RealmResource importedRealmResource = adminClient.realm(testRealmName);
+        assertNotNull("Imported realm should exist", importedRealmResource);
+        
+        // Verify the role still exists after import
+        RoleRepresentation importedRole = importedRealmResource.roles().get(OID4VCIConstants.CREDENTIAL_OFFER_CREATE.getName()).toRepresentation();
+        assertNotNull("credential-offer-create role should exist after import", importedRole);
+        assertEquals("Role name should match", OID4VCIConstants.CREDENTIAL_OFFER_CREATE.getName(), importedRole.getName());
+
+        // Cleanup
+        removeRealm(testRealmName);
     }
 
     @Test
