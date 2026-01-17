@@ -64,7 +64,7 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         userAttributeConfig.setHelpText("The name of the user attribute that maps to the subject id.");
         userAttributeConfig.setType(ProviderConfigProperty.LIST_TYPE);
         userAttributeConfig.setOptions(List.of(USER_ATTRIBUTE_NAME_DID, UserModel.USERNAME, UserModel.EMAIL, UserModel.ID));
-        userAttributeConfig.setDefaultValue(USER_ATTRIBUTE_NAME_DID);
+        userAttributeConfig.setDefaultValue(UserModel.ID);
         CONFIG_PROPERTIES.add(userAttributeConfig);
     }
 
