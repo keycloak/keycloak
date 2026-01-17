@@ -36,6 +36,7 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.USER_ATTRIBUTE_NAME_DID;
 
 /**
  * Sets an ID for the credential subject, either from User ID or by attribute mapping
@@ -62,7 +63,7 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         userAttributeConfig.setLabel("User attribute");
         userAttributeConfig.setHelpText("The name of the user attribute that maps to the subject id.");
         userAttributeConfig.setType(ProviderConfigProperty.LIST_TYPE);
-        userAttributeConfig.setOptions(List.of(UserModel.USERNAME, UserModel.EMAIL, UserModel.ID));
+        userAttributeConfig.setOptions(List.of(USER_ATTRIBUTE_NAME_DID, UserModel.USERNAME, UserModel.EMAIL, UserModel.ID));
         userAttributeConfig.setDefaultValue(UserModel.ID);
         CONFIG_PROPERTIES.add(userAttributeConfig);
     }
