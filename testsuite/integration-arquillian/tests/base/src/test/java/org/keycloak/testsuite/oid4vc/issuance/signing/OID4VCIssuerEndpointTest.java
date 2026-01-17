@@ -50,6 +50,7 @@ import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels;
 import org.keycloak.TokenVerifier;
+import org.keycloak.VCFormat;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -82,7 +83,6 @@ import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -185,18 +185,17 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 session);
         SdJwtCredentialBuilder sdJwtCredentialBuilder = new SdJwtCredentialBuilder();
 
-        return prepareIssuerEndpoint(
-                session,
-                authenticator,
-                Map.of(jwtCredentialBuilder.getSupportedFormat(), jwtCredentialBuilder,
-                        sdJwtCredentialBuilder.getSupportedFormat(), sdJwtCredentialBuilder)
+        Map<VCFormat, CredentialBuilder> credentialBuilders = Map.of(
+                jwtCredentialBuilder.getSupportedFormat(), jwtCredentialBuilder,
+                sdJwtCredentialBuilder.getSupportedFormat(), sdJwtCredentialBuilder
         );
+        return prepareIssuerEndpoint(session, authenticator, credentialBuilders);
     }
 
     protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(
             KeycloakSession session,
             AppAuthManager.BearerTokenAuthenticator authenticator,
-            Map<String, CredentialBuilder> credentialBuilders
+            Map<VCFormat, CredentialBuilder> credentialBuilders
     ) {
         return new OID4VCIssuerEndpoint(
                 session,
@@ -222,7 +221,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                                                                      sdJwtTypeCredentialConfigurationIdName,
                                                                      sdJwtTypeCredentialScopeName,
                                                                      sdJwtCredentialVct,
-                                                                     Format.SD_JWT_VC,
+                                                                     VCFormat.SD_JWT_VC.getValue(),
                                                                      null,
                                                                      List.of(KeyAttestationResistanceLevels.HIGH,
                                                                              KeyAttestationResistanceLevels.MODERATE));
@@ -231,7 +230,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                                                                    jwtTypeCredentialConfigurationIdName,
                                                                    jwtTypeCredentialScopeName,
                                                                    null,
-                                                                   Format.JWT_VC,
+                                                                   VCFormat.JWT_VC.getValue(),
                                                                    TEST_CREDENTIAL_MAPPERS_FILE,
                                                                    Collections.emptyList());
         minimalJwtTypeCredentialClientScope = registerOptionalClientScope("vc-with-minimal-config",
@@ -302,7 +301,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         addAttribute.accept(CredentialScopeModel.CONFIGURATION_ID, credentialConfigurationId);
         addAttribute.accept(CredentialScopeModel.CREDENTIAL_IDENTIFIER, credentialIdentifier);
         addAttribute.accept(CredentialScopeModel.FORMAT, format);
-        addAttribute.accept(CredentialScopeModel.VCT, Optional.ofNullable(vct).orElse(credentialIdentifier));
+        addAttribute.accept(CredentialScopeModel.VC_TYPE, Optional.ofNullable(vct).orElse(credentialIdentifier));
         if (credentialConfigurationId != null) {
             String vcDisplay;
             try {
