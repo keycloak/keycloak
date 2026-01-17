@@ -728,8 +728,6 @@ public class AuthServerTestEnricher {
                     realms.append(testRealm.getRealm()).append(", ");
                 } catch (NotFoundException e) {
                     // Ignore
-                } catch (Exception e) {
-                    // Ignore
                 }
             }
             log.info("removed realms: " + realms);
