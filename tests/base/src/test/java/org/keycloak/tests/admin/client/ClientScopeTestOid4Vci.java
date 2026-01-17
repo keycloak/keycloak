@@ -85,7 +85,7 @@ public class ClientScopeTestOid4Vci extends AbstractClientScopeTest {
             Assertions.assertEquals(clientScope.getName(),
                                     createdClientScope.getAttributes().get(CredentialScopeModel.CONTEXTS));
             Assertions.assertEquals(clientScope.getName(),
-                                    createdClientScope.getAttributes().get(CredentialScopeModel.VCT));
+                                    createdClientScope.getAttributes().get(CredentialScopeModel.VC_TYPE));
             Assertions.assertEquals(clientScope.getName(),
                                     createdClientScope.getAttributes().get(CredentialScopeModel.ISSUER_DID));
 

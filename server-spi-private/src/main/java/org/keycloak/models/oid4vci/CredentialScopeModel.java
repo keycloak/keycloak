@@ -59,7 +59,7 @@ public class CredentialScopeModel implements ClientScopeModel {
     public static final String FORMAT = "vc.format";
     public static final String EXPIRY_IN_SECONDS = "vc.expiry_in_seconds";
     public static final String ISSUER_DID = "vc.issuer_did";
-    public static final String VCT = "vc.verifiable_credential_type";
+    public static final String VC_TYPE = "vc.verifiable_credential_type";
 
     /**
      * the value that is added into the "types"-attribute of a verifiable credential
@@ -207,11 +207,11 @@ public class CredentialScopeModel implements ClientScopeModel {
     }
 
     public String getVct() {
-        return Optional.ofNullable(clientScope.getAttribute(VCT)).orElse(getName());
+        return Optional.ofNullable(clientScope.getAttribute(VC_TYPE)).orElse(getName());
     }
 
     public void setVct(String vct) {
-        clientScope.setAttribute(VCT, Optional.ofNullable(vct).orElse(getName()));
+        clientScope.setAttribute(VC_TYPE, Optional.ofNullable(vct).orElse(getName()));
     }
 
     public String getTokenJwsType() {
