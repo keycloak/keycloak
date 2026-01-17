@@ -41,24 +41,6 @@ import static org.junit.Assert.assertTrue;
 
 public class OID4VCIWellKnownProviderTest extends OID4VCTest {
 
-    @Test
-    public void assertOnlyAsymmetricIncluded() throws IOException {
-
-        getTestingClient()
-                .server(TEST_REALM_NAME)
-                .run(session -> {
-                    OID4VCIssuerWellKnownProvider oid4VCIssuerWellKnownProvider = new OID4VCIssuerWellKnownProvider(session);
-                    CredentialIssuer credentialIssuer = oid4VCIssuerWellKnownProvider.getIssuerMetadata();
-                    assertEquals("Only one asymmetric encryption key is present in the realm.",
-                            1,
-                            credentialIssuer.getCredentialResponseEncryption()
-                                    .getAlgValuesSupported()
-                                    .size());
-                    assertTrue("The algorithm of the configured asymmetric encryption key should be provided.",
-                            credentialIssuer.getCredentialResponseEncryption().getAlgValuesSupported().contains(RSA_OAEP_256));
-                });
-    }
-
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.setVerifiableCredentialsEnabled(true);
@@ -81,7 +63,24 @@ public class OID4VCIWellKnownProviderTest extends OID4VCTest {
         }
     }
 
-    public static ComponentExportRepresentation getAesKeyProvider(String algorithm, String keyName, String keyUse, String providerId) {
+    @Test
+    public void assertOnlyAsymmetricIncluded() throws IOException {
+
+        getTestingClient()
+                .server(TEST_REALM_NAME)
+                .run(session -> {
+                    CredentialIssuer issuerMetadata = new OID4VCIssuerWellKnownProvider(session).getIssuerMetadata();
+                    assertEquals("Only one asymmetric encryption key is present in the realm.",
+                            1,
+                            issuerMetadata.getCredentialResponseEncryption()
+                                    .getAlgValuesSupported()
+                                    .size());
+                    assertTrue("The algorithm of the configured asymmetric encryption key should be provided.",
+                            issuerMetadata.getCredentialResponseEncryption().getAlgValuesSupported().contains(RSA_OAEP_256));
+                });
+    }
+
+    private ComponentExportRepresentation getAesKeyProvider(String algorithm, String keyName, String keyUse, String providerId) {
         // Generate a random AES key (default length: 256 bits)
         byte[] secret = SecretGenerator.getInstance().randomBytes(32); // 32 bytes = 256 bits
 

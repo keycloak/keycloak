@@ -672,7 +672,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
         final String verifiableCredentialType = jwtTypeCredentialClientScope.getAttributes()
-                .get(CredentialScopeModel.VCT);
+                .get(CredentialScopeModel.VC_TYPE);
         String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
         String expectedCredentialsEndpoint = expectedIssuer + "/protocol/oid4vc/credential";
         String expectedNonceEndpoint = expectedIssuer + "/protocol/oid4vc/" + OID4VCIssuerEndpoint.NONCE_PATH;

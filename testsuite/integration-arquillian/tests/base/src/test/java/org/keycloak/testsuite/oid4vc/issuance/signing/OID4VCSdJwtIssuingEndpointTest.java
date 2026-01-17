@@ -340,7 +340,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         assertEquals(HttpStatus.SC_OK, accessTokenResponse.getStatusCode());
         String theToken = accessTokenResponse.getAccessToken();
 
-        final String vct = clientScope.getAttributes().get(CredentialScopeModel.VCT);
+        final String vct = clientScope.getAttributes().get(CredentialScopeModel.VC_TYPE);
 
         // 6. Get the credential
         credentialsOffer.getCredentialConfigurationIds().stream()
@@ -369,7 +369,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         final String credentialConfigurationId = sdJwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
         final String verifiableCredentialType = sdJwtTypeCredentialClientScope.getAttributes()
-                .get(CredentialScopeModel.VCT);
+                .get(CredentialScopeModel.VC_TYPE);
         String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
         String expectedCredentialsEndpoint = expectedIssuer + "/protocol/oid4vc/credential";
         String expectedNonceEndpoint = expectedIssuer + "/protocol/oid4vc/" + OID4VCIssuerEndpoint.NONCE_PATH;

@@ -53,12 +53,6 @@ public enum VCFormat {
         throw new IllegalArgumentException("Unknown VC format: " + value);
     }
 
-    public static VCFormat fromScopeName(String name) {
-        if (name.endsWith("_jwt")) return JWT_VC;
-        if (name.endsWith("_ld")) return LDP_VC;
-        return SD_JWT_VC;
-    }
-
     public String getValue() {
         return value;
     }
