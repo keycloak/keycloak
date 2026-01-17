@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Map;
 
 import jakarta.ws.rs.Consumes;
@@ -51,6 +52,7 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
 import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.CANCELLED;
 
 public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpoint {
@@ -225,6 +227,7 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
 
         SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(clientNotificationEndpoint)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                .header(METRICS_URI_TEMPLATE_HEADER, URI.create(clientNotificationEndpoint).getPath())
                 .json(clientNotificationRequest)
                 .auth(deviceModel.getClientNotificationToken());
 

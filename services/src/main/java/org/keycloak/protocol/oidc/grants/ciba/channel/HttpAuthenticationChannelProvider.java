@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oidc.grants.ciba.channel;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Map;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -32,6 +33,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.util.TokenUtil;
+
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -81,6 +84,7 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
 
             SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(httpAuthenticationChannelUri)
                     .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                    .header(METRICS_URI_TEMPLATE_HEADER, URI.create(httpAuthenticationChannelUri).getPath())
                     .json(channelRequest)
                     .auth(createBearerToken(request, client));
  

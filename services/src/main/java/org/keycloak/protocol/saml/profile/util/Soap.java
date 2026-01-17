@@ -57,6 +57,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -266,7 +268,7 @@ public final class Soap {
                 message.saveChanges();
             }
             // use SimpleHttp from the session
-            SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(url);
+            SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(url).header(METRICS_URI_TEMPLATE_HEADER, URI.create(url).getPath());
             // add all the headers as HTTP headers except the ones needed for the HttpEntity
             Iterator<MimeHeader> reqHeaders = message.getMimeHeaders().getAllHeaders();
             ContentType contentType = null;

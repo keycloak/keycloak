@@ -30,6 +30,8 @@ import org.keycloak.models.KeycloakSession;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -89,6 +91,7 @@ public class InstagramIdentityProvider extends AbstractOAuth2IdentityProvider im
 		}
 
 		return SimpleHttp.create(session).doGet(PROFILE_URL)
+                .header(METRICS_URI_TEMPLATE_HEADER, "/me")
 				.param("access_token", accessToken)
 				.param("fields", fields)
 				.asJson();

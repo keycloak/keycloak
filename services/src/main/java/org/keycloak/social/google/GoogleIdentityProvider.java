@@ -43,6 +43,8 @@ import org.keycloak.services.ErrorResponseException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -107,6 +109,7 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         try {
             JsonNode tokenInfo = SimpleHttp.create(session).doGet(TOKEN_INFO_URL)
                     .header("Authorization", "Bearer " + tokenExchangeContext.getParams().getSubjectToken())
+                    .header(METRICS_URI_TEMPLATE_HEADER, "/tokeninfo")
                     .asJson();
             if (tokenInfo == null || !tokenInfo.has(JsonWebToken.AUD) || !tokenInfo.get(JsonWebToken.AUD).asText().equals(getConfig().getClientId())) {
                 logger.tracef("Invalid response or unmatching audience from the token-info endpoint from Google. Expected audience '%s' . Token info response: %s", getConfig().getClientId(), tokenInfo);

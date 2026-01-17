@@ -1,6 +1,7 @@
 package org.keycloak.broker.kubernetes;
 
 import java.io.File;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
 import org.keycloak.crypto.PublicKeysWrapper;
@@ -20,6 +21,7 @@ import org.apache.http.HttpHeaders;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.broker.kubernetes.KubernetesConstants.SERVICE_ACCOUNT_TOKEN_PATH;
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
 
 public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
 
@@ -39,15 +41,18 @@ public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
 
         String token = getToken(issuer);
 
-        String wellKnownEndpoint = issuer + "/.well-known/openid-configuration";
+        String path = "/.well-known/openid-configuration";
+        String wellKnownEndpoint = issuer + path;
 
-        SimpleHttpRequest wellKnownReqest = simpleHttp.doGet(wellKnownEndpoint).acceptJson();
+        SimpleHttpRequest wellKnownReqest = simpleHttp.doGet(wellKnownEndpoint).header(METRICS_URI_TEMPLATE_HEADER, path).acceptJson();
+
         if (token != null) {
             wellKnownReqest.auth(token);
         }
-        String jwksUri = wellKnownReqest.asJson(OIDCConfigurationRepresentation.class).getJwksUri();
-
-        SimpleHttpRequest jwksRequest = simpleHttp.doGet(jwksUri).header(HttpHeaders.ACCEPT, "application/jwk-set+json");
+        URI uri = URI.create(wellKnownReqest.asJson(OIDCConfigurationRepresentation.class).getJwksUri());
+        SimpleHttpRequest jwksRequest = simpleHttp.doGet(uri.toString())
+              .header(HttpHeaders.ACCEPT, "application/jwk-set+json")
+              .header(METRICS_URI_TEMPLATE_HEADER, uri.getPath());
         if (token != null) {
             jwksRequest.auth(token);
         }

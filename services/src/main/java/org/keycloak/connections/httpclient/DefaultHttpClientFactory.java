@@ -26,6 +26,8 @@ import java.util.concurrent.TimeUnit;
 import org.keycloak.Config;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.config.HttpOptions;
+import org.keycloak.config.MetricsOptions;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -66,6 +68,8 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     private static final String HTTP_PROXY = "http_proxy";
     private static final String NO_PROXY = "no_proxy";
     public static final String MAX_CONSUMED_RESPONSE_SIZE = "max-consumed-response-size";
+    public static final String METRICS_ENABLED = "metrics-enabled";
+    public static final String METRICS_URI_TEMPLATE_HEADER = "X-Metrics-Template";
 
     private volatile CloseableHttpClient httpClient;
     private Config.Scope config;
@@ -206,6 +210,15 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     }
 
                     HttpClientBuilder builder = newHttpClientBuilder();
+
+                    Config.Scope configRoot = config.root();
+                    boolean enableMetrics = configRoot.getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), false) &&
+                          configRoot.getBoolean(HttpOptions.HTTP_CLIENT_METRICS_ENABLED.getKey());
+
+                    if (enableMetrics) {
+                        builder.metrics(true)
+                              .metricsTagLimit(configRoot.getInt(HttpOptions.HTTP_CLIENT_METRICS_TAG_LIMIT.getKey()));
+                    }
 
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
                             .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)

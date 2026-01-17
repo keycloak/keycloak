@@ -32,6 +32,8 @@ import org.keycloak.services.validation.Validation;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
+
 /**
  *
  * Identity provider for Microsoft account. Uses OAuth 2 protocol of Microsoft Graph as documented at
@@ -72,7 +74,9 @@ public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider im
     @Override
     protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
         try {
-            JsonNode profile = SimpleHttp.create(session).doGet(PROFILE_URL).auth(accessToken).asJson();
+            JsonNode profile = SimpleHttp.create(session).doGet(PROFILE_URL).auth(accessToken)
+                  .header(METRICS_URI_TEMPLATE_HEADER, "/v1.0/me")
+                  .asJson();
             if (profile.has("error") && !profile.get("error").isNull()) {
                 throw new IdentityBrokerException("Error in Microsoft Graph API response. Payload: " + profile.toString());
             }

@@ -19,6 +19,7 @@ package org.keycloak.services.clientpolicy.executor;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.URI;
 import java.util.Optional;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -39,6 +40,8 @@ import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
+
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -120,8 +123,10 @@ public class IntentClientBindCheckExecutor implements ClientPolicyExecutorProvid
         IntentBindCheckRequest request = new IntentBindCheckRequest();
         request.setClientId(clientId);
         request.setIntentId(intentId);
-        SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(configuration.getIntentClientBindCheckEndpoint())
+        String url = configuration.getIntentClientBindCheckEndpoint();
+        SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(url)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                .header(METRICS_URI_TEMPLATE_HEADER, URI.create(url).getPath())
                 .json(request);
         IntentBindCheckResponse response = null;
         try {

@@ -17,6 +17,7 @@
 package org.keycloak.broker.oauth;
 
 import java.io.IOException;
+import java.net.URI;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -34,6 +35,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
 
 public class OAuth2IdentityProvider extends AbstractOAuth2IdentityProvider<OAuth2IdentityProviderConfig> {
 
@@ -106,10 +109,12 @@ public class OAuth2IdentityProvider extends AbstractOAuth2IdentityProvider<OAuth
 
     private JsonNode fetchUserProfile(String accessToken) {
         String userInfoUrl = getConfig().getUserInfoUrl();
+        URI userInfoUri = URI.create(getConfig().getUserInfoUrl());
 
         try (SimpleHttpResponse response = executeRequest(userInfoUrl, SimpleHttp.create(session).doGet(userInfoUrl)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
-                .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON))) {
+                .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
+                .header(METRICS_URI_TEMPLATE_HEADER, userInfoUri.getPath()))) {
             String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
             MediaType contentMediaType;
 

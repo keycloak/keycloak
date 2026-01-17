@@ -35,6 +35,12 @@ Previously virtual threads were used when at least two CPU cores were available.
 Starting with this version, virtual threads are only used when at least four CPU cores are available.
 This change should prevent deadlocks due to pinned virtual threads.
 
+=== HTTP client metrics
+
+The HTTP client used by {project_name} now exposes metrics which allow request latency and connection pool status to be monitored.
+These metrics are enabled by default when {project_name} is configured with `--metrics-enabled=true`, but can be disabled
+by configuring `--http-client-metrics-enabled=false`.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

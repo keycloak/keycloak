@@ -33,6 +33,8 @@ import org.keycloak.models.UserModel;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
+
 public class Ipatuura {
     private static final Logger logger = Logger.getLogger(Ipatuura.class);
 
@@ -81,10 +83,11 @@ public class Ipatuura {
         String password = model.getConfig().getFirst("loginpassword");
 
         /* Execute GET to get initial csrftoken */
-        String url = String.format("https://%s%s", server, "/admin/login/");
+        String loginPath = "/admin/login";
+        String url = String.format("https://%s%s", server, loginPath);
 
         try {
-            response = SimpleHttp.create(session).doGet(url).asResponse();
+            response = SimpleHttp.create(session).doGet(url).header(METRICS_URI_TEMPLATE_HEADER, loginPath).asResponse();
             parseSetCookie(response);
             response.close();
         } catch (Exception e) {
@@ -95,8 +98,14 @@ public class Ipatuura {
         /* Perform login POST */
         try {
             /* Here we retrieve the Response sessionid and csrftoken cookie */
-            response = SimpleHttp.create(session).doPost(url).header("X-CSRFToken", csrf_value).header("Cookie", csrf_cookie)
-                    .header("referer", url).param("username", username).param("password", password).asResponse();
+            response = SimpleHttp.create(session).doPost(url)
+                  .header("X-CSRFToken", csrf_value)
+                  .header("Cookie", csrf_cookie)
+                  .header("referer", url)
+                  .header(METRICS_URI_TEMPLATE_HEADER, loginPath)
+                  .param("username", username)
+                  .param("password", password)
+                  .asResponse();
 
             parseSetCookie(response);
             response.close();
@@ -117,12 +126,18 @@ public class Ipatuura {
 
         /* Build URL */
         String server = model.getConfig().getFirst("scimurl");
-        String endpointurl = String.format("https://%s/creds/simple_pwd", server);
+        String path = "/creds/simple_pwd";
+        String endpointurl = String.format("https://%s%s", server, path);
 
         logger.debugv("Sending POST request to {0}", endpointurl);
-        SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(endpointurl).header("X-CSRFToken", this.csrf_value)
-                .header("Cookie", this.csrf_cookie).header("SessionId", sessionid_cookie).header("referer", endpointurl)
-                .param("username", username).param("password", password);
+        SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(endpointurl)
+              .header("X-CSRFToken", this.csrf_value)
+              .header("Cookie", this.csrf_cookie)
+              .header("SessionId", sessionid_cookie)
+              .header("referer", endpointurl)
+              .header(METRICS_URI_TEMPLATE_HEADER, path)
+              .param("username", username)
+              .param("password", password);
         try (SimpleHttpResponse response = simpleHttp.asResponse()){
             JsonNode result = response.asJson();
             return (result.get("result").get("validated").asBoolean());
@@ -136,11 +151,14 @@ public class Ipatuura {
     public String gssAuth(String spnegoToken) {
 
         String server = model.getConfig().getFirst("scimurl");
-        String endpointurl = String.format("https://%s/bridge/login_kerberos/", server);
+        String path = "/bridge/login_kerberos";
+        String endpointurl = String.format("https://%s%s", server, path);
 
         logger.debugv("Sending POST request to {0}", endpointurl);
-        SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(endpointurl).header("Authorization", "Negotiate " + spnegoToken)
-                .param("username", "");
+        SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(endpointurl)
+              .header("Authorization", "Negotiate " + spnegoToken)
+              .header(METRICS_URI_TEMPLATE_HEADER, path)
+              .param("username", "");
         try (SimpleHttpResponse response = simpleHttp.asResponse()) {
             logger.debugv("Response status is {0}", response.getStatus());
             return response.getFirstHeader("Remote-User");
@@ -151,6 +169,10 @@ public class Ipatuura {
     }
 
     public <T> SimpleHttpResponse clientRequest(String endpoint, String method, T entity) throws Exception {
+        return clientRequest(endpoint, method, entity, null);
+    }
+
+    public <T> SimpleHttpResponse clientRequest(String endpoint, String method, T entity, String template) throws Exception {
         SimpleHttpResponse response = null;
 
         if (!this.logged_in) {
@@ -168,26 +190,45 @@ public class Ipatuura {
 
         logger.debugv("Sending {0} request to {1}", method, endpointurl);
 
+        String uriMetricsTemplate = template != null ? template : endpoint;
         try {
             switch (method) {
                 case "GET":
-                    response = SimpleHttp.create(session).doGet(endpointurl).header("X-CSRFToken", csrf_value)
-                            .header("Cookie", csrf_cookie).header("SessionId", sessionid_cookie).asResponse();
+                    response = SimpleHttp.create(session).doGet(endpointurl)
+                          .header("X-CSRFToken", csrf_value)
+                          .header("Cookie", csrf_cookie)
+                          .header("SessionId", sessionid_cookie)
+                          .header(METRICS_URI_TEMPLATE_HEADER, uriMetricsTemplate)
+                          .asResponse();
                     break;
                 case "DELETE":
-                    response = SimpleHttp.create(session).doDelete(endpointurl).header("X-CSRFToken", csrf_value)
-                            .header("Cookie", csrf_cookie).header("SessionId", sessionid_cookie).header("referer", endpointurl)
-                            .asResponse();
+                    response = SimpleHttp.create(session).doDelete(endpointurl)
+                          .header("X-CSRFToken", csrf_value)
+                          .header("Cookie", csrf_cookie)
+                          .header("SessionId", sessionid_cookie)
+                          .header("referer", endpointurl)
+                          .header(METRICS_URI_TEMPLATE_HEADER, uriMetricsTemplate)
+                          .asResponse();
                     break;
                 case "POST":
                     /* Header is needed for domains endpoint only, but use it here anyway */
-                    response = SimpleHttp.create(session).doPost(endpointurl).header("X-CSRFToken", this.csrf_value)
-                            .header("Cookie", this.csrf_cookie).header("SessionId", sessionid_cookie)
-                            .header("referer", endpointurl).json(entity).asResponse();
+                    response = SimpleHttp.create(session).doPost(endpointurl)
+                          .header("X-CSRFToken", this.csrf_value)
+                          .header("Cookie", this.csrf_cookie)
+                          .header("SessionId", sessionid_cookie)
+                          .header("referer", endpointurl)
+                          .header(METRICS_URI_TEMPLATE_HEADER, uriMetricsTemplate)
+                          .json(entity)
+                          .asResponse();
                     break;
                 case "PUT":
-                    response = SimpleHttp.create(session).doPut(endpointurl).header("X-CSRFToken", this.csrf_value)
-                            .header("SessionId", sessionid_cookie).header("Cookie", this.csrf_cookie).json(entity).asResponse();
+                    response = SimpleHttp.create(session).doPut(endpointurl)
+                          .header("X-CSRFToken", this.csrf_value)
+                          .header("SessionId", sessionid_cookie)
+                          .header("Cookie", this.csrf_cookie)
+                          .header(METRICS_URI_TEMPLATE_HEADER, uriMetricsTemplate)
+                          .json(entity)
+                          .asResponse();
                     break;
                 default:
                     logger.warn("Unknown HTTP method, skipping");
@@ -264,7 +305,7 @@ public class Ipatuura {
 
         SimpleHttpResponse response;
         try {
-            response = clientRequest(userIdUrl, "DELETE", null);
+            response = clientRequest(userIdUrl, "DELETE", null, "/Users/{id}");
         } catch (Exception e) {
             logger.errorv("Error: {0}", e.getMessage());
             throw new RuntimeException(e);
@@ -367,7 +408,7 @@ public class Ipatuura {
 
         SimpleHttpResponse response;
         try {
-            response = clientRequest(modifyUrl, "PUT", user);
+            response = clientRequest(modifyUrl, "PUT", user, "/Users/{id}");
         } catch (Exception e) {
             logger.errorv("Error: {0}", e.getMessage());
             throw new RuntimeException(e);

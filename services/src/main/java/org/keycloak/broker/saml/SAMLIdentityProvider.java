@@ -109,6 +109,8 @@ import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
+
 /**
  * @author Pedro Igor
  */
@@ -287,9 +289,11 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             if (logoutRequest.getDestination() != null) {
                 singleLogoutServiceUrl = logoutRequest.getDestination().toString();
             }
+            URI uri = URI.create(singleLogoutServiceUrl);
             int status = SimpleHttp.create(session).doPost(singleLogoutServiceUrl)
-                    .param(GeneralConstants.SAML_REQUEST_KEY, binding.postBinding(SAML2Request.convert(logoutRequest)).encoded())
-                    .param(GeneralConstants.RELAY_STATE, userSession.getId()).asStatus();
+                  .header(METRICS_URI_TEMPLATE_HEADER, uri.getPath())
+                  .param(GeneralConstants.SAML_REQUEST_KEY, binding.postBinding(SAML2Request.convert(logoutRequest)).encoded())
+                  .param(GeneralConstants.RELAY_STATE, userSession.getId()).asStatus();
             boolean success = status >=200 && status < 400;
             if (!success) {
                 logger.warn("Failed saml backchannel broker logout to: " + singleLogoutServiceUrl);

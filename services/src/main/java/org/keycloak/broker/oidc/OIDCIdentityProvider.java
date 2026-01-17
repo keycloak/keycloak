@@ -17,6 +17,7 @@
 package org.keycloak.broker.oidc;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -97,6 +98,8 @@ import org.keycloak.vault.VaultStringSecret;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
+
 /**
  * @author Pedro Igor
  */
@@ -163,9 +166,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         if (getConfig().isSendClientIdOnLogout()) {
             logoutUri.queryParam("client_id", getConfig().getClientId());
         }
-        String url = logoutUri.build().toString();
+        URI uri = logoutUri.build();
+        String url = uri.toString();
         try {
-            int status = SimpleHttp.create(session).doGet(url).asStatus();
+            int status = SimpleHttp.create(session).doGet(url).header(METRICS_URI_TEMPLATE_HEADER, uri.getPath()).asStatus();
             boolean success = status >= 200 && status < 400;
             if (!success) {
                 logger.warn("Failed backchannel broker logout to: " + url);
@@ -520,7 +524,12 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             if (userInfoUrl != null && !userInfoUrl.isEmpty()) {
 
                 if (accessToken != null) {
-                    SimpleHttpResponse response = executeRequest(userInfoUrl, SimpleHttp.create(session).doGet(userInfoUrl).header("Authorization", "Bearer " + accessToken));
+                    URI uri = URI.create(userInfoUrl);
+                    SimpleHttpResponse response = executeRequest(userInfoUrl,
+                          SimpleHttp.create(session).doGet(userInfoUrl)
+                                .header("Authorization", "Bearer " + accessToken)
+                                .header(METRICS_URI_TEMPLATE_HEADER, uri.getPath())
+                    );
                     String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
                     MediaType contentMediaType;
                     try {

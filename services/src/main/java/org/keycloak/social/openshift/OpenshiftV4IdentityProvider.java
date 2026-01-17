@@ -2,6 +2,7 @@ package org.keycloak.social.openshift;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 
@@ -20,6 +21,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
 
 /**
  * Identity provider for Openshift V4.
@@ -111,8 +114,10 @@ public class OpenshiftV4IdentityProvider extends AbstractOAuth2IdentityProvider<
     }
 
     private JsonNode fetchProfile(String accessToken) throws IOException {
-        return SimpleHttp.create(session).doGet(getConfig().getUserInfoUrl())
+        String url = getConfig().getUserInfoUrl();
+        return SimpleHttp.create(session).doGet(url)
                 .header("Authorization", "Bearer " + accessToken)
+                .header(METRICS_URI_TEMPLATE_HEADER, URI.create(url).getPath())
                 .asJson();
     }
 

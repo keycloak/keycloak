@@ -1,6 +1,7 @@
 package org.keycloak.email;
 
 import java.io.IOException;
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
@@ -17,6 +18,8 @@ import org.keycloak.vault.VaultStringSecret;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
+
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
 
 public class TokenAuthEmailAuthenticator implements EmailAuthenticator {
 
@@ -125,6 +128,7 @@ public class TokenAuthEmailAuthenticator implements EmailAuthenticator {
 
     private JsonNode fetchTokenViaHTTP(KeycloakSession session, String authTokenUrl, String authTokenScope, String authTokenClientId, String authTokenClientSecret) throws IOException {
         return SimpleHttp.create(session).doPost(authTokenUrl)
+                .header(METRICS_URI_TEMPLATE_HEADER, URI.create(authTokenUrl).getPath())
                 .param("client_id", authTokenClientId)
                 .param("client_secret", authTokenClientSecret)
                 .param("scope", authTokenScope)

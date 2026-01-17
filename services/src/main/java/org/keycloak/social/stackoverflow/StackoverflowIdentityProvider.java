@@ -36,6 +36,8 @@ import org.keycloak.models.KeycloakSession;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
+
 /**
  * Stackoverflow social provider. See https://api.stackexchange.com/docs/authentication
  * 
@@ -70,7 +72,7 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 	@Override
 	protected SimpleHttpRequest buildUserInfoRequest(String subjectToken, String userInfoUrl) {
 		String URL = PROFILE_URL + "&access_token=" + subjectToken + "&key=" + getConfig().getKey();
-		return SimpleHttp.create(session).doGet(URL);
+		return SimpleHttp.create(session).doGet(URL).header(METRICS_URI_TEMPLATE_HEADER, "/2.2/me");
 	}
 
 	@Override
@@ -100,7 +102,7 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 			if (log.isDebugEnabled()) {
 				log.debug("StackOverflow profile request to: " + URL);
 			}
-			return extractIdentityFromProfile(null, SimpleHttp.create(session).doGet(URL).asJson());
+			return extractIdentityFromProfile(null, SimpleHttp.create(session).doGet(URL).header(METRICS_URI_TEMPLATE_HEADER, "/2.2/me").asJson());
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Could not obtain user profile from Stackoverflow: " + e.getMessage(), e);
 		}

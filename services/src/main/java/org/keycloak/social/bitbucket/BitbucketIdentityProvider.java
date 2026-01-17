@@ -38,6 +38,8 @@ import org.keycloak.services.ErrorResponseException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -79,7 +81,7 @@ public class BitbucketIdentityProvider extends AbstractOAuth2IdentityProvider im
 		int status = 0;
 		try {
 			String userInfoUrl = getProfileEndpointForValidation(event);
-			response = buildUserInfoRequest(subjectToken, userInfoUrl).asResponse();
+			response = buildUserInfoRequest(subjectToken, userInfoUrl).header(METRICS_URI_TEMPLATE_HEADER, "/user").asResponse();
 			status = response.getStatus();
 		} catch (IOException e) {
 			logger.debug("Failed to invoke user info for external exchange", e);
@@ -144,7 +146,10 @@ public class BitbucketIdentityProvider extends AbstractOAuth2IdentityProvider im
 		AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
 
 		try {
-			JsonNode emails = SimpleHttp.create(session).doGet(USER_EMAIL_URL).header("Authorization", "Bearer " + subjectToken).asJson();
+			JsonNode emails = SimpleHttp.create(session).doGet(USER_EMAIL_URL)
+                  .header("Authorization", "Bearer " + subjectToken)
+                  .header(METRICS_URI_TEMPLATE_HEADER, "/user/emails")
+                  .asJson();
 
 			// {"pagelen":10,"values":[{"is_primary":true,"is_confirmed":true,"type":"email","email":"bburke@redhat.com","links":{"self":{"href":"https://api.bitbucket.org/2.0/user/emails/bburke@redhat.com"}}}],"page":1,"size":1}
 			JsonNode emailJson = emails.get("values");
@@ -167,7 +172,10 @@ public class BitbucketIdentityProvider extends AbstractOAuth2IdentityProvider im
 	@Override
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		try {
-			JsonNode profile = SimpleHttp.create(session).doGet(USER_URL).header("Authorization", "Bearer " + accessToken).asJson();
+			JsonNode profile = SimpleHttp.create(session).doGet(USER_URL)
+                  .header("Authorization", "Bearer " + accessToken)
+                  .header(METRICS_URI_TEMPLATE_HEADER, "/user")
+                  .asJson();
 
 			String type = getJsonProperty(profile, "type");
 			if (type == null) {

@@ -77,6 +77,50 @@ m| http_server_bytes_read_sum
 
 include::partials/histogram_note_http.adoc[]
 
+=== Client
+
+The metrics below helps to monitor the performance of the client used by the {project_name} server to make HTTP requests.
+
+Client metrics are enabled by default when `--metrics-enabled=true`, however you can disable them by specifying `--spi-connections-http-client-default-metrics-enabled=false`.
+
+|===
+|Metric |Description
+
+m| httpcomponents_httpclient_request_seconds_count
+| The total number HttpClient requests for a given URI
+
+m| httpcomponents_httpclient_request_seconds_max
+| Duration of the longest HttpClient request for a given URI
+
+m| httpcomponents_httpclient_request_seconds_sum
+| Duration of all HttpClient requests for a given URI
+
+m| httpcomponents_httpclient_pool_total_connections
+| The number of persistent and available connections for all routes
+
+m| httpcomponents_httpclient_pool_total_pending
+| The number of connection requests being blocked awaiting a free connection for all routes.
+
+m| httpcomponents_httpclient_pool_total_max
+| The configured maximum number of allowed persistent connections for all routes
+
+m| httpcomponents_httpclient_pool_route_max_default
+| The configured default maximum number of allowed persistent connections per route
+
+|===
+
+A `httpcomponents_httpclient_request_seconds` metric is recorded for each unique `host` and `port`, however in order to
+prevent cardinality explosion we define the `uri` tag as "UNKNOWN" unless the `X-Metrics-Template` header is explicitly
+configured in the request. This prevents endpoints such as `/users/{id}`, registering a metric for every call to
+`/users/1`, `/users/2` and so forth. For such paths, it is recommended that the `X-Metrics-Template` be defined as `/users/{id}`.
+
+Similarly, by default we limit the total number of metrics with unique `host`, `port` and `uri` tags to 100. Users can
+define the upper limit by setting `http-client-metrics-tag-limit` with the desired value.
+
+You can enable histograms for the `httpcomponents_httpclient_request_seconds` metric by setting `http-client-metrics-histograms-enabled`
+to `true`, and add additional buckets for service level objectives using the option `http-client-metrics-slos`.
+
+include::partials/histogram_note_http.adoc[]
 
 == Next steps
 

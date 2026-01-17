@@ -18,6 +18,7 @@
 package org.keycloak.social.gitlab;
 
 import java.io.IOException;
+import java.net.URI;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -42,6 +43,8 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorResponseException;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -143,8 +146,11 @@ public class GitLabIdentityProvider extends OIDCIdentityProvider  implements Soc
 		for (int i = 0; i < 10; i++) {
 			try {
 				String userInfoUrl = getUserInfoUrl();
+                URI uri = URI.create(userInfoUrl);
 				response = SimpleHttp.create(session).doGet(userInfoUrl)
-						.header("Authorization", "Bearer " + accessToken).asResponse();
+						.header("Authorization", "Bearer " + accessToken)
+                        .header(METRICS_URI_TEMPLATE_HEADER, uri.getPath())
+                        .asResponse();
 				status = response.getStatus();
 			} catch (IOException e) {
 				logger.debug("Failed to invoke user info for external exchange", e);

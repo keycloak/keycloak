@@ -113,6 +113,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
+
 /**
  * @author Pedro Igor
  */
@@ -280,7 +282,10 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected SimpleHttpRequest getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {
-        SimpleHttpRequest refreshTokenRequest = SimpleHttp.create(session).doPost(getConfig().getTokenUrl())
+        String url = getConfig().getTokenUrl();
+        URI uri = URI.create(url);
+        SimpleHttpRequest refreshTokenRequest = SimpleHttp.create(session).doPost(url)
+                .header(METRICS_URI_TEMPLATE_HEADER, uri.getPath())
                 .param(OAUTH2_GRANT_TYPE_REFRESH_TOKEN, refreshToken)
                 .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN);
         return authenticateTokenRequest(refreshTokenRequest);
@@ -795,7 +800,10 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         public SimpleHttpRequest generateTokenRequest(String authorizationCode) {
             KeycloakContext context = session.getContext();
             OAuth2IdentityProviderConfig providerConfig = provider.getConfig();
-            SimpleHttpRequest tokenRequest = SimpleHttp.create(session).doPost(providerConfig.getTokenUrl())
+            String url = providerConfig.getTokenUrl();
+            URI uri = URI.create(url);
+            SimpleHttpRequest tokenRequest = SimpleHttp.create(session).doPost(url)
+                    .header(METRICS_URI_TEMPLATE_HEADER, uri.getPath())
                     .param(OAUTH2_PARAMETER_CODE, authorizationCode)
                     .param(OAUTH2_PARAMETER_REDIRECT_URI, Urls.identityProviderAuthnResponse(context.getUri().getBaseUri(),
                             providerConfig.getAlias(), context.getRealm().getName()).toString())
@@ -1012,9 +1020,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         try {
-
             // Supporting only access-tokens for now
             SimpleHttpRequest introspectionRequest = SimpleHttp.create(session).doPost(introspectionEndointUrl)
+                    .header(METRICS_URI_TEMPLATE_HEADER, URI.create(introspectionEndointUrl).getPath())
                     .param(TokenIntrospectionEndpoint.PARAM_TOKEN, idpAccessToken)
                     .param(TokenIntrospectionEndpoint.PARAM_TOKEN_TYPE_HINT, AccessTokenIntrospectionProviderFactory.ACCESS_TOKEN_TYPE);
             introspectionRequest = authenticateTokenRequest(introspectionRequest);
