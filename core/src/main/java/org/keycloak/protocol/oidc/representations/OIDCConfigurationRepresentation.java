@@ -205,6 +205,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("authorization_details_types_supported")
     private List<String> authorizationDetailsTypesSupported;
 
+    @JsonProperty("client_id_metadata_document_supported")
+    private Boolean clientIdMetadataDocumentSupported;
+
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
     public String getIssuer() {
@@ -675,5 +678,13 @@ public class OIDCConfigurationRepresentation {
 
     public void setAuthorizationDetailsTypesSupported(List<String> authorizationDetailsTypesSupported) {
         this.authorizationDetailsTypesSupported = authorizationDetailsTypesSupported;
+    }
+
+    public Boolean getClientIdMetadataDocumentSupported() {
+        return clientIdMetadataDocumentSupported;
+    }
+
+    public void setClientIdMetadataDocumentSupported(Boolean clientIdMetadataDocumentSupported) {
+        this.clientIdMetadataDocumentSupported = clientIdMetadataDocumentSupported;
     }
 }
