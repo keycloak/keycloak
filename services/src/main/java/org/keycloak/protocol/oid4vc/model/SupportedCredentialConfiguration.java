@@ -109,8 +109,7 @@ public class SupportedCredentialConfiguration {
 
         credentialConfiguration.setFormat(credentialScope.getFormat());
 
-        String vct = Optional.ofNullable(credentialScope.getVct()).orElse(credentialScope.getName());
-        credentialConfiguration.setVct(vct);
+        credentialConfiguration.setVct(credentialScope.getVct());
 
         CredentialDefinition credentialDefinition = CredentialDefinition.parse(credentialScope);
         credentialConfiguration.setCredentialDefinition(credentialDefinition);

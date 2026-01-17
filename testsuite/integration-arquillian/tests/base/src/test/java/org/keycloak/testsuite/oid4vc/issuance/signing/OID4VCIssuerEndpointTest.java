@@ -185,18 +185,17 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 session);
         SdJwtCredentialBuilder sdJwtCredentialBuilder = new SdJwtCredentialBuilder();
 
-        return prepareIssuerEndpoint(
-                session,
-                authenticator,
-                Map.of(jwtCredentialBuilder.getSupportedFormat(), jwtCredentialBuilder,
-                        sdJwtCredentialBuilder.getSupportedFormat(), sdJwtCredentialBuilder)
+        Map<VCFormat, CredentialBuilder> credentialBuilders = Map.of(
+                jwtCredentialBuilder.getSupportedFormat(), jwtCredentialBuilder,
+                sdJwtCredentialBuilder.getSupportedFormat(), sdJwtCredentialBuilder
         );
+        return prepareIssuerEndpoint(session, authenticator, credentialBuilders);
     }
 
     protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(
             KeycloakSession session,
             AppAuthManager.BearerTokenAuthenticator authenticator,
-            Map<String, CredentialBuilder> credentialBuilders
+            Map<VCFormat, CredentialBuilder> credentialBuilders
     ) {
         return new OID4VCIssuerEndpoint(
                 session,
@@ -302,7 +301,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         addAttribute.accept(CredentialScopeModel.CONFIGURATION_ID, credentialConfigurationId);
         addAttribute.accept(CredentialScopeModel.CREDENTIAL_IDENTIFIER, credentialIdentifier);
         addAttribute.accept(CredentialScopeModel.FORMAT, format);
-        addAttribute.accept(CredentialScopeModel.VCT, Optional.ofNullable(vct).orElse(credentialIdentifier));
+        addAttribute.accept(CredentialScopeModel.VC_TYPE, Optional.ofNullable(vct).orElse(credentialIdentifier));
         if (credentialConfigurationId != null) {
             String vcDisplay;
             try {

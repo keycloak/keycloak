@@ -59,9 +59,7 @@ public class JwtCredentialBuilder implements CredentialBuilder {
     }
 
     @Override
-    public String getSupportedFormat() {
-        return VCFormat.JWT_VC.getValue();
-    }
+    public VCFormat getSupportedFormat() { return VCFormat.JWT_VC; }
 
     @Override
     public JwtCredentialBody buildCredentialBody(
