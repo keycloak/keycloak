@@ -17,6 +17,7 @@
 package org.keycloak.broker.oidc;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -385,11 +386,17 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             }
             UserSessionModel userSession = session.sessions().getUserSession(realm, state);
             if (userSession == null) {
-                logger.error("no valid user session");
+                logger.warnf("User session not found for state %s - likely already logged out via backchannel", state);
                 EventBuilder event = new EventBuilder(realm, session, clientConnection);
                 event.event(EventType.LOGOUT);
-                event.error(Errors.USER_SESSION_NOT_FOUND);
-                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                event.detail(Details.REASON, "Session already terminated via backchannel");
+                event.success();
+                AuthenticationManager.expireIdentityCookie(session);
+                AuthenticationManager.expireRememberMeCookie(session);
+                URI redirectUri = session.getContext().getUri().getBaseUriBuilder()
+                        .path("realms").path(realm.getName()).path("account")
+                        .build();
+                return Response.status(Response.Status.FOUND).location(redirectUri).build();
             }
             if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
                 logger.error("usersession in different state");
