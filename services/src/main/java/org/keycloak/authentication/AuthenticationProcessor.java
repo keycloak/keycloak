@@ -289,7 +289,7 @@ public class AuthenticationProcessor {
         return flowPath;
     }
 
-    public void setAutheticatedUser(UserModel user) {
+    public void setAuthenticatedUser(UserModel user) {
         UserModel previousUser = getAuthenticationSession().getAuthenticatedUser();
         if (previousUser != null && !user.getId().equals(previousUser.getId()))
             throw new AuthenticationFlowException(AuthenticationFlowError.USER_CONFLICT);
@@ -481,7 +481,7 @@ public class AuthenticationProcessor {
 
         @Override
         public void setUser(UserModel user) {
-            setAutheticatedUser(user);
+            setAuthenticatedUser(user);
         }
 
         @Override

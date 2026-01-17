@@ -96,6 +96,27 @@
         },
         "person-name-prohibited-characters": {}
       }
+    },
+    {
+      "name": "did",
+      "displayName": "DID",
+      "multivalued": false,
+      "permissions": {
+        "view": [
+          "admin",
+          "user"
+        ],
+        "edit": [
+          "admin",
+          "user"
+        ]
+      },
+      "validations": {
+        "pattern": {
+          "pattern": "^did:.+:.+$",
+          "error-message": "Value must start with 'did:scheme:'"
+        }
+      }
     }
   ],
   "groups": [
