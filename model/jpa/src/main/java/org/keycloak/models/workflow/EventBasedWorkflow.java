@@ -16,15 +16,17 @@ import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RE
 final class EventBasedWorkflow {
 
     private final KeycloakSession session;
+    private final ResourceType supportedType;
     private final ComponentModel model;
 
-    EventBasedWorkflow(KeycloakSession session, ComponentModel model) {
+    EventBasedWorkflow(KeycloakSession session, ResourceType supportedType, ComponentModel model) {
+        this.supportedType = supportedType;
         this.session = session;
         this.model = model;
     }
 
     boolean supports(ResourceType type) {
-        return ResourceType.USERS.equals(type);
+        return supportedType == type;
     }
 
     /**
@@ -99,7 +101,7 @@ final class EventBasedWorkflow {
         String eventConditions = model.getConfig().getFirst(CONFIG_ON_EVENT);
         if (StringUtil.isNotBlank(eventConditions)) {
             BooleanConditionParser.EvaluatorContext context = EvaluatorUtils.createEvaluatorContext(model, eventConditions);
-            EventEvaluator eventEvaluator = new EventEvaluator(getSession(), event);
+            EventEvaluator eventEvaluator = new EventEvaluator(event);
             return eventEvaluator.visit(context);
         } else {
             return false;
@@ -129,7 +131,7 @@ final class EventBasedWorkflow {
             else {
                 // the flag has an event expression - parse and evaluate it
                 BooleanConditionParser.EvaluatorContext context = EvaluatorUtils.createEvaluatorContext(model, concurrencySetting);
-                EventEvaluator eventEvaluator = new EventEvaluator(getSession(), executionContext.getEvent());
+                EventEvaluator eventEvaluator = new EventEvaluator(executionContext.getEvent());
                 return eventEvaluator.visit(context);
             }
         }

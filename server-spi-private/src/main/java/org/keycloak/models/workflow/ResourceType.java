@@ -17,18 +17,13 @@
 
 package org.keycloak.models.workflow;
 
+
 import java.util.List;
-import java.util.Objects;
 import java.util.function.BiFunction;
 
-import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
-import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.provider.ProviderEvent;
-
-import static org.keycloak.models.workflow.ResourceOperationType.toOperationType;
 
 public enum ResourceType {
 
@@ -37,6 +32,12 @@ public enum ResourceType {
             List.of(OperationType.CREATE),
             List.of(EventType.LOGIN, EventType.REGISTER),
             (session, id) -> session.users().getUserById(session.getContext().getRealm(), id)
+    ),
+    CLIENTS(
+            org.keycloak.events.admin.ResourceType.CLIENT,
+            List.of(OperationType.CREATE),
+            List.of(EventType.CLIENT_LOGIN, EventType.CLIENT_REGISTER),
+            (session, id) -> session.clients().getClientById(session.getContext().getRealm(), id)
     );
 
     private final org.keycloak.events.admin.ResourceType supportedAdminResourceType;
@@ -54,45 +55,12 @@ public enum ResourceType {
         this.resourceResolver = resourceResolver;
     }
 
-    public WorkflowEvent toEvent(AdminEvent event) {
-        if (Objects.equals(this.supportedAdminResourceType, event.getResourceType())
-                && this.supportedAdminOperationTypes.contains(event.getOperationType())) {
-
-            ResourceOperationType resourceOperationType = toOperationType(event.getOperationType());
-            if (resourceOperationType != null && event.getResourceId() != null) {
-                return new WorkflowEvent(this, resourceOperationType, event.getResourceId(), event);
-            }
-        }
-        return null;
+    public boolean supportsEvent(EventType eventType) {
+        return supportedEventTypes.contains(eventType);
     }
 
-    public WorkflowEvent toEvent(Event event) {
-        if (this.supportedEventTypes.contains(event.getType())) {
-            ResourceOperationType resourceOperationType = toOperationType(event.getType());
-            String resourceId = switch (this) {
-                case USERS -> event.getUserId();
-            };
-            if (resourceOperationType != null && resourceId != null) {
-                return new WorkflowEvent(this, resourceOperationType, event.getUserId(), event);
-            }
-        }
-        return null;
-    }
-
-    public WorkflowEvent toEvent(ProviderEvent event) {
-        ResourceOperationType resourceOperationType = toOperationType(event.getClass());
-
-        if (resourceOperationType == null) {
-            return null;
-        }
-
-        String resourceId = resourceOperationType.getResourceId(event);
-
-        if (resourceId == null) {
-            return null;
-        }
-
-        return new WorkflowEvent(this, resourceOperationType, resourceId, event);
+    public boolean supportsAdminEvent(org.keycloak.events.admin.ResourceType resourceType, OperationType operationType) {
+        return supportedAdminResourceType.equals(resourceType) && supportedAdminOperationTypes.contains(operationType);
     }
 
     public Object resolveResource(KeycloakSession session, String id) {

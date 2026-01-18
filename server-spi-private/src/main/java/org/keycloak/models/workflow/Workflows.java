@@ -26,7 +26,7 @@ public final class Workflows {
         return getStepProviderFactory(session, step).create(session, realm.getComponent(step.getId()));
     }
 
-    private static WorkflowStepProviderFactory<WorkflowStepProvider> getStepProviderFactory(KeycloakSession session, WorkflowStep step) {
+    public static WorkflowStepProviderFactory<WorkflowStepProvider> getStepProviderFactory(KeycloakSession session, WorkflowStep step) {
         WorkflowStepProviderFactory<WorkflowStepProvider> factory = (WorkflowStepProviderFactory<WorkflowStepProvider>) session
                 .getKeycloakSessionFactory().getProviderFactory(WorkflowStepProvider.class, step.getProviderId());
 
