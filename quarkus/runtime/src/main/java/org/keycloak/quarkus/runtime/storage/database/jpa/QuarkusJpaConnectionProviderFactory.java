@@ -33,6 +33,7 @@ import jakarta.persistence.EntityManagerFactory;
 
 import org.keycloak.ServerStartupError;
 import org.keycloak.common.Version;
+import org.keycloak.common.util.Environment;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.database.Database;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
@@ -46,7 +47,6 @@ import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.quarkus.arc.Arc;
@@ -303,8 +303,9 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
     private void checkMySQLWaitTimeout() {
         String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
         Database.Vendor vendor = Database.getVendor(db).orElseThrow();
-        if (!(Database.Vendor.MYSQL == vendor || Database.Vendor.MARIADB == vendor))
+        if (!(Database.Vendor.MYSQL == vendor || Database.Vendor.MARIADB == vendor)) {
             return;
+        }
 
         try (Connection connection = getConnection();
              Statement statement = connection.createStatement();
