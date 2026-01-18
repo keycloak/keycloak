@@ -22,8 +22,6 @@ package org.keycloak.models.jpa.entities;
  */
 public interface RealmAttributes {
 
-    String DISPLAY_NAME = "displayName";
-
     String DISPLAY_NAME_HTML = "displayNameHtml";
 
     String ACTION_TOKEN_GENERATED_BY_ADMIN_LIFESPAN = "actionTokenGeneratedByAdminLifespan";
