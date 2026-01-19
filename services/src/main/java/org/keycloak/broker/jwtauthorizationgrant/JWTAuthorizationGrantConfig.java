@@ -5,7 +5,7 @@ import java.util.Map;
 
 import static org.keycloak.broker.oidc.OIDCIdentityProviderConfig.JWKS_URL;
 import static org.keycloak.broker.oidc.OIDCIdentityProviderConfig.USE_JWKS_URL;
-import static org.keycloak.protocol.oidc.OIDCLoginProtocol.ISSUER;
+import static org.keycloak.models.IdentityProviderModel.ISSUER;
 
 public interface JWTAuthorizationGrantConfig {
 
