@@ -151,11 +151,12 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         assertFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v2/css%2Fstyles.css");
         assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v2/css%2Fstyles.css");
         assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkn%2F" + "/login/keycloak.v2/css/styles.css");
+        assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v2/css/unknown.css");
         // This on check will fail on Quarkus as Quarkus will normalize the URL before handing it to the REST endpoint
         // It will succeed on Undertow
         // assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v2/css/../css/styles.css");
         assertRedirectAndValidateRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v2/css/styles.css?name=%2Fvalue",
-                suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v2/css/styles.css?name=%2Fvalue");
+                suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v2/css/styles.css");
     }
 
 
