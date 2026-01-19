@@ -576,6 +576,15 @@ jobs:
           name: aurora-integration-tests-mvn-logs
           path: .github/scripts/ansible/files
 
+      - name: Clear Aurora DB schema
+        id: aurora-clear-db-schema
+        run: |
+         EC2_CLUSTER_NAME=${{ steps.ec2-create.outputs.ec2_cluster }}
+         AWS_REGION=${{ steps.aurora-init.outputs.region }}
+         
+         cd .github/scripts/ansible
+         ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "-Pexecute-sql -f tests/base/pom.xml sql:execute@clear-schema -Dautocommit=true -Ddriver=software.amazon.jdbc.Driver -Durl=\"jdbc:aws-wrapper:postgresql://${{ steps.aurora-create.outputs.endpoint }}/keycloak${{ steps.aurora-init.outputs.jdbc_params }}\" -Dusername=keycloak -Dpassword=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
+
       - name: Run Aurora new database tests on EC2
         id: aurora-new-integration-tests
         run: |
@@ -588,10 +597,6 @@ jobs:
           PROPS+=" -Dkc.test.database.url=\"jdbc:aws-wrapper:postgresql://${{ steps.aurora-create.outputs.endpoint }}/keycloak${{ steps.aurora-init.outputs.jdbc_params }}\""
           PROPS+=" -Dkc.test.database.driver=software.amazon.jdbc.Driver"
           PROPS+=" -Dkc.test.database.driver.artifact=software.amazon.jdbc:aws-advanced-jdbc-wrapper"
-
-          PROPS+=" -Dkc.test.server.bootstrap=user"
-          PROPS+=" -Dkc.test.server.bootstrap.user.create=false -Dkc.test.server.bootstrap.username=admin -Dkc.test.server.bootstrap.password=admin"
-          PROPS+=" -Dkc.test.server.bootstrap.client.create=false -Dkc.test.server.bootstrap.client.id=admin-cli"
 
           cd .github/scripts/ansible
           ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "$PROPS package -f tests/pom.xml -Dtest=DatabaseTestSuite"
