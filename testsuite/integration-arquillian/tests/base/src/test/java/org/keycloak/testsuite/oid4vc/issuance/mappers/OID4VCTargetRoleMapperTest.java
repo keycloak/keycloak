@@ -82,6 +82,7 @@ public class OID4VCTargetRoleMapperTest extends OID4VCTest {
 
 	@Override
 	public void configureTestRealm(RealmRepresentation testRealm) {
+		testRealm.setVerifiableCredentialsEnabled(true);
 
 		ClientRepresentation newClient = new ClientRepresentation();
 		newClient.setClientId("newClient");

@@ -86,7 +86,7 @@ test.describe("OID4VCI Protocol Mapper Configuration", () => {
   let testBed: Awaited<ReturnType<typeof createTestBed>>;
 
   test.beforeEach(async ({ page }) => {
-    testBed = await createTestBed();
+    testBed = await createTestBed({ verifiableCredentialsEnabled: true });
     await login(page, { to: toClientScopes({ realm: testBed.realm }) });
   });
 

@@ -19,20 +19,24 @@
 package org.keycloak.tests.admin.client;
 
 import java.util.Map;
-import java.util.Optional;
 
-import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.common.Profile;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.util.ApiUtil;
 
+import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -41,6 +45,13 @@ import org.junit.jupiter.api.Test;
  */
 @KeycloakIntegrationTest(config = ClientScopeTestOid4Vci.DefaultServerConfigWithOid4Vci.class)
 public class ClientScopeTestOid4Vci extends AbstractClientScopeTest {
+
+    @BeforeEach
+    public void enableVerifiableCredentialsInRealm() {
+        // Enable verifiable credentials on the realm
+        // This is required in addition to the server feature being enabled
+        managedRealm.updateWithCleanup(r -> r.update(rep -> rep.setVerifiableCredentialsEnabled(true)));
+    }
 
     @DisplayName("Verify default values are correctly set")
     @Test
@@ -54,11 +65,7 @@ public class ClientScopeTestOid4Vci extends AbstractClientScopeTest {
         String clientScopeId = null;
         try (Response response = clientScopes().create(clientScope)) {
             Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-            String location = (String) Optional.ofNullable(response.getHeaders().get(HttpHeaders.LOCATION))
-                                               .map(list -> list.get(0))
-                                               .orElse(null);
-            Assertions.assertNotNull(location);
-            clientScopeId = location.substring(location.lastIndexOf("/") + 1);
+            clientScopeId = ApiUtil.getCreatedId(response);
 
             ClientScopeRepresentation createdClientScope = clientScopes().get(clientScopeId).toRepresentation();
             Assertions.assertNotNull(createdClientScope);
@@ -85,14 +92,65 @@ public class ClientScopeTestOid4Vci extends AbstractClientScopeTest {
             Assertions.assertEquals(clientScope.getName(),
                                     createdClientScope.getAttributes().get(CredentialScopeModel.CONTEXTS));
             Assertions.assertEquals(clientScope.getName(),
-                                    createdClientScope.getAttributes().get(CredentialScopeModel.VCT));
-            Assertions.assertEquals(clientScope.getName(),
-                                    createdClientScope.getAttributes().get(CredentialScopeModel.ISSUER_DID));
+                    createdClientScope.getAttributes().get(CredentialScopeModel.VCT));
+            // Note: ISSUER_DID is intentionally not set by default, as there's no sensible default
+            // The implementation leaves it undefined so the realm's URL will be used as the Issuer's ID
 
         } finally {
             Assertions.assertNotNull(clientScopeId);
             // cleanup
             clientScopes().get(clientScopeId).remove();
+        }
+    }
+
+    @DisplayName("Verify CRUD of clientScope when OID4VCI is disabled for the realm")
+    @Test
+    public void testCreateOid4vciClientScopeDisabledForTheRealm() {
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
+        try {
+            // Create clientScope1 successfully
+            String clientScopeId1;
+            ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+            clientScope.setName("test-client-scope1");
+            clientScope.setDescription("test-client-scope-description");
+            clientScope.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
+            clientScope.setAttributes(Map.of("test-attribute", "test-value"));
+            try (Response response = clientScopes().create(clientScope)) {
+                Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+                clientScopeId1 = ApiUtil.getCreatedId(response);
+            }
+
+            // Disable OID4VCI for the realm
+            realm.setVerifiableCredentialsEnabled(false);
+            managedRealm.admin().update(realm);
+
+            // Test not possible to update existing oid4vci client-scope
+            ClientScopeResource clientScope1 = managedRealm.admin().clientScopes().get(clientScopeId1);
+            ClientScopeRepresentation clientScopeRep1 = clientScope1.toRepresentation();
+            clientScopeRep1.setDescription("Foo");
+            try {
+                clientScope1.update(clientScopeRep1);
+                Assert.fail("Not expected to update client scope");
+            } catch (BadRequestException bre) {
+                // expected
+            }
+
+            // Still possible to delete oid4vci clientScope
+            clientScope1.remove();
+
+            // Not possible to create new oid4vci clientScope
+            clientScope= new ClientScopeRepresentation();
+            clientScope.setName("test-client-scope2");
+            clientScope.setDescription("test-client-scope-description");
+            clientScope.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
+            clientScope.setAttributes(Map.of("test-attribute", "test-value"));
+            try (Response response = clientScopes().create(clientScope)) {
+                Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            }
+        } finally {
+            // Revert
+            realm.setVerifiableCredentialsEnabled(true);
+            managedRealm.admin().update(realm);
         }
     }
 

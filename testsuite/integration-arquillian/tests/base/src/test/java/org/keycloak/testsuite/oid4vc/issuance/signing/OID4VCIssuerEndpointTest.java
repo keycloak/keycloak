@@ -658,6 +658,8 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.setVerifiableCredentialsEnabled(true);
+        
         if (testRealm.getComponents() == null) {
             testRealm.setComponents(new MultivaluedHashMap<>());
         }

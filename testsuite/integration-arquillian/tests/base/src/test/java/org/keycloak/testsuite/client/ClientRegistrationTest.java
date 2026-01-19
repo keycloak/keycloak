@@ -206,6 +206,22 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         registerClient();
     }
 
+    /**
+     * OID4VC protocol is not valid for clients. It can only be used for ClientScopes.
+     * Attempting to create a client with protocol "oid4vc" should be rejected.
+     */
+    @Test
+    public void registerOid4vcClientShouldBeRejected() {
+        authManageClients();
+
+        ClientRepresentation client = buildClient();
+        client.setProtocol("oid4vc");
+
+        Response response = adminClient.realm(REALM_NAME).clients().create(client);
+        assertEquals("Creating a client with OID4VC protocol should be rejected as it is not a valid protocol for clients.",
+                400, response.getStatus());
+    }
+
     @Test
     public void registerClientAsAdminWithNoAccess() throws ClientRegistrationException {
         authNoAccess();

@@ -45,7 +45,6 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
-import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.services.ErrorResponse;
@@ -126,6 +125,7 @@ public class ClientScopeResource {
     })
     public Response update(final ClientScopeRepresentation rep) {
         auth.clients().requireManageClientScopes();
+        ClientScopeResource.validateClientScope(session, rep);
         validateDynamicScopeUpdate(rep);
         try {
             LoginProtocolFactory loginProtocolFactory = //
@@ -247,11 +247,24 @@ public class ClientScopeResource {
                                                       .map(type -> (LoginProtocolFactory) type)
                                                       .map(LoginProtocolFactory::getId)
                                                       .collect(Collectors.toSet());
-        // the OID4VC protocol is not registered to prevent it from being displayed in the client-details ui
-        acceptedProtocols.add(OID4VCLoginProtocolFactory.PROTOCOL_ID);
 
         if (protocol == null || !acceptedProtocols.contains(protocol)) {
             throw ErrorResponse.error("Unexpected protocol", Response.Status.BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Validates client scope during creation or update
+     *
+     * @param session  the Keycloak session
+     * @param clientScope clientScope to validate
+     * @throws ErrorResponseException if error happens during client-scope validation
+     */
+    public static void validateClientScope(KeycloakSession session, ClientScopeRepresentation clientScope)
+            throws ErrorResponseException {
+        LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, clientScope.getProtocol());
+        if (factory != null) {
+            factory.validateClientScope(session, clientScope);
         }
     }
 
