@@ -14,6 +14,8 @@ type RealmSettingsLoginTabProps = {
 
 type SwitchType = { [K in keyof RealmRepresentation]: boolean };
 
+const SAML_BLOCK_LOCKED_USER_LOGIN_ATTR = "saml.broker.block-locked-user-login";
+
 export const RealmSettingsLoginTab = ({
   realm,
   refresh,
@@ -24,6 +26,12 @@ export const RealmSettingsLoginTab = ({
 
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
+  const samlBlockLockedUserLoginValue =
+    realm.attributes?.[SAML_BLOCK_LOCKED_USER_LOGIN_ATTR];
+  const isSamlBlockLockedUserLoginEnabled =
+    samlBlockLockedUserLoginValue === undefined
+      ? true
+      : samlBlockLockedUserLoginValue === "true";
 
   const updateSwitchValue = async (switches: SwitchType | SwitchType[]) => {
     const name = Array.isArray(switches)
@@ -124,6 +132,41 @@ export const RealmSettingsLoginTab = ({
                 await updateSwitchValue({ rememberMe: value });
               }}
               aria-label={t("rememberMe")}
+            />
+          </FormGroup>
+        </FormAccess>
+      </FormPanel>
+      <FormPanel
+        className="kc-identity-provider-login-settings"
+        title={t("identityProviderLoginSettings")}
+      >
+        <FormAccess isHorizontal role="manage-realm">
+          <FormGroup
+            label={t("samlBlockLockedUserLogin")}
+            fieldId="kc-saml-block-locked-user-login"
+            labelIcon={
+              <HelpItem
+                helpText={t("samlBlockLockedUserLoginHelp")}
+                fieldLabelId="samlBlockLockedUserLogin"
+              />
+            }
+            hasNoPaddingTop
+          >
+            <Switch
+              id="kc-saml-block-locked-user-login-switch"
+              data-testid="saml-block-locked-user-login-switch"
+              label={t("on")}
+              labelOff={t("off")}
+              isChecked={isSamlBlockLockedUserLoginEnabled}
+              onChange={async (_event, value) => {
+                await updateSwitchValue({
+                  attributes: {
+                    ...(realm.attributes || {}),
+                    [SAML_BLOCK_LOCKED_USER_LOGIN_ATTR]: value.toString(),
+                  },
+                });
+              }}
+              aria-label={t("samlBlockLockedUserLogin")}
             />
           </FormGroup>
         </FormAccess>
