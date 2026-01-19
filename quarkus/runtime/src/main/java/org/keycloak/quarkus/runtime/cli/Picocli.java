@@ -626,7 +626,7 @@ public class Picocli {
                 }
                 return result;
             }
-        }).name(Environment.getCommand());
+        }).name(getCommandNameForHelp());
         updateSpecHelpAndUnmatched(spec, unrecognizedArgs);
 
         CommandLine cmd = new CommandLine(spec);
@@ -638,6 +638,7 @@ public class Picocli {
         cmd.getHelpSectionMap().put(SECTION_KEY_COMMAND_LIST, new SubCommandListRenderer());
         cmd.setErr(getErrWriter());
         cmd.setOut(getOutWriter());
+        configureUsageHelpWidth(cmd);
 
         removePlatformSpecificCommands(cmd);
 
@@ -669,6 +670,25 @@ public class Picocli {
         // not an official option, just a way for integration tests to produce the same output regardless of OS
         return Optional.ofNullable(System.getenv("KEYCLOAK_COMMAND_MODE")).map(CommandMode::valueOf)
                 .orElse(Environment.isWindows() ? CommandMode.WIN : CommandMode.UNIX);
+    }
+
+    private String getCommandNameForHelp() {
+        // enforce kc.sh for ALL mode to ensure consistent line wrapping
+        if (getCommandMode() == CommandMode.ALL) {
+            return "kc.sh";
+        }
+        return Environment.getCommand();
+    }
+
+    private void configureUsageHelpWidth(CommandLine cmd) {
+        // not an official option, just a way to make help wrapping configurable
+        Optional.ofNullable(System.getenv("KEYCLOAK_HELP_WIDTH"))
+                .map(Integer::parseInt)
+                .filter(width -> width > 0)
+                .ifPresent(width -> {
+                    cmd.setUsageHelpAutoWidth(false);
+                    cmd.setUsageHelpWidth(width);
+                });
     }
 
     public PrintWriter getErrWriter() {
