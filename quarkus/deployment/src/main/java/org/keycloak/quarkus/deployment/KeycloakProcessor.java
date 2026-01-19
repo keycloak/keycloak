@@ -242,6 +242,13 @@ class KeycloakProcessor {
         return new FeatureBuildItem("keycloak");
     }
 
+    /**
+     * Initialize configuration in runtime during the static initialization
+     * <p>
+     * We need to wait for the full configuration initialization on the Quarkus side (see {@link RuntimeConfigSetupCompleteBuildItem}).
+     * <p>
+     * It prevents issues like https://github.com/keycloak/keycloak/issues/45501
+     */
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     @Consume(RuntimeConfigSetupCompleteBuildItem.class)
