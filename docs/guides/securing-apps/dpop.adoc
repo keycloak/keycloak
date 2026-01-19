@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Securing applications with DPoP"
-priority=140
+priority=150
 summary="Guide for securing applications with DPoP using Keycloak">
 
 Standard OAuth 2.0 access tokens are typically **Bearer** tokens. Any party in possession of the token can use it to access protected resources, regardless of whether they are the legitimate client. If a Bearer token is leaked (e.g., via server logs, network interception, or browser storage), it is vulnerable to unauthorized reuse, known as a replay attack.
