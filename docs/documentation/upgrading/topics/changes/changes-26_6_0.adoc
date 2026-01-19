@@ -1,0 +1,51 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== <TODO>
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== New database indexes on the `BROKER_LINK` table
+
+The `BROKER_LINK` table now contains two additional indexes `IDX_BROKER_LINK_USER_ID` and `IDX_BROKER_LINK_IDENTITY_PROVIDER` to improve performance.
+
+If the table contains more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
+=== Client secret authentication method
+
+OIDC specification has multiple client authentication methods. Two of them `client_secret_basic` and `client_secret_post` are implemented in {project_name} by **Client Id and Secret**
+client authenticator. Until now, when the OIDC client registration request was sent with the attribute `token_endpoint_auth_method` set to `client_secret_basic` or `client_secret_post`,
+the {project_name} allowed to authenticate client with both `client_secret_basic` and `client_secret_post` methods and did not preserved the single method specified in the OIDC client
+registration request. Now the specified method is respected, so for example when the OIDC client registration is sent with `token_endpoint_auth_method` set to `client_secret_post`, then
+it is required to authenticate the client really with the client secret sent as a parameter in the POST request body.
+
+It is still possible to make the OIDC client to allow both methods and clients migrated from previous versions are set by default to allow authentication with both methods.
+
+=== Usage of virtual threads for embedded caches
+
+Previously virtual threads were used when at least two CPU cores were available.
+Starting with this version, virtual threads are only used when at least four CPU cores are available.
+This change should prevent deadlocks due to pinned virtual threads.
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== <TODO>
+
+// ------------------------ Removed features ------------------------ //
+== Removed features
+
+The following features have been removed from this release.
+
+=== <TODO>
+

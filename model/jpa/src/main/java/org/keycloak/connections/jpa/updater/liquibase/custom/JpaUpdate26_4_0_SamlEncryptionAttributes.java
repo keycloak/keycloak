@@ -18,7 +18,7 @@ package org.keycloak.connections.jpa.updater.liquibase.custom;
 
 import liquibase.exception.CustomChangeException;
 import liquibase.statement.SqlStatement;
-import liquibase.statement.core.RawParameterizedSqlStatement;
+import liquibase.statement.core.RawSqlStatement;
 
 /**
  *
@@ -41,11 +41,13 @@ public class JpaUpdate26_4_0_SamlEncryptionAttributes extends CustomKeycloakTask
     private SqlStatement createInsertQueryForAttribute(String attribute, String value) {
         final String clientTable = getTableName("CLIENT");
         final String clientAttributesTable = getTableName("CLIENT_ATTRIBUTES");
-        return new RawParameterizedSqlStatement(
-                "INSERT INTO " + clientAttributesTable + " (CLIENT_ID,NAME,VALUE) " +
-                "SELECT ID, ?, ? FROM " + clientTable + " WHERE PROTOCOL = ? AND ID NOT IN " +
-                "(SELECT CLIENT_ID FROM " + clientAttributesTable + " WHERE NAME = ?)",
-                attribute, value, "saml", attribute
+        return new RawSqlStatement(
+                String.format(
+                        "INSERT INTO %s (CLIENT_ID,NAME,VALUE) " +
+                        "SELECT ID, '%s', '%s' FROM %s WHERE PROTOCOL = 'saml' AND ID NOT IN " +
+                        "(SELECT CLIENT_ID FROM %s WHERE NAME = '%s')",
+                        clientAttributesTable, attribute, value, clientTable, clientAttributesTable, attribute
+                )
         );
     }
 }

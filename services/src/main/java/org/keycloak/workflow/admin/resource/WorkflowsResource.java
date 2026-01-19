@@ -139,7 +139,7 @@ public class WorkflowsResource {
             @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = WorkflowRepresentation.class))),
             @APIResponse(responseCode = "400", description = "Bad Request")
     })
-    public List<WorkflowRepresentation> getScheduledSteps(
+    public List<WorkflowRepresentation> getScheduledWorkflows(
             @Parameter(description = "Identifier of the resource associated with the scheduled workflows")
             @PathParam("resource-id") String resourceId
     ) {

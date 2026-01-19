@@ -8,6 +8,6 @@ public class WorkflowsScheduledTaskServerConfig extends WorkflowsBlockingServerC
     @Override
     public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
         return super.configure(config)
-                .option("spi-events-listener--" + WorkflowsEventListenerFactory.ID + "--step-runner-task-interval", "1000");
+                .option("spi-events-listener--" + WorkflowsEventListenerFactory.ID + "--step-runner-task-interval", "1s");
     }
 }

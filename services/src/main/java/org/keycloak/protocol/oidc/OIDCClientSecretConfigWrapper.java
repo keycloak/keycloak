@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import static org.keycloak.models.ClientSecretConstants.CLIENT_ROTATED_SECRET;
 import static org.keycloak.models.ClientSecretConstants.CLIENT_ROTATED_SECRET_CREATION_TIME;
 import static org.keycloak.models.ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME;
+import static org.keycloak.models.ClientSecretConstants.CLIENT_SECRET_AUTHENTICATION_ALLOWED_METHOD;
 import static org.keycloak.models.ClientSecretConstants.CLIENT_SECRET_CREATION_TIME;
 import static org.keycloak.models.ClientSecretConstants.CLIENT_SECRET_EXPIRATION;
 import static org.keycloak.models.ClientSecretConstants.CLIENT_SECRET_REMAINING_EXPIRATION_TIME;
@@ -63,6 +64,14 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
         } else {
             return clientRep.getName();
         }
+    }
+
+    public String getClientSecretAuthenticationAllowedMethod() {
+        return getAttribute(CLIENT_SECRET_AUTHENTICATION_ALLOWED_METHOD);
+    }
+
+    public void setClientSecretAuthenticationAllowedMethod(String clientSecretAuthenticationAllowedMethod) {
+        setAttribute(CLIENT_SECRET_AUTHENTICATION_ALLOWED_METHOD, clientSecretAuthenticationAllowedMethod);
     }
 
     public void removeClientSecretRotationInfo() {

@@ -19,6 +19,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.resources.admin.ClientResource;
@@ -60,7 +61,9 @@ public class DefaultClientService implements ClientService {
                                                    ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions) {
         // TODO: is the access map on the representation needed
         return clientsResource.getClientModels(null, true, false, null, null, null)
-                .map(model -> session.getProvider(ClientModelMapper.class, model.getProtocol()).fromModel(model));
+                .filter(model -> model.getProtocol() != null) // Skip clients with null protocol
+                .map(model -> session.getProvider(ClientModelMapper.class, model.getProtocol()).fromModel(model))
+                .filter(java.util.Objects::nonNull);
     }
 
     @Override
@@ -84,10 +87,17 @@ public class DefaultClientService implements ClientService {
             created = true;
             validator.validate(client, CreateClientDefault.class); // TODO improve it to avoid second validation when we know it is create and not update
 
-            model = mapper.toModel(client);
-            var rep = ModelToRepresentation.toRepresentation(model, session);
-            model = clientsResource.createClientModel(rep);
+            // First, create a basic v1 representation to persist the client in the database.
+            // We can't use mapper.toModel(client) directly for creation because the "detached model"
+            var basicRep = new ClientRepresentation();
+            basicRep.setClientId(client.getClientId());
+            basicRep.setProtocol(client.getProtocol());
+
+            // Create the client in the database
+            model = clientsResource.createClientModel(basicRep);
             clientResource = clientsResource.getClient(model.getId());
+
+            mapper.toModel(client, model);
         }
 
         handleRoles(client.getRoles());

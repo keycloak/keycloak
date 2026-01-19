@@ -18,6 +18,7 @@
 package org.keycloak.organization.forms.login.freemarker.model;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 
@@ -61,6 +62,18 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
                     .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                     .sorted(IDP_COMPARATOR_INSTANCE).toList();
         }
+        Predicate<IdentityProviderModel> defaultFilter = idp -> {
+            if (idp.isEnabled() && !Objects.equals(existingIDP, idp.getAlias())) {
+                if (organization == null) {
+                    Map<String, String> config = idp.getConfig();
+                    return !Boolean.parseBoolean(config.get(OrganizationModel.HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN));
+                }
+
+                return true;
+            }
+
+            return false;
+        };
         if (onlyOrganizationBrokers) {
             // we already have the organization, just fetch the organization's public enabled IDPs.
             if (this.organization != null) {
@@ -72,12 +85,12 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
             }
             // we don't have a specific organization - fetch public enabled IDPs linked to any org.
             return session.identityProviders().getForLogin(ORG_ONLY, null)
-                    .filter(idp -> idp.isEnabled() && !Objects.equals(existingIDP, idp.getAlias())) // re-check isEnabled as idp might have been wrapped.
+                    .filter(defaultFilter) // re-check isEnabled as idp might have been wrapped.
                     .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                     .sorted(IDP_COMPARATOR_INSTANCE).toList();
         }
         return session.identityProviders().getForLogin(ALL, this.organization != null ? this.organization.getId() : null)
-                .filter(idp -> idp.isEnabled() && !Objects.equals(existingIDP, idp.getAlias())) // re-check isEnabled as idp might have been wrapped.
+                .filter(defaultFilter) // re-check isEnabled as idp might have been wrapped.
                 .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                 .sorted(IDP_COMPARATOR_INSTANCE).toList();
     }

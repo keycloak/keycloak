@@ -35,3 +35,5 @@
 :kc_js_path: /js
 :kc_realms_path: /realms
 :kubernetes: Kubernetes
+:keycloak_benchmark_link: https://www.keycloak.org/keycloak-benchmark/
+:keycloak_benchmark_name: Keycloak Benchmark Project

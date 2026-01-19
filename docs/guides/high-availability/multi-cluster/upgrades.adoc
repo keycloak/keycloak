@@ -1,0 +1,67 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Managing upgrades"
+summary="How to manage multi-cluster upgrades"
+tileVisible="false" >
+
+== {project_name} upgrades
+
+In order to update to a new major or minor version of {project_name}, it is expected that the {project_name} deployment
+on each site is link:{links_high-availability_operate_site_offline_url}[taken offline] during the upgrade procedure.
+Deploying different {project_name} major/minor versions on each of the sites is not supported. Neither site should be
+exposed to user requests via the load balancer until both {project_name} deployments have been upgraded and their
+{jdgserver_name} clusters synchronized.
+
+Patch upgrades can be deployed with zero-downtime, using the `rolling-updates:v2` feature. It is technically
+possible for upgrades to be rolled out to both sites simultaneously, however we recommend that upgrades be rolled out to one
+site at a time in order to simplify monitoring and debugging. For example, all nodes in site A should be upgraded to the
+new {project_name} version before the upgrade is rolled out to nodes in site B.
+
+See the <@links.operator id="rolling-updates" /> guide for more details on how to use the `rolling-updates:v2` Feature.
+
+== {jdgserver_name} upgrades
+
+Upgrading {jdgserver_name} to a new major or minor version, requires the {jdgserver_name} cluster to be shutdown and redeployed
+on both sites. This results in {project_name} downtime, as requests cannot succeed without a {jdgserver_name} cluster. The
+{project_name} deployments should not be exposed via the load balancer until both {jdgserver_name} clusters have been upgraded,
+marked as online and synchronized.
+
+[NOTE]
+====
+As major and minor upgrades of both {project_name} and {jdgserver_name} require downtime, we recommend that these upgrades
+be performed during the same maintenance window in order to reduce overall service downtime.
+====
+
+{jdgserver_name} supports zero-downtime upgrades of patch versions for local clusters, however it does not support running
+cross-site clusters with different patch versions on each site. Therefore, in order to upgrade {jdgserver_name} patch versions
+with zero-downtime, it is necessary for the upgrade to be applied as follows:
+
+1. Take site B offline
+2. Shutdown site B
+3. Perform an in-place upgrade of {jdgserver_name} on site A and wait for it to complete
+4. Deploy the new {jdgserver_name} version to site B
+5. Bring site B online
+
+Site B will no longer be able to serve {project_name} requests during steps 1-4, however the load balancer should ensure
+these requests are still served by site A, hence downtime is avoided.
+
+See the link:{infinispan-operator-docs}#upgrading-clusters[{jdgserver_name} cluster upgrade documentation] for more details
+on how to perform {jdgserver_name} in-place upgrades.
+
+== Database upgrades
+
+Database upgrade semantics vary depending on the vendor chosen. In general, it should be possible for {project_name} to
+continue to function as expected if the database natively supports zero-downtime upgrades, for example AWS Aurora. If the
+database does not support zero-downtime upgrades, then it is necessary for the {project_name} deployment to be shutdown on
+both sites before the database is upgraded. Once the database upgrade has completed, it is then possible to redeploy
+{project_name} to both sites.
+
+[NOTE]
+====
+When a database upgrade cannot be performed without downtime, it is recommended to also perform {project_name} and
+{jdgserver_name} major/minor upgrades in the same maintenance window as these also require downtime.
+====
+
+</@tmpl.guide>

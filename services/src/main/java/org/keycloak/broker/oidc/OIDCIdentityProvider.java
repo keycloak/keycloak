@@ -1062,8 +1062,11 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public boolean verifyClientAssertion(ClientAuthenticationFlowContext context) throws Exception {
         OIDCIdentityProviderConfig config = getConfig();
 
-        FederatedJWTClientValidator validator = new FederatedJWTClientValidator(context, v -> verifySignature(v.getJws()),
-                config.getIssuer(), config.getAllowedClockSkew(), config.isSupportsClientAssertionReuse());
+        FederatedJWTClientValidator validator = config.isAllowClientIdAsAudience() && config.getClientId() != null
+                ? new FederatedJWTClientValidator(context, v -> verifySignature(v.getJws()), config.getIssuer(),
+                        config.getAllowedClockSkew(), config.isSupportsClientAssertionReuse(), config.getClientId())
+                : new FederatedJWTClientValidator(context, v -> verifySignature(v.getJws()), config.getIssuer(),
+                        config.getAllowedClockSkew(), config.isSupportsClientAssertionReuse());
 
         if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_FEDERATED)) {
             return false;
@@ -1104,7 +1107,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     @Override
     public List<String> getAllowedAudienceForJWTGrant() {
-        return new JWTAuthorizationGrantIdentityProvider(session, getConfig()).getAllowedAudienceForJWTGrant();
+        return getConfig().isAllowClientIdAsAudience() && getConfig().getClientId() != null
+                ? List.of(getConfig().getClientId())
+                : new JWTAuthorizationGrantIdentityProvider(session, getConfig()).getAllowedAudienceForJWTGrant();
     }
 
     @Override

@@ -173,6 +173,25 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
                 value: displayName || id!,
               }))}
             />
+            {clientAuthenticatorType === "client-secret" && (
+              <SelectControl
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.client.secret.authentication.allowed.method",
+                )}
+                label={t("clientSecretAuthenticationAllowedMethod")}
+                labelIcon={t("clientSecretAuthenticationAllowedMethodHelp")}
+                controller={{
+                  defaultValue: "",
+                }}
+                isScrollable
+                maxMenuHeight="200px"
+                options={[
+                  { key: "", value: t("any") },
+                  { key: "client_secret_basic", value: "client_secret_basic" },
+                  { key: "client_secret_post", value: "client_secret_post" },
+                ]}
+              />
+            )}
             {(clientAuthenticatorType === "client-jwt" ||
               clientAuthenticatorType === "client-secret-jwt") && (
               <SignedJWT clientAuthenticatorType={clientAuthenticatorType} />

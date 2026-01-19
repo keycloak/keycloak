@@ -14,22 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
+
+package org.keycloak.models.mapper;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 
-public class InMemoryCredentialOfferStorageFactory implements CredentialOfferStorageFactory {
-
-    private static CredentialOfferStorage INSTANCE;
+/**
+ * Factory for creating SAMLClientModelMapper instances.
+ */
+public class SAMLClientModelMapperFactory implements ClientModelMapperFactory {
 
     @Override
-    public CredentialOfferStorage create(KeycloakSession session) {
-        if (INSTANCE == null) {
-            INSTANCE = new InMemoryCredentialOfferStorage();
-        }
-        return INSTANCE;
+    public ClientModelMapper create(KeycloakSession session) {
+        return new SAMLClientModelMapper(session);
+    }
+
+    @Override
+    public String getId() {
+        return SAMLClientRepresentation.PROTOCOL;
     }
 
     @Override
@@ -41,7 +46,6 @@ public class InMemoryCredentialOfferStorageFactory implements CredentialOfferSto
     }
 
     @Override
-    public String getId() {
-        return "in_memory";
+    public void close() {
     }
 }

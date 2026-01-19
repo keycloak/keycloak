@@ -24,9 +24,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.keycloak.Keycloak;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.RawKeycloakDistribution;
@@ -34,9 +34,7 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 
 import io.quarkus.deployment.util.FileUtil;
@@ -56,8 +54,6 @@ import static java.lang.System.setProperty;
 import static org.keycloak.it.junit5.extension.DistributionTest.ReInstall.BEFORE_ALL;
 import static org.keycloak.it.junit5.extension.DistributionType.RAW;
 import static org.keycloak.quarkus.runtime.Environment.forceTestLaunchMode;
-import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
-import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_SHORT_NAME;
 
 public class CLITestExtension extends QuarkusMainTestExtension {
 
@@ -74,15 +70,14 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         getStore(context).put(SYS_PROPS, new HashMap<>(System.getProperties()));
 
         if (launch != null && distConfig == null) {
-            ConfigArgsConfigSource.parseConfigArgs(List.of(launch.value()), (arg, value) -> {
-                if (arg.equals(CONFIG_FILE_SHORT_NAME) || arg.equals(CONFIG_FILE_LONG_NAME)) {
-                    setProperty(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP, value);
-                } else if (arg.startsWith("-D")) {
-                    setProperty(arg, value);
-                }
-            }, arg -> {
+            Stream.of(launch.value()).forEach(arg -> {
                 if (arg.startsWith("-D")) {
-                    setProperty(arg, "");
+                    int index = arg.indexOf("=");
+                    if (index > 0) {
+                        setProperty(arg.substring(2, index), arg.substring(index + 1, arg.length()));
+                    } else {
+                        setProperty(arg.substring(2), "");
+                    }
                 }
             });
         }
@@ -112,10 +107,10 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             }
 
             if (launch != null) {
-                result = dist.run(Stream.concat(List.of(launch.value()).stream(), List.of(distConfig.defaultOptions()).stream()).collect(Collectors.toList()));
+                result = dist.run(List.of(launch.value()));
             }
         } else {
-            ConfigArgsConfigSource.setCliArgs(launch == null ? new String[] {} : launch.value());
+            Keycloak.initSys(launch == null ? new String[] {} : launch.value());
             configureProfile(context);
             super.beforeEach(context);
         }
@@ -345,7 +340,12 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     private static InfinispanContainer configureExternalInfinispan(ExtensionContext context) {
         if (getAnnotationFromTestContext(context, WithExternalInfinispan.class) != null) {
             InfinispanContainer infinispanContainer = new InfinispanContainer();
-            infinispanContainer.start();
+            try {
+                infinispanContainer.start();
+            }  catch (RuntimeException e) {
+                infinispanContainer.stop();
+                throw e;
+            }
             return infinispanContainer;
         }
 

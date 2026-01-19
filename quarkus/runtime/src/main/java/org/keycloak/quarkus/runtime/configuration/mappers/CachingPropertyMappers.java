@@ -2,6 +2,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.function.BooleanSupplier;
 
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
+import org.keycloak.config.CachingOptions.Mechanism;
 import org.keycloak.config.Option;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.quarkus.runtime.Environment;
@@ -35,6 +37,10 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
     public List<PropertyMapper<?>> getPropertyMappers() {
         List<PropertyMapper<?>> staticMappers = List.of(
                 fromOption(CachingOptions.CACHE)
+                        .transformer(
+                                (value, context) -> org.keycloak.common.util.Environment.isNonServerMode()
+                                        ? Mechanism.local.name()
+                                        : Optional.ofNullable(value).orElse(Mechanism.ispn.name()))
                         .paramLabel("type")
                         .build(),
                 fromOption(CachingOptions.CACHE_STACK)
@@ -56,7 +62,11 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                         .transformer(CachingPropertyMappers::resolveConfigFile)
                         .validator(s -> {
                             if (!Files.exists(Paths.get(resolveConfigFile(s, null)))) {
-                                throw new PropertyException("Cache config file '%s' does not exist in the conf directory".formatted(s));
+                                if (Path.of(s).isAbsolute()) {
+                                    throw new PropertyException("Cache config file '%s' does not exist".formatted(s));
+                                } else {
+                                    throw new PropertyException("Cache config file '%s' does not exist in the conf directory".formatted(s));
+                                }
                             }
                         })
                         .paramLabel("file")
@@ -203,7 +213,12 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
     }
 
     private static String resolveConfigFile(String value, ConfigSourceInterceptorContext context) {
-        return Environment.getHomeDir().map(f -> Paths.get(f, "conf", value).toString()).orElse(null);
+        Path p = Path.of(value);
+        if (p.isAbsolute()) {
+            return p.toString();
+        } else {
+            return Environment.getHomeDir().map(f -> Paths.get(f, "conf", value).toString()).orElse(null);
+        }
     }
 
     private static String getConfPathValue(String file) {

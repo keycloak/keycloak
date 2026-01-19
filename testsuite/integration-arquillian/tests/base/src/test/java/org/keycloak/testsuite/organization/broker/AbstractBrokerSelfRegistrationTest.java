@@ -777,6 +777,48 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     }
 
     @Test
+    public void testDoNotShowBrokersIfOrganizationNotResolved() {
+        String org0Name = "org-0";
+        OrganizationResource org0 = testRealm().organizations().get(createOrganization(org0Name).getId());
+        IdentityProviderRepresentation org0Broker = org0.identityProviders().getIdentityProviders().get(0);
+        org0Broker.setHideOnLogin(false);
+        org0Broker.getConfig().put(OrganizationModel.HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN, Boolean.TRUE.toString());
+        org0Broker.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        testRealm().identityProviders().get(org0Broker.getAlias()).update(org0Broker);
+
+        // do not show if organization cannot be resolved
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername("user@unknowndomain.org");
+        Assert.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+
+        // show if organization can be resolved
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername("user@org-0.org");
+        Assert.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+
+        // show if the config is set to false
+        org0Broker.getConfig().put(OrganizationModel.HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN, Boolean.FALSE.toString());
+        testRealm().identityProviders().get(org0Broker.getAlias()).update(org0Broker);
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername("user@unknowndomain.org");
+        Assert.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername("user@org-0.org");
+        Assert.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+
+        // hide if hide on login is set to true
+        org0Broker.setHideOnLogin(true);
+        testRealm().identityProviders().get(org0Broker.getAlias()).update(org0Broker);
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername("user@unknowndomain.org");
+        Assert.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername("user@org-0.org");
+        Assert.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+    }
+
+    @Test
     public void testLoginUsingBrokerWithoutDomain() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();

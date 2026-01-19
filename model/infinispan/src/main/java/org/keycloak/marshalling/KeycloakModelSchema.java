@@ -118,6 +118,7 @@ import org.infinispan.protostream.types.java.CommonTypes;
         schemaPackageName = Marshalling.PROTO_SCHEMA_PACKAGE,
         schemaFilePath = "proto/generated",
         allowNullFields = true,
+        orderedMarshallers = true,
 
         // common-types for UUID
         dependsOn = CommonTypes.class,

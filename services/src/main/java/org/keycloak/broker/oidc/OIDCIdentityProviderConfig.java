@@ -35,6 +35,7 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
     public static final String IS_ACCESS_TOKEN_JWT = "isAccessTokenJWT";
     public static final String SUPPORTS_CLIENT_ASSERTIONS = "supportsClientAssertions";
     public static final String SUPPORTS_CLIENT_ASSERTION_REUSE = "supportsClientAssertionReuse";
+    public static final String ALLOW_CLIENT_ID_AS_AUDIENCE = "allowClientIdAsAudience";
 
     public OIDCIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
         super(identityProviderModel);
@@ -151,6 +152,14 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
 
     public boolean isSupportsClientAssertionReuse() {
         return Boolean.parseBoolean(getConfig().get(SUPPORTS_CLIENT_ASSERTION_REUSE));
+    }
+
+    public boolean isAllowClientIdAsAudience() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(ALLOW_CLIENT_ID_AS_AUDIENCE, "false"));
+    }
+
+    public void setAllowClientIdAsAudience(boolean allowClientIdAsAudience) {
+        getConfig().put(ALLOW_CLIENT_ID_AS_AUDIENCE, String.valueOf(allowClientIdAsAudience));
     }
 
     @Override

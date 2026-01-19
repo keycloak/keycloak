@@ -24,6 +24,7 @@ import java.util.Optional;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
+import org.keycloak.utils.StringUtil;
 
 /**
  * Define credential-specific configurations for its builder.
@@ -91,14 +92,16 @@ public class CredentialBuildConfig {
         final String credentialIssuer = Optional.ofNullable(credentialModel.getIssuerDid()).orElse(
                 OID4VCIssuerWellKnownProvider.getIssuer(keycloakSession.getContext()));
 
+        String modelSigningAlg = credentialModel.getSigningAlg();
+        String signingAlg = StringUtil.isNotBlank(modelSigningAlg) ? modelSigningAlg : credentialConfiguration.getCredentialSigningAlgValuesSupported().get(0);
+
         return new CredentialBuildConfig().setCredentialIssuer(credentialIssuer)
                                           .setCredentialId(credentialConfiguration.getId())
                                           .setCredentialType(credentialConfiguration.getVct())
                                           .setTokenJwsType(credentialModel.getTokenJwsType())
                                           .setNumberOfDecoys(credentialModel.getSdJwtNumberOfDecoys())
                                           .setSigningKeyId(credentialModel.getSigningKeyId())
-                                          .setSigningAlgorithm(credentialConfiguration.getCredentialSigningAlgValuesSupported()
-                                                                                      .get(0))
+                                          .setSigningAlgorithm(signingAlg)
                                           .setHashAlgorithm(credentialModel.getHashAlgorithm())
                                           .setSdJwtVisibleClaims(credentialModel.getSdJwtVisibleClaims());
     }

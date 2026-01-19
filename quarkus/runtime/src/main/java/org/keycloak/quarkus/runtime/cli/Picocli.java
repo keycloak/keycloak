@@ -103,6 +103,7 @@ public class Picocli {
 
     private Ansi colorMode = hasColorSupport() ? Ansi.ON : Ansi.OFF;
     private IncludeOptions options;
+    private Set<String> duplicatedOptionsNames = new HashSet<String>();
 
     public static boolean hasColorSupport() {
         return QuarkusConsole.hasColorSupport();
@@ -139,31 +140,37 @@ public class Picocli {
             } else {
                 currentCommand = null;
             }
+
+            // any unrecognized args can now be normalized to our property mapper based argument expectations
+            Map<String, String> normalizedArgs = new LinkedHashMap<String, String>();
+            List<String> unknown = new ArrayList<String>();
+            ConfigArgsConfigSource.parseConfigArgs(unrecognizedArgs, (k, v) -> {
+                if (normalizedArgs.put(k, v) != null) {
+                    duplicatedOptionsNames.add(k);
+                }
+            }, unknown::add);
+            unrecognizedArgs = null;
+
+            ConfigArgsConfigSource.setCliArgs(normalizedArgs.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).toArray(String[]::new));
+
             initConfig(currentCommand);
 
-            if (!unrecognizedArgs.isEmpty() && options.allowUnrecognized) {
-                // TODO: further refactor this as these args should be the source for ConfigArgsConfigSource
-                unrecognizedArgs.removeIf(arg -> {
-                    boolean hasArg = false;
-                    if (arg.contains("=")) {
-                        arg = arg.substring(0, arg.indexOf("="));
-                        hasArg = true;
-                    }
-                    PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(arg);
-                    if (mapper != null) {
-                        if (!hasArg) {
-                            addCommandOptions(cl, currentCommand);
-                            throw new MissingParameterException(cl, cl.getCommandSpec().optionsMap().get(arg), null);
-                        }
-                        return true;
-                    }
-                    return false;
-                });
+            // now that the property mappers are properly initalized further refine the args
+            if (options.allowUnrecognized) {
+                normalizedArgs.keySet().removeIf(arg -> PropertyMappers.getMapperByCliKey(arg) != null || arg.startsWith(ConfigArgsConfigSource.SPI_OPTION_PREFIX));
             }
-
-            if (!unrecognizedArgs.isEmpty()) {
+            unknown.forEach(arg -> {
+                if (PropertyMappers.getMapperByCliKey(arg) != null) {
+                    addCommandOptions(cl, currentCommand);
+                    throw new MissingParameterException(cl, cl.getCommandSpec().optionsMap().get(arg), null);
+                } else if (arg.startsWith(ConfigArgsConfigSource.SPI_OPTION_PREFIX)) {
+                    throw new PropertyException(format("spi argument %s requires a value.", arg));
+                }
+            });
+            unknown.addAll(normalizedArgs.keySet());
+            if (!unknown.isEmpty()) {
                 addCommandOptions(cl, currentCommand);
-                throw new KcUnmatchedArgumentException(cl, unrecognizedArgs);
+                throw new KcUnmatchedArgumentException(cl, unknown);
             }
 
             if (isHelpRequested(result)) {
@@ -391,12 +398,13 @@ public class Picocli {
         if (mapper.isBuildTime() && !options.includeBuildTime) {
             return; // no need to validate as we've already checked for changes in the build time state
         }
+        boolean ignoreRuntime = mapper.isRunTime() && !options.includeRuntime;
 
         ConfigValue configValue = getUnmappedValue(mapper.getFrom());
         String configValueStr = configValue.getValue();
 
         if (configValueStr == null) {
-            if (mapper.isRequired()) {
+            if (!ignoreRuntime && mapper.isRequired()) {
                 handleRequired(missingOption, mapper);
             }
             return;
@@ -417,7 +425,7 @@ public class Picocli {
             return;
         }
 
-        if (mapper.isRunTime() && !options.includeRuntime) {
+        if (ignoreRuntime) {
             ignoredRunTime.add(mapper.getFrom());
             return;
         }
@@ -823,33 +831,6 @@ public class Picocli {
         getOutWriter().println(message);
     }
 
-    public static List<String> parseArgs(String[] rawArgs) throws PropertyException {
-        if (rawArgs.length == 0) {
-            return List.of();
-        }
-
-        // makes sure cli args are available to the config source
-        ConfigArgsConfigSource.setCliArgs(rawArgs);
-
-        // TODO: ignore properties for providers for now, need to fetch them from the providers, otherwise CLI will complain about invalid options
-        // also ignores system properties as they are set when starting the JVM
-        // change this once we are able to obtain properties from providers
-        List<String> args = new ArrayList<>();
-        ConfigArgsConfigSource.parseConfigArgs(List.of(rawArgs), (arg, value) -> {
-            if (!arg.startsWith(ConfigArgsConfigSource.SPI_OPTION_PREFIX) && !arg.startsWith("-D")) {
-                args.add(arg + "=" + value);
-            }
-        }, arg -> {
-            if (arg.startsWith(ConfigArgsConfigSource.SPI_OPTION_PREFIX)) {
-                throw new PropertyException(format("spi argument %s requires a value.", arg));
-            }
-            if (!arg.startsWith("-D")) {
-                args.add(arg);
-            }
-        });
-        return args;
-    }
-
     public void checkChangesInBuildOptionsDuringAutoBuild(PrintWriter out) {
         StringBuilder options = new StringBuilder();
 
@@ -913,6 +894,7 @@ public class Picocli {
     }
 
     public void build() throws Throwable {
+        Environment.setRebuild();
         QuarkusEntryPoint.main();
     }
 
@@ -923,10 +905,8 @@ public class Picocli {
         this.parsedCommand = Optional.ofNullable(command);
         options = getIncludeOptions(command);
 
-        if (!Environment.isRebuilt() && command instanceof AbstractAutoBuildCommand
-                && !command.isOptimized()) {
-            Environment.setRebuildCheck(true);
-        }
+        Environment.setRebuildCheck(!Environment.isRebuilt() && command instanceof AbstractAutoBuildCommand
+                && !command.isOptimized());
 
         String profile = Optional.ofNullable(org.keycloak.common.util.Environment.getProfile())
                 .or(() -> parsedCommand.map(AbstractCommand::getInitProfile)).orElse(Environment.PROD_PROFILE_VALUE);
@@ -939,10 +919,8 @@ public class Picocli {
 
     // Show warning about duplicated options in CLI
     public void warnOnDuplicatedOptionsInCli() {
-        var duplicatedOptionsNames = ConfigArgsConfigSource.getDuplicatedArgNames();
         if (!duplicatedOptionsNames.isEmpty()) {
             warn("Duplicated options present in CLI: %s".formatted(String.join(", ", duplicatedOptionsNames)));
-            ConfigArgsConfigSource.clearDuplicatedArgNames();
         }
     }
 

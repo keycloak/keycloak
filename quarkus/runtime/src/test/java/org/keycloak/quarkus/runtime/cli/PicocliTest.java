@@ -1017,11 +1017,6 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--non-existing'"));
         onAfter();
 
-        nonRunningPicocli = pseudoLaunch("start-dev", "-Dsome.property=123", "-Dsome.property=456");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getOutString(), containsString("WARNING: Duplicated options present in CLI: -Dsome.property"));
-        onAfter();
-
         nonRunningPicocli = pseudoLaunch("start-dev", "something-wrong=asdf", "something-wrong=not-here");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getOutString(), not(containsString("WARNING: Duplicated options present in CLI: something-wrong")));
@@ -1723,6 +1718,9 @@ public class PicocliTest extends AbstractConfigurationTest {
         KeycloakMain.main(new String[] {"tools", "windows-service"}, nonRunningPicocli);
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.getErrString().contains("Missing required subcommand"));
+        onAfter();
+        KeycloakMain.main(new String[] {"tools", "windows-service", "uninstall", "--db=bar"}, nonRunningPicocli);
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
     }
 
     @Test

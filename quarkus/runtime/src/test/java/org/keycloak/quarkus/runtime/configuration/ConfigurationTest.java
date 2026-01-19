@@ -526,8 +526,9 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void testResolvePropertyFromDefaultProfile() {
-        Environment.setProfile(Environment.NON_SERVER_MODE);
-        assertEquals("false", createConfig().getConfigValue("kc.hostname-strict").getValue());
+        Environment.setProfile(org.keycloak.common.util.Environment.NON_SERVER_MODE);
+        var config = createConfig();
+        assertEquals("local", config.getConfigValue("kc.cache").getValue());
 
         Environment.setProfile("prod");
         assertEquals("true", createConfig().getConfigValue("kc.spi-hostname-v2-hostname-strict").getValue());

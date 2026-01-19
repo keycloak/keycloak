@@ -2,7 +2,6 @@ package org.keycloak.testframework.server;
 
 import java.net.ConnectException;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -71,15 +70,6 @@ public class RemoteKeycloakServer implements KeycloakServer {
             }
             out.println();
         }
-
-        Set<Path> configFiles = config.toConfigFiles();
-        if (!configFiles.isEmpty()) {
-            out.println("Config files:");
-            for (Path c : configFiles) {
-                out.print("* " + c.toAbsolutePath());
-            }
-            out.println();
-        }
     }
 
     private void printStartupInstructionsKcw(KeycloakServerConfigBuilder config) {
@@ -90,12 +80,6 @@ public class RemoteKeycloakServer implements KeycloakServer {
         if (!dependencies.isEmpty()) {
             String dependencyPaths = dependencies.stream().map(d -> Maven.resolveArtifact(d.getGroupId(), d.getArtifactId()).toString()).collect(Collectors.joining(","));
             out.println("KCW_PROVIDERS=" + dependencyPaths + " \\");
-        }
-
-        Set<Path> configFiles = config.toConfigFiles();
-        if (!configFiles.isEmpty()) {
-            String configPaths =  configFiles.stream().map(p -> p.toAbsolutePath().toString()).collect(Collectors.joining(","));
-            out.println("KCW_CONFIGS=" + configPaths + " \\");
         }
 
         out.println("kcw " + kcwCommand + " " + String.join(" \\\n", config.toArgs()));

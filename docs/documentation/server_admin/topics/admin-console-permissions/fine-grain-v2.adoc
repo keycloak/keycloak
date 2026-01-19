@@ -20,17 +20,21 @@ Enforcing access to realm resources only applies when managing resources through
 
 ==== Understanding the different types of realm administrators
 
-There are two different types of realm administrators when managing a realm:
+There are three different types of realm administrators when managing a realm:
 
 * **Server administrators**: These are users (or service accounts) that have been granted with the `admin` role in the master realm.
 
 * **Realm administrators**: These are users (or service accounts) that have been granted with the `realm-admin` role in a specific realm.
 
-Both types of administrators can manage a realm with full access to all their resources and
-administrative operations.
+* **Delegated realm administrators**: These are users (or service accounts) that do not have the `realm-admin` role but have been granted access to manage
+a realm through the fine-grained admin permissions feature.
 
-The main difference between them is that server administrators can manage any realm in the server, while realm administrators can only manage
+Both server and realm administrators can manage a realm with full access to all their resources and
+administrative operations. The main difference between them is that server administrators can manage any realm in the server, while realm administrators can only manage
 the realm they have been granted access to.
+
+Delegated realm administrators, on the other hand, can have limited access to a realm based on the permissions defined through this feature.
+They can only access the resources and operations they have been granted access to.
 
 Be aware that both server and realm administrators are not affected by the permissions you define when managing access to realm resources through this feature.
 Always make sure to review the users granted with the `admin` or `realm-admin` roles to avoid any potential privilege escalation.
@@ -219,6 +223,10 @@ make them available from queries:
 * `User`
 * `Group`
 * `Role`
+* `Aggregated`
+
+In case of using an `Aggregated` policy, all the underlying policies must be of type `User`, `Group`, or `Role`. Otherwise,
+the policy will always evaluate to `DENY` when performing partial evaluation.
 
 By using any of the policies above, {project_name} can pre-calculate the set of resources that a realm administration can view
 by looking for a direct (if using a user policy) or indirect (if using a role or group policy) reference to the realm administrator.
@@ -370,6 +378,9 @@ if a respective admin role is assigned to a realm administrator, permission eval
 | *view-clients*           | A realm administrator can *view* all clients in the realm.
 | *manage-clients*         | A realm administrator can *view* and *manage* all clients and client scopes in the realm.
 |===
+
+When this feature is enabled in a realm, only server and realm administrators with the corresponding admin roles can grant these roles
+to other realm administrators. Delegated realm administrators cannot assign administrative roles to other realm administrators.
 
 ==== Understanding some common use cases
 

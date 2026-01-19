@@ -43,6 +43,7 @@ import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
@@ -345,6 +346,46 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         response.setTokenEndpointAuthMethod(OIDCLoginProtocol.TLS_CLIENT_AUTH);
         OIDCClientRepresentation updated = reg.oidc().update(response);
         Assert.assertEquals("tls_client_auth", updated.getTokenEndpointAuthMethod());
+        Assert.assertNull(updated.getClientSecret());
+        Assert.assertNull(updated.getClientSecretExpiresAt());
+    }
+
+    @Test
+    public void testClientSecretClientAuthMethod() throws ClientRegistrationException {
+        // Test that client_secret_post is properly stored and returned
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.CLIENT_SECRET_POST);
+
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_POST, response.getTokenEndpointAuthMethod());
+        Assert.assertNotNull(response.getClientSecret());
+
+        ClientRepresentation kcClientRep = getKeycloakClient(response.getClientId());
+        Assert.assertFalse(kcClientRep.isPublicClient());
+        Assert.assertNotNull(kcClientRep.getSecret());
+        Assert.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_POST, OIDCClientSecretConfigWrapper.fromClientRepresentation(kcClientRep).getClientSecretAuthenticationAllowedMethod());
+
+        // Verify that retrieving the client returns client_secret_post
+        reg.auth(Auth.token(response));
+        OIDCClientRepresentation retrieved = reg.oidc().get(response.getClientId());
+        Assert.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_POST, retrieved.getTokenEndpointAuthMethod());
+
+        // Update to use client_secret_basic and test it
+        reg.auth(Auth.token(response));
+        response.setTokenEndpointAuthMethod(OIDCLoginProtocol.CLIENT_SECRET_BASIC);
+        OIDCClientRepresentation updated = reg.oidc().update(response);
+        Assert.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, updated.getTokenEndpointAuthMethod());
+
+        kcClientRep = getKeycloakClient(response.getClientId());
+        Assert.assertFalse(kcClientRep.isPublicClient());
+        Assert.assertNotNull(kcClientRep.getSecret());
+        Assert.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, OIDCClientSecretConfigWrapper.fromClientRepresentation(kcClientRep).getClientSecretAuthenticationAllowedMethod());
+
+        // Update to use different method (tls_client_auth)
+        reg.auth(Auth.token(updated));
+        updated.setTokenEndpointAuthMethod(OIDCLoginProtocol.TLS_CLIENT_AUTH);
+        updated = reg.oidc().update(updated);
+        Assert.assertEquals(OIDCLoginProtocol.TLS_CLIENT_AUTH, updated.getTokenEndpointAuthMethod());
         Assert.assertNull(updated.getClientSecret());
         Assert.assertNull(updated.getClientSecretExpiresAt());
     }

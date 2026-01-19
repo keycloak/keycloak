@@ -17,14 +17,8 @@
 
 package org.keycloak.models.workflow;
 
-import java.util.Arrays;
-import java.util.List;
-
-import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.ProviderConfigProperty;
 
 public class NotifyUserStepProviderFactory implements WorkflowStepProviderFactory<NotifyUserStepProvider> {
 
@@ -33,21 +27,6 @@ public class NotifyUserStepProviderFactory implements WorkflowStepProviderFactor
     @Override
     public NotifyUserStepProvider create(KeycloakSession session, ComponentModel model) {
         return new NotifyUserStepProvider(session, model);
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-        // no-op
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        // no-op
-    }
-
-    @Override
-    public void close() {
-        // no-op
     }
 
     @Override
@@ -63,22 +42,5 @@ public class NotifyUserStepProviderFactory implements WorkflowStepProviderFactor
     @Override
     public String getHelpText() {
         return "Sends email notifications to users based on configurable templates";
-    }
-
-    @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        return Arrays.asList(
-            new ProviderConfigProperty("reason", "Reason", 
-                "Reason for the action (inactivity, workflow violation, compliance requirement)", 
-                ProviderConfigProperty.STRING_TYPE, ""),
-
-            new ProviderConfigProperty("custom_subject_key", "Custom Subject Message Key", 
-                "Override default subject with custom message property key (optional)", 
-                ProviderConfigProperty.STRING_TYPE, ""),
-
-            new ProviderConfigProperty("custom_message", "Custom Message", 
-                "Override default message with custom text (optional)", 
-                ProviderConfigProperty.TEXT_TYPE, "")
-        );
     }
 }

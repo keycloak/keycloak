@@ -101,10 +101,11 @@ Valid values:
 
 Configuration:
 
-| Value                                             | Description                                                                            |
-|---------------------------------------------------|----------------------------------------------------------------------------------------|
-| `kc.test.server.config` / `KC_TEST_SERVER_CONFIG` | The name of a KeycloakServerConfig class to use when running the tests                 |
-| `kc.test.server.kcw` / `KC_TEST_SERVER_KCW`       | Set to a kcw command to use kcw with remote server (see `kcw help` for valid commands) |
+| Value                                             | Description                                                                                                      |
+|---------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| `kc.test.server.reuse` / `KC_TEST_SERVER_REUSE`   | If enabled for the `distribution` server the started server will be left running and re-used for subsequent runs |
+| `kc.test.server.config` / `KC_TEST_SERVER_CONFIG` | The name of a KeycloakServerConfig class to use when running the tests                                           |
+| `kc.test.server.kcw` / `KC_TEST_SERVER_KCW`       | Set to a kcw command to use kcw with remote server (see `kcw help` for valid commands)                           |
 
 
 ### Database

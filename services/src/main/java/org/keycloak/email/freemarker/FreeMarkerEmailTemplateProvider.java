@@ -279,7 +279,14 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         send(subjectFormatKey, subjectAttributes, bodyTemplate, bodyAttributes, null);
     }
 
-    protected void send(String subjectFormatKey, List<Object> subjectAttributes, String bodyTemplate, Map<String, Object> bodyAttributes, String address) throws EmailException {
+    @Override
+    public void send(String subjectFormatKey, String bodyTemplate, Map<String, Object> bodyAttributes, String destinationEmail) throws EmailException {
+        send(subjectFormatKey, Collections.emptyList(), bodyTemplate, bodyAttributes, destinationEmail);
+    }
+
+    @Override
+    public void send(String subjectFormatKey, List<Object> subjectAttributes, String bodyTemplate,
+        Map<String, Object> bodyAttributes, String address) throws EmailException {
         try {
             EmailTemplate email = processTemplate(subjectFormatKey, subjectAttributes, bodyTemplate, bodyAttributes);
             send(email.getSubject(), email.getTextBody(), email.getHtmlBody(), address);

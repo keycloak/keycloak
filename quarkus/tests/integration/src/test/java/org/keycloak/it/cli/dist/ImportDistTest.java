@@ -53,6 +53,7 @@ public class ImportDistTest {
         cliResult = dist.run("export", "--realm=master", "--dir=" + dir.getAbsolutePath());
         cliResult.assertMessage("Export of realm 'master' requested.");
         cliResult.assertMessage("Export finished successfully");
+        cliResult.assertNoMessage("local_addr");
 
         // add a placeholder into the realm
         ObjectMapper mapper = new ObjectMapper();
@@ -62,11 +63,14 @@ public class ImportDistTest {
         mapper.writer().writeValue(file, node);
 
         dist.setEnvVar("REALM_ENABLED", "true");
+        dist.setEnvVar("KC_HOSTNAME_STRICT", "false");
+        dist.setEnvVar("KC_CACHE", "ispn");
         cliResult = dist.run("import", "--dir=" + dir.getAbsolutePath());
         cliResult.assertMessage("Realm 'master' imported");
         cliResult.assertMessage("Import finished successfully");
         cliResult.assertNoMessage("Changes detected in configuration");
         cliResult.assertNoMessage("Listening on: http");
+        cliResult.assertNoMessage("local_addr");
 
         cliResult = dist.run("import");
         cliResult.assertError("Must specify either --dir or --file options.");

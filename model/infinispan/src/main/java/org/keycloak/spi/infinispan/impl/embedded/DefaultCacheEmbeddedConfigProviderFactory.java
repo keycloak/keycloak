@@ -241,8 +241,8 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
                     .meterRegistry(Metrics.globalRegistry);
             builder.cacheContainer().statistics(true);
             builder.metrics()
-                    .namesAsTags(true)
-                    .histograms(keycloakConfig.getBoolean(HISTOGRAMS, Boolean.FALSE));
+                    .histograms(keycloakConfig.getBoolean(HISTOGRAMS, Boolean.FALSE))
+                    .legacy(true);
             holder.getNamedConfigurationBuilders()
                     .values()
                     .stream()

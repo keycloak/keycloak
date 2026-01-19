@@ -59,6 +59,14 @@ public class JsonSerialization {
         }
     }
 
+    public static String valueAsPrettyString(Object obj) {
+        try {
+            return prettyMapper.writeValueAsString(obj);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
     public static <T> T valueFromString(String string, Class<T> type) {
         try {
             return mapper.readValue(string, type);

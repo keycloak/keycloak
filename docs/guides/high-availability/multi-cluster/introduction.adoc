@@ -38,7 +38,7 @@ We regularly test {project_name} with the following configuration:
 using ROSA HCP.
 
 ** All worker nodes reside in a single Availability Zone.
-** OpenShift version 4.17.
+** OpenShift version 4.18.
 
 * Amazon Aurora PostgreSQL database
 ** High availability with a primary DB instance in one availability zone, and a synchronously replicated reader in the second availability zone
@@ -60,7 +60,7 @@ either ROSA HCP or ROSA classic.
 ** Each {kubernetes} cluster has all its workers in a single Availability Zone.
 <@profile.ifProduct>
 ** OpenShift version
-4.17 (or later).
+4.18 (or later).
 </@profile.ifProduct>
 <@profile.ifCommunity>
 ** Kubernetes version 1.30
@@ -94,7 +94,6 @@ See the <@links.ha id="multi-cluster-concepts-memory-and-cpu-sizing" /> {section
 Even with the additional redundancy of the two sites, downtimes can still occur:
 </@profile.ifCommunity>
 
-* During upgrades of {project_name} or {jdgserver_name} both sites needs to be taken offline for the duration of the upgrade.
 * During certain failure scenarios, there may be downtime of up to 5 minutes.
 * After certain failure scenarios, manual intervention may be required to restore redundancy by bringing the failed site back online.
 * During certain switchover scenarios, there may be downtime of up to 5 minutes.
@@ -131,6 +130,7 @@ Additional performance tuning and security hardening are still recommended when 
 * <@links.ha id="multi-cluster-operate-site-offline" />
 * <@links.ha id="multi-cluster-operate-site-online" />
 * <@links.ha id="multi-cluster-health-checks" />
+* <@links.ha id="multi-cluster-upgrades" />
 
 </@profile.ifCommunity>
 
