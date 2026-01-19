@@ -263,7 +263,9 @@ public class ClientScopeResource {
     public static void validateClientScope(KeycloakSession session, ClientScopeRepresentation clientScope)
             throws ErrorResponseException {
         LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, clientScope.getProtocol());
-        factory.validateClientScope(session, clientScope);
+        if (factory != null) {
+            factory.validateClientScope(session, clientScope);
+        }
     }
 
     /**
