@@ -16,7 +16,6 @@
  */
 package org.keycloak.social.google;
 
-import java.util.Collections;
 import java.util.List;
 
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -69,6 +68,8 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         config.setUserInfoUrl(PROFILE_URL);
         getConfig().setUseJwksUrl(true);
         getConfig().setJwksUrl(JWKS_URL);
+        getConfig().setIssuer(ISSUER_URL);
+        getConfig().setAllowClientIdAsAudience(true);
     }
 
     @Override
@@ -173,11 +174,5 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     @Override
     public boolean isAssertionReuseAllowed() {
         return true;
-    }
-
-    @Override
-    public List<String> getAllowedAudienceForJWTGrant() {
-        //google IDToken audience can only contain client-id, this is an exception compared to the RFC7523
-        return Collections.singletonList(getConfig().getClientId());
     }
 }
