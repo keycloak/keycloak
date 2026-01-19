@@ -46,5 +46,6 @@ public abstract class CredentialBuilderTest extends OID4VCTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.setVerifiableCredentialsEnabled(true);
     }
 }

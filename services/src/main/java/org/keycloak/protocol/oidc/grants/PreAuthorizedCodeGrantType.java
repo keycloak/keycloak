@@ -60,6 +60,15 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         LOGGER.debug("Process grant request for preauthorized.");
         setContext(context);
 
+        // Check if OID4VCI functionality is enabled for the realm
+        if (!realm.isVerifiableCredentialsEnabled()) {
+            LOGGER.debugf("OID4VCI functionality is disabled for realm '%s'. Verifiable Credentials switch is off.", realm.getName());
+            event.error(Errors.INVALID_CLIENT);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT,
+                    "OID4VCI functionality is disabled for this realm",
+                    Response.Status.FORBIDDEN);
+        }
+
         // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-token-request
         String code = formParams.getFirst(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM);
 

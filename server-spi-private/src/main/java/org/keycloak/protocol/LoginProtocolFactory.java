@@ -19,8 +19,11 @@ package org.keycloak.protocol;
 
 import java.util.Map;
 
+import jakarta.ws.rs.WebApplicationException;
+
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -64,5 +67,22 @@ public interface LoginProtocolFactory extends ProviderFactory<LoginProtocol> {
     /**
      * Add default values to {@link ClientScopeRepresentation}s that refer to the specific login-protocol
      */
-    void addClientScopeDefaults(ClientScopeRepresentation clientModel);
+    void addClientScopeDefaults(ClientScopeRepresentation clientScope);
+
+    /**
+     * Invoked during client-scope creation or update to add additional validation hooks specific to target protocol. May throw errorResponseException in case
+     *
+     * @param session Keycloak session
+     * @param clientScope client scope to create or update
+     * @throws WebApplicationException or some of it's subclass if validation fails
+     */
+    default void validateClientScope(KeycloakSession session, ClientScopeRepresentation clientScope) throws WebApplicationException {
+    }
+
+    /**
+     * Test if the clientScope is valid for particular client. Usually called during protocol requests
+     */
+    default boolean isValidClientScope(KeycloakSession session, ClientModel client, ClientScopeModel clientScope) {
+        return true;
+    }
 }
