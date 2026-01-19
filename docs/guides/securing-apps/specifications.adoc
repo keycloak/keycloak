@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Specifications implemented"
-priority=140
+priority=160
 summary="List of specifications and standards implemented by {project_name}.">
 
 This {section} presents a list of specifications and standards that {project_name} currently implements. The standards are separated in different sections and, in each one, a table is shown with the following four columns:
