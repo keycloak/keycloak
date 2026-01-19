@@ -738,7 +738,7 @@ public class TokenManager {
                     .filter(((Predicate<ClientScopeModel>) ClientModel.class::isInstance).negate())
                     .peek(clientScope -> {
                         LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, clientScope.getProtocol());
-                        if (!factory.isValidClientScope(session, client, clientScope)) {
+                        if (factory != null && !factory.isValidClientScope(session, client, clientScope)) {
                             logger.debugf("Requested scope '%s' invalid for client '%s'", clientScope.getName(), client.getClientId());
                             anyInvalid.set(true);
                         }
