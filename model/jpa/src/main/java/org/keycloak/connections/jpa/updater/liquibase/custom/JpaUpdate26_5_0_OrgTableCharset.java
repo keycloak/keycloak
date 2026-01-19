@@ -49,18 +49,31 @@ public class JpaUpdate26_5_0_OrgTableCharset extends CustomKeycloakTask {
     @Override
     protected void generateStatementsImpl() throws CustomChangeException {
         String orgTableName = getTableName("ORG");
+        String orgDomainTableName = getTableName("ORG_DOMAIN");
 
-        // Fix ORG.ID column charset to utf8mb3 to ensure foreign key compatibility with ORG_INVITATION table
+        // Safety toggle for all environments
+        statements.add(new RawSqlStatement("SET FOREIGN_KEY_CHECKS=0"));
+
+        // Fix ORG table charset to utf8mb3 to ensure foreign key compatibility with ORG_INVITATION table
         statements.add(new RawSqlStatement(
             "ALTER TABLE " + orgTableName +
-            " MODIFY ID VARCHAR(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci NOT NULL"
+            " CONVERT TO CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci"
         ));
+
+        // Fix ORG_DOMAIN table charset to utf8mb3 to ensure foreign key compatibility with ORG table
+        statements.add(new RawSqlStatement(
+            "ALTER TABLE " + orgDomainTableName +
+            " CONVERT TO CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci"
+        ));
+
+        // Restore checks
+        statements.add(new RawSqlStatement("SET FOREIGN_KEY_CHECKS=1"));
 
         confirmationMessage.append("Updated ORG.ID column charset to utf8mb3 for foreign key compatibility");
     }
 
     @Override
     protected String getTaskId() {
-        return "Update ORG table charset and collation";
+        return "Update ORG and ORG_DOMAIN tables charset and collation";
     }
 }
