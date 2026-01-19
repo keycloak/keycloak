@@ -21,6 +21,7 @@ type ThemesTabProps = {
 };
 
 export type ThemeRealmRepresentation = RealmRepresentation & {
+  themeName?: string;
   fileName?: string;
   favicon?: File;
   logo?: File;
@@ -37,28 +38,29 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
     const zip = new JSZip();
 
     const styles = JSON.parse(realm.attributes?.style ?? "{}");
-    const { favicon, logo, bgimage, fileName } = realm;
+    const { favicon, logo, bgimage, fileName, themeName } = realm;
 
+    const name = themeName || "quick-theme";
     const logoName =
       "img/logo" + logo?.name?.substring(logo?.name?.lastIndexOf("."));
     const bgimageName =
       "img/bgimage" + bgimage?.name?.substring(bgimage?.name?.lastIndexOf("."));
 
     if (favicon) {
-      zip.file(`theme/quick-theme/common/resources/img/favicon.ico`, favicon);
+      zip.file(`theme/${name}/common/resources/img/favicon.ico`, favicon);
     }
     if (logo) {
-      zip.file(`theme/quick-theme/common/resources/${logoName}`, logo);
+      zip.file(`theme/${name}/common/resources/${logoName}`, logo);
     }
     if (bgimage) {
-      zip.file(`theme/quick-theme/common/resources/${bgimageName}`, bgimage);
+      zip.file(`theme/${name}/common/resources/${bgimageName}`, bgimage);
     }
 
     zip.file(
-      "theme/quick-theme/admin/theme.properties",
+      `theme/${name}/admin/theme.properties`,
       `
 parent=keycloak.v2
-import=common/quick-theme
+import=common/${name}
 
 ${logo ? "logo=" + logoName : ""}
 styles=css/theme-styles.css
@@ -66,10 +68,10 @@ styles=css/theme-styles.css
     );
 
     zip.file(
-      "theme/quick-theme/account/theme.properties",
+      `theme/${name}/account/theme.properties`,
       `
 parent=keycloak.v3
-import=common/quick-theme
+import=common/${name}
 
 ${logo ? "logo=" + logoName : ""}
 styles=css/theme-styles.css
@@ -77,10 +79,10 @@ styles=css/theme-styles.css
     );
 
     zip.file(
-      "theme/quick-theme/login/theme.properties",
+      `theme/${name}/login/theme.properties`,
       `
 parent=keycloak.v2
-import=common/quick-theme
+import=common/${name}
 
 styles=css/login.css css/theme-styles.css
 `,
@@ -90,7 +92,7 @@ styles=css/login.css css/theme-styles.css
       "META-INF/keycloak-themes.json",
       `{
   "themes": [{
-      "name" : "quick-theme",
+      "name" : "${name}",
       "types": [ "login", "account", "admin", "common" ]
   }]
 }`,
@@ -100,12 +102,10 @@ styles=css/login.css css/theme-styles.css
       "theme-settings.json",
       JSON.stringify({
         ...styles,
-        logo: logo ? `theme/quick-theme/common/resources/${logoName}` : "",
-        bgimage: bgimage
-          ? `theme/quick-theme/common/resources/${bgimageName}`
-          : "",
+        logo: logo ? `theme/${name}/common/resources/${logoName}` : "",
+        bgimage: bgimage ? `theme/${name}/common/resources/${bgimageName}` : "",
         favicon: favicon
-          ? "theme/quick-theme/common/resources/img/favicon.ico"
+          ? `theme/${name}/common/resources/img/favicon.ico`
           : "",
       }),
     );
@@ -118,10 +118,10 @@ styles=css/login.css css/theme-styles.css
     const logoCss = (
       await fetch(joinPath(environment.resourceUrl, "/theme/login.css"))
     ).text();
-    zip.file("theme/quick-theme/common/resources/css/login.css", logoCss);
+    zip.file(`theme/${name}/common/resources/css/login.css`, logoCss);
 
     zip.file(
-      "theme/quick-theme/common/resources/css/theme-styles.css",
+      `theme/${name}/common/resources/css/theme-styles.css`,
       `:root {
         --keycloak-bg-logo-url: url('../${bgimageName}');
         --keycloak-logo-url: url('../${logoName}');
