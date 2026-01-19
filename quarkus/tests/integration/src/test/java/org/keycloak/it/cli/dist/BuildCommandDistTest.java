@@ -121,4 +121,18 @@ class BuildCommandDistTest {
     void forceRebuild(CLIResult cliResult) {
         cliResult.getOutput().contains("Quarkus augmentation completed");
     }
+
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    @Launch({"build", "--features=clusterless"})
+    void clusterlessDoesNotRequireRuntimeOptions(CLIResult cliResult) {
+        cliResult.assertBuild();
+    }
+
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    @Launch({"build", "--features=multi-site"})
+    void multiSiteDoesNotRequireRuntimeOptions(CLIResult cliResult) {
+        cliResult.assertBuild();
+    }
 }
