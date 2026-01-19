@@ -151,12 +151,13 @@ export const ThemeColors = ({
     const styles = JSON.parse(realm.attributes?.style || "{}");
     save({
       ...realm,
+      themeName: values.themeName as string,
       favicon: values.favicon as File,
       logo: values.logo as File,
       logoWidth: values.logoWidth as string,
       logoHeight: values.logoHeight as string,
       bgimage: values.bgimage as File,
-      fileName: values.name as string,
+      fileName: values.fileName as string,
       attributes: {
         ...realm.attributes,
         style: JSON.stringify({
@@ -179,8 +180,10 @@ export const ThemeColors = ({
     <>
       {open && (
         <FileNameDialog
-          onSave={async (name) => {
-            await handleSubmit((data) => convert({ ...data, name }))();
+          onSave={async (themeName, fileName) => {
+            await handleSubmit((data) =>
+              convert({ ...data, themeName, fileName }),
+            )();
             setOpen(false);
           }}
           onClose={toggle}
