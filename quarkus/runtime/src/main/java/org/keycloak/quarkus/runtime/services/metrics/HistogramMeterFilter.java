@@ -36,34 +36,58 @@ import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
 @Singleton
 public class HistogramMeterFilter implements MeterFilter {
 
-    private boolean histogramsEnabled;
-    private double[] slos;
+    private final boolean httpClientHistograms;
+    private final boolean httpServerHistograms;
+    private final double[] httpClientSLOs;
+    private final double[] httpServerSLOs;
 
     public HistogramMeterFilter() {
-        histogramsEnabled = Configuration.isTrue(HttpOptions.HTTP_METRICS_HISTOGRAMS_ENABLED);
-        Optional<String> slosOption = Configuration.getOptionalKcValue(HttpOptions.HTTP_METRICS_SLOS.getKey());
-        if (slosOption.isPresent()) {
-            slos = Arrays.stream(slosOption.get().split(",")).filter(s -> !s.trim().isEmpty()).mapToDouble(s -> TimeUnit.MILLISECONDS.toNanos(Long.parseLong(s))).toArray();
-            if (slos.length == 0) {
-                slos = null;
-            }
-        }
+        this.httpClientHistograms = Configuration.isTrue(HttpOptions.HTTP_CLIENT_METRICS_HISTOGRAMS_ENABLED);
+        this.httpClientSLOs = slo(Configuration.getOptionalKcValue(HttpOptions.HTTP_CLIENT_METRICS_SLOS));
+        this.httpServerHistograms = Configuration.isTrue(HttpOptions.HTTP_METRICS_HISTOGRAMS_ENABLED);
+        this.httpServerSLOs = slo(Configuration.getOptionalKcValue(HttpOptions.HTTP_METRICS_SLOS.getKey()));
     }
 
     @Override
     public DistributionStatisticConfig configure(Meter.Id id, DistributionStatisticConfig config) {
+        if (isHttpClientRequests(id)) {
+            return histogramConfig(httpClientHistograms, httpClientSLOs).merge(config);
+        }
         if (isHttpServerRequests(id)) {
-            DistributionStatisticConfig.Builder builder = DistributionStatisticConfig.builder()
-                    .percentilesHistogram(histogramsEnabled);
-            if (slos != null) {
-                builder.serviceLevelObjectives(slos);
-            }
-            return builder.build().merge(config);
+            return histogramConfig(httpServerHistograms, httpServerSLOs).merge(config);
         }
         return config;
     }
 
+    private double[] slo(Optional<String> sloOptional) {
+        if (sloOptional.isPresent()) {
+            double[] sloArray = Arrays.stream(sloOptional.get().split(","))
+                  .filter(s -> !s.trim().isEmpty())
+                  .mapToDouble(s -> TimeUnit.MILLISECONDS.toNanos(Long.parseLong(s)))
+                  .toArray();
+            if (sloArray.length == 0) {
+                return null;
+            }
+            return sloArray;
+        } else {
+            return null;
+        }
+    }
+
+    private DistributionStatisticConfig histogramConfig(boolean enabled, double... slos) {
+        DistributionStatisticConfig.Builder builder = DistributionStatisticConfig.builder()
+              .percentilesHistogram(enabled);
+        if (slos != null) {
+            builder.serviceLevelObjectives(slos);
+        }
+        return builder.build();
+    }
+
     private boolean isHttpServerRequests(Meter.Id id) {
         return "http.server.requests".equals(id.getName());
+    }
+
+    private boolean isHttpClientRequests(Meter.Id id) {
+        return "httpcomponents.httpclient.request".equals(id.getName());
     }
 }

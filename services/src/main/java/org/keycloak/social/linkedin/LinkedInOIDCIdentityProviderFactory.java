@@ -34,6 +34,8 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
+
 /**
  * <p>Specific OIDC LinkedIn provider for <b>Sign In with LinkedIn using OpenID Connect</b>
  * product app. LinkedIn currently has two issues with default OIDC provider
@@ -98,6 +100,7 @@ public class LinkedInOIDCIdentityProviderFactory extends AbstractIdentityProvide
     private static OIDCConfigurationRepresentation getWellKnownMetadata(KeycloakSession session) {
         try (SimpleHttpResponse response = SimpleHttp.create(session).doGet(WELL_KNOWN_URL)
                 .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
+                .header(METRICS_URI_TEMPLATE_HEADER, ".well-known/openid-configuration")
                 .asResponse()) {
             if (Response.Status.fromStatusCode(response.getStatus()).getFamily() != Response.Status.Family.SUCCESSFUL) {
                 throw new RuntimeException("Error calling the OIDC LinkedIn well-known address. Http status " + response.getStatus());

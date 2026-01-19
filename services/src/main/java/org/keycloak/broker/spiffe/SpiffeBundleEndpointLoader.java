@@ -1,11 +1,15 @@
 package org.keycloak.broker.spiffe;
 
+import java.net.URI;
+
 import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JWKSUtils;
+
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
 
 public class SpiffeBundleEndpointLoader implements PublicKeyLoader {
 
@@ -19,7 +23,10 @@ public class SpiffeBundleEndpointLoader implements PublicKeyLoader {
 
     @Override
     public PublicKeysWrapper loadKeys() throws Exception {
-        SpiffeJSONWebKeySet jwks = SimpleHttp.create(session).doGet(bundleEndpoint).asJson(SpiffeJSONWebKeySet.class);
+        URI uri = URI.create(bundleEndpoint);
+        SpiffeJSONWebKeySet jwks = SimpleHttp.create(session).doGet(bundleEndpoint)
+              .header(METRICS_URI_TEMPLATE_HEADER, uri.getPath())
+              .asJson(SpiffeJSONWebKeySet.class);
         PublicKeysWrapper keysWrapper = JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.JWT_SVID, true);
         if (keysWrapper.getKeys().isEmpty()) {
             keysWrapper = JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG, true);

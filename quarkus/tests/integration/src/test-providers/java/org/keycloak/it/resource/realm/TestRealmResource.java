@@ -17,14 +17,9 @@
 
 package org.keycloak.it.resource.realm;
 
-import org.infinispan.Cache;
-import org.infinispan.commons.configuration.io.ConfigurationWriter;
-import org.infinispan.commons.io.StringBuilderWriter;
-import org.infinispan.configuration.parsing.ParserRegistry;
-import org.jboss.logging.Logger;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.resource.RealmResourceProvider;
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
+
+import java.io.IOException;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -32,6 +27,18 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.resource.RealmResourceProvider;
+
+import org.infinispan.Cache;
+import org.infinispan.commons.configuration.io.ConfigurationWriter;
+import org.infinispan.commons.io.StringBuilderWriter;
+import org.infinispan.configuration.parsing.ParserRegistry;
+import org.jboss.logging.Logger;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -90,6 +97,29 @@ public class TestRealmResource implements RealmResourceProvider {
             new ParserRegistry().serialize(writer, cacheName, cache.getCacheConfiguration());
         }
         return Response.ok(out.toString(), MediaType.APPLICATION_JSON).build();
+    }
+
+    @Path("init-http-client")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response initHttpClient() {
+        // Execute a request so that at least one metric is created with a successful response
+        execHTTP(SimpleHttp.create(session).doGet("http://localhost:8080"));
+        // Execute a request with a custom template to ensure that the uri tag is populated as expected
+        execHTTP(
+              SimpleHttp.create(session)
+                    .doGet("http://localhost:8080/test/users/1")
+                    .header(METRICS_URI_TEMPLATE_HEADER, "/test/users/{id}")
+        );
+        return Response.noContent().build();
+    }
+
+    private void execHTTP(SimpleHttpRequest req) {
+        try (var ignore = req.asResponse()) {
+            // no-op
+        } catch (IOException e) {
+            logger.error(e);
+        }
     }
 
     @Override

@@ -6,7 +6,7 @@
 <@tmpl.guide
 title="Gaining insights with metrics"
 summary="Collect metrics to gain insights about state and activities of a running instance of {project_name}."
-includedOptions="metrics-enabled http-metrics-* cache-metrics-*">
+includedOptions="metrics-enabled http-metrics-* cache-metrics-* http-client-metrics-*">
 
 {project_name} has built in support for metrics. This {section} describes how to enable and configure server metrics.
 

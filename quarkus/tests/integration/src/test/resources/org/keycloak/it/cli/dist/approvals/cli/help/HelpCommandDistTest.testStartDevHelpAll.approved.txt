@@ -294,6 +294,22 @@ HTTP(S):
                        according to RFC3986 or that contain a double slash ('//'). While accepting
                        those requests might be relevant for legacy applications, it is recommended
                        to disable it to allow for more concise URL filtering. Default: false.
+--http-client-metrics-enabled <true|false>
+                     Whether to register client metrics when metrics are enabled on the server.
+                       Default: true. Available only when metrics are enabled.
+--http-client-metrics-histograms-enabled <true|false>
+                     Enables a histogram with default buckets for the duration of client HTTP
+                       requests. Default: false. Available only when metrics are enabled.
+--http-client-metrics-slos <list of buckets>
+                     Service level objectives for client HTTP requests. Use this instead of the
+                       default histogram, or use it in combination to add additional buckets.
+                       Specify a list of comma-separated values defined in milliseconds. Example
+                       with buckets from 5ms to 10s: 5,10,25,50,250,500,1000,2500,5000,10000
+                       Available only when metrics are enabled.
+--http-client-metrics-tag-limit <PARAM>
+                     The maximum number of unique client metrics that can be present for the
+                       'host', 'port' and 'uri' tags. Default: 100. Available only when metrics are
+                       enabled.
 --http-enabled <true|false>
                      Enables the HTTP listener. Enabled by default in development mode. Typically
                        not enabled in production unless the server is fronted by a TLS termination

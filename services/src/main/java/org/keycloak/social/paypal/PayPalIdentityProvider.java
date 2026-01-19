@@ -17,6 +17,8 @@
 
 package org.keycloak.social.paypal;
 
+import java.net.URI;
+
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -27,6 +29,8 @@ import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.KeycloakSession;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
 
 /**
  * @author Petter Lysne (petterlysne at hotmail dot com)
@@ -73,7 +77,11 @@ public class PayPalIdentityProvider extends AbstractOAuth2IdentityProvider<PayPa
 	@Override
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		try {
-			JsonNode profile = SimpleHttp.create(session).doGet(getConfig().getUserInfoUrl()).header("Authorization", "Bearer " + accessToken).asJson();
+            String url = getConfig().getUserInfoUrl();
+			JsonNode profile = SimpleHttp.create(session).doGet(url)
+                  .header("Authorization", "Bearer " + accessToken)
+                  .header(METRICS_URI_TEMPLATE_HEADER, URI.create(url).getPath())
+                  .asJson();
 
 			return extractIdentityFromProfile(null, profile);
 		} catch (Exception e) {

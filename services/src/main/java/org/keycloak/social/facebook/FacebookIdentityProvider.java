@@ -38,6 +38,8 @@ import org.keycloak.services.ErrorResponseException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import static org.keycloak.connections.httpclient.DefaultHttpClientFactory.METRICS_URI_TEMPLATE_HEADER;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -63,7 +65,10 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider<Fac
 			final String url = StringUtil.isNotNull(fetchedFields)
 					? String.join(PROFILE_URL_FIELDS_SEPARATOR, PROFILE_URL, fetchedFields)
 					: PROFILE_URL;
-			JsonNode profile = SimpleHttp.create(session).doGet(url).header("Authorization", "Bearer " + accessToken).asJson();
+			JsonNode profile = SimpleHttp.create(session).doGet(url)
+                  .header("Authorization", "Bearer " + accessToken)
+                  .header(METRICS_URI_TEMPLATE_HEADER, "/me")
+                  .asJson();
 			return extractIdentityFromProfile(null, profile);
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Could not obtain user profile from facebook.", e);
@@ -73,6 +78,7 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider<Fac
     private void verifyToken(String accessToken) throws IOException {
         JsonNode response = SimpleHttp.create(session).doGet(DEBUG_TOKEN_URL)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + getConfig().getClientId() + "|" + getConfig().getClientSecret())
+                .header(METRICS_URI_TEMPLATE_HEADER, "/debug_token")
                 .param("input_token", accessToken)
                 .asJson();
 
