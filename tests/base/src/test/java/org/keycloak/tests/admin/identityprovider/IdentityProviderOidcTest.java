@@ -23,7 +23,11 @@ import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
+import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -33,10 +37,22 @@ import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -57,6 +73,18 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @KeycloakIntegrationTest
 public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
+
+    @InjectRealm(ref = "external-realm", config = ExternalRealmConfig.class)
+    ManagedRealm externalRealm;
+
+    @InjectOAuthClient
+    OAuthClient oauth;
+
+    @InjectPage
+    LoginPage loginPage;
+
+    @InjectEvents
+    Events events;
 
     @Test
     public void testCreateWithReservedCharacterForAlias() {
@@ -491,4 +519,62 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
         managedRealm.cleanup().add(r -> r.identityProviders().get(id).remove());
     }
+
+    @Test
+    public void testOIDCIdentityProviderLoginIssuerValidation() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("external-idp", "oidc");
+        newIdentityProvider.getConfig().put(OIDCIdentityProviderConfig.ISSUER, "bad-issuer");
+        newIdentityProvider.getConfig().put("clientId", "test-client");
+        newIdentityProvider.getConfig().put("clientSecret", "password");
+        newIdentityProvider.getConfig().put(IdentityProviderModel.SYNC_MODE, "IMPORT");
+        newIdentityProvider.getConfig().put(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL, "http://localhost:8080/realms/external-realm/protocol/openid-connect/token");
+        newIdentityProvider.getConfig().put("authorizationUrl", "http://localhost:8080/realms/external-realm/protocol/openid-connect/auth");
+        newIdentityProvider.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, "http://localhost:8080/realms/external-realm/protocol/openid-connect/certs");
+        newIdentityProvider.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, "true");
+        create(newIdentityProvider);
+
+        events.skipAll();
+        oauth.openLoginForm();
+        loginPage.clickSocial("external-idp");
+        loginPage.fillLogin("testuser", "password");
+        loginPage.submit();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.IDENTITY_PROVIDER_LOGIN_ERROR)
+                .sessionId(null)
+                .error(Errors.IDENTITY_PROVIDER_LOGIN_FAILURE);
+
+        //test correct issuer
+        managedRealm.updateIdentityProviderWithCleanup("external-idp", rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.ISSUER, "http://localhost:8080/realms/external-realm");
+        });
+
+        oauth.openLoginForm();
+        loginPage.clickSocial("external-idp");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(tokenResponse.isSuccess());
+
+        oauth.logoutRequest().idTokenHint(tokenResponse.getIdToken()).send();
+        oauth.logoutRequest().send();
+    }
+
+    public static class ExternalRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            realm.name("external-realm");
+
+            realm.addClient("test-client")
+                    .secret("password")
+                    .redirectUris("*");
+
+            realm.addUser("testuser")
+                    .name("Test", "User")
+                    .email("test@localhost")
+                    .emailVerified(Boolean.TRUE)
+                    .password("password");
+
+            return realm;
+        }
+    }
+
 }
