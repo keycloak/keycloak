@@ -65,6 +65,7 @@ import org.keycloak.storage.adapter.InMemoryUserAdapter;
 import org.keycloak.utils.StringUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -76,6 +77,7 @@ import static org.keycloak.representations.idm.OrganizationInvitationRepresentat
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
 public class OrganizationInvitationResource {
 
