@@ -36,10 +36,9 @@
       ]
     },
     "generate:openapi": {
-      "command": "pnpm dlx @openapitools/openapi-generator-cli generate -i api.yml -g typescript-fetch -o src/generated --additional-properties=supportsES6=true,typescriptThreePlus=true,importFileExtension=.js && node scripts/fix-generated-runtime.mjs",
+      "command": "kiota generate -l TypeScript -d api.yml -o src/generated -c AdminClient -n ApiSdk",
       "files": [
-        "api.yml",
-        "scripts/fix-generated-runtime.mjs"
+        "api.yml"
       ],
       "output": [
         "src/generated"
@@ -53,6 +52,12 @@
     }
   },
   "dependencies": {
+    "@microsoft/kiota-abstractions": "^1.0.0-preview.86",
+    "@microsoft/kiota-http-fetchlibrary": "^1.0.0-preview.80",
+    "@microsoft/kiota-serialization-form": "^1.0.0-preview.74",
+    "@microsoft/kiota-serialization-json": "^1.0.0-preview.86",
+    "@microsoft/kiota-serialization-multipart": "^1.0.0-preview.67",
+    "@microsoft/kiota-serialization-text": "^1.0.0-preview.79",
     "camelize-ts": "^3.0.0",
     "url-template": "^3.1.1"
   },
