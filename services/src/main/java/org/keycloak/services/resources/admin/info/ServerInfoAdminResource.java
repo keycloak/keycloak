@@ -233,7 +233,8 @@ public class ServerInfoAdminResource {
                 try {
                     Theme theme = session.theme().getTheme(name, type);
                     // Different name means the theme itself was not found and fallback to default theme was needed
-                    if (theme != null && name.equals(theme.getName())) {
+                    // Do not include abstract themes that can only be extended (like base)
+                    if (theme != null && name.equals(theme.getName()) && !theme.isAbstract()) {
                         ThemeInfoRepresentation ti = new ThemeInfoRepresentation();
                         ti.setName(name);
 

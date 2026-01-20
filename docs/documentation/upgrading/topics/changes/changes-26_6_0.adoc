@@ -50,6 +50,10 @@ To analyze rejected requests in the server log, enable debug logging for `org.ke
 To revert to the previous behavior and to accept matrix parameters set the option `http-accept-non-normalized-paths` to `true`.
 With this configuration, enable and review the HTTP access log to identify problematic requests.
 
+=== The base themes are now abstract
+
+All the `base` themes are now tagged as **abstract**, and they are not listed in the admin console to be selected (**Realm Settings** -> **Themes** tab). They were always intended to be only extended but not used directly. If you use one of them, it will continue working (or not working) in the same way but cannot be selected using the admin console anymore. Please select one of the available default themes or create your own one.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

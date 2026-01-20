@@ -32,6 +32,7 @@ public interface Theme {
 
     String ACCOUNT_RESOURCE_PROVIDER_KEY = "accountResourceProvider";
     String CONTENT_HASH_PATTERN = "contentHashPattern";
+    String ABSTRACT_PROPERTY = "abstract";
 
     enum Type { LOGIN, ACCOUNT, ADMIN, EMAIL, WELCOME, COMMON };
 
@@ -100,6 +101,16 @@ public interface Theme {
         } else {
             return false;
         }
+    }
+
+    /**
+     * Method to know if the theme is just an abstract theme (only to be extended by
+     * other themes). By default it just checks the <em>abstract</em> property.
+     * @return true if abstract, false if not
+     * @throws IOException Some error reading the properties
+     */
+    default boolean isAbstract() throws IOException {
+        return Boolean.parseBoolean(getProperties().getProperty(ABSTRACT_PROPERTY));
     }
 
 }
