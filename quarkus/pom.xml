@@ -62,4 +62,5 @@
         </repository>
     </repositories>
     
+<pluginRepositories>             <pluginRepository>             <id>sonatype-snapshots</id>             <name>Sonatype Snapshots</name>             <url>https://central.sonatype.com/repository/maven-snapshots/</url>             <snapshots>                 <enabled>true</enabled>                 <updatePolicy>daily</updatePolicy>             </snapshots>             <releases>                 <enabled>false</enabled>             </releases>             </pluginRepository>             </pluginRepositories>
 </project>

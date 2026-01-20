@@ -45,7 +45,7 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.30.5</quarkus.version>
+        <quarkus.version>999-SNAPSHOT</quarkus.version>
         <quarkus.build.version>3.30.5</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
@@ -1769,4 +1769,5 @@
             </properties>
         </profile>
     </profiles>
+<repositories>             <repository>             <id>sonatype-snapshots</id>             <name>Sonatype Snapshots</name>             <url>https://central.sonatype.com/repository/maven-snapshots/</url>             <snapshots>                 <enabled>true</enabled>                 <updatePolicy>daily</updatePolicy>             </snapshots>             <releases>                 <enabled>false</enabled>             </releases>             </repository>             </repositories>
 </project>
