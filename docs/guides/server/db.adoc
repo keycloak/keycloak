@@ -251,6 +251,23 @@ Note that the utf8mb4 character set is not supported due to different storage re
 . Under JDBC driver settings, locate the *JDBC connection settings*.
 . Add this connection property: `characterEncoding=UTF-8`
 
+==== Database default charset and collation considerations
+
+Different MySQL and MariaDB versions may have different default settings for character sets and collations. {project_name} uses the database default charset and collation when creating new tables and columns. This design allows you to manage your own data lifecycle by defining the charset and collation that best fits your requirements.
+
+[IMPORTANT]
+====
+Before migrating {project_name} to a new version, ensure that your database has a consistent charset and collation configuration. Inconsistent settings between existing tables can cause foreign key constraint errors during migration.
+
+To avoid potential mismatches:
+
+. Set your desired charset and collation as the database default *before* installing or upgrading {project_name}.
+. Ensure all existing {project_name} tables use the same charset and collation.
+. When upgrading, {project_name} will align new tables and columns with your database default settings.
+
+By relying on the database default, {project_name} respects your intent and allows you to maintain control over your database configuration throughout its lifecycle.
+====
+
 === Configuring Unicode support for a PostgreSQL database
 
 Unicode is supported for a PostgreSQL database when the database character set is UTF8. Unicode characters can be used in any field with no reduction of field length for non-special fields. The JDBC driver requires no special settings. The character set is determined when the PostgreSQL database is created.
