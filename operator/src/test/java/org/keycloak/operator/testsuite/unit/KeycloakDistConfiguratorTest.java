@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.util.CollectionUtil;
@@ -194,6 +195,48 @@ public class KeycloakDistConfiguratorTest {
         );
 
         testFirstClassCitizen(expectedValues);
+    }
+
+    @Test
+    public void invalidTelemetryResourceAttributes() {
+        Keycloak keycloakCR = K8sUtils.getResourceFromFile("test-serialization-keycloak-cr.yml", Keycloak.class);
+        assertResourceAttributes(keycloakCR, keycloakCR.getSpec().getTelemetrySpec()::setResourceAttributes);
+    }
+
+    @Test
+    public void invalidTracingResourceAttributes() {
+        Keycloak keycloakCR = K8sUtils.getResourceFromFile("test-serialization-keycloak-cr.yml", Keycloak.class);
+        assertResourceAttributes(keycloakCR, keycloakCR.getSpec().getTracingSpec()::setResourceAttributes);
+    }
+
+    public void assertResourceAttributes(Keycloak keycloakCR, Consumer<Map<String, String>> specResourceAttributesSetter) {
+        // invalid keys
+        specResourceAttributesSetter.accept(Map.of(
+                "invalid=key", "validValue",
+                "another,key", "anotherValue"
+        ));
+
+        KeycloakStatusAggregator statusBuilder = new KeycloakStatusAggregator(1L);
+        distConfig.validateOptions(keycloakCR, statusBuilder);
+        KeycloakStatus status = statusBuilder.build();
+
+        assertKeycloakStatusCondition(status, KeycloakStatusCondition.HAS_ERRORS, true);
+        assertThat(status.findCondition(KeycloakStatusCondition.HAS_ERRORS).get().getMessage())
+                .contains("Resource attributes keys cannot contain characters '=' or ','. Invalid keys: 'another,key', 'invalid=key'");
+
+        // invalid values
+        specResourceAttributesSetter.accept(Map.of(
+                "validKey1", "invalid=value",
+                "validKey2", "another,value"
+        ));
+
+        statusBuilder = new KeycloakStatusAggregator(1L);
+        distConfig.validateOptions(keycloakCR, statusBuilder);
+        status = statusBuilder.build();
+
+        assertKeycloakStatusCondition(status, KeycloakStatusCondition.HAS_ERRORS, true);
+        assertThat(status.findCondition(KeycloakStatusCondition.HAS_ERRORS).get().getMessage())
+                .contains("Resource attributes values cannot contain characters '=' or ','. Invalid values: 'another,value'(key 'validKey2'), 'invalid=value'(key 'validKey1')");
     }
 
     /* UTILS */

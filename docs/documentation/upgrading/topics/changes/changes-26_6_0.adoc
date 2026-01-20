@@ -46,8 +46,8 @@ The following sections provide details on deprecated features.
 
 === Deprecation of specific tracing properties in Keycloak CR
 
-The `tracing.serviceName`, and `tracing.resourceAttributes`, first-class citizens of the Keycloak CR, are now deprecated.
-You should use the new `telemetry.serviceName`, and `telemetry.resourceAttributes` first class citizens that are shared among all OpenTelemetry components - logs, metrics, and traces.
+The `tracing.serviceName`, and `tracing.resourceAttributes`, fields of the Keycloak CR, are now deprecated.
+You should use the new `telemetry.serviceName`, and `telemetry.resourceAttributes` fields citizens that are shared among all OpenTelemetry components - logs, metrics, and traces.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features
