@@ -70,7 +70,7 @@ export const DetailCell = ({ id, clientId, uris }: DetailCellProps) => {
             id: clientId,
             realm,
             permissionId: permission.id!,
-            permissionType: "resource",
+            permissionType: permission.type,
           })
         }
       />

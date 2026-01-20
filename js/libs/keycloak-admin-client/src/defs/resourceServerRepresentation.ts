@@ -9,6 +9,7 @@ export default interface ResourceServerRepresentation {
   id?: string;
   clientId?: string;
   name?: string;
+  type?: string;
   allowRemoteResourceManagement?: boolean;
   authorizationSchema?: AuthorizationSchemaRepresentation;
   policyEnforcementMode?: PolicyEnforcementMode;
