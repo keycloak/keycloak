@@ -20,7 +20,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
@@ -38,10 +37,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
 
 import jakarta.inject.Inject;
@@ -52,8 +48,6 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 
-import org.apache.http.conn.ssl.DefaultHostnameVerifier;
-import org.apache.http.conn.util.PublicSuffixMatcherLoader;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.api.AdminApi;
 import org.keycloak.admin.api.client.ClientApi;
@@ -68,12 +62,12 @@ import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusBuilder;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -81,6 +75,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkus.logging.Log;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
@@ -91,7 +86,6 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
     private static final String HTTPS = "https";
     // TODO allows for local testing - could be promoted in some way to the CR if needed
     public static final String KEYCLOAK_TEST_ADDRESS = "KEYCLOAK_TEST_ADDRESS";
-    private DefaultHostnameVerifier verifier = new DefaultHostnameVerifier(PublicSuffixMatcherLoader.getDefault());
 
     class KeycloakClientStatusAggregator {
         R resource;
@@ -238,9 +232,9 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
 
     }
 
-    private <T> T invoke(R resource, Context<?> context, Keycloak keycloak,
-            Function<ClientApi, T> action) {
-        try (var kcAdmin = getAdminClient(resource, context, keycloak)) {
+    private <V> V invoke(R resource, Context<?> context, Keycloak keycloak,
+            Function<ClientApi, V> action) {
+        try (var kcAdmin = getAdminClient(context.getClient(), keycloak)) {
             var target = getWebTarget(kcAdmin);
             AdminRootV2 root = org.keycloak.admin.client.Keycloak.getClientProvider().targetProxy(target,
                     AdminRootV2.class);
@@ -260,20 +254,19 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         }
     }
 
-    private org.keycloak.admin.client.Keycloak getAdminClient(R resource, Context<?> context,
-            Keycloak keycloak) {
-        Secret adminSecret = context.getClient().resources(Secret.class)
-                .inNamespace(resource.getMetadata().getNamespace())
+    public static org.keycloak.admin.client.Keycloak getAdminClient(KubernetesClient client, Keycloak keycloak) {
+        Secret adminSecret = client.resources(Secret.class)
+                .inNamespace(keycloak.getMetadata().getNamespace())
                 .withName(keycloak.getMetadata().getName() + "-admin").require();
 
-        String adminUrl = getAdminUrl(keycloak, context);
+        String adminUrl = getAdminUrl(keycloak, client);
 
         Client restEasyClient = null;
 
         // create a custom client if using https
         if (adminUrl.startsWith(HTTPS)) {
             // TODO: support for mtls
-            restEasyClient = createRestEasyClient(resource, context, keycloak, restEasyClient);
+            restEasyClient = createRestEasyClient(client, keycloak, restEasyClient);
         }
 
         return KeycloakBuilder.builder()
@@ -289,11 +282,11 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
                 .build();
     }
 
-    private Client createRestEasyClient(R resource, Context<?> context, Keycloak keycloak, Client restEasyClient) {
+    private static Client createRestEasyClient(KubernetesClient client, Keycloak keycloak, Client restEasyClient) {
         // add server cert trust
         String tlsSecretName = keycloak.getSpec().getHttpSpec().getTlsSecret();
-        Secret tlsSecret = context.getClient().resources(Secret.class)
-                .inNamespace(resource.getMetadata().getNamespace()).withName(tlsSecretName).require();
+        Secret tlsSecret = client.resources(Secret.class)
+                .inNamespace(keycloak.getMetadata().getNamespace()).withName(tlsSecretName).require();
         byte[] certBytes = Base64.getDecoder().decode(tlsSecret.getData().get("tls.crt"));
 
         try {
@@ -309,7 +302,12 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
 
             ClientBuilder clientBuilder = ClientBuilderWrapper.create(sslContext, false);
 
-            configureHostnameVerifier(context, keycloak, clientBuilder);
+            // because we trust only the server cert, disable hostname verification
+            // - only if the tlsSecret is compromised and traffic to the service hostname can be hijacked,
+            // would this be a problem
+            //
+            // TODO: could warn if a ca cert is set as the server certificate
+            clientBuilder.hostnameVerifier(NoopHostnameVerifier.INSTANCE);
 
             restEasyClient = clientBuilder.build();
         } catch (CertificateException | NoSuchAlgorithmException | KeyStoreException | IOException
@@ -319,35 +317,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         return restEasyClient;
     }
 
-    private void configureHostnameVerifier(Context<?> context, Keycloak keycloak, ClientBuilder clientBuilder) {
-        Optional<String> adminHostname = Optional.ofNullable(keycloak.getSpec().getHostnameSpec())
-                .map(HostnameSpec::getAdmin)
-                .or(() -> Optional.ofNullable(keycloak.getSpec().getHostnameSpec()).map(HostnameSpec::getHostname))
-                .map(hostname -> {
-                    try {
-                        return URI.create("http://"+hostname).getHost();
-                    } catch (IllegalArgumentException e) {
-                        return hostname;
-                    }
-                });
-        clientBuilder.hostnameVerifier(new HostnameVerifier() {
-
-            @Override
-            public boolean verify(String hostname, SSLSession session) {
-                // TODO: validate this approach
-
-                // if we're configured for passthrough, and adminHostname is present
-                if (adminHostname.isPresent() && verifier.verify(adminHostname.get(), session)) {
-                    return true;
-                }
-                // otherwise we expect the cert to be valid against the svc hostname - which
-                // should happen with service serving certificates
-                return verifier.verify(hostname, session);
-            }
-        });
-    }
-
-    private String getAdminUrl(Keycloak keycloak, Context<?> context) {
+    private static String getAdminUrl(Keycloak keycloak, KubernetesClient client) {
         boolean httpEnabled = KeycloakServiceDependentResource.isHttpEnabled(keycloak);
         // for now preferring to use http if available
         boolean https = isTlsConfigured(keycloak) && !httpEnabled;
@@ -363,7 +333,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
                     keycloak.getMetadata().getNamespace(), port);
         }
 
-        var relativePath = KeycloakDeploymentDependentResource.readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, keycloak, context)
+        var relativePath = KeycloakDeploymentDependentResource.readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, keycloak, client)
                 .map(path -> !path.isEmpty() && !path.startsWith("/") ? "/" + path : path)
                 .orElse("");
 

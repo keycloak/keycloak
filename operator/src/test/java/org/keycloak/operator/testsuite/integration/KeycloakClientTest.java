@@ -37,6 +37,7 @@ import org.keycloak.operator.testsuite.utils.K8sUtils;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.quarkus.test.junit.QuarkusTest;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -65,8 +66,16 @@ public class KeycloakClientTest extends BaseOperatorTest {
     }
 
     @Test
-    public void testBasicClientCreationAndDeletion() throws InterruptedException {
-        boolean https = true;
+    public void testBasicClientCreationAndDeletionHttp() throws InterruptedException {
+        helpTestBasicClientCreationAndDeletion(false);
+    }
+
+    @Test
+    public void testBasicClientCreationAndDeletionHttps() throws InterruptedException {
+        helpTestBasicClientCreationAndDeletion(true);
+    }
+
+    public void helpTestBasicClientCreationAndDeletion(boolean https) throws InterruptedException {
         var kc = getTestKeycloakDeployment(false);
         kc.getSpec().getHostnameSpec().setHostname("example.com");
         // TODO will need validation that this is enabled
@@ -82,18 +91,17 @@ public class KeycloakClientTest extends BaseOperatorTest {
         var deploymentName = kc.getMetadata().getName();
         deployKeycloak(k8sclient, kc, true);
 
+        Map<String, String> labels = Utils.allInstanceLabels(kc);
+        labels.put("app.kubernetes.io/component", "server");
+
+        var nodeport = new ServiceBuilder().withNewMetadata().withName("nodeport-service").endMetadata().withNewSpec()
+                .withType("NodePort").addToSelector(labels).addNewPort().withPort(https?Constants.KEYCLOAK_HTTPS_PORT:Constants.KEYCLOAK_HTTP_PORT)
+                .endPort().endSpec().build();
+        nodeport = k8sclient.resource(nodeport).create();
+        int port = nodeport.getSpec().getPorts().get(0).getNodePort();
+
         if (operatorDeployment == OperatorDeployment.local) {
-            Map<String, String> labels = Utils.allInstanceLabels(kc);
-            labels.put("app.kubernetes.io/component", "server");
-
-            var nodeport = new ServiceBuilder().withNewMetadata().withName("nodeport-service").endMetadata().withNewSpec()
-                    .withType("NodePort").addToSelector(labels).addNewPort().withPort(https?Constants.KEYCLOAK_HTTPS_PORT:Constants.KEYCLOAK_HTTP_PORT)
-                    .endPort().endSpec().build();
-            nodeport = k8sclient.resource(nodeport).create();
-            int port = nodeport.getSpec().getPorts().get(0).getNodePort();
-
             System.setProperty(KeycloakClientBaseController.KEYCLOAK_TEST_ADDRESS, kubernetesIp + ":" + port);
-            //System.setProperty(KeycloakClientBaseController.KEYCLOAK_TEST_ADDRESS, "localhost:8080");
         }
 
         KeycloakOIDCClient client = new KeycloakOIDCClientBuilder().withNewMetadata().withName("test-client")
@@ -102,9 +110,13 @@ public class KeycloakClientTest extends BaseOperatorTest {
 
         K8sUtils.set(k8sclient, client);
 
-        Thread.sleep(10000);
+        try (var adminClient = KeycloakClientBaseController.getAdminClient(k8sclient, kc)) {
+            Awaitility.await().until(() -> adminClient.realm("master").clients().findAll().stream().anyMatch(cr -> cr.getClientId().equals("test-client")));
 
-        k8sclient.resource(client).withTimeout(10, TimeUnit.SECONDS).delete();
+            k8sclient.resource(client).withTimeout(10, TimeUnit.SECONDS).delete();
+
+            Awaitility.await().until(() -> adminClient.realm("master").clients().findAll().stream().noneMatch(cr -> cr.getClientId().equals("test-client")));
+        }
 
         assertNull(k8sclient.resource(client).get());
     }
