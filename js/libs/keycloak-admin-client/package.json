@@ -18,17 +18,31 @@
     "build": "wireit",
     "lint": "wireit",
     "test": "wireit",
+    "generate:openapi": "wireit",
     "prepublishOnly": "pnpm build"
   },
   "wireit": {
     "build": {
       "command": "tsc --pretty",
+      "dependencies": [
+        "generate:openapi"
+      ],
       "files": [
         "src",
         "tsconfig.json"
       ],
       "output": [
         "lib"
+      ]
+    },
+    "generate:openapi": {
+      "command": "pnpm dlx @openapitools/openapi-generator-cli generate -i api.yml -g typescript-fetch -o src/generated --additional-properties=supportsES6=true,typescriptThreePlus=true,importFileExtension=.js && node scripts/fix-generated-runtime.mjs",
+      "files": [
+        "api.yml",
+        "scripts/fix-generated-runtime.mjs"
+      ],
+      "output": [
+        "src/generated"
       ]
     },
     "lint": {
