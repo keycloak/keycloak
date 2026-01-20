@@ -19,6 +19,7 @@ import type ScopeRepresentation from "../defs/scopeRepresentation.js";
 import type UserRepresentation from "../defs/userRepresentation.js";
 import type UserSessionRepresentation from "../defs/userSessionRepresentation.js";
 import Resource from "./resource.js";
+import { ClientsV2 } from "./clientsV2.js";
 
 export interface PaginatedQuery {
   first?: number;
@@ -53,6 +54,11 @@ export interface PolicyQuery extends PaginatedQuery {
 }
 
 export class Clients extends Resource<{ realm?: string }> {
+  /**
+   * Clients v2 API - New versioned API with OpenAPI-generated client.
+   */
+  public v2: ClientsV2;
+
   public find = this.makeRequest<ClientQuery, ClientRepresentation[]>({
     method: "GET",
   });
@@ -1055,6 +1061,9 @@ export class Clients extends Resource<{ realm?: string }> {
       }),
       getBaseUrl: () => client.baseUrl,
     });
+
+    // Initialize v2 API
+    this.v2 = new ClientsV2(client);
   }
 
   /**
