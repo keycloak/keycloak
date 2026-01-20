@@ -51,6 +51,21 @@ public class RejectNonNormalizedPathFilter implements Handler<RoutingContext> {
                 jsonString = "";
             }
             routingContext.response().setStatusCode(400).end(jsonString);
+        } else if (routingContext.request().path().contains(";")) {
+            // RFC 6570 defines matrix parameters that are separated with a semicolon in each path segment.
+            // Keycloak does not use @MatrixParam, therefore any URL containing a semicolon is treated as invalid.
+            // Once Keycloak starts using them in any of its APIs, consider enabling them only for specific paths,
+            // as URL filtering would otherwise be quite hard for reverse proxies.
+            LOGGER.debugf("Invalid character ';' found in the request path", routingContext.request().path());
+            OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation("invalidCharacter", "Request path contains invalid character ';'");
+            routingContext.response().headers().add("Content-Type", "application/json; charset=UTF-8");
+            String jsonString;
+            try {
+                jsonString = MAPPER.writeValueAsString(error);
+            } catch (JsonProcessingException e) {
+                jsonString = "";
+            }
+            routingContext.response().setStatusCode(400).end(jsonString);
         } else {
             routingContext.next();
         }
