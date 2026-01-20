@@ -13,7 +13,8 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public class HttpAccessLogPropertyMappers implements PropertyMapperGrouping {
-    public static final String ACCESS_LOG_ENABLED_MSG = "HTTP Access log is enabled";
+    private static final String ACCESS_LOG_ENABLED_MSG = "HTTP Access log is enabled";
+    private static final String ACCESS_LOG_FILE_ENABLED_MSG = "HTTP Access logging to file is enabled";
 
     @Override
     public List<PropertyMapper<?>> getPropertyMappers() {
@@ -42,6 +43,25 @@ public class HttpAccessLogPropertyMappers implements PropertyMapperGrouping {
                         .paramLabel("<cookies>")
                         .to("quarkus.http.access-log.masked-cookies")
                         .transformer(HttpAccessLogPropertyMappers::transformMaskedCookies)
+                        .build(),
+                // file
+                fromOption(HttpAccessLogOptions.HTTP_ACCESS_LOG_FILE_ENABLED)
+                        .isEnabled(HttpAccessLogPropertyMappers::isHttpAccessLogEnabled, ACCESS_LOG_ENABLED_MSG)
+                        .to("quarkus.http.access-log.log-to-file")
+                        .build(),
+                fromOption(HttpAccessLogOptions.HTTP_ACCESS_LOG_FILE_NAME)
+                        .isEnabled(HttpAccessLogPropertyMappers::isHttpAccessLogFileEnabled, ACCESS_LOG_FILE_ENABLED_MSG)
+                        .paramLabel("<name>")
+                        .to("quarkus.http.access-log.base-file-name")
+                        .build(),
+                fromOption(HttpAccessLogOptions.HTTP_ACCESS_LOG_FILE_SUFFIX)
+                        .isEnabled(HttpAccessLogPropertyMappers::isHttpAccessLogFileEnabled, ACCESS_LOG_FILE_ENABLED_MSG)
+                        .paramLabel("<suffix>")
+                        .to("quarkus.http.access-log.log-suffix")
+                        .build(),
+                fromOption(HttpAccessLogOptions.HTTP_ACCESS_LOG_FILE_ROTATE)
+                        .isEnabled(HttpAccessLogPropertyMappers::isHttpAccessLogFileEnabled, ACCESS_LOG_FILE_ENABLED_MSG)
+                        .to("quarkus.http.access-log.rotate")
                         .build()
         );
     }
@@ -67,5 +87,9 @@ public class HttpAccessLogPropertyMappers implements PropertyMapperGrouping {
 
     static boolean isHttpAccessLogEnabled() {
         return Configuration.isTrue(HttpAccessLogOptions.HTTP_ACCESS_LOG_ENABLED);
+    }
+
+    static boolean isHttpAccessLogFileEnabled() {
+        return Configuration.isTrue(HttpAccessLogOptions.HTTP_ACCESS_LOG_FILE_ENABLED);
     }
 }

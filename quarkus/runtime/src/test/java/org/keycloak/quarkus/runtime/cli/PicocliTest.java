@@ -1002,6 +1002,59 @@ public class PicocliTest extends AbstractConfigurationTest {
         nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-masked-cookies=MY_CUSTOM_COOKIE," + CookieType.AUTH_SESSION_ID.getName());
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertExternalConfig("quarkus.http.access-log.masked-cookies", "AUTH_SESSION_ID,KC_AUTH_SESSION_HASH,KEYCLOAK_IDENTITY,KEYCLOAK_SESSION,AUTH_SESSION_ID_LEGACY,KEYCLOAK_IDENTITY_LEGACY,KEYCLOAK_SESSION_LEGACY,MY_CUSTOM_COOKIE");
+        onAfter();
+
+        // log to file
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-file-enabled=true");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Available only when HTTP Access log is enabled"));
+        assertExternalConfigNull("quarkus.http.access-log.log-to-file");
+        onAfter();
+
+        // log to file defaults
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-enabled=true");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.http.access-log.log-to-file", "true",
+                "quarkus.http.access-log.base-file-name", "keycloak-http-access",
+                "quarkus.http.access-log.log-suffix", ".log",
+                "quarkus.http.access-log.rotate", "true"
+        ));
+        onAfter();
+
+        // name - disabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-name=something");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Available only when HTTP Access logging to file is enabled"));
+        assertExternalConfig("quarkus.http.access-log.log-to-file", "false");
+        assertExternalConfigNull("quarkus.http.access-log.base-file-name");
+        onAfter();
+
+        // name
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-enabled=true", "--http-access-log-file-name=something");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.http.access-log.log-to-file", "true",
+                "quarkus.http.access-log.base-file-name", "something")
+        );
+        onAfter();
+
+        // suffix
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-enabled=true", "--http-access-log-file-suffix=.txt");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.http.access-log.log-to-file", "true",
+                "quarkus.http.access-log.log-suffix", ".txt")
+        );
+        onAfter();
+
+        // rotate
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-enabled=true", "--http-access-log-file-rotate=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.http.access-log.log-to-file", "true",
+                "quarkus.http.access-log.rotate", "false")
+        );
     }
 
     @Test

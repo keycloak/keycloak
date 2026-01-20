@@ -322,6 +322,39 @@ You can use regular expressions to exclude them, such as:
 
 In this case, all calls to the `/realms/my-internal-realm/` and subsequent paths will be excluded from the HTTP Access log.
 
+=== Log to dedicated file with rotation
+
+Instead of keeping the HTTP access logs in the normal server log, you can write them to a dedicated log file.
+This helps you separate HTTP access logs from the server logs and maintain audit trails.
+When file logging is enabled, HTTP access logs are not written to the console.
+
+==== Enable file logging
+
+You can enable file logging as follows:
+
+<@kc.start parameters="--http-access-log-enabled=true --http-access-log-file-enabled=true"/>
+
+This automatically creates a file called `keycloak-http-access.log` in the `/data` directory of your distribution.
+
+==== Change file name and suffix
+
+You can change the name of the log file using the `http-access-log-file-name` property.
+To change the file suffix (`.log` is the default), use the `http-access-log-file-suffix` property.
+
+For example, to write HTTP access logs to the file `my-http-logs.txt`:
+
+<@kc.start parameters="--http-access-log-enabled=true --http-access-log-file-enabled=true --http-access-log-file-name=my-http-logs --http-access-log-file-suffix=txt"/>
+
+==== File rotation
+
+By default, the HTTP access log file is rotated daily.
+
+When the daily rotation occurs, a date-based suffix '.+{yyyy-MM-dd}+' is added to the log file name from the previous day, keeping access logs separated by date (for example, `keycloak-http-access.2052-02-29.log`).
+
+To disable rotation, use the following configuration:
+
+<@kc.start parameters="--http-access-log-enabled=true --http-access-log-file-enabled=true --http-access-log-file-rotate=false"/>
+
 [[logs-export-opentelemetry]]
 == Telemetry Logs export (OpenTelemetry)
 
