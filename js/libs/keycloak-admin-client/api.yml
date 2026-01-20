@@ -107,7 +107,7 @@ tags:
 - name: Clients (v2)
   x-smallrye-profile-admin: ""
 paths:
-  /admin/api/v2/realms/{name}/clients:
+  /admin/api/{realmName}/clients/{version}:
     get:
       summary: Get all clients
       description: Returns a list of all clients in the realm
@@ -154,12 +154,18 @@ paths:
             application/json:
               schema: {}
     parameters:
-    - name: name
+    - name: realmName
       in: path
       required: true
       schema:
         type: string
-  /admin/api/v2/realms/{name}/clients/{id}:
+    - name: version
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: v\d+
+  /admin/api/{realmName}/clients/{version}/{id}:
     get:
       tags:
       - Clients (v2)
@@ -204,7 +210,10 @@ paths:
       - Clients (v2)
       requestBody:
         content:
-          application/merge-patch+json: {}
+          application/merge-patch+json:
+            schema:
+              type: object
+              additionalProperties: true
         required: true
       responses:
         "200":
@@ -227,11 +236,17 @@ paths:
         "204":
           description: No Content
     parameters:
-    - name: name
+    - name: realmName
       in: path
       required: true
       schema:
         type: string
+    - name: version
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: v\d+
     - name: id
       in: path
       required: true
