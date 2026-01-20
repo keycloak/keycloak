@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>39</version>
+        <version>49</version>
     </parent>
 
     <name>Keycloak</name>
