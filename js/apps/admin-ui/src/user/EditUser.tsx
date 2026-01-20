@@ -59,6 +59,7 @@ import {
 import { UserParams, UserTab, toUser } from "./routes/User";
 import { toUsers } from "./routes/Users";
 import { isLightweightUser } from "./utils";
+import { extractUserProfileErrorMessages } from "./utils/user-profile";
 
 import "./user-section.css";
 import { AdminEvents } from "../events/AdminEvents";
@@ -193,14 +194,19 @@ export default function EditUser() {
             (field, params) => {
               if (field.startsWith("attributes.")) {
                 const attributeName = field.substring("attributes.".length);
+                let isUnmanagedAttribute = false;
                 (data.unmanagedAttributes as KeyValueType[]).forEach(
                   (attr, index) => {
                     if (attr.key === attributeName) {
                       unmanagedAttributeErrors[index] = params;
                       someUnmanagedAttributeError = true;
+                      isUnmanagedAttribute = true;
                     }
                   },
                 );
+                if (!isUnmanagedAttribute) {
+                  form.setError(field, params);
+                }
               } else {
                 form.setError(field, params);
               }
@@ -219,7 +225,8 @@ export default function EditUser() {
             param,
           ) => t(key as string, param as any)) as TFunction);
         }
-        addError("userNotSaved", "");
+        const errorMessage = extractUserProfileErrorMessages(error, t);
+        addError("userNotSaved", errorMessage);
       } else {
         addError("userCreateError", error);
       }

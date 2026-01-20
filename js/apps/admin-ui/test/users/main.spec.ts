@@ -160,6 +160,53 @@ test.describe("Existing users", () => {
     await assertNotificationMessage(page, "The user has been saved");
   });
 
+  test("shows validation error for empty required attribute", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed({
+      ...overrides,
+      attributes: {
+        userProfileEnabled: "true",
+      },
+    });
+
+    await adminClient.addUserProfile(testBed.realm, {
+      attributes: [
+        {
+          name: "customRequired",
+          displayName: "Custom Required Field",
+          required: {},
+          permissions: { view: ["admin", "user"], edit: ["admin", "user"] },
+        },
+      ],
+    });
+
+    const user = await adminClient.findUserByUsername(
+      testBed.realm,
+      existingUserName,
+    );
+
+    await login(page, {
+      to: toUser({ realm: testBed.realm, id: user.id!, tab: "settings" }),
+    });
+
+    const customField = page.locator("#customRequired");
+    await expect(customField).toBeVisible();
+
+    await clickSaveButton(page);
+
+    const fieldError = page.locator(
+      "#customRequired ~ .pf-v5-c-helper-text, [data-testid='customRequired-helper']",
+    );
+    await expect(fieldError).toBeVisible();
+
+    const notification = page.getByTestId("last-alert");
+    await expect(notification).toBeVisible();
+    const notificationText = await notification.textContent();
+    expect(notificationText).toContain("The user has not been saved:");
+    expect(notificationText?.split(":")[1]?.trim()).toBeTruthy();
+  });
+
   const attributesName = "unmanagedAttributes";
 
   test("adds unmanaged attributes to a user", async ({ page }) => {
@@ -189,9 +236,12 @@ test.describe("Existing users", () => {
     await clickAttributeSaveButton(page);
 
     await expect(page.getByText("Update of read-only attribute")).toHaveCount(
-      2,
+      3,
     );
-    await assertNotificationMessage(page, "The user has not been saved: ");
+    await assertNotificationMessage(
+      page,
+      "The user has not been saved: Update of read-only attribute rejected",
+    );
   });
 
   test("adds unmanaged attributes with multiple values to a user", async ({
