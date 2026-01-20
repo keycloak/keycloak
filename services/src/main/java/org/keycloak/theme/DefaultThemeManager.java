@@ -209,6 +209,11 @@ public class DefaultThemeManager implements ThemeManager {
         }
 
         @Override
+        public boolean isAbstract() throws IOException {
+            return themes.get(0).isAbstract();
+        }
+
+        @Override
         public URL getTemplate(String name) throws IOException {
             for (Theme t : themes) {
                 URL template = t.getTemplate(name);
