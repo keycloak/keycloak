@@ -108,12 +108,21 @@ public class JsonWebToken implements Serializable, Token {
 
     /**
      * Tests that the token is not expired and is not-before.
-     *
-     * @return
+     * This assumes a default clock-skew for the "is not before" of 10 seconds which is in line FAPI 2.0.
+     * See <a href="https://openid.net/specs/fapi-security-profile-2_0-final.html#section-5.3.2.1-6">FAPI 2.0 Security Profile</a>:
+     * <blockquote>
+     * Clock skew is a cause of many interoperability issues. Even a few hundred milliseconds of clock skew can cause JWTs to be rejected
+     * for being "issued in the future". The DPoP specification [RFC9449] suggests that JWTs are accepted in the reasonably near future
+     * (on the order of seconds or minutes). This document goes further by requiring authorization servers to accept JWTs that have
+     * timestamps up to 10 seconds in the future. 10 seconds was chosen as a value that does not affect security while greatly increasing
+     * interoperability. Implementers are free to accept JWTs with a timestamp of up to 60 seconds in the future. Some ecosystems
+     * have found that the value of 30 seconds is needed to fully eliminate clock skew issues. To prevent implementations switching
+     * off iat and nbf checks completely this document imposes a maximum timestamp in the future of 60 seconds.
+     * </blockquote>
      */
     @JsonIgnore
     public boolean isActive() {
-        return isActive(0);
+        return isActive(10);
     }
 
     @JsonIgnore
