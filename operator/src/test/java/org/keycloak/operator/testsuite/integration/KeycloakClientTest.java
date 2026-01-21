@@ -18,6 +18,7 @@
 package org.keycloak.operator.testsuite.integration;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.inject.Inject;
@@ -26,8 +27,10 @@ import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakClientBaseController;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientBuilder;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientRepresentation.AuthWithSecretRef;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpecBuilder;
@@ -35,9 +38,11 @@ import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -49,6 +54,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 @Tag(BaseOperatorTest.SLOW)
 @QuarkusTest
 public class KeycloakClientTest extends BaseOperatorTest {
+
+    private static final String CLIENT_SECRET = "client-secret";
+
+    private static final String NODEPORT_SERVICE = "nodeport-service";
 
     @Inject
     Config config;
@@ -65,6 +74,12 @@ public class KeycloakClientTest extends BaseOperatorTest {
         return secretName;
     }
 
+    @AfterEach
+    public void afterEach() {
+        k8sclient.services().withName(NODEPORT_SERVICE).delete();
+        k8sclient.secrets().withName(CLIENT_SECRET).delete();
+    }
+
     @Test
     public void testBasicClientCreationAndDeletionHttp() throws InterruptedException {
         helpTestBasicClientCreationAndDeletion(false);
@@ -77,6 +92,7 @@ public class KeycloakClientTest extends BaseOperatorTest {
 
     public void helpTestBasicClientCreationAndDeletion(boolean https) throws InterruptedException {
         var kc = getTestKeycloakDeployment(false);
+        kc.getSpec().setStartOptimized(false);
         kc.getSpec().getHostnameSpec().setHostname("example.com");
         // TODO will need validation that this is enabled
         kc.getSpec().setFeatureSpec(new FeatureSpecBuilder().withEnabledFeatures("client-admin-api:v2").build());
@@ -94,21 +110,39 @@ public class KeycloakClientTest extends BaseOperatorTest {
         Map<String, String> labels = Utils.allInstanceLabels(kc);
         labels.put("app.kubernetes.io/component", "server");
 
-        var nodeport = new ServiceBuilder().withNewMetadata().withName("nodeport-service").endMetadata().withNewSpec()
+        var nodeport = new ServiceBuilder().withNewMetadata().withName(NODEPORT_SERVICE).endMetadata().withNewSpec()
                 .withType("NodePort").addToSelector(labels).addNewPort().withPort(https?Constants.KEYCLOAK_HTTPS_PORT:Constants.KEYCLOAK_HTTP_PORT)
                 .endPort().endSpec().build();
-        nodeport = k8sclient.resource(nodeport).create();
+        nodeport = k8sclient.resource(nodeport).serverSideApply();
         int port = nodeport.getSpec().getPorts().get(0).getNodePort();
 
-        if (operatorDeployment == OperatorDeployment.local) {
-            System.setProperty(KeycloakClientBaseController.KEYCLOAK_TEST_ADDRESS, kubernetesIp + ":" + port);
-        }
+        System.setProperty(KeycloakClientBaseController.KEYCLOAK_TEST_ADDRESS, kubernetesIp + ":" + port);
 
+        AuthWithSecretRef auth = new AuthWithSecretRef();
+        auth.setMethod("client-jwt");
+        auth.setSecretRef(new SecretKeySelector("secret", CLIENT_SECRET, null));
         KeycloakOIDCClient client = new KeycloakOIDCClientBuilder().withNewMetadata().withName("test-client")
                 .endMetadata().withNewSpec().withRealm("master").withKeycloakCRName(deploymentName).withNewClient()
+                .withAuth(auth)
                 .withEnabled(true).endClient().endSpec().build();
 
         K8sUtils.set(k8sclient, client);
+
+        Awaitility.await()
+                .until(() -> Optional.ofNullable(k8sclient.resource(client).get().getStatus()).filter(s -> s.getConditions().stream()
+                        .anyMatch(c -> Boolean.TRUE.equals(c.getStatus())
+                                && KeycloakClientStatusCondition.HAS_ERRORS.equals(c.getType())
+                                && c.getMessage().contains(CLIENT_SECRET))).isPresent());
+
+        K8sUtils.set(k8sclient, new SecretBuilder().withNewMetadata().withName(CLIENT_SECRET).endMetadata()
+                .addToStringData("secret", "1234567890").build());
+
+        Awaitility.await()
+                .until(() -> k8sclient.resource(client).get().getStatus().getConditions().stream()
+                        .noneMatch(c -> Boolean.TRUE.equals(c.getStatus())
+                                && KeycloakClientStatusCondition.HAS_ERRORS.equals(c.getType())));
+
+        // TODO: a success or ready status?
 
         try (var adminClient = KeycloakClientBaseController.getAdminClient(k8sclient, kc)) {
             Awaitility.await().until(() -> adminClient.realm("master").clients().findAll().stream().anyMatch(cr -> cr.getClientId().equals("test-client")));

@@ -44,7 +44,6 @@ public class KeycloakOIDCClientRepresentation extends BaseOIDCClientRepresentati
     @JsonIgnore
     @Override
     public String getClientId() {
-        // TODO Auto-generated method stub
         return super.getClientId();
     }
 
