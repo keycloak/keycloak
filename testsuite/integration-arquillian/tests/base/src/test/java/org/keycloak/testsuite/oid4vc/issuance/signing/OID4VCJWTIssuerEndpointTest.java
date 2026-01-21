@@ -328,7 +328,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             Assert.fail("Should have thrown an exception");
         } catch (Exception e) {
             Assert.assertTrue(e instanceof BadRequestException);
-            Assert.assertEquals("No credential builder found for format jwt_vc", e.getMessage());
+            Assert.assertEquals("No credential builder found for format jwt_vc_json", e.getMessage());
         }
     }
 
