@@ -19,10 +19,10 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-vertx-http</artifactId>
             <exclusions>
-            	<exclusion>
-            		<groupId>io.vertx</groupId>
-            		<artifactId>vertx-uri-template</artifactId>
-            	</exclusion>
+                <exclusion>
+                    <groupId>io.vertx</groupId>
+                    <artifactId>vertx-uri-template</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -431,12 +431,7 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-v2-rest</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- Keycloak Dependencies-->
@@ -701,7 +696,7 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest</artifactId>
