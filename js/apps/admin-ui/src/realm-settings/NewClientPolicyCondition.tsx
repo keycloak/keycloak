@@ -50,15 +50,10 @@ export default function NewClientPolicyCondition() {
   const [isGlobalPolicy, setIsGlobalPolicy] = useState(false);
   const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>([]);
 
-  const [condition, setCondition] = useState<
-    ClientPolicyConditionRepresentation[]
-  >([]);
   const [conditionData, setConditionData] =
     useState<ClientPolicyConditionRepresentation>();
   const [conditionType, setConditionType] = useState("");
-  const [conditionProperties, setConditionProperties] = useState<
-    ConfigPropertyRepresentation[]
-  >([]);
+  const [condition, setCondition] = useState<ComponentTypeRepresentation>();
 
   const { policyName, conditionName } =
     useParams<EditClientPolicyConditionParams>();
@@ -104,7 +99,7 @@ export default function NewClientPolicyCondition() {
         );
 
         setConditionData(typeAndConfigData!);
-        setConditionProperties(currentCondition?.properties!);
+        setCondition(currentCondition);
         setupForm(typeAndConfigData!);
       }
     },
@@ -115,7 +110,7 @@ export default function NewClientPolicyCondition() {
     const configValues = configPolicy.config;
 
     const writeConfig = () => {
-      return conditionProperties.reduce((r: any, p) => {
+      return condition?.properties.reduce((r: any, p) => {
         r[p.name!] = configValues[p.name!];
         return r;
       }, {});
@@ -155,7 +150,7 @@ export default function NewClientPolicyCondition() {
       }
 
       conditions = conditions.concat({
-        condition: condition[0].condition,
+        condition: condition!.id,
         configuration: writeConfig(),
       });
 
@@ -207,11 +202,7 @@ export default function NewClientPolicyCondition() {
             fieldId="conditionType"
             labelIcon={
               <HelpItem
-                helpText={
-                  conditionType
-                    ? `${camelCase(conditionType.replace(/-/g, " "))}Help`
-                    : "conditionsHelp"
-                }
+                helpText={t(condition?.helpText || "conditionsHelp")}
                 fieldLabelId="conditionType"
               />
             }
@@ -230,15 +221,8 @@ export default function NewClientPolicyCondition() {
                   onToggle={(toggle) => setOpenConditionType(toggle)}
                   onSelect={(value) => {
                     field.onChange(value);
-                    setConditionProperties(
-                      (value as ComponentTypeRepresentation).properties,
-                    );
+                    setCondition(value as ComponentTypeRepresentation);
                     setConditionType((value as ComponentTypeRepresentation).id);
-                    setCondition([
-                      {
-                        condition: (value as ComponentTypeRepresentation).id,
-                      },
-                    ]);
                     setOpenConditionType(false);
                   }}
                   selections={conditionName ? conditionName : conditionType}
@@ -265,7 +249,7 @@ export default function NewClientPolicyCondition() {
           </FormGroup>
 
           <FormProvider {...form}>
-            <DynamicComponents properties={conditionProperties} />
+            <DynamicComponents properties={condition?.properties || []} />
           </FormProvider>
           {!isGlobalPolicy && (
             <ActionGroup>
