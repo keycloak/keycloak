@@ -83,6 +83,47 @@
             <groupId>com.fasterxml.jackson.jakarta.rs</groupId>
             <artifactId>jackson-jakarta-rs-yaml-provider</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.openapitools</groupId>
+            <artifactId>jackson-databind-nullable</artifactId>
+            <version>0.2.6</version>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>2.2.19</version>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>7.2.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/../../services/target/apidocs-rest/swagger/apidocs/openapi.yaml</inputSpec>
+                            <generatorName>java</generatorName>
+                            <library>microprofile</library> <output>${project.build.directory}/generated-sources/openapi</output>
+                            <generateApiTests>false</generateApiTests>
+                            <generateModelTests>false</generateModelTests>
+                            <configOptions>
+                                <useJakartaEe>true</useJakartaEe>
+                                <dateLibrary>java8</dateLibrary>
+                                <apiPackage>org.keycloak.admin.client.v2.resource</apiPackage>
+                                <modelPackage>org.keycloak.admin.client.v2.representation</modelPackage>
+                                <inlineSchemaNameMapping>AdminRealmsRealmTestSMTPConnectionPostRequest=TestSMTPConnectionRepresentation</inlineSchemaNameMapping>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
