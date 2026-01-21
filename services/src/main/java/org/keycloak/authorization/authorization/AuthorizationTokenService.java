@@ -928,7 +928,10 @@ public class AuthorizationTokenService {
             Map.Entry<String, Resource> matches = pathMatcher.matches(uri);
 
             if (matches != null) {
-                return Collections.singletonList(matches.getValue());
+                String matchedUriPattern = matches.getKey();
+                return serverResources.stream()
+                    .filter(resource -> resource.getUris().contains(matchedUriPattern))
+                    .collect(Collectors.toList());
             }
 
             return null;
