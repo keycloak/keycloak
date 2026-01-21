@@ -46,6 +46,10 @@ import org.eclipse.aether.resolution.DependencyResolutionException;
 public final class Maven {
 
     public static Path resolveArtifact(String groupId, String artifactId) {
+        return getArtifact(groupId, artifactId).getFile().toPath();
+    }
+
+    public static Artifact getArtifact(String groupId, String artifactId) {
         try {
             BootstrapMavenContext ctx = bootstrapCurrentMavenContext();
             LocalProject project = ctx.getCurrentProject();
@@ -72,7 +76,7 @@ public final class Maven {
                             ctx.getRepositorySystemSession(),
                             new ArtifactRequest().setArtifact(artifact)
                                     .setRepositories(remoteRepositories))
-                    .getArtifact().getFile().toPath();
+                    .getArtifact();
         } catch (Exception cause) {
             throw new RuntimeException("Failed to resolve artifact: " + groupId + ":" + artifactId, cause);
         }
