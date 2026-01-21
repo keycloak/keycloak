@@ -17,7 +17,6 @@ import {
   PageSection,
   SelectOption,
 } from "@patternfly/react-core";
-import { camelCase } from "lodash-es";
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -202,7 +201,7 @@ export default function NewClientPolicyCondition() {
             fieldId="conditionType"
             labelIcon={
               <HelpItem
-                helpText={t(condition?.helpText || "conditionsHelp")}
+                helpText={condition?.helpText || t("conditionsHelp")}
                 fieldLabelId="conditionType"
               />
             }
@@ -234,9 +233,7 @@ export default function NewClientPolicyCondition() {
                     <SelectOption
                       data-testid={condition.id}
                       selected={condition.id === field.value}
-                      description={t(
-                        camelCase(condition.id.replace(/-/g, " ")),
-                      )}
+                      description={condition?.helpText}
                       key={condition.id}
                       value={condition}
                     >
