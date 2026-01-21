@@ -1,9 +1,14 @@
 package org.keycloak.broker.kubernetes;
 
+import java.util.Objects;
+
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.cache.AlternativeLookupProvider;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.util.Strings;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
 
@@ -49,5 +54,13 @@ public class KubernetesIdentityProviderConfig extends IdentityProviderModel {
             throw new IllegalArgumentException(ISSUER + " is required");
         }
         checkUrl(realm.getSslRequired(), issuer, ISSUER);
+
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+        AlternativeLookupProvider lookupProvider = session.getProvider(AlternativeLookupProvider.class);
+        IdentityProviderModel existingIdp = lookupProvider.lookupIdentityProviderFromIssuer(session, getIssuer());
+        if (existingIdp != null && (getInternalId() == null || !Objects.equals(existingIdp.getInternalId(), getInternalId()))) {
+            throw new IllegalArgumentException("Issuer URL already used for IDP '" + existingIdp.getAlias() + "'");
+        }
+
     }
 }
