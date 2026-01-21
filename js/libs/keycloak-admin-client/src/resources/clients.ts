@@ -768,7 +768,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public listPermissionsByResource = this.makeRequest<
     { id: string; resourceId: string },
-    ResourceServerRepresentation[]
+    PolicyRepresentation[]
   >({
     method: "GET",
     path: "/{id}/authz/resource-server/resource/{resourceId}/permissions",
