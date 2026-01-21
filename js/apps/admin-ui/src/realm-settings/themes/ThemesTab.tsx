@@ -61,6 +61,7 @@ parent=keycloak.v2
 import=common/quick-theme
 
 ${logo ? "logo=" + logoName : ""}
+${favicon ? "favIcon=/img/favicon.ico" : ""}
 styles=css/theme-styles.css
 `,
     );
@@ -72,6 +73,7 @@ parent=keycloak.v3
 import=common/quick-theme
 
 ${logo ? "logo=" + logoName : ""}
+${favicon ? "favIcon=/img/favicon.ico" : ""}
 styles=css/theme-styles.css
 `,
     );
