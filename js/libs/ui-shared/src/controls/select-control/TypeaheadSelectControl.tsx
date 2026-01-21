@@ -50,6 +50,7 @@ export const TypeaheadSelectControl = <
   placeholderText,
   onFilter,
   variant,
+  isFullWidth = true,
   ...rest
 }: SelectControlProps<T, P>) => {
   const {
@@ -206,7 +207,7 @@ export const TypeaheadSelectControl = <
                   textInputRef.current?.focus();
                 }}
                 isExpanded={open}
-                isFullWidth
+                isFullWidth={isFullWidth}
                 status={get(errors, name) ? MenuToggleStatus.danger : undefined}
               >
                 <TextInputGroup isPlain>
