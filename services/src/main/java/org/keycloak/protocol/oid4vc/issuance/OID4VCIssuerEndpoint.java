@@ -429,7 +429,6 @@ public class OID4VCIssuerEndpoint {
         checkClientEnabled();
 
         // Check required role to create a credential offer
-        //
         boolean hasCredentialOfferRole = userModel.getRoleMappingsStream()
                 .anyMatch(rm -> rm.getName().equals(CREDENTIAL_OFFER_CREATE.getName()));
         if (!hasCredentialOfferRole) {
@@ -442,7 +441,6 @@ public class OID4VCIssuerEndpoint {
         LOGGER.debugf("Get an offer for %s", credConfigId);
 
         // Check whether given client/user ids actually exist
-        //
         if (appClientId != null && session.clients().getClientByClientId(realmModel, appClientId) == null) {
             var errorMessage = "No such client id: " + appClientId;
             eventBuilder.detail(Details.REASON, errorMessage).error(Errors.CLIENT_NOT_FOUND);
@@ -482,7 +480,6 @@ public class OID4VCIssuerEndpoint {
         }
 
         // Check whether the credential configuration exists in available client scopes
-        //
         List<String> availableInClientScopes = session.clientScopes()
                 .getClientScopesByProtocol(realmModel, OID4VC_PROTOCOL)
                 .map(it -> it.getAttribute(CredentialScopeModel.CONFIGURATION_ID))
@@ -607,7 +604,6 @@ public class OID4VCIssuerEndpoint {
         eventBuilder.event(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST);
 
         // Retrieve the associated credential offer state
-        //
         CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
         CredentialOfferState offerState = offerStorage.findOfferStateByNonce(session, nonce);
         if (offerState == null) {
@@ -618,7 +614,6 @@ public class OID4VCIssuerEndpoint {
 
         // We treat the credential offer URI as an unprotected capability URL and rely solely on the later authorization step
         // i.e. an authenticated client/user session is not required nor checked against the offer state
-
         CredentialsOffer credOffer = offerState.getCredentialsOffer();
         LOGGER.debugf("Found credential offer state: [ids=%s, cid=%s, uid=%s, nonce=%s]",
                 credOffer.getCredentialConfigurationIds(), offerState.getClientId(), offerState.getUserId(), offerState.getNonce());
