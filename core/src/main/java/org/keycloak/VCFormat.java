@@ -24,17 +24,17 @@ package org.keycloak;
  */
 public enum VCFormat {
     /**
-     * LD-Credentials {@see https://www.w3.org/TR/vc-data-model/}
+     * LD-Credentials {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-vc-secured-using-data-integ}
      */
     LDP_VC("ldp_vc"),
 
     /**
-     * JWT-Credentials {@see https://identity.foundation/jwt-vc-presentation-profile/}
+     * JWT-Credentials {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-w3c-verifiable-credentials}
      */
-    JWT_VC("jwt_vc"),
+    JWT_VC("jwt_vc_json"),
 
     /**
-     * SD-JWT-Credentials {@see https://drafts.oauth.net/oauth-sd-jwt-vc/draft-ietf-oauth-sd-jwt-vc.html}
+     * SD-JWT-Credentials {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-ietf-sd-jwt-vc}
      */
     SD_JWT_VC("dc+sd-jwt");
 
