@@ -18,6 +18,7 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.AbstractLifecycleEvent;
 import org.keycloak.provider.ProviderEvent;
 
 /**
@@ -25,15 +26,9 @@ import org.keycloak.provider.ProviderEvent;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PostMigrationEvent implements ProviderEvent {
-
-    private final KeycloakSessionFactory factory;
+public class PostMigrationEvent extends AbstractLifecycleEvent {
 
     public PostMigrationEvent(KeycloakSessionFactory factory) {
-        this.factory = factory;
-    }
-
-    public KeycloakSessionFactory getFactory() {
-        return this.factory;
+        super(factory);
     }
 }
