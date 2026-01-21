@@ -196,7 +196,7 @@ public class CRSerializationTest {
 
     @Test
     public void telemetrySpecification() {
-        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr.yml"), Keycloak.class);
+        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr-telemetry.yml"), Keycloak.class);
 
         TelemetrySpec telemetry = keycloak.getSpec().getTelemetrySpec();
         assertThat(telemetry, notNullValue());
@@ -215,7 +215,7 @@ public class CRSerializationTest {
 
     @Test
     public void tracingSpecification() {
-        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr.yml"), Keycloak.class);
+        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr-telemetry.yml"), Keycloak.class);
 
         TracingSpec tracing = keycloak.getSpec().getTracingSpec();
         assertThat(tracing, notNullValue());

@@ -1,0 +1,31 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: test-serialization-kc-telemetry
+spec:
+  instances: 3
+  tracing:
+    enabled: true
+    endpoint: http://my-tracing:4317
+    serviceName: my-best-keycloak
+    protocol: http/protobuf
+    samplerType: parentbased_traceidratio
+    samplerRatio: 0.01
+    compression: gzip
+    resourceAttributes:
+      service.namespace: keycloak-namespace
+      service.name: custom-service-name
+  telemetry:
+    endpoint: http://my-telemetry:4317
+    serviceName: my-best-keycloak-telemetry
+    protocol: http/protobuf
+    resourceAttributes:
+      service.namespace: keycloak-namespace-telemetry
+      service.name: custom-service-name-telemetry
+  additionalOptions:
+    - name: tracing-header-Authorization
+      secret:
+        name: tracing-secret
+        key: token
+    - name: tracing-header-X-Org-Id
+      value: my-org-id

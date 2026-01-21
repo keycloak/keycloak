@@ -178,7 +178,7 @@ public class KeycloakDistConfiguratorTest {
                 "telemetry-resource-attributes", "service.namespace=keycloak-namespace-telemetry,service.name=custom-service-name-telemetry"
         );
 
-        testFirstClassCitizen(expectedValues);
+        testFirstClassCitizen("/test-serialization-keycloak-cr-telemetry.yml", expectedValues);
     }
 
     @Test
@@ -194,18 +194,18 @@ public class KeycloakDistConfiguratorTest {
                 "tracing-resource-attributes", "service.namespace=keycloak-namespace,service.name=custom-service-name"
         );
 
-        testFirstClassCitizen(expectedValues);
+        testFirstClassCitizen("/test-serialization-keycloak-cr-telemetry.yml", expectedValues);
     }
 
     @Test
     public void invalidTelemetryResourceAttributes() {
-        Keycloak keycloakCR = K8sUtils.getResourceFromFile("test-serialization-keycloak-cr.yml", Keycloak.class);
+        Keycloak keycloakCR = K8sUtils.getResourceFromFile("test-serialization-keycloak-cr-telemetry.yml", Keycloak.class);
         assertResourceAttributes(keycloakCR, keycloakCR.getSpec().getTelemetrySpec()::setResourceAttributes);
     }
 
     @Test
     public void invalidTracingResourceAttributes() {
-        Keycloak keycloakCR = K8sUtils.getResourceFromFile("test-serialization-keycloak-cr.yml", Keycloak.class);
+        Keycloak keycloakCR = K8sUtils.getResourceFromFile("test-serialization-keycloak-cr-telemetry.yml", Keycloak.class);
         assertResourceAttributes(keycloakCR, keycloakCR.getSpec().getTracingSpec()::setResourceAttributes);
     }
 
