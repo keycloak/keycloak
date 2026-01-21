@@ -11,6 +11,8 @@ import {
 } from "@patternfly/react-core";
 import yaml from "yaml";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
+import { Popover, Button } from "@patternfly/react-core";
+import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
@@ -82,7 +84,7 @@ const StepsCell = (workflow: WorkflowRepresentation) => {
         <Thead>
           <Tr>
             <Th>{t("step")}</Th>
-            <Th>{t("scheduledAt")}</Th>
+            <Th>{t("scheduledAfter")}</Th>
             <Th>{t("status")}</Th>
           </Tr>
         </Thead>
@@ -93,7 +95,7 @@ const StepsCell = (workflow: WorkflowRepresentation) => {
               <Td>
                 {step["scheduled-at"]
                   ? formatDate(new Date(step["scheduled-at"]!))
-                  : t("immediateStep")}
+                  : ""}
               </Td>
               <Td>
                 {step.status! === "COMPLETED" ? (
@@ -122,6 +124,16 @@ export const UserWorkflows = ({ user }: UserWorkflowProps) => {
     });
   };
 
+  const nextStepRenderer = (workflow: WorkflowRepresentation) => {
+    if (!workflow.steps) return "";
+    const found = workflow.steps.find((step) => step.status === "PENDING");
+    if (found) {
+      return found.uses;
+    } else {
+      return t("completed");
+    }
+  };
+
   return (
     <KeycloakDataTable
       key={key}
@@ -129,7 +141,11 @@ export const UserWorkflows = ({ user }: UserWorkflowProps) => {
       ariaLabelKey="titleWorkflows"
       columns={[
         { name: "name", displayKey: "name" },
-        { name: "on", displayKey: "on" },
+        {
+          name: "nextStep",
+          displayKey: "nextStep",
+          cellRenderer: (row) => nextStepRenderer(row) || "",
+        },
         {
           name: "steps",
           displayKey: "steps",
@@ -146,6 +162,23 @@ export const UserWorkflows = ({ user }: UserWorkflowProps) => {
         },
       ]}
       isPaginated={false}
+      toolbarItem={[
+        <Popover
+          key="who-will-appear-popover"
+          aria-label={t("whichWorkflowsWillAppear")}
+          position="bottom"
+          bodyContent={<div>{t("whichWorkflowsWillAppearDetail")}</div>}
+        >
+          <Button
+            variant="link"
+            className="kc-who-will-appear-button"
+            key="who-will-appear-button"
+            icon={<QuestionCircleIcon />}
+          >
+            {t("whichWorkflowsWillAppear")}
+          </Button>
+        </Popover>,
+      ]}
       searchPlaceholderKey="searchByName"
       emptyState={
         <ListEmptyState
