@@ -42,6 +42,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
+import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -183,6 +184,24 @@ public class SubjectImpersonationTokenExchangeV1Test extends AbstractKeycloakTes
             Assert.assertEquals("target", exchangedToken.getAudience()[0]);
             Assert.assertEquals(exchangedToken.getPreferredUsername(), "impersonated-user");
             assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
+        }
+
+        // disabled user cannot be impersonated
+        try (UserAttributeUpdater userUpdater = UserAttributeUpdater
+                .forUserByUsername(adminClient.realm(TEST), "impersonated-user")
+                .setEnabled(Boolean.FALSE)
+                .update();
+            Response response = exchangeUrl.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("direct-legal", "secret"))
+                .post(Entity.form(
+                            new Form()
+                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                    .param(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user")
+                                    .param(OAuth2Constants.AUDIENCE, "target")
+                        ))) {
+            Assert.assertEquals(403, response.getStatus());
         }
 
         try (Response response = exchangeUrl.request()
@@ -526,6 +545,22 @@ public class SubjectImpersonationTokenExchangeV1Test extends AbstractKeycloakTes
                     ));
             assertTrue(response.getStatus() >= 400);
             response.close();
+        }
+
+        // disabled user cannot be impersonated
+        try (UserAttributeUpdater userUpdater = UserAttributeUpdater
+                .forUserByUsername(adminClient.realm(TEST), "impersonated-user")
+                .setEnabled(Boolean.FALSE)
+                .update();
+            Response response = exchangeUrl.request()
+                   .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("direct-legal", "secret"))
+                   .post(Entity.form(
+                            new Form()
+                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                    .param(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user")
+                                    .param(OAuth2Constants.AUDIENCE, "target")
+                    ))) {
+            Assert.assertEquals(403, response.getStatus());
         }
     }
 
