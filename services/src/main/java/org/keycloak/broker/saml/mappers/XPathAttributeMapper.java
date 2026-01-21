@@ -40,6 +40,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.saml.mappers.SamlMetadataDescriptorUpdater;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StringUtil;
 
@@ -214,7 +215,7 @@ public class XPathAttributeMapper extends AbstractIdentityProviderMapper impleme
                 });
                 Document document = DocumentUtil.getDocument(new StringReader(xml));
                 return xPath.compile(attributeXPath).evaluate(document, XPathConstants.STRING);
-            } catch (XPathExpressionException|UnsupportedOperationException e) {
+            } catch (XPathExpressionException | UnsupportedOperationException | ParsingException e) {
                 LOGGER.warn("Unparsable element will be ignored", e);
                 return "";
             } catch (Exception e) {
