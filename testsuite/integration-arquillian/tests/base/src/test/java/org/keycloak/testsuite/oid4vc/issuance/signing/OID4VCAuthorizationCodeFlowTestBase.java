@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
@@ -568,16 +569,16 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     public void testAuthorizationCodeReuse() throws Exception {
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
-        // Perform authorization code flow to get authorization code
-        String code = performAuthorizationCodeLogin();
-
         // Create authorization details for token exchange
         OID4VCAuthorizationDetail authDetail = createAuthorizationDetail(ctx);
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
+        // Perform authorization code flow with authorization_details in authorization request
+        String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetailsJson);
+
         // First token exchange - should succeed
-        HttpPost postToken = createTokenExchangeRequest(ctx, code, authDetailsJson);
+        HttpPost postToken = createTokenExchangeRequest(ctx, code, null);
 
         try (CloseableHttpResponse tokenHttpResponse = httpClient.execute(postToken)) {
             assertEquals(HttpStatus.SC_OK, tokenHttpResponse.getStatusLine().getStatusCode());
@@ -588,7 +589,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         // Second token exchange with same code - should fail
         // Recreate entity to avoid potential issues with stream consumption
-        HttpPost postTokenReuse = createTokenExchangeRequest(ctx, code, authDetailsJson);
+        HttpPost postTokenReuse = createTokenExchangeRequest(ctx, code, null);
 
         try (CloseableHttpResponse tokenHttpResponse = httpClient.execute(postTokenReuse)) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, tokenHttpResponse.getStatusLine().getStatusCode());
@@ -616,13 +617,8 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     public void testInvalidAuthorizationCode() throws Exception {
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
-        // Create authorization details for token exchange
-        OID4VCAuthorizationDetail authDetail = createAuthorizationDetail(ctx);
-        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
-        String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
-
         // Attempt token exchange with invalid code
-        HttpPost postToken = createTokenExchangeRequest(ctx, "invalid-code-12345", authDetailsJson);
+        HttpPost postToken = createTokenExchangeRequest(ctx, "invalid-code-12345", null);
 
         events.clear();
 
@@ -675,16 +671,16 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     public void testMismatchedCredentialConfigurationId() throws Exception {
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
-        // Perform authorization code flow to get authorization code
-        String code = performAuthorizationCodeLogin();
-
         // Create authorization details with mismatched credential_configuration_id
         OID4VCAuthorizationDetail authDetail = createAuthorizationDetail(ctx, "unknown-credential-config-id");
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
-        // Attempt token exchange with mismatched credential_configuration_id
-        HttpPost postToken = createTokenExchangeRequest(ctx, code, authDetailsJson);
+        // Perform authorization code flow with authorization_details in authorization request
+        String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetailsJson);
+
+        // Attempt token exchange without resubmitting authorization_details
+        HttpPost postToken = createTokenExchangeRequest(ctx, code, null);
 
         events.clear();
 
@@ -706,13 +702,13 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     public void testTokenExchangeWithoutRedirectUri() throws Exception {
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
-        // Perform authorization code flow to get authorization code
-        String code = performAuthorizationCodeLogin();
-
         // Create authorization details for token exchange
         OID4VCAuthorizationDetail authDetail = createAuthorizationDetail(ctx);
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
+
+        // Perform authorization code flow with authorization_details in authorization request
+        String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetailsJson);
 
         // Attempt token exchange without redirect_uri
         // Note: We need to create the request manually since redirect_uri is required, but we want to omit it
@@ -723,7 +719,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Intentionally omitting redirect_uri
         tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
         tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, "password"));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.AUTHORIZATION_DETAILS, authDetailsJson));
         postToken.setEntity(new UrlEncodedFormEntity(tokenParameters, StandardCharsets.UTF_8));
 
         events.clear();
@@ -745,9 +740,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     public void testTokenExchangeWithMismatchedRedirectUri() throws Exception {
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
-        // Perform authorization code flow to get authorization code
-        String code = performAuthorizationCodeLogin();
-
         // Store the original redirect_uri used in authorization request
         String originalRedirectUri = oauth.getRedirectUri();
 
@@ -756,8 +748,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
+        // Perform authorization code flow with authorization_details in authorization request
+        String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetailsJson);
+
         // Attempt token exchange with mismatched redirect_uri
-        HttpPost postToken = createTokenExchangeRequest(ctx, code, authDetailsJson, "http://invalid-redirect-uri", null);
+        HttpPost postToken = createTokenExchangeRequest(ctx, code, null, "http://invalid-redirect-uri", null);
 
         events.clear();
 
@@ -824,16 +819,16 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     public void testTokenExchangeWithInvalidClientSecret() throws Exception {
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
-        // Perform authorization code flow to get authorization code
-        String code = performAuthorizationCodeLogin();
-
         // Create authorization details for token exchange
         OID4VCAuthorizationDetail authDetail = createAuthorizationDetail(ctx);
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
-        // Attempt token exchange with invalid client_secret
-        HttpPost postToken = createTokenExchangeRequest(ctx, code, authDetailsJson, null, "wrong-secret");
+        // Perform authorization code flow with authorization_details in authorization request
+        String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetailsJson);
+
+        // Attempt token exchange with invalid client_secret (no need to resend authorization_details)
+        HttpPost postToken = createTokenExchangeRequest(ctx, code, null, null, "wrong-secret");
 
         events.clear();
 
@@ -852,13 +847,13 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     public void testTokenExchangeWithoutClientId() throws Exception {
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
-        // Perform authorization code flow to get authorization code
-        String code = performAuthorizationCodeLogin();
-
         // Create authorization details for token exchange
         OID4VCAuthorizationDetail authDetail = createAuthorizationDetail(ctx);
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
+
+        // Perform authorization code flow with authorization_details in authorization request
+        String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetailsJson);
 
         // Attempt token exchange without client_id
         HttpPost postToken = new HttpPost(ctx.openidConfig.getTokenEndpoint());
@@ -868,7 +863,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         tokenParameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
         // Intentionally omitting client_id
         tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, "password"));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.AUTHORIZATION_DETAILS, authDetailsJson));
         postToken.setEntity(new UrlEncodedFormEntity(tokenParameters, StandardCharsets.UTF_8));
 
         events.clear();
@@ -891,11 +885,17 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     public void testTokenExchangeWithMalformedAuthorizationDetails() throws Exception {
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
-        // Perform authorization code flow to get authorization code
-        String code = performAuthorizationCodeLogin();
+        // Perform authorization code flow with malformed authorization_details in the authorization request.
+        oauth.client(client.getClientId());
+        oauth.scope(getCredentialClientScope().getName());
+        oauth.loginForm()
+                .param(OAuth2Constants.AUTHORIZATION_DETAILS, "invalid-json")
+                .doLogin("john", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        assertNotNull("Authorization code should not be null", code);
 
-        // Attempt token exchange with malformed authorization_details JSON
-        HttpPost postToken = createTokenExchangeRequest(ctx, code, "invalid-json-{");
+        // Attempt token exchange without resubmitting authorization_details (stored value is malformed)
+        HttpPost postToken = createTokenExchangeRequest(ctx, code, null);
 
         events.clear();
 
@@ -905,6 +905,35 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
             OAuth2ErrorRepresentation error = JsonSerialization.readValue(responseBody, OAuth2ErrorRepresentation.class);
             assertEquals(Errors.INVALID_AUTHORIZATION_DETAILS, error.getError());
             assertTrue("Error description should indicate authorization_details processing error",
+                    error.getErrorDescription() != null && error.getErrorDescription().contains("authorization_details"));
+        }
+    }
+
+    /**
+     * Test that token request authorization_details cannot exceed what was granted in the authorization request.
+     */
+    @Test
+    public void testTokenExchangeRejectsAuthorizationDetailsNotGranted() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Authorization request with a valid authorization_details entry
+        OID4VCAuthorizationDetail grantedDetail = createAuthorizationDetail(ctx);
+        String grantedAuthDetailsJson = JsonSerialization.writeValueAsString(List.of(grantedDetail));
+        String code = performAuthorizationCodeLoginWithAuthorizationDetails(grantedAuthDetailsJson);
+
+        // Token request attempts to change authorization_details (different credential configuration)
+        OID4VCAuthorizationDetail differentDetail = createAuthorizationDetail(ctx, "different-credential-config-id");
+        String differentAuthDetailsJson = JsonSerialization.writeValueAsString(List.of(differentDetail));
+        HttpPost postToken = createTokenExchangeRequest(ctx, code, differentAuthDetailsJson);
+
+        events.clear();
+
+        try (CloseableHttpResponse tokenHttpResponse = httpClient.execute(postToken)) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, tokenHttpResponse.getStatusLine().getStatusCode());
+            String responseBody = IOUtils.toString(tokenHttpResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+            OAuth2ErrorRepresentation error = JsonSerialization.readValue(responseBody, OAuth2ErrorRepresentation.class);
+            assertEquals(Errors.INVALID_AUTHORIZATION_DETAILS, error.getError());
+            assertTrue("Error description should indicate authorization_details mismatch",
                     error.getErrorDescription() != null && error.getErrorDescription().contains("authorization_details"));
         }
     }
@@ -1051,19 +1080,25 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     }
 
     // Successful authorization_code flow
-    private AccessTokenResponse authzCodeFlow(Oid4vcTestContext ctx, List<ClaimsDescription> claimsForAuthorizationDetailsParameter, boolean expectUserAlreadyAuthenticated) throws Exception {
+    private AccessTokenResponse authzCodeFlow(Oid4vcTestContext ctx,
+                                              List<ClaimsDescription> claimsForAuthorizationDetailsParameter,
+                                              boolean expectUserAlreadyAuthenticated) throws Exception {
+
         // Perform authorization code flow to get authorization code
         oauth.client(client.getClientId(), "password");
         oauth.scope(getCredentialClientScope().getName()); // Add the credential scope
+
         if (expectUserAlreadyAuthenticated) {
             oauth.openLoginForm();
         } else {
             oauth.loginForm().doLogin("john", "password");
         }
 
+        // Step 1: Get initial authorization code
         String code = oauth.parseLoginResponse().getCode();
         assertNotNull("Authorization code should not be null", code);
 
+        // Prepare authorization_details parameter
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID));
@@ -1073,8 +1108,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
-        // Exchange authorization code for tokens with authorization_details
-        HttpPost postToken = createTokenExchangeRequest(ctx, code, authDetailsJson);
+        // Step 2: Perform authorization code login with authorization_details
+        code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetailsJson);
+
+        // Step 3: Exchange authorization code for tokens
+        HttpPost postToken = createTokenExchangeRequest(ctx, code, null);
 
         try (CloseableHttpResponse tokenHttpResponse = httpClient.execute(postToken)) {
             assertEquals(HttpStatus.SC_OK, tokenHttpResponse.getStatusLine().getStatusCode());
@@ -1159,6 +1197,25 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         oauth.client(client.getClientId());
         oauth.scope(getCredentialClientScope().getName());
         oauth.loginForm().doLogin("john", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        assertNotNull("Authorization code should not be null", code);
+        return code;
+    }
+
+    /**
+     * Performs authorization code login flow with provided authorization_details JSON in the authorization request.
+     *
+     * @param authorizationDetailsJson authorization_details JSON to send with the authorization request
+     * @return the authorization code
+     */
+    protected String performAuthorizationCodeLoginWithAuthorizationDetails(String authorizationDetailsJson) {
+        oauth.client(client.getClientId());
+        oauth.scope(getCredentialClientScope().getName());
+        oauth.loginForm()
+                // Encode JSON so UriBuilder does not treat '{' or '}' as URI template characters
+                .param(OAuth2Constants.AUTHORIZATION_DETAILS,
+                        URLEncoder.encode(authorizationDetailsJson, StandardCharsets.UTF_8))
+                .doLogin("john", "password");
         String code = oauth.parseLoginResponse().getCode();
         assertNotNull("Authorization code should not be null", code);
         return code;
