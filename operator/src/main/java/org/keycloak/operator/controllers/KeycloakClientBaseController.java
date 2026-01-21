@@ -62,6 +62,7 @@ import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusBuilder;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 
@@ -87,31 +88,36 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
     // TODO allows for local testing - could be promoted in some way to the CR if needed
     public static final String KEYCLOAK_TEST_ADDRESS = "KEYCLOAK_TEST_ADDRESS";
 
-    class KeycloakClientStatusAggregator {
-        R resource;
+    static class KeycloakClientStatusAggregator {
+        Long generation;
         KeycloakClientStatus existingStatus;
         Map<String, KeycloakClientStatusCondition> existingConditions;
         Map<String, KeycloakClientStatusCondition> newConditions = new LinkedHashMap<String, KeycloakClientStatusCondition>();
 
-        KeycloakClientStatusAggregator(R resource) {
-            this.resource = resource;
-            existingStatus = Optional.ofNullable(resource.getStatus()).orElse(new KeycloakClientStatus());
+        KeycloakClientStatusAggregator(CustomResource<?, KeycloakClientStatus> resource) {
+            this.generation = resource.getMetadata().getGeneration();
+            this.existingStatus = Optional.ofNullable(resource.getStatus()).orElse(new KeycloakClientStatus());
             existingConditions = KeycloakStatusAggregator.getConditionMap(existingStatus.getConditions());
         }
 
         void setCondition(String type, Boolean status, String message) {
             KeycloakClientStatusCondition condition = new KeycloakClientStatusCondition();
+            condition.setType(type);
             condition.setStatus(status);
             condition.setMessage(message);
+            condition.setObservedGeneration(generation);
             newConditions.put(type, condition); // No aggregation yet
         }
 
         KeycloakClientStatus build() {
             KeycloakClientStatusBuilder statusBuilder = new KeycloakClientStatusBuilder();
             String now = Utils.iso8601Now();
-            statusBuilder.withObservedGeneration(resource.getMetadata().getGeneration());
+            statusBuilder.withObservedGeneration(generation);
             newConditions.values().forEach(c -> KeycloakStatusAggregator.updateConditionFromExisting(c, existingConditions, now));
             existingConditions.putAll(newConditions);
+            existingConditions.computeIfAbsent(KeycloakStatusCondition.HAS_ERRORS,
+                    k -> new KeycloakClientStatusCondition(KeycloakStatusCondition.HAS_ERRORS, false, null, now,
+                            generation));
             statusBuilder.withConditions(new ArrayList<>(existingConditions.values().stream().sorted(Comparator.comparing(KeycloakClientStatusCondition::getType)).toList()));
             return statusBuilder.build();
         }
@@ -157,13 +163,14 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
             // TODO however not all errors (something not validating) should get retried every 10 seconds
             // that should instead get captured in the status
             if (response.getStatus() != HttpURLConnection.HTTP_OK && response.getStatus() != HttpURLConnection.HTTP_CREATED) {
-                throw new RuntimeException("Client update operation not sucessful with status code " + response.getStatus());
+                String message = response.hasEntity() ? response.readEntity(String.class) : "";
+                throw new RuntimeException("Client update operation not sucessful with status code " + response.getStatus() + " : " + message);
             }
         }
 
+        statusAggregator.setCondition(KeycloakClientStatusCondition.HAS_ERRORS, false, null);
         KeycloakClientStatus status = statusAggregator.build();
         status.setHash(hash);
-        statusAggregator.setCondition(KeycloakClientStatusCondition.HAS_ERRORS, false, null);
         UpdateControl<R> updateControl;
 
         if (status.equals(resource.getStatus())) {

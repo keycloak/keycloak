@@ -19,9 +19,17 @@ package org.keycloak.operator.crds.v2alpha1.client;
 
 import org.keycloak.operator.crds.v2alpha1.StatusCondition;
 
-import io.sundr.builder.annotations.Buildable;
-
-@Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder", lazyCollectionInitEnabled = false)
+// TODO: we may want to simply eliminate this until a specialization is needed
 public class KeycloakClientStatusCondition extends StatusCondition {
     public static final String HAS_ERRORS = "HasErrors";
+
+    public KeycloakClientStatusCondition() {
+
+    }
+
+    public KeycloakClientStatusCondition(String type, Boolean status, String message, String lastTransitionTime,
+            Long observedGeneration) {
+        super(type, status, message, lastTransitionTime, observedGeneration);
+    }
+
 }

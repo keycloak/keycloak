@@ -16,6 +16,9 @@
  */
 package org.keycloak.operator.controllers;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientRepresentation;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientRepresentation.AuthWithSecretRef;
@@ -44,6 +47,7 @@ public class KeycloakOIDCClientController extends KeycloakClientBaseController<K
         AuthWithSecretRef auth = crRepresentation.getAuth();
         if (auth != null) {
             SecretKeySelector secretSelector = auth.getSecretRef();
+            targetRepresentation.getAuth().getAdditionalFields().remove("secretRef");
             if (secretSelector != null) {
                 poll = true;
 
@@ -65,7 +69,7 @@ public class KeycloakOIDCClientController extends KeycloakClientBaseController<K
                             throw new ResourceNotFoundException(String.format("Secret key %s in %s/%s not found", secretSelector.getKey(), namespace, secretSelector.getName()));
                         }
                     } else {
-                        targetRepresentation.getAuth().setSecret(value);
+                        targetRepresentation.getAuth().setSecret(new String(Base64.getDecoder().decode(value), StandardCharsets.UTF_8));
                     }
                 }
             }
