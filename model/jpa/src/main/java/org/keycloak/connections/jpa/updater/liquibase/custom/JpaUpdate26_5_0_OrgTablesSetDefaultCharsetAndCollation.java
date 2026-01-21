@@ -24,6 +24,7 @@ import liquibase.database.core.MySQLDatabase;
 import liquibase.exception.CustomChangeException;
 import liquibase.snapshot.SnapshotGeneratorFactory;
 import liquibase.statement.core.RawSqlStatement;
+import liquibase.structure.core.Schema;
 import liquibase.structure.core.Table;
 
 /**
@@ -44,8 +45,14 @@ public class JpaUpdate26_5_0_OrgTablesSetDefaultCharsetAndCollation extends Cust
 
     @Override
     protected void generateStatementsImpl() throws CustomChangeException {
+        String schemaName = database.escapeObjectName(database.getDefaultSchemaName(), Schema.class);
+
         try (Statement st = connection.createStatement();
-             ResultSet rs = st.executeQuery("SELECT @@character_set_database AS charset, @@collation_database AS collation")) {
+             ResultSet rs = st.executeQuery(
+                     "SELECT DEFAULT_CHARACTER_SET_NAME as charset, DEFAULT_COLLATION_NAME as collation " +
+                     "FROM INFORMATION_SCHEMA.SCHEMATA " +
+                     "WHERE SCHEMA_NAME = '" + schemaName + "'"
+             )) {
 
             if (rs.next()) {
                 String charset = rs.getString("charset");
