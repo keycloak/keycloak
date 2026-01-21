@@ -169,7 +169,7 @@ jobs:
       - name: Start Keycloak server
         run: |
           tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
-          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=transient-users,oid4vc-vci &> ~/server.log &
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=transient-users,oid4vc-vci,client-admin-api:v2 &> ~/server.log &
         env:
           KC_BOOTSTRAP_ADMIN_USERNAME: admin
           KC_BOOTSTRAP_ADMIN_PASSWORD: admin
