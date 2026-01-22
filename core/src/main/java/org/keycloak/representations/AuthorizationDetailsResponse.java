@@ -16,8 +16,8 @@
  */
 package org.keycloak.representations;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Generic response object for authorization details processing.
@@ -29,12 +29,26 @@ import java.util.Map;
 public class AuthorizationDetailsResponse extends AuthorizationDetailsJSONRepresentation {
 
     // Map of parsers for specific values of "type" claim of authorizationDetails
-    private static final Map<String, AuthorizationDetailsResponseParser<?>> PARSERS = new HashMap<>();
+    private static final Map<String, AuthorizationDetailsResponseParser<?>> PARSERS = new ConcurrentHashMap<>();
 
+    /**
+     * Register new parser for specific type. This can be later used by {@link #asSubtype} method. Parsers are supposed to be
+     * registered before authorizationDetails are being used by the application and before method {@link #asSubtype} is called for the first time.
+     * Usually it is supposed to be registered at the startup of the application. If implementing Keycloak provider <em>AuthorizationDetailsProcessor</em>, it might
+     * be good to register corresponding parser in the <em>AuthorizationDetailsProcessorFactory.init</em> method of your provider
+     *
+     * @param type
+     * @param parser
+     */
     public static void registerParser(String type, AuthorizationDetailsResponseParser<?> parser) {
         PARSERS.put(type, parser);
     }
 
+    /**
+     * @param clazz Subtype of {@link AuthorizationDetailsResponse}, which will be returned by calling this method
+     * @return this authorizationDetails content cast to the class specified by clazz parameter as long as parser corresponding to the type returned by {@link #getType}
+     * is able to parse this authorizationDetails and convert it to that subtype
+     */
     public <T extends AuthorizationDetailsResponse> T asSubtype(Class<T> clazz) {
         AuthorizationDetailsResponseParser<T> parser = (AuthorizationDetailsResponseParser<T>) PARSERS.get(getType());
         if (parser == null) {
