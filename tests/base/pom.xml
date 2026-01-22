@@ -166,7 +166,7 @@
                                 <id>clear-schema</id>
                                 <configuration>
                                     <srcFiles>
-                                        <srcFile>../../.github/scripts/aws/rds/aurora_clear.sql</srcFile>
+                                        <srcFile>../../.github/scripts/aws/rds/pg_clear.sql</srcFile>
                                     </srcFiles>
                                 </configuration>
                             </execution>
