@@ -9,7 +9,7 @@ tileVisible="false" >
 == {project_name} upgrades
 
 In order to update to a new major or minor version of {project_name}, it is expected that the {project_name} deployment
-on each site is link:{links_high-availability_operate_site_offline_url}[taken offline] during the upgrade procedure.
+on each site is taken offline during the upgrade procedure as described in <@links.ha id="multi-cluster-operate-site-offline" />.
 Deploying different {project_name} major/minor versions on each of the sites is not supported. Neither site should be
 exposed to user requests via the load balancer until both {project_name} deployments have been upgraded and their
 {jdgserver_name} clusters synchronized.
