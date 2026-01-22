@@ -84,9 +84,10 @@ public class JpaUpdate26_6_0_OfflineClientSessionRealm extends CustomKeycloakTas
 
     private void generateUpdateQueryForMSSQL(String clientSessionTable, String userSessionTable) {
         statements.add(new RawParameterizedSqlStatement("""
-                UPDATE %s cs
-                INNER JOIN %s us ON cs.user_session_id = us.user_session_id
-                SET cs.realm_id = us.realm_id"""
+                UPDATE cs
+                SET cs.realm_id = us.realm_id
+                FROM %s cs
+                INNER JOIN %s us ON cs.user_session_id = us.user_session_id"""
                 .formatted(clientSessionTable, userSessionTable)));
     }
 
