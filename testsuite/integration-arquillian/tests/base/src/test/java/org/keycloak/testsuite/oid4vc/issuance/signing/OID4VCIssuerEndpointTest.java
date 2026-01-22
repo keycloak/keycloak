@@ -145,9 +145,12 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerEndpointTest.class);
 
-    protected static ClientScopeRepresentation sdJwtTypeNaturalPersonClientScope;
-    protected static ClientScopeRepresentation sdJwtTypeCredentialClientScope;
     protected static ClientScopeRepresentation jwtTypeCredentialClientScope;
+    protected static ClientScopeRepresentation sdJwtTypeCredentialClientScope;
+
+    protected static ClientScopeRepresentation jwtTypeNaturalPersonClientScope;
+    protected static ClientScopeRepresentation sdJwtTypeNaturalPersonClientScope;
+
     protected static ClientScopeRepresentation minimalJwtTypeCredentialClientScope;
 
     protected CloseableHttpClient httpClient;
@@ -213,6 +216,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         namedClient = testRealm().clients().findByClientId(namedClientId).get(0);
 
         // Lookup the pre-installed oid4vc_natural_person client scope
+        jwtTypeNaturalPersonClientScope = requireExistingClientScope(jwtTypeNaturalPersonScopeName);
         sdJwtTypeNaturalPersonClientScope = requireExistingClientScope(sdJwtTypeNaturalPersonScopeName);
 
         // Register the optional client scopes
@@ -245,14 +249,10 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             String clientId = client.getClientId();
 
             // Assign the registered optional client scopes to the client
+            assignOptionalClientScopeToClient(jwtTypeNaturalPersonClientScope.getId(), clientId);
             assignOptionalClientScopeToClient(sdJwtTypeNaturalPersonClientScope.getId(), clientId);
-            assignOptionalClientScopeToClient(sdJwtTypeCredentialClientScope.getId(), clientId);
             assignOptionalClientScopeToClient(jwtTypeCredentialClientScope.getId(), clientId);
-            assignOptionalClientScopeToClient(minimalJwtTypeCredentialClientScope.getId(), clientId);
-
-            assignOptionalClientScopeToClient(sdJwtTypeNaturalPersonClientScope.getId(), clientId);
             assignOptionalClientScopeToClient(sdJwtTypeCredentialClientScope.getId(), clientId);
-            assignOptionalClientScopeToClient(jwtTypeCredentialClientScope.getId(), clientId);
             assignOptionalClientScopeToClient(minimalJwtTypeCredentialClientScope.getId(), clientId);
 
             // Enable OID4VCI for the client by default, but allow tests to override
