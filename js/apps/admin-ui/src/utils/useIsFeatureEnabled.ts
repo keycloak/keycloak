@@ -20,6 +20,7 @@ export enum Feature {
   Passkeys = "PASSKEYS",
   ClientAuthFederated = "CLIENT_AUTH_FEDERATED",
   Workflows = "WORKFLOWS",
+  PQC_ML_DSA = "PQC_ML_DSA",
 }
 
 export default function useIsFeatureEnabled() {

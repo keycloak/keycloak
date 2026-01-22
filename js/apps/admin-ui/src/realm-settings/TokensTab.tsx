@@ -59,9 +59,13 @@ export const RealmSettingsTokensTab = ({
   const [defaultSigAlgDrpdwnIsOpen, setDefaultSigAlgDrpdwnOpen] =
     useState(false);
 
-  const defaultSigAlgOptions = sortProviders(
+  const allSigAlgOptions = sortProviders(
     serverInfo.providers!["signature"].providers,
   );
+  // Filter out ML-DSA if feature not enabled
+  const defaultSigAlgOptions = !isFeatureEnabled(Feature.PQC_ML_DSA)
+    ? allSigAlgOptions.filter((alg) => !alg.includes("ML-DSA"))
+    : allSigAlgOptions;
 
   const asymmetricSigAlgOptions =
     serverInfo.cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? [];
