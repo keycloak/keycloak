@@ -22,10 +22,13 @@ import java.util.Objects;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 /**
@@ -36,8 +39,8 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name="COMPOSITE_ROLE")
 @NamedQueries({
-        @NamedQuery(name="getChildRoles", query="select r from CompositeRoleEntity c join RoleEntity r on r.id = c.childRoleId where c.parentRoleId = :parentRoleId"),
         @NamedQuery(name="deleteRoleFromComposites", query="delete CompositeRoleEntity c where c.parentRoleId = :roleId or c.childRoleId = :roleId"),
+        @NamedQuery(name="deleteSingleCompositeFromRole", query="delete CompositeRoleEntity c where c.parentRoleId = :parentRoleId and c.childRoleId = :childRoleId"),
 })
 @IdClass(CompositeRoleEntity.Key.class)
 public class CompositeRoleEntity {
@@ -49,12 +52,27 @@ public class CompositeRoleEntity {
     @Column(name="CHILD_ROLE", length = 36)
     private String childRoleId;
 
+    /* Although this field seems not to be used, it is important for Hibernate to figure out the dependencies when
+    sorting the SQL statements for inserting and deleting. Otherwise, we might see primary key violations. */
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "COMPOSITE", updatable = false, insertable = false)
+    RoleEntity parentRole;
+
+    /* Although this field seems not to be used, it is important for Hibernate to figure out the dependencies when
+    sorting the SQL statements for inserting and deleting. Otherwise, we might see primary key violations. */
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CHILD_ROLE", updatable = false, insertable = false)
+    RoleEntity childRole;
+
     public CompositeRoleEntity() {
     }
 
-    public CompositeRoleEntity(String parentRoleId, String childRoleId) {
-        this.childRoleId = childRoleId;
-        this.parentRoleId = parentRoleId;
+    public CompositeRoleEntity(RoleEntity parentRole, RoleEntity childRole) {
+        // Fields must not be null otherwise the automatic dependency detection of Hibernate will not work
+        this.parentRole = parentRole;
+        this.childRole = childRole;
+        this.childRoleId = childRole.getId();
+        this.parentRoleId = parentRole.getId();
     }
 
     public String getParentRoleId() {

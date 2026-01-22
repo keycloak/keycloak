@@ -257,7 +257,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         entity.setRealmId(realm.getId());
         em.persist(entity);
         em.flush();
-        RoleAdapter adapter = new RoleAdapter(session, realm, em, entity, false);
+        RoleAdapter adapter = new RoleAdapter(session, realm, em, entity);
         return adapter;
 
     }
@@ -289,7 +289,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         roleEntity.setClientId(client.getId());
         roleEntity.setClientRole(true);
         em.persist(roleEntity);
-        RoleAdapter adapter = new RoleAdapter(session, client.getRealm(), em, roleEntity, true);
+        RoleAdapter adapter = new RoleAdapter(session, client.getRealm(), em, roleEntity);
         return adapter;
     }
 
@@ -398,7 +398,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                         cb.asc(clientRoot.get("clientId")),
                         cb.asc(roleRoot.get("name")));
         return closing(paginateQuery(em.createQuery(query),first,max).getResultStream())
-                .map(roleEntity -> new RoleAdapter(session, realm, em, roleEntity, false));
+                .map(roleEntity -> new RoleAdapter(session, realm, em, roleEntity));
     }
 
 
@@ -413,7 +413,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     protected Stream<RoleModel> getRolesStream(TypedQuery<RoleEntity> query, RealmModel realm, Integer first, Integer max) {
         Stream<RoleEntity> results = paginateQuery(query, first, max).getResultStream();
 
-        return closing(results.map(role -> new RoleAdapter(session, realm, em, role, false)));
+        return closing(results.map(role -> new RoleAdapter(session, realm, em, role)));
     }
 
     @Override
@@ -435,7 +435,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         query.setParameter("search", "%" + search.trim().toLowerCase() + "%");
         Stream<RoleEntity> results = paginateQuery(query, first, max).getResultStream();
 
-        return closing(results.map(role -> new RoleAdapter(session, realm, em, role, false)));
+        return closing(results.map(role -> new RoleAdapter(session, realm, em, role)));
     }
 
     @Override
@@ -499,7 +499,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         RoleEntity entity = em.find(RoleEntity.class, id);
         if (entity == null) return null;
         if (!realm.getId().equals(entity.getRealmId())) return null;
-        RoleAdapter adapter = new RoleAdapter(session, realm, em, entity, false);
+        RoleAdapter adapter = new RoleAdapter(session, realm, em, entity);
         return adapter;
     }
 

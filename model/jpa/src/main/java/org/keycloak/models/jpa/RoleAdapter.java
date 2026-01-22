@@ -48,14 +48,12 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
     protected EntityManager em;
     protected RealmModel realm;
     protected KeycloakSession session;
-    private boolean newEntity;
 
-    public RoleAdapter(KeycloakSession session, RealmModel realm, EntityManager em, RoleEntity role, boolean newEntity) {
+    public RoleAdapter(KeycloakSession session, RealmModel realm, EntityManager em, RoleEntity role) {
         this.em = em;
         this.realm = realm;
         this.role = role;
         this.session = session;
-        this.newEntity = newEntity;
     }
 
     @Override
@@ -100,34 +98,22 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
     @Override
     public void addCompositeRole(RoleModel role) {
         if (em.find(CompositeRoleEntity.class, new CompositeRoleEntity.Key(this.getId(), role.getId())) == null) {
-            CompositeRoleEntity compositeRoleEntity = new CompositeRoleEntity(getId(), role.getId());
-            if (role instanceof RoleAdapter roleAdapter) {
-                roleAdapter.flushNewEntity();
-            }
-            flushNewEntity(); // ensure that role is stored to the database first
+            CompositeRoleEntity compositeRoleEntity = new CompositeRoleEntity(getEntity(), toRoleEntity(role));
             em.persist(compositeRoleEntity);
-        }
-    }
-
-    private void flushNewEntity() {
-        if (newEntity) {
-            // flush the current role to the database to ensure that we can join with it later
-            em.createQuery("select 1 from RoleEntity r where r.id = :id").setParameter("id", getId()).getResultList();
-            newEntity = false;
         }
     }
 
     @Override
     public void removeCompositeRole(RoleModel role) {
-        CompositeRoleEntity compositeRoleEntity = em.find(CompositeRoleEntity.class, new CompositeRoleEntity.Key(this.getId(), role.getId()));
-        if (compositeRoleEntity != null) {
-            em.remove(compositeRoleEntity);
-        }
+        em.createNamedQuery("deleteSingleCompositeFromRole")
+                .setParameter("parentRoleId", this.role.getId())
+                .setParameter("childRoleId", role.getId())
+                .executeUpdate();
     }
 
     @Override
     public Stream<RoleModel> getCompositesStream() {
-        Stream<RoleModel> composites = getChildRoles().map(c -> new RoleAdapter(session, realm, em, c, false));
+        Stream<RoleModel> composites = getChildRoles().map(c -> new RoleAdapter(session, realm, em, c));
         return composites.filter(Objects::nonNull);
     }
 
