@@ -52,6 +52,9 @@ public class OrganizationDomainEntity {
     @Column(name="VERIFIED")
     protected Boolean verified;
 
+    @Column(name="EXCLUDED_SUBDOMAINS", length = 2048)
+    protected String excludedSubdomains;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ORG_ID")
     private OrganizationEntity organization;
@@ -78,6 +81,14 @@ public class OrganizationDomainEntity {
 
     public void setVerified(Boolean verified) {
         this.verified = verified;
+    }
+
+    public String getExcludedSubdomains() {
+        return this.excludedSubdomains;
+    }
+
+    public void setExcludedSubdomains(String excludedSubdomains) {
+        this.excludedSubdomains = excludedSubdomains;
     }
 
     public OrganizationEntity getOrganization() {

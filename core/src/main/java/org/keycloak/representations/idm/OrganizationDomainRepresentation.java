@@ -17,6 +17,8 @@
 
 package org.keycloak.representations.idm;
 
+import java.util.Set;
+
 /**
  * Representation implementation of an organization internet domain.
  *
@@ -26,6 +28,7 @@ public class OrganizationDomainRepresentation {
 
     private String name;
     private boolean verified;
+    private Set<String> excludedSubdomains;
 
     public OrganizationDomainRepresentation() {
         // for reflection
@@ -49,6 +52,14 @@ public class OrganizationDomainRepresentation {
 
     public void setVerified(boolean verified) {
         this.verified = verified;
+    }
+
+    public Set<String> getExcludedSubdomains() {
+        return this.excludedSubdomains;
+    }
+
+    public void setExcludedSubdomains(Set<String> excludedSubdomains) {
+        this.excludedSubdomains = excludedSubdomains;
     }
 
     @Override

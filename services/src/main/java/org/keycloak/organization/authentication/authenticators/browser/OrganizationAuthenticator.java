@@ -300,6 +300,23 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                 .filter(broker -> organization.getDomains().map(OrganizationDomainModel::getName).anyMatch(domain::equals))
                 .findFirst().orElse(null);
 
+        if (idp == null) {
+            idp = organization.getIdentityProviders().filter(IdentityProviderRedirectMode.EMAIL_MATCH::isSet)
+                    .filter(broker -> {
+                        String brokerDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+
+                        if (ANY_DOMAIN.equals(brokerDomain)) {
+                            return organization.getDomains()
+                                    .anyMatch(orgDomain -> Organizations.domainMatches(domain, orgDomain));
+                        }
+
+                        return organization.getDomains()
+                                .filter((d) -> d.getName().equals(brokerDomain))
+                                .anyMatch(orgDomain -> Organizations.domainMatches(domain, orgDomain));
+                    })
+                    .findFirst().orElse(null);
+        }
+
         if (idp != null) {
             redirect(context, idp.getAlias(), username);
             return true;

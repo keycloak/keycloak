@@ -24,7 +24,6 @@ import java.util.stream.Stream;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -138,6 +137,10 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
             }
             cached = new CachedOrganizationIds(loaded, cacheKey, getRealm(), Stream.ofNullable(model));
             realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
+            model = getById(model.getId());
+            if (model instanceof OrganizationAdapter ma) {
+                ma.getCached().getDomainNames().add(domainName);
+            }
         }
 
         return cached.getOrgIds().stream().map(this::getById).findAny().orElse(null);
@@ -401,10 +404,13 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         if (realmCache != null) {
             realmCache.registerInvalidation(cacheKeyOrgId(getRealm(), id));
             realmCache.registerInvalidation(id);
-            organization.getDomains()
-                    .map(OrganizationDomainModel::getName)
-                    .map(this::cacheKeyByDomain)
-                    .forEach(realmCache::registerInvalidation);
+            CachedOrganization cachedOrg = realmCache.getCache().get(id, CachedOrganization.class);
+
+            if (cachedOrg != null) {
+                cachedOrg.getDomainNames().stream()
+                        .map(this::cacheKeyByDomain)
+                        .forEach(realmCache::registerInvalidation);
+            }
         }
 
         OrganizationAdapter adapter = managedOrganizations.get(id);

@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import java.io.Serializable;
+import java.util.Set;
 
 /**
  * Model implementation of an organization internet domain.
@@ -34,14 +35,20 @@ public class OrganizationDomainModel implements Serializable {
 
     private final String name;
     private final boolean verified;
+    private final Set<String> excludedSubdomains;
 
     public OrganizationDomainModel(String name) {
         this(name, false);
     }
 
     public OrganizationDomainModel(String name, boolean verified) {
+        this(name, verified, null);
+    }
+
+    public OrganizationDomainModel(String name, boolean verified, Set<String> excludedSubdomains) {
         this.name = name == null ? null : name.trim().toLowerCase();
         this.verified = verified;
+        this.excludedSubdomains = excludedSubdomains == null ? Set.of() : Set.copyOf(excludedSubdomains);
     }
 
     public String getName() {
@@ -50,6 +57,10 @@ public class OrganizationDomainModel implements Serializable {
 
     public boolean isVerified() {
         return this.verified;
+    }
+
+    public Set<String> getExcludedSubdomains() {
+        return this.excludedSubdomains;
     }
 
     @Override

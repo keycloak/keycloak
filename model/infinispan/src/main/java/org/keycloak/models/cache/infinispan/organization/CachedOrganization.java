@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.cache.infinispan.organization;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -42,6 +43,7 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
     private final boolean enabled;
     private final LazyLoader<OrganizationModel, MultivaluedHashMap<String, String>> attributes;
     private final Set<OrganizationDomainModel> domains;
+    private final Set<String> domainNames;
     private final Set<IdentityProviderModel> idps;
 
     public CachedOrganization(Long revision, RealmModel realm, OrganizationModel organization) {
@@ -54,6 +56,8 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
         this.enabled = organization.isEnabled();
         this.attributes = new DefaultLazyLoader<>(orgModel -> new MultivaluedHashMap<>(orgModel.getAttributes()), MultivaluedHashMap::new);
         this.domains = organization.getDomains().collect(Collectors.toSet());
+        this.domainNames = organization.getDomains().map(OrganizationDomainModel::getName)
+                .collect(Collectors.toCollection(HashSet::new));
         this.idps = organization.getIdentityProviders().collect(Collectors.toSet());
     }
 
@@ -88,6 +92,10 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
 
     public Stream<OrganizationDomainModel> getDomains() {
         return domains.stream();
+    }
+
+    public Set<String> getDomainNames() {
+        return domainNames;
     }
 
     public Stream<IdentityProviderModel> getIdentityProviders() {

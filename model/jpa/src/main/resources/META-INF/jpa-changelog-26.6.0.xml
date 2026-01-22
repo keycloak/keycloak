@@ -55,4 +55,10 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.6.0-org-domain-exclusions">
+        <addColumn tableName="ORG_DOMAIN">
+            <column name="EXCLUDED_SUBDOMAINS" type="VARCHAR(2048)"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
