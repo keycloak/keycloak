@@ -84,7 +84,7 @@ public class JsonWebTokenTest {
     @Test
     public void isActiveReturnFalseWhenBeforeTimeInFuture() {
         long currentTime = Time.currentTime();
-        long futureTime = currentTime + 10;
+        long futureTime = currentTime + 12; // default allowed clock skew is 10 seconds
         JsonWebToken jsonWebToken = new JsonWebToken();
         jsonWebToken.nbf(futureTime);
         assertFalse(jsonWebToken.isActive());

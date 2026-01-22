@@ -50,6 +50,17 @@ To analyze rejected requests in the server log, enable debug logging for `org.ke
 To revert to the previous behavior and to accept matrix parameters set the option `http-accept-non-normalized-paths` to `true`.
 With this configuration, enable and review the HTTP access log to identify problematic requests.
 
+=== Adjusted default clock-skew for not-before JWT token checks
+
+Previous versions of {project_name} tested the issued-at timestamp with a clock-skew of zero seconds by default if this value was provided in a token.
+Be default, access tokens issued by {project_name} used for the admin API or for the user info endpoint by default do not contain a not-before claim in the token, but customized setups might have it.
+In a setup with such a claim configured and with clocks that were not fully synchronized, this could lead to rejecting tokens on a node that lagged behind, as it would consider the tokens not valid yet.
+
+Starting with this version, {project_name} will honor a clock skew of 10 seconds for the issued-at timestamp by default which is aligned with the best practices for example of the https://openid.net/specs/fapi-security-profile-2_0-final.html#section-5.3.2.1-6[FAPI 2.0 Security Profile].
+
+This applies to all places where no explicit configuration of clock skew is configured except for JWT Client Assertions that have a hardcoded clock skew of 15 seconds.
+It does not affect any explicitly configured clock skew for example in identity providers where an individual clock skew can be configured.
+
 === The base themes are now abstract
 
 All the `base` themes are now tagged as **abstract**, and they are not listed in the admin console to be selected (**Realm Settings** -> **Themes** tab). They were always intended to be only extended but not used directly. If you use one of them, it will continue working (or not working) in the same way but cannot be selected using the admin console anymore. Please select one of the available default themes or create your own one.
