@@ -133,6 +133,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         entity.setTimestamp(clientSession.getTimestamp());
         entity.setData(model.getData());
+        entity.setRealmId(adapter.getRealm().getId());
 
         if (!exists) {
             em.persist(entity);
@@ -272,14 +273,9 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     @Override
     public Map<String, Long> getUserSessionsCountsByClients(RealmModel realm, boolean offline) {
-
-        String offlineStr = offlineToString(offline);
-
-        TypedQuery<Object[]> query = em.createNamedQuery("findClientSessionsClientIds", Object[].class);
-
-        query.setParameter("offline", offlineStr);
-        query.setParameter("realmId", realm.getId());
-        query.setParameter("lastSessionRefresh", calculateOldestSessionTime(realm, offline));
+        TypedQuery<Object[]> query = em.createNamedQuery("findClientSessionsClientIds", Object[].class)
+                .setParameter("offline", offlineToString(offline))
+                .setParameter("realmId", realm.getId());
 
         return closing(query.getResultStream())
                 .collect(Collectors.toMap(row -> {
