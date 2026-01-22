@@ -752,7 +752,8 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
         
         // Update the organization domain to enable wildcard subdomain matching
-        orgRep.getDomains().iterator().next().setMatchSubdomains(true);
+        OrganizationDomainRepresentation domain = orgRep.getDomains().iterator().next();
+        domain.setName("*." + domain.getName());
         try (Response response = organization.update(orgRep)) {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
@@ -782,7 +783,10 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
                 driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.consumerRealmName() + "/"));
 
         // Enable wildcard subdomain matching
-        orgRep.getDomains().iterator().next().setMatchSubdomains(true);
+        OrganizationDomainRepresentation domain2 = orgRep.getDomains().iterator().next();
+        if (!domain2.getName().startsWith("*.")) {
+            domain2.setName("*." + domain2.getName());
+        }
         try (Response response = organization.update(orgRep)) {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
@@ -803,8 +807,11 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         OrganizationRepresentation orgRep = createOrganization();
         OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
         
-        // Explicitly disable wildcard subdomain matching (should be default)
-        orgRep.getDomains().iterator().next().setMatchSubdomains(false);
+        // Ensure domain doesn't have wildcard prefix (exact match only)
+        OrganizationDomainRepresentation domain = orgRep.getDomains().iterator().next();
+        if (domain.getName().startsWith("*.")) {
+            domain.setName(domain.getName().substring(2));
+        }
         try (Response response = organization.update(orgRep)) {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
@@ -831,7 +838,8 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
         
         // Enable wildcard subdomain matching
-        orgRep.getDomains().iterator().next().setMatchSubdomains(true);
+        OrganizationDomainRepresentation domain = orgRep.getDomains().iterator().next();
+        domain.setName("*." + domain.getName());
         try (Response response = organization.update(orgRep)) {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
@@ -994,7 +1002,8 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
         
         // Enable wildcard subdomain matching for the organization domain
-        orgRep.getDomains().iterator().next().setMatchSubdomains(true);
+        OrganizationDomainRepresentation domain = orgRep.getDomains().iterator().next();
+        domain.setName("*." + domain.getName());
         organization.update(orgRep).close();
         
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
@@ -1014,8 +1023,11 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         OrganizationRepresentation orgRep = createOrganization();
         OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
         
-        // Explicitly disable wildcard subdomain matching
-        orgRep.getDomains().iterator().next().setMatchSubdomains(false);
+        // Ensure domain doesn't have wildcard prefix (exact match only)
+        OrganizationDomainRepresentation domain = orgRep.getDomains().iterator().next();
+        if (domain.getName().startsWith("*.")) {
+            domain.setName(domain.getName().substring(2));
+        }
         organization.update(orgRep).close();
         
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
@@ -1039,7 +1051,8 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
         
         // Enable wildcard subdomain matching
-        orgRep.getDomains().iterator().next().setMatchSubdomains(true);
+        OrganizationDomainRepresentation domain = orgRep.getDomains().iterator().next();
+        domain.setName("*." + domain.getName());
         organization.update(orgRep).close();
         
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();

@@ -476,11 +476,10 @@ public class OrganizationTest extends AbstractOrganizationTest {
         OrganizationRepresentation org = createOrganization();
         OrganizationResource organization = testRealm().organizations().get(org.getId());
         
-        // Add a domain with wildcard subdomain matching
+        // Add a domain with wildcard subdomain matching using *.domain pattern
         OrganizationDomainRepresentation wildcardDomain = new OrganizationDomainRepresentation();
-        wildcardDomain.setName("example.com");
+        wildcardDomain.setName("*.example.com");
         wildcardDomain.setVerified(true);
-        wildcardDomain.setMatchSubdomains(true);
         org.addDomain(wildcardDomain);
         
         try (Response response = organization.update(org)) {
@@ -491,36 +490,41 @@ public class OrganizationTest extends AbstractOrganizationTest {
         OrganizationRepresentation updated = organization.toRepresentation();
         assertEquals(2, updated.getDomains().size());
         
-        OrganizationDomainRepresentation savedDomain = updated.getDomain("example.com");
+        OrganizationDomainRepresentation savedDomain = updated.getDomain("*.example.com");
         assertNotNull(savedDomain);
         assertTrue(savedDomain.isVerified());
-        assertTrue(savedDomain.isMatchSubdomains());
         
-        // Verify that matchSubdomains defaults to false for existing domain
+        // Verify that the original domain without wildcard remains unchanged
         OrganizationDomainRepresentation defaultDomain = updated.getDomain("neworg.org");
         assertNotNull(defaultDomain);
-        assertFalse(defaultDomain.isMatchSubdomains());
         
-        // Test updating the matchSubdomains flag
-        wildcardDomain.setMatchSubdomains(false);
+        // Test changing to exact match (removing wildcard prefix)
+        org.getDomains().remove(wildcardDomain);
+        OrganizationDomainRepresentation exactDomain = new OrganizationDomainRepresentation();
+        exactDomain.setName("example.com");
+        exactDomain.setVerified(true);
+        org.addDomain(exactDomain);
+        
         try (Response response = organization.update(org)) {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
         
         updated = organization.toRepresentation();
-        savedDomain = updated.getDomain("example.com");
-        assertFalse(savedDomain.isMatchSubdomains());
+        assertNotNull(updated.getDomain("example.com"));
+        assertNull(updated.getDomain("*.example.com"));
         
-        // Re-enable wildcard matching
-        wildcardDomain.setMatchSubdomains(true);
+        // Re-add wildcard domain
+        org.getDomains().remove(exactDomain);
+        org.addDomain(wildcardDomain);
         try (Response response = organization.update(org)) {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
         
         updated = organization.toRepresentation();
-        savedDomain = updated.getDomain("example.com");
-        assertTrue(savedDomain.isMatchSubdomains());
+        savedDomain = updated.getDomain("*.example.com");
+        assertNotNull(savedDomain);
 
+        // Test conflict: another org cannot add a subdomain when wildcard exists
         OrganizationRepresentation fooOrg = createOrganization("foo-org");
         OrganizationDomainRepresentation conflictingDomain = new OrganizationDomainRepresentation();
         conflictingDomain.setName("sub.example.com");

@@ -22,11 +22,14 @@ import org.keycloak.organization.utils.Organizations;
 
 import org.junit.Test;
 
+import java.util.Set;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Unit tests for domain matching logic including wildcard subdomain support.
+ * Unit tests for domain matching logic including wildcard subdomain support with excluded subdomains.
+ * Patterns: *.domain for wildcards (with optional excludedSubdomains field), domain for exact matches.
  *
  * @author Keycloak Team
  */
@@ -34,7 +37,7 @@ public class OrganizationDomainMatchingTest {
 
     @Test
     public void testExactDomainMatch() {
-        OrganizationDomainModel domain = new OrganizationDomainModel("example.com", true, false);
+        OrganizationDomainModel domain = new OrganizationDomainModel("example.com", true);
         
         // Exact match should work
         assertTrue(Organizations.domainMatches("example.com", domain));
@@ -43,7 +46,7 @@ public class OrganizationDomainMatchingTest {
         assertTrue(Organizations.domainMatches("Example.COM", domain));
         assertTrue(Organizations.domainMatches("EXAMPLE.COM", domain));
         
-        // Subdomain should NOT match when wildcard is disabled
+        // Subdomain should NOT match without wildcard
         assertFalse(Organizations.domainMatches("sub.example.com", domain));
         assertFalse(Organizations.domainMatches("deep.sub.example.com", domain));
         
@@ -54,13 +57,13 @@ public class OrganizationDomainMatchingTest {
 
     @Test
     public void testWildcardSubdomainMatch() {
-        OrganizationDomainModel domain = new OrganizationDomainModel("example.com", true, true);
+        OrganizationDomainModel domain = new OrganizationDomainModel("*.example.com", true);
         
         // Exact match should still work
         assertTrue(Organizations.domainMatches("example.com", domain));
         assertTrue(Organizations.domainMatches("EXAMPLE.COM", domain));
         
-        // Subdomain should match when wildcard is enabled
+        // Subdomain should match with wildcard
         assertTrue(Organizations.domainMatches("sub.example.com", domain));
         assertTrue(Organizations.domainMatches("SUB.EXAMPLE.COM", domain));
         
@@ -80,7 +83,7 @@ public class OrganizationDomainMatchingTest {
     @Test
     public void testMicrosoftOnMicrosoftComScenario() {
         // Real-world scenario: Microsoft 365 tenants
-        OrganizationDomainModel domain = new OrganizationDomainModel("onmicrosoft.com", true, true);
+        OrganizationDomainModel domain = new OrganizationDomainModel("*.onmicrosoft.com", true);
         
         // Tenant-specific domains should match
         assertTrue(Organizations.domainMatches("contoso.onmicrosoft.com", domain));
@@ -98,7 +101,7 @@ public class OrganizationDomainMatchingTest {
     @Test
     public void testUniversityDomainScenario() {
         // Real-world scenario: University with department subdomains
-        OrganizationDomainModel domain = new OrganizationDomainModel("university.edu", true, true);
+        OrganizationDomainModel domain = new OrganizationDomainModel("*.university.edu", true);
         
         // Department domains should match
         assertTrue(Organizations.domainMatches("cs.university.edu", domain));
@@ -118,7 +121,7 @@ public class OrganizationDomainMatchingTest {
 
     @Test
     public void testNullAndEmptyValues() {
-        OrganizationDomainModel domain = new OrganizationDomainModel("example.com", true, true);
+        OrganizationDomainModel domain = new OrganizationDomainModel("*.example.com", true);
         
         // Null email domain should not match
         assertFalse(Organizations.domainMatches(null, domain));
@@ -130,13 +133,13 @@ public class OrganizationDomainMatchingTest {
         assertFalse(Organizations.domainMatches("example.com", null));
         
         // Null domain name should not match
-        OrganizationDomainModel nullNameDomain = new OrganizationDomainModel(null, true, true);
+        OrganizationDomainModel nullNameDomain = new OrganizationDomainModel(null, true);
         assertFalse(Organizations.domainMatches("example.com", nullNameDomain));
     }
 
     @Test
     public void testEdgeCases() {
-        OrganizationDomainModel domain = new OrganizationDomainModel("example.com", true, true);
+        OrganizationDomainModel domain = new OrganizationDomainModel("*.example.com", true);
         
         // Single character subdomain
         assertTrue(Organizations.domainMatches("a.example.com", domain));
@@ -155,27 +158,44 @@ public class OrganizationDomainMatchingTest {
     }
 
     @Test
-    public void testWildcardDisabledByDefault() {
-        // Using constructor without matchSubdomains parameter (defaults to false)
-        OrganizationDomainModel domain = new OrganizationDomainModel("example.com", true);
+    public void testExclusionPattern() {
+        // Test wildcard with exclusions
+        OrganizationDomainModel wildcard = new OrganizationDomainModel("*.example.com", true, 
+                Set.of("admin.example.com"));
         
-        // Exact match should work
-        assertTrue(Organizations.domainMatches("example.com", domain));
+        // Should match non-excluded subdomains
+        assertTrue(Organizations.domainMatches("users.example.com", wildcard));
+        assertTrue(Organizations.domainMatches("portal.example.com", wildcard));
+        assertTrue(Organizations.domainMatches("example.com", wildcard));
         
-        // Subdomain should NOT match (wildcard disabled by default)
-        assertFalse(Organizations.domainMatches("sub.example.com", domain));
-        assertFalse(domain.isMatchSubdomains());
+        // Should not match excluded subdomain
+        assertFalse(Organizations.domainMatches("admin.example.com", wildcard));
+        
+        // Test cascading exclusion - subdomains of excluded domain are also excluded
+        assertFalse(Organizations.domainMatches("api.admin.example.com", wildcard));
+        assertFalse(Organizations.domainMatches("deep.sub.admin.example.com", wildcard));
+        
+        // Test with multiple exclusions
+        OrganizationDomainModel multipleExclusions = new OrganizationDomainModel("*.university.edu", true,
+                Set.of("alumni.university.edu", "test.university.edu"));
+        
+        assertTrue(Organizations.domainMatches("students.university.edu", multipleExclusions));
+        assertFalse(Organizations.domainMatches("alumni.university.edu", multipleExclusions));
+        assertFalse(Organizations.domainMatches("test.university.edu", multipleExclusions));
+        assertFalse(Organizations.domainMatches("portal.alumni.university.edu", multipleExclusions)); // cascading
     }
 
     @Test
-    public void testBackwardCompatibility() {
-        // Using old constructor (should default to exact match only)
-        OrganizationDomainModel domain = new OrganizationDomainModel("example.com");
+    public void testWildcardPatternValidation() {
+        // Wildcard domains without base domain should be caught by validation
+        // (This would be tested in integration tests with full validation)
         
-        assertFalse(domain.isVerified());
-        assertFalse(domain.isMatchSubdomains());
+        // Valid wildcard pattern
+        OrganizationDomainModel wildcard = new OrganizationDomainModel("*.example.com", true);
+        assertTrue(Organizations.domainMatches("sub.example.com", wildcard));
         
-        assertTrue(Organizations.domainMatches("example.com", domain));
-        assertFalse(Organizations.domainMatches("sub.example.com", domain));
+        // Exact match pattern
+        OrganizationDomainModel exact = new OrganizationDomainModel("example.com", true);
+        assertFalse(Organizations.domainMatches("sub.example.com", exact));
     }
 }

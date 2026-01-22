@@ -165,7 +165,15 @@ public class Organizations {
     }
 
     /**
-     * Check if an email domain matches an organization domain, considering wildcard subdomain matching.
+     * Check if an email domain matches an organization domain, considering wildcard subdomain matching
+     * and exclusion patterns specified in the excludedSubdomains field.
+     *
+     * Patterns:
+     * - "*.example.com" - matches example.com and all subdomains (e.g., sub.example.com, deep.sub.example.com)
+     * - excludedSubdomains field contains domains to exclude (e.g., "alumni.example.com")
+     * - "example.com" - exact match only
+     *
+     * Exclusions are cascading: excluding "alumni.mit.edu" also excludes "portal.alumni.mit.edu", etc.
      *
      * @param emailDomain the domain from the user's email address
      * @param orgDomain the organization domain model to match against
@@ -179,17 +187,27 @@ public class Organizations {
         String email = emailDomain.toLowerCase();
         String pattern = orgDomain.getName().toLowerCase();
 
-        // Exact match always works
-        if (email.equals(pattern)) {
-            return true;
+        // Handle wildcard pattern (*.domain)
+        if (pattern.startsWith("*.")) {
+            String baseDomain = pattern.substring(2);
+            boolean matches = email.equals(baseDomain) || email.endsWith("." + baseDomain);
+            
+            // If it matches, check exclusions (cascading)
+            if (matches && orgDomain.getExcludedSubdomains() != null) {
+                for (String exclusion : orgDomain.getExcludedSubdomains()) {
+                    String excludedDomain = exclusion.toLowerCase();
+                    // Exclude exact match or any subdomain (cascading)
+                    if (email.equals(excludedDomain) || email.endsWith("." + excludedDomain)) {
+                        return false;
+                    }
+                }
+            }
+            
+            return matches;
         }
 
-        // If wildcards enabled, check if it's a subdomain
-        if (orgDomain.isMatchSubdomains()) {
-            return email.endsWith("." + pattern);
-        }
-
-        return false;
+        // Exact match
+        return email.equals(pattern);
     }
 
     public static String getEmailDomain(String email) {
@@ -323,9 +341,8 @@ public class Organizations {
             return false;
         }
 
-        Stream<OrganizationDomainModel> domains = organization.getDomains();
-
-        return domains.anyMatch(orgDomain -> domainMatches(emailDomain, orgDomain));
+        // The exclusion checking is now handled within domainMatches via the excludedSubdomains field
+        return organization.getDomains().anyMatch(orgDomain -> domainMatches(emailDomain, orgDomain));
     }
 
     private static OrganizationModel resolveOrganizationByDomain(UserModel user, String domain, OrganizationProvider provider) {

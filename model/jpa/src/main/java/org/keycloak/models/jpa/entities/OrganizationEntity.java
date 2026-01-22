@@ -41,7 +41,7 @@ import org.keycloak.utils.StringUtil;
 @NamedQueries({
         @NamedQuery(name="getByOrgName", query="select distinct o from OrganizationEntity o where o.realmId = :realmId AND o.name = :name"),
         @NamedQuery(name="getByDomainName", query="select distinct o from OrganizationEntity o inner join OrganizationDomainEntity d ON o.id = d.organization.id" +
-                " where o.realmId = :realmId and (d.name = :name or (d.matchSubdomains = true and d.name in (:names)))"),
+                " where o.realmId = :realmId and d.name in (:names)"),
         @NamedQuery(name="getCount", query="select count(o) from OrganizationEntity o where o.realmId = :realmId"),
         @NamedQuery(name="deleteOrganizationsByRealm", query="delete from OrganizationEntity o where o.realmId = :realmId"),
         @NamedQuery(name="getInternalOrgGroupsByMember", query="select m.groupId from UserGroupMembershipEntity m join GroupEntity g on g.id = m.groupId where g.type = 1 and m.user.id = :userId"),

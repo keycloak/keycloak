@@ -52,8 +52,8 @@ public class OrganizationDomainEntity {
     @Column(name="VERIFIED")
     protected Boolean verified;
 
-    @Column(name="MATCH_SUBDOMAINS")
-    protected Boolean matchSubdomains;
+    @Column(name="EXCLUDED_SUBDOMAINS", length = 2048)
+    protected String excludedSubdomains;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ORG_ID")
@@ -83,12 +83,12 @@ public class OrganizationDomainEntity {
         this.verified = verified;
     }
 
-    public Boolean isMatchSubdomains() {
-        return this.matchSubdomains;
+    public String getExcludedSubdomains() {
+        return this.excludedSubdomains;
     }
 
-    public void setMatchSubdomains(Boolean matchSubdomains) {
-        this.matchSubdomains = matchSubdomains;
+    public void setExcludedSubdomains(String excludedSubdomains) {
+        this.excludedSubdomains = excludedSubdomains;
     }
 
     public OrganizationEntity getOrganization() {

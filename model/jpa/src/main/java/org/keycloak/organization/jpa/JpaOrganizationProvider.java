@@ -234,35 +234,46 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         TypedQuery<OrganizationEntity> query = em.createNamedQuery("getByDomainName", OrganizationEntity.class);
 
         query.setParameter("realmId", realm.getId());
-        query.setParameter("name", emailDomain);
-
-        List<String> names = new ArrayList<>();
-
-        // Also consider wildcard domains by stripping subdomains
+        
+        List<String> domainPatterns = new ArrayList<>();
+        
+        // Add exact match
+        domainPatterns.add(emailDomain);
+        
+        // Strip subdomains to check for parent wildcard domains
         String[] parts = emailDomain.split("\\.");
-
+        
         for (int i = 1; i < parts.length - 1; i++) {
             String parentDomain = String.join(".", java.util.Arrays.copyOfRange(parts, i, parts.length));
-            names.add(parentDomain);
+            // Check for both exact parent and wildcard parent
+            domainPatterns.add(parentDomain);
+            domainPatterns.add("*." + parentDomain);
         }
-
-        query.setParameter("names", names);
+        
+        // Also check for wildcard at the current level
+        domainPatterns.add("*." + emailDomain);
+        
+        query.setParameter("names", domainPatterns);
 
         List<OrganizationEntity> result = query.getResultList();
 
-        for (OrganizationEntity org : result) {
-            // Check if this org has the exact domain
-            if (org.getDomains().stream()
-                    .anyMatch(d -> d.getName().equals(emailDomain) && !d.isMatchSubdomains())) {
-                return new OrganizationAdapter(session, realm, org, this);
+        // If we have results, filter by checking domain matching logic including exclusions
+        for (OrganizationEntity orgEntity : result) {
+            OrganizationAdapter org = new OrganizationAdapter(session, realm, orgEntity, this);
+            
+            // Check if this org actually matches using the full matching logic (handles exclusions)
+            if (matchesOrgDomain(org, emailDomain)) {
+                return org;
             }
         }
 
-        if (result.size() == 1) {
-            return new OrganizationAdapter(session, realm, result.get(0), this);
-        }
-
         return null;
+    }
+    
+    private boolean matchesOrgDomain(OrganizationModel org, String emailDomain) {
+        // The exclusion checking is now handled within Organizations.domainMatches
+        // via the excludedSubdomains field on each domain
+        return org.getDomains().anyMatch(orgDomain -> Organizations.domainMatches(emailDomain, orgDomain));
     }
 
     @Override
