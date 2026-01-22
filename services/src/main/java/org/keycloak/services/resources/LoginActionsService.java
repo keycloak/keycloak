@@ -154,7 +154,7 @@ public class LoginActionsService {
 
     protected final KeycloakSession session;
 
-    private EventBuilder event;
+    protected EventBuilder event;
 
     public static UriBuilder loginActionsBaseUrl(UriInfo uriInfo) {
         UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
