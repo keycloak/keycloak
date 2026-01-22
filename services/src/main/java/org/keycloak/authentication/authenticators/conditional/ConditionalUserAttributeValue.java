@@ -52,7 +52,7 @@ public class ConditionalUserAttributeValue implements ConditionalAuthenticator {
         if (!result && includeGroupAttributes) {
             result = KeycloakModelUtils.resolveAttribute(user, attributeName, true).stream().anyMatch(attr -> regexOutput ? Pattern.compile(attributeValue).matcher(attr).matches() : Objects.equals(attr, attributeValue));
         }
-        return negateOutput != result;
+        return negateOutput ? !result : result;
     }
 
     @Override
