@@ -90,7 +90,8 @@ public class FolderTheme extends FileBasedTheme {
 
     @Override
     public boolean hasResource(String path) throws IOException {
-        return ResourceLoader.getFile(resourcesDir, path) != null;
+        var file = ResourceLoader.getFile(resourcesDir, path);
+        return file != null && file.isFile();
     }
 
     @Override
