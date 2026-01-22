@@ -8,7 +8,6 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jakarta.validation.ValidationException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
@@ -102,8 +101,6 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
                 error.setErrorDescription("Cannot parse the JSON");
             } else if (isServerError) {
                 error.setErrorDescription("For more on this error consult the server log.");
-            } else if (throwable instanceof ValidationException) {
-                error.setErrorDescription(throwable.getMessage());
             }
 
             return Response.status(responseStatus)
