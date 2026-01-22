@@ -19,12 +19,13 @@ package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.sundr.builder.annotations.Buildable;
+
+import static org.keycloak.operator.crds.v2alpha1.deployment.spec.TelemetrySpec.convertResourceAttributesToString;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
@@ -36,7 +37,11 @@ public class TracingSpec {
     @JsonPropertyDescription("OpenTelemetry endpoint to connect to.")
     private String endpoint;
 
-    @JsonPropertyDescription("OpenTelemetry service name. Takes precedence over 'service.name' defined in the 'resourceAttributes' map.")
+    /**
+     * @deprecated Use {@link TelemetrySpec#getServiceName()}
+     */
+    @Deprecated
+    @JsonPropertyDescription("DEPRECATED - use the 'telemetry.serviceName' instead. OpenTelemetry service name. Takes precedence over 'service.name' defined in the 'resourceAttributes' map.")
     private String serviceName;
 
     @JsonPropertyDescription("OpenTelemetry protocol used for the telemetry data (default 'grpc'). For more information, check the Tracing guide.")
@@ -51,7 +56,11 @@ public class TracingSpec {
     @JsonPropertyDescription("OpenTelemetry compression method used to compress payloads. If unset, compression is disabled. Possible values are: gzip, none.")
     private String compression;
 
-    @JsonPropertyDescription("OpenTelemetry resource attributes present in the exported trace to characterize the telemetry producer.")
+    /**
+     * @deprecated Use {@link TelemetrySpec#getResourceAttributes()}
+     */
+    @Deprecated
+    @JsonPropertyDescription("DEPRECATED - use the 'telemetry.resourceAttributes' instead. OpenTelemetry resource attributes present in the exported trace to characterize the telemetry producer.")
     private Map<String, String> resourceAttributes;
 
     public Boolean getEnabled() {
@@ -120,19 +129,10 @@ public class TracingSpec {
     // resource attributes in format key=val delimited by comma
     @JsonIgnore
     public String getResourceAttributesString() {
-        return convertTracingAttributesToString(getResourceAttributes());
+        return convertResourceAttributesToString(getResourceAttributes());
     }
 
     public void setResourceAttributes(Map<String, String> resourceAttributes) {
         this.resourceAttributes = resourceAttributes;
-    }
-
-    /**
-     * Convert resource attributes in format key=val delimited by comma to string
-     */
-    public static String convertTracingAttributesToString(Map<String, String> attributes) {
-        return attributes.entrySet().stream()
-                .map(attr -> String.format("%s=%s", attr.getKey(), attr.getValue()))
-                .collect(Collectors.joining(","));
     }
 }

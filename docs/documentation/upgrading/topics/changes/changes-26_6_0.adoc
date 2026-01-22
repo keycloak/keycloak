@@ -59,7 +59,10 @@ All the `base` themes are now tagged as **abstract**, and they are not listed in
 
 The following sections provide details on deprecated features.
 
-=== <TODO>
+=== Deprecation of specific tracing properties in Keycloak CR
+
+The `tracing.serviceName`, and `tracing.resourceAttributes` fields of the Keycloak CR, are now deprecated.
+You should use the new `telemetry.serviceName`, and `telemetry.resourceAttributes` fields citizens that are shared among all OpenTelemetry components - logs, metrics, and traces.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

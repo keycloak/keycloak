@@ -19,13 +19,17 @@ package org.keycloak.operator.controllers;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -42,6 +46,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TelemetrySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
@@ -65,11 +70,13 @@ public class KeycloakDistConfigurator {
      */
     @SuppressWarnings("rawtypes")
     private final Map<String, org.keycloak.operator.controllers.KeycloakDistConfigurator.OptionMapper.Mapper> firstClassConfigOptions = new LinkedHashMap<>();
+    private final List<BiConsumer<Keycloak, KeycloakStatusAggregator>> validators = new ArrayList<>();
 
     public KeycloakDistConfigurator() {
         // register the configuration mappers for the various parts of the keycloak cr
         configureHostname();
         configureFeatures();
+        configureTelemetry();
         configureTracing();
         configureTransactions();
         configureHttp();
@@ -87,6 +94,7 @@ public class KeycloakDistConfigurator {
      */
     public void validateOptions(Keycloak keycloakCR, KeycloakStatusAggregator status) {
         assumeFirstClassCitizens(keycloakCR, status);
+        executeCustomValidations(keycloakCR, status);
     }
 
     /* ---------- Configuration of first-class citizen fields ---------- */
@@ -127,6 +135,15 @@ public class KeycloakDistConfigurator {
                 .mapOptionFromCollection("features-disabled", FeatureSpec::getDisabledFeatures);
     }
 
+    void configureTelemetry() {
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getTelemetrySpec())
+                .mapOption("telemetry-endpoint", TelemetrySpec::getEndpoint)
+                .mapOption("telemetry-service-name", TelemetrySpec::getServiceName)
+                .mapOption("telemetry-protocol", TelemetrySpec::getProtocol)
+                .mapOption("telemetry-resource-attributes", TelemetrySpec::getResourceAttributesString)
+                .validate((telemetry, status) -> validateResourceAttributes(telemetry.getResourceAttributes(), status));
+    }
+
     void configureTracing() {
         optionMapper(keycloakCR -> keycloakCR.getSpec().getTracingSpec())
                 .mapOption("tracing-enabled", TracingSpec::getEnabled)
@@ -136,7 +153,8 @@ public class KeycloakDistConfigurator {
                 .mapOption("tracing-sampler-type", TracingSpec::getSamplerType)
                 .mapOption("tracing-sampler-ratio", TracingSpec::getSamplerRatio)
                 .mapOption("tracing-compression", TracingSpec::getCompression)
-                .mapOption("tracing-resource-attributes", TracingSpec::getResourceAttributesString);
+                .mapOption("tracing-resource-attributes", TracingSpec::getResourceAttributesString)
+                .validate((tracing, status) -> validateResourceAttributes(tracing.getResourceAttributes(), status));
     }
 
     void configureTransactions() {
@@ -184,6 +202,40 @@ public class KeycloakDistConfigurator {
     }
 
     /* ---------- END of configuration of first-class citizen fields ---------- */
+
+    private static void validateResourceAttributes(Map<String, String> resourceAttributes, KeycloakStatusAggregator status) {
+        Predicate<String> isInvalidResourceAttribute = (keyOrVal) -> (keyOrVal.contains("=") || keyOrVal.contains(","));
+        Set<String> invalidKeys = new HashSet<>();
+        Map<String, String> invalidValues = new HashMap<>();
+
+        resourceAttributes.forEach((key, val) -> {
+            if (isInvalidResourceAttribute.test(key)) {
+                invalidKeys.add(key);
+            }
+            if (isInvalidResourceAttribute.test(val)) {
+                invalidValues.put(key, val);
+            }
+        });
+
+        if (!invalidKeys.isEmpty()) {
+            var formattedKeys = invalidKeys.stream()
+                    .map("'%s'"::formatted)
+                    .collect(Collectors.toSet());
+            status.addErrorMessage("Resource attributes keys cannot contain characters '=' or ','. Invalid keys: %s".formatted(String.join(", ", formattedKeys)));
+        }
+
+        if (!invalidValues.isEmpty()) {
+            var formattedInvalidValues = invalidValues.entrySet()
+                    .stream()
+                    .map(entry -> "'%s'(key '%s')".formatted(entry.getValue(), entry.getKey()))
+                    .collect(Collectors.toSet());
+            status.addErrorMessage("Resource attributes values cannot contain characters '=' or ','. Invalid values: %s".formatted(String.join(", ", formattedInvalidValues)));
+        }
+    }
+
+    protected void executeCustomValidations(Keycloak keycloakCR, KeycloakStatusAggregator status) {
+        validators.forEach(validator -> validator.accept(keycloakCR, status));
+    }
 
     /**
      * Assume the specified first-class citizens are not included in the general server configuration
@@ -259,6 +311,18 @@ public class KeycloakDistConfigurator {
 
         public <R> OptionMapper<T> mapOption(String optionName, Function<T, R> optionValueSupplier) {
             firstClassConfigOptions.put(optionName, new Mapper<>(optionValueSupplier));
+            return this;
+        }
+
+        public <R> OptionMapper<T> validate(BiConsumer<T, KeycloakStatusAggregator> validator) {
+            validators.add((keycloakCR, status) -> {
+                T value = optionSpec.apply(keycloakCR);
+                if (value == null) {
+                    Log.debugf("Skipping validation of configuration as the parent is not specified in the CR");
+                    return;
+                }
+                validator.accept(value, status);
+            });
             return this;
         }
 

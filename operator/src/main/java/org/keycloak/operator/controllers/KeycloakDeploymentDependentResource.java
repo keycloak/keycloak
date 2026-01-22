@@ -78,7 +78,7 @@ import static org.keycloak.operator.Utils.addResources;
 import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.LEGACY_MANAGEMENT_ENABLED;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
-import static org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec.convertTracingAttributesToString;
+import static org.keycloak.operator.crds.v2alpha1.deployment.spec.TelemetrySpec.convertResourceAttributesToString;
 
 @KubernetesDependent(
         informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
@@ -99,8 +99,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     public static final String KC_TRUSTSTORE_PATHS = "KC_TRUSTSTORE_PATHS";
 
-    // Tracing
-    public static final String KC_TRACING_SERVICE_NAME = "KC_TRACING_SERVICE_NAME";
+    // Telemetry
+    public static final String KC_TELEMETRY_SERVICE_NAME = "KC_TELEMETRY_SERVICE_NAME";
+    public static final String KC_TELEMETRY_RESOURCE_ATTRIBUTES = "KC_TELEMETRY_RESOURCE_ATTRIBUTES";
     public static final String KC_TRACING_RESOURCE_ATTRIBUTES = "KC_TRACING_RESOURCE_ATTRIBUTES";
 
     public static final String OPTIMIZED_ARG = "--optimized";
@@ -485,7 +486,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
         }
 
-        setTracingEnvVars(keycloakCR, varMap);
+        setTelemetryEnvVars(keycloakCR, varMap);
 
         var envVars = new ArrayList<>(varMap.values());
         baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
@@ -497,32 +498,40 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         Log.debugf("Found config secrets names: %s", serverConfigSecretsNames);
     }
 
-    private static void setTracingEnvVars(Keycloak keycloakCR, Map<String, EnvVar> varMap) {
-        varMap.putIfAbsent(KC_TRACING_SERVICE_NAME,
-                new EnvVarBuilder().withName(KC_TRACING_SERVICE_NAME)
+    private static void setTelemetryEnvVars(Keycloak keycloakCR, Map<String, EnvVar> varMap) {
+        varMap.putIfAbsent(KC_TELEMETRY_SERVICE_NAME,
+                new EnvVarBuilder().withName(KC_TELEMETRY_SERVICE_NAME)
                         .withValue(keycloakCR.getMetadata().getName())
                         .build()
         );
 
         // Possible OTel k8s attributes convention can be found here: https://opentelemetry.io/docs/specs/semconv/attributes-registry/k8s/#kubernetes-attributes
-        var tracingAttributes = Map.of("k8s.namespace.name", keycloakCR.getMetadata().getNamespace());
+        var telemetryAttributes = Map.of("k8s.namespace.name", keycloakCR.getMetadata().getNamespace());
 
-        if (varMap.containsKey(KC_TRACING_RESOURCE_ATTRIBUTES)) {
-            // append 'tracingAttributes' to the existing attributes defined in the 'KC_TRACING_RESOURCE_ATTRIBUTES' env var
-            var existingAttributes = convertTracingAttributesToMap(varMap);
-            tracingAttributes.forEach(existingAttributes::putIfAbsent);
-            varMap.get(KC_TRACING_RESOURCE_ATTRIBUTES).setValue(convertTracingAttributesToString(existingAttributes));
+        if (varMap.containsKey(KC_TELEMETRY_RESOURCE_ATTRIBUTES)) {
+            appendExistingResourceAttributes(KC_TELEMETRY_RESOURCE_ATTRIBUTES, telemetryAttributes, varMap);
+        } else if (varMap.containsKey(KC_TRACING_RESOURCE_ATTRIBUTES)) {
+            appendExistingResourceAttributes(KC_TRACING_RESOURCE_ATTRIBUTES, telemetryAttributes, varMap);
         } else {
-            varMap.put(KC_TRACING_RESOURCE_ATTRIBUTES,
-                    new EnvVarBuilder().withName(KC_TRACING_RESOURCE_ATTRIBUTES)
-                            .withValue(convertTracingAttributesToString(tracingAttributes))
+            varMap.put(KC_TELEMETRY_RESOURCE_ATTRIBUTES,
+                    new EnvVarBuilder().withName(KC_TELEMETRY_RESOURCE_ATTRIBUTES)
+                            .withValue(convertResourceAttributesToString(telemetryAttributes))
                             .build()
             );
         }
     }
 
-    private static Map<String, String> convertTracingAttributesToMap(Map<String, EnvVar> envVars) {
-        return Arrays.stream(Optional.ofNullable(envVars.get(KC_TRACING_RESOURCE_ATTRIBUTES).getValue()).orElse("").split(","))
+    /**
+     * Append default resource attributes to the specified resource attributes
+     */
+    private static void appendExistingResourceAttributes(String resourceAttributesEnvVar, Map<String, String> existingResourceAttributes, Map<String, EnvVar> varMap) {
+        var existingAttributes = convertResourceAttributesToMap(resourceAttributesEnvVar, varMap);
+        existingResourceAttributes.forEach(existingAttributes::putIfAbsent);
+        varMap.get(resourceAttributesEnvVar).setValue(convertResourceAttributesToString(existingAttributes));
+    }
+
+    private static Map<String, String> convertResourceAttributesToMap(String resourceAttributesEnvVar, Map<String, EnvVar> envVars) {
+        return Arrays.stream(Optional.ofNullable(envVars.get(resourceAttributesEnvVar).getValue()).orElse("").split(","))
                 .filter(entry -> entry.contains("="))
                 .map(entry -> entry.split("=", 2))
                 .collect(Collectors.toMap(entry -> entry[0], entry -> entry[1]));
