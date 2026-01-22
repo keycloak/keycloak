@@ -89,6 +89,11 @@ public class FolderTheme extends FileBasedTheme {
     }
 
     @Override
+    public boolean hasResource(String path) throws IOException {
+        return ResourceLoader.getFile(resourcesDir, path) != null;
+    }
+
+    @Override
     public InputStream getResourceAsStream(String path) throws IOException {
         return ResourceLoader.getFileAsStream(resourcesDir, path);
     }

@@ -131,11 +131,7 @@ public class ThemeResource {
                         return Response.status(Response.Status.NOT_FOUND).build();
                     }
 
-                    boolean resourceExists;
-                    try (InputStream is = theme.getResourceAsStream(path)) {
-                        resourceExists = is != null;
-                    }
-                    if (!resourceExists) {
+                    if (!theme.hasResource(path)) {
                         // Prevent a redirect to a file that doesn't exist anyway
                         log.debugf("Resource doesn't exist, returning a 404: %s", path);
                         return Response.status(Response.Status.NOT_FOUND).build();
