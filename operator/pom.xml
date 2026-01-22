@@ -26,10 +26,15 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>io.quarkus.platform</groupId>
+          <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-client-registration-api</artifactId>
+            <version>999.0.0-SNAPSHOT</version>
+          </dependency>
+          <dependency>
+                <groupId>io.quarkiverse.operatorsdk</groupId>
                 <artifactId>quarkus-operator-sdk-bom</artifactId>
-                <version>${quarkus.version}</version>
+                <version>7.5.0.CR1</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
