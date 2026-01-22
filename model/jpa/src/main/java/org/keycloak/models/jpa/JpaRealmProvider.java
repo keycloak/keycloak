@@ -455,7 +455,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             throw new ModelException("Role not found or trying to remove role from incorrect realm");
         }
 
-        em.createNamedQuery("deleteRoleFromComposites").setParameter("roleId", role.getId())
+        em.createNamedQuery("deleteRoleFromComposites").setParameter("role", roleEntity)
                 .executeUpdate();
 
         em.createNamedQuery("deleteClientScopeRoleMappingByRole").setParameter("role", roleEntity).executeUpdate();

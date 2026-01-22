@@ -97,7 +97,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public void addCompositeRole(RoleModel role) {
-        if (em.find(CompositeRoleEntity.class, new CompositeRoleEntity.Key(this.getId(), role.getId())) == null) {
+        if (em.find(CompositeRoleEntity.class, new CompositeRoleEntity.Key(getEntity(), toRoleEntity(role))) == null) {
             CompositeRoleEntity compositeRoleEntity = new CompositeRoleEntity(getEntity(), toRoleEntity(role));
             em.persist(compositeRoleEntity);
         }
@@ -105,9 +105,10 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public void removeCompositeRole(RoleModel role) {
+        RoleEntity child = toRoleEntity(role);
         em.createNamedQuery("deleteSingleCompositeFromRole")
-                .setParameter("parentRoleId", this.role.getId())
-                .setParameter("childRoleId", role.getId())
+                .setParameter("parentRole", getEntity())
+                .setParameter("childRole", child)
                 .executeUpdate();
     }
 

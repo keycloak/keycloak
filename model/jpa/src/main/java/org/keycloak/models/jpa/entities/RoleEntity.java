@@ -60,7 +60,7 @@ import org.hibernate.annotations.Nationalized;
         @NamedQuery(name="searchForRealmRoles", query="select role from RoleEntity role where role.clientRole = false and role.realmId = :realm and ( lower(role.name) like :search or lower(role.description) like :search ) order by role.name"),
         @NamedQuery(name="getRoleIdsFromIdList", query="select role.id from RoleEntity role where role.realmId = :realm and role.id in :ids order by role.name ASC"),
         @NamedQuery(name="getRoleIdsByNameContainingFromIdList", query="select role.id from RoleEntity role where role.realmId = :realm and lower(role.name) like lower(concat('%',:search,'%')) and role.id in :ids order by role.name ASC"),
-        @NamedQuery(name="getChildRoles", query="select r from RoleEntity r join CompositeRoleEntity c on r.id = c.childRoleId where c.parentRoleId = :parentRoleId"),
+        @NamedQuery(name="getChildRoles", query="select r from RoleEntity r join CompositeRoleEntity c on r.id = c.childRole.id where c.parentRole.id = :parentRoleId"),
 })
 
 public class RoleEntity {

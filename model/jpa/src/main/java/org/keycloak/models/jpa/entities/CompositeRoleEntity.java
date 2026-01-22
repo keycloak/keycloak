@@ -20,15 +20,14 @@ package org.keycloak.models.jpa.entities;
 import java.io.Serializable;
 import java.util.Objects;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 /**
@@ -39,30 +38,20 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name="COMPOSITE_ROLE")
 @NamedQueries({
-        @NamedQuery(name="deleteRoleFromComposites", query="delete CompositeRoleEntity c where c.parentRoleId = :roleId or c.childRoleId = :roleId"),
-        @NamedQuery(name="deleteSingleCompositeFromRole", query="delete CompositeRoleEntity c where c.parentRoleId = :parentRoleId and c.childRoleId = :childRoleId"),
+        @NamedQuery(name="deleteRoleFromComposites", query="delete CompositeRoleEntity c where c.parentRole = :role or c.childRole = :role"),
+        @NamedQuery(name="deleteSingleCompositeFromRole", query="delete CompositeRoleEntity c where c.parentRole = :parentRole and c.childRole = :childRole"),
 })
 @IdClass(CompositeRoleEntity.Key.class)
 public class CompositeRoleEntity {
     @Id
-    @Column(name="COMPOSITE", length = 36)
-    private String parentRoleId;
+    @ManyToOne(fetch=FetchType.LAZY)
+    @JoinColumn(name="COMPOSITE")
+    private RoleEntity parentRole;
 
     @Id
-    @Column(name="CHILD_ROLE", length = 36)
-    private String childRoleId;
-
-    /* Although this field seems not to be used, it is important for Hibernate to figure out the dependencies when
-    sorting the SQL statements for inserting and deleting. Otherwise, we might see primary key violations. */
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "COMPOSITE", updatable = false, insertable = false)
-    RoleEntity parentRole;
-
-    /* Although this field seems not to be used, it is important for Hibernate to figure out the dependencies when
-    sorting the SQL statements for inserting and deleting. Otherwise, we might see primary key violations. */
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CHILD_ROLE", updatable = false, insertable = false)
-    RoleEntity childRole;
+    @ManyToOne(fetch=FetchType.LAZY)
+    @JoinColumn(name="CHILD_ROLE")
+    private RoleEntity childRole;
 
     public CompositeRoleEntity() {
     }
@@ -71,24 +60,22 @@ public class CompositeRoleEntity {
         // Fields must not be null otherwise the automatic dependency detection of Hibernate will not work
         this.parentRole = parentRole;
         this.childRole = childRole;
-        this.childRoleId = childRole.getId();
-        this.parentRoleId = parentRole.getId();
     }
 
-    public String getParentRoleId() {
-        return parentRoleId;
+    public RoleEntity getParentRole() {
+        return parentRole;
     }
 
-    public void setParentRoleId(String parentRoleId) {
-        this.parentRoleId = parentRoleId;
+    public void setParentRole(RoleEntity parentRole) {
+        this.parentRole = parentRole;
     }
 
-    public String getChildRoleId() {
-        return childRoleId;
+    public RoleEntity getChildRole() {
+        return childRole;
     }
 
-    public void setChildRoleId(String childRoleId) {
-        this.childRoleId = childRoleId;
+    public void setChildRole(RoleEntity childRole) {
+        this.childRole = childRole;
     }
 
     @Override
@@ -97,51 +84,51 @@ public class CompositeRoleEntity {
         if (o == null) return false;
         if (!(o instanceof CompositeRoleEntity that)) return false;
 
-        return parentRoleId.equals(that.parentRoleId) && childRoleId.equals(that.childRoleId);
+        return parentRole.equals(that.parentRole) && childRole.equals(that.childRole);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(childRoleId, parentRoleId);
+        return Objects.hash(childRole, parentRole);
     }
 
     public static class Key implements Serializable {
-        private String childRoleId;
-        private String parentRoleId;
+        private RoleEntity childRole;
+        private RoleEntity parentRole;
 
         public Key() {
         }
 
-        public Key(String parentRoleId, String childRoleId) {
-            this.childRoleId = childRoleId;
-            this.parentRoleId = parentRoleId;
+        public Key(RoleEntity parentRole, RoleEntity childRole) {
+            this.childRole = childRole;
+            this.parentRole = parentRole;
         }
 
-        public String getChildRoleId() {
-            return childRoleId;
+        public RoleEntity getChildRole() {
+            return childRole;
         }
 
-        public void setChildRoleId(String childRoleId) {
-            this.childRoleId = childRoleId;
+        public void setChildRole(RoleEntity childRole) {
+            this.childRole = childRole;
         }
 
-        public String getParentRoleId() {
-            return parentRoleId;
+        public RoleEntity getParentRole() {
+            return parentRole;
         }
 
-        public void setParentRoleId(String parentRole) {
-            this.parentRoleId = parentRole;
+        public void setParentRole(RoleEntity parentRole) {
+            this.parentRole = parentRole;
         }
 
         @Override
         public boolean equals(Object o) {
             if (!(o instanceof Key key)) return false;
-            return Objects.equals(childRoleId, key.childRoleId) && Objects.equals(parentRoleId, key.parentRoleId);
+            return Objects.equals(childRole, key.childRole) && Objects.equals(parentRole, key.parentRole);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(childRoleId, parentRoleId);
+            return Objects.hash(childRole, parentRole);
         }
     }
 }
