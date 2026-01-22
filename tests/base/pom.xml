@@ -85,6 +85,11 @@
             <artifactId>keycloak-test-framework-db-tidb</artifactId>
         </dependency>
         <dependency>
+            <groupId>software.amazon.jdbc</groupId>
+            <artifactId>aws-advanced-jdbc-wrapper</artifactId>
+            <version>${aws-jdbc-wrapper.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-email-server</artifactId>
         </dependency>
@@ -134,4 +139,42 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>execute-sql</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>sql-maven-plugin</artifactId>
+                        <version>3.0.0</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>software.amazon.jdbc</groupId>
+                                <artifactId>aws-advanced-jdbc-wrapper</artifactId>
+                                <version>${aws-jdbc-wrapper.version}</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.postgresql</groupId>
+                                <artifactId>postgresql</artifactId>
+                                <version>${postgresql-jdbc.version}</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <id>clear-schema</id>
+                                <configuration>
+                                    <srcFiles>
+                                        <srcFile>../../.github/scripts/aws/rds/pg_clear.sql</srcFile>
+                                    </srcFiles>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
