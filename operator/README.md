@@ -48,7 +48,7 @@ Vanilla minikube does not support Network Policies, and Cilium implements the CN
 Another CNI implementation may work too.
 
 ```bash
-minikube start --addons ingress --cni cilium
+minikube start --addons ingress --cni cilium --cpus=max
 ```
 
 Enable the Minikube Docker daemon:
@@ -113,7 +113,7 @@ minikube addons enable ingress
 To avoid skipping tests that are depending on custom Keycloak images, you need to build those first:
 
 ```bash
-./build-testing-docker-images.sh [SOURCE KEYCLOAK IMAGE TAG] [SOURCE KEYCLOAK IMAGE]
+./scripts/build-testing-docker-images.sh [SOURCE KEYCLOAK IMAGE TAG] [SOURCE KEYCLOAK IMAGE]
 ```
 
 And run the tests passing an extra Java property:
