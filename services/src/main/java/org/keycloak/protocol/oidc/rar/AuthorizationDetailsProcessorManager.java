@@ -3,6 +3,7 @@ package org.keycloak.protocol.oidc.rar;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -12,7 +13,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.representations.AuthorizationDetailsResponse;
-import org.keycloak.services.cors.Cors;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -31,7 +31,6 @@ public class AuthorizationDetailsProcessorManager {
 
     public List<AuthorizationDetailsResponse> processStoredAuthorizationDetails(KeycloakSession session, UserSessionModel userSession,
                                                                                 ClientSessionContext clientSessionCtx,
-                                                                                Cors cors,
                                                                                 String authorizationDetailsParam) throws InvalidAuthorizationDetailsException {
         return processAuthzDetailsImpl(session, authorizationDetailsParam,
                 (processor, authzDetail) ->
@@ -41,14 +40,15 @@ public class AuthorizationDetailsProcessorManager {
 
 
     public List<AuthorizationDetailsResponse> handleMissingAuthorizationDetails(KeycloakSession session, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-        return session.getKeycloakSessionFactory()
+        List<AuthorizationDetailsResponse> allAuthzDetails = new ArrayList<>();
+        session.getKeycloakSessionFactory()
                 .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
                 .sorted((f1, f2) -> f2.order() - f1.order())
                 .map(f -> session.getProvider(AuthorizationDetailsProcessor.class, f.getId()))
                 .map(processor -> processor.handleMissingAuthorizationDetails(userSession, clientSessionCtx))
-                .filter(authzDetailsResponse -> authzDetailsResponse != null)
-                .findFirst()
-                .orElse(null);
+                .filter(Objects::nonNull)
+                .forEach(allAuthzDetails::addAll);
+        return allAuthzDetails;
     }
 
 
@@ -89,7 +89,7 @@ public class AuthorizationDetailsProcessorManager {
 
     private List<AuthorizationDetailsJSONRepresentation> parseAuthorizationDetails(String authorizationDetailsParam) {
         try {
-            return JsonSerialization.readValue(authorizationDetailsParam, new TypeReference<List<AuthorizationDetailsJSONRepresentation>>() {
+            return JsonSerialization.readValue(authorizationDetailsParam, new TypeReference<>() {
             });
         } catch (Exception e) {
             logger.warnf(e, "Invalid authorization_details format: %s", authorizationDetailsParam);

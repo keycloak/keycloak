@@ -25,7 +25,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.Security;
 import java.security.cert.Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -51,6 +50,7 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -104,7 +104,6 @@ import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.HttpStatus;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -171,8 +170,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	public static KeyWrapper getECKey(String keyId) {
 		try {
-			Security.addProvider(new BouncyCastleProvider());
-			KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
+			KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", BouncyIntegration.PROVIDER);
 			kpg.initialize(256);
 			var keyPair = kpg.generateKeyPair();
 			KeyWrapper kw = new KeyWrapper();
@@ -195,8 +193,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	public static KeyWrapper getEd25519Key(String keyId) {
 		try {
-			Security.addProvider(new BouncyCastleProvider());
-			KeyPairGenerator kpg = KeyPairGenerator.getInstance("Ed25519", "BC");
+			KeyPairGenerator kpg = KeyPairGenerator.getInstance("Ed25519", BouncyIntegration.PROVIDER);
 			var keyPair = kpg.generateKeyPair();
 			KeyWrapper kw = new KeyWrapper();
 			kw.setPrivateKey(keyPair.getPrivate());

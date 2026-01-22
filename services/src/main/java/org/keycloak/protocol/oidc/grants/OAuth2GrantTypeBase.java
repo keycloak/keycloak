@@ -355,7 +355,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
             logger.debugf("Found authorization_details in client session, processing it");
             try {
                 return new AuthorizationDetailsProcessorManager()
-                        .processStoredAuthorizationDetails(session, userSession, clientSessionCtx, cors, storedAuthDetails);
+                        .processStoredAuthorizationDetails(session, userSession, clientSessionCtx, storedAuthDetails);
             } catch (InvalidAuthorizationDetailsException e) {
                 logger.warnf(e, "Error when processing stored authorization_details");
                 event.detail(Details.REASON, e.getMessage());
