@@ -29,10 +29,12 @@ import jakarta.persistence.TypedQuery;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Event;
+import org.keycloak.events.EventCountQuery;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.AdminEventCountQuery;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
@@ -63,6 +65,16 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     @Override
     public EventQuery createQuery() {
         return new JpaEventQuery(em);
+    }
+
+    @Override
+    public EventCountQuery createCountQuery() {
+        return new JpaEventCountQuery(em);
+    }
+
+    @Override
+    public AdminEventCountQuery createAdminCountQuery() {
+        return new JpaAdminEventCountQuery(em);
     }
 
     @Override
