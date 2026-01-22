@@ -209,30 +209,35 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         client = testRealm().clients().findByClientId(clientId).get(0);
         namedClient = testRealm().clients().findByClientId(namedClientId).get(0);
 
+        // Enable OID4VCI at realm level (required before assigning OID4VCI scopes)
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        realmRep.setVerifiableCredentialsEnabled(true);
+        testRealm().update(realmRep);
+
         // Lookup the pre-installed oid4vc_natural_person client scope
         sdJwtTypeNaturalPersonClientScope = requireExistingClientScope(sdJwtTypeNaturalPersonScopeName);
 
-        // Register the client scopes
-        sdJwtTypeCredentialClientScope = registerClientScope(sdJwtTypeCredentialScopeName,
-                                                             null,
-                                                             sdJwtTypeCredentialConfigurationIdName,
+        // Register the optional client scopes
+        sdJwtTypeCredentialClientScope = registerOptionalClientScope(sdJwtTypeCredentialScopeName,
+                                                                     null,
+                                                                     sdJwtTypeCredentialConfigurationIdName,
                                                                      sdJwtTypeCredentialScopeName,
                                                                      sdJwtCredentialVct,
                                                                      Format.SD_JWT_VC,
                                                                      null,
                                                                      List.of(KeyAttestationResistanceLevels.HIGH,
                                                                              KeyAttestationResistanceLevels.MODERATE));
-        jwtTypeCredentialClientScope = registerClientScope(jwtTypeCredentialScopeName,
-                                                           TEST_DID.toString(),
-                                                           jwtTypeCredentialConfigurationIdName,
+        jwtTypeCredentialClientScope = registerOptionalClientScope(jwtTypeCredentialScopeName,
+                                                                   TEST_DID.toString(),
+                                                                   jwtTypeCredentialConfigurationIdName,
                                                                    jwtTypeCredentialScopeName,
                                                                    null,
                                                                    Format.JWT_VC,
                                                                    TEST_CREDENTIAL_MAPPERS_FILE,
                                                                    Collections.emptyList());
-        minimalJwtTypeCredentialClientScope = registerClientScope("vc-with-minimal-config",
-                                                                  null,
-                                                                  null,
+        minimalJwtTypeCredentialClientScope = registerOptionalClientScope("vc-with-minimal-config",
+                                                                          null,
+                                                                          null,
                                                                           null,
                                                                           null,
                                                                           null,
@@ -266,38 +271,21 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return null;
     }
 
-    /**
-     * Registers a client scope in the realm. This method creates and registers the scope
-     * but does NOT assign it to any client. Assignment as Default or Optional must be done
-     * separately by the test.
-     *
-     * @param scopeName the name of the client scope
-     * @param issuerDid the issuer DID
-     * @param credentialConfigurationId the credential configuration ID
-     * @param credentialIdentifier the credential identifier
-     * @param vct the verifiable credential type
-     * @param format the credential format
-     * @param protocolMapperReferenceFile reference to protocol mapper file
-     * @param acceptedKeyAttestationValues accepted key attestation values
-     * @return the registered ClientScopeRepresentation
-     */
-    protected ClientScopeRepresentation registerClientScope(String scopeName,
-                                                            String issuerDid,
-                                                            String credentialConfigurationId,
-                                                            String credentialIdentifier,
-                                                            String vct,
-                                                            String format,
-                                                            String protocolMapperReferenceFile,
-                                                            List<String> acceptedKeyAttestationValues) {
-        // Check if the client scope already exists
+    protected ClientScopeRepresentation registerOptionalClientScope(String scopeName,
+                                                          String issuerDid,
+                                                          String credentialConfigurationId,
+                                                          String credentialIdentifier,
+                                                          String vct,
+                                                          String format,
+                                                          String protocolMapperReferenceFile,
+                                                          List<String> acceptedKeyAttestationValues) {
         List<ClientScopeRepresentation> existingScopes = testRealm().clientScopes().findAll();
         for (ClientScopeRepresentation existingScope : existingScopes) {
             if (existingScope.getName().equals(scopeName)) {
-                return existingScope; // Reuse existing scope
+                return existingScope;
             }
         }
 
-        // Create a new ClientScope if not found
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName(scopeName);
         clientScope.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
@@ -344,7 +332,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
         clientScope.setId(scopeId);
 
-        // Add protocol mappers to the ClientScope
         List<ProtocolMapperRepresentation> protocolMappers;
         if (protocolMapperReferenceFile == null) {
             protocolMappers = getProtocolMappers(scopeName);
