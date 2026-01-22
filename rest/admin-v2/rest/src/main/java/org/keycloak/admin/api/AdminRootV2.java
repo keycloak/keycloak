@@ -12,10 +12,14 @@ import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resources.admin.AdminCorsPreflightService;
 
+import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.info.Info;
+import org.eclipse.microprofile.openapi.annotations.servers.Server;
 
 @Provider
 @Path("admin/api")
+@OpenAPIDefinition(servers = @Server(url = "/admin/api"), info = @Info(title = "Base path of the API", version = "v2"))
 public class AdminRootV2 {
 
     @Context
