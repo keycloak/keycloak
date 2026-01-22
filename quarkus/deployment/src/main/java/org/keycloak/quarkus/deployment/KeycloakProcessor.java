@@ -131,6 +131,7 @@ import io.quarkus.bootstrap.logging.InitialConfigurator;
 import io.quarkus.datasource.deployment.spi.DevServicesDatasourceResultBuildItem;
 import io.quarkus.datasource.runtime.DataSourcesBuildTimeConfig;
 import io.quarkus.deployment.IsDevelopment;
+import io.quarkus.deployment.IsTest;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.Consume;
@@ -861,7 +862,7 @@ class KeycloakProcessor {
         removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean.asClass(), false));
     }
 
-    @BuildStep
+    @BuildStep(onlyIfNot = IsTest.class) // needed for embedded Keycloak
     void disableHibernateValidatorCustomizer(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
         if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_ADMIN_API_V2)) {
             // disables the filter
