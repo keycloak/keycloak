@@ -50,7 +50,9 @@ const SecretInput = ({
             <Controller
               name="secret"
               control={form.control}
-              render={({ field }) => <PasswordInput id={id} {...field} />}
+              render={({ field }) => (
+                <PasswordInput id={id} {...field} readOnly={!isManager} />
+              )}
             />
           </InputGroupItem>
           <InputGroupItem>
