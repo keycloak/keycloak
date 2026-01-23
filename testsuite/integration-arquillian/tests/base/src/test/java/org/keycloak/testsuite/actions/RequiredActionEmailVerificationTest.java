@@ -1216,4 +1216,40 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         assertTrue(userRep.isEmailVerified());
         assertThat(userRep.getRequiredActions(), Matchers.empty());
     }
+
+    @Test
+    public void executeActionsEmailVerifiesEmailAndRemovesRequiredAction() throws IOException {
+        try (Closeable u = new UserAttributeUpdater(testRealm().users().get(testUserId))
+                .setEmailVerified(false)
+                .setRequiredActions(RequiredAction.VERIFY_EMAIL)
+                .update()) {
+
+            UserRepresentation userBefore = testRealm().users().get(testUserId).toRepresentation();
+            assertFalse(userBefore.isEmailVerified());
+            assertThat(userBefore.getRequiredActions(), Matchers.contains(RequiredAction.VERIFY_EMAIL.name()));
+
+            testRealm().users().get(testUserId).executeActionsEmail(List.of(RequiredAction.UPDATE_PASSWORD.name()));
+
+            Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+            MimeMessage message = greenMail.getLastReceivedMessage();
+            String verificationUrl = getEmailLink(message);
+
+            driver.manage().deleteAllCookies();
+            driver.navigate().to(verificationUrl.trim());
+
+            proceedPage.assertCurrent();
+            proceedPage.clickProceedLink();
+
+            events.expectRequiredAction(EventType.VERIFY_EMAIL)
+                    .user(testUserId)
+                    .client("account")
+                    .detail(Details.EMAIL, "test-user@localhost")
+                    .detail(Details.REDIRECT_URI, Matchers.any(String.class))
+                    .assertEvent();
+
+            UserRepresentation userAfter = testRealm().users().get(testUserId).toRepresentation();
+            assertTrue(userAfter.isEmailVerified());
+            assertThat(userAfter.getRequiredActions(), Matchers.not(Matchers.contains(RequiredAction.VERIFY_EMAIL.name())));
+        }
+    }
 }
