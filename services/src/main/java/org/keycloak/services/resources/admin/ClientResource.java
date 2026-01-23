@@ -170,7 +170,7 @@ public class ClientResource {
 
             if (!(boolean) session.getAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED)){
                 logger.debugv("Removing the previous rotation info for client {0}{1}, if there is",client.getClientId(),client.getName());
-                OIDCClientSecretConfigWrapper.fromClientModel(client, session).removeClientSecretRotationInfo();
+                OIDCClientSecretConfigWrapper.fromClientModel(client).removeClientSecretRotationInfo();
             }
             session.removeAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED);
 
@@ -309,7 +309,7 @@ public class ClientResource {
 
             if (!(boolean) session.getAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED)){
                 logger.debugv("Removing the previous rotation info for client {0}{1}, if there is",client.getClientId(),client.getName());
-                OIDCClientSecretConfigWrapper.fromClientModel(client, session).removeClientSecretRotationInfo();
+                OIDCClientSecretConfigWrapper.fromClientModel(client).removeClientSecretRotationInfo();
             }
 
             adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(rep).success();
@@ -784,11 +784,11 @@ public class ClientResource {
 
             logger.debug("delete rotated secret");
 
-            OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client, session);
+            OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
 
             CredentialRepresentation rep = new CredentialRepresentation();
             rep.setType(CredentialRepresentation.SECRET);
-            rep.setValue(wrapper.getClientRotatedSecret());
+            rep.setValue(wrapper.getClientRotatedSecret(session));
 
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
@@ -816,11 +816,11 @@ public class ClientResource {
         auth.clients().requireView(client);
 
         logger.debug("getClientRotatedSecret");
-        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client, session);
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
         if (!wrapper.hasRotatedSecret())
             throw new NotFoundException("Client does not have a rotated secret");
         else {
-            UserCredentialModel model = UserCredentialModel.secret(wrapper.getClientRotatedSecret());
+            UserCredentialModel model = UserCredentialModel.secret(wrapper.getClientRotatedSecret(session));
             return ModelToRepresentation.toRepresentation(model);
         }
     }

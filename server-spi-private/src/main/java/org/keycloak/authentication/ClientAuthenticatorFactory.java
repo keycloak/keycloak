@@ -53,17 +53,7 @@ public interface ClientAuthenticatorFactory extends ProviderFactory<ClientAuthen
      *
      * @return
      */
-    Map<String, Object> getAdapterConfiguration(ClientModel client);
-
-    /**
-     * Get configuration, which needs to be used for adapter ( keycloak.json ) of particular client. Some implementations
-     * may return just template and user needs to edit the values according to his environment (For example fill the location of keystore file)
-     *
-     * @return
-     */
-    default Map<String, Object> getAdapterConfiguration(KeycloakSession session, ClientModel client) {
-        return getAdapterConfiguration(client);
-    }
+    Map<String, Object> getAdapterConfiguration(KeycloakSession session, ClientModel client);
 
     /**
      * Get authentication methods for the specified protocol

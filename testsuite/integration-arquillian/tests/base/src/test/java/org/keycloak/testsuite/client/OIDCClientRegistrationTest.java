@@ -363,7 +363,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         ClientRepresentation kcClientRep = getKeycloakClient(response.getClientId());
         Assert.assertFalse(kcClientRep.isPublicClient());
         Assert.assertNotNull(kcClientRep.getSecret());
-        Assert.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_POST, OIDCClientSecretConfigWrapper.fromClientRepresentation(kcClientRep, null).getClientSecretAuthenticationAllowedMethod());
+        Assert.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_POST, OIDCClientSecretConfigWrapper.fromClientRepresentation(kcClientRep).getClientSecretAuthenticationAllowedMethod());
 
         // Verify that retrieving the client returns client_secret_post
         reg.auth(Auth.token(response));
@@ -379,7 +379,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         kcClientRep = getKeycloakClient(response.getClientId());
         Assert.assertFalse(kcClientRep.isPublicClient());
         Assert.assertNotNull(kcClientRep.getSecret());
-        Assert.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, OIDCClientSecretConfigWrapper.fromClientRepresentation(kcClientRep, null).getClientSecretAuthenticationAllowedMethod());
+        Assert.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, OIDCClientSecretConfigWrapper.fromClientRepresentation(kcClientRep).getClientSecretAuthenticationAllowedMethod());
 
         // Update to use different method (tls_client_auth)
         reg.auth(Auth.token(updated));

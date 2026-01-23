@@ -32,6 +32,7 @@ import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -94,7 +95,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
         }
 
         //
-        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client, context.getSession());
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
         if (wrapper.isClientSecretExpired()) {
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, null);
             return false;
@@ -117,7 +118,8 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
             signatureValid = jwt != null;
             //try authenticate with client rotated secret
             if (!signatureValid && wrapper.hasRotatedSecret() && !wrapper.isClientRotatedSecretExpired()) {
-                jwt = context.getSession().tokens().decodeClientJWT(validator.getClientAssertion(), wrapper.toRotatedClientModel(), JsonWebToken.class);
+                jwt = context.getSession().tokens().decodeClientJWT(validator.getClientAssertion(),
+                        wrapper.toRotatedClientModel(context.getSession()), JsonWebToken.class);
                 signatureValid = jwt != null;
             }
         } catch (Exception e) {
@@ -142,7 +144,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
     }
 
     @Override
-    public Map<String, Object> getAdapterConfiguration(ClientModel client) {
+    public Map<String, Object> getAdapterConfiguration(KeycloakSession session, ClientModel client) {
         // e.g. client adapter's keycloak.json
         // "credentials": {
         //   "secret-jwt": {

@@ -141,7 +141,7 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
             return;
         }
 
-        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client, context.getSession());
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
 
         String clientSecretAllowedMethod = wrapper.getClientSecretAuthenticationAllowedMethod();
         if (StringUtil.isNotBlank(clientSecretAllowedMethod) && !clientSecretAllowedMethod.equals(clientSecretRetrievalUsedMethod)) {
@@ -151,8 +151,8 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
             return;
         }
 
-        if (!wrapper.validatePrimarySecret(clientSecret)) {
-            if (!wrapper.validateRotatedSecret(clientSecret)){
+        if (!wrapper.validateSecret(context.getSession(), clientSecret)) {
+            if (!wrapper.validateRotatedSecret(context.getSession(), clientSecret)){
                 reportFailedAuth(context);
                 return;
             }
@@ -206,11 +206,6 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
     }
 
     @Override
-    public Map<String, Object> getAdapterConfiguration(ClientModel client) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @Override
     public String getId() {
         return PROVIDER_ID;
     }
@@ -229,7 +224,7 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
 
     @Override
     public String getProtocolAuthenticatorMethod(ClientRepresentation client) {
-        String clientSecretAllowedMethod = OIDCClientSecretConfigWrapper.fromClientRepresentation(client, null).getClientSecretAuthenticationAllowedMethod();
+        String clientSecretAllowedMethod = OIDCClientSecretConfigWrapper.fromClientRepresentation(client).getClientSecretAuthenticationAllowedMethod();
         return clientSecretAllowedMethod == null ? super.getProtocolAuthenticatorMethod(client) : clientSecretAllowedMethod;
     }
 
@@ -237,7 +232,7 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
     public void setClientAuthenticationMethod(ClientRepresentation client, String protocolAuthMethod) {
         client.setClientAuthenticatorType(getId());
         if (protocolAuthMethod != null) {
-            OIDCClientSecretConfigWrapper.fromClientRepresentation(client, null).setClientSecretAuthenticationAllowedMethod(protocolAuthMethod);
+            OIDCClientSecretConfigWrapper.fromClientRepresentation(client).setClientSecretAuthenticationAllowedMethod(protocolAuthMethod);
         }
     }
 

@@ -101,7 +101,7 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
         // Update client to request client_secret_post client authentication method
         ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), oauth.getClientId());
         ClientRepresentation clientRep = client.toRepresentation();
-        OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRep, null).setClientSecretAuthenticationAllowedMethod(OIDCLoginProtocol.CLIENT_SECRET_POST);
+        OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRep).setClientSecretAuthenticationAllowedMethod(OIDCLoginProtocol.CLIENT_SECRET_POST);
         client.update(clientRep);
 
         try {
@@ -120,7 +120,7 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
             assertEquals(200, response.getStatusCode());
         } finally {
             // Revert
-            OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRep, null).setClientSecretAuthenticationAllowedMethod(null);
+            OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRep).setClientSecretAuthenticationAllowedMethod(null);
             client.update(clientRep);
         }
     }
@@ -130,7 +130,7 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
         // Update client to request client_secret_basic client authentication method
         ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), oauth.getClientId());
         ClientRepresentation clientRep = client.toRepresentation();
-        OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRep, null).setClientSecretAuthenticationAllowedMethod(OIDCLoginProtocol.CLIENT_SECRET_BASIC);
+        OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRep).setClientSecretAuthenticationAllowedMethod(OIDCLoginProtocol.CLIENT_SECRET_BASIC);
         client.update(clientRep);
 
         try {
@@ -149,7 +149,7 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
             assertEquals(200, response.getStatusCode());
         } finally {
             // Revert
-            OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRep, null).setClientSecretAuthenticationAllowedMethod(null);
+            OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRep).setClientSecretAuthenticationAllowedMethod(null);
             client.update(clientRep);
         }
     }
