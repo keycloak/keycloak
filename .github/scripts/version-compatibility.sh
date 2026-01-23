@@ -22,4 +22,4 @@ ALL_RELEASES=$(gh release list \
 MAJOR_MINOR=${TARGET_BRANCH#"release/"}
 MAJOR_MINOR_RELEASES=$(echo "${ALL_RELEASES}" | (grep "${MAJOR_MINOR}" || true))
 
-echo -n "${MAJOR_MINOR_RELEASES}" | jq -cnR '[inputs] | map({version: .})'
+echo -n "${MAJOR_MINOR_RELEASES}" | jq -cnMR '[inputs] | map({version: .})'
