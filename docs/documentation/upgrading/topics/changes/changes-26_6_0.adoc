@@ -65,6 +65,13 @@ It does not affect any explicitly configured clock skew for example in identity 
 
 All the `base` themes are now tagged as **abstract**, and they are not listed in the admin console to be selected (**Realm Settings** -> **Themes** tab). They were always intended to be only extended but not used directly. If you use one of them, it will continue working (or not working) in the same way but cannot be selected using the admin console anymore. Please select one of the available default themes or create your own one.
 
+=== New database indexes on the `OFFLINE_CLIENT_SESSION` table
+
+The `OFFLINE_CLIENT_SESSION` table now contains two additional index `IDX_OFFLINE_CSS_BY_CLIENT_AND_REALM` and `IDX_OFFLINE_CSS_BY_USER_SESSION_AND_OFFLINE` to improve performance.
+
+If the table contains more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
