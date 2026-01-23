@@ -67,8 +67,9 @@ public class JpaUpdate26_6_0_OfflineClientSessionRealm extends CustomKeycloakTas
                 SET cs.realm_id = (
                     SELECT us.realm_id
                     FROM %s us
-                    WHERE us.user_session_id = cs.user_session_id
-                )"""
+                    WHERE us.user_session_id = cs.user_session_id AND cs.offline_flag = us.offline_flag
+                )
+                WHERE cs.realm_id IS NULL"""
                 .formatted(clientSessionTable, userSessionTable)));
     }
 
@@ -76,7 +77,7 @@ public class JpaUpdate26_6_0_OfflineClientSessionRealm extends CustomKeycloakTas
         statements.add(new RawParameterizedSqlStatement("""
                 MERGE INTO %s cs
                 USING %s us
-                ON (cs.user_session_id = us.user_session_id)
+                ON (cs.user_session_id = us.user_session_id AND cs.offline_flag = us.offline_flag AND cs.realm_id IS NULL)
                 WHEN MATCHED THEN
                 UPDATE SET cs.realm_id = us.realm_id"""
                 .formatted(clientSessionTable, userSessionTable)));
@@ -87,14 +88,14 @@ public class JpaUpdate26_6_0_OfflineClientSessionRealm extends CustomKeycloakTas
                 UPDATE cs
                 SET cs.realm_id = us.realm_id
                 FROM %s cs
-                INNER JOIN %s us ON cs.user_session_id = us.user_session_id"""
+                INNER JOIN %s us ON cs.user_session_id = us.user_session_id AND cs.offline_flag = us.offline_flag AND cs.realm_id IS NULL"""
                 .formatted(clientSessionTable, userSessionTable)));
     }
 
     private void generateUpdateQueryForMySQL(String clientSessionTable, String userSessionTable) {
         statements.add(new RawParameterizedSqlStatement("""
                 UPDATE %s cs
-                INNER JOIN %s us ON cs.user_session_id = us.user_session_id
+                INNER JOIN %s us ON cs.user_session_id = us.user_session_id AND cs.offline_flag = us.offline_flag AND cs.realm_id IS NULL
                 SET cs.realm_id = us.realm_id"""
                 .formatted(clientSessionTable, userSessionTable)));
     }
@@ -104,7 +105,7 @@ public class JpaUpdate26_6_0_OfflineClientSessionRealm extends CustomKeycloakTas
                 UPDATE %s cs
                 SET realm_id = us.realm_id
                 FROM %s us
-                WHERE cs.user_session_id = us.user_session_id"""
+                WHERE cs.user_session_id = us.user_session_id AND cs.offline_flag = us.offline_flag AND cs.realm_id IS NULL"""
                 .formatted(clientSessionTable, userSessionTable)));
     }
 }
