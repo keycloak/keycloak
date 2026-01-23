@@ -260,7 +260,7 @@ public class XPathAttributeMapper extends AbstractIdentityProviderMapper impleme
 
     @Override
     public String getHelpText() {
-        return "Extract text of a saml attribute via XPath expression and import into the specified user property or attribute.";
+        return "Extract text of a SAML attribute via an XPath expression and import it into the specified user property or attribute. If the parsing fails due to an in invalid XML structure or an invalid XPath expression, the attribute value defaults to an empty string.";
     }
 
     // ISpMetadataAttributeProvider interface
