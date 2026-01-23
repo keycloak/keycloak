@@ -130,8 +130,8 @@ metadata:
   name: example-kc
 spec:
   features:
-  enabled:
-    - rolling-updates:v2
+    enabled:
+      - rolling-updates:v2
   update:
     strategy: Auto
 ----
