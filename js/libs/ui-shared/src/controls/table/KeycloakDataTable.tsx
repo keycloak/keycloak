@@ -475,7 +475,7 @@ export function KeycloakDataTable<T>({
     if (format === "csv") {
       exportToCSV(allData, { filename, columns: exportColumns, csvDelimiter }, t);
     } else {
-      exportToPDF(allData, { filename, columns: exportColumns }, t);
+      await exportToPDF(allData, { filename, columns: exportColumns }, t);
     }
   };
 

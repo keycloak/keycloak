@@ -1,6 +1,4 @@
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 
 export type ExportConfig = {
   filename: string;
@@ -116,13 +114,20 @@ export function exportToCSV<T>(
 
 /**
  * Exports data to PDF format
+ * Uses dynamic imports to avoid TypeScript errors when dependencies aren't installed
  */
-export function exportToPDF<T>(
+export async function exportToPDF<T>(
   data: T[],
   config: ExportConfig,
   t: TFunction,
-): void {
-  const doc = new jsPDF({
+): Promise<void> {
+  // Dynamically import PDF libraries to avoid TypeScript errors when not installed
+  const [{ jsPDF }, autoTable] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+  ]);
+
+  const doc = new jsPDF.jsPDF({
     orientation: config.columns.length > 5 ? "landscape" : "portrait",
     unit: "mm",
     format: "a4",
@@ -142,7 +147,7 @@ export function exportToPDF<T>(
   );
 
   // Generate table
-  autoTable(doc, {
+  autoTable.default(doc, {
     head: [headers],
     body: rows,
     startY: 20,
