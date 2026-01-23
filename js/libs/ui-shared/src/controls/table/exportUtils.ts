@@ -122,10 +122,12 @@ export async function exportToPDF<T>(
   t: TFunction,
 ): Promise<void> {
   // Dynamically import PDF libraries to avoid TypeScript errors when not installed
-  // @ts-expect-error - jspdf is loaded dynamically at runtime
-  const { jsPDF } = await import("jspdf");
-  // @ts-expect-error - jspdf-autotable is loaded dynamically at runtime
-  const autoTable = (await import("jspdf-autotable")).default;
+  // These are loaded dynamically at runtime, so TypeScript may not resolve them at compile time
+  const jspdfModule = await import("jspdf");
+  const autoTableModule = await import("jspdf-autotable");
+  
+  const jsPDF = jspdfModule.default || jspdfModule.jsPDF;
+  const autoTable = autoTableModule.default;
 
   const doc = new jsPDF({
     orientation: config.columns.length > 5 ? "landscape" : "portrait",

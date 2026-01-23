@@ -12,6 +12,7 @@ declare module "jspdf" {
     text(text: string, x: number, y: number): void;
     save(filename: string): void;
   }
+  export default jsPDF;
 }
 
 declare module "jspdf-autotable" {
