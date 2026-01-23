@@ -15,6 +15,9 @@ type MemberModalProps = {
   onAdd: (users: UserRepresentation[]) => Promise<void>;
   onClose: () => void;
   orgId?: string;
+  titleKey?: string;
+  confirmLabelKey?: string;
+  filterEmptyEmail?: boolean;
 };
 
 const UserDetail = (user: UserRepresentation) => {
@@ -36,6 +39,9 @@ export const MemberModal = ({
   onAdd,
   onClose,
   orgId,
+  titleKey = "addMember",
+  confirmLabelKey = "add",
+  filterEmptyEmail = false,
 }: MemberModalProps) => {
   const { adminClient } = useAdminClient();
 
@@ -64,7 +70,10 @@ export const MemberModal = ({
 
     try {
       const users = await usersQuery(params);
-      return differenceBy(users, members, "id").slice(0, max);
+      const filtered = differenceBy(users, members, "id");
+      return (
+        filterEmptyEmail ? filtered.filter((u) => u.email) : filtered
+      ).slice(0, max);
     } catch (error) {
       addError("noUsersFoundError", error);
       return [];
@@ -74,7 +83,7 @@ export const MemberModal = ({
   return (
     <Modal
       variant={ModalVariant.large}
-      title={t("addMember")}
+      title={t(titleKey)}
       isOpen
       onClose={onClose}
       actions={[
@@ -87,7 +96,7 @@ export const MemberModal = ({
             onClose();
           }}
         >
-          {t("add")}
+          {t(confirmLabelKey)}
         </Button>,
         <Button
           data-testid="cancel"
