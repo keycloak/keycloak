@@ -77,7 +77,7 @@ public class JpaUpdate26_6_0_OfflineClientSessionRealm extends CustomKeycloakTas
         statements.add(new RawParameterizedSqlStatement("""
                 MERGE INTO %s cs
                 USING %s us
-                ON (cs.user_session_id = us.user_session_id AND cs.offline_flag = us.offline_flag AND cs.realm_id IS NULL)
+                ON (cs.user_session_id = us.user_session_id AND cs.offline_flag = us.offline_flag)
                 WHEN MATCHED THEN
                 UPDATE SET cs.realm_id = us.realm_id"""
                 .formatted(clientSessionTable, userSessionTable)));
