@@ -38,8 +38,12 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
     final protected String name;
     final protected String realm;
     final protected String description;
-    final protected boolean composite;
-    protected LazyLoader<RoleModel, Set<String>> composites;
+    protected boolean composite;
+    final protected LazyLoader<RoleModel, Set<String>> composites;
+    /**
+     * Use this so the cache invalidation can retrieve any previously cached role mappings to determine if this
+     * items should be evicted.
+     */
     private Set<String> cachedComposites = new HashSet<>();
     private final LazyLoader<RoleModel, MultivaluedHashMap<String, String>> attributes;
 
@@ -75,9 +79,14 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
 
     public Set<String> getComposites(KeycloakSession session, Supplier<RoleModel> roleModel) {
         cachedComposites = composites.get(session, roleModel);
+        composite = !cachedComposites.isEmpty();
         return cachedComposites;
     }
 
+    /**
+     * Use this so the cache invalidation can retrieve any previously cached role mappings to determine if this
+     * items should be evicted. Will return an empty list if it hasn't been cached yet (and then no invalidation is necessary)
+     */
     public Set<String> getCachedComposites() {
         return cachedComposites;
     }

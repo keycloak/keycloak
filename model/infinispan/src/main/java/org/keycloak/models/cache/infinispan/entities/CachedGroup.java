@@ -44,6 +44,10 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
     private final String parentId;
     private final LazyLoader<GroupModel, MultivaluedHashMap<String, String>> attributes;
     private final LazyLoader<GroupModel, Set<String>> roleMappings;
+    /**
+     * Use this so the cache invalidation can retrieve any previously cached role mappings to determine if this
+     * items should be evicted.
+     */
     private Set<String> cachedRoleMappings = new HashSet<>();
     private final LazyLoader<GroupModel, Set<String>> subGroups;
     private final Type type;
@@ -74,6 +78,10 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
         return cachedRoleMappings;
     }
 
+    /**
+     * Use this so the cache invalidation can retrieve any previously cached role mappings to determine if this
+     * items should be evicted. Will return an empty list if it hasn't been cached yet (and then no invalidation is necessary)
+     */
     public Set<String> getCachedRoleMappings() {
         return cachedRoleMappings;
     }
