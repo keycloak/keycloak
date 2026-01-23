@@ -332,7 +332,7 @@ Finally, change the bindings.
 .Browser login with step-up mechanism
 image:images/authentication-step-up-flow.png[Authentication step up flow]
 
-.Request a certain authentication level
+.Request a certain authentication level with OpenID Connect
 To use the step-up mechanism, you specify a requested level of authentication (LoA) in your authentication request. The `claims` parameter is used for this purpose:
 
 [source,subs=+attributes]
@@ -425,6 +425,85 @@ In case you do not want `acr` claim inside tokens or you need some custom logic 
 Note when the login request initiates a request with the `claims` parameter requesting `acr` as `essential` claim, then {project_name} will always return
 one of the specified levels. If it is not able to return one of the specified levels (For example if the requested level is unknown or bigger than configured conditions
 in the authentication flow), then {project_name} will throw an error.
+
+[[_step-up-authentication-saml]]
+==== Step-up authentication for SAML
+
+:tech_feature_name: Step-up Authentication for SAML
+:tech_feature_id: step-up-authentication-saml
+include::../../topics/templates/techpreview.adoc[]
+
+For the SAML protocol, the step-up authentication uses the `<AuthnContextClassRef>` element (Authentication Context Class Reference or ACR) to map the Level of Authentication (LoA). This element is a URI reference that identifies an authentication context declaration. The LoA is requested by the client in the SAML request via the `<RequestedAuthnContext>` element.
+
+[source,xml,subs=+attributes]
+----
+<samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" AssertionConsumerServiceURL="https://sp.example.com/" Destination="https://localhost:8543/realms/demo/protocol/saml" ForceAuthn="false" ID="1cc6ba19-b34d-48d5-ac44-3c4b2598b6c3" IssueInstant="2025-12-10T16:29:41.177Z" ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Version="2.0">
+  <saml:Issuer>https://sp.example.com/</saml:Issuer>
+  <samlp:NameIDPolicy Format="urn:oasis:names:tc:SAML:2.0:nameid-format:transient"/>
+  <samlp:RequestedAuthnContext>
+    <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken</saml:AuthnContextClassRef>
+    <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</saml:AuthnContextClassRef>
+  </samlp:RequestedAuthnContext>
+</samlp:AuthnRequest>
+----
+
+The request asks for a set of authentication contexts that will be evaluated in order by {project_name} until one of them can be satisfied. This means that {project_name} knows that URI declaration and there is a level defined in the mapping that is sufficient for the request. If none of the specified contexts can be satisfied, then {project_name} returns a `<Response>` message with a second-level `<StatusCode>` of `urn:oasis:names:tc:SAML:2.0:status:NoAuthnContext`.
+
+[source,xml,subs=+attributes]
+----
+<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Destination="https://sp.example.com/" ID="ID_70625c64-004a-44cc-b338-74802f0cc37d" InResponseTo="b935f66a-8185-40b6-990c-bd5f4971773e" IssueInstant="2025-12-10T17:00:46.894Z" Version="2.0">
+  <saml:Issuer>https://localhost:8543/auth/realms/demo</saml:Issuer>
+  <samlp:Status>
+    <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Responder">
+      <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:NoAuthnContext"/>
+    </samlp:StatusCode>
+  </samlp:Status>
+</samlp:Response>
+----
+
+If {project_name} can satisfy the request, the step-up authentication flow is called to authenticate the user with the mapped level. The SAML response, using the `<AuthnStatement>` element inside the successful response, will contain again the `<AuthnContextClassRef>` with the context finally applied.
+
+[source,xml,subs=+attributes]
+----
+<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Destination="https://sp.example.com/" ID="ID_079be770-ace4-4a0b-bdad-2042267a9bb9" InResponseTo="1cc6ba19-b34d-48d5-ac44-3c4b2598b6c3" IssueInstant="2025-12-10T16:29:41.228Z" Version="2.0">
+  <saml:Issuer>https://localhost:8543/auth/realms/demo</saml:Issuer>
+  <samlp:Status>
+    <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/>
+  </samlp:Status>
+  <saml:Assertion xmlns="urn:oasis:names:tc:SAML:2.0:assertion" ID="ID_0278d50c-03c2-4ae0-accd-16161577faa5" IssueInstant="2025-12-10T16:29:41.228Z" Version="2.0">
+    <saml:Issuer>https://localhost:8543/auth/realms/demo</saml:Issuer>
+    <saml:Subject>
+      <saml:NameID Format="urn:oasis:names:tc:SAML:2.0:nameid-format:transient">G-b1e11e8a-c002-47bc-8060-64f6f11fe267</saml:NameID>
+      <saml:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
+        <saml:SubjectConfirmationData InResponseTo="1cc6ba19-b34d-48d5-ac44-3c4b2598b6c3" NotOnOrAfter="2025-12-10T16:34:39.228Z" Recipient="https://sp.example.com/"/>
+      </saml:SubjectConfirmation>
+    </saml:Subject>
+    <saml:Conditions NotBefore="2025-12-10T16:29:39.228Z" NotOnOrAfter="2025-12-10T16:30:39.228Z">
+      <saml:AudienceRestriction>
+        <saml:Audience>https://sp.example.com/</saml:Audience>
+      </saml:AudienceRestriction>
+    </saml:Conditions>
+    <saml:AuthnStatement AuthnInstant="2025-12-10T16:29:41.229Z" SessionIndex="pZJ1Scsa1MyQ2KkesFEbedPq::56687d60-82d9-49bd-8609-dbc38153e55f" SessionNotOnOrAfter="2025-12-11T02:29:41.229Z">
+      <saml:AuthnContext>
+        <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken</saml:AuthnContextClassRef>
+      </saml:AuthnContext>
+    </saml:AuthnStatement>
+  </saml:Assertion>
+</samlp:Response>
+----
+
+For more information about the processing rules defined in the SAML standard for the `<RequestedAuthnContext>` element, see Section 3.3.2.2.1 Element `<RequestedAuthnContext>` of the *Assertions and Protocols for the OASIS Security Assertion Markup Language (SAML) V2.0* (`saml-core-2.0-os.pdf` document). The complete SAML v2.0 OASIS Standard set (PDF format) and schema files are available in the link:https://www.oasis-open.org/standard/saml/[Security Assertion Markup Language (SAML) v2.0] page. Note that the spec also defines a comparison (exact, minimum, better and maximum), that complicates what Level of Authentication will be finally selected in {project_name}.
+
+When the `step-up-authentication-saml` feature is enabled, the <<_mapping-acr-to-loa-realm,ACR to Level of Authentication (LoA) Mapping>> is a table with three values: the OpenID Connect ACR, the SAML URI context and the Level of Authentication (LoA). The mapping can be defined for both client types. It can also be overridden at client level, but, in this case, only the URI and the LoA are present. The minimum ACR value which is allowed for the client can also be defined in the configuration. The step-up authentication options for SAML clients are placed in the **Advanced** tab, section **Advanced Settings**. See chapter <<_client-saml-configuration,Creating a SAML client>> for details.
+
+In summary, when the step-up authentication is configured for SAML, {project_name} will process the specified context level in the SAML request and the minimum ACR allowed for the client (if they are present) to obtain the LoA (integer level) that should be reached in the authentication. If there is no available level that satisfies the request, the error is returned per specification. If the URI/LoA mapping returns a level that satisfies the request, the authentication flow is started, enforcing that Level of Authentication to be reached.
+
+In order to maintain backwards compatibility, {project_name} does not return an error and continues adding the previous ACR `urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified` to the response in the following situations:
+
+* The new feature `step-up-authentication-saml` is not enabled in {project_name}.
+* The SAML client does not define any mapping between context URI and LoA. Use the client mapping instead of the general realm mapping when you just need to apply the step-up for some specific SAML clients.
+* The `AuthnContextClassRef mapper` is not executed. This mapper is provided by a new default client scope `AuthnContextClassRef` which is now added to SAML clients by default. It is in charge of adding the resulting `<AuthnContextClassRef>` to the response.
+* The LoA calculated at request time is not achieved by the authentication flow. For example, if the authentication flow used for authentication is not a step-up flow, or there is a misconfiguration between the URI/LoA mapping and the final level reached in the step-up authentication flow.
 
 [[_registration-rc-client-flows]]
 ==== Registration or Reset credentials requested by client
