@@ -63,6 +63,11 @@ quarkus.datasource.user-store.db-kind=postgresql
 quarkus.datasource.user-store.username=my-username
 ----
 
+=== Internal representation of client sessions changed
+
+The cache key of the authenticated client sessions has changed for embedded Infinispan, while the public APIs have not changed.
+Due to this, you should not run 26.4.x concurrently in a cluster with previous versions.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
@@ -182,11 +187,6 @@ configured directly by {project_name}:
 
 Configuring ports using the old
 properties has not changed, but using the CLI options is recommended because the previous method could be deprecated.
-
-=== Internal representation of client sessions changed
-
-The cache key of the authenticated client sessions has changed for embedded Infinispan, while the public APIs have not changed.
-Due to this, you should not run 26.4.x concurrently in a cluster with previous versions.
 
 === External IDP tokens automatically refreshed
 
