@@ -824,6 +824,52 @@ public class UserResource {
                 .peek(credentialRepresentation -> credentialRepresentation.setSecretData(null));
     }
 
+    /**
+     * Add a credential for a user
+     */
+    @POST
+    @Path("credentials")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(summary = "Add a credential for a user")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "201", description = "Created"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public Response createCredential(CredentialRepresentation cred) {
+        auth.users().requireManage(user);
+
+        if (cred == null) {
+            throw new BadRequestException("No credential provided");
+        }
+
+        try {
+            if (cred.getValue() != null && !cred.getValue().isEmpty()) {
+                // handle password-like credentials that are provided as raw value
+                user.credentialManager().updateCredential(UserCredentialModel.password(cred.getValue(), false));
+                adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(cred).success();
+                return Response.noContent().build();
+            } else {
+                CredentialModel model = RepresentationToModel.toModel(cred);
+                CredentialModel created = user.credentialManager().createCredentialThroughProvider(model);
+                if (created == null) {
+                    throw ErrorResponse.error("Credential provider for given type not found or not supported", Status.BAD_REQUEST);
+                }
+                adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(cred).success();
+                return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(created.getId()).build()).build();
+            }
+        } catch (PasswordPolicyNotMetException e) {
+            logger.warn("Password policy not met for user " + e.getUsername(), e);
+            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
+            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+                    Status.BAD_REQUEST);
+        } catch (ModelException me) {
+            logger.warn("Could not create credential!", me);
+            throw ErrorResponse.error("Could not create credential!", Status.BAD_REQUEST);
+        }
+    }
+
     private CredentialModel decorateCredentialForPresentation(CredentialModel credential) {
         CredentialProvider credentialProvider = AuthenticatorUtil.getCredentialProviders(session)
                 .filter(p -> p.supportsCredentialType(credential.getType()))
@@ -883,6 +929,46 @@ public class UserResource {
         }
         user.credentialManager().removeStoredCredentialById(credentialId);
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
+    }
+
+    /**
+     * Update an existing credential for a user
+     */
+    @PUT
+    @Path("credentials/{credentialId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(summary = "Update an existing credential for a user")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public void updateCredential(final @PathParam("credentialId") String credentialId, CredentialRepresentation cred) {
+        auth.users().requireManage(user);
+
+        CredentialModel existing = user.credentialManager().getStoredCredentialById(credentialId);
+        if (existing == null) {
+            if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
+            else throw new ForbiddenException();
+        }
+
+        try {
+            CredentialModel model = RepresentationToModel.toModel(cred);
+            // preserve id and type
+            model.setId(existing.getId());
+            if (model.getType() != null && !model.getType().equals(existing.getType())) {
+                throw ErrorResponse.error("Changing credential type is not allowed", Status.BAD_REQUEST);
+            }
+            model.setType(existing.getType());
+
+            user.credentialManager().updateStoredCredential(model);
+            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(cred).success();
+        } catch (ModelException me) {
+            logger.warn("Could not update credential!", me);
+            throw ErrorResponse.error("Could not update credential!", Status.BAD_REQUEST);
+        }
     }
 
     /**
