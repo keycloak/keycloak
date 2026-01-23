@@ -18,8 +18,7 @@ package org.keycloak.protocol.oid4vc.issuance;
 
 import java.util.List;
 
-import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
-import org.keycloak.representations.AuthorizationDetailsResponse;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -29,28 +28,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
-public class OID4VCAuthorizationDetailResponse extends AuthorizationDetailsResponse {
+public class OID4VCAuthorizationDetailResponse extends OID4VCAuthorizationDetail {
 
-    public static final String CREDENTIAL_CONFIGURATION_ID = "credential_configuration_id";
     public static final String CREDENTIAL_IDENTIFIERS = "credential_identifiers";
-    public static final String CLAIMS = "claims";
-
-    @JsonProperty(CREDENTIAL_CONFIGURATION_ID)
-    private String credentialConfigurationId;
 
     @JsonProperty(CREDENTIAL_IDENTIFIERS)
     private List<String> credentialIdentifiers;
-
-    @JsonProperty(CLAIMS)
-    private List<ClaimsDescription> claims;
-
-    public String getCredentialConfigurationId() {
-        return credentialConfigurationId;
-    }
-
-    public void setCredentialConfigurationId(String credentialConfigurationId) {
-        this.credentialConfigurationId = credentialConfigurationId;
-    }
 
     public List<String> getCredentialIdentifiers() {
         return credentialIdentifiers;
@@ -60,22 +43,14 @@ public class OID4VCAuthorizationDetailResponse extends AuthorizationDetailsRespo
         this.credentialIdentifiers = credentialIdentifiers;
     }
 
-    public List<ClaimsDescription> getClaims() {
-        return claims;
-    }
-
-    public void setClaims(List<ClaimsDescription> claims) {
-        this.claims = claims;
-    }
-
     @Override
     public String toString() {
-        return "OID4VCAuthorizationDetailsResponse{" +
-                "type='" + getType() + '\'' +
+        return "OID4VCAuthorizationDetailsResponse {" +
+                " type='" + getType() + '\'' +
                 ", locations='" + getLocations() + '\'' +
-                ", credentialConfigurationId='" + credentialConfigurationId + '\'' +
+                ", credentialConfigurationId='" + getCredentialConfigurationId() + '\'' +
                 ", credentialIdentifiers=" + credentialIdentifiers +
-                ", claims=" + claims +
+                ", claims=" + getClaims() +
                 '}';
     }
 }

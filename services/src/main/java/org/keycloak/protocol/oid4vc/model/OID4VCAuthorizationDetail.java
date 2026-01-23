@@ -29,10 +29,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresentation {
 
-    @JsonProperty("credential_configuration_id")
+    public static final String CREDENTIAL_CONFIGURATION_ID = "credential_configuration_id";
+    public static final String CREDENTIAL_IDENTIFIERS = "credential_identifiers";
+    public static final String CLAIMS = "claims";
+
+    @JsonProperty(CREDENTIAL_CONFIGURATION_ID)
     private String credentialConfigurationId;
 
-    @JsonProperty("claims")
+    @JsonProperty(CLAIMS)
     private List<ClaimsDescription> claims;
 
     public String getCredentialConfigurationId() {
@@ -53,8 +57,8 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
 
     @Override
     public String toString() {
-        return "OID4VCAuthorizationDetailsResponse{" +
-                "type='" + getType() + '\'' +
+        return "OID4VCAuthorizationDetail {" +
+                " type='" + getType() + '\'' +
                 ", locations='" + getLocations() + '\'' +
                 ", credentialConfigurationId='" + credentialConfigurationId + '\'' +
                 ", claims=" + claims +

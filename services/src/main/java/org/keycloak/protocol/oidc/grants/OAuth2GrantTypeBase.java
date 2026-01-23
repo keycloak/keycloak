@@ -56,7 +56,7 @@ import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.AuthorizationDetailsResponse;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -291,7 +291,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      * @param authorizationDetailsResponse the processed authorization details response
      */
     protected void afterAuthorizationDetailsProcessed(UserSessionModel userSession, ClientSessionContext clientSessionCtx,
-                                                      List<AuthorizationDetailsResponse> authorizationDetailsResponse) {
+                                                      List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponse) {
         // Default: do nothing
         // Subclasses or processors can override/extend this to perform post-processing
     }
@@ -304,7 +304,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      * @param clientSessionCtx the client session context
      * @return the authorization details response if processing was successful, null otherwise
      */
-    protected List<AuthorizationDetailsResponse> processAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+    protected List<AuthorizationDetailsJSONRepresentation> processAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         String authorizationDetailsParam = formParams.getFirst(AUTHORIZATION_DETAILS);
         if (authorizationDetailsParam != null) {
             try {
@@ -328,7 +328,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      * @param clientSessionCtx the client session context
      * @return the authorization details response if generation was successful, null otherwise
      */
-    protected List<AuthorizationDetailsResponse> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+    protected List<AuthorizationDetailsJSONRepresentation> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         try {
             return new AuthorizationDetailsProcessorManager().handleMissingAuthorizationDetails(session, userSession, clientSessionCtx);
         } catch (RuntimeException e) {
@@ -348,7 +348,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      * @param clientSessionCtx the client session context
      * @return the authorization details response if processing was successful, null otherwise
      */
-    protected List<AuthorizationDetailsResponse> processStoredAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) throws CorsErrorResponseException {
+    protected List<AuthorizationDetailsJSONRepresentation> processStoredAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) throws CorsErrorResponseException {
         // Check if authorization_details was stored during authorization request (e.g., from PAR)
         String storedAuthDetails = clientSessionCtx.getClientSession().getNote(AUTHORIZATION_DETAILS);
         if (storedAuthDetails != null) {

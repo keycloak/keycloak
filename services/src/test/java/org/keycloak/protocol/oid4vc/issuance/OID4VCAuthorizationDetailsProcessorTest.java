@@ -22,7 +22,8 @@ import java.util.List;
 
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
-import org.keycloak.representations.AuthorizationDetailsResponse;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+import org.keycloak.util.AuthorizationDetailsParser;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.Assert;
@@ -53,7 +54,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
 
     @BeforeClass
     public static void beforeClass() {
-        AuthorizationDetailsResponse.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsProcessor.OID4VCAuthorizationDetailsParser());
+        AuthorizationDetailsParser.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsProcessor.OID4VCAuthorizationDetailsParser());
     }
 
     /**
@@ -505,7 +506,8 @@ public class OID4VCAuthorizationDetailsProcessorTest {
 
         OID4VCAuthorizationDetail invalidDetail1 = createInvalidTypeAuthorizationDetail();
 
-        List<AuthorizationDetailsResponse> responses = List.of(
+        // Convert to the "generic" types to be able to test parser
+        List<AuthorizationDetailsJSONRepresentation> responses = List.of(
                 convertToResponseType(validDetail1),
                 convertToResponseType(validDetail2),
                 convertToResponseType(invalidDetail1)
@@ -519,8 +521,9 @@ public class OID4VCAuthorizationDetailsProcessorTest {
         assertValidClaims(authzResponses.get(1).getClaims());
     }
 
-    private AuthorizationDetailsResponse convertToResponseType(Object oid4vcDetails) throws IOException {
-        return JsonSerialization.readValue(JsonSerialization.writeValueAsString(oid4vcDetails), AuthorizationDetailsResponse.class);
+
+    private AuthorizationDetailsJSONRepresentation convertToResponseType(OID4VCAuthorizationDetail oid4vcDetails) throws IOException {
+        return JsonSerialization.readValue(JsonSerialization.writeValueAsString(oid4vcDetails), AuthorizationDetailsJSONRepresentation.class);
     }
 
 }
