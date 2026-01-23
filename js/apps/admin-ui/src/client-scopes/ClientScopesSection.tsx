@@ -212,6 +212,17 @@ export default function ClientScopesSection() {
           isPaginated
           onSelect={(clientScopes) => setSelectedScopes([...clientScopes])}
           canSelectAll
+          exportConfig={{
+            enabled: true,
+            filename: "client-scopes",
+            columns: [
+              { key: "name", label: t("name") },
+              { key: "type", label: t("assignedType") },
+              { key: "protocol", label: t("protocol") },
+              { key: "attributes['gui.order']", label: t("displayOrder") },
+              { key: "description", label: t("description") },
+            ],
+          }}
           toolbarItem={
             <>
               <SearchToolbar

@@ -458,6 +458,17 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
         ]}
         isPaginated
         ariaLabelKey="titleEvents"
+        exportConfig={{
+          enabled: true,
+          filename: "user-events",
+          columns: [
+            { key: "time", label: t("time") },
+            ...(user ? [] : [{ key: "userId", label: t("userId") }]),
+            { key: "type", label: t("eventType") },
+            { key: "ipAddress", label: t("ipAddress") },
+            ...(client ? [] : [{ key: "clientId", label: t("client") }]),
+          ],
+        }}
         toolbarItem={userEventSearchFormDisplay()}
         columns={[
           {

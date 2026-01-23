@@ -359,6 +359,16 @@ export function UserDataTable() {
         ariaLabelKey="titleUsers"
         canSelectAll
         onSelect={(rows: UserRepresentation[]) => setSelectedRows([...rows])}
+        exportConfig={{
+          enabled: true,
+          filename: "users",
+          columns: [
+            { key: "username", label: t("username") },
+            { key: "email", label: t("email") },
+            { key: "lastName", label: t("lastName") },
+            { key: "firstName", label: t("firstName") },
+          ],
+        }}
         emptyState={
           !listUsers ? (
             <>

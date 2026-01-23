@@ -1,5 +1,13 @@
-import { Button, ButtonVariant, ToolbarItem } from "@patternfly/react-core";
-import { SyncAltIcon } from "@patternfly/react-icons";
+import {
+  Button,
+  ButtonVariant,
+  Dropdown,
+  DropdownItem,
+  DropdownList,
+  MenuToggle,
+  ToolbarItem,
+} from "@patternfly/react-core";
+import { DownloadIcon, SyncAltIcon } from "@patternfly/react-icons";
 import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 import {
   ActionsColumn,
@@ -318,6 +326,19 @@ export type LoaderFunction<T> = (
   search?: string,
 ) => Promise<T[]>;
 
+export type ExportColumn<T> = {
+  key: string;
+  label: string;
+};
+
+export type ExportConfig<T> = {
+  enabled?: boolean;
+  filename?: string;
+  columns?: ExportColumn<T>[];
+  csvDelimiter?: string;
+  onExport?: (format: "csv" | "pdf") => void;
+};
+
 export type DataListProps<T> = Omit<
   TableProps,
   "rows" | "cells" | "onSelect"
@@ -341,6 +362,7 @@ export type DataListProps<T> = Omit<
   isNotCompact?: boolean;
   isRadio?: boolean;
   isSearching?: boolean;
+  exportConfig?: ExportConfig<T>;
 };
 
 /**
@@ -386,6 +408,7 @@ export function KeycloakDataTable<T>({
   emptyState,
   icon,
   isSearching = false,
+  exportConfig,
   ...props
 }: DataListProps<T>) {
   const { t } = useTranslation();
@@ -393,6 +416,7 @@ export function KeycloakDataTable<T>({
   const [rows, setRows] = useState<(Row<T> | SubRow<T>)[]>();
   const [unPaginatedData, setUnPaginatedData] = useState<T[]>();
   const [loading, setLoading] = useState(false);
+  const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
 
   const [defaultPageSize, setDefaultPageSize] = useStoredState(
     localStorage,
@@ -409,6 +433,51 @@ export function KeycloakDataTable<T>({
   const prevKey = useRef<number>();
   const refresh = () => setKey(key + 1);
   const id = useId();
+
+  const handleExport = async (format: "csv" | "pdf") => {
+    if (exportConfig?.onExport) {
+      exportConfig.onExport(format);
+      return;
+    }
+
+    // Default export behavior - export all data
+    let allData: T[] = [];
+    
+    if (typeof loader === "function") {
+      // For paginated data, we need to fetch all records
+      if (isPaginated) {
+        try {
+          setLoading(true);
+          // Fetch with a large max value to get all records
+          allData = await loader(0, 100000, search);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // For non-paginated, use the unPaginatedData we already have
+        allData = unPaginatedData || [];
+      }
+    } else {
+      allData = loader;
+    }
+
+    // Prepare export configuration
+    const filename = exportConfig?.filename || ariaLabelKey;
+    const exportColumns = exportConfig?.columns || columns.map(col => ({
+      key: col.name,
+      label: t(col.displayKey || col.name)
+    }));
+    const csvDelimiter = exportConfig?.csvDelimiter || ";";
+
+    // Dynamically import export utilities to avoid bundling them always
+    const { exportToCSV, exportToPDF } = await import("./exportUtils");
+
+    if (format === "csv") {
+      exportToCSV(allData, { filename, columns: exportColumns, csvDelimiter }, t);
+    } else {
+      exportToPDF(allData, { filename, columns: exportColumns }, t);
+    }
+  };
 
   const renderCell = (columns: (Field<T> | DetailField<T>)[], value: T) => {
     return columns.map((col) => {
@@ -582,6 +651,50 @@ export function KeycloakDataTable<T>({
           toolbarItem={
             <>
               {toolbarItem} <ToolbarItem variant="separator" />{" "}
+              {exportConfig?.enabled !== false && (
+                <ToolbarItem>
+                  <Dropdown
+                    onOpenChange={setExportDropdownOpen}
+                    toggle={(ref) => (
+                      <MenuToggle
+                        ref={ref}
+                        onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
+                        isExpanded={exportDropdownOpen}
+                        variant="secondary"
+                        icon={<DownloadIcon />}
+                        data-testid="export-dropdown"
+                      >
+                        {t("export")}
+                      </MenuToggle>
+                    )}
+                    isOpen={exportDropdownOpen}
+                    shouldFocusToggleOnSelect
+                  >
+                    <DropdownList>
+                      <DropdownItem
+                        key="export-csv"
+                        data-testid="export-csv"
+                        onClick={() => {
+                          handleExport("csv");
+                          setExportDropdownOpen(false);
+                        }}
+                      >
+                        {t("exportAsCSV")}
+                      </DropdownItem>
+                      <DropdownItem
+                        key="export-pdf"
+                        data-testid="export-pdf"
+                        onClick={() => {
+                          handleExport("pdf");
+                          setExportDropdownOpen(false);
+                        }}
+                      >
+                        {t("exportAsPDF")}
+                      </DropdownItem>
+                    </DropdownList>
+                  </Dropdown>
+                </ToolbarItem>
+              )}
               <ToolbarItem>
                 <Button variant="link" onClick={refresh} data-testid="refresh">
                   <SyncAltIcon /> {t("refresh")}
