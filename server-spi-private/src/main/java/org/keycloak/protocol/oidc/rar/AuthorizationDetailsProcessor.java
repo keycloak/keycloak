@@ -22,7 +22,6 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
-import org.keycloak.representations.AuthorizationDetailsResponse;
 
 /**
  * Provider interface for processing authorization_details parameter in OAuth2/OIDC authorization and token requests.
@@ -33,7 +32,7 @@ import org.keycloak.representations.AuthorizationDetailsResponse;
  *
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
-public interface AuthorizationDetailsProcessor<ADR extends AuthorizationDetailsResponse> extends Provider {
+public interface AuthorizationDetailsProcessor<ADR extends AuthorizationDetailsJSONRepresentation> extends Provider {
 
     /**
      * Checks if this processor should be regarded as supported in the running context.
@@ -47,7 +46,7 @@ public interface AuthorizationDetailsProcessor<ADR extends AuthorizationDetailsR
     String getSupportedType();
 
     /**
-     * @return supported Java type of {@link AuthorizationDetailsResponse} subclass, which this processor can create in the token response
+     * @return supported Java type of {@link AuthorizationDetailsJSONRepresentation} subclass, which this processor can create in the token response
      */
     Class<ADR> getSupportedResponseJavaType();
 
@@ -94,7 +93,7 @@ public interface AuthorizationDetailsProcessor<ADR extends AuthorizationDetailsR
      * @param authzDetailsResponse all the authorizationDetails. May contain also authorizationDetails entries, with different "type" than the type understandable by this processor
      * @return sublist of the list provided by "authDetailsResponse" parameter, which will contain just the authorizationDetails of the corresponding type of this processor.
      */
-    default List<ADR> getSupportedAuthorizationDetails(List<AuthorizationDetailsResponse> authzDetailsResponse) {
+    default List<ADR> getSupportedAuthorizationDetails(List<AuthorizationDetailsJSONRepresentation> authzDetailsResponse) {
         if (authzDetailsResponse == null) {
             return null;
         }

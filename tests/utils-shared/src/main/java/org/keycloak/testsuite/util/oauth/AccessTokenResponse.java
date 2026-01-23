@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.representations.AuthorizationDetailsResponse;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -23,7 +23,7 @@ public class AccessTokenResponse extends AbstractHttpResponse {
     private String refreshToken;
     private String scope;
     private String sessionState;
-    private List<AuthorizationDetailsResponse> authorizationDetails;
+    private List<AuthorizationDetailsJSONRepresentation> authorizationDetails;
 
     private Map<String, Object> otherClaims;
 
@@ -68,7 +68,7 @@ public class AccessTokenResponse extends AbstractHttpResponse {
                     break;
                 case OAuth2Constants.AUTHORIZATION_DETAILS:
                     var valJson = JsonSerialization.valueAsString(entry.getValue());
-                    var arr = JsonSerialization.valueFromString(valJson, AuthorizationDetailsResponse[].class);
+                    var arr = JsonSerialization.valueFromString(valJson, AuthorizationDetailsJSONRepresentation[].class);
                     authorizationDetails = Arrays.asList(arr);
                     break;
                 default:
@@ -118,11 +118,11 @@ public class AccessTokenResponse extends AbstractHttpResponse {
         return otherClaims;
     }
 
-    public List<AuthorizationDetailsResponse> getAuthorizationDetails() {
+    public List<AuthorizationDetailsJSONRepresentation> getAuthorizationDetails() {
         return authorizationDetails;
     }
 
-    public <ADR extends AuthorizationDetailsResponse> List<ADR> getAuthorizationDetails(Class<ADR> clazz) {
+    public <ADR extends AuthorizationDetailsJSONRepresentation> List<ADR> getAuthorizationDetails(Class<ADR> clazz) {
         if (getAuthorizationDetails() == null) {
             return null;
         } else {

@@ -39,7 +39,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.AuthorizationDetailsResponse;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
@@ -139,7 +139,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                 .user(userModel);
 
         // Process authorization_details using provider discovery
-        List<AuthorizationDetailsResponse> authorizationDetailsResponses = processAuthorizationDetails(userSession, sessionContext);
+        List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponses = processAuthorizationDetails(userSession, sessionContext);
         LOGGER.debugf("Initial authorization_details processing result: %s", authorizationDetailsResponses);
 
         // If no authorization_details were processed from the request, try to generate them from credential offer
