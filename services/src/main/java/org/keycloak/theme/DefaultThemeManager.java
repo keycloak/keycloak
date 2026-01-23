@@ -233,6 +233,25 @@ public class DefaultThemeManager implements ThemeManager {
         }
 
         @Override
+        public boolean hasResource(String path) throws IOException {
+            for (Theme t : themes) {
+                if (t.hasResource(path)) {
+                    return true;
+                }
+            }
+
+            for (ThemeResourceProvider t : themeResourceProviders) {
+                try (InputStream resource = t.getResourceAsStream(path)) {
+                    if (resource != null) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        @Override
         public InputStream getResourceAsStream(String path) throws IOException {
             for (Theme t : themes) {
                 InputStream resource = t.getResourceAsStream(path);

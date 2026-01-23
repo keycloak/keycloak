@@ -86,6 +86,17 @@ public interface Theme {
     Properties getProperties() throws IOException;
 
     /**
+     * Check if a resource exists in the theme.
+     * @param path path of the resource
+     * @return true if the resource exists
+     */
+    default boolean hasResource(String path) throws IOException {
+        try (InputStream is = getResourceAsStream(path)) {
+            return is != null;
+        }
+    }
+
+    /**
      * Check if the given path contains a content hash.
      * If a resource is requested from this path, and it has a content hash, this guarantees that if the file
      * exists in two versions of the theme, it will contain the same contents.
