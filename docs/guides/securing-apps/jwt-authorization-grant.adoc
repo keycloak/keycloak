@@ -155,5 +155,9 @@ The enforcer can be used for any request that uses an assertion parameter. Curre
 * Executor **jwt-claim-enforcer**. This executor allows to configure extra requirements for claims in the JWT assertion token. For example, if we want the assertion to contain an `iat` claim or a custom claim with a specific value. The configuration allows us to set any claim name and any claim value (using a java regex). If the claim in the JWT assertion does not match the regex, the request does not proceed and an error is returned.
 +
 As the previous executor, for the moment this enforcer can be used for JWT Authorization Grant and the Standard Token exchange.
+* Executor **jwt-authorization-grant-audience**. The executor allows to configure different and exclusive valid audiences for the assertion. The JWT Authorization Grant processing ensures, by specification, that the audience of the assertion is the {project_name} issuer or token endpoint URL. You can also use the Client ID as valid audience (option **Allows Client ID as audience for assertions**) for the OpenID Connect identity providers. Using this executor, you can configure one or more valid audiences instead of the default ones for the requests processed by the client policy.
++
+WARNING: The **jwt-authorization-grant-audience** executor changes the validation of the assertion audience out of the standard compliance. This behavior can have major security implications.
+
 
 </@tmpl.guide>
