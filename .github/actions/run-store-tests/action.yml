@@ -19,7 +19,7 @@ runs:
     - name: Run new base tests
       shell: bash
       run: |
-        KC_TEST_DATABASE=${{ inputs.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw package -f tests/pom.xml -Dtest=DatabaseTestSuite -Dkeycloak.distribution.start.timeout=360
+        KC_TEST_DATABASE=${{ inputs.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw package -f tests/pom.xml -Dtest=DatabaseTestSuite -Dkc.test.server.start.timeout=360
 
     - name: Database container port
       shell: bash

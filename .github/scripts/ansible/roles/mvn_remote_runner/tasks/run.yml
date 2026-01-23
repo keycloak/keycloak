@@ -24,6 +24,8 @@
   async: 86400
   poll: 10
   register: result
+  # Allow playbook to continue to collect test results even when tests fail
+  ignore_errors: yes
 
 - debug: var=result
 
@@ -52,3 +54,8 @@
     mode: pull
   with_items:
     - "{{ output.files }}"
+
+- name: Fail if Maven command failed
+  fail:
+    msg: "Maven command failed with return code {{ result.rc }}: {{ result.stderr | default('') }}"
+  when: result.rc != 0
