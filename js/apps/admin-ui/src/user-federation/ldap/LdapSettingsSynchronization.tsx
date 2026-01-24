@@ -64,6 +64,36 @@ export const LdapSettingsSynchronization = ({
         </FormGroup>
         <FormGroup
           hasNoPaddingTop
+          label={t("caseSensitiveOriginalUsernameOnImport")}
+          labelIcon={
+            <HelpItem
+              helpText={t("caseSensitiveOriginalUsernameOnImportHelp")}
+              fieldLabelId="caseSensitiveOriginalUsernameOnImport"
+            />
+          }
+          fieldId="kc-case-sensitive-original-username-on-import"
+        >
+          <Controller
+            name="config.caseSensitiveOriginalUsernameOnImport"
+            defaultValue={["false"]}
+            control={form.control}
+            render={({ field }) => (
+              <Switch
+                id="kc-case-sensitive-original-username-on-import"
+                data-testid="case-sensitive-original-username-on-import"
+                name="caseSensitiveOriginalUsernameOnImport"
+                label={t("on")}
+                labelOff={t("off")}
+                onChange={(_event, value) => field.onChange([`${value}`])}
+                isChecked={field.value[0] === "true"}
+                isDisabled={false}
+                aria-label={t("caseSensitiveOriginalUsernameOnImport")}
+              />
+            )}
+          ></Controller>
+        </FormGroup>
+        <FormGroup
+          hasNoPaddingTop
           label={t("syncRegistrations")}
           labelIcon={
             <HelpItem

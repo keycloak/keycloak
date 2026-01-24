@@ -27,6 +27,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.storage.UserStorageProvider;
 
+import static org.keycloak.models.LDAPConstants.CASE_SENSITIVE_ORIGINAL_USERNAME_ON_IMPORT;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 
 /**
@@ -287,6 +288,11 @@ public class LDAPConfig {
 
     public boolean isImportEnabled() {
         return Boolean.parseBoolean(config.getFirstOrDefault(IMPORT_ENABLED, Boolean.TRUE.toString())) ;
+    }
+
+    public boolean isCaseSensitiveOriginalUsernameOnImport() {
+        return Boolean.parseBoolean(config.getFirstOrDefault(CASE_SENSITIVE_ORIGINAL_USERNAME_ON_IMPORT,
+                Boolean.FALSE.toString())) ;
     }
 
     @Override
