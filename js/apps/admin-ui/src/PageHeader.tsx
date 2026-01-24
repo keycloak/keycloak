@@ -38,7 +38,7 @@ const ServerInfoDropdownItem = () => {
   return (
     <DropdownItem
       key="server info"
-      component={(props) => <Link {...props} to={toDashboard({ realm })} />}
+      component={(props: React.ComponentProps<typeof Link>) => <Link {...props} to={toDashboard({ realm })} />}
     >
       {t("realmInfo")}
     </DropdownItem>
@@ -113,7 +113,7 @@ export const Header = () => {
       features={{ hasManageAccount: false }}
       brand={{
         href: logoUrl,
-        src: customLogo || joinPath(environment.resourceUrl, logo),
+        src: (customLogo && customLogo.trim()) ? customLogo : joinPath(environment.resourceUrl, logo),
         alt: t("logo"),
         className: "keycloak__pageheader_brand",
       }}
