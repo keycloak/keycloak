@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
@@ -300,6 +301,36 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
         return cached.isManaged();
 
+    }
+
+    @Override
+    public GroupModel createGroup(OrganizationModel organization, String name, GroupModel toParent) {
+        //todo caching
+        return getDelegate().createGroup(organization, name, toParent);
+    }
+
+    @Override
+    public Stream<GroupModel> getTopLevelGroups(OrganizationModel organization, Integer firstResult, Integer maxResults) {
+        //todo caching
+        return getDelegate().getTopLevelGroups(organization, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<GroupModel> searchGroupsByName(OrganizationModel organization, String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        //todo caching
+        return getDelegate().searchGroupsByName(organization, search, exact, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<GroupModel> searchGroupsByAttributes(OrganizationModel organization, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        //todo caching
+        return getDelegate().searchGroupsByAttributes(organization, attributes, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member) {
+        //todo caching
+        return getDelegate().getOrganizationGroupsByMember(organization, member);
     }
 
     @Override

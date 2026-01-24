@@ -35,6 +35,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ServiceMonitorSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TelemetrySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
@@ -136,6 +137,10 @@ public class KeycloakSpec {
     @JsonProperty("networkPolicy")
     @JsonPropertyDescription("Controls the ingress traffic flow into Keycloak pods.")
     private NetworkPolicySpec networkPolicySpec;
+
+    @JsonProperty("telemetry")
+    @JsonPropertyDescription("In this section you can configure general shared OpenTelemetry settings for Keycloak.")
+    private TelemetrySpec telemetrySpec;
 
     @JsonProperty("tracing")
     @JsonPropertyDescription("In this section you can configure OpenTelemetry Tracing for Keycloak.")
@@ -337,6 +342,14 @@ public class KeycloakSpec {
 
     public void setNetworkPolicySpec(NetworkPolicySpec networkPolicySpec) {
         this.networkPolicySpec = networkPolicySpec;
+    }
+
+    public TelemetrySpec getTelemetrySpec() {
+        return telemetrySpec;
+    }
+
+    public void setTelemetrySpec(TelemetrySpec telemetrySpec) {
+        this.telemetrySpec = telemetrySpec;
     }
 
     public TracingSpec getTracingSpec() {

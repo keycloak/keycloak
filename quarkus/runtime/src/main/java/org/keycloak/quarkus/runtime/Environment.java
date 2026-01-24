@@ -42,7 +42,6 @@ public final class Environment {
     public static final String KC_CONFIG_BUILT = "kc.config.built";
     public static final String KC_TEST_REBUILD = "kc.test.rebuild";
     private static final String KC_HOME_DIR = "kc.home.dir";
-    public static final String NON_SERVER_MODE = "nonserver";
     public static final String PROFILE ="kc.profile";
     public static final String ENV_PROFILE ="KC_PROFILE";
     public static final String DATA_PATH = File.separator + "data";
@@ -103,10 +102,6 @@ public final class Environment {
 
     public static boolean isDevProfile(){
         return Optional.ofNullable(org.keycloak.common.util.Environment.getProfile()).orElse("").equalsIgnoreCase(org.keycloak.common.util.Environment.DEV_PROFILE_VALUE);
-    }
-
-    public static boolean isNonServerMode() {
-        return NON_SERVER_MODE.equalsIgnoreCase(org.keycloak.common.util.Environment.getProfile());
     }
 
     public static boolean isWindows() {

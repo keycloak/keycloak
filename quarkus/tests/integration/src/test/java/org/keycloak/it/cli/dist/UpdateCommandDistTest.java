@@ -187,6 +187,28 @@ public class UpdateCommandDistTest {
     }
 
     @Test
+    public void testRollingUpdatePatchCompatibility(KeycloakDistribution distribution) throws IOException {
+        var jsonFile = createTempFile("patch-compatible", ".json");
+        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath(),
+                "--features", "rolling-updates:v2"
+        );
+        result.assertMessage("Metadata:");
+        assertEquals(0, result.exitCode());
+        var info = JsonSerialization.mapper.readValue(jsonFile, UpdateCompatibilityCheck.METADATA_TYPE_REF);
+        var cacheMeta = info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME);
+        assertTrue(cacheMeta.get("version").matches("^\\d+\\.\\d+$"), "Infinispan version should be Major.Minor");
+        assertTrue(cacheMeta.get("jgroupsVersion").matches("^\\d+\\.\\d+$"), "JGroups version should be Major.Minor");
+        result = distribution.run(
+                UpdateCompatibility.NAME,
+                UpdateCompatibilityCheck.NAME,
+                UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath(),
+                "--features", "rolling-updates:v2"
+        );
+        result.assertExitCode(CompatibilityResult.ExitCode.ROLLING.value());
+        result.assertMessage("[OK] Rolling Update is available.");
+    }
+
+    @Test
     public void testChangeCacheEmbeddedToRemote(KeycloakDistribution distribution) throws IOException {
         var jsonFile = createTempFile("compatible", ".json");
         var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath());

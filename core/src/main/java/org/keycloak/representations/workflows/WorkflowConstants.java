@@ -6,6 +6,7 @@ public final class WorkflowConstants {
 
     public static final String CONFIG_USES = "uses";
     public static final String CONFIG_WITH = "with";
+    public static final String CONFIG_SUPPORTS = "supports";
 
     // Entry configuration keys for Workflow
     public static final String CONFIG_ON_EVENT = "on";

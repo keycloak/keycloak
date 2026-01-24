@@ -744,7 +744,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
     @DisplayName("Create ClientScope with protocol:")
     @ParameterizedTest
-    @ValueSource(strings = {"openid-connect", "saml", "oid4vc"})
+    @ValueSource(strings = {"openid-connect", "saml"})
     public void createClientScopeWithOpenIdProtocol(String protocol) {
         createClientScope(protocol);
     }

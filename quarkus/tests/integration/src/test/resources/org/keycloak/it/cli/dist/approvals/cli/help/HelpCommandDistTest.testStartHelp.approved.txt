@@ -22,7 +22,7 @@ Cache:
                        mode, a 'ispn' cache is used to create a cluster between multiple server
                        nodes. By default in development mode, a 'local' cache disables clustering
                        and is intended for development and testing purposes. Possible values are:
-                       ispn, local. Default: ispn.
+                       ispn, local.
 --cache-config-file <file>
                      Defines the file from which cache configuration should be loaded from. The
                        configuration file is relative to the 'conf/' directory.
@@ -269,9 +269,10 @@ HTTP(S):
 
 --http-accept-non-normalized-paths <true|false>
                      DEPRECATED. If the server should accept paths that are not normalized
-                       according to RFC3986 or that contain a double slash ('//'). While accepting
-                       those requests might be relevant for legacy applications, it is recommended
-                       to disable it to allow for more concise URL filtering. Default: false.
+                       according to RFC3986 or that contain a double slash ('//') or semicolon
+                       (';'). While accepting those requests might be relevant for legacy
+                       applications, it is recommended to disable it to allow for more concise URL
+                       filtering. Default: false.
 --http-enabled <true|false>
                      Enables the HTTP listener. Enabled by default in development mode. Typically
                        not enabled in production unless the server is fronted by a TLS termination

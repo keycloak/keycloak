@@ -214,6 +214,11 @@ public class KeycloakModelUtilsTest {
         }
 
         @Override
+        public OrganizationModel getOrganization() {
+            return null;
+        }
+
+        @Override
         public Stream<GroupModel> getSubGroupsStream() {
             return Stream.empty();
         }

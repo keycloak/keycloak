@@ -21,7 +21,7 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
     field: ControllerRenderProps<UserFormFields>,
   ) => {
     if (isMultiValue) {
-      if (field.value.includes(value)) {
+      if (field.value?.includes(value)) {
         field.onChange(field.value.filter((item: string) => item !== value));
       } else {
         if (Array.isArray(field.value)) {

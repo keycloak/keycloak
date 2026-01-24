@@ -53,4 +53,7 @@ public interface OrganizationResource {
 
     @Path("identity-providers")
     OrganizationIdentityProvidersResource identityProviders();
+
+    @Path("groups")
+    OrganizationGroupsResource groups();
 }

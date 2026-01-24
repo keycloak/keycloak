@@ -225,8 +225,6 @@ Known limitations:
 
 * If there have been changes to the Account Console or Admin UI in the patch release, and the user opened the Account Console or Admin UI before or during the upgrade, the user might see an error message and be asked to reload the application while navigating in browser during or after the upgrade.
 
-* If the two patch releases of {project_name} use different versions of the embedded Infinispan, no rolling update of {project_name} be performed.
-
 == Further reading
 
 The {project_name} Operator uses the functionality described above to determine if a rolling update is possible. See the <@links.operator id="rolling-updates" /> {section} and the `Auto` strategy for more information.

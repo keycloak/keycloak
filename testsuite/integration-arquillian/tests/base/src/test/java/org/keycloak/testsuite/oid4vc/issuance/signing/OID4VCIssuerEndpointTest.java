@@ -377,7 +377,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         clientResource.addOptionalClientScope(scopeId);
     }
 
-    private void logoutUser(String clientId, String username) {
+    protected void logoutUser(String username) {
         UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(TEST_REALM_NAME), username);
         user.logout();
     }
@@ -658,6 +658,8 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.setVerifiableCredentialsEnabled(true);
+        
         if (testRealm.getComponents() == null) {
             testRealm.setComponents(new MultivaluedHashMap<>());
         }

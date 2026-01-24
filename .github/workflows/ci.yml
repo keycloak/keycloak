@@ -480,9 +480,9 @@ jobs:
           echo "aurora-cluster-password=${PASS}" >> $GITHUB_OUTPUT
           echo "region=${AWS_REGION}" >> $GITHUB_OUTPUT
           curl --fail-with-body https://truststore.pki.rds.amazonaws.com/${AWS_REGION}/${AWS_REGION}-bundle.pem -o aws.pem
-          PROPS+=' -Dkeycloak.connectionsJpa.jdbcParameters=\"?ssl=true&sslmode=verify-ca&sslrootcert=/opt/keycloak/aws.pem\"'
           
-          echo "maven_properties=${PROPS}" >> $GITHUB_OUTPUT
+          JDBC_PARAMS='?ssl=true&sslmode=verify-ca&sslrootcert=/opt/keycloak/aws.pem'
+          echo "jdbc_params=${JDBC_PARAMS}" >> $GITHUB_OUTPUT
 
       - id: aurora-create
         name: Create Aurora DB
@@ -520,8 +520,8 @@ jobs:
         run: |
           EC2_CLUSTER_NAME=${{ steps.ec2-create.outputs.ec2_cluster }}
           AWS_REGION=${{ steps.aurora-init.outputs.region }}
-          PROPS='${{ steps.aurora-init.outputs.maven_properties }}'
-          
+          PROPS="-Dkeycloak.connectionsJpa.jdbcParameters=\"${{ steps.aurora-init.outputs.jdbc_params }}\""
+
           PROPS+=" -Dauth.server.db.host=${{ steps.aurora-create.outputs.endpoint }} -Dkeycloak.connectionsJpa.password=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
           PROPS+=" -Djdbc.mvn.groupId=software.amazon.jdbc -Djdbc.mvn.artifactId=aws-advanced-jdbc-wrapper -Djdbc.mvn.version=2.3.1 -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ env.old-version }}/providers"
 
@@ -553,7 +553,7 @@ jobs:
         run: |
           EC2_CLUSTER_NAME=${{ steps.ec2-create.outputs.ec2_cluster }}
           AWS_REGION=${{ steps.aurora-init.outputs.region }}
-          PROPS='${{ steps.aurora-init.outputs.maven_properties }}'          
+          PROPS="-Dkeycloak.connectionsJpa.jdbcParameters=\"${{ steps.aurora-init.outputs.jdbc_params }}\""
           PROPS+=" -Dauth.server.db.host=${{ steps.aurora-create.outputs.endpoint }} -Dkeycloak.connectionsJpa.password=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
           
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
@@ -579,6 +579,50 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: aurora-integration-tests-mvn-logs
+          path: .github/scripts/ansible/files
+
+      - name: Clear Aurora DB schema
+        id: aurora-clear-db-schema
+        run: |
+         EC2_CLUSTER_NAME=${{ steps.ec2-create.outputs.ec2_cluster }}
+         AWS_REGION=${{ steps.aurora-init.outputs.region }}
+         
+         cd .github/scripts/ansible
+         ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "-Pexecute-sql -f tests/base/pom.xml sql:execute@clear-schema -Dautocommit=true -Ddriver=software.amazon.jdbc.Driver -Durl=\"jdbc:aws-wrapper:postgresql://${{ steps.aurora-create.outputs.endpoint }}/keycloak${{ steps.aurora-init.outputs.jdbc_params }}\" -Dusername=keycloak -Dpassword=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
+
+      - name: Run Aurora new database tests on EC2
+        id: aurora-new-integration-tests
+        run: |
+          EC2_CLUSTER_NAME=${{ steps.ec2-create.outputs.ec2_cluster }}
+          AWS_REGION=${{ steps.aurora-init.outputs.region }}
+
+          PROPS="-Dkc.test.database=remote -Dkc.test.database.vendor=postgres"
+          PROPS+=" -Dkc.test.database.user=keycloak"
+          PROPS+=" -Dkc.test.database.password=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
+          PROPS+=" -Dkc.test.database.url=\"jdbc:aws-wrapper:postgresql://${{ steps.aurora-create.outputs.endpoint }}/keycloak${{ steps.aurora-init.outputs.jdbc_params }}\""
+          PROPS+=" -Dkc.test.database.driver=software.amazon.jdbc.Driver"
+          PROPS+=" -Dkc.test.database.driver.artifact=software.amazon.jdbc:aws-advanced-jdbc-wrapper"
+
+          cd .github/scripts/ansible
+          ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "$PROPS package -f tests/pom.xml -Dtest=DatabaseTestSuite"
+
+          # Copy returned surefire-report directories to workspace root to ensure they're discovered
+          results=(files/keycloak/results/*)
+          rsync -a $results/* ../../../
+          rm -rf $results
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: AuroraDB IT
+
+      - name: EC2 Maven Logs
+        if: failure()
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: aurora-new-integration-tests-mvn-logs
           path: .github/scripts/ansible/files
 
       - name: Delete EC2 Instance

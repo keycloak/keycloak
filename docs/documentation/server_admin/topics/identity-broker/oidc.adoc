@@ -91,6 +91,9 @@ to forward are any non OpenID Connect/OAuth standard parameter or standard param
 |Allows client assertions to be re-used
 |By default, a client assertion can not be used multiple times. If the client is not able to retrieve a new client assertion for each request this option can be enabled to allow re-use of the same client assertion.
 
+|Allows Client ID as audience for assertions
+|If enabled, the Client ID configured in the Identity Provider is the only valid audience for assertions used in Federated client authentication and in JWT Authorization Grants (Client Assertions and JWT Authorization Grant). The client ID is used instead of the token-url/issuer-url defined in the respective specifications. Note this behavior is not covered by any standard.
+
 |===
 
 You can import all this configuration data by providing a URL or file that points to OpenID Provider Metadata. If you connect to a {project_name} external IDP, you can import the IDP settings from `<root>{kc_realms_path}/{realm-name}/.well-known/openid-configuration`. This link is a JSON document describing metadata about the IDP.

@@ -85,6 +85,10 @@ public final class CRAssert {
         }
     }
 
+    public static void assertKeycloakStatusCondition(KeycloakStatus kcStatus, String condition, Boolean status) {
+        assertKeycloakStatusCondition(kcStatus, condition, status, null);
+    }
+
     public static void assertKeycloakStatusCondition(KeycloakStatus kcStatus, String condition, Boolean status, String containedMessage) {
         assertKeycloakStatusCondition(kcStatus, condition, status, containedMessage, null);
     }

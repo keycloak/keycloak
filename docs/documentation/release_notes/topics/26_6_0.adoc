@@ -1,0 +1,23 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+= Sensitive Keycloak information is not displayed in the HTTP Access log
+
+If you are using the HTTP Access logging capability, sensitive information is omitted.
+It means that tokens in the 'Authorization' HTTP header and specific sensitive Keycloak cookies are not shown.
+
+For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
+
+= HTTP access logs in a dedicated file
+
+HTTP access logs can now be written to a dedicated file, separate from the server logs.
+This makes it easier to process and archive access logs independently for security auditing and compliance monitoring.
+
+For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
+
+= Telemetry configuration via Keycloak CR
+
+{project_name} now supports configuring the OpenTelemetry properties via Keycloak CR when using Operator.
+These properties are shared among the available OpenTelemetry components - logs, metrics, and traces.
+
+For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.

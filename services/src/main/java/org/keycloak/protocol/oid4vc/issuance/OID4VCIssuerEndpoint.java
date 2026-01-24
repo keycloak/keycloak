@@ -85,6 +85,7 @@ import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
+import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerException;
 import org.keycloak.protocol.oid4vc.model.AttestationProof;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
@@ -248,6 +249,28 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
+     * Validates whether OID4VCI functionality is enabled for the realm.
+     * <p>
+     * If the realm setting is disabled, this method logs the status and throws a
+     * {@link CorsErrorResponseException} with an appropriate error message.
+     * </p>
+     *
+     * @throws CorsErrorResponseException if OID4VCI is disabled for the realm.
+     */
+    private void checkIsOid4vciEnabled() {
+        RealmModel realm = session.getContext().getRealm();
+        if (!realm.isVerifiableCredentialsEnabled()) {
+            LOGGER.debugf("OID4VCI functionality is disabled for realm '%s'. Verifiable Credentials switch is off.", realm.getName());
+            throw new CorsErrorResponseException(
+                    cors != null ? cors : Cors.builder().allowAllOrigins(),
+                    Errors.INVALID_CLIENT,
+                    "OID4VCI functionality is disabled for this realm",
+                    Response.Status.FORBIDDEN
+            );
+        }
+    }
+
+    /**
      * Validates whether the authenticated client is enabled for OID4VCI features.
      * <p>
      * If the client is not enabled, this method logs the status and throws a
@@ -286,6 +309,8 @@ public class OID4VCIssuerEndpoint {
     @Produces({MediaType.APPLICATION_JSON})
     @Path(NONCE_PATH)
     public Response getCNonce() {
+        checkIsOid4vciEnabled();
+
         RealmModel realm = session.getContext().getRealm();
         EventBuilder eventBuilder = new EventBuilder(realm, session, session.getContext().getConnection());
         eventBuilder.event(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST);
@@ -384,6 +409,7 @@ public class OID4VCIssuerEndpoint {
             @QueryParam("width") @DefaultValue("200") int width,
             @QueryParam("height") @DefaultValue("200") int height
     ) {
+        checkIsOid4vciEnabled();
         configureCors(true);
 
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
@@ -403,7 +429,6 @@ public class OID4VCIssuerEndpoint {
         checkClientEnabled();
 
         // Check required role to create a credential offer
-        //
         boolean hasCredentialOfferRole = userModel.getRoleMappingsStream()
                 .anyMatch(rm -> rm.getName().equals(CREDENTIAL_OFFER_CREATE.getName()));
         if (!hasCredentialOfferRole) {
@@ -416,7 +441,6 @@ public class OID4VCIssuerEndpoint {
         LOGGER.debugf("Get an offer for %s", credConfigId);
 
         // Check whether given client/user ids actually exist
-        //
         if (appClientId != null && session.clients().getClientByClientId(realmModel, appClientId) == null) {
             var errorMessage = "No such client id: " + appClientId;
             eventBuilder.detail(Details.REASON, errorMessage).error(Errors.CLIENT_NOT_FOUND);
@@ -456,7 +480,6 @@ public class OID4VCIssuerEndpoint {
         }
 
         // Check whether the credential configuration exists in available client scopes
-        //
         List<String> availableInClientScopes = session.clientScopes()
                 .getClientScopesByProtocol(realmModel, OID4VC_PROTOCOL)
                 .map(it -> it.getAttribute(CredentialScopeModel.CONFIGURATION_ID))
@@ -567,6 +590,7 @@ public class OID4VCIssuerEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Path(CREDENTIAL_OFFER_PATH + "{nonce}")
     public Response getCredentialOffer(@PathParam("nonce") String nonce) {
+        checkIsOid4vciEnabled();
         configureCors(false);
 
         if (nonce == null) {
@@ -580,7 +604,6 @@ public class OID4VCIssuerEndpoint {
         eventBuilder.event(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST);
 
         // Retrieve the associated credential offer state
-        //
         CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
         CredentialOfferState offerState = offerStorage.findOfferStateByNonce(session, nonce);
         if (offerState == null) {
@@ -591,7 +614,6 @@ public class OID4VCIssuerEndpoint {
 
         // We treat the credential offer URI as an unprotected capability URL and rely solely on the later authorization step
         // i.e. an authenticated client/user session is not required nor checked against the offer state
-
         CredentialsOffer credOffer = offerState.getCredentialsOffer();
         LOGGER.debugf("Found credential offer state: [ids=%s, cid=%s, uid=%s, nonce=%s]",
                 credOffer.getCredentialConfigurationIds(), offerState.getClientId(), offerState.getUserId(), offerState.getNonce());
@@ -654,6 +676,7 @@ public class OID4VCIssuerEndpoint {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     @Path(CREDENTIAL_PATH)
     public Response requestCredential(String requestPayload) {
+        checkIsOid4vciEnabled();
         LOGGER.debugf("Received credentials request with payload: %s", requestPayload);
 
         RealmModel realm = session.getContext().getRealm();
@@ -704,8 +727,7 @@ public class OID4VCIssuerEndpoint {
             String errorMessage = "Response encryption is required by the Credential Issuer, but no encryption parameters were provided.";
             LOGGER.debug(errorMessage);
             eventBuilder.detail(Details.REASON, errorMessage)
-                    .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
-                    .error(Errors.INVALID_REQUEST);
+                    .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
         }
 
@@ -720,8 +742,7 @@ public class OID4VCIssuerEndpoint {
                         encryptionParams.getJwk().getKeyType());
                 LOGGER.debug(errorMessage);
                 eventBuilder.detail(Details.REASON, errorMessage)
-                        .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
-                        .error(Errors.INVALID_REQUEST);
+                        .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
 
@@ -731,8 +752,7 @@ public class OID4VCIssuerEndpoint {
                         encryptionParams.getEnc());
                 LOGGER.debug(errorMessage);
                 eventBuilder.detail(Details.REASON, errorMessage)
-                        .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
-                        .error(Errors.INVALID_REQUEST);
+                        .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
 
@@ -743,8 +763,7 @@ public class OID4VCIssuerEndpoint {
                         encryptionParams.getZip());
                 LOGGER.debug(errorMessage);
                 eventBuilder.detail(Details.REASON, errorMessage)
-                        .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
-                        .error(Errors.INVALID_REQUEST);
+                        .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
         }
@@ -923,8 +942,7 @@ public class OID4VCIssuerEndpoint {
                 LOGGER.debug(errorMessage);
                 if (eventBuilder != null) {
                     eventBuilder.detail(Details.REASON, errorMessage)
-                            .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
-                            .error(Errors.INVALID_REQUEST);
+                            .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                 }
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
@@ -937,8 +955,7 @@ public class OID4VCIssuerEndpoint {
                     LOGGER.debug(errorMessage);
                     if (eventBuilder != null) {
                         eventBuilder.detail(Details.REASON, errorMessage)
-                                .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
-                                .error(Errors.INVALID_REQUEST);
+                                .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                     }
                     throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
                 }
@@ -947,8 +964,7 @@ public class OID4VCIssuerEndpoint {
                     LOGGER.debug(errorMessage);
                     if (eventBuilder != null) {
                         eventBuilder.detail(Details.REASON, errorMessage)
-                                .detail(Details.ERROR_TYPE, ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue())
-                                .error(Errors.INVALID_REQUEST);
+                                .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                     }
                     throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
                 }
@@ -1419,17 +1435,30 @@ public class OID4VCIssuerEndpoint {
                 credentialConfig.getFormat());
 
         return Optional.ofNullable(credentialSigner)
-                .map(signer -> signer.signCredential(
-                        vcIssuanceContext.getCredentialBody(),
-                        credentialConfig.getCredentialBuildConfig()
-                ))
+                .map(signer -> {
+                    try {
+                        return signer.signCredential(
+                                vcIssuanceContext.getCredentialBody(),
+                                credentialConfig.getCredentialBuildConfig()
+                        );
+                    } catch (CredentialSignerException cse) {
+                        throw badRequestException(ErrorType.INVALID_CREDENTIAL_REQUEST, "Signing of credential failed: " + cse.getMessage(), eventBuilder);
+                    }
+                })
                 .orElseThrow(() -> {
                     String message = String.format("No signer found for format '%s'.", credentialConfig.getFormat());
-                    return new BadRequestException(
-                            message,
-                            getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, message)
-                    );
+                    return badRequestException(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, message, eventBuilder);
                 });
+    }
+
+    // Throw the error event and return corresponding BadRequestException
+    private BadRequestException badRequestException(ErrorType errorType, String errorMessage, EventBuilder eventBuilder) {
+        eventBuilder.detail(Details.REASON, errorMessage)
+                .error(errorType.getValue());
+        return new BadRequestException(
+                errorMessage,
+                getErrorResponse(errorType, errorMessage)
+        );
     }
 
     private CredentialScopeModel getClientScopeModel(SupportedCredentialConfiguration credentialConfig) {

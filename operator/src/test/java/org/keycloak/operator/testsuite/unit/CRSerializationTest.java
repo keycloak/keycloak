@@ -30,6 +30,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ServiceMonitorSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TelemetrySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
@@ -194,8 +195,27 @@ public class CRSerializationTest {
     }
 
     @Test
+    public void telemetrySpecification() {
+        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr-telemetry.yml"), Keycloak.class);
+
+        TelemetrySpec telemetry = keycloak.getSpec().getTelemetrySpec();
+        assertThat(telemetry, notNullValue());
+
+        assertThat(telemetry.getEndpoint(), is("http://my-telemetry:4317"));
+        assertThat(telemetry.getServiceName(), is("my-best-keycloak-telemetry"));
+        assertThat(telemetry.getProtocol(), is("http/protobuf"));
+
+        var attributes = telemetry.getResourceAttributes();
+        assertThat(attributes, notNullValue());
+
+        assertThat(attributes.size(), is(2));
+        assertThat(attributes, hasEntry("service.namespace", "keycloak-namespace-telemetry"));
+        assertThat(attributes, hasEntry("service.name", "custom-service-name-telemetry"));
+    }
+
+    @Test
     public void tracingSpecification() {
-        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr.yml"), Keycloak.class);
+        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr-telemetry.yml"), Keycloak.class);
 
         TracingSpec tracing = keycloak.getSpec().getTracingSpec();
         assertThat(tracing, notNullValue());

@@ -30,6 +30,7 @@ import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.config.OpenApiOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.TelemetryOptions;
 
@@ -43,8 +44,11 @@ import static org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts.JDBC_O
 import static org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts.JDBC_POSTGRES;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
+import static org.hamcrest.CoreMatchers.everyItem;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.in;
 import static org.junit.Assert.assertTrue;
 
 public class IgnoredArtifactsTest extends AbstractConfigurationTest {
@@ -60,10 +64,7 @@ public class IgnoredArtifactsTest extends AbstractConfigurationTest {
 
     @Test
     public void fipsEnabled() {
-        Properties properties = new Properties();
-        properties.setProperty("keycloak.profile.feature.fips", "enabled");
-        var profile = Profile.configure(new PropertiesProfileConfigResolver(properties));
-
+        var profile = getProfileWithEnabledFeature(Profile.Feature.FIPS);
         assertThat(profile.isFeatureEnabled(Profile.Feature.FIPS), is(true));
 
         var ignoredArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
@@ -161,6 +162,31 @@ public class IgnoredArtifactsTest extends AbstractConfigurationTest {
         assertIgnoredArtifacts(IgnoredArtifacts.OTEL_METRICS, TelemetryOptions.TELEMETRY_METRICS_ENABLED);
     }
 
+    @Test
+    public void openApi() {
+        assertIgnoredArtifacts(IgnoredArtifacts.OPENAPI, OpenApiOptions.OPENAPI_ENABLED);
+    }
+
+    @Test
+    public void openApiSwagger() {
+        assertIgnoredArtifacts(IgnoredArtifacts.OPENAPI_SWAGGER, OpenApiOptions.OPENAPI_UI_ENABLED);
+    }
+
+    @Test
+    public void hibernateValidator() {
+        var profile = Profile.defaults();
+        assertThat(profile.isFeatureEnabled(Profile.Feature.CLIENT_ADMIN_API_V2), is(false));
+
+        var ignoredArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
+        assertThat(IgnoredArtifacts.HIBERNATE_VALIDATOR, everyItem(in(ignoredArtifacts)));
+
+        profile = getProfileWithEnabledFeature(Profile.Feature.CLIENT_ADMIN_API_V2);
+        assertThat(profile.isFeatureEnabled(Profile.Feature.CLIENT_ADMIN_API_V2), is(true));
+
+        ignoredArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
+        assertThat(IgnoredArtifacts.HIBERNATE_VALIDATOR, everyItem(not(in(ignoredArtifacts))));
+    }
+
     private void assertIgnoredArtifacts(Set<String> artifactsSet, Option<Boolean> enabledOption) {
         assertIgnoredArtifacts(artifactsSet, enabledOption, true);
     }
@@ -173,5 +199,11 @@ public class IgnoredArtifactsTest extends AbstractConfigurationTest {
             final var artifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
             assertThat(artifacts.containsAll(artifactsSet), is(!disabledByDefault));
         });
+    }
+
+    private Profile getProfileWithEnabledFeature(Profile.Feature feature) {
+        Properties properties = new Properties();
+        properties.setProperty("keycloak.profile.feature.%s".formatted(feature.name().toLowerCase()), "enabled");
+        return Profile.configure(new PropertiesProfileConfigResolver(properties));
     }
 }

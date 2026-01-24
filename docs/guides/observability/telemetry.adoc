@@ -51,6 +51,26 @@ You can change the protocol via CLI as follows:
 
 <@kc.start parameters="--telemetry-protocol=http/protobuf"/>
 
+== Configuration via Keycloak CR (Operator)
+The Keycloak CR has first-class citizen configuration options for telemetry. These may be configured under the spec.telemtry stanza as follows:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  telemetry:
+    endpoint: http://my-telemetry:4317          # default 'http://localhost:4317'
+    serviceName: my-best-keycloak-telemetry     # default 'keycloak'
+    protocol: http/protobuf                     # default 'grpc'
+    resourceAttributes:
+      service.namespace: keycloak-namespace-telemetry
+----
+
+These fields should reflect a 1:1 association with `telemetry-*` server options.
+
 == Traces
 
 See the https://www.keycloak.org/observability/tracing[Root cause analysis with tracing guide].

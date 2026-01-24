@@ -1,21 +1,18 @@
 package org.keycloak.testframework.server;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Set;
+import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 import org.keycloak.Keycloak;
 import org.keycloak.common.Version;
-import org.keycloak.platform.Platform;
+import org.keycloak.it.utils.Maven;
 
 import io.quarkus.maven.dependency.Dependency;
+import org.eclipse.aether.artifact.Artifact;
 
 public class EmbeddedKeycloakServer implements KeycloakServer {
 
     private Keycloak keycloak;
-    private Path homeDir;
     private boolean tlsEnabled = false;
 
     @Override
@@ -24,32 +21,12 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
         this.tlsEnabled = tlsEnabled;
 
         for(Dependency dependency : keycloakServerConfigBuilder.toDependencies()) {
-            builder.addDependency(dependency.getGroupId(), dependency.getArtifactId(), "");
+            var version = Optional.ofNullable(Maven.getArtifact(dependency.getGroupId(), dependency.getArtifactId()))
+                    .map(Artifact::getVersion)
+                    .orElse("");
+            builder.addDependency(dependency.getGroupId(), dependency.getArtifactId(), version);
         }
 
-        Set<Path> configFiles = keycloakServerConfigBuilder.toConfigFiles();
-        if (!configFiles.isEmpty()) {
-            if (homeDir == null) {
-                homeDir = Platform.getPlatform().getTmpDirectory().toPath();
-            }
-
-            Path conf = homeDir.resolve("conf");
-
-            if (!conf.toFile().exists()) {
-                conf.toFile().mkdirs();
-            }
-
-            for (Path configFile : configFiles) {
-                try {
-                    Files.copy(configFile, conf.resolve(configFile.getFileName()));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-        }
-
-        builder.setHomeDir(homeDir);
         keycloak = builder.start(keycloakServerConfigBuilder.toArgs());
     }
 

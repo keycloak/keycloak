@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Specifications implemented"
-priority=140
+priority=160
 summary="List of specifications and standards implemented by {project_name}.">
 
 This {section} presents a list of specifications and standards that {project_name} currently implements. The standards are separated in different sections and, in each one, a table is shown with the following four columns:
@@ -58,7 +58,7 @@ This {section} presents a list of specifications and standards that {project_nam
 |link:https://datatracker.ietf.org/doc/html/rfc8693[OAuth 2.0 Token Exchange (RFC 8693)]|Supported (see comments)||Token exchange V2 only supports the internal to internal use-case, so the specification is only partially supported now. See <@links.securingapps id="token-exchange" /> for more information.
 |link:https://datatracker.ietf.org/doc/html/rfc9101[The OAuth 2.0 Authorization Framework: JWT-Secured Authorization Request (JAR) (RFC 9101)]|Supported||
 |link:https://datatracker.ietf.org/doc/html/rfc9207[OAuth 2.0 Authorization Server Issuer Identification (RFC 9207)]|Supported||
-|link:https://datatracker.ietf.org/doc/html/rfc9449[OAuth 2.0 Demonstrating Proof of Possession (DPoP) (RFC 9449)]|Preview||
+|link:https://datatracker.ietf.org/doc/html/rfc9449[OAuth 2.0 Demonstrating Proof of Possession (DPoP) (RFC 9449)]|Supported||
 |===
 
 == Financial-grade API (FAPI)

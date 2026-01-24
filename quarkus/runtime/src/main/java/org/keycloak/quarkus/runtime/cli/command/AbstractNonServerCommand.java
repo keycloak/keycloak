@@ -19,8 +19,8 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import java.util.EnumSet;
 
+import org.keycloak.common.util.Environment;
 import org.keycloak.config.OptionCategory;
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
 
 import picocli.CommandLine;

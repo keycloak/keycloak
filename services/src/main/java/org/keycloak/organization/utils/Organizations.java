@@ -54,18 +54,23 @@ import static java.util.Optional.ofNullable;
 
 public class Organizations {
 
+    public static boolean isOrganizationGroup(GroupModel group) {
+        return Type.ORGANIZATION.equals(group.getType());
+    }
+
     public static boolean canManageOrganizationGroup(KeycloakSession session, GroupModel group) {
-        if (!Type.ORGANIZATION.equals(group.getType())) {
+        //  if it's not an organization group OR the feature is disabled, we don't need further checks
+        if (!isOrganizationGroup(group) || !Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
             return true;
         }
 
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
-            OrganizationModel organization = resolveOrganization(session);
-
-            return organization != null && organization.getId().equals(group.getName());
+        // if an organization is in context, allow management
+        if (resolveOrganization(session) != null) {
+            return true;
         }
 
-        return true;
+        // no organization in context, but the group is the internal org group
+        return getProvider(session).getById(group.getName()) == null;
     }
 
     public static List<IdentityProviderModel> resolveHomeBroker(KeycloakSession session, UserModel user) {

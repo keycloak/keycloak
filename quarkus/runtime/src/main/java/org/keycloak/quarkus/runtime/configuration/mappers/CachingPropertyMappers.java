@@ -11,6 +11,7 @@ import java.util.function.BooleanSupplier;
 
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
+import org.keycloak.config.CachingOptions.Mechanism;
 import org.keycloak.config.Option;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.quarkus.runtime.Environment;
@@ -36,6 +37,10 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
     public List<PropertyMapper<?>> getPropertyMappers() {
         List<PropertyMapper<?>> staticMappers = List.of(
                 fromOption(CachingOptions.CACHE)
+                        .transformer(
+                                (value, context) -> org.keycloak.common.util.Environment.isNonServerMode()
+                                        ? Mechanism.local.name()
+                                        : Optional.ofNullable(value).orElse(Mechanism.ispn.name()))
                         .paramLabel("type")
                         .build(),
                 fromOption(CachingOptions.CACHE_STACK)

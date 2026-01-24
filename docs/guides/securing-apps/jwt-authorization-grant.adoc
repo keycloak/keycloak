@@ -60,6 +60,8 @@ The Identity Provider (both types commented in the introduction) needs to also b
   * **Allowed clock skew**: Clock skew in seconds that is tolerated when validating identity provider tokens. Default value is zero.
   * **Limit access token expiration**: If enabled the access token lifespan will be limited to the expiration of the JWT assertion but only if the JWT assertion expiration is less than the calculated access token expiration.
 
+NOTE: The OpenID Connect Identity Provider types have one extra configuration switch **Allows Client ID as audience for assertions**, placed in the **Advance settings** section. This option, when enabled, sets the the Client ID of the provider configuration as the only valid audience for assertions used in Federated client authentication and in JWT Authorization Grants. The client ID is used instead of the token-url/issuer-url defined in the respective specifications. This behavior is not covered by any standard.
+
 .OIDC Identity Provider configuration for JWT Authorization Grant
 image::jwt-authorization-grant-oidc-provider-config.png[Identity Provider configuration for JWT Authorization Grant]
 
@@ -131,7 +133,7 @@ NOTE: Following the spec recommendation, the JWT Authorization Grant never issue
 
 == How to get a valid token for JWT Authorization Grant
 
-The JWT Authorization Grant feature needs a previous JWT assertion in order to be exchanged for an access token. We can call the external OpenID Connect Provider (OP) `domaina`, the one that is represented in {project_name} via the Identity Provider. And we can call the {project_name} server that receives the JWT authorization grant `domainb`. The `domaina` should somehow issue a JWT that is a valid assertion for `domainb`.
+The JWT Authorization Grant feature needs a previous JWT assertion in order to be exchanged for an access token. We can name the external OpenID Connect Provider (OP) `domaina`, the one that is represented in {project_name} via the Identity Provider. And we can name the {project_name} server that receives the JWT authorization grant `domainb`. The `domaina` should somehow issue a JWT that is a valid assertion for `domainb`.
 
 If `domaina` is a server different to {project_name}, we don't know how that initial JWT is obtained. But note that the specification enforces some processing of the assertion to be valid and return the access token. The way the client gets or generates such a JWT assertion in `domaina` depends completely on `domaina` server and client.
 
@@ -140,65 +142,7 @@ In case the external identity provider is another {project_name} server or realm
 . For `domaina`, `domainb` is an audience that can be restricted via token exchange.
 . For `domainb`, `domaina` is an Identity Provider that is used to validate the assertion. The user in `domainb` is also a valid user previously linked to `domaina` via the identity provider.
 
-For example, if `domaina` is a {project_name} realm, the following configuration is available to use Token Exchange to obtain the JWT assertion:
-
-. Create a client that represents `domainb`. This client can be the same client configured in `domainb` for the identity provider access.
-  * **Client ID**: http://localhost:8080/realms/domainb (issuer for `domainb`).
-  * **Name**: domainb
-+
-.Client that represents domainb in domaina
-image::jwt-authorization-grant-oidc-client-domaina.png[Client that represents domainb in domaina]
-. Create a client scope `access-domainb` to include the correct audience for the token when this scope is requested. An audience mapper for `domainb` will be added.
-  * **Name**: access-domainb
-  * **Type**: None
-  * Only enable **Include in token scope**.
-+
-.Client scope to include domainb as audience
-image::jwt-authorization-grant-oidc-client-scope-domaina.png[Client scope to include domainb as audience]
-  * In the client scope add a mapper:
-    ** **Type**: Audience
-    ** **Name**: domainb-audience
-    ** **Included Client Audience**:  http://localhost:8080/realms/domainb
-    ** **Add to access token**: On
-+
-.Client scope mapper for domainb audience
-image::jwt-authorization-grant-oidc-client-scope-mapper.png[Client scope mapper for domainb audience]
-. In the client used to do the token exchange assign the previous `access-domainb` client scope as optional.
-
-NOTE: This example allows any user to request that client scope. Roles can be used to restrict the scope of the client scope. This way only users with a specific role would be allowed to add the `domainb` audience.
-
-With the previous configuration, the client in `domaina` can request a token exchange including scope `access-domainb` and restricting the audience to `http://localhost:8080/realms/domainb` (issuer of `domainb`).
-
-[source,bash]
-----
-POST /realms/domaina/protocol/openid-connect/token
-Content-Type: application/x-www-form-urlencoded
-Accept: application/json
-
-client_id=clienta&
-client_secret=XXXXX&
-grant_type=urn:ietf:params:oauth:grant-type:token-exchange&
-subject_token_type=urn:ietf:params:oauth:token-type:access_token&
-requested_token_type=urn:ietf:params:oauth:token-type:access_token&
-scope=access-domainb&
-audience=http://localhost:8080/realms/domainb&
-subject_token=$SUBJECT_TOKEN
-----
-
-The resulting token will be a valid token for JWT Authorization Grant in `domainb`. So another client defined for `domainb` can send a JWT Authorization Grant with that assertion.
-
-[source,bash]
-----
-POST /realms/domainb/protocol/openid-connect/token
-Content-Type: application/x-www-form-urlencoded
-Accept: application/json
-
-client_id=clientb&
-client_secret=YYYYYY&
-grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&
-scope=scope1 scope2
-assertion=$ASSERTION_TOKEN
-----
+See <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" /> for a detailed configuration to perform authorization chaining across two {project_name} realms.
 
 == Client policies and JWT Authorization Grant
 

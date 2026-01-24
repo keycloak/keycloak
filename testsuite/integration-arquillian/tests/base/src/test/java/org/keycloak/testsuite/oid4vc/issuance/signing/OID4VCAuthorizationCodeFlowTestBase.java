@@ -20,6 +20,7 @@ package org.keycloak.testsuite.oid4vc.issuance.signing;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -30,9 +31,11 @@ import jakarta.ws.rs.core.HttpHeaders;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
@@ -41,6 +44,7 @@ import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -66,6 +70,8 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.SIGNING_ALG;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.SIGNING_KEY_ID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -189,7 +195,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         HttpPost postCredential = getCredentialRequest(ctx, credRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
 
         try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-            assertErrorCredentialResponse(credentialResponse);
+            assertErrorCredentialResponse_mandatoryClaimsMissing(credentialResponse);
             
             // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired with details about missing mandatory claim
             events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
@@ -257,7 +263,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
             HttpPost postCredential = getCredentialRequest(ctx, credRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
 
             try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-                assertErrorCredentialResponse(credentialResponse);
+                assertErrorCredentialResponse_mandatoryClaimsMissing(credentialResponse);
                 
                 // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired with details about missing mandatory claim
                 events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
@@ -278,7 +284,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
             events.clear();
 
             try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-                assertErrorCredentialResponse(credentialResponse);
+                assertErrorCredentialResponse_mandatoryClaimsMissing(credentialResponse);
                 
                 // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
                 events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
@@ -299,7 +305,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
             events.clear();
 
             try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-                assertErrorCredentialResponse(credentialResponse);
+                assertErrorCredentialResponse_mandatoryClaimsMissing(credentialResponse);
                 
                 // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
                 events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
@@ -326,8 +332,88 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         }
     }
 
+    @Test
+    public void testCompleteFlowWithSigningAlgorithmAndKeyIdConfigured() throws Exception {
+        BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
+            CredentialRequest credentialRequest = new CredentialRequest();
+            credentialRequest.setCredentialIdentifier(credentialIdentifier);
+            return credentialRequest;
+        };
 
-    private void testCompleteFlowWithClaimsValidationAuthorizationCode(BiFunction<String, String, CredentialRequest> credentialRequestSupplier) throws Exception {
+        ClientScopeResource clientScope = ApiUtil.findClientScopeByName(testRealm(), getCredentialClientScope().getName());
+        ClientScopeRepresentation clientScopeRep = clientScope.toRepresentation();
+        Map<String, String> origAttributes = new HashMap<>(clientScopeRep.getAttributes());
+
+        try {
+            // 1 - Configure signature algorithm, but not keyId. Make sure that credential signed with the target algorithm
+            clientScopeRep.getAttributes().put(SIGNING_ALG, Algorithm.ES512);
+            clientScopeRep.getAttributes().put(SIGNING_KEY_ID, null);
+            clientScope.update(clientScopeRep);
+
+            Object credentialObj = testCompleteFlowWithClaimsValidationAuthorizationCode(credRequestSupplier);
+            JWSHeader jwsHeader = verifyCredentialSignature(credentialObj, Algorithm.ES512);
+            String es512keyId = jwsHeader.getKeyId();
+            logoutUser("john");
+
+            // 2 - Configure signature algorithm, and keyId with blank value "" (just to simulate what admin console was doing when clientScope was saved).
+            // Make sure that credential signed with the target algorithm and keyId is not considered
+            clientScopeRep.getAttributes().put(SIGNING_ALG, Algorithm.EdDSA);
+            clientScopeRep.getAttributes().put(SIGNING_KEY_ID, "");
+            clientScope.update(clientScopeRep);
+
+            credentialObj = testCompleteFlowWithClaimsValidationAuthorizationCode(credRequestSupplier);
+            verifyCredentialSignature(credentialObj, Algorithm.EdDSA);
+            logoutUser("john");
+
+            // 3 - Configure signature algorithm, and keyId with some value. Make sure that
+            // credential signed with the target algorithm and keyId as expected
+            clientScopeRep.getAttributes().put(SIGNING_ALG, Algorithm.ES512);
+            clientScopeRep.getAttributes().put(SIGNING_KEY_ID, es512keyId);
+            clientScope.update(clientScopeRep);
+
+            credentialObj = testCompleteFlowWithClaimsValidationAuthorizationCode(credRequestSupplier);
+            JWSHeader newJWSHeader = verifyCredentialSignature(credentialObj, Algorithm.ES512);
+            assertEquals(es512keyId, newJWSHeader.getKeyId());
+            logoutUser("john");
+
+            // 4 - Configure different signature algorithm not matching with key specified by keyId. Error is expected
+            clientScopeRep.getAttributes().put(SIGNING_ALG, Algorithm.EdDSA);
+            clientScopeRep.getAttributes().put(SIGNING_KEY_ID, es512keyId);
+            clientScope.update(clientScopeRep);
+
+            Oid4vcTestContext ctx = prepareOid4vcTestContext();
+            AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
+            String credentialIdentifier = assertTokenResponse(tokenResponse);
+            String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+
+            // Clear events before credential request
+            events.clear();
+
+            HttpPost postCredential = getCredentialRequest(ctx, credRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
+
+            try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+                String expectedError = "Signing of credential failed: No key for id '" + es512keyId + "' and algorithm 'EdDSA' available.";
+                assertErrorCredentialResponse(credentialResponse, ErrorType.INVALID_CREDENTIAL_REQUEST.name(), expectedError);
+
+                // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired with details about missing mandatory claim
+                events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                        .client(client.getClientId())
+                        .user(AssertEvents.isUUID())
+                        .session(AssertEvents.isSessionId())
+                        .error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue())
+                        .detail(Details.REASON, expectedError)
+                        .assertEvent();
+            }
+
+        } finally {
+            // Revert clientScope config
+            clientScopeRep.setAttributes(origAttributes);
+            clientScope.update(clientScopeRep);
+        }
+    }
+
+    // Return VC credential object
+    private Object testCompleteFlowWithClaimsValidationAuthorizationCode(BiFunction<String, String, CredentialRequest> credentialRequestSupplier) throws Exception {
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
         // Perform authorization code flow to get authorization code
@@ -335,11 +421,24 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         String credentialIdentifier = assertTokenResponse(tokenResponse);
         String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
 
+        events.clear();
+
         // Request the actual credential using the identifier
         HttpPost postCredential = getCredentialRequest(ctx, credentialRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
 
         try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-            assertSuccessfulCredentialResponse(credentialResponse);
+            Object credential = assertSuccessfulCredentialResponse(credentialResponse);
+
+            // Verify event
+            events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST)
+                    .client(client.getClientId())
+                    .user(AssertEvents.isUUID())
+                    .session(AssertEvents.isSessionId())
+                    .detail(Details.USERNAME, "john")
+                    .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
+                    .assertEvent();
+
+            return credential;
         }
     }
 
@@ -430,7 +529,8 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         return postCredential;
     }
 
-    private void assertSuccessfulCredentialResponse(CloseableHttpResponse credentialResponse) throws Exception {
+    // Test successful credential response and returns credential object
+    private Object assertSuccessfulCredentialResponse(CloseableHttpResponse credentialResponse) throws Exception {
         assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusLine().getStatusCode());
         String responseBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
 
@@ -450,13 +550,23 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         // Verify the credential structure based on formatfix-authorization_details-processing
         verifyCredentialStructure(credentialObj);
+
+        return credentialObj;
     }
 
-    private void assertErrorCredentialResponse(CloseableHttpResponse credentialResponse) throws Exception {
+    private void assertErrorCredentialResponse_mandatoryClaimsMissing(CloseableHttpResponse credentialResponse) throws Exception {
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusLine().getStatusCode());
         String responseBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
         OAuth2ErrorRepresentation error = JsonSerialization.readValue(responseBody, OAuth2ErrorRepresentation.class);
         assertEquals("Credential issuance failed: No elements selected after processing claims path pointer. The requested claims are not available in the user profile.", error.getError());
+    }
+
+    private void assertErrorCredentialResponse(CloseableHttpResponse credentialResponse, String expectedError, String expectedErrorDescription) throws Exception {
+        assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusLine().getStatusCode());
+        String responseBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+        OAuth2ErrorRepresentation error = JsonSerialization.readValue(responseBody, OAuth2ErrorRepresentation.class);
+        assertEquals(expectedError, error.getError());
+        assertEquals(expectedErrorDescription, error.getErrorDescription());
     }
 
     /**
@@ -467,6 +577,15 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Default implementation - subclasses should override
         assertNotNull("Credential object should not be null", credentialObj);
     }
+
+    /**
+     * Verify credential signature on VC credential is of expected algorithm and optionally expected keyId.
+     *
+     * @param vcCredential Verifiable credential
+     * @param expectedSignatureAlgorithm expected signature algorithm of the VC credential
+     * @return JWS header used for the VC credential. Can be used for further checks in the tests
+     */
+    protected abstract JWSHeader verifyCredentialSignature(Object vcCredential, String expectedSignatureAlgorithm) throws Exception;
 
     /**
      * Parse authorization details from the token response.

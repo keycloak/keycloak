@@ -26,12 +26,14 @@ import jakarta.persistence.AccessType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
+import org.keycloak.models.GroupModel;
 import org.keycloak.utils.StringUtil;
 
 @Table(name="ORG")
@@ -42,8 +44,20 @@ import org.keycloak.utils.StringUtil;
                 " where o.realmId = :realmId AND d.name = :name"),
         @NamedQuery(name="getCount", query="select count(o) from OrganizationEntity o where o.realmId = :realmId"),
         @NamedQuery(name="deleteOrganizationsByRealm", query="delete from OrganizationEntity o where o.realmId = :realmId"),
-        @NamedQuery(name="getGroupsByMember", query="select m.groupId from UserGroupMembershipEntity m join GroupEntity g on g.id = m.groupId where g.type = 1 and m.user.id = :userId"),
-        @NamedQuery(name="getGroupsByFederatedMember", query="select m.groupId from FederatedUserGroupMembershipEntity m join GroupEntity g on g.id = m.groupId where g.type = 1 and m.userId = :userId")
+        @NamedQuery(name="getInternalOrgGroupsByMember", query="select m.groupId from UserGroupMembershipEntity m join GroupEntity g on g.id = m.groupId where g.type = 1 and m.user.id = :userId"),
+        @NamedQuery(name="getInternalOrgGroupsByFederatedMember", query="select m.groupId from FederatedUserGroupMembershipEntity m join GroupEntity g on g.id = m.groupId where g.type = 1 and m.userId = :userId"),
+        @NamedQuery(name="getOrgGroupsByMember", query="select g.id from UserGroupMembershipEntity m join GroupEntity g on g.id = m.groupId " +
+                "where m.user.id = :userId " +
+                "and g.realm = :realmId " +
+                "and g.type = :type " +
+                "and g.organization.id = :orgId " +
+                "and g.id != :internalOrgGroupId"),
+        @NamedQuery(name="getOrgGroupsByFederatedMember", query="select g.id from FederatedUserGroupMembershipEntity m join GroupEntity g on g.id = m.groupId " +
+                "where m.userId = :userId " +
+                "and g.realm = :realmId " +
+                "and g.type = :type " +
+                "and g.organization.id = :orgId " +
+                "and g.id != :internalOrgGroupId")
 })
 public class OrganizationEntity {
 
@@ -70,11 +84,17 @@ public class OrganizationEntity {
     @Column(name = "REALM_ID")
     private String realmId;
 
+    /**
+     * References the internal Group used for organization membership.
+     */
     @Column(name = "GROUP_ID")
     private String groupId;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy="organization")
     protected Set<OrganizationDomainEntity> domains = new HashSet<>();
+
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy = "organization", fetch = FetchType.LAZY)
+    protected Set<GroupEntity> groups = new HashSet<>();
 
     public String getId() {
         return id;
@@ -156,6 +176,26 @@ public class OrganizationEntity {
 
     public void removeDomain(OrganizationDomainEntity domainEntity) {
         this.domains.remove(domainEntity);
+    }
+
+    public Set<GroupEntity> getGroups() {
+        if (groups == null) groups = new HashSet<>();
+        return groups;
+    }
+
+    public void setGroups(Set<GroupEntity> groups) {
+        this.groups = groups;
+    }
+
+    public void addGroup(GroupEntity group) {
+        getGroups().add(group);
+        group.setOrganization(this);
+        group.setType(GroupModel.Type.ORGANIZATION.intValue());
+    }
+
+    public void removeGroup(GroupEntity group) {
+        getGroups().remove(group);
+        group.setOrganization(null);
     }
 
     @Override

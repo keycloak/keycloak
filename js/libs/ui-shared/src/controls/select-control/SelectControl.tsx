@@ -47,6 +47,7 @@ export type SelectControlProps<
     onFilter?: (value: string) => void;
     variant?: Variant;
     isDisabled?: boolean;
+    isFullWidth?: boolean;
     menuAppendTo?: string;
     placeholderText?: string;
     chipGroupProps?: ChipGroupProps;

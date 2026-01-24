@@ -116,29 +116,39 @@ public class ThemeResource {
                     return Response.status(Response.Status.NOT_FOUND).build();
                 }
 
-                if (!version.equals(Version.RESOURCES_VERSION) && !hasContentHash) {
+                // Only enter here if the requested version is different, doesn't have a content hash in the URL,
+                // and we didn't default to the default theme as the theme is unknown.
+                if (!version.equals(Version.RESOURCES_VERSION) && !hasContentHash && Objects.equals(theme.getName(), themeName)) {
                     // If it is not the right version, and it does not have a content hash, redirect.
                     // If it is not the right version, but it has a content hash, continue to see if it exists.
 
                     // A simpler way to check for encoded URL characters would be to retrieve the raw values.
                     // Unfortunately, RESTEasy doesn't support this, and UrlInfo will throw an IllegalArgumentException.
                     if (!uriInfo.getRequestUri().toURL().getPath().startsWith(base + UriBuilder.fromResource(ThemeResource.class)
-                            .path("/{version}/{themeType}/{themeName}/{path}").build(version,themeType, themeName, path).getPath())) {
+                            .path("/{version}/{themeType}/{themeName}/{path}").build(version, theme.getType().toString().toLowerCase(), theme.getName(), path).getPath())) {
                         // This prevents half-open redirects
                         log.debugf("No URL encoding should be necessary for the path, returning a 404: %s", uriInfo.getRequestUri().getPath());
                         return Response.status(Response.Status.NOT_FOUND).build();
                     }
 
+                    if (!theme.hasResource(path)) {
+                        // Prevent a redirect to a file that doesn't exist anyway
+                        log.debugf("Resource doesn't exist, returning a 404: %s", path);
+                        return Response.status(Response.Status.NOT_FOUND).build();
+                    }
+
                     URI redirectUri = UriBuilder.fromResource(ThemeResource.class)
                             .path("/{version}/{themeType}/{themeName}/{path}")
-                            .replaceQuery(uriInfo.getRequestUri().getRawQuery())
-                            // The 'path' can contain slashes, so encoding of slashes is set to false
-                            .build(new Object[]{Version.RESOURCES_VERSION, themeType, themeName, path}, false);
+                            // We will not add the query parameters to the redirect as it is difficult to sanitize them, and the theme handler doesn't need them.
+                            // The 'path' can contain slashes, so encoding of slashes is set to false.
+                            .build(new Object[]{Version.RESOURCES_VERSION, theme.getType().toString().toLowerCase(), theme.getName(), path}, false);
                     if (!redirectUri.normalize().equals(redirectUri)) {
                         // This prevents half-open redirects
                         log.debugf("Redirect URL should not require normalization, returning a 404: %s", redirectUri.toString());
                         return Response.status(Response.Status.NOT_FOUND).build();
                     }
+
+                    // From here, it should be safe to redirect as we only redirect to files that we know are present in the theme.
 
                     // The redirect will lead the browser to a resource that it then (when retrieved successfully) can cache again.
                     // This assumes that it is better to try to some content even if it is outdated or too new, instead of returning a 404.

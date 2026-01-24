@@ -1,5 +1,5 @@
+import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
-import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import {
   ListEmptyState,
   PaginatingTableToolbar,
@@ -67,8 +67,7 @@ export const AuthorizationResources = ({
     useState<ExpandableResourceRepresentation[]>();
   const [selectedResource, setSelectedResource] =
     useState<ResourceRepresentation>();
-  const [permissions, setPermission] =
-    useState<ResourceServerRepresentation[]>();
+  const [permissions, setPermission] = useState<PolicyRepresentation[]>();
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);

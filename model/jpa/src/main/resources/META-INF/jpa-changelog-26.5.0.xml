@@ -58,6 +58,18 @@
         </modifySql>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.5.0-idp-config-allow-null-fixed-drop-mssql-index">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <and>
+                <dbms type="mssql"/>
+                <not>
+                    <changeSetExecuted id="26.5.0-idp-config-allow-null" author="keycloak" changeLogFile="META-INF/jpa-changelog-26.5.0.xml"/>
+                </not>
+            </and>
+        </preConditions>
+        <dropIndex tableName="IDENTITY_PROVIDER" indexName="IDX_IDP_FOR_LOGIN"/>
+    </changeSet>
+
     <changeSet author="keycloak" id="26.5.0-idp-config-allow-null">
         <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="TRUST_EMAIL"/>
         <dropNotNullConstraint tableName="IDENTITY_PROVIDER" columnName="TRUST_EMAIL" columnDataType="BOOLEAN"/>
@@ -71,6 +83,24 @@
         <dropNotNullConstraint tableName="IDENTITY_PROVIDER" columnName="LINK_ONLY" columnDataType="BOOLEAN"/>
         <!-- HIDE_ON_LOGIN did not have a non-null constraint -->
         <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="HIDE_ON_LOGIN"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.5.0-idp-config-allow-null-fixed-create-mssql-index">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <and>
+                <dbms type="mssql"/>
+                <not>
+                    <changeSetExecuted id="26.5.0-idp-config-allow-null" author="keycloak" changeLogFile="META-INF/jpa-changelog-26.5.0.xml"/>
+                </not>
+            </and>
+        </preConditions>
+        <createIndex indexName="IDX_IDP_FOR_LOGIN" tableName="IDENTITY_PROVIDER">
+            <column name="REALM_ID"/>
+            <column name="ENABLED"/>
+            <column name="LINK_ONLY"/>
+            <column name="HIDE_ON_LOGIN"/>
+            <column name="ORGANIZATION_ID"/>
+        </createIndex>
     </changeSet>
 
     <changeSet author="keycloak" id="26.5.0-remove-workflow-provider-id-column">
@@ -136,7 +166,7 @@
         <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_LAST_SESSION_REFRESH"/>
     </changeSet>
 
-    <changeSet author="keycloak" id="26.5.0-org-id-charset-mysql">
+    <changeSet author="keycloak" id="26.5.0-mysql-mariadb-default-charset-collation">
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <and>
                 <or>
@@ -148,13 +178,14 @@
                 </not>
             </and>
         </preConditions>
-        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_5_0_OrgTableCharset"/>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_5_0_OrgTablesSetDefaultCharsetAndCollation"/>
     </changeSet>
 
-    <changeSet author="keycloak" id="26.5.0-invitations-table-fixed">
+    <changeSet author="keycloak" id="26.5.0-invitations-table-fixed2">
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <not>
-                <changeSetExecuted id="26.5.0-invitations-table" author="keycloak" changeLogFile="META-INF/jpa-changelog-26.5.0.xml"/>
+                <tableExists schemaName="${database.defaultSchemaName}"
+                             tableName="ORG_INVITATION"/>
             </not>
         </preConditions>
 
@@ -176,18 +207,6 @@
             <column name="EXPIRES_AT" type="INT"/>
             <column name="INVITE_LINK" type="VARCHAR(2048)"/>
         </createTable>
-
-        <modifySql dbms="mysql,mariadb">
-            <append value=" CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci"/>
-        </modifySql>
-    </changeSet>
-
-    <changeSet author="keycloak" id="26.5.0-invitations-table-fixed-fk">
-        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
-            <not>
-                <changeSetExecuted id="26.5.0-invitations-table" author="keycloak" changeLogFile="META-INF/jpa-changelog-26.5.0.xml"/>
-            </not>
-        </preConditions>
 
         <addForeignKeyConstraint baseTableName="ORG_INVITATION"
                                  baseColumnNames="ORGANIZATION_ID"

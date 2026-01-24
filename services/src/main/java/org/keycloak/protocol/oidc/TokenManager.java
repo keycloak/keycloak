@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -86,6 +87,8 @@ import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationMembershipMapper;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
@@ -697,8 +700,10 @@ public class TokenManager {
     /**
      * Check that all the ClientScopes that have been parsed into authorization_resources are actually in the requested scopes
      * otherwise, the scope wasn't parsed correctly
+     * <p>
+     *
      * @param scopes
-     * @param authorizationRequestContext
+     * @param authorizationRequestContext authorizationRequestContext. It is not null just if dynamic scopes feature is enabled
      * @param client
      * @return
      */
@@ -727,11 +732,23 @@ public class TokenManager {
         Set<String> clientScopes;
 
         if (authorizationRequestContext == null) {
-            // only true when dynamic scopes feature is enabled
+            AtomicBoolean anyInvalid = new AtomicBoolean(false);
+
             clientScopes = getRequestedClientScopes(session, scopes, client, user)
                     .filter(((Predicate<ClientScopeModel>) ClientModel.class::isInstance).negate())
+                    .peek(clientScope -> {
+                        LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, clientScope.getProtocol());
+                        if (factory != null && !factory.isValidClientScope(session, client, clientScope)) {
+                            logger.debugf("Requested scope '%s' invalid for client '%s'", clientScope.getName(), client.getClientId());
+                            anyInvalid.set(true);
+                        }
+                    })
                     .map(ClientScopeModel::getName)
                     .collect(Collectors.toSet());
+
+            if (anyInvalid.get()) {
+                return false;
+            }
         } else {
             List<AuthorizationDetails> details = Optional.ofNullable(authorizationRequestContext.getAuthorizationDetailEntries()).orElse(List.of());
 

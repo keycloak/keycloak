@@ -25,6 +25,7 @@ import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
+import org.keycloak.utils.StringUtil;
 
 public abstract class AbstractCredentialSigner<T> implements CredentialSigner<T> {
 
@@ -71,7 +72,7 @@ public abstract class AbstractCredentialSigner<T> implements CredentialSigner<T>
         KeyWrapper signingKey = getKey(keyId, algorithm);
         if (signingKey == null) {
             throw new CredentialSignerException(
-                    String.format("No key for id %s and algorithm %s available.", keyId, algorithm));
+                    String.format("No key for id '%s' and algorithm '%s' available.", keyId, algorithm));
         }
 
         if (keyIdSubstitute != null) {
@@ -91,7 +92,7 @@ public abstract class AbstractCredentialSigner<T> implements CredentialSigner<T>
         RealmModel realm = keycloakSession.getContext().getRealm();
         KeyManager keys = keycloakSession.keys();
 
-        if (keyId == null) {
+        if (StringUtil.isBlank(keyId)) {
             // Allow the signer to work with the active key if keyId is null
             // And we still have to figure out how to proceed with key rotation
             return keys.getActiveKey(realm, KeyUse.SIG, algorithm);

@@ -209,6 +209,11 @@ public class DefaultThemeManager implements ThemeManager {
         }
 
         @Override
+        public boolean isAbstract() throws IOException {
+            return themes.get(0).isAbstract();
+        }
+
+        @Override
         public URL getTemplate(String name) throws IOException {
             for (Theme t : themes) {
                 URL template = t.getTemplate(name);
@@ -225,6 +230,25 @@ public class DefaultThemeManager implements ThemeManager {
             }
 
             return null;
+        }
+
+        @Override
+        public boolean hasResource(String path) throws IOException {
+            for (Theme t : themes) {
+                if (t.hasResource(path)) {
+                    return true;
+                }
+            }
+
+            for (ThemeResourceProvider t : themeResourceProviders) {
+                try (InputStream resource = t.getResourceAsStream(path)) {
+                    if (resource != null) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         @Override
