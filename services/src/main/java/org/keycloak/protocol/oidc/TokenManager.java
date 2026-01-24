@@ -96,6 +96,7 @@ import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCRefreshTokenMapper;
 import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -1173,6 +1174,9 @@ public class TokenManager {
             if (realm.isRevokeRefreshToken()) {
                 refreshToken.getOtherClaims().put(Constants.REUSE_ID, KeycloakModelUtils.generateId());
             }
+
+            transformRefreshToken();
+
             return this;
         }
 
@@ -1196,7 +1200,21 @@ public class TokenManager {
                 clientSession.setRefreshTokenLastRefresh(getReuseIdKey(oldRefreshToken), refreshToken.getIat().intValue());
             }
             refreshToken.setScope(scope);
+
+            transformRefreshToken();
+
             return this;
+        }
+
+        private void transformRefreshToken() {
+            ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)
+                .filter(entry -> entry.getValue() instanceof OIDCRefreshTokenMapper)
+                .forEach(entry -> {
+                        var mapper = (OIDCRefreshTokenMapper) entry.getValue();
+
+                        refreshToken = mapper.transformRefreshToken(refreshToken, entry.getKey(), session, userSession, clientSessionCtx);
+                    }
+                );
         }
 
         private void generateRefreshToken(boolean offlineTokenRequested) {
