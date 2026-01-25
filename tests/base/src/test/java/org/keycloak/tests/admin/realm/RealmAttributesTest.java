@@ -268,4 +268,28 @@ public class RealmAttributesTest extends AbstractRealmTest {
             adminClient.realm(realmName).remove();
         }
     }
+
+    @Test
+    public void testDisplayNameNotRemovableViaRemoveAttribute() {
+        String realmName = "testDisplayNameNotRemovable";
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm(realmName);
+        rep.setDisplayName("Test Display Name");
+
+        adminClient.realms().create(rep);
+
+        try {
+            runOnServer.run(session -> {
+                RealmModel realm = session.realms().getRealmByName(realmName);
+
+                assertEquals("Test Display Name", realm.getDisplayName());
+                realm.removeAttribute("displayName");
+                assertEquals("Test Display Name", realm.getDisplayName());
+                realm.setDisplayName("Updated Display Name");
+                assertEquals("Updated Display Name", realm.getDisplayName());
+            });
+        } finally {
+            adminClient.realm(realmName).remove();
+        }
+    }
 }
