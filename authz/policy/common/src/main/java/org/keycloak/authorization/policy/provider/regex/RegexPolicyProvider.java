@@ -59,21 +59,24 @@ public class RegexPolicyProvider implements PolicyProvider {
     public void evaluate(Evaluation evaluation) {
         AuthorizationProvider authorizationProvider = evaluation.getAuthorizationProvider();
         RegexPolicyRepresentation policy = representationFunction.apply(evaluation.getPolicy(), authorizationProvider);
-        String value = getClaimValue(evaluation, policy);
+        String[] value = getClaimValue(evaluation, policy);
 
         if (value == null) {
             return;
         }
 
         Pattern pattern = Pattern.compile(policy.getPattern());
-        Matcher matcher = pattern.matcher(value);
-        if (matcher.matches()) {
-            evaluation.grant();
-            logger.debugf("policy %s evaluated with status %s on identity %s and claim value %s", policy.getName(), evaluation.getEffect(), evaluation.getContext().getIdentity().getId(), getClaimValue(evaluation, policy));
+        for (String claimValue : value) {
+            Matcher matcher = pattern.matcher(claimValue);
+            if (matcher.matches()) {
+                evaluation.grant();
+                logger.debugf("policy %s evaluated with status %s on identity %s and claim value %s", policy.getName(),
+                        evaluation.getEffect(), evaluation.getContext().getIdentity().getId(), claimValue);
+            }
         }
     }
 
-    private String getClaimValue(Evaluation evaluation, RegexPolicyRepresentation policy) {
+    private String[] getClaimValue(Evaluation evaluation, RegexPolicyRepresentation policy) {
         Attributes attributes = policy.isTargetContextAttributes()
                 ? evaluation.getContext().getAttributes()
                 : evaluation.getContext().getIdentity().getAttributes();
@@ -81,7 +84,7 @@ public class RegexPolicyProvider implements PolicyProvider {
 
         try {
             if (hasPath(targetClaim)) {
-                return resolveJsonValue(attributes, targetClaim);
+                return new String[] { resolveJsonValue(attributes, targetClaim) };
             }
 
             return resolveSimpleValue(attributes, targetClaim);
@@ -90,14 +93,14 @@ public class RegexPolicyProvider implements PolicyProvider {
         }
     }
 
-    private String resolveSimpleValue(Attributes attributes, String targetClaim) {
+    private String[] resolveSimpleValue(Attributes attributes, String targetClaim) {
         Attributes.Entry value = attributes.getValue(targetClaim);
 
         if (value == null || value.isEmpty()) {
             return null;
         }
 
-        return value.asString(0);
+        return value.getValues();
     }
 
     private String resolveJsonValue(Attributes attributes, String targetClaim) throws IOException {
