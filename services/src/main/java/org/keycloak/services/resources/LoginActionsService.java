@@ -657,6 +657,11 @@ public class LoginActionsService {
         tokenContext = new ActionTokenContext<>(session, realm, sessionContext.getUri(), clientConnection, request, event, handler, execution, clientData, this::processFlow, this::brokerLoginFlow);
 
         if (preHandleToken != null) {
+            KeycloakContext context = session.getContext();
+            authSession = context.getAuthenticationSession();
+            if (authSession != null) {
+                tokenContext.setAuthenticationSession(authSession, false);
+            }
             return preHandleToken.apply(handler, token, tokenContext);
         }
 
@@ -778,11 +783,7 @@ public class LoginActionsService {
                                  @QueryParam(Constants.CLIENT_DATA) String clientData,
                                  @QueryParam(Constants.TAB_ID) String tabId,
                                  @QueryParam(Constants.TOKEN) String tokenString) {
-        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && tokenString != null) {
-            //this call should extract orgId from token and set the organization to the session context
-            preHandleActionToken(tokenString);
-        }
-        return registerRequest(authSessionId, code, execution, clientId,  tabId,clientData);
+        return registerRequest(authSessionId, code, execution, clientId,  tabId,clientData, tokenString);
     }
 
 
@@ -801,21 +802,12 @@ public class LoginActionsService {
                                     @QueryParam(Constants.CLIENT_DATA) String clientData,
                                     @QueryParam(Constants.TAB_ID) String tabId,
                                     @QueryParam(Constants.TOKEN) String tokenString) {
-        
-        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && tokenString != null) {
-            //this call should extract orgId from token and set the organization to the session context
-            preHandleActionToken(tokenString);
-        }
-        return registerRequest(authSessionId, code, execution, clientId, tabId, clientData);
+        return registerRequest(authSessionId, code, execution, clientId, tabId, clientData, tokenString);
     }
 
 
-    private Response registerRequest(String authSessionId, String code, String execution, String clientId, String tabId, String clientData) {
+    private Response registerRequest(String authSessionId, String code, String execution, String clientId, String tabId, String clientData, String tokenString) {
         event.event(EventType.REGISTER);
-        if (!Organizations.isRegistrationAllowed(session, realm)) {
-            event.error(Errors.REGISTRATION_DISABLED);
-            return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.REGISTRATION_NOT_ALLOWED);
-        }
 
         SessionCodeChecks checks = checksForCode(authSessionId, code, execution, clientId, tabId, clientData, REGISTRATION_PATH);
         if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
@@ -824,9 +816,24 @@ public class LoginActionsService {
 
         AuthenticationSessionModel authSession = checks.getAuthenticationSession();
 
+        session.getContext().setAuthenticationSession(authSession);
+
         processLocaleParam(authSession);
 
         AuthenticationManager.expireIdentityCookie(session);
+
+        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && tokenString != null) {
+            //this call should extract orgId from token and set the organization to the session context
+            Response response = preHandleActionToken(tokenString);
+            if (response != null) {
+                return response;
+            }
+        }
+
+        if (!Organizations.isRegistrationAllowed(session, realm)) {
+            event.error(Errors.REGISTRATION_DISABLED);
+            return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.REGISTRATION_NOT_ALLOWED);
+        }
 
         return processRegistration(checks.isActionRequest(), execution, authSession, null);
     }

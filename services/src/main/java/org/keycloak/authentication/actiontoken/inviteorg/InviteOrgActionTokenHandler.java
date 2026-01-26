@@ -84,14 +84,23 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
             return invalidOrganizationResponse(tokenContext, token);
         }
 
-        session.getContext().setOrganization(organization);
-
         InvitationManager invitationManager = orgProvider.getInvitationManager();
         OrganizationInvitationModel invitation = invitationManager.getById(token.getId());
+        AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
 
         if (invitation == null || invitation.isExpired()) {
-            return invalidTokenResponse(tokenContext, token);
+            String orgId = authSession == null ? null : authSession.getAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+
+            if (orgId == null || !orgId.equals(token.getOrgId())) {
+                return invalidTokenResponse(tokenContext, token);
+            }
         }
+
+        if (authSession != null) {
+            authSession.setAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
+        }
+
+        session.getContext().setOrganization(organization);
 
         return super.preHandleToken(token, tokenContext);
     }
@@ -173,6 +182,7 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
                 .detail(Details.ORG_ID, token.getOrgId())
                 .error(Errors.INVALID_TOKEN);
         return session.getProvider(LoginFormsProvider.class)
+                .setStatus(Status.BAD_REQUEST)
                 .setAuthenticationSession(authSession)
                 .setAttribute("messageHeader", Messages.EXPIRED_ACTION)
                 .setInfo(Messages.STALE_INVITE_ORG_LINK)
@@ -189,6 +199,7 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
                 .detail(Details.ORG_ID, token.getOrgId())
                 .error(Errors.ORG_NOT_FOUND);
         return session.getProvider(LoginFormsProvider.class)
+                .setStatus(Status.BAD_REQUEST)
                 .setAuthenticationSession(authSession)
                 .setAttribute("messageHeader", Messages.EXPIRED_ACTION)
                 .setInfo(Messages.ORG_NOT_FOUND, token.getOrgId())
@@ -205,6 +216,7 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
                 .detail(Details.ORG_ID, token.getOrgId())
                 .error(Errors.USER_ORG_MEMBER_ALREADY);
         return session.getProvider(LoginFormsProvider.class)
+                .setStatus(Status.BAD_REQUEST)
                 .setAuthenticationSession(authSession)
                 .setAttribute("messageHeader", Messages.EXPIRED_ACTION)
                 .setInfo(Messages.ORG_MEMBER_ALREADY, user.getUsername(), organization.getName())
