@@ -63,6 +63,11 @@ public class GoogleIdentityProviderConfig extends OIDCIdentityProviderConfig imp
     }
 
     @Override
+    public int getJWTAuthorizationGrantMaxAllowedAssertionExpiration() {
+        return Integer.parseInt(getConfig().getOrDefault(JWT_AUTHORIZATION_GRANT_MAX_ALLOWED_ASSERTION_EXPIRATION, "3600"));
+    }
+
+    @Override
     public void validate(RealmModel realm) {
         if (!GoogleIdentityProvider.ISSUER_URL.equals(getConfig().get(ISSUER))) {
            throw new IllegalArgumentException("The issuer url [" + getConfig().get(ISSUER) + "] is invalid");
