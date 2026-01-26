@@ -27,9 +27,12 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>io.quarkus.platform</groupId>
+                <!--<groupId>io.quarkus.platform</groupId>
                 <artifactId>quarkus-operator-sdk-bom</artifactId>
-                <version>${quarkus.version}</version>
+                <version>${quarkus.version}</version> -->
+                <groupId>io.quarkiverse.operatorsdk</groupId>
+                <artifactId>quarkus-operator-sdk-bom</artifactId>
+                <version>7.5.0.CR1</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -186,6 +189,7 @@
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
                 <version>${quarkus.build.version}</version>
+                <extensions>true</extensions>
                 <executions>
                     <execution>
                     <goals>
