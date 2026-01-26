@@ -160,30 +160,6 @@
                                 <artifactId>postgresql</artifactId>
                                 <version>${postgresql-jdbc.version}</version>
                             </dependency>
-                        </dependencies>
-                        <executions>
-                            <execution>
-                                <id>clear-schema</id>
-                                <configuration>
-                                    <srcFiles>
-                                        <srcFile>../../.github/scripts/aws/rds/pg_clear.sql</srcFile>
-                                    </srcFiles>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>execute-sql-mssql</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>sql-maven-plugin</artifactId>
-                        <version>3.0.0</version>
-                        <dependencies>
                             <dependency>
                                 <groupId>com.microsoft.sqlserver</groupId>
                                 <artifactId>mssql-jdbc</artifactId>
@@ -192,7 +168,15 @@
                         </dependencies>
                         <executions>
                             <execution>
-                                <id>clear-schema</id>
+                                <id>clear-schema-psql</id>
+                                <configuration>
+                                    <srcFiles>
+                                        <srcFile>../../.github/scripts/aws/rds/pg_clear.sql</srcFile>
+                                    </srcFiles>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>clear-schema-mssql</id>
                                 <configuration>
                                     <srcFiles>
                                         <srcFile>../../.github/scripts/azure/sql/mssql_clear.sql</srcFile>
