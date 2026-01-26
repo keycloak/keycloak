@@ -441,6 +441,8 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
                 .firstName(firstName)
                 .lastName(lastName)
                 .password("password")
+                .addAttribute("address_street_address", "221B Baker Street")
+                .addAttribute("address_locality", "London")
                 .role("account", "manage-account")
                 .role("account", "view-profile");
 
