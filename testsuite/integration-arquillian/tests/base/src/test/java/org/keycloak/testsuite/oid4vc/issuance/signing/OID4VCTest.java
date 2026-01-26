@@ -25,7 +25,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.Security;
 import java.security.cert.Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -51,6 +50,7 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -67,23 +67,25 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.AttestationValidatorUtil;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
-import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AuthorizationDetailsResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
@@ -102,10 +104,11 @@ import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.HttpStatus;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 
+import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest.TIME_PROVIDER;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getCredentialIssuer;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getJtiGeneratedIdMapper;
@@ -137,6 +140,11 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	protected static final String TEST_CREDENTIAL_MAPPERS_FILE = "/oid4vc/test-credential-mappers.json";
 
+    @BeforeClass
+    public static void beforeClass() {
+        AuthorizationDetailsResponse.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsProcessor.OID4VCAuthorizationDetailsParser());
+    }
+
 	protected static CredentialSubject getCredentialSubject(Map<String, Object> claims) {
 		CredentialSubject credentialSubject = new CredentialSubject();
 		claims.forEach(credentialSubject::setClaims);
@@ -162,8 +170,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	public static KeyWrapper getECKey(String keyId) {
 		try {
-			Security.addProvider(new BouncyCastleProvider());
-			KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
+			KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", BouncyIntegration.PROVIDER);
 			kpg.initialize(256);
 			var keyPair = kpg.generateKeyPair();
 			KeyWrapper kw = new KeyWrapper();
@@ -186,8 +193,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	public static KeyWrapper getEd25519Key(String keyId) {
 		try {
-			Security.addProvider(new BouncyCastleProvider());
-			KeyPairGenerator kpg = KeyPairGenerator.getInstance("Ed25519", "BC");
+			KeyPairGenerator kpg = KeyPairGenerator.getInstance("Ed25519", BouncyIntegration.PROVIDER);
 			var keyPair = kpg.generateKeyPair();
 			KeyWrapper kw = new KeyWrapper();
 			kw.setPrivateKey(keyPair.getPrivate());
@@ -468,7 +474,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         return getBearerTokenCodeFlow(oauthClient, client, username, scope).getAccessToken();
     }
 
-    protected AccessTokenResponse getBearerToken(OAuthClient oauthClient, String authCode, AuthorizationDetail... authDetail) {
+    protected AccessTokenResponse getBearerToken(OAuthClient oauthClient, String authCode, OID4VCAuthorizationDetail... authDetail) {
         AccessTokenRequest accessTokenRequest = oauthClient.accessTokenRequest(authCode);
         if (authDetail != null) {
             accessTokenRequest.authorizationDetails(Arrays.asList(authDetail));

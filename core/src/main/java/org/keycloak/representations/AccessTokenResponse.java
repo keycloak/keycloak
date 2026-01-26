@@ -18,7 +18,10 @@
 package org.keycloak.representations;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import org.keycloak.OAuth2Constants;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -61,6 +64,9 @@ public class AccessTokenResponse {
     @JsonProperty("scope")
     protected String scope;
 
+    @JsonProperty(OAuth2Constants.AUTHORIZATION_DETAILS)
+    protected List<AuthorizationDetailsResponse> authorizationDetails;
+
     @JsonProperty("error")
     protected String error;
 
@@ -76,6 +82,14 @@ public class AccessTokenResponse {
 
     public void setScope(String scope) {
         this.scope = scope;
+    }
+
+    public List<AuthorizationDetailsResponse> getAuthorizationDetails() {
+        return authorizationDetails;
+    }
+
+    public void setAuthorizationDetails(List<AuthorizationDetailsResponse> authorizationDetails) {
+        this.authorizationDetails = authorizationDetails;
     }
 
     public String getToken() {

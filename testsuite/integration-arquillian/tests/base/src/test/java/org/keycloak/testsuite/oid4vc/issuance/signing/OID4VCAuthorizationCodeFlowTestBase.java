@@ -38,13 +38,13 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
-import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -55,7 +55,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
@@ -75,6 +74,8 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.SIGNING_KEY_ID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Base class for authorization code flow tests with authorization details and claims validation.
@@ -140,6 +141,75 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         return ctx;
     }
 
+    /**
+     * Test that verifies that a second regular SSO login should NOT return authorization_details
+     * from a previous OID4VCI login.
+     */
+    @Test
+    public void testSecondSSOLoginDoesNotReturnAuthorizationDetails() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // ===== STEP 1: First login with OID4VCI (should return authorization_details) =====
+        AccessTokenResponse firstTokenResponse = authzCodeFlow(ctx);
+        String credentialIdentifier = assertTokenResponse(firstTokenResponse);
+        assertNotNull("Credential identifier should be present in first token", credentialIdentifier);
+
+        // ===== STEP 2: Second login - Regular SSO (should NOT return authorization_details) =====
+        // Second login WITHOUT OID4VCI scope and WITHOUT authorization_details.
+        oauth.client(client.getClientId(), "password");
+        oauth.scope(OAuth2Constants.SCOPE_OPENID);
+        oauth.openLoginForm();
+
+        String secondCode = oauth.parseLoginResponse().getCode();
+        assertNotNull("Second authorization code should not be null", secondCode);
+
+        // Exchange second code for tokens WITHOUT authorization_details
+        HttpPost postSecondToken = new HttpPost(ctx.openidConfig.getTokenEndpoint());
+        List<NameValuePair> secondTokenParameters = new LinkedList<>();
+        secondTokenParameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
+        secondTokenParameters.add(new BasicNameValuePair(OAuth2Constants.CODE, secondCode));
+        secondTokenParameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
+        secondTokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
+        secondTokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, "password"));
+        // NOTE: NO authorization_details parameter in this request
+
+        UrlEncodedFormEntity secondTokenFormEntity = new UrlEncodedFormEntity(secondTokenParameters, StandardCharsets.UTF_8);
+        postSecondToken.setEntity(secondTokenFormEntity);
+
+        AccessTokenResponse secondTokenResponse;
+        try (CloseableHttpResponse tokenHttpResponse = httpClient.execute(postSecondToken)) {
+            assertEquals("Second token exchange should succeed", HttpStatus.SC_OK, tokenHttpResponse.getStatusLine().getStatusCode());
+            String tokenResponseBody = IOUtils.toString(tokenHttpResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+            secondTokenResponse = JsonSerialization.readValue(tokenResponseBody, AccessTokenResponse.class);
+        }
+
+        // ===== STEP 3: Verify second token does NOT have authorization_details =====
+        assertNull("Second token (regular SSO) should NOT have authorization_details", secondTokenResponse.getAuthorizationDetails());
+
+        // ===== STEP 4: Verify second token cannot be used for credential requests =====
+        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        CredentialRequest credentialRequest = new CredentialRequest();
+        credentialRequest.setCredentialIdentifier(credentialIdentifier);
+
+        HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
+        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + secondTokenResponse.getToken());
+        postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+        postCredential.setEntity(new StringEntity(JsonSerialization.writeValueAsString(credentialRequest), StandardCharsets.UTF_8));
+
+        // Credential request with second token should fail
+        // The second token doesn't have the OID4VCI scope, so it should fail at scope check
+        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+            assertEquals("Credential request with token without OID4VCI scope should fail",
+                    HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusLine().getStatusCode());
+
+            String errorBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+
+            assertTrue("Error should indicate scope check failure. Actual error: " + errorBody,
+                    errorBody.contains("Scope check failure"));
+        }
+
+    }
+
     // Test for the whole authorization_code flow with the credentialRequest using credential_configuration_id
     @Test
     public void testCompleteFlowWithClaimsValidationAuthorizationCode_credentialRequestWithConfigurationId() throws Exception {
@@ -162,6 +232,38 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         };
 
         testCompleteFlowWithClaimsValidationAuthorizationCode(credRequestSupplier);
+    }
+
+    // Tests that when token is refreshed, the new access-token can be used as well for credential-request
+    @Test
+    public void testCompleteFlowWithClaimsValidationAuthorizationCode_refreshToken() throws Exception {
+        BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
+            CredentialRequest credentialRequest = new CredentialRequest();
+            credentialRequest.setCredentialIdentifier(credentialIdentifier);
+            return credentialRequest;
+        };
+
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Perform authorization code flow to get authorization code
+        AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
+
+        // Refresh token now
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponseRef = oauth.refreshRequest(tokenResponse.getRefreshToken()).send();
+        // TODO: Converting from one to the other... This is dummy and should be replaced once we start using "OAuthClient" in this test instead of hand-written HTTP requests...
+        AccessTokenResponse tokenResponse2 = new AccessTokenResponse();
+        tokenResponse2.setAuthorizationDetails(tokenResponseRef.getAuthorizationDetails());
+        tokenResponse2.setToken(tokenResponseRef.getAccessToken());
+
+        String credentialIdentifier = assertTokenResponse(tokenResponse2);
+        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+
+        // Request the actual credential using the identifier
+        HttpPost postCredential = getCredentialRequest(ctx, credRequestSupplier, tokenResponse2, credentialConfigurationId, credentialIdentifier);
+
+        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+            assertSuccessfulCredentialResponse(credentialResponse);
+        }
     }
 
     // Test for the authorization_code flow with "mandatory" claim specified in the "authorization_details" parameter
@@ -214,6 +316,55 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // 4 - Test the credential-request again. Should be OK now
         try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
             assertSuccessfulCredentialResponse(credentialResponse);
+        }
+    }
+
+
+    // Tests that Keycloak should use authorization_details from accessToken when processing mandatory claims
+    @Test
+    public void testCorrectAccessTokenUsed() throws Exception {
+        BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
+            CredentialRequest credentialRequest = new CredentialRequest();
+            credentialRequest.setCredentialIdentifier(credentialIdentifier);
+            return credentialRequest;
+        };
+
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Update user to have missing "lastName"
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "john");
+        UserRepresentation userRep = user.toRepresentation();
+        // NOTE: Need to call both "setLastName" and set attributes to be able to set last name as null
+        userRep.setAttributes(Collections.emptyMap());
+        userRep.setLastName(null);
+        user.update(userRep);
+
+        try {
+            // Create token with authorization_details, which does not require "lastName" to be mandatory attribute
+            AccessTokenResponse tokenResponse = authzCodeFlow(ctx, Collections.emptyList(), false);
+
+            // Create another token with authorization_details, which require "lastName" to be mandatory attribute
+            AccessTokenResponse tokenResponseWithMandatoryLastName = authzCodeFlow(ctx, mandatoryLastNameClaimsSupplier(), true);
+
+            // Request with mandatory lastName will fail as user does not have "lastName"
+            String credentialIdentifier = assertTokenResponse(tokenResponseWithMandatoryLastName);
+            String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+
+            HttpPost postCredential = getCredentialRequest(ctx, credRequestSupplier, tokenResponseWithMandatoryLastName, credentialConfigurationId, credentialIdentifier);
+            try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+                assertErrorCredentialResponse_mandatoryClaimsMissing(credentialResponse);
+            }
+
+            // Request without mandatory lastName should work. Authorization_Details from accessToken will be used by Keycloak for processing this request
+            credentialIdentifier = assertTokenResponse(tokenResponse);
+            postCredential = getCredentialRequest(ctx, credRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
+            try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+                assertSuccessfulCredentialResponse(credentialResponse);
+            }
+        } finally {
+            // Revert user changes and add lastName back
+            userRep.setLastName("Doe");
+            user.update(userRep);
         }
     }
 
@@ -444,15 +595,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
     // Successful authorization_code flow
     private AccessTokenResponse authzCodeFlow(Oid4vcTestContext ctx) throws Exception {
-        // Perform authorization code flow to get authorization code
-        oauth.client(client.getClientId());
-        oauth.scope(getCredentialClientScope().getName()); // Add the credential scope
-        oauth.loginForm().doLogin("john", "password");
+        return authzCodeFlow(ctx, mandatoryLastNameClaimsSupplier(), false);
+    }
 
-        String code = oauth.parseLoginResponse().getCode();
-        assertNotNull("Authorization code should not be null", code);
-
-        // Create authorization details with claims for token exchange
+    private List<ClaimsDescription> mandatoryLastNameClaimsSupplier() {
+        // Create authorization details with mandatory claims for "lastName" user attribute
         ClaimsDescription claim = new ClaimsDescription();
 
         // Construct claim path based on credential format
@@ -464,14 +611,30 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         }
         claim.setPath(claimPath);
         claim.setMandatory(true);
+        return List.of(claim);
+    }
 
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+    // Successful authorization_code flow
+    private AccessTokenResponse authzCodeFlow(Oid4vcTestContext ctx, List<ClaimsDescription> claimsForAuthorizationDetailsParameter, boolean expectUserAlreadyAuthenticated) throws Exception {
+        // Perform authorization code flow to get authorization code
+        oauth.client(client.getClientId(), "password");
+        oauth.scope(getCredentialClientScope().getName()); // Add the credential scope
+        if (expectUserAlreadyAuthenticated) {
+            oauth.openLoginForm();
+        } else {
+            oauth.loginForm().doLogin("john", "password");
+        }
+
+        String code = oauth.parseLoginResponse().getCode();
+        assertNotNull("Authorization code should not be null", code);
+
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID));
-        authDetail.setClaims(List.of(claim));
+        authDetail.setClaims(claimsForAuthorizationDetailsParameter);
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
-        List<AuthorizationDetail> authDetails = List.of(authDetail);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
         // Exchange authorization code for tokens with authorization_details
@@ -496,11 +659,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     // Test successful token response. Returns "Credential identifier" of the VC credential
     private String assertTokenResponse(AccessTokenResponse tokenResponse) throws Exception {
         // Extract authorization_details from token response
-        List<OID4VCAuthorizationDetailsResponse> authDetailsResponse = parseAuthorizationDetails(JsonSerialization.writeValueAsString(tokenResponse));
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(tokenResponse);
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertEquals(1, authDetailsResponse.size());
 
-        OID4VCAuthorizationDetailsResponse authDetailResponse = authDetailsResponse.get(0);
+        OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(0);
         assertNotNull("Credential identifiers should be present", authDetailResponse.getCredentialIdentifiers());
         assertEquals(1, authDetailResponse.getCredentialIdentifiers().size());
 
@@ -590,23 +753,10 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     /**
      * Parse authorization details from the token response.
      */
-    protected List<OID4VCAuthorizationDetailsResponse> parseAuthorizationDetails(String responseBody) {
-        try {
-            // Parse the JSON response to extract authorization_details
-            Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, new TypeReference<>() {
-            });
-            Object authDetailsObj = responseMap.get(OAuth2Constants.AUTHORIZATION_DETAILS);
-
-            if (authDetailsObj == null) {
-                return Collections.emptyList();
-            }
-
-            // Convert to list of OID4VCAuthorizationDetailsResponse
-            return JsonSerialization.readValue(JsonSerialization.writeValueAsString(authDetailsObj),
-                    new TypeReference<>() {
-                    });
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to parse authorization_details from response", e);
-        }
+    protected List<OID4VCAuthorizationDetailResponse> parseAuthorizationDetails(AccessTokenResponse tokenResponse) {
+        return tokenResponse.getAuthorizationDetails()
+                .stream()
+                .map(authzDetailsResponse -> authzDetailsResponse.asSubtype(OID4VCAuthorizationDetailResponse.class))
+                .toList();
     }
 }

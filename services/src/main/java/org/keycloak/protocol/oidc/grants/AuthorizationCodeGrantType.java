@@ -36,11 +36,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
-import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.AuthorizationDetailsResponse;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
@@ -227,16 +226,12 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         }
 
         // If no authorization_details were processed from the request, try to process stored authorization_details
+        // (e.g., from PAR flow where authorization_details was in authorization request but not in token request)
         if (authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty()) {
             try {
                 authorizationDetailsResponse = processStoredAuthorizationDetails(userSession, clientSessionCtx);
                 if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
                     clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
-                } else {
-                    authorizationDetailsResponse = handleMissingAuthorizationDetails(clientSession.getUserSession(), clientSessionCtx);
-                    if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
-                        clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
-                    }
                 }
             } catch (CorsErrorResponseException e) {
                 // Re-throw CorsErrorResponseException as it's already properly formatted for HTTP response
@@ -244,18 +239,29 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             }
         }
 
+        // Case when authorization_details response not generated
+        if ((authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty())) {
+            authorizationDetailsResponse = handleMissingAuthorizationDetails(clientSession.getUserSession(), clientSessionCtx);
+            if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
+                clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
+            }
+        }
+
         // Call hook for post-processing authorization details (e.g., creating state objects)
         afterAuthorizationDetailsProcessed(userSession, clientSessionCtx, authorizationDetailsResponse);
 
-        return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, s -> {return new TokenResponseContext(formParams, parseResult, clientSessionCtx, s);});
-    }
-
-    @Override
-    protected void addCustomTokenResponseClaims(AccessTokenResponse res, ClientSessionContext clientSessionCtx) {
-        List<AuthorizationDetailsResponse> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
-        if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
-            res.setOtherClaims(AUTHORIZATION_DETAILS, authDetailsResponse);
-        }
+        return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, s -> {
+            // Add authorization_details to the access token and refresh token if they were processed
+            List<AuthorizationDetailsResponse> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
+            if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
+                s.getAccessToken().setAuthorizationDetails(authDetailsResponse);
+                // Also add to refresh token if one is generated
+                if (s.getRefreshToken() != null) {
+                    s.getRefreshToken().setAuthorizationDetails(authDetailsResponse);
+                }
+            }
+            return new TokenResponseContext(formParams, parseResult, clientSessionCtx, s);
+        });
     }
 
     @Override

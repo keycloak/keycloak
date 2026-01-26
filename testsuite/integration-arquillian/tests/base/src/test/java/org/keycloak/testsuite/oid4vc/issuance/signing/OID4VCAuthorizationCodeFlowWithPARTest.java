@@ -29,12 +29,12 @@ import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
-import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessTokenResponse;
@@ -130,13 +130,13 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         claim.setPath(claimPath);
         claim.setMandatory(true);
 
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(credentialConfigurationId);
         authDetail.setClaims(List.of(claim));
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
-        List<AuthorizationDetail> authDetails = List.of(authDetail);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
         // Create PAR request
@@ -193,11 +193,11 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         }
 
         // Step 4: Verify authorization_details is present in token response
-        List<OID4VCAuthorizationDetailsResponse> authDetailsResponse = parseAuthorizationDetails(JsonSerialization.writeValueAsString(tokenResponse));
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(JsonSerialization.writeValueAsString(tokenResponse));
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertEquals("Should have exactly one authorization detail", 1, authDetailsResponse.size());
 
-        OID4VCAuthorizationDetailsResponse authDetailResponse = authDetailsResponse.get(0);
+        OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(0);
         assertEquals("Type should be openid_credential", OPENID_CREDENTIAL, authDetailResponse.getType());
         assertEquals("Credential configuration ID should match", credentialConfigurationId, authDetailResponse.getCredentialConfigurationId());
 
@@ -262,12 +262,12 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
 
         // Step 1: Create PAR request with INVALID authorization_details
         // Create authorization details with INVALID credential configuration ID
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId("INVALID_CONFIG_ID"); // This should cause failure
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
-        List<AuthorizationDetail> authDetails = List.of(authDetail);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
         // Create PAR request
@@ -378,7 +378,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         }
 
         // Step 4: Verify NO authorization_details in token response (since none was in PAR request)
-        List<OID4VCAuthorizationDetailsResponse> authDetailsResponse = parseAuthorizationDetails(JsonSerialization.writeValueAsString(tokenResponse));
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(JsonSerialization.writeValueAsString(tokenResponse));
         assertTrue("authorization_details should NOT be present in the response when not used in PAR request",
                 authDetailsResponse == null || authDetailsResponse.isEmpty());
     }
@@ -395,7 +395,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
     /**
      * Parse authorization details from the token response.
      */
-    protected List<OID4VCAuthorizationDetailsResponse> parseAuthorizationDetails(String responseBody) {
+    protected List<OID4VCAuthorizationDetailResponse> parseAuthorizationDetails(String responseBody) {
         try {
             // Parse the JSON response to extract authorization_details
             Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, Map.class);
@@ -407,7 +407,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
 
             // Convert to list of OID4VCAuthorizationDetailsResponse
             return JsonSerialization.readValue(JsonSerialization.writeValueAsString(authDetailsObj),
-                    new TypeReference<List<OID4VCAuthorizationDetailsResponse>>() {
+                    new TypeReference<List<OID4VCAuthorizationDetailResponse>>() {
                     });
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse authorization_details from response", e);

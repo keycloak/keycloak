@@ -22,9 +22,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenCategory;
 import org.keycloak.representations.idm.authorization.Permission;
 
@@ -146,6 +148,9 @@ public class AccessToken extends IDToken {
 
     @JsonProperty("scope")
     protected String scope;
+
+    @JsonProperty(OAuth2Constants.AUTHORIZATION_DETAILS)
+    protected List<AuthorizationDetailsResponse> authorizationDetails;
 
     @JsonIgnore
     public Map<String, Access> getResourceAccess() {
@@ -272,6 +277,14 @@ public class AccessToken extends IDToken {
 
     public void setScope(String scope) {
         this.scope = scope;
+    }
+
+    public List<AuthorizationDetailsResponse> getAuthorizationDetails() {
+        return authorizationDetails;
+    }
+
+    public void setAuthorizationDetails(List<AuthorizationDetailsResponse> authorizationDetails) {
+        this.authorizationDetails = authorizationDetails;
     }
 
     @Override
