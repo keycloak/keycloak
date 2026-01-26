@@ -51,7 +51,7 @@ const SecretInput = ({
               name="secret"
               control={form.control}
               render={({ field }) => (
-                <PasswordInput id={id} {...field} readOnly={!isManager} />
+                <PasswordInput id={id} {...field} isDisabled={!isManager} />
               )}
             />
           </InputGroupItem>
