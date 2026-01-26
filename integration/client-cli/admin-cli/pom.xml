@@ -80,6 +80,8 @@
                                         <include>org/keycloak/representations/adapters/config/**</include>
                                         <include>org/keycloak/representations/adapters/action/**</include>
                                         <include>org/keycloak/representations/AccessTokenResponse.class</include>
+                                        <include>org/keycloak/representations/AuthorizationDetailsJSONRepresentation.class</include>
+                                        <include>org/keycloak/representations/AuthorizationDetailsResponse.class</include>
                                         <!--
                                         <include>org/keycloak/representations/idm/ClientRepresentation.class</include>
                                         <include>org/keycloak/representations/idm/RealmRepresentation.class</include>

@@ -18,10 +18,9 @@ package org.keycloak.protocol.oid4vc.issuance;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorFactory;
+import org.keycloak.util.AuthorizationDetailsParser;
 
 import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
 
@@ -36,23 +35,13 @@ public class OID4VCAuthorizationDetailsProcessorFactory implements Authorization
     public static final String PROVIDER_ID = OPENID_CREDENTIAL;
 
     @Override
-    public AuthorizationDetailsProcessor create(KeycloakSession session) {
+    public OID4VCAuthorizationDetailsProcessor create(KeycloakSession session) {
         return new OID4VCAuthorizationDetailsProcessor(session);
     }
 
     @Override
     public void init(Config.Scope config) {
-        // No configuration needed
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        // No post-initialization needed
-    }
-
-    @Override
-    public void close() {
-        // No cleanup needed
+        AuthorizationDetailsParser.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsProcessor.OID4VCAuthorizationDetailsParser());
     }
 
     @Override

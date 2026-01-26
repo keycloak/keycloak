@@ -16,12 +16,18 @@
  */
 package org.keycloak.protocol.oid4vc.issuance;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+import org.keycloak.util.AuthorizationDetailsParser;
+import org.keycloak.util.JsonSerialization;
 
+import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.keycloak.OAuth2Constants.CREDENTIAL_IDENTIFIERS;
@@ -46,11 +52,16 @@ import static org.junit.Assert.assertTrue;
  */
 public class OID4VCAuthorizationDetailsProcessorTest {
 
+    @BeforeClass
+    public static void beforeClass() {
+        AuthorizationDetailsParser.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsProcessor.OID4VCAuthorizationDetailsParser());
+    }
+
     /**
      * Creates a valid AuthorizationDetail for testing
      */
-    private AuthorizationDetail createValidAuthorizationDetail() {
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+    private OID4VCAuthorizationDetail createValidAuthorizationDetail() {
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId("test-config-id");
         authDetail.setLocations(List.of("https://test-issuer.com"));
@@ -60,8 +71,8 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     /**
      * Creates a valid AuthorizationDetail with claims for testing
      */
-    private AuthorizationDetail createValidAuthorizationDetailWithClaims() {
-        AuthorizationDetail authDetail = createValidAuthorizationDetail();
+    private OID4VCAuthorizationDetail createValidAuthorizationDetailWithClaims() {
+        OID4VCAuthorizationDetail authDetail = createValidAuthorizationDetail();
 
         ClaimsDescription claim1 = new ClaimsDescription();
         claim1.setPath(Arrays.asList("credentialSubject", "given_name"));
@@ -78,8 +89,8 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     /**
      * Creates an invalid AuthorizationDetail with wrong type for testing
      */
-    private AuthorizationDetail createInvalidTypeAuthorizationDetail() {
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+    private OID4VCAuthorizationDetail createInvalidTypeAuthorizationDetail() {
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType("invalid_type");
         authDetail.setCredentialConfigurationId("test-config-id");
         return authDetail;
@@ -88,8 +99,8 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     /**
      * Creates an AuthorizationDetail with missing credential configuration ID for testing
      */
-    private AuthorizationDetail createMissingCredentialIdAuthorizationDetail() {
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+    private OID4VCAuthorizationDetail createMissingCredentialIdAuthorizationDetail() {
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         return authDetail;
     }
@@ -118,7 +129,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     /**
      * Asserts that an AuthorizationDetail has valid structure
      */
-    private void assertValidAuthorizationDetail(AuthorizationDetail authDetail) {
+    private void assertValidAuthorizationDetail(OID4VCAuthorizationDetail authDetail) {
         assertEquals("Type should be openid_credential", OPENID_CREDENTIAL, authDetail.getType());
         assertEquals("Credential configuration ID should be set", "test-config-id", authDetail.getCredentialConfigurationId());
         assertNotNull("Locations should not be null", authDetail.getLocations());
@@ -127,9 +138,22 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     }
 
     /**
+     * Asserts that an AuthorizationDetail has valid structure
+     */
+    private void assertValidAuthorizationDetailResponse(OID4VCAuthorizationDetailResponse authDetail) {
+        assertEquals("Type should be openid_credential", OPENID_CREDENTIAL, authDetail.getType());
+        assertEquals("Credential configuration ID should be set", "test-config-id", authDetail.getCredentialConfigurationId());
+        assertNotNull("Locations should not be null", authDetail.getLocations());
+        assertEquals("Should have exactly one location", 1, authDetail.getLocations().size());
+        assertEquals("Location should match issuer", "https://test-issuer.com", authDetail.getLocations().get(0));
+        assertEquals(1, authDetail.getCredentialIdentifiers().size());
+        assertEquals("test-identifier-123", authDetail.getCredentialIdentifiers().get(0));
+    }
+
+    /**
      * Asserts that an AuthorizationDetail has invalid type
      */
-    private void assertInvalidTypeAuthorizationDetail(AuthorizationDetail authDetail) {
+    private void assertInvalidTypeAuthorizationDetail(OID4VCAuthorizationDetail authDetail) {
         assertNotEquals("Type should not be openid_credential", OPENID_CREDENTIAL, authDetail.getType());
         assertEquals("Invalid type should be preserved", "invalid_type", authDetail.getType());
     }
@@ -137,7 +161,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     /**
      * Asserts that an AuthorizationDetail has missing credential configuration ID
      */
-    private void assertMissingCredentialIdAuthorizationDetail(AuthorizationDetail authDetail) {
+    private void assertMissingCredentialIdAuthorizationDetail(OID4VCAuthorizationDetail authDetail) {
         assertEquals("Type should be openid_credential", OPENID_CREDENTIAL, authDetail.getType());
         assertNull("Credential configuration ID should be null", authDetail.getCredentialConfigurationId());
     }
@@ -163,35 +187,35 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     @Test
     public void testAuthorizationDetailValidation() {
         // Test the core validation logic that the processor uses
-        AuthorizationDetail authDetail = createValidAuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = createValidAuthorizationDetail();
         assertValidAuthorizationDetail(authDetail);
     }
 
     @Test
     public void testAuthorizationDetailWithInvalidType() {
         // Test validation logic for invalid type
-        AuthorizationDetail authDetail = createInvalidTypeAuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = createInvalidTypeAuthorizationDetail();
         assertInvalidTypeAuthorizationDetail(authDetail);
     }
 
     @Test
     public void testAuthorizationDetailWithMissingCredentialConfigurationId() {
         // Test validation logic for missing credential configuration ID
-        AuthorizationDetail authDetail = createMissingCredentialIdAuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = createMissingCredentialIdAuthorizationDetail();
         assertMissingCredentialIdAuthorizationDetail(authDetail);
     }
 
     @Test
     public void testAuthorizationDetailWithClaims() {
         // Test the claims processing logic that the processor uses
-        AuthorizationDetail authDetail = createValidAuthorizationDetailWithClaims();
+        OID4VCAuthorizationDetail authDetail = createValidAuthorizationDetailWithClaims();
         assertValidClaims(authDetail.getClaims());
     }
 
     @Test
     public void testAuthorizationDetailWithComplexClaims() {
         // Test complex claims processing logic
-        AuthorizationDetail authDetail = createValidAuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = createValidAuthorizationDetail();
 
         ClaimsDescription claim1 = new ClaimsDescription();
         claim1.setPath(Arrays.asList("credentialSubject", "address", "street"));
@@ -220,7 +244,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     @Test
     public void testAuthorizationDetailWithNullClaims() {
         // Test null claims handling
-        AuthorizationDetail authDetail = createValidAuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = createValidAuthorizationDetail();
         authDetail.setClaims(null);
         assertNull("Claims should be null", authDetail.getClaims());
     }
@@ -228,7 +252,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     @Test
     public void testAuthorizationDetailWithEmptyClaims() {
         // Test empty claims handling
-        AuthorizationDetail authDetail = createValidAuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = createValidAuthorizationDetail();
         authDetail.setClaims(List.of());
         assertNotNull("Claims should not be null", authDetail.getClaims());
         assertTrue("Claims should be empty", authDetail.getClaims().isEmpty());
@@ -237,7 +261,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     @Test
     public void testAuthorizationDetailWithMultipleLocations() {
         // Test multiple locations handling
-        AuthorizationDetail authDetail = createValidAuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = createValidAuthorizationDetail();
         authDetail.setLocations(Arrays.asList("https://issuer1.com", "https://issuer2.com"));
 
         // Verify multiple locations structure
@@ -250,7 +274,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     @Test
     public void testAuthorizationDetailWithNullLocations() {
         // Test null locations handling
-        AuthorizationDetail authDetail = createValidAuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = createValidAuthorizationDetail();
         authDetail.setLocations(null);
         assertNull("Locations should be null", authDetail.getLocations());
     }
@@ -309,17 +333,17 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     @Test
     public void testParseAuthorizationDetailsLogic() {
         // Test valid authorization details structure that would be parsed
-        AuthorizationDetail authDetail = createValidAuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = createValidAuthorizationDetail();
         ClaimsDescription claim = createValidClaimsDescription();
         authDetail.setClaims(List.of(claim));
 
-        List<AuthorizationDetail> authDetails = List.of(authDetail);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
 
         // Verify the structure that parseAuthorizationDetails() would process
         assertNotNull("Authorization details list should not be null", authDetails);
         assertEquals("Should have exactly one authorization detail", 1, authDetails.size());
 
-        AuthorizationDetail parsedDetail = authDetails.get(0);
+        OID4VCAuthorizationDetail parsedDetail = authDetails.get(0);
         assertEquals("Type should be preserved", OPENID_CREDENTIAL, parsedDetail.getType());
         assertEquals("Credential configuration ID should be preserved", "test-config-id", parsedDetail.getCredentialConfigurationId());
         assertNotNull("Claims should be preserved", parsedDetail.getClaims());
@@ -329,22 +353,22 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     @Test
     public void testValidateAuthorizationDetailLogic() {
         // Test valid authorization detail that would pass validation
-        AuthorizationDetail validDetail = createValidAuthorizationDetail();
+        OID4VCAuthorizationDetail validDetail = createValidAuthorizationDetail();
         assertValidAuthorizationDetail(validDetail);
 
         // Test invalid type that would fail validation
-        AuthorizationDetail invalidDetail = createInvalidTypeAuthorizationDetail();
+        OID4VCAuthorizationDetail invalidDetail = createInvalidTypeAuthorizationDetail();
         assertInvalidTypeAuthorizationDetail(invalidDetail);
 
         // Test missing credential configuration ID that would fail validation
-        AuthorizationDetail missingIdDetail = createMissingCredentialIdAuthorizationDetail();
+        OID4VCAuthorizationDetail missingIdDetail = createMissingCredentialIdAuthorizationDetail();
         assertMissingCredentialIdAuthorizationDetail(missingIdDetail);
     }
 
     @Test
     public void testValidateClaimsLogic() {
         // Test valid claims that would pass validation
-        AuthorizationDetail authDetailWithClaims = createValidAuthorizationDetailWithClaims();
+        OID4VCAuthorizationDetail authDetailWithClaims = createValidAuthorizationDetailWithClaims();
         List<ClaimsDescription> validClaims = authDetailWithClaims.getClaims();
         assertValidClaims(validClaims);
 
@@ -375,8 +399,8 @@ public class OID4VCAuthorizationDetailsProcessorTest {
         List<ClaimsDescription> expectedClaims = List.of(claim);
 
         // Test authorization detail that would be used to build response
-        AuthorizationDetail authDetail = createValidAuthorizationDetail();
-        authDetail.setAdditionalField(CREDENTIAL_IDENTIFIERS, expectedCredentialIdentifiers);
+        OID4VCAuthorizationDetail authDetail = createValidAuthorizationDetail();
+        authDetail.setCustomData(CREDENTIAL_IDENTIFIERS, expectedCredentialIdentifiers);
         authDetail.setClaims(expectedClaims);
 
         // Verify the data structure that buildAuthorizationDetailResponse() would process
@@ -385,7 +409,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
         assertEquals("Should have exactly one claim", 1, authDetail.getClaims().size());
 
         @SuppressWarnings("unchecked")
-        List<String> actualCredentialIdentifiers = (List<String>) authDetail.getAdditionalFields().get(CREDENTIAL_IDENTIFIERS);
+        List<String> actualCredentialIdentifiers = (List<String>) authDetail.getCustomData().get(CREDENTIAL_IDENTIFIERS);
 
         // Verify the response data that would be created
         assertEquals("Response type should match", OPENID_CREDENTIAL, authDetail.getType());
@@ -401,23 +425,23 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     @Test
     public void testProcessStoredAuthorizationDetailsLogic() {
         // Test valid stored authorization details
-        AuthorizationDetail storedDetail = createValidAuthorizationDetail();
+        OID4VCAuthorizationDetail storedDetail = createValidAuthorizationDetail();
         ClaimsDescription claim = createValidClaimsDescription();
         storedDetail.setClaims(List.of(claim));
 
-        List<AuthorizationDetail> storedDetails = List.of(storedDetail);
+        List<OID4VCAuthorizationDetail> storedDetails = List.of(storedDetail);
 
         // Verify the stored details structure that processStoredAuthorizationDetails() would process
         assertNotNull("Stored details should not be null", storedDetails);
         assertEquals("Should have exactly one stored detail", 1, storedDetails.size());
 
-        AuthorizationDetail processedDetail = storedDetails.get(0);
+        OID4VCAuthorizationDetail processedDetail = storedDetails.get(0);
         assertValidAuthorizationDetail(processedDetail);
         assertNotNull("Claims should be preserved", processedDetail.getClaims());
         assertEquals("Should have exactly one claim", 1, processedDetail.getClaims().size());
 
         // Test null stored details
-        List<AuthorizationDetail> nullStoredDetails = null;
+        List<OID4VCAuthorizationDetail> nullStoredDetails = null;
         assertNull("Null stored details should be null", nullStoredDetails);
     }
 
@@ -450,11 +474,11 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     @Test
     public void testErrorHandlingLogic() {
         // Test invalid type error handling
-        AuthorizationDetail invalidTypeDetail = createInvalidTypeAuthorizationDetail();
+        OID4VCAuthorizationDetail invalidTypeDetail = createInvalidTypeAuthorizationDetail();
         assertInvalidTypeAuthorizationDetail(invalidTypeDetail);
 
         // Test missing credential configuration ID error handling
-        AuthorizationDetail missingIdDetail = createMissingCredentialIdAuthorizationDetail();
+        OID4VCAuthorizationDetail missingIdDetail = createMissingCredentialIdAuthorizationDetail();
         assertMissingCredentialIdAuthorizationDetail(missingIdDetail);
 
         // Test invalid claims error handling
@@ -469,4 +493,37 @@ public class OID4VCAuthorizationDetailsProcessorTest {
         assertNotNull("Empty path claim should not be null", emptyPathClaim.getPath());
         assertTrue("Empty path should be empty", emptyPathClaim.getPath().isEmpty());
     }
+
+    @Test
+    public void testOID4VCAuthzDetailsTogetherWithGenericAuthzDetails() throws IOException {
+        List<String> expectedCredentialIdentifiers = List.of("test-identifier-123");
+
+        OID4VCAuthorizationDetail validDetail1 = createValidAuthorizationDetail();
+        validDetail1.setCustomData(CREDENTIAL_IDENTIFIERS, expectedCredentialIdentifiers);
+
+        OID4VCAuthorizationDetail validDetail2 = createValidAuthorizationDetailWithClaims();
+        validDetail2.setCustomData(CREDENTIAL_IDENTIFIERS, expectedCredentialIdentifiers);
+
+        OID4VCAuthorizationDetail invalidDetail1 = createInvalidTypeAuthorizationDetail();
+
+        // Convert to the "generic" types to be able to test parser
+        List<AuthorizationDetailsJSONRepresentation> responses = List.of(
+                convertToResponseType(validDetail1),
+                convertToResponseType(validDetail2),
+                convertToResponseType(invalidDetail1)
+        );
+        List<OID4VCAuthorizationDetailResponse> authzResponses = new OID4VCAuthorizationDetailsProcessor(null).getSupportedAuthorizationDetails(responses);
+
+        Assert.assertEquals(2, authzResponses.size());
+        assertValidAuthorizationDetailResponse(authzResponses.get(0));
+        Assert.assertNull(authzResponses.get(0).getClaims());
+        assertValidAuthorizationDetailResponse(authzResponses.get(1));
+        assertValidClaims(authzResponses.get(1).getClaims());
+    }
+
+
+    private AuthorizationDetailsJSONRepresentation convertToResponseType(OID4VCAuthorizationDetail oid4vcDetails) throws IOException {
+        return JsonSerialization.readValue(JsonSerialization.writeValueAsString(oid4vcDetails), AuthorizationDetailsJSONRepresentation.class);
+    }
+
 }

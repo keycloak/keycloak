@@ -17,6 +17,10 @@ It also lists significant changes to internal APIs.
 When running the server in dev mode on a platform other than Windows Subsystem For Linux, the `http-host` setting will default to localhost. This ensures your dev instance won't be accessible from 
 other machines. If you want the previous behavior of binding to all interfaces, then explicitly set `http-host` to `0.0.0.0`.
 
+=== `X-Forwarded-Prefix` Header is now supported
+
+With `proxy-headers` set to `xforwarded`, the server can determine the proxy context path from the `X-Forwarded-Prefix` header.
+
 === New database indexes on the `BROKER_LINK` table
 
 The `BROKER_LINK` table now contains two additional indexes `IDX_BROKER_LINK_USER_ID` and `IDX_BROKER_LINK_IDENTITY_PROVIDER` to improve performance.
@@ -69,6 +73,13 @@ It does not affect any explicitly configured clock skew for example in identity 
 === The base themes are now abstract
 
 All the `base` themes are now tagged as **abstract**, and they are not listed in the admin console to be selected (**Realm Settings** -> **Themes** tab). They were always intended to be only extended but not used directly. If you use one of them, it will continue working (or not working) in the same way but cannot be selected using the admin console anymore. Please select one of the available default themes or create your own one.
+
+=== New database indexes on the `OFFLINE_CLIENT_SESSION` table
+
+The `OFFLINE_CLIENT_SESSION` table now contains two additional index `IDX_OFFLINE_CSS_BY_CLIENT_AND_REALM` and `IDX_OFFLINE_CSS_BY_USER_SESSION_AND_OFFLINE` to improve performance.
+
+If the table contains more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
