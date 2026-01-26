@@ -33,7 +33,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -51,6 +50,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.USER_ATTRIBUTE_NAME_DID;
 import static org.keycloak.VCFormat.JWT_VC;
 import static org.keycloak.VCFormat.LDP_VC;
 import static org.keycloak.VCFormat.SD_JWT_VC;
@@ -99,7 +99,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
 	@Override
 	public void init(Config.Scope config) {
-		builtins.put(SUBJECT_ID_MAPPER, OID4VCSubjectIdMapper.create(SUBJECT_ID_MAPPER, CLAIM_NAME_SUBJECT_ID, UserModel.ID));
+		builtins.put(SUBJECT_ID_MAPPER, OID4VCSubjectIdMapper.create(SUBJECT_ID_MAPPER, CLAIM_NAME_SUBJECT_ID, USER_ATTRIBUTE_NAME_DID));
 		builtins.put(USERNAME_MAPPER, OID4VCUserAttributeMapper.create(USERNAME_MAPPER, "username", "username", false));
 		builtins.put(EMAIL_MAPPER, OID4VCUserAttributeMapper.create(EMAIL_MAPPER, "email", "email", false));
 		builtins.put(FIRST_NAME_MAPPER, OID4VCUserAttributeMapper.create(FIRST_NAME_MAPPER, "firstName", "firstName", false));
