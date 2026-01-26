@@ -71,12 +71,11 @@ public class DistributionKeycloakServer implements KeycloakServer {
         List<String> args = keycloakServerConfigBuilder.toArgs();
         Set<Dependency> dependencies = keycloakServerConfigBuilder.toDependencies();
 
-        if (!reuse) {
-            killPreviousProcess();
-        }
-
         try {
             boolean installationCreated = createInstallation();
+            if (!reuse) {
+                killPreviousProcess();
+            }
 
             File providersDir = new File(keycloakHomeDir, "providers");
             List<File> existingProviders = listExistingProviders(providersDir);
@@ -426,13 +425,17 @@ public class DistributionKeycloakServer implements KeycloakServer {
                 }
             } catch (IOException e) {
                 // Ignored
+            } finally {
+                if (startupLatch.getCount() != 0) {
+                    startupLatch.countDown();
+                }
             }
         }
 
         public boolean waitForStarted() {
             try {
                 startupLatch.await(startTimeout, TimeUnit.SECONDS);
-                return true;
+                return process.isAlive();
             } catch (InterruptedException e) {
                 return false;
             }
