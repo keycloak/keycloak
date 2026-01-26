@@ -146,4 +146,34 @@ public class WorkflowsResource {
         auth.realm().requireManageRealm();
         return provider.getScheduledWorkflowsByResource(resourceId).toList();
     }
+
+    @Path("migrate")
+    @POST
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.WORKFLOWS)
+    @Operation(
+            summary = "Migrate scheduled resources from one step to another",
+            description = "Migrate scheduled resources from one step to another step in the same or in a different workflow."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "400", description = "Bad Request")
+    })
+    public Response migrate(
+            @Parameter(description = "A String representing the id of the step to migrate from")
+            @QueryParam("from") String stepIdFrom,
+            @Parameter(description = "A String representing the id of the step to migrate to")
+            @QueryParam("to") String stepIdTo) {
+        auth.realm().requireManageRealm();
+
+        if (stepIdFrom == null || stepIdTo == null) {
+            throw ErrorResponse.error("Both 'from' and 'to' step ids must be provided for migration.", Response.Status.BAD_REQUEST);
+        }
+
+        try {
+            provider.migrateScheduledResources(stepIdFrom, stepIdTo);
+            return Response.noContent().build();
+        } catch (ModelException me) {
+            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+        }
+    }
 }
