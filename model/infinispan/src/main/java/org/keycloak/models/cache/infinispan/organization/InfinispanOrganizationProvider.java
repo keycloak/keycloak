@@ -304,9 +304,9 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public GroupModel createGroup(OrganizationModel organization, String name, GroupModel toParent) {
+    public GroupModel createGroup(OrganizationModel organization, String id, String name, GroupModel toParent) {
         //todo caching
-        return getDelegate().createGroup(organization, name, toParent);
+        return getDelegate().createGroup(organization, id, name, toParent);
     }
 
     @Override
