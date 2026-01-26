@@ -1,18 +1,19 @@
 package org.keycloak.operator.crds.v2alpha1.client;
 
-import org.keycloak.representations.admin.v2.BaseOIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import io.fabric8.crd.generator.annotation.SchemaSwap;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.sundr.builder.annotations.Buildable;
 
 @JsonTypeInfo(use = Id.NONE)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder", lazyCollectionInitEnabled = false)
-public class KeycloakOIDCClientRepresentation extends BaseOIDCClientRepresentation<KeycloakOIDCClientRepresentation.AuthWithSecretRef> {
+@SchemaSwap(fieldName = "auth", originalType = KeycloakOIDCClientRepresentation.class, targetType = KeycloakOIDCClientRepresentation.AuthWithSecretRef.class)
+public class KeycloakOIDCClientRepresentation extends OIDCClientRepresentation {
 
     public static class AuthWithSecretRef extends OIDCClientRepresentation.Auth {
 

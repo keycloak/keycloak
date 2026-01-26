@@ -21,8 +21,8 @@ import java.util.Base64;
 
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientRepresentation;
-import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientRepresentation.AuthWithSecretRef;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
+import org.keycloak.representations.admin.v2.OIDCClientRepresentation.Auth;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
@@ -44,9 +44,9 @@ public class KeycloakOIDCClientController extends KeycloakClientBaseController<K
             Context<?> context) {
         boolean poll = false;
         // create the payload via inlining of the secret
-        AuthWithSecretRef auth = crRepresentation.getAuth();
+        Auth auth = crRepresentation.getAuth();
         if (auth != null) {
-            SecretKeySelector secretSelector = auth.getSecretRef();
+            SecretKeySelector secretSelector = context.getClient().getKubernetesSerialization().convertValue(auth.getAdditionalFields().get("secretRef"), SecretKeySelector.class);
             targetRepresentation.getAuth().getAdditionalFields().remove("secretRef");
             if (secretSelector != null) {
                 poll = true;
