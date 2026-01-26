@@ -18,11 +18,13 @@
 package org.keycloak.protocol.oid4vc;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.Config;
+import org.keycloak.VCFormat;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -49,6 +51,9 @@ import org.keycloak.services.ErrorResponseException;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.VCFormat.JWT_VC;
+import static org.keycloak.VCFormat.LDP_VC;
+import static org.keycloak.VCFormat.SD_JWT_VC;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.CONFIGURATION_ID;
@@ -59,7 +64,6 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BIN
 import static org.keycloak.models.oid4vci.CredentialScopeModel.EXPIRY_IN_SECONDS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.EXPIRY_IN_SECONDS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.FORMAT;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.FORMAT_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.HASH_ALGORITHM;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.HASH_ALGORITHM_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.INCLUDE_IN_METADATA;
@@ -70,7 +74,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.SD_JWT_VISIBLE_CL
 import static org.keycloak.models.oid4vci.CredentialScopeModel.TOKEN_JWS_TYPE;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.TOKEN_TYPE_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.TYPES;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.VCT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_TYPE;
 
 /**
  * Factory for creating all OID4VC related endpoints and the default mappers.
@@ -79,7 +83,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VCT;
  */
 public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCEnvironmentProviderFactory {
 
-	private static final Logger LOGGER = Logger.getLogger(OID4VCLoginProtocolFactory.class);
+    private static final Logger LOGGER = Logger.getLogger(OID4VCLoginProtocolFactory.class);
 
 	private static final String CLIENT_ROLES_MAPPER = "client-roles";
 	private static final String USERNAME_MAPPER = "username";
@@ -89,8 +93,9 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 	private static final String FIRST_NAME_MAPPER = "first-name";
 
 	public static final String PROTOCOL_ID = OID4VCIConstants.OID4VC_PROTOCOL;
+    public static final String CREDENTIAL_TYPE_NATURAL_PERSON = "natural_person";
 
-	private final Map<String, ProtocolMapperModel> builtins = new HashMap<>();
+    private final Map<String, ProtocolMapperModel> builtins = new HashMap<>();
 
 	@Override
 	public void init(Config.Scope config) {
@@ -126,18 +131,25 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     public void createDefaultClientScopes(RealmModel newRealm, boolean addScopesToExistingClients) {
         LOGGER.debugf("Create default scopes for realm %s", newRealm.getName());
 
-        ClientScopeModel naturalPersonScope = KeycloakModelUtils.getClientScopeByName(newRealm, "natural_person");
-        if (naturalPersonScope == null) {
-            LOGGER.debug("Add natural person scope");
-            naturalPersonScope = newRealm.addClientScope(String.format("%s_%s", OID4VC_PROTOCOL, "natural_person"));
-            naturalPersonScope.setDescription("OID4VCI Scope, that adds properties required for a natural person.");
-            naturalPersonScope.setProtocol(OID4VC_PROTOCOL);
-            naturalPersonScope.addProtocolMapper(builtins.get(SUBJECT_ID_MAPPER));
-            naturalPersonScope.addProtocolMapper(builtins.get(EMAIL_MAPPER));
-            naturalPersonScope.addProtocolMapper(builtins.get(FIRST_NAME_MAPPER));
-            naturalPersonScope.addProtocolMapper(builtins.get(LAST_NAME_MAPPER));
-            addClientScopeDefaults(naturalPersonScope);
-            newRealm.addDefaultClientScope(naturalPersonScope, true);
+        // [TODO #44875] Proof Type null is not supported for format ldp_vc
+        // https://github.com/keycloak/keycloak/issues/44875
+        List<VCFormat> supportedFormats = List.of(JWT_VC, SD_JWT_VC);
+
+        for (VCFormat format : supportedFormats) {
+            String scopeName = CREDENTIAL_TYPE_NATURAL_PERSON + format.getSuffix();
+            ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(newRealm, scopeName);
+            if (clientScope == null) {
+                LOGGER.debugf("Add client scope: %s", scopeName);
+                clientScope = newRealm.addClientScope(String.format("%s_%s", OID4VC_PROTOCOL, scopeName));
+                clientScope.setDescription("OID4VCI credential scope that represents a natural person in format: " + format.getValue());
+                clientScope.setProtocol(OID4VC_PROTOCOL);
+                clientScope.addProtocolMapper(builtins.get(SUBJECT_ID_MAPPER));
+                clientScope.addProtocolMapper(builtins.get(EMAIL_MAPPER));
+                clientScope.addProtocolMapper(builtins.get(FIRST_NAME_MAPPER));
+                clientScope.addProtocolMapper(builtins.get(LAST_NAME_MAPPER));
+                addClientScopeDefaults(clientScope);
+                newRealm.addDefaultClientScope(clientScope, false);
+            }
         }
     }
 
@@ -148,6 +160,13 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     @Override
     public void addClientScopeDefaults(ClientScopeRepresentation clientScope) {
+        String scopeName = clientScope.getName();
+
+        clientScope.getAttributes().computeIfAbsent(FORMAT, k -> getVCFormatFromScope(scopeName).getValue());
+        VCFormat format = VCFormat.fromValue(clientScope.getAttributes().get(FORMAT));
+
+        int idx = scopeName.lastIndexOf(format.getSuffix());
+        String credentialType = idx > 0 ? scopeName.substring(0, idx) : scopeName;
 
         // Note, there is no sensible default for the Issuer's DID unless we generate a did:key:* from the signing key
         // Leaving vc.issuer_did undefined results in the realm's url being used as the value for the Issuer's ID (iss), which is fine.
@@ -155,18 +174,21 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
         clientScope.getAttributes().putIfAbsent(INCLUDE_IN_TOKEN_SCOPE, "true");
         clientScope.getAttributes().putIfAbsent(INCLUDE_IN_METADATA, "true");
-        clientScope.getAttributes().computeIfAbsent(CONFIGURATION_ID, k -> clientScope.getName());
-        clientScope.getAttributes().computeIfAbsent(CREDENTIAL_IDENTIFIER, k -> clientScope.getName());
-        clientScope.getAttributes().computeIfAbsent(TYPES, k -> clientScope.getName());
-        clientScope.getAttributes().computeIfAbsent(CONTEXTS, k -> clientScope.getName());
-        clientScope.getAttributes().computeIfAbsent(VCT, k -> clientScope.getName());
-        clientScope.getAttributes().computeIfAbsent(FORMAT, k -> FORMAT_DEFAULT);
+        clientScope.getAttributes().computeIfAbsent(CONFIGURATION_ID, k -> scopeName);
+        clientScope.getAttributes().computeIfAbsent(CREDENTIAL_IDENTIFIER, k -> credentialType);
+        clientScope.getAttributes().computeIfAbsent(TYPES, k -> credentialType);
+        clientScope.getAttributes().computeIfAbsent(CONTEXTS, k -> credentialType);
+        clientScope.getAttributes().computeIfAbsent(VC_TYPE, k -> credentialType);
         clientScope.getAttributes().computeIfAbsent(CRYPTOGRAPHIC_BINDING_METHODS, k -> CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
-        clientScope.getAttributes().computeIfAbsent(SD_JWT_NUMBER_OF_DECOYS, k -> String.valueOf(SD_JWT_DECOYS_DEFAULT));
-        clientScope.getAttributes().computeIfAbsent(SD_JWT_VISIBLE_CLAIMS, k -> SD_JWT_VISIBLE_CLAIMS_DEFAULT);
         clientScope.getAttributes().computeIfAbsent(HASH_ALGORITHM, k -> HASH_ALGORITHM_DEFAULT);
         clientScope.getAttributes().computeIfAbsent(TOKEN_JWS_TYPE, k -> TOKEN_TYPE_DEFAULT);
         clientScope.getAttributes().computeIfAbsent(EXPIRY_IN_SECONDS, k -> String.valueOf(EXPIRY_IN_SECONDS_DEFAULT));
+
+
+        if (format == SD_JWT_VC) {
+            clientScope.getAttributes().computeIfAbsent(SD_JWT_NUMBER_OF_DECOYS, k -> String.valueOf(SD_JWT_DECOYS_DEFAULT));
+            clientScope.getAttributes().computeIfAbsent(SD_JWT_VISIBLE_CLAIMS, k -> SD_JWT_VISIBLE_CLAIMS_DEFAULT);
+        }
     }
 
     @Override
@@ -210,5 +232,12 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         ClientScopeRepresentation clientScopeRep = ModelToRepresentation.toRepresentation(clientScope);
         addClientScopeDefaults(clientScopeRep);
         RepresentationToModel.updateClientScope(clientScopeRep, clientScope);
+    }
+
+    private VCFormat getVCFormatFromScope(String scope) {
+        VCFormat format = SD_JWT_VC; // default format
+        if (scope.toLowerCase().endsWith("_jwt")) format = JWT_VC;
+        if (scope.toLowerCase().endsWith("_ld")) format = LDP_VC;
+        return format;
     }
 }
