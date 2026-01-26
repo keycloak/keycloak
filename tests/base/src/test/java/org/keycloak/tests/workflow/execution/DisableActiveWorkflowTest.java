@@ -107,7 +107,7 @@ public class DisableActiveWorkflowTest extends AbstractWorkflowTest {
             List<Workflow> registeredWorkflow = provider.getWorkflows().toList();
             assertEquals(1, registeredWorkflow.size());
             WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
-            List<WorkflowStateProvider.ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(registeredWorkflow.get(0)).toList();
+            List<WorkflowStateProvider.ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(registeredWorkflow.get(0).getId()).toList();
 
             // verify that there's only one scheduled step, for the first user
             assertEquals(1, scheduledSteps.size());
