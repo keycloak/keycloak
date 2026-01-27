@@ -25,9 +25,11 @@ import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Comparator;
@@ -37,6 +39,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
@@ -69,6 +73,7 @@ import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.internal.CertUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -305,7 +310,9 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
             ks.setCertificateEntry("cert", cert);
             tmf.init(ks);
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, tmf.getTrustManagers(), null);
+            KeyManager[] keyManagers = createKeyManagers(client, keycloak);
+
+            sslContext.init(keyManagers, tmf.getTrustManagers(), null);
 
             ClientBuilder clientBuilder = ClientBuilderWrapper.create(sslContext, false);
 
@@ -318,10 +325,40 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
 
             restEasyClient = clientBuilder.build();
         } catch (CertificateException | NoSuchAlgorithmException | KeyStoreException | IOException
-                | KeyManagementException e) {
+                | KeyManagementException | UnrecoverableKeyException | InvalidKeySpecException e) {
             throw new RuntimeException(e);
         }
         return restEasyClient;
+    }
+
+    private static KeyManager[] createKeyManagers(KubernetesClient client, Keycloak keycloak)
+            throws UnrecoverableKeyException, KeyStoreException, NoSuchAlgorithmException, CertificateException,
+            InvalidKeySpecException, IOException {
+        if (keycloak.getSpec().getAdminSpec() == null) {
+            return null;
+        }
+        String clientTlsSecretName = keycloak.getSpec().getAdminSpec().getTlsSecret();
+        if (clientTlsSecretName == null) {
+            return null;
+        }
+        Secret clientTlsSecret = client.resources(Secret.class)
+                .inNamespace(keycloak.getMetadata().getNamespace()).withName(clientTlsSecretName).require();
+
+        byte[] certBytes = Base64.getDecoder().decode(clientTlsSecret.getData().get("tls.crt"));
+        byte[] keyBytes = Base64.getDecoder().decode(clientTlsSecret.getData().get("tls.key"));
+
+        KeyStore store = null;
+        // TODO: key type algorithm type could be specifyable in the CR, inferred in a better way (not sure where the quarkus logic is for this), or
+        // in some cases specified in the files - BEGIN RSA PRIVATE KEY
+        try {
+            store = CertUtils.createKeyStore(new ByteArrayInputStream(certBytes), new ByteArrayInputStream(keyBytes), "RSA", null, null, null);
+        } catch (Exception e) {
+            store = CertUtils.createKeyStore(new ByteArrayInputStream(certBytes), new ByteArrayInputStream(keyBytes), "EC", null, null, null);
+        }
+
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        kmf.init(store, null);
+        return kmf.getKeyManagers();
     }
 
     private static String getAdminUrl(Keycloak keycloak, KubernetesClient client) {
