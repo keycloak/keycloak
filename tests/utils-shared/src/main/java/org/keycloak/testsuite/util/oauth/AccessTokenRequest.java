@@ -8,6 +8,7 @@ import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
+import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenRequest, AccessTokenResponse> {
@@ -53,6 +54,11 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
         return this;
     }
 
+    public AccessTokenRequest redirectUri(String redirectUri) {
+        parameter(OAuth2Constants.REDIRECT_URI, redirectUri);
+        return this;
+    }
+
     public AccessTokenRequest param(String name, String value) {
         parameter(name, value);
         return this;
@@ -60,9 +66,10 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
 
     protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE);
-
         parameter(OAuth2Constants.CODE, code);
-        parameter(OAuth2Constants.REDIRECT_URI, client.getRedirectUri());
+        if (!hasParameter(OAuth2Constants.REDIRECT_URI)) {
+            parameter(OAuth2Constants.REDIRECT_URI, client.getRedirectUri());
+        }
     }
 
     @Override
@@ -70,4 +77,14 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
         return new AccessTokenResponse(response);
     }
 
+    private String getParameter(String key) {
+        return parameters.stream()
+                .filter(vp -> vp.getName().equals(key))
+                .map(NameValuePair::getValue)
+                .findFirst().orElse(null);
+    }
+
+    private boolean hasParameter(String key) {
+        return getParameter(key) != null;
+    }
 }

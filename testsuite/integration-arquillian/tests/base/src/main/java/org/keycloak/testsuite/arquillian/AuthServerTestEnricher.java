@@ -728,6 +728,11 @@ public class AuthServerTestEnricher {
                     realms.append(testRealm.getRealm()).append(", ");
                 } catch (NotFoundException e) {
                     // Ignore
+                } catch (Exception e) {
+                    // [#44574] Unable to find contextual data of type: org.keycloak.models.KeycloakSession
+                    // https://github.com/keycloak/keycloak/issues/44574
+                    log.errorf("Failed to remove test realm: %s - %s", testRealm.getRealm(), e);
+                    // Ignore
                 }
             }
             log.info("removed realms: " + realms);

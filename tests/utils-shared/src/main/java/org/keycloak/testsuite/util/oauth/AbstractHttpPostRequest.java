@@ -11,6 +11,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.utils.MediaType;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -22,17 +23,18 @@ public abstract class AbstractHttpPostRequest<T, R> {
     protected final AbstractOAuthClient<?> client;
 
     protected String clientId;
-
     protected String clientSecret;
 
     protected String clientAssertion;
-
     protected String clientAssertionType;
+
+    protected String bearerToken;
 
     protected HttpPost post;
 
     protected Map<String, String> headers = new HashMap<>();
     protected List<NameValuePair> parameters = new LinkedList<>();
+    protected HttpEntity entity;
 
     public AbstractHttpPostRequest(AbstractOAuthClient<?> client) {
         this.client = client;
@@ -53,14 +55,24 @@ public abstract class AbstractHttpPostRequest<T, R> {
 
         headers.forEach((n, v) -> post.addHeader(n, v));
 
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        post.setEntity(formEntity);
+        if (entity != null && !parameters.isEmpty())
+            throw new IllegalStateException("Provide entity or parameters");
+
+        if (entity == null)
+            entity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+
+        post.setEntity(entity);
 
         try {
             return toResponse(client.httpClient().get().execute(post));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public T bearerToken(String token) {
+        this.bearerToken = token;
+        return request();
     }
 
     public T client(String clientId) {
@@ -106,6 +118,8 @@ public abstract class AbstractHttpPostRequest<T, R> {
         if (clientAssertion != null && clientAssertionType != null) {
             parameter("client_assertion_type", clientAssertionType);
             parameter("client_assertion", clientAssertion);
+        } else if (bearerToken != null) {
+            header("Authorization", "Bearer " + bearerToken);
         } else if (clientSecret != null) {
             String authorization = BasicAuthHelper.RFC6749.createHeader(clientId, clientSecret);
             header("Authorization", authorization);

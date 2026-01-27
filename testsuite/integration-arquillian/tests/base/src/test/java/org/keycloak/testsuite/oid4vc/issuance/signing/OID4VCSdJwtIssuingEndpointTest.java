@@ -30,6 +30,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
+import org.keycloak.VCFormat;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.constants.OID4VCIConstants;
@@ -51,7 +52,6 @@ import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
@@ -77,6 +77,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
 import org.junit.Test;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -350,7 +352,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         assertEquals(HttpStatus.SC_OK, accessTokenResponse.getStatusCode());
         String theToken = accessTokenResponse.getAccessToken();
 
-        final String vct = clientScope.getAttributes().get(CredentialScopeModel.VCT);
+        final String vct = clientScope.getAttributes().get(CredentialScopeModel.VC_TYPE);
 
         // 6. Get the credential
         credentialsOffer.getCredentialConfigurationIds().stream()
@@ -379,7 +381,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         final String credentialConfigurationId = sdJwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
         final String verifiableCredentialType = sdJwtTypeCredentialClientScope.getAttributes()
-                .get(CredentialScopeModel.VCT);
+                .get(CredentialScopeModel.VC_TYPE);
         String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
         String expectedCredentialsEndpoint = expectedIssuer + "/protocol/oid4vc/credential";
         String expectedNonceEndpoint = expectedIssuer + "/protocol/oid4vc/" + OID4VCIssuerEndpoint.NONCE_PATH;
@@ -406,7 +408,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                             scopeName,
                             jwtVcConfig.getScope());
                     assertEquals("The sd-jwt-credential should be offered in the jwt_vc format.",
-                            Format.SD_JWT_VC,
+                            VCFormat.SD_JWT_VC.getValue(),
                             jwtVcConfig.getFormat());
 
                     assertNotNull("The sd-jwt-credential can optionally provide a claims claim.",
@@ -419,46 +421,36 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                     assertNotNull("The sd-jwt-credential can optionally provide a claims claim.",
                             jwtVcClaims);
 
-                    assertEquals(4,  jwtVcClaims.size());
+                    assertEquals(5,  jwtVcClaims.size());
                     {
                         Claim claim = jwtVcClaims.get(0);
-                        assertEquals("The sd-jwt-credential claim email is present.",
-                                "email",
-                                claim.getPath().get(0));
-                        assertFalse("The sd-jwt-credential claim email is not mandatory.",
-                                claim.isMandatory());
-                        assertNull("The sd-jwt-credential claim email has no display configured",
-                                claim.getDisplay());
+                        assertEquals("id claim is present", CLAIM_NAME_SUBJECT_ID, claim.getPath().get(0));
+                        assertFalse("id claim not mandatory.", claim.isMandatory());
+                        assertNull("id has no display value", claim.getDisplay());
                     }
                     {
                         Claim claim = jwtVcClaims.get(1);
-                        assertEquals("The sd-jwt-credential claim firstName is present.",
-                                "firstName",
-                                claim.getPath().get(0));
-                        assertFalse("The sd-jwt-credential claim firstName is not mandatory.",
-                                claim.isMandatory());
-                        assertNull("The sd-jwt-credential claim firstName has no display configured",
-                                claim.getDisplay());
+                        assertEquals("email claim is present", "email", claim.getPath().get(0));
+                        assertFalse("email claim not mandatory.", claim.isMandatory());
+                        assertNull("email has no display value", claim.getDisplay());
                     }
                     {
                         Claim claim = jwtVcClaims.get(2);
-                        assertEquals("The sd-jwt-credential claim lastName is present.",
-                                "lastName",
-                                claim.getPath().get(0));
-                        assertFalse("The sd-jwt-credential claim lastName is not mandatory.",
-                                claim.isMandatory());
-                        assertNull("The sd-jwt-credential claim lastName has no display configured",
-                                claim.getDisplay());
+                        assertEquals("firstName claim is present", "firstName", claim.getPath().get(0));
+                        assertFalse("firstName claim not mandatory.", claim.isMandatory());
+                        assertNull("firstName has no display value", claim.getDisplay());
                     }
                     {
                         Claim claim = jwtVcClaims.get(3);
-                        assertEquals("The sd-jwt-credential claim scope-name is present.",
-                                "scope-name",
-                                claim.getPath().get(0));
-                        assertFalse("The sd-jwt-credential claim scope-name is not mandatory.",
-                                claim.isMandatory());
-                        assertNull("The sd-jwt-credential claim scope-name has no display configured",
-                                claim.getDisplay());
+                        assertEquals("lastName claim is present", "lastName", claim.getPath().get(0));
+                        assertFalse("lastName claim not mandatory.", claim.isMandatory());
+                        assertNull("lastName has no display value", claim.getDisplay());
+                    }
+                    {
+                        Claim claim = jwtVcClaims.get(4);
+                        assertEquals("scope-name claim is present", "scope-name", claim.getPath().get(0));
+                        assertFalse("scope-name claim not mandatory.", claim.isMandatory());
+                        assertNull("scope-name has no display value", claim.getDisplay());
                     }
 
                     assertEquals("The sd-jwt-credential should offer vct",

@@ -48,6 +48,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest;
+import org.keycloak.testsuite.oid4vc.issuance.wallet.CredentialRequestPost;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -60,10 +61,9 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
@@ -104,8 +104,8 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     String appUsername = "alice";
 
-    String credScopeName = jwtTypeCredentialScopeName;
-    String credConfigId = jwtTypeCredentialConfigurationIdName;
+    String credScopeName = jwtTypeNaturalPersonScopeName;
+    String credConfigId = jwtTypeNaturalPersonScopeName;
 
     static class OfferTestContext {
         boolean preAuthorized;
@@ -129,6 +129,15 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         ctx.authorizationMetadata = getAuthorizationMetadata(ctx.issuerMetadata.getAuthorizationServers().get(0));
         ctx.supportedCredentialConfiguration = ctx.issuerMetadata.getCredentialsSupported().get(credConfigId);
         return ctx;
+    }
+
+    @Before
+    public void setup() {
+        super.setup();
+
+        // Assign the registered optional client scopes to the client
+        assignOptionalClientScopeToClient(jwtTypeNaturalPersonClientScope.getId(), namedClientId);
+        setClientOid4vciEnabled(namedClientId, true);
     }
 
     @Test
@@ -207,12 +216,12 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     }
 
     @Test
-    public void testCredentialOffer_PreAuth_ClientId_Username() throws Exception {
+    public void testCredentialOffer_PreAuth_ClientId_UserId() throws Exception {
         runCredentialOfferTest(newTestContext(true, namedClientId, appUsername));
     }
 
     @Test
-    public void testCredentialOffer_PreAuth_ClientId_Username_disabledUser() throws Exception {
+    public void testCredentialOffer_PreAuth_ClientId_UserId_disabled() throws Exception {
         // Disable user
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), appUsername);
         UserRepresentation userRep = user.toRepresentation();
@@ -413,21 +422,10 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     }
 
     private CredentialResponse sendCredentialRequest(OfferTestContext ctx, String accessToken, CredentialRequest credentialRequest) throws Exception {
-        HttpPost postCredential = new HttpPost(ctx.issuerMetadata.getCredentialEndpoint());
-        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
-        StringEntity stringEntity = new StringEntity(JsonSerialization.valueAsString(credentialRequest), ContentType.APPLICATION_JSON);
-        postCredential.setEntity(stringEntity);
-
-        CloseableHttpResponse credentialRequestResponse = httpClient.execute(postCredential);
-        int statusCode = credentialRequestResponse.getStatusLine().getStatusCode();
-        if (HttpStatus.SC_OK != statusCode) {
-            HttpEntity entity = credentialRequestResponse.getEntity();
-            throw new IllegalStateException(EntityUtils.toString(entity));
-        }
-
-        String s = IOUtils.toString(credentialRequestResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialResponse credentialResponse = JsonSerialization.valueFromString(s, CredentialResponse.class);
-
+        String endpointUri = ctx.issuerMetadata.getCredentialEndpoint();
+        CredentialResponse credentialResponse = new CredentialRequestPost(oauth, endpointUri, credentialRequest)
+                .bearerToken(accessToken)
+                .send();
         assertNotNull("The credentials array should be present in the response", credentialResponse.getCredentials());
         assertFalse("The credentials array should not be empty", credentialResponse.getCredentials().isEmpty());
         return credentialResponse;
@@ -435,6 +433,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     private void verifyCredentialResponse(OfferTestContext ctx, CredentialResponse credResponse) throws Exception {
 
+        String issuer = ctx.issuerMetadata.getCredentialIssuer();
         String scope = ctx.supportedCredentialConfiguration.getScope();
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull("The first credential in the array should not be null", credentialObj);
@@ -442,11 +441,11 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         String expUsername = ctx.appUser != null ? ctx.appUser : appUsername;
 
         JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialObj.getCredential(), JsonWebToken.class).getToken();
-        assertEquals("did:web:test.org", jsonWebToken.getIssuer());
+        assertEquals(issuer, jsonWebToken.getIssuer());
         Object vc = jsonWebToken.getOtherClaims().get("vc");
         VerifiableCredential credential = JsonSerialization.mapper.convertValue(vc, VerifiableCredential.class);
         assertEquals(List.of(scope), credential.getType());
-        assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
+        assertEquals(URI.create(issuer), credential.getIssuer());
         assertEquals(expUsername + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
     }
 

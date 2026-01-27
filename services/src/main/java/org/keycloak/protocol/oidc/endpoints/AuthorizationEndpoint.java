@@ -17,8 +17,12 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 
 import jakarta.ws.rs.Consumes;
@@ -28,8 +32,11 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.Profile;
 import org.keycloak.constants.AdapterConstants;
@@ -40,16 +47,27 @@ import org.keycloak.events.EventType;
 import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.AuthorizationEndpointBase;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.IDTokenRequest;
+import org.keycloak.protocol.oid4vc.model.IDTokenRequestBuilder;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCWellKnownProvider;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
+import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor.EndpointType;
 import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
@@ -59,16 +77,22 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.OID4VCConstants.USER_ATTRIBUTE_NAME_DID;
+import static org.keycloak.authentication.AuthenticationFlowError.ACCESS_DENIED;
+import static org.keycloak.authentication.AuthenticationFlowError.INVALID_USER;
+import static org.keycloak.protocol.oidc.endpoints.DirectPostEndpoint.AUTHORIZATION_REQUEST_KEY;
 import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.PAR_DPOP_PROOF_JKT;
 
 /**
@@ -146,9 +170,9 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             event.error(cpe.getError());
             throw new ErrorPageException(session, authenticationSession, cpe.getErrorStatus(), cpe.getErrorDetail());
         }
-        checkClient(clientId);
+        checkClient(clientId, params);
 
-        request = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params, AuthorizationEndpointRequestParserProcessor.EndpointType.OIDC_AUTH_ENDPOINT);
+        request = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params, EndpointType.OIDC_AUTH_ENDPOINT);
 
         AuthorizationEndpointChecker checker = new AuthorizationEndpointChecker()
                 .event(event)
@@ -269,7 +293,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         return this;
     }
 
-    private void checkClient(String clientId) {
+    private void checkClient(String clientId, MultivaluedMap<String, String> params) {
         if (clientId == null) {
             event.detail(Details.REASON, "Missing parameter: " + OIDCLoginProtocol.CLIENT_ID_PARAM);
             event.error(Errors.INVALID_REQUEST);
@@ -278,7 +302,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         event.client(clientId);
 
-        client = realm.getClientByClientId(clientId);
+        client = findClientByClientId(realm, clientId, params);
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
             throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND);
@@ -307,6 +331,45 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
 
         session.getContext().setClient(client);
+    }
+
+    private ClientModel findClientByClientId(RealmModel realm, String clientId, MultivaluedMap<String, String> params) {
+
+        ClientModel client = realm.getClientByClientId(clientId);
+
+        // In case of an OID4VCI IDToken Handshake, the client_id would be a DID rather than known client_id
+        // We scan the available clients for a match on the requested scope
+        if (client == null && clientId.startsWith("did:") && params.containsKey(OIDCLoginProtocol.SCOPE_PARAM)) {
+
+            String joinedScopes = String.join(" ", params.get(OIDCLoginProtocol.SCOPE_PARAM));
+            List<String> scopes = Arrays.asList(joinedScopes.split("\\s"));
+
+            ClientScopeModel clientScopeModel = realm.getClientScopesStream()
+                    .filter( cs -> scopes.contains(cs.getName()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (clientScopeModel == null) {
+                logger.warnf("Cannot find client scope for: %s", scopes);
+                return null;
+            }
+
+            String scope = clientScopeModel.getName();
+            client = realm.getClientsStream()
+                    .sorted(Comparator.comparing(ClientModel::getClientId))
+                    .filter(c -> {
+                        Set<String> defaultScopes = c.getClientScopes(true).keySet();
+                        Set<String> optionalScopes = c.getClientScopes(false).keySet();
+                        boolean match = defaultScopes.contains(scope) || optionalScopes.contains(scope);
+                        return match;
+                    })
+                    .findFirst()
+                    .orElse(null);
+
+            if (client == null)
+                logger.warnf("Cannot find client for scope: %s", scope);
+        }
+        return client;
     }
 
     private Response redirectErrorToClient(OIDCResponseMode responseMode, String error, String errorDescription) {
@@ -339,9 +402,13 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         authenticationSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, request.getRedirectUriParam());
         authenticationSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
-        performActionOnParameters(request, (paramName, paramValue) -> {if (paramValue != null) authenticationSession.setClientNote(paramName, paramValue);});
-        if (request.getMaxAge() != null) authenticationSession.setClientNote(OIDCLoginProtocol.MAX_AGE_PARAM, String.valueOf(request.getMaxAge()));
-        if (request.getUiLocales() != null) authenticationSession.setClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, request.getUiLocales());
+        performActionOnParameters(request, (paramName, paramValue) -> {
+            if (paramValue != null) authenticationSession.setClientNote(paramName, paramValue);
+        });
+        if (request.getMaxAge() != null)
+            authenticationSession.setClientNote(OIDCLoginProtocol.MAX_AGE_PARAM, String.valueOf(request.getMaxAge()));
+        if (request.getUiLocales() != null)
+            authenticationSession.setClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, request.getUiLocales());
 
         Map<String, Integer> acrLoaMap = AcrUtils.getAcrLoaMap(authenticationSession.getClient());
         List<String> acrValues = AcrUtils.getRequiredAcrValues(request.getClaims());
@@ -397,16 +464,89 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         this.event.event(EventType.LOGIN);
         authenticationSession.setAuthNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
 
+        String clientId = request.getClientId();
+        if (clientId.startsWith("did:")) {
+            return buildIDTokenAuthorizationCodeResponse(clientId);
+        }
+
         // redirect if it is a PAR request because authentication can need a refresh (kerberos) and the single object is consumed now
         final boolean redirectToAuthenticationIfParRequest = requestUriParam != null
                 && RequestUriType.PAR == AuthorizationEndpointRequestParserProcessor.getRequestUriType(requestUriParam);
 
-        return handleBrowserAuthenticationRequest(authenticationSession, new OIDCLoginProtocol(session, realm, session.getContext().getUri(), headers, event),
-                TokenUtil.hasPrompt(request.getPrompt(), OIDCLoginProtocol.PROMPT_VALUE_NONE), redirectToAuthenticationIfParRequest);
+        boolean isPassive = TokenUtil.hasPrompt(request.getPrompt(), OIDCLoginProtocol.PROMPT_VALUE_NONE);
+        OIDCLoginProtocol loginProtocol = new OIDCLoginProtocol(session, realm, session.getContext().getUri(), headers, event);
+        return handleBrowserAuthenticationRequest(authenticationSession, loginProtocol, isPassive, redirectToAuthenticationIfParRequest);
+    }
+
+    /**
+     * Handle IDToken Authorization Handshake
+     * <p/>
+     * Details of the IDToken handshake between an OID4VCI Issuer and Holder are described
+     * in the EBSI Conformance documentation.
+     * <p/>
+     * <a href="https://openid.net/specs/openid-connect-self-issued-v2-1_0.html">Self-Issued OpenID Provider v2</a>
+     * <a href="https://hub.ebsi.eu/conformance/build-solutions/issue-to-holder-functional-flows#in-time-issuance">EBSI - Issue Verifiable Credentials</a>
+     *
+     * @author <a href="mailto:tdiesler@ibm.com">Thomas Diesler</a>
+     */
+    private Response buildIDTokenAuthorizationCodeResponse(String clientId) {
+
+        // Identify the target User by his 'did' attribute
+        //
+        UserModel userModel = session.users()
+                .searchForUserByUserAttributeStream(realm, USER_ATTRIBUTE_NAME_DID, clientId)
+                .findFirst()
+                .orElse(null);
+        if (userModel == null)
+            throw new AuthenticationFlowException("Cannot identify user by: " + clientId, INVALID_USER);
+
+        String authDetailsParam = request.getAdditionalReqParams().get("authorization_details");
+        if (authDetailsParam == null)
+            throw new AuthenticationFlowException("No authorization_details", ACCESS_DENIED);
+
+        OID4VCAuthorizationDetail[] authDetails = JsonSerialization.valueFromString(authDetailsParam, OID4VCAuthorizationDetail[].class);
+        if (authDetails.length != 1)
+            throw new AuthenticationFlowException("Invalid authorization_details: " + authDetailsParam, ACCESS_DENIED);
+
+        String issuerLocation = authDetails[0].getLocations().stream().findFirst().orElse(null);
+        if (issuerLocation == null)
+            throw new AuthenticationFlowException("No issuer location in authorization_details: " + authDetailsParam, ACCESS_DENIED);
+
+        OID4VCIssuerWellKnownProvider oid4vciWellKnownProvider = new OID4VCIssuerWellKnownProvider(session);
+        CredentialIssuer issuerMetadata = oid4vciWellKnownProvider.getIssuerMetadata();
+
+        if (!issuerMetadata.getCredentialIssuer().equals(issuerLocation))
+            throw new IllegalArgumentException("Unexpected issuer: " + issuerLocation);
+
+        // [TODO #44657] Do we want to advertise the 'direct_post' endpoint in the config - if yes, how?
+        // The EBSI reference impl does it like this ...
+        //      "redirect_uris": [ "https://api-conformance.ebsi.eu/conformance/v3/auth-mock/direct_post" ]
+        //
+        OIDCWellKnownProvider oidcWellKnownProvider = new OIDCWellKnownProvider(session, Map.of(), false);
+        OIDCConfigurationRepresentation oidcConfig = (OIDCConfigurationRepresentation) oidcWellKnownProvider.getConfig();
+        String directPostUri = oidcConfig.getAuthorizationEndpoint().replaceAll("/auth$", "/direct_post");
+
+        // Store AuthorizationRequest in user session
+        session.singleUseObjects().put(AUTHORIZATION_REQUEST_KEY, 10, Map.of("json", JsonSerialization.valueAsString(request)));
+
+        DirectPostEndpoint.authSessionHolder.put(clientId, authenticationSession);
+
+        // Build IDToken Request
+        IDTokenRequest idTokenRequest = new IDTokenRequestBuilder()
+                .withClientId(issuerLocation)
+                .withRedirectUri(directPostUri)
+                .withJwtIssuer(issuerLocation)
+                .withJwtAudience(clientId)
+                .sign(realm, session)
+                .build();
+
+        logger.infof("Send IDTokenRequest: %s", JsonSerialization.valueAsString(idTokenRequest));
+        URI redirectUri = UriBuilder.fromUri(idTokenRequest.toRequestUrl(this.redirectUri)).build();
+        return Response.status(Status.FOUND).location(redirectUri).build();
     }
 
     private Response buildRegister() {
-        authManager.expireIdentityCookie(session);
+        AuthenticationManager.expireIdentityCookie(session);
 
         AuthenticationFlowModel flow = realm.getRegistrationFlow();
         String flowId = flow.getId();
@@ -419,7 +559,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     }
 
     private Response buildForgotCredential() {
-        authManager.expireIdentityCookie(session);
+        AuthenticationManager.expireIdentityCookie(session);
 
         AuthenticationFlowModel flow = realm.getResetCredentialsFlow();
         String flowId = flow.getId();

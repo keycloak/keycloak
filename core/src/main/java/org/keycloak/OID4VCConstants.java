@@ -11,7 +11,6 @@ public class OID4VCConstants {
     /**
      * SD-JWT-Credentials {@see https://drafts.oauth.net/oauth-sd-jwt-vc/draft-ietf-oauth-sd-jwt-vc.html}
      */
-    public static final String SD_JWT_VC_FORMAT = "dc+sd-jwt";
     public static final String CLAIM_NAME_SD = "_sd";
     public static final String CLAIM_NAME_SD_HASH_ALGORITHM = "_sd_alg";
     public static final String CLAIM_NAME_SD_UNDISCLOSED_ARRAY = "...";
@@ -39,6 +38,7 @@ public class OID4VCConstants {
     //   * Would in most cases be the subject's DID
     //   * Can be mapped to user attributes
     public static final String CLAIM_NAME_SUBJECT_ID = "id";
+    public static final String USER_ATTRIBUTE_NAME_DID = "did";
 
     public static final String KEYBINDING_JWT_TYP = "kb+jwt";
 
