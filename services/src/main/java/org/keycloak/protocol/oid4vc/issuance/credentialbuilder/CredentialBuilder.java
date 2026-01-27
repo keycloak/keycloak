@@ -17,7 +17,6 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
-import org.keycloak.VCFormat;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.Provider;
@@ -31,7 +30,7 @@ public interface CredentialBuilder extends Provider {
     /**
      * Returns the credential format supported by the builder.
      */
-    VCFormat getSupportedFormat();
+    String getSupportedFormat();
 
     /**
      * Builds a verifiable credential of a specific format from the basis of

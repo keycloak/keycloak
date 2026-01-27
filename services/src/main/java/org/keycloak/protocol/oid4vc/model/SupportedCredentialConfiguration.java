@@ -153,7 +153,7 @@ public class SupportedCredentialConfiguration {
      * https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request-3
      */
     public VerifiableCredentialType deriveType() {
-        if (Objects.equals(format, VCFormat.SD_JWT_VC.getValue())) {
+        if (VCFormat.SD_JWT_VC.equals(format)) {
             return VerifiableCredentialType.from(vct);
         }
         return null;

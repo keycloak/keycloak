@@ -433,7 +433,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                 .get(clientScope.getName());
 
         assertNotNull(supportedConfig);
-        assertEquals(VCFormat.SD_JWT_VC.getValue(), supportedConfig.getFormat());
+        assertEquals(VCFormat.SD_JWT_VC, supportedConfig.getFormat());
         assertEquals(clientScope.getName(), supportedConfig.getScope());
         assertEquals(1, supportedConfig.getCredentialDefinition().getType().size());
         assertEquals(clientScope.getName(), supportedConfig.getCredentialDefinition().getType().get(0));
@@ -537,12 +537,12 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                     CredentialIssuer issuerMetadata = new OID4VCIssuerWellKnownProvider(session).getIssuerMetadata();
                     Map<String, SupportedCredentialConfiguration> supported = issuerMetadata.getCredentialsSupported();
                     String credType = "oid4vc_natural_person";
-                    for (VCFormat format : List.of(SD_JWT_VC, JWT_VC)) {
-                        String key = credType + format.getSuffix();
+                    for (String format : List.of(SD_JWT_VC, JWT_VC)) {
+                        String key = credType + VCFormat.getSuffix(format);
                         SupportedCredentialConfiguration credConfig = supported.get(key);
                         assertNotNull("No " + key, credConfig);
                         assertEquals(credConfig.getId(), credConfig.getScope());
-                        assertEquals(format.getValue(), credConfig.getFormat());
+                        assertEquals(format, credConfig.getFormat());
                         assertEquals(credType, credConfig.getVct());
                     }
                 });
@@ -559,7 +559,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         assertEquals(credentialConfigurationId, supportedConfig.getId());
 
         String expectedFormat = Optional.ofNullable(clientScope.getAttributes().get(CredentialScopeModel.FORMAT))
-                .orElse(VCFormat.SD_JWT_VC.getValue());
+                .orElse(VCFormat.SD_JWT_VC);
         assertEquals(expectedFormat, supportedConfig.getFormat());
 
         assertEquals(clientScope.getName(), supportedConfig.getScope());

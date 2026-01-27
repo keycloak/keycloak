@@ -35,7 +35,7 @@ public class JwtCredentialBuilderFactory implements CredentialBuilderFactory {
 
     @Override
     public String getSupportedFormat() {
-        return VCFormat.JWT_VC.getValue();
+        return VCFormat.JWT_VC;
     }
 
     @Override

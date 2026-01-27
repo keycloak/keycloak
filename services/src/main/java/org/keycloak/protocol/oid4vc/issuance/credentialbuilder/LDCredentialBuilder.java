@@ -34,7 +34,7 @@ public class LDCredentialBuilder implements CredentialBuilder {
     }
 
     @Override
-    public VCFormat getSupportedFormat() {
+    public String getSupportedFormat() {
         return VCFormat.LDP_VC;
     }
 

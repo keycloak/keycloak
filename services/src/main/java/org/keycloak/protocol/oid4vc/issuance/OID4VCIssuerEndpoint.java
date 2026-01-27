@@ -203,10 +203,10 @@ public class OID4VCIssuerEndpoint {
      * credential {@link VCFormat} associated with the builder. The matching credential
      * signer is directly loaded from the Keycloak container.
      */
-    private final Map<VCFormat, CredentialBuilder> credentialBuilders;
+    private final Map<String, CredentialBuilder> credentialBuilders;
 
     public OID4VCIssuerEndpoint(KeycloakSession session,
-                                Map<VCFormat, CredentialBuilder> credentialBuilders,
+                                Map<String, CredentialBuilder> credentialBuilders,
                                 AppAuthManager.BearerTokenAuthenticator authenticator,
                                 TimeProvider timeProvider,
                                 int preAuthorizedCodeLifeSpan) {
@@ -235,7 +235,7 @@ public class OID4VCIssuerEndpoint {
      *
      * @return a map of the created credential builders with their supported formats as keys.
      */
-    private Map<VCFormat, CredentialBuilder> loadCredentialBuilders(KeycloakSession keycloakSession) {
+    private Map<String, CredentialBuilder> loadCredentialBuilders(KeycloakSession keycloakSession) {
         KeycloakSessionFactory keycloakSessionFactory = keycloakSession.getKeycloakSessionFactory();
         return keycloakSessionFactory.getProviderFactoriesStream(CredentialBuilder.class)
                 .map(factory -> (CredentialBuilderFactory) factory)
@@ -1603,11 +1603,11 @@ public class OID4VCIssuerEndpoint {
     }
 
     private CredentialBuilder findCredentialBuilder(SupportedCredentialConfiguration credentialConfig) {
-        VCFormat format = VCFormat.fromValue(credentialConfig.getFormat());
+        String format = credentialConfig.getFormat();
         CredentialBuilder credentialBuilder = credentialBuilders.get(format);
 
         if (credentialBuilder == null) {
-            String message = String.format("No credential builder found for format %s", format.getValue());
+            String message = String.format("No credential builder found for format %s", format);
             throw new BadRequestException(message, getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, message));
         }
 

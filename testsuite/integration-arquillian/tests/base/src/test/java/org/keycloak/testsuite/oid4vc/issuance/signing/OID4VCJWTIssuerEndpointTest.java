@@ -700,7 +700,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                             scopeName,
                             jwtVcConfig.getScope());
                     assertEquals("The jwt_vc-credential should be offered in the jwt_vc format.",
-                            VCFormat.JWT_VC.getValue(),
+                            VCFormat.JWT_VC,
                             jwtVcConfig.getFormat());
 
                     Claims jwtVcClaims = jwtVcConfig.getCredentialMetadata() != null ? jwtVcConfig.getCredentialMetadata().getClaims() : null;

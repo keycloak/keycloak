@@ -26,7 +26,7 @@ public class LDCredentialSignerFactory implements CredentialSignerFactory {
 
     @Override
     public String getSupportedFormat() {
-        return VCFormat.LDP_VC.getValue();
+        return VCFormat.LDP_VC;
     }
 
     @Override

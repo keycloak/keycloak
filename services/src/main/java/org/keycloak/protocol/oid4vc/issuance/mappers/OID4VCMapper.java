@@ -118,7 +118,7 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     }
 
     protected List<String> getAttributePrefix() {
-        if (SD_JWT_VC.getValue().equals(format)) {
+        if (SD_JWT_VC.equals(format)) {
             return Collections.emptyList();
         } else {
             return List.of(CREDENTIAL_SUBJECT);

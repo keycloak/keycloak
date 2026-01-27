@@ -133,15 +133,15 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
         // [TODO #44875] Proof Type null is not supported for format ldp_vc
         // https://github.com/keycloak/keycloak/issues/44875
-        List<VCFormat> supportedFormats = List.of(JWT_VC, SD_JWT_VC);
+        List<String> supportedFormats = List.of(JWT_VC, SD_JWT_VC);
 
-        for (VCFormat format : supportedFormats) {
-            String scopeName = CREDENTIAL_TYPE_NATURAL_PERSON + format.getSuffix();
+        for (String format : supportedFormats) {
+            String scopeName = CREDENTIAL_TYPE_NATURAL_PERSON + VCFormat.getSuffix(format);
             ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(newRealm, scopeName);
             if (clientScope == null) {
                 LOGGER.debugf("Add client scope: %s", scopeName);
                 clientScope = newRealm.addClientScope(String.format("%s_%s", OID4VC_PROTOCOL, scopeName));
-                clientScope.setDescription("OID4VCI credential scope that represents a natural person in format: " + format.getValue());
+                clientScope.setDescription("OID4VCI credential scope that represents a natural person in format: " + format);
                 clientScope.setProtocol(OID4VC_PROTOCOL);
                 clientScope.addProtocolMapper(builtins.get(SUBJECT_ID_MAPPER));
                 clientScope.addProtocolMapper(builtins.get(EMAIL_MAPPER));
@@ -162,10 +162,10 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     public void addClientScopeDefaults(ClientScopeRepresentation clientScope) {
         String scopeName = clientScope.getName();
 
-        clientScope.getAttributes().computeIfAbsent(FORMAT, k -> getVCFormatFromScope(scopeName).getValue());
-        VCFormat format = VCFormat.fromValue(clientScope.getAttributes().get(FORMAT));
+        clientScope.getAttributes().computeIfAbsent(FORMAT, k -> getVCFormatFromScope(scopeName));
+        String format = clientScope.getAttributes().get(FORMAT);
 
-        int idx = scopeName.lastIndexOf(format.getSuffix());
+        int idx = scopeName.lastIndexOf(VCFormat.getSuffix(format));
         String credentialType = idx > 0 ? scopeName.substring(0, idx) : scopeName;
 
         // Note, there is no sensible default for the Issuer's DID unless we generate a did:key:* from the signing key
@@ -253,8 +253,8 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         RepresentationToModel.updateClientScope(clientScopeRep, clientScope);
     }
 
-    private VCFormat getVCFormatFromScope(String scope) {
-        VCFormat format = SD_JWT_VC; // default format
+    private String getVCFormatFromScope(String scope) {
+        String format = SD_JWT_VC; // default format
         if (scope.toLowerCase().endsWith("_jwt")) format = JWT_VC;
         if (scope.toLowerCase().endsWith("_ld")) format = LDP_VC;
         return format;

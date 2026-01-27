@@ -63,7 +63,7 @@ public class OID4VCSdJwtPreInstalledNaturalPersonTest extends OID4VCIssuerEndpoi
                     var credentialBuildConfig = jwtVcConfig.getCredentialBuildConfig();
                     assertEquals(scopeName, jwtVcConfig.getScope());
                     assertEquals(expectedIssuer, credentialBuildConfig.getCredentialIssuer());
-                    assertEquals(VCFormat.SD_JWT_VC.getValue(), jwtVcConfig.getFormat());
+                    assertEquals(VCFormat.SD_JWT_VC, jwtVcConfig.getFormat());
 
                     var credentialMetadata = jwtVcConfig.getCredentialMetadata();
                     var jwtVcClaims = credentialMetadata.getClaims().stream()

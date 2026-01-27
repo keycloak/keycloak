@@ -18,52 +18,33 @@
 package org.keycloak;
 
 /**
- * Enum of supported credential formats
+ * Supported credential formats
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public enum VCFormat {
+public interface VCFormat {
     /**
      * LD-Credentials {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-vc-secured-using-data-integ}
      */
-    LDP_VC("ldp_vc"),
+    String LDP_VC = "ldp_vc";
 
     /**
      * JWT-Credentials {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-w3c-verifiable-credentials}
      */
-    JWT_VC("jwt_vc_json"),
+    String JWT_VC = "jwt_vc_json";
 
     /**
      * SD-JWT-Credentials {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-ietf-sd-jwt-vc}
      */
-    SD_JWT_VC("dc+sd-jwt");
+    String SD_JWT_VC = "dc+sd-jwt";
 
-    private final String value;
-
-    VCFormat(String value) {
-        this.value = value;
-    }
-
-    public static VCFormat fromValue(String value) {
-        for (VCFormat f : values()) {
-            if (f.value.equals(value)) {
-                return f;
-            }
-        }
-        throw new IllegalArgumentException("Unknown VC format: " + value);
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public String getSuffix() {
-        switch (this) {
+    static String getSuffix(String value) {
+        switch (value) {
             case JWT_VC: return "_jwt";
             case LDP_VC: return "_ld";
             case SD_JWT_VC: return "_sd";
             default:
-                throw new IllegalStateException("Unexpected value: " + this);
+                throw new IllegalStateException("Unexpected value: " + value);
         }
     }
 }

@@ -52,7 +52,7 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
     }
 
     @Override
-    public VCFormat getSupportedFormat() {
+    public String getSupportedFormat() {
         return VCFormat.SD_JWT_VC;
     }
 

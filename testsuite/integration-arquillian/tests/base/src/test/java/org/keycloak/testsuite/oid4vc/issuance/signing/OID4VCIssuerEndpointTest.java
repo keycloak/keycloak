@@ -184,7 +184,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 session);
         SdJwtCredentialBuilder sdJwtCredentialBuilder = new SdJwtCredentialBuilder();
 
-        Map<VCFormat, CredentialBuilder> credentialBuilders = Map.of(
+        Map<String, CredentialBuilder> credentialBuilders = Map.of(
                 jwtCredentialBuilder.getSupportedFormat(), jwtCredentialBuilder,
                 sdJwtCredentialBuilder.getSupportedFormat(), sdJwtCredentialBuilder
         );
@@ -194,7 +194,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(
             KeycloakSession session,
             AppAuthManager.BearerTokenAuthenticator authenticator,
-            Map<VCFormat, CredentialBuilder> credentialBuilders
+            Map<String, CredentialBuilder> credentialBuilders
     ) {
         return new OID4VCIssuerEndpoint(
                 session,
@@ -226,7 +226,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                                                                      sdJwtTypeCredentialConfigurationIdName,
                                                                      sdJwtTypeCredentialScopeName,
                                                                      sdJwtCredentialVct,
-                                                                     VCFormat.SD_JWT_VC.getValue(),
+                                                                     VCFormat.SD_JWT_VC,
                                                                      null,
                                                                      List.of(KeyAttestationResistanceLevels.HIGH,
                                                                              KeyAttestationResistanceLevels.MODERATE));
@@ -235,7 +235,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                                                                    jwtTypeCredentialConfigurationIdName,
                                                                    jwtTypeCredentialScopeName,
                                                                    null,
-                                                                   VCFormat.JWT_VC.getValue(),
+                                                                   VCFormat.JWT_VC,
                                                                    TEST_CREDENTIAL_MAPPERS_FILE,
                                                                    Collections.emptyList());
         minimalJwtTypeCredentialClientScope = registerOptionalClientScope("vc-with-minimal-config",

@@ -96,7 +96,7 @@ public abstract class SdJwtCreationAndSigningTest {
 
         // validate object content
         {
-            Assert.assertEquals(VCFormat.SD_JWT_VC.getValue(), sdJwt.getIssuerSignedJWT().getJwsHeader().getType());
+            Assert.assertEquals(VCFormat.SD_JWT_VC, sdJwt.getIssuerSignedJWT().getJwsHeader().getType());
             Assert.assertEquals(1,
                                 JsonSerialization.mapper.convertValue(sdJwt.getIssuerSignedJWT().getJwsHeader(),
                                                                       ObjectNode.class).size());
@@ -244,7 +244,7 @@ public abstract class SdJwtCreationAndSigningTest {
         // validate object content
         {
             Assert.assertEquals(Algorithm.ES256, sdJwt.getIssuerSignedJWT().getJwsHeader().getAlgorithm().name());
-            Assert.assertEquals(VCFormat.SD_JWT_VC.getValue(), sdJwt.getIssuerSignedJWT().getJwsHeader().getType());
+            Assert.assertEquals(VCFormat.SD_JWT_VC, sdJwt.getIssuerSignedJWT().getJwsHeader().getType());
             Assert.assertEquals(issuerKeyPair.getKid(), sdJwt.getIssuerSignedJWT().getJwsHeader().getKeyId());
             Assert.assertEquals(3,
                                 JsonSerialization.mapper.convertValue(sdJwt.getIssuerSignedJWT().getJwsHeader(),

@@ -692,7 +692,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 		keyAttestationsRequired.setKeyStorage(List.of(KeyAttestationResistanceLevels.HIGH,
 													  KeyAttestationResistanceLevels.MODERATE));
 		SupportedCredentialConfiguration config = new SupportedCredentialConfiguration()
-				.setFormat(VCFormat.SD_JWT_VC.getValue())
+				.setFormat(VCFormat.SD_JWT_VC)
 				.setVct("https://credentials.example.com/test-credential")
 				.setCryptographicBindingMethodsSupported(List.of("jwk"))
 				.setProofTypesSupported(ProofTypesSupported.parse(session, keyAttestationsRequired, List.of("ES256")));
