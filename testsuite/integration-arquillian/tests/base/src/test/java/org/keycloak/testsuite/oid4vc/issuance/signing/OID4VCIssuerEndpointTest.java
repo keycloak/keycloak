@@ -44,7 +44,6 @@ import java.util.zip.DeflaterOutputStream;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
@@ -103,16 +102,13 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.logging.Logger;
@@ -604,23 +600,15 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                                      SupportedCredentialConfiguration offeredCredential,
                                      CredentialResponseHandler responseHandler,
                                      ClientScopeRepresentation expectedClientScope) throws IOException, VerificationException {
+        Oid4vcCredentialResponse credentialRequestResponse = oauth.oid4vc()
+                .credentialRequest()
+                .endpoint(credentialEndpoint)
+                .bearerToken(token)
+                .credentialConfigurationId(offeredCredential.getId())
+                .send();
 
-        CredentialRequest request = new CredentialRequest();
-        request.setCredentialConfigurationId(offeredCredential.getId());
-
-        StringEntity stringEntity = new StringEntity(JsonSerialization.writeValueAsString(request),
-                ContentType.APPLICATION_JSON);
-
-        HttpPost postCredential = new HttpPost(credentialEndpoint);
-        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        postCredential.setEntity(stringEntity);
-
-        CredentialResponse credentialResponse;
-        try (CloseableHttpResponse credentialRequestResponse = httpClient.execute(postCredential)) {
-            assertEquals(HttpStatus.SC_OK, credentialRequestResponse.getStatusLine().getStatusCode());
-            String s = IOUtils.toString(credentialRequestResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            credentialResponse = JsonSerialization.readValue(s, CredentialResponse.class);
-        }
+        assertEquals(HttpStatus.SC_OK, credentialRequestResponse.getStatusCode());
+        CredentialResponse credentialResponse = credentialRequestResponse.getCredentialResponse();
 
         // Use response handler to customize checks based on formats.
         responseHandler.handleCredentialResponse(credentialResponse, expectedClientScope);
@@ -628,25 +616,20 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     public CredentialIssuer getCredentialIssuerMetadata() {
         final String endpoint = getRealmMetadataPath(TEST_REALM_NAME);
-        HttpGet getMetadataRequest = new HttpGet(endpoint);
-        try (CloseableHttpResponse metadataResponse = httpClient.execute(getMetadataRequest)) {
-            assertEquals(HttpStatus.SC_OK, metadataResponse.getStatusLine().getStatusCode());
-            String s = IOUtils.toString(metadataResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            return JsonSerialization.readValue(s, CredentialIssuer.class);
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        CredentialIssuerMetadataResponse metadataResponse = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .endpoint(endpoint)
+                .send();
+        assertEquals(HttpStatus.SC_OK, metadataResponse.getStatusCode());
+        return metadataResponse.getMetadata();
     }
 
     public OIDCConfigurationRepresentation getAuthorizationMetadata(String authServerUrl) {
-        HttpGet getOpenidConfiguration = new HttpGet(authServerUrl + "/.well-known/openid-configuration");
-        try (CloseableHttpResponse response = httpClient.execute(getOpenidConfiguration)) {
-            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
-            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
-            return JsonSerialization.readValue(s, OIDCConfigurationRepresentation.class);
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        OpenIDProviderConfigurationResponse response = oauth.wellknownRequest()
+                .url(authServerUrl)
+                .send();
+        assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+        return response.getOidcConfiguration();
     }
 
     public SupportedCredentialConfiguration getSupportedCredentialConfigurationByScope(CredentialIssuer metadata, String scope) {

@@ -34,16 +34,23 @@ public abstract class AbstractHttpPostRequest<T, R> {
     protected Map<String, String> headers = new HashMap<>();
     protected List<NameValuePair> parameters = new LinkedList<>();
 
+    protected String endpoint;
+
     public AbstractHttpPostRequest(AbstractOAuthClient<?> client) {
         this.client = client;
     }
 
     protected abstract String getEndpoint();
 
+    public T endpoint(String endpoint) {
+        this.endpoint = endpoint;
+        return request();
+    }
+
     protected abstract void initRequest();
 
     public R send() {
-        post = new HttpPost(getEndpoint());
+        post = new HttpPost(endpoint != null ? endpoint : getEndpoint());
         post.addHeader("Accept", getAccept());
         post.addHeader("Origin", client.config().getOrigin());
 
@@ -128,7 +135,6 @@ public abstract class AbstractHttpPostRequest<T, R> {
 
     protected abstract R toResponse(CloseableHttpResponse response) throws IOException;
 
-    @SuppressWarnings("unchecked")
     private T request() {
         return (T) this;
     }

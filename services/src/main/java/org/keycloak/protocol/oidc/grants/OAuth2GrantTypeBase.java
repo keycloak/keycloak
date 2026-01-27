@@ -314,7 +314,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
                 logger.warnf(e, "Error when processing authorization_details");
                 event.detail(Details.REASON, e.getMessage());
                 event.error(Errors.INVALID_AUTHORIZATION_DETAILS);
-                throw new CorsErrorResponseException(cors, Errors.INVALID_AUTHORIZATION_DETAILS, e.getMessage(), Response.Status.BAD_REQUEST);
+                throw new CorsErrorResponseException(cors, Errors.INVALID_AUTHORIZATION_DETAILS, "Error when processing authorization_details: " + e.getMessage(), Response.Status.BAD_REQUEST);
             }
         }
         return null;
