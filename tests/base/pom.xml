@@ -160,13 +160,26 @@
                                 <artifactId>postgresql</artifactId>
                                 <version>${postgresql-jdbc.version}</version>
                             </dependency>
+                            <dependency>
+                                <groupId>com.microsoft.sqlserver</groupId>
+                                <artifactId>mssql-jdbc</artifactId>
+                                <version>${mssql-jdbc.version}</version>
+                            </dependency>
                         </dependencies>
                         <executions>
                             <execution>
-                                <id>clear-schema</id>
+                                <id>clear-schema-psql</id>
                                 <configuration>
                                     <srcFiles>
                                         <srcFile>../../.github/scripts/aws/rds/pg_clear.sql</srcFile>
+                                    </srcFiles>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>clear-schema-mssql</id>
+                                <configuration>
+                                    <srcFiles>
+                                        <srcFile>../../.github/scripts/azure/sql/mssql_clear.sql</srcFile>
                                     </srcFiles>
                                 </configuration>
                             </execution>
