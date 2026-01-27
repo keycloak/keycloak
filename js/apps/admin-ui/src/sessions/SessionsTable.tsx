@@ -204,6 +204,17 @@ export default function SessionsTable({
         isPaginated={isPaginated}
         isSearching={isSearching}
         searchTypeComponent={filter}
+        exportConfig={{
+          enabled: true,
+          filename: "sessions",
+          columns: [
+            { key: "username", label: t("user") },
+            { key: "type", label: t("type") },
+            { key: "start", label: t("started") },
+            { key: "lastAccess", label: t("lastAccess") },
+            { key: "ipAddress", label: t("ipAddress") },
+          ],
+        }}
         toolbarItem={
           logoutUser && (
             <ToolbarItem>

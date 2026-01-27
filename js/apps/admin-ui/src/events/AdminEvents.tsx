@@ -299,6 +299,17 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
         ]}
         isPaginated
         ariaLabelKey="adminEvents"
+        exportConfig={{
+          enabled: true,
+          filename: "admin-events",
+          columns: [
+            { key: "time", label: t("time") },
+            { key: "resourcePath", label: t("resourcePath") },
+            { key: "resourceType", label: t("resourceType") },
+            { key: "operationType", label: t("operationType") },
+            { key: "authDetails.userId", label: t("user") },
+          ],
+        }}
         toolbarItem={
           <FormProvider {...form}>
             <Flex

@@ -116,6 +116,15 @@ export const RolesList = ({
         ariaLabelKey="roleList"
         searchPlaceholderKey="searchForRoles"
         isPaginated={paginated}
+        exportConfig={{
+          enabled: true,
+          filename: "roles",
+          columns: [
+            { key: "name", label: t("roleName") },
+            { key: "composite", label: t("composite") },
+            { key: "description", label: t("description") },
+          ],
+        }}
         toolbarItem={
           !isReadOnly && (
             <Button

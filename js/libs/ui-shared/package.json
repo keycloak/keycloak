@@ -49,6 +49,8 @@
     "@patternfly/react-styles": "^5.4.1",
     "@patternfly/react-table": "^5.4.16",
     "i18next": "^25.7.3",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.8.4",
     "keycloak-js": "^26.2.2",
     "lodash-es": "^4.17.22",
     "react": "^18.3.1",

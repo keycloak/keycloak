@@ -99,6 +99,8 @@
     "flat": "^6.0.1",
     "i18next": "^25.7.3",
     "i18next-fetch-backend": "^7.0.0",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.8.4",
     "jszip": "^3.10.1",
     "keycloak-js": "^26.2.2",
     "lodash-es": "^4.17.22",

@@ -215,6 +215,17 @@ export default function ClientsSection() {
               ariaLabelKey="clientList"
               searchPlaceholderKey="searchForClient"
               toolbarItem={<ToolbarItems />}
+              exportConfig={{
+                enabled: true,
+                filename: "clients",
+                columns: [
+                  { key: "clientId", label: t("clientId") },
+                  { key: "name", label: t("clientName") },
+                  { key: "protocol", label: t("type") },
+                  { key: "description", label: t("description") },
+                  { key: "baseUrl", label: t("homeURL") },
+                ],
+              }}
               actionResolver={(rowData: IRowData) => {
                 const client: ClientRepresentation = rowData.data;
                 const actions: Action<ClientRepresentation>[] = [
