@@ -25,7 +25,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.http.client.methods.CloseableHttpResponse;
 
-public class FetchExternalIdpTokenRequest extends AbstractHttpGetRequest<AccessTokenResponse> {
+public class FetchExternalIdpTokenRequest extends AbstractHttpGetRequest<FetchExternalIdpTokenRequest, AccessTokenResponse> {
 
     private final String providerAlias;
     private final String accessToken;

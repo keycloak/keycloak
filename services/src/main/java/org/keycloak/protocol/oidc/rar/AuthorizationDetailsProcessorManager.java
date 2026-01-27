@@ -61,6 +61,10 @@ public class AuthorizationDetailsProcessorManager {
 
         List<AuthorizationDetailsJSONRepresentation> authzDetails = parseAuthorizationDetails(authorizationDetailsParam);
 
+        if (authzDetails.isEmpty()) {
+            throw new InvalidAuthorizationDetailsException("Authorization_Details parameter cannot be empty");
+        }
+
         Map<String, AuthorizationDetailsProcessor<?>> processors = getProcessors(session);
 
         for (AuthorizationDetailsJSONRepresentation authzDetail : authzDetails) {

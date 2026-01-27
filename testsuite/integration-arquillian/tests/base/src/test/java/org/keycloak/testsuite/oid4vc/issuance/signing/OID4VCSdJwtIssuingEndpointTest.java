@@ -17,18 +17,14 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
@@ -66,15 +62,8 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -303,50 +292,51 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 1. Retrieving the credential-offer-uri
         final String credentialConfigurationId = clientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
-        HttpGet getCredentialOfferURI = new HttpGet(getCredentialOfferUriUrl(credentialConfigurationId));
-        getCredentialOfferURI.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        CloseableHttpResponse credentialOfferURIResponse = httpClient.execute(getCredentialOfferURI);
+        CredentialOfferURI credentialOfferURI = oauth.oid4vc()
+                .credentialOfferUriRequest()
+                .credentialConfigurationId(credentialConfigurationId)
+                .preAuthorized(true)
+                .username("john")
+                .bearerToken(token)
+                .send()
+                .getCredentialOfferURI();
 
-        assertEquals("A valid offer uri should be returned", HttpStatus.SC_OK, credentialOfferURIResponse.getStatusLine().getStatusCode());
-        String s = IOUtils.toString(credentialOfferURIResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialOfferURI credentialOfferURI = JsonSerialization.readValue(s, CredentialOfferURI.class);
+        assertNotNull("A valid offer uri should be returned", credentialOfferURI);
 
         // 2. Using the uri to get the actual credential offer
-        HttpGet getCredentialOffer = new HttpGet(credentialOfferURI.getIssuer() + "/" + credentialOfferURI.getNonce());
-        getCredentialOffer.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        CloseableHttpResponse credentialOfferResponse = httpClient.execute(getCredentialOffer);
+        CredentialsOffer credentialsOffer = oauth.oid4vc()
+                .credentialOfferRequest(credentialOfferURI.getNonce())
+                .bearerToken(token)
+                .send()
+                .getCredentialsOffer();
 
-        assertEquals("A valid offer should be returned", HttpStatus.SC_OK, credentialOfferResponse.getStatusLine().getStatusCode());
-        s = IOUtils.toString(credentialOfferResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialsOffer credentialsOffer = JsonSerialization.readValue(s, CredentialsOffer.class);
+        assertNotNull("A valid offer should be returned", credentialsOffer);
 
         // 3. Get the issuer metadata
-        HttpGet getIssuerMetadata = new HttpGet(credentialsOffer.getIssuerMetadataUrl());
-        CloseableHttpResponse issuerMetadataResponse = httpClient.execute(getIssuerMetadata);
-        assertEquals(HttpStatus.SC_OK, issuerMetadataResponse.getStatusLine().getStatusCode());
-        s = IOUtils.toString(issuerMetadataResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialIssuer credentialIssuer = JsonSerialization.readValue(s, CredentialIssuer.class);
+        CredentialIssuer credentialIssuer = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .endpoint(credentialsOffer.getIssuerMetadataUrl())
+                .send()
+                .getMetadata();
 
+        assertNotNull("Issuer metadata should be returned", credentialIssuer);
         assertEquals("We only expect one authorization server.", 1, credentialIssuer.getAuthorizationServers().size());
 
         // 4. Get the openid-configuration
-        HttpGet getOpenidConfiguration = new HttpGet(credentialIssuer.getAuthorizationServers().get(0) + "/.well-known/openid-configuration");
-        CloseableHttpResponse openidConfigResponse = httpClient.execute(getOpenidConfiguration);
-        assertEquals(HttpStatus.SC_OK, openidConfigResponse.getStatusLine().getStatusCode());
-        s = IOUtils.toString(openidConfigResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        OIDCConfigurationRepresentation openidConfig = JsonSerialization.readValue(s, OIDCConfigurationRepresentation.class);
+        OIDCConfigurationRepresentation openidConfig = oauth
+                .wellknownRequest()
+                .url(credentialIssuer.getAuthorizationServers().get(0))
+                .send()
+                .getOidcConfiguration();
 
         assertNotNull("A token endpoint should be included.", openidConfig.getTokenEndpoint());
         assertTrue("The pre-authorized code should be supported.", openidConfig.getGrantTypesSupported().contains(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
 
         // 5. Get an access token for the pre-authorized code
-        HttpPost postPreAuthorizedCode = new HttpPost(openidConfig.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
-        AccessTokenResponse accessTokenResponse = new AccessTokenResponse(httpClient.execute(postPreAuthorizedCode));
+        AccessTokenResponse accessTokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .send();
+
         assertEquals(HttpStatus.SC_OK, accessTokenResponse.getStatusCode());
         String theToken = accessTokenResponse.getAccessToken();
 
