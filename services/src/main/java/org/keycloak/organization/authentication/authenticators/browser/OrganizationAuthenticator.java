@@ -199,27 +199,27 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         MultivaluedMap<String, String> parameters = request.getDecodedFormParameters();
         // parameter from the organization selection page
         List<String> alias = parameters.getOrDefault(OrganizationModel.ORGANIZATION_ATTRIBUTE, List.of());
+        OrganizationModel organization;
 
         if (alias.isEmpty()) {
-            OrganizationModel organization = Organizations.resolveOrganization(session, user, domain);
-
-            if (isSSOAuthentication(authSession) && organization != null) {
+            organization = Organizations.resolveOrganization(session, user, domain);
+            if (organization != null && isSSOAuthentication(authSession)) {
                 // make sure the organization selected by the user is available from the client session when running mappers and issuing tokens
                 authSession.setClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
             }
-
-            return organization;
+        } else {
+            OrganizationProvider provider = getOrganizationProvider();
+            organization = provider.getByAlias(alias.get(0));
         }
 
-        OrganizationProvider provider = getOrganizationProvider();
-        OrganizationModel organization = provider.getByAlias(alias.get(0));
-
-        if (organization == null) {
+        if (organization == null || !organization.isEnabled()) {
             return null;
         }
 
-        // make sure the organization selected by the user is available from the client session when running mappers and issuing tokens
-        authSession.setClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
+        if (!alias.isEmpty() || isSSOAuthentication(authSession)) {
+            // make sure the organization selected by the user is available from the client session when running mappers and issuing tokens
+            authSession.setClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
+        }
 
         return organization;
     }
@@ -237,7 +237,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         }
 
         OrganizationProvider provider = getOrganizationProvider();
-        Stream<OrganizationModel> organizations = provider.getByMember(user);
+        Stream<OrganizationModel> organizations = provider.getByMember(user).filter(OrganizationModel::isEnabled);
 
         if (organizations.count() > 1) {
             LoginFormsProvider form = context.form();
