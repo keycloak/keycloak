@@ -1,0 +1,34 @@
+package org.keycloak.db.compatibility.verifier;
+
+import java.io.File;
+import java.util.Set;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Mojo;
+
+@Mojo(name = "create-snapshot")
+public class CreateSnapshotMojo extends AbstractMojo {
+
+    @Override
+    public void execute() throws MojoExecutionException {
+       try {
+          File root = project.getBasedir();
+          File sFile = new File(root, supportedFile);
+          File uFile = new File(root, unsupportedFile);
+
+          // Write all known ChangeSet defined in the jpa-changelog*.xml files to the supported file
+          ChangeLogXMLParser xmlParser = new ChangeLogXMLParser(classLoader());
+          Set<ChangeSet> changeSets = xmlParser.discoverAllChangeSets();
+          ObjectMapper objectMapper = new ObjectMapper();
+          objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+          objectMapper.writeValue(sFile, changeSets);
+
+          // Create an empty JSON array in the unsupported file
+          objectMapper.writeValue(uFile, Set.of());
+       } catch (Exception e) {
+          throw new MojoExecutionException("Error creating ChangeSet snapshot", e);
+       }
+    }
+}
