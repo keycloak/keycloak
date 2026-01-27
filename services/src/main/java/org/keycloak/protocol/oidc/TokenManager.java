@@ -1214,7 +1214,6 @@ public class TokenManager {
             refreshToken = new RefreshToken(accessToken, confirmation);
             refreshToken.id(SecretGenerator.getInstance().generateSecureID());
             refreshToken.issuedNow();
-            clientSession.setTimestamp(refreshToken.getIat().intValue());
             UserSessionModel userSession = clientSession.getUserSession();
             userSession.setLastSessionRefresh(refreshToken.getIat().intValue());
             if (offlineTokenRequested) {
