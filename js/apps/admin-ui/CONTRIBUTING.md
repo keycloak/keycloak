@@ -83,8 +83,7 @@ The Playwright UI provides an interactive environment for developing and debuggi
 Before proceeding, ensure the following prerequisites are met:
 
 - The Keycloak server is running.
-- The Admin UI development server is running.
-- You are authenticated in the keycloak Admin Console using admin credentials.
+- An admin user with login `admin` and password `admin` exists in master realm.
 
 Execute the following steps from the repository root.
 
@@ -94,19 +93,13 @@ Execute the following steps from the repository root.
    cd apps/admin-ui
 ```
 
-2. Install the Playwright browser binaries:
+2. Install the Playwright browser binaries. This step is required once per local development environment:
 
  ```bash
    pnpm exec playwright install
    ```
 
-3. Start the Admin UI development server (if not already running):
-
- ```bash
-   pnpm dev
-   ```
-
-4. Launch the Playwright interactive UI and run tests (Chromium):
+3. Launch the Playwright interactive UI and run tests (Chromium):
 
 ```bash
    pnpm run test:integration -- --project=chromium --ui
