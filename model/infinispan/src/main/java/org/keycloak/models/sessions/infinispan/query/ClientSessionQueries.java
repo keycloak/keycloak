@@ -17,6 +17,8 @@
 
 package org.keycloak.models.sessions.infinispan.query;
 
+import java.util.Collection;
+
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionKey;
 import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
@@ -38,6 +40,7 @@ public final class ClientSessionQueries {
     private static final String PER_CLIENT_COUNT = "SELECT e.clientId, count(e.clientId) FROM %s as e WHERE e.realmId = :realmId GROUP BY e.clientId ORDER BY e.clientId".formatted(CLIENT_SESSION);
     private static final String CLIENT_SESSION_COUNT = "SELECT count(e) FROM %s as e WHERE e.realmId = :realmId && e.clientId = :clientId".formatted(CLIENT_SESSION);
     private static final String FROM_USER_SESSION = "FROM %s as e WHERE e.userSessionId = :userSessionId ORDER BY e.clientId".formatted(CLIENT_SESSION);
+    private static final String FROM_MULTI_USER_SESSION = "FROM %s as e WHERE e.userSessionId IN (:userSessionIds) ORDER BY e.clientId".formatted(CLIENT_SESSION);
     private static final String IDS_FROM_USER_SESSION = "SELECT e.clientId FROM %s as e WHERE e.userSessionId = :userSessionId ORDER BY e.clientId".formatted(CLIENT_SESSION);
 
     /**
@@ -85,5 +88,9 @@ public final class ClientSessionQueries {
                 .setParameter("userSessionId", userSessionId);
     }
 
+    public static Query<RemoteAuthenticatedClientSessionEntity> fetchClientSessions(RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache, Collection<String> userSessionIds) {
+        return cache.<RemoteAuthenticatedClientSessionEntity>query(FROM_MULTI_USER_SESSION)
+                .setParameter("userSessionIds", userSessionIds);
+    }
 
 }

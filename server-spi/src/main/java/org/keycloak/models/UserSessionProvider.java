@@ -278,4 +278,16 @@ public interface UserSessionProvider extends Provider {
     default UserSessionModel getUserSessionIfClientExists(RealmModel realm, String userSessionId, boolean offline, String clientUUID) {
         return getUserSessionWithPredicate(realm, userSessionId, offline, userSession -> userSession.getAuthenticatedClientSessionByClient(clientUUID) != null);
     }
+
+    Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm);
+
+    Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm);
+
+    default Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm, ClientModel client) {
+        return Stream.empty();
+    }
+
+    default Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm, ClientModel client) {
+        return Stream.empty();
+    }
 }

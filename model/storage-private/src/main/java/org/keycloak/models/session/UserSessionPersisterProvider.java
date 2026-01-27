@@ -155,4 +155,7 @@ public interface UserSessionPersisterProvider extends Provider {
         removeUserSessions(realm, false);
     }
 
+    Stream<UserSessionModel> readOnlyUserSessionStream(RealmModel realm, boolean offline);
+
+    Stream<UserSessionModel> readOnlyUserSessionStream(RealmModel realm, ClientModel client, boolean offline);
 }
