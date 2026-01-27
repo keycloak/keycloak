@@ -27,6 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
@@ -74,9 +78,6 @@ import org.keycloak.utils.StringUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.Response;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.hamcrest.MatcherAssert;

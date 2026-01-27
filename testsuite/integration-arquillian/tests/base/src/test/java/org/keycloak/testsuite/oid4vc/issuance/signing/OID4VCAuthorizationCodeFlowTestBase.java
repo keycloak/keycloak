@@ -24,7 +24,6 @@ import java.util.function.BiFunction;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientScopeResource;
-import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -59,7 +58,6 @@ import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Base class for authorization code flow tests with authorization details and claims validation.
