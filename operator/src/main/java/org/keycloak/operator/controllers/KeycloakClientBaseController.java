@@ -90,8 +90,6 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
 
     private static final String CLIENT_API_VERSION = "v2";
     private static final String HTTPS = "https";
-    // TODO allows for local testing - could be promoted in some way to the CR if needed
-    public static final String KEYCLOAK_TEST_ADDRESS = "KEYCLOAK_TEST_ADDRESS";
 
     static class KeycloakClientStatusAggregator {
         Long generation;
@@ -244,9 +242,16 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
 
     }
 
+    //TODO: for local testing only - consider removing
+    private String addressOverride;
+
+    public void setAddressOverride(String addressOverride) {
+        this.addressOverride = addressOverride;
+    }
+
     private <V> V invoke(R resource, Context<?> context, Keycloak keycloak,
             Function<ClientApi, V> action) {
-        try (var kcAdmin = getAdminClient(context.getClient(), keycloak)) {
+        try (var kcAdmin = getAdminClient(context.getClient(), keycloak, addressOverride)) {
             var target = getWebTarget(kcAdmin);
             AdminRootV2 root = org.keycloak.admin.client.Keycloak.getClientProvider().targetProxy(target,
                     AdminRootV2.class);
@@ -266,12 +271,12 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         }
     }
 
-    public static org.keycloak.admin.client.Keycloak getAdminClient(KubernetesClient client, Keycloak keycloak) {
+    public static org.keycloak.admin.client.Keycloak getAdminClient(KubernetesClient client, Keycloak keycloak, String addressOverride) {
         Secret adminSecret = client.resources(Secret.class)
                 .inNamespace(keycloak.getMetadata().getNamespace())
                 .withName(keycloak.getMetadata().getName() + "-admin").require();
 
-        String adminUrl = getAdminUrl(keycloak, client);
+        String adminUrl = getAdminUrl(keycloak, client, addressOverride);
 
         Client restEasyClient = null;
 
@@ -361,12 +366,12 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         return kmf.getKeyManagers();
     }
 
-    private static String getAdminUrl(Keycloak keycloak, KubernetesClient client) {
+    private static String getAdminUrl(Keycloak keycloak, KubernetesClient client, String addressOverride) {
         boolean httpEnabled = KeycloakServiceDependentResource.isHttpEnabled(keycloak);
         // for now preferring to use http if available
         boolean https = isTlsConfigured(keycloak) && !httpEnabled;
         String protocol = https?HTTPS:"http";
-        String address = System.getProperty(KEYCLOAK_TEST_ADDRESS);
+        String address = addressOverride;
 
         int port = https?HttpSpec.httpsPort(keycloak):HttpSpec.httpPort(keycloak);
 

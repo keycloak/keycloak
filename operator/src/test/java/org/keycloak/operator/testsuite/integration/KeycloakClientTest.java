@@ -21,12 +21,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakClientBaseController;
+import org.keycloak.operator.controllers.KeycloakOIDCClientController;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientBuilder;
@@ -116,7 +118,10 @@ public class KeycloakClientTest extends BaseOperatorTest {
         nodeport = k8sclient.resource(nodeport).serverSideApply();
         int port = nodeport.getSpec().getPorts().get(0).getNodePort();
 
-        System.setProperty(KeycloakClientBaseController.KEYCLOAK_TEST_ADDRESS, kubernetesIp + ":" + port);
+        String addressOverride = kubernetesIp + ":" + port;
+        if (operatorDeployment == OperatorDeployment.local) {
+            CDI.current().select(KeycloakOIDCClientController.class).get().setAddressOverride(addressOverride);
+        }
 
         AuthWithSecretRef auth = new AuthWithSecretRef();
         auth.setMethod("client-jwt");
@@ -144,7 +149,7 @@ public class KeycloakClientTest extends BaseOperatorTest {
 
         // TODO: a success or ready status?
 
-        try (var adminClient = KeycloakClientBaseController.getAdminClient(k8sclient, kc)) {
+        try (var adminClient = KeycloakClientBaseController.getAdminClient(k8sclient, kc, addressOverride)) {
             Awaitility.await().until(() -> adminClient.realm("master").clients().findAll().stream().anyMatch(cr -> cr.getClientId().equals("test-client")));
 
             k8sclient.resource(client).withTimeout(10, TimeUnit.SECONDS).delete();
