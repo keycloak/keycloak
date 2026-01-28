@@ -4,7 +4,15 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
-=== <TODO>
+=== JavaScript-based policies can only be deployed now if the `scripts` feature is enabled
+
+In this version, JavaScript-based policies can only be deployed if the `scripts` feature is enabled.
+
+Until now, JavaScript-based policies were always enabled regardless of the `scripts` feature flag. However, this behavior
+was causing confusion as users expected that disabling the `scripts` feature would also disable JavaScript-based policies.
+It was also not aligned with how other script-based features work in {project_name}.
+
+If you have existing JavaScript-based policies, make sure to enable the `scripts` feature when starting {project_name}.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
