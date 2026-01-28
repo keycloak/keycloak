@@ -43,6 +43,9 @@ type RealmSettingsGeneralTabProps = {
   save: (realm: UIRealmRepresentation) => Promise<void>;
 };
 
+const ORGANIZATIONS_SHOW_ALL_IDPS_WHEN_NO_ORG_ATTR =
+  "organizations.login.showAllEnabledIdpsWhenNoOrg";
+
 export const RealmSettingsGeneralTab = ({
   realm,
   save,
@@ -225,11 +228,23 @@ function RealmSettingsGeneralTabForm({
             labelIcon={t("userManagedAccessHelp")}
           />
           {isOrganizationsEnabled && (
-            <DefaultSwitchControl
-              name="organizationsEnabled"
-              label={t("organizationsEnabled")}
-              labelIcon={t("organizationsEnabledHelp")}
-            />
+            <>
+              <DefaultSwitchControl
+                name="organizationsEnabled"
+                label={t("organizationsEnabled")}
+                labelIcon={t("organizationsEnabledHelp")}
+              />
+              <DefaultSwitchControl
+                name={convertAttributeNameToForm<FormFields>(
+                  `attributes.${ORGANIZATIONS_SHOW_ALL_IDPS_WHEN_NO_ORG_ATTR}`,
+                )}
+                label={t("organizationsShowAllIdpsWhenNoOrg")}
+                labelIcon={t("organizationsShowAllIdpsWhenNoOrgHelp")}
+                stringify
+                defaultValue="true"
+                isDisabled={!realm.organizationsEnabled}
+              />
+            </>
           )}
           {isAdminPermissionsV2Enabled && (
             <DefaultSwitchControl
