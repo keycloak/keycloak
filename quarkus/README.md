@@ -2,6 +2,8 @@
 
 ## Before you start
 
+Note that the shell commands below are written for Linux.  If running in Windows, use a linux-like shell such as Git Bash.
+
 This section describes how to run Keycloak in *Quarkus development mode*. Before continuing, make sure you have already followed the main project [build
 and prerequisites](https://github.com/keycloak/keycloak/blob/main/docs/building.md) documentation, which explains all required tools (JDK, Maven, etc.).
 
