@@ -18,16 +18,11 @@ package org.keycloak.testsuite.oid4vc.issuance;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.ws.rs.core.HttpHeaders;
-
-import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.jose.jws.JWSInput;
@@ -41,7 +36,6 @@ import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -49,21 +43,14 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialRequest;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.directory.api.util.Strings;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.junit.Test;
 
 import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
@@ -273,15 +260,18 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
                 //  4. does not reflect anything from the credential offer
                 //
                 AccessTokenResponse accessToken = getPreAuthorizedAccessTokenResponse(ctx, credOffer);
-                List<OID4VCAuthorizationDetailResponse> authDetails = accessToken.getAuthorizationDetails(OID4VCAuthorizationDetailResponse.class);
-                if (authDetails == null)
+                List<OID4VCAuthorizationDetailResponse> authDetailsResponse = accessToken.getOid4vcAuthorizationDetails();
+                if (authDetailsResponse == null || authDetailsResponse.isEmpty()) {
                     throw new IllegalStateException("No authorization_details in token response");
-                if (authDetails.size() > 1)
+                }
+                if (authDetailsResponse.size() > 1) {
                     throw new IllegalStateException("Multiple authorization_details in token response");
+                }
+                OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(0);
 
                 // Get the credential and verify
                 //
-                CredentialResponse credResponse = getCredentialByAuthDetail(ctx, accessToken.getAccessToken(), authDetails.get(0));
+                CredentialResponse credResponse = getCredentialByAuthDetail(ctx, accessToken.getAccessToken(), authDetailResponse);
                 verifyCredentialResponse(ctx, credResponse);
 
             } else {
@@ -342,50 +332,59 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     private CredentialOfferURI getCredentialOfferUri(OfferTestContext ctx, String token) throws Exception {
         String credConfigId = ctx.supportedCredentialConfiguration.getId();
         String credOfferUriUrl = getCredentialOfferUriUrl(credConfigId, ctx.preAuthorized, ctx.appUser, ctx.appClient);
-        HttpGet getCredentialOfferURI = new HttpGet(credOfferUriUrl);
-        getCredentialOfferURI.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        CloseableHttpResponse credentialOfferURIResponse = httpClient.execute(getCredentialOfferURI);
-        int statusCode = credentialOfferURIResponse.getStatusLine().getStatusCode();
+        CredentialOfferUriResponse credentialOfferURIResponse = oauth.oid4vc()
+                .credentialOfferUriRequest()
+                .endpoint(credOfferUriUrl)
+                .bearerToken(token)
+                .send();
+        int statusCode = credentialOfferURIResponse.getStatusCode();
         if (HttpStatus.SC_OK != statusCode) {
-            HttpEntity entity = credentialOfferURIResponse.getEntity();
-            throw new IllegalStateException(EntityUtils.toString(entity));
+            String error = credentialOfferURIResponse.getError();
+            String errorDescription = credentialOfferURIResponse.getErrorDescription();
+            String errorMessage = error != null ? error : "";
+            if (errorDescription != null) {
+                errorMessage += (errorMessage.isEmpty() ? "" : " ") + errorDescription;
+            }
+            if (errorMessage.isEmpty()) {
+                errorMessage = "Request failed with status " + statusCode;
+            }
+            throw new IllegalStateException(errorMessage);
         }
-        String s = IOUtils.toString(credentialOfferURIResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialOfferURI credentialOfferURI = JsonSerialization.valueFromString(s, CredentialOfferURI.class);
+        CredentialOfferURI credentialOfferURI = credentialOfferURIResponse.getCredentialOfferURI();
         assertTrue(credentialOfferURI.getIssuer().startsWith(ctx.issuerMetadata.getCredentialIssuer()));
         assertTrue(Strings.isNotEmpty(credentialOfferURI.getNonce()));
         return credentialOfferURI;
     }
 
     private CredentialsOffer getCredentialsOffer(OfferTestContext ctx, String offerUri) throws Exception {
-        HttpGet getCredentialOffer = new HttpGet(offerUri);
-        CloseableHttpResponse credentialOfferResponse = httpClient.execute(getCredentialOffer);
-        int statusCode = credentialOfferResponse.getStatusLine().getStatusCode();
+        CredentialOfferResponse credentialOfferResponse = oauth.oid4vc()
+                .credentialOfferRequest()
+                .endpoint(offerUri)
+                .send();
+        int statusCode = credentialOfferResponse.getStatusCode();
         if (HttpStatus.SC_OK != statusCode) {
-            HttpEntity entity = credentialOfferResponse.getEntity();
-            throw new IllegalStateException(EntityUtils.toString(entity));
+            throw new IllegalStateException(credentialOfferResponse.getErrorDescription() != null
+                    ? credentialOfferResponse.getErrorDescription()
+                    : "Request failed with status " + statusCode);
         }
-        String s = IOUtils.toString(credentialOfferResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialsOffer credOffer = JsonSerialization.valueFromString(s, CredentialsOffer.class);
+        CredentialsOffer credOffer = credentialOfferResponse.getCredentialsOffer();
         assertEquals(List.of(ctx.supportedCredentialConfiguration.getId()), credOffer.getCredentialConfigurationIds());
         return credOffer;
     }
 
     private AccessTokenResponse getPreAuthorizedAccessTokenResponse(OID4VCICredentialOfferMatrixTest.OfferTestContext ctx, CredentialsOffer credOffer) throws Exception {
         PreAuthorizedCode preAuthorizedCode = credOffer.getGrants().getPreAuthorizedCode();
-        HttpPost postPreAuthorizedCode = new HttpPost(ctx.authorizationMetadata.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, preAuthorizedCode.getPreAuthorizedCode()));
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
-        CloseableHttpResponse accessTokenResponse = httpClient.execute(postPreAuthorizedCode);
-        int statusCode = accessTokenResponse.getStatusLine().getStatusCode();
+        AccessTokenResponse accessTokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(preAuthorizedCode.getPreAuthorizedCode())
+                .endpoint(ctx.authorizationMetadata.getTokenEndpoint())
+                .send();
+        int statusCode = accessTokenResponse.getStatusCode();
         if (HttpStatus.SC_OK != statusCode) {
-            HttpEntity entity = accessTokenResponse.getEntity();
-            throw new IllegalStateException(EntityUtils.toString(entity));
+            throw new IllegalStateException(accessTokenResponse.getErrorDescription() != null
+                    ? accessTokenResponse.getErrorDescription()
+                    : "Request failed with status " + statusCode);
         }
-        return new AccessTokenResponse(accessTokenResponse);
+        return accessTokenResponse;
     }
 
     private CredentialResponse getCredentialByAuthDetail(OfferTestContext ctx, String accessToken, OID4VCAuthorizationDetailResponse authDetail) throws Exception {
@@ -413,21 +412,27 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     }
 
     private CredentialResponse sendCredentialRequest(OfferTestContext ctx, String accessToken, CredentialRequest credentialRequest) throws Exception {
-        HttpPost postCredential = new HttpPost(ctx.issuerMetadata.getCredentialEndpoint());
-        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
-        StringEntity stringEntity = new StringEntity(JsonSerialization.valueAsString(credentialRequest), ContentType.APPLICATION_JSON);
-        postCredential.setEntity(stringEntity);
+        Oid4vcCredentialRequest request = oauth.oid4vc()
+                .credentialRequest()
+                .endpoint(ctx.issuerMetadata.getCredentialEndpoint())
+                .bearerToken(accessToken);
 
-        CloseableHttpResponse credentialRequestResponse = httpClient.execute(postCredential);
-        int statusCode = credentialRequestResponse.getStatusLine().getStatusCode();
-        if (HttpStatus.SC_OK != statusCode) {
-            HttpEntity entity = credentialRequestResponse.getEntity();
-            throw new IllegalStateException(EntityUtils.toString(entity));
+        if (credentialRequest.getCredentialConfigurationId() != null) {
+            request.credentialConfigurationId(credentialRequest.getCredentialConfigurationId());
+        }
+        if (credentialRequest.getCredentialIdentifier() != null) {
+            request.credentialIdentifier(credentialRequest.getCredentialIdentifier());
         }
 
-        String s = IOUtils.toString(credentialRequestResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialResponse credentialResponse = JsonSerialization.valueFromString(s, CredentialResponse.class);
+        Oid4vcCredentialResponse credentialRequestResponse = request.send();
+        int statusCode = credentialRequestResponse.getStatusCode();
+        if (HttpStatus.SC_OK != statusCode) {
+            throw new IllegalStateException(credentialRequestResponse.getErrorDescription() != null
+                    ? credentialRequestResponse.getErrorDescription()
+                    : "Request failed with status " + statusCode);
+        }
 
+        CredentialResponse credentialResponse = credentialRequestResponse.getCredentialResponse();
         assertNotNull("The credentials array should be present in the response", credentialResponse.getCredentials());
         assertFalse("The credentials array should not be empty", credentialResponse.getCredentials().isEmpty());
         return credentialResponse;
