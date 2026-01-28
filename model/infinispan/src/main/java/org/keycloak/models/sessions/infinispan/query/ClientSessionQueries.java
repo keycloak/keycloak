@@ -61,7 +61,7 @@ public final class ClientSessionQueries {
     }
 
     /**
-     * Returns a projection with the sum of all client session belonging to the client ID.
+     * Returns a projection with the sum of all client sessions belonging to the client ID.
      */
     public static Query<Object[]> countClientSessions(RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache, String realmId, String clientId) {
         return cache.<Object[]>query(CLIENT_SESSION_COUNT)
@@ -70,8 +70,7 @@ public final class ClientSessionQueries {
     }
 
     /**
-     * Returns a projection with the client session, and the version of all client sessions belonging to the user
-     * session ID.
+     * Returns the client sessions belonging to the user session ID.
      */
     public static Query<RemoteAuthenticatedClientSessionEntity> fetchClientSessions(RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache, String userSessionId) {
         return cache.<RemoteAuthenticatedClientSessionEntity>query(FROM_USER_SESSION)
@@ -88,6 +87,9 @@ public final class ClientSessionQueries {
                 .setParameter("userSessionId", userSessionId);
     }
 
+    /**
+     * Returns all the client sessions belonging to all user session IDs.
+     */
     public static Query<RemoteAuthenticatedClientSessionEntity> fetchClientSessions(RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache, Collection<String> userSessionIds) {
         return cache.<RemoteAuthenticatedClientSessionEntity>query(FROM_MULTI_USER_SESSION)
                 .setParameter("userSessionIds", userSessionIds);

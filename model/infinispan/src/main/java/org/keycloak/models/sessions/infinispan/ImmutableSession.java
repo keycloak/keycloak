@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -45,9 +44,18 @@ import org.keycloak.utils.StreamsUtil;
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 
+/**
+ * Helper class to map a list of user and client sessions, from Infinispan caches, into an immutable session.
+ * <p>
+ * It copies the data to a new instance to prevent observing changes made by other threads to the underlying cached
+ * instances.
+ */
 public final class ImmutableSession {
 
-    public static Stream<UserSessionModel> copyOf(KeycloakSession session, List<UserSessionEntity> entityList, SessionExpirationPredicates expiration, Cache<EmbeddedClientSessionKey, SessionEntityWrapper<AuthenticatedClientSessionEntity>> cache) {
+    public static Stream<UserSessionModel> copyOf(KeycloakSession session,
+                                                  Collection<UserSessionEntity> entityList,
+                                                  SessionExpirationPredicates expiration,
+                                                  Cache<EmbeddedClientSessionKey, SessionEntityWrapper<AuthenticatedClientSessionEntity>> cache) {
         var clientSessionKeys = new HashSet<EmbeddedClientSessionKey>();
         var userSessionMap = new LinkedHashMap<String, ImmutableUserSessionModel>();
         var users = session.users();
@@ -91,7 +99,11 @@ public final class ImmutableSession {
                 .map(UserSessionModel.class::cast);
     }
 
-    public static Stream<UserSessionModel> copyOf(KeycloakSession session, Collection<RemoteUserSessionEntity> entityList, SessionExpirationPredicates expiration, RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache, int batchSize) {
+    public static Stream<UserSessionModel> copyOf(KeycloakSession session,
+                                                  Collection<RemoteUserSessionEntity> entityList,
+                                                  SessionExpirationPredicates expiration,
+                                                  RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache,
+                                                  int batchSize) {
         var userSessionMap = new LinkedHashMap<String, ImmutableUserSessionModel>();
         var users = session.users();
         entityList.forEach(entity -> {

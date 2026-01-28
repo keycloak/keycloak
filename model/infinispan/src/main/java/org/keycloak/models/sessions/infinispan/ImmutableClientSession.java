@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan;
 
+import java.util.Collections;
 import java.util.Map;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -24,6 +25,11 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 
+/**
+ * An immutable {@link AuthenticatedClientSessionModel} implementation.
+ * <p>
+ * All setters throw a {@link UnsupportedOperationException}.
+ */
 record ImmutableClientSession(
         String id,
         ClientModel client,
@@ -83,7 +89,7 @@ record ImmutableClientSession(
 
     @Override
     public Map<String, String> getNotes() {
-        return notes;
+        return Collections.unmodifiableMap(notes);
     }
 
     @Override

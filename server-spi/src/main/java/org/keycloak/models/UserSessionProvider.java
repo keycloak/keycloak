@@ -279,15 +279,49 @@ public interface UserSessionProvider extends Provider {
         return getUserSessionWithPredicate(realm, userSessionId, offline, userSession -> userSession.getAuthenticatedClientSessionByClient(clientUUID) != null);
     }
 
+    /**
+     * Stream all the regular sessions in the realm.
+     * <p>
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the JPA and any
+     * modification may throw an {@link UnsupportedOperationException}.
+     *
+     * @param realm The {@link RealmModel} instance.
+     * @return A {@link Stream} for all the sessions in the realm.
+     */
     Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm);
 
+    /**
+     * Stream all the offline sessions in the realm.
+     * <p>
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the JPA and any
+     * modification may throw an {@link UnsupportedOperationException}.
+     *
+     * @param realm The {@link RealmModel} instance.
+     * @return A {@link Stream} for all the sessions in the realm.
+     */
     Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm);
 
-    default Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm, ClientModel client) {
-        return Stream.empty();
-    }
+    /**
+     * Stream all the regular sessions belonging to the realm and having a client session from the client.
+     * <p>
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the JPA and any
+     * modification may throw an {@link UnsupportedOperationException}.
+     *
+     * @param realm  The {@link RealmModel} instance.
+     * @param client The {@link ClientModel} instance.
+     * @return A {@link Stream} for all the sessions matching the parameters.
+     */
+    Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm, ClientModel client);
 
-    default Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm, ClientModel client) {
-        return Stream.empty();
-    }
+    /**
+     * Stream all the offline sessions belonging to the realm and having a client session from the client.
+     * <p>
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the JPA and any
+     * modification may throw an {@link UnsupportedOperationException}.
+     *
+     * @param realm   The {@link RealmModel} instance.
+     * @param client  The {@link ClientModel} instance.
+     * @return A {@link Stream} for all the sessions matching the parameters.
+     */
+    Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm, ClientModel client);
 }

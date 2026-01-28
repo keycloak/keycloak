@@ -20,6 +20,9 @@ package org.keycloak.models.jpa.session;
 import org.keycloak.models.session.PersistentClientSessionModel;
 import org.keycloak.storage.StorageId;
 
+/**
+ * An immutable {@link PersistentClientSessionEntity} to optimize read-only queries.
+ */
 public record ImmutablePersistentClientSessionEntity(
         String userSessionId,
         String clientId,

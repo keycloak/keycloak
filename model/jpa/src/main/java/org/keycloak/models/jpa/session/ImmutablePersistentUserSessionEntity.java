@@ -19,6 +19,9 @@ package org.keycloak.models.jpa.session;
 
 import org.keycloak.models.session.PersistentUserSessionModel;
 
+/**
+ * An immutable {@link PersistentUserSessionEntity} to optimize read-only queries.
+ */
 public record ImmutablePersistentUserSessionEntity(
         String userSessionId,
         String realmId,

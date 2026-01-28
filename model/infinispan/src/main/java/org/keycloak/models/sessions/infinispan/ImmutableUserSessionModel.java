@@ -20,13 +20,17 @@ package org.keycloak.models.sessions.infinispan;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Objects;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
+/**
+ * An immutable {@link UserSessionModel} implementation.
+ * <p>
+ * All setters throw a {@link UnsupportedOperationException}.
+ */
 record ImmutableUserSessionModel(
         String id,
         RealmModel realm,
@@ -44,10 +48,6 @@ record ImmutableUserSessionModel(
         boolean rememberMe,
         boolean offline
 ) implements UserSessionModel {
-
-    ImmutableUserSessionModel {
-        Objects.requireNonNull(id, "id cannot be null");
-    }
 
     @Override
     public String getId() {
@@ -141,7 +141,7 @@ record ImmutableUserSessionModel(
 
     @Override
     public Map<String, String> getNotes() {
-        return notes;
+        return Collections.unmodifiableMap(notes);
     }
 
     @Override
