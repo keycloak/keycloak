@@ -21,8 +21,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.keycloak.operator.ContextUtils;
-import org.keycloak.operator.crds.v2alpha1.CRDUtils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.CRDUtils;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
 import org.keycloak.operator.update.UpdateType;
 
 import io.fabric8.kubernetes.api.model.Container;

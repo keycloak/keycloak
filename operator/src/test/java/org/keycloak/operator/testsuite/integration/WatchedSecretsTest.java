@@ -25,9 +25,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 

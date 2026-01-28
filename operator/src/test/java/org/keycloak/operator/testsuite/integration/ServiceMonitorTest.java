@@ -3,10 +3,10 @@ package org.keycloak.operator.testsuite.integration;
 import java.util.List;
 
 import org.keycloak.operator.controllers.KeycloakServiceMonitorDependentResource;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.ServiceMonitorSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.ServiceMonitorSpecBuilder;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
