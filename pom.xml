@@ -156,7 +156,7 @@
         <mysql-jdbc.version>8.3.0</mysql-jdbc.version>
         <postgresql.version>17</postgresql.version>
         <postgresql.container>mirror.gcr.io/postgres:${postgresql.version}</postgresql.container>
-        <aurora-postgresql.version>16.1</aurora-postgresql.version>
+        <aurora-postgresql.version>16.8</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.3.1</aws-jdbc-wrapper.version>
         <postgresql-jdbc.version>42.7.7</postgresql-jdbc.version>
         <mariadb.version>11.4</mariadb.version>
