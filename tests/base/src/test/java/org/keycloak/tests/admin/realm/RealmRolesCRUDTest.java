@@ -130,6 +130,14 @@ public class RealmRolesCRUDTest extends AbstractRealmRolesTest {
 
         assertFalse(managedRealm.admin().roles().get("role-a").toRepresentation().isComposite());
         assertEquals(0, managedRealm.admin().roles().get("role-a").getRoleComposites().size());
+
+        managedRealm.admin().roles().create(RoleConfigBuilder.create().name("role-z").build());
+        managedRealm.admin().roles().get("role-z").addComposites(l);
+        // show that I can delete a role that has composite roles
+        managedRealm.admin().roles().deleteRole("role-z");
+        // show that the roles still exist
+        assertNotNull(managedRealm.admin().roles().get("role-b").toRepresentation().getId());
+        assertNotNull(managedRealm.admin().clients().get(clientA.getId()).roles().get("role-c").toRepresentation().getId());
     }
 
     @Test

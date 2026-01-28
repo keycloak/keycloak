@@ -33,9 +33,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.jpa.entities.CompositeRoleEntity;
 import org.keycloak.models.jpa.entities.RoleAttributeEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.utils.StreamsUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -90,34 +92,42 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public boolean isComposite() {
-        return getCompositesStream().count() > 0;
+        return getChildRoles().findAny().isPresent();
     }
 
     @Override
     public void addCompositeRole(RoleModel role) {
-        RoleEntity entity = toRoleEntity(role);
-        for (RoleEntity composite : getEntity().getCompositeRoles()) {
-            if (composite.equals(entity)) return;
+        if (em.find(CompositeRoleEntity.class, new CompositeRoleEntity.Key(getEntity(), toRoleEntity(role))) == null) {
+            CompositeRoleEntity compositeRoleEntity = new CompositeRoleEntity(getEntity(), toRoleEntity(role));
+            em.persist(compositeRoleEntity);
         }
-        getEntity().getCompositeRoles().add(entity);
     }
 
     @Override
     public void removeCompositeRole(RoleModel role) {
-        RoleEntity entity = toRoleEntity(role);
-        getEntity().getCompositeRoles().remove(entity);
+        RoleEntity child = toRoleEntity(role);
+        em.createNamedQuery("deleteSingleCompositeFromRole")
+                .setParameter("parentRole", getEntity())
+                .setParameter("childRole", child)
+                .executeUpdate();
     }
 
     @Override
     public Stream<RoleModel> getCompositesStream() {
-        Stream<RoleModel> composites = getEntity().getCompositeRoles().stream().map(c -> new RoleAdapter(session, realm, em, c));
+        Stream<RoleModel> composites = getChildRoles().map(c -> new RoleAdapter(session, realm, em, c));
         return composites.filter(Objects::nonNull);
+    }
+
+
+    private Stream<RoleEntity> getChildRoles() {
+        return StreamsUtil.closing(em.createNamedQuery("getChildRoles", RoleEntity.class)
+                .setParameter("parentRoleId", getId()).getResultStream());
     }
 
     @Override
     public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) {
         return session.roles().getRolesStream(realm,
-                getEntity().getCompositeRoles().stream().map(RoleEntity::getId),
+                getChildRoles().map(RoleEntity::getId),
                 search, first, max);
     }
 

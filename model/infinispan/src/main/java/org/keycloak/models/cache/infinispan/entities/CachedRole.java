@@ -38,8 +38,13 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
     final protected String name;
     final protected String realm;
     final protected String description;
-    final protected boolean composite;
-    final protected Set<String> composites = new HashSet<>();
+    protected boolean composite;
+    final protected LazyLoader<RoleModel, Set<String>> composites;
+    /**
+     * Use this so the cache invalidation can retrieve any previously cached role mappings to determine if this
+     * items should be evicted.
+     */
+    private Set<String> cachedComposites = new HashSet<>();
     private final LazyLoader<RoleModel, MultivaluedHashMap<String, String>> attributes;
 
     public CachedRole(Long revision, RoleModel model, RealmModel realm) {
@@ -49,7 +54,9 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
         name = model.getName();
         this.realm = realm.getId();
         if (composite) {
-            composites.addAll(model.getCompositesStream().map(RoleModel::getId).collect(Collectors.toSet()));
+            composites = new DefaultLazyLoader<>(roleModel -> roleModel.getCompositesStream().map(RoleModel::getId).collect(Collectors.toSet()), HashSet::new);
+        } else {
+            composites = new DefaultLazyLoader<>(roleModel -> new HashSet<>(), HashSet::new);
         }
         attributes = new DefaultLazyLoader<>(roleModel -> new MultivaluedHashMap<>(roleModel.getAttributes()), MultivaluedHashMap::new);
     }
@@ -70,8 +77,18 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
         return composite;
     }
 
-    public Set<String> getComposites() {
-        return composites;
+    public Set<String> getComposites(KeycloakSession session, Supplier<RoleModel> roleModel) {
+        cachedComposites = composites.get(session, roleModel);
+        composite = !cachedComposites.isEmpty();
+        return cachedComposites;
+    }
+
+    /**
+     * Use this so the cache invalidation can retrieve any previously cached role mappings to determine if this
+     * items should be evicted. Will return an empty list if it hasn't been cached yet (and then no invalidation is necessary)
+     */
+    public Set<String> getCachedComposites() {
+        return cachedComposites;
     }
 
     public MultivaluedHashMap<String, String> getAttributes(KeycloakSession session, Supplier<RoleModel> roleModel) {
