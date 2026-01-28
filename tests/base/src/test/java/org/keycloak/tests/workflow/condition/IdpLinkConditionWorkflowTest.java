@@ -168,7 +168,7 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
 
             // check no workflows are yet attached to the previous users, only to the ones created after the workflow was in place
             WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
-            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
+            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow.getId()).toList();
             assertEquals(3, scheduledSteps.size());
             scheduledSteps.forEach(scheduledStep -> {
                 assertEquals(notifyStep.getId(), scheduledStep.stepId());
@@ -191,7 +191,7 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
             WorkflowStep disableStep = workflow.getSteps().toList().get(1);
             WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
 
-            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
+            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow.getId()).toList();
             assertEquals(3, scheduledSteps.size());
             scheduledSteps.forEach(scheduledStep -> {
                 assertEquals(disableStep.getId(), scheduledStep.stepId());
@@ -217,7 +217,7 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
                         Workflow workflow = registeredWorkflows.get(0);
                         // check workflow was correctly assigned to the old users, not affecting users already associated with the workflow.
                         WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-                        List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
+                        List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow.getId()).toList();
                         assertEquals(13, scheduledSteps.size());
 
                         List<WorkflowStep> steps = workflow.getSteps().toList();

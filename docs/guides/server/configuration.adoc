@@ -187,7 +187,7 @@ You can start {project_name} in `development mode` or `production mode`. Each mo
 Use development mode to try out {project_name} for the first time to get it up and running quickly. This mode offers convenient defaults for developers, such as for developing a new {project_name} theme.
 
 [NOTE]
-By default, when you start {project_name} in development mode, the server binds to all network addresses (`0.0.0.0`). This means your instance may be accessible from other machines on your network. If you want to restrict access to your local machine only, you can use the option `--http-host=127.0.0.1` when starting the server.
+By default, when you start {project_name} in development mode on Windows Subsystem For Linux, the server binds to all network addresses (`0.0.0.0`). This means your instance may be accessible from other machines on your network.
 
 To start in development mode, enter the following command:
 

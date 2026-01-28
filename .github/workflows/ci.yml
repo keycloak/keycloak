@@ -588,7 +588,7 @@ jobs:
          AWS_REGION=${{ steps.aurora-init.outputs.region }}
          
          cd .github/scripts/ansible
-         ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "-Pexecute-sql -f tests/base/pom.xml sql:execute@clear-schema -Dautocommit=true -Ddriver=software.amazon.jdbc.Driver -Durl=\"jdbc:aws-wrapper:postgresql://${{ steps.aurora-create.outputs.endpoint }}/keycloak${{ steps.aurora-init.outputs.jdbc_params }}\" -Dusername=keycloak -Dpassword=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
+         ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "-Pexecute-sql -f tests/base/pom.xml sql:execute@clear-schema-psql -Dautocommit=true -Ddriver=software.amazon.jdbc.Driver -Durl=\"jdbc:aws-wrapper:postgresql://${{ steps.aurora-create.outputs.endpoint }}/keycloak${{ steps.aurora-init.outputs.jdbc_params }}\" -Dusername=keycloak -Dpassword=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
 
       - name: Run Aurora new database tests on EC2
         id: aurora-new-integration-tests
@@ -620,7 +620,7 @@ jobs:
 
       - name: EC2 Maven Logs
         if: failure()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: aurora-new-integration-tests-mvn-logs
           path: .github/scripts/ansible/files
@@ -775,6 +775,7 @@ jobs:
           # Copy returned surefire-report directories to workspace root to ensure they're discovered
           results=(files/keycloak/results/*)
           rsync -a $results/* ../../../
+          rm -rf $results
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -782,6 +783,63 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: AzureDB IT
+
+      - name: Azure VM Maven Logs
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: azure-integration-tests-mvn-logs
+          path: .github/scripts/ansible/files
+
+      - name: Clear Azure DB schema
+        id: azure-clear-db-schema
+        run: |
+         AZ_VM_CLUSTER_NAME=${{ steps.vm-create.outputs.az_vm_cluster }}
+         AZURE_REGION=${{ steps.azure-init.outputs.region }}
+         
+         cd .github/scripts/ansible
+         ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} "-Pexecute-sql -f tests/base/pom.xml sql:execute@clear-schema-mssql -Dautocommit=true -Ddriver=com.microsoft.sqlserver.jdbc.SQLServerDriver -Durl=\"jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false\" -Dusername=${{ steps.azure-create.outputs.username }} -Dpassword=${{ env.AZURE_DB_PASSWORD }}"
+
+      - name: Run Azure new database tests on VM
+        id: azure-new-integration-tests
+        run: |
+          AZ_VM_CLUSTER_NAME=${{ steps.vm-create.outputs.az_vm_cluster }}
+          AZURE_REGION=${{ steps.azure-init.outputs.region }}
+
+          PROPS="-Dkc.test.database=remote -Dkc.test.database.vendor=mssql"
+          PROPS+=" -Dkc.test.database.user=${{ steps.azure-create.outputs.username }}"
+          PROPS+=" -Dkc.test.database.password=${{ env.AZURE_DB_PASSWORD }}"
+          PROPS+=" -Dkc.test.database.url=\"jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false;sendStringParametersAsUnicode=false\""
+          PROPS+=" -Dkc.test.database.driver=com.microsoft.sqlserver.jdbc.SQLServerDriver"
+          PROPS+=" -Dkc.test.database.driver.artifact=com.microsoft.sqlserver:mssql-jdbc"
+          PROPS+=" -Dkc.test.server.start.timeout=360"
+
+          cd .github/scripts/ansible
+          set +e
+          ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} "$PROPS package -f tests/pom.xml -Dtest=DatabaseTestSuite"
+          MVN_EXIT=$?
+          set -e
+
+          # Copy returned surefire-report directories to workspace root to ensure they're discovered
+          results=(files/keycloak/results/*)
+          rsync -a $results/* ../../../
+          rm -rf $results
+          
+          exit $MVN_EXIT
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: AzureDB IT
+
+      - name: Azure VM Maven Logs
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: azure-new-integration-tests-mvn-logs
+          path: .github/scripts/ansible/files
 
       - name: Delete all Azure resources (resource group)
         if: always()

@@ -117,6 +117,24 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
     }
 
     @Override
+    public Stream<ScheduledStep> getScheduledStepsByStep(String workflowId, String stepId) {
+        if (StringUtil.isBlank(workflowId) || StringUtil.isBlank(stepId)) {
+            return Stream.empty();
+        }
+
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<WorkflowStateEntity> query = cb.createQuery(WorkflowStateEntity.class);
+        Root<WorkflowStateEntity> stateRoot = query.from(WorkflowStateEntity.class);
+
+        Predicate byWorkflowAndStep = cb.and(cb.equal(stateRoot.get("workflowId"), workflowId),
+                                    cb.equal(stateRoot.get("scheduledStepId"), stepId));
+        query.where(byWorkflowAndStep);
+
+        return em.createQuery(query).getResultStream()
+                .map(this::toScheduledStep);
+    }
+
+    @Override
     public Stream<ScheduledStep> getScheduledStepsByResource(String resourceId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<WorkflowStateEntity> query = cb.createQuery(WorkflowStateEntity.class);

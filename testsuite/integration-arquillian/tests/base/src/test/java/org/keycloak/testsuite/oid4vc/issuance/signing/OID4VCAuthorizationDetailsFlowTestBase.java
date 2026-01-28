@@ -20,16 +20,11 @@ package org.keycloak.testsuite.oid4vc.issuance.signing;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import jakarta.ws.rs.core.HttpHeaders;
-
-import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -38,30 +33,28 @@ import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
-import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
-import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.message.BasicNameValuePair;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -126,57 +119,50 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         // Clear events before credential offer URI request
         events.clear();
 
-        HttpGet getCredentialOfferURI = new HttpGet(getCredentialOfferUriUrl(credentialConfigurationId));
-        getCredentialOfferURI.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        CredentialOfferUriResponse credentialOfferURIResponse = oauth.oid4vc().credentialOfferUriRequest()
+                .endpoint(getCredentialOfferUriUrl(credentialConfigurationId))
+                .bearerToken(token)
+                .send();
+        assertEquals(HttpStatus.SC_OK, credentialOfferURIResponse.getStatusCode());
+        CredentialOfferURI credentialOfferURI = credentialOfferURIResponse.getCredentialOfferURI();
 
-        CredentialOfferURI credentialOfferURI;
-        try (CloseableHttpResponse response = httpClient.execute(getCredentialOfferURI)) {
-            int status = response.getStatusLine().getStatusCode();
-            assertEquals(HttpStatus.SC_OK, status);
-            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
-            credentialOfferURI = JsonSerialization.readValue(s, CredentialOfferURI.class);
-
-            // Verify CREDENTIAL_OFFER_REQUEST event was fired
-            events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
-                    .client(client.getClientId())
-                    .user(AssertEvents.isUUID())
-                    .session(AssertEvents.isSessionId())
-                    .detail(Details.USERNAME, "john")
-                    .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
-                    .assertEvent();
-        }
+        // Verify CREDENTIAL_OFFER_REQUEST event was fired
+        events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
+                .client(client.getClientId())
+                .user(AssertEvents.isUUID())
+                .session(AssertEvents.isSessionId())
+                .detail(Details.USERNAME, "john")
+                .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
+                .assertEvent();
 
         // Clear events before credential offer request
         events.clear();
 
-        HttpGet getCredentialOffer = new HttpGet(credentialOfferURI.getIssuer() + "/" + credentialOfferURI.getNonce());
-        try (CloseableHttpResponse response = httpClient.execute(getCredentialOffer)) {
-            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
-            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
-            ctx.credentialsOffer = JsonSerialization.readValue(s, CredentialsOffer.class);
+        CredentialOfferResponse credentialOfferResponse = oauth.oid4vc().credentialOfferRequest()
+                .endpoint(credentialOfferURI.getIssuer() + "/" + credentialOfferURI.getNonce())
+                .send();
+        assertEquals(HttpStatus.SC_OK, credentialOfferResponse.getStatusCode());
+        ctx.credentialsOffer = credentialOfferResponse.getCredentialsOffer();
 
-            // Verify CREDENTIAL_OFFER_REQUEST event was fired (unauthenticated endpoint)
-            events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
-                    .client(client.getClientId())
-                    .user(AssertEvents.isUUID())
-                    .session((String) null)
-                    .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
-                    .assertEvent();
-        }
+        // Verify CREDENTIAL_OFFER_REQUEST event was fired (unauthenticated endpoint)
+        events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
+                .client(client.getClientId())
+                .user(AssertEvents.isUUID())
+                .session((String) null)
+                .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
+                .assertEvent();
 
-        HttpGet getIssuerMetadata = new HttpGet(ctx.credentialsOffer.getIssuerMetadataUrl());
-        try (CloseableHttpResponse response = httpClient.execute(getIssuerMetadata)) {
-            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
-            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
-            ctx.credentialIssuer = JsonSerialization.readValue(s, CredentialIssuer.class);
-        }
+        CredentialIssuerMetadataResponse issuerMetadataResponse = oauth.oid4vc().issuerMetadataRequest()
+                .endpoint(ctx.credentialsOffer.getIssuerMetadataUrl())
+                .send();
+        assertEquals(HttpStatus.SC_OK, issuerMetadataResponse.getStatusCode());
+        ctx.credentialIssuer = issuerMetadataResponse.getMetadata();
 
-        HttpGet getOpenidConfiguration = new HttpGet(ctx.credentialIssuer.getAuthorizationServers().get(0) + "/.well-known/openid-configuration");
-        try (CloseableHttpResponse response = httpClient.execute(getOpenidConfiguration)) {
-            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
-            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
-            ctx.openidConfig = JsonSerialization.readValue(s, OIDCConfigurationRepresentation.class);
-        }
+        OpenIDProviderConfigurationResponse openIDProviderConfigurationResponse = oauth.wellknownRequest()
+                .url(ctx.credentialIssuer.getAuthorizationServers().get(0))
+                .send();
+        assertEquals(HttpStatus.SC_OK, openIDProviderConfigurationResponse.getStatusCode());
+        ctx.openidConfig = openIDProviderConfigurationResponse.getOidcConfiguration();
 
         return ctx;
     }
@@ -194,33 +180,28 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
-        HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
-        parameters.add(new BasicNameValuePair("authorization_details", authDetailsJson));
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
+        AccessTokenResponse tokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .addParameter("authorization_details", authDetailsJson)
+                .send();
 
-        try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
-            assertNotNull("authorization_details should be present in the response", authDetailsResponse);
-            assertEquals(1, authDetailsResponse.size());
-            OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(0);
-            assertEquals(OPENID_CREDENTIAL, authDetailResponse.getType());
-            assertEquals(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID), authDetailResponse.getCredentialConfigurationId());
-            assertNotNull(authDetailResponse.getCredentialIdentifiers());
-            assertEquals(1, authDetailResponse.getCredentialIdentifiers().size());
-            String firstIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
-            assertNotNull("Identifier should not be null", firstIdentifier);
-            assertFalse("Identifier should not be empty", firstIdentifier.isEmpty());
-            try {
-                UUID.fromString(firstIdentifier);
-            } catch (IllegalArgumentException e) {
-                fail("Identifier should be a valid UUID, but was: " + firstIdentifier);
-            }
+        assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+        assertEquals(1, authDetailsResponse.size());
+        OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(0);
+        assertEquals(OPENID_CREDENTIAL, authDetailResponse.getType());
+        assertEquals(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID), authDetailResponse.getCredentialConfigurationId());
+        assertNotNull(authDetailResponse.getCredentialIdentifiers());
+        assertEquals(1, authDetailResponse.getCredentialIdentifiers().size());
+        String firstIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
+        assertNotNull("Identifier should not be null", firstIdentifier);
+        assertFalse("Identifier should not be empty", firstIdentifier.isEmpty());
+        try {
+            UUID.fromString(firstIdentifier);
+        } catch (IllegalArgumentException e) {
+            fail("Identifier should be a valid UUID, but was: " + firstIdentifier);
         }
     }
 
@@ -253,40 +234,36 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
-        HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
-        parameters.add(new BasicNameValuePair("authorization_details", authDetailsJson));
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
+        AccessTokenResponse tokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .addParameter("authorization_details", authDetailsJson)
+                .send();
 
-        try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
-            assertNotNull("authorization_details should be present in the response", authDetailsResponse);
-            assertEquals(1, authDetailsResponse.size());
-            OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(0);
-            assertEquals(OPENID_CREDENTIAL, authDetailResponse.getType());
-            assertEquals(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID), authDetailResponse.getCredentialConfigurationId());
-            assertNotNull(authDetailResponse.getClaims());
-            assertEquals(1, authDetailResponse.getClaims().size());
-            ClaimsDescription responseClaim = authDetailResponse.getClaims().get(0);
+        assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+        assertEquals(1, authDetailsResponse.size());
+        OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(0);
+        assertEquals(OPENID_CREDENTIAL, authDetailResponse.getType());
+        assertEquals(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID), authDetailResponse.getCredentialConfigurationId());
+        assertNotNull(authDetailResponse.getClaims());
+        assertEquals(1, authDetailResponse.getClaims().size());
+        ClaimsDescription responseClaim = authDetailResponse.getClaims().get(0);
 
-            List<Object> expectedClaimPath;
-            if ("sd_jwt_vc".equals(getCredentialFormat())) {
-                expectedClaimPath = Arrays.asList(getExpectedClaimPath());
-            } else {
-                expectedClaimPath = Arrays.asList("credentialSubject", getExpectedClaimPath());
-            }
-            assertEquals(expectedClaimPath, responseClaim.getPath());
-            assertTrue(responseClaim.isMandatory());
-
-            // Verify that credential identifiers are present
-            assertNotNull(authDetailResponse.getCredentialIdentifiers());
-            assertEquals(1, authDetailResponse.getCredentialIdentifiers().size());
+        List<Object> expectedClaimPath;
+        if ("sd_jwt_vc".equals(getCredentialFormat())) {
+            expectedClaimPath = Arrays.asList(getExpectedClaimPath());
+        } else {
+            expectedClaimPath = Arrays.asList("credentialSubject", getExpectedClaimPath());
         }
+        assertEquals(expectedClaimPath, responseClaim.getPath());
+        assertTrue(responseClaim.isMandatory());
+
+        // Verify that credential identifiers are present
+        assertNotNull(authDetailResponse.getCredentialIdentifiers());
+        assertEquals(1, authDetailResponse.getCredentialIdentifiers().size());
+
     }
 
     @Test
@@ -308,21 +285,17 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
-        HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
-        parameters.add(new BasicNameValuePair("authorization_details", authDetailsJson));
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
+        AccessTokenResponse tokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .addParameter("authorization_details", authDetailsJson)
+                .send();
 
-        try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            // Should fail because the claim is not supported by the credential configuration
-            assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            assertTrue("Error message should indicate authorization_details processing error",
-                    responseBody.contains("Invalid authorization_details"));
-        }
+        // Should fail because the claim is not supported by the credential configuration
+        assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
+        assertTrue("Error message should indicate authorization_details processing error",
+                (tokenResponse.getErrorDescription() != null && tokenResponse.getErrorDescription().contains("Error when processing authorization_details")) ||
+                        (tokenResponse.getError() != null && tokenResponse.getError().contains("Error when processing authorization_details")));
     }
 
     @Test
@@ -344,21 +317,17 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
-        HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
-        parameters.add(new BasicNameValuePair("authorization_details", authDetailsJson));
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
+        AccessTokenResponse tokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .addParameter("authorization_details", authDetailsJson)
+                .send();
 
-        try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            // Should fail because the mandatory claim is not supported
-            assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            assertTrue("Error message should indicate invalid authorization_details",
-                    responseBody.contains("Invalid authorization_details"));
-        }
+        // Should fail because the mandatory claim is not supported
+        assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
+        assertTrue("Error message should indicate authorization_details processing error",
+                (tokenResponse.getErrorDescription() != null && tokenResponse.getErrorDescription().contains("Error when processing authorization_details")) ||
+                        (tokenResponse.getError() != null && tokenResponse.getError().contains("Error when processing authorization_details")));
     }
 
     @Test
@@ -380,29 +349,24 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
-        HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
-        parameters.add(new BasicNameValuePair("authorization_details", authDetailsJson));
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
+        AccessTokenResponse tokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .addParameter("authorization_details", authDetailsJson)
+                .send();
 
-        try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            // Should fail if the complex path is not supported
-            int statusCode = tokenResponse.getStatusLine().getStatusCode();
-            if (statusCode == HttpStatus.SC_BAD_REQUEST) {
-                String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-                assertTrue("Error message should indicate authorization_details processing error",
-                        responseBody.contains("Invalid authorization_details"));
-            } else {
-                // If it succeeds, verify the response structure
-                assertEquals(HttpStatus.SC_OK, statusCode);
-                String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-                List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
-                assertNotNull("authorization_details should be present in the response", authDetailsResponse);
-                assertEquals(1, authDetailsResponse.size());
-            }
+        // Should fail if the complex path is not supported
+        int statusCode = tokenResponse.getStatusCode();
+        if (statusCode == HttpStatus.SC_BAD_REQUEST) {
+            assertTrue("Error message should indicate authorization_details processing error",
+                    (tokenResponse.getErrorDescription() != null && tokenResponse.getErrorDescription().contains("Error when processing authorization_details")) ||
+                            (tokenResponse.getError() != null && tokenResponse.getError().contains("Error when processing authorization_details")));
+        } else {
+            // If it succeeds, verify the response structure
+            assertEquals(HttpStatus.SC_OK, statusCode);
+            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+            assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+            assertEquals(1, authDetailsResponse.size());
         }
     }
 
@@ -419,20 +383,17 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
-        HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
-        parameters.add(new BasicNameValuePair("authorization_details", authDetailsJson));
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
+        AccessTokenResponse tokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .addParameter("authorization_details", authDetailsJson)
+                .send();
 
-        try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            assertTrue("Error message should indicate authorization_details processing error",
-                    responseBody.contains("Invalid authorization_details"));
-        }
+        assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
+        assertEquals("invalid_authorization_details", tokenResponse.getError());
+        assertTrue("Error description should indicate missing credential_configuration_id. Actual: " + tokenResponse.getErrorDescription(),
+                tokenResponse.getErrorDescription() != null && tokenResponse.getErrorDescription().contains("Invalid authorization_details")
+                        && tokenResponse.getErrorDescription().contains("credential_configuration_id is required"));
     }
 
     @Test
@@ -454,20 +415,17 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
-        HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
-        parameters.add(new BasicNameValuePair("authorization_details", authDetailsJson));
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
+        AccessTokenResponse tokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .addParameter("authorization_details", authDetailsJson)
+                .send();
 
-        try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            assertTrue("Error message should indicate authorization_details processing error",
-                    responseBody.contains("Invalid authorization_details"));
-        }
+        assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
+        assertEquals("invalid_authorization_details", tokenResponse.getError());
+        assertTrue("Error description should indicate invalid claims path. Actual: " + tokenResponse.getErrorDescription(),
+                tokenResponse.getErrorDescription() != null && tokenResponse.getErrorDescription().contains("Invalid authorization_details")
+                        && tokenResponse.getErrorDescription().contains("path is required"));
     }
 
     @Test
@@ -478,20 +436,15 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         // Send empty authorization_details array - should fail
         String authDetailsJson = "[]";
 
-        HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
-        parameters.add(new BasicNameValuePair("authorization_details", authDetailsJson));
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
+        AccessTokenResponse tokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .addParameter("authorization_details", authDetailsJson)
+                .send();
 
-        try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            assertTrue("Error message should indicate authorization_details processing error",
-                    responseBody.contains("Invalid authorization_details"));
-        }
+        assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
+        assertEquals("invalid_request", tokenResponse.getError());
+        assertNotNull("Error description should be present", tokenResponse.getErrorDescription());
     }
 
     @Test
@@ -502,42 +455,36 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         // Test Pre-Authorized Code Flow without authorization_details parameter
         // The system should generate authorization_details based on credential_configuration_ids from the credential offer
 
-        HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
+        AccessTokenResponse tokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .send();
 
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
+        assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
-        try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+        assertEquals("Should have authorization_details for each credential configuration in the offer",
+                ctx.credentialsOffer.getCredentialConfigurationIds().size(), authDetailsResponse.size());
 
-            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
-            assertNotNull("authorization_details should be present in the response", authDetailsResponse);
-            assertEquals("Should have authorization_details for each credential configuration in the offer",
-                    ctx.credentialsOffer.getCredentialConfigurationIds().size(), authDetailsResponse.size());
+        // Verify each credential configuration from the offer has corresponding authorization_details
+        for (int i = 0; i < ctx.credentialsOffer.getCredentialConfigurationIds().size(); i++) {
+            String expectedConfigId = ctx.credentialsOffer.getCredentialConfigurationIds().get(i);
+            OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(i);
 
-            // Verify each credential configuration from the offer has corresponding authorization_details
-            for (int i = 0; i < ctx.credentialsOffer.getCredentialConfigurationIds().size(); i++) {
-                String expectedConfigId = ctx.credentialsOffer.getCredentialConfigurationIds().get(i);
-                OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(i);
+            assertEquals(OPENID_CREDENTIAL, authDetailResponse.getType());
+            assertEquals("Credential configuration ID should match the one from the offer",
+                    expectedConfigId, authDetailResponse.getCredentialConfigurationId());
+            assertNotNull("Credential identifiers should be present", authDetailResponse.getCredentialIdentifiers());
+            assertEquals("Should have exactly one credential identifier", 1, authDetailResponse.getCredentialIdentifiers().size());
 
-                assertEquals(OPENID_CREDENTIAL, authDetailResponse.getType());
-                assertEquals("Credential configuration ID should match the one from the offer",
-                        expectedConfigId, authDetailResponse.getCredentialConfigurationId());
-                assertNotNull("Credential identifiers should be present", authDetailResponse.getCredentialIdentifiers());
-                assertEquals("Should have exactly one credential identifier", 1, authDetailResponse.getCredentialIdentifiers().size());
-
-                String credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
-                assertNotNull("Identifier should not be null", credentialIdentifier);
-                assertFalse("Identifier should not be empty", credentialIdentifier.isEmpty());
-                try {
-                    UUID.fromString(credentialIdentifier);
-                } catch (IllegalArgumentException e) {
-                    fail("Identifier should be a valid UUID, but was: " + credentialIdentifier);
-                }
+            String credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
+            assertNotNull("Identifier should not be null", credentialIdentifier);
+            assertFalse("Identifier should not be empty", credentialIdentifier.isEmpty());
+            try {
+                UUID.fromString(credentialIdentifier);
+            } catch (IllegalArgumentException e) {
+                fail("Identifier should be a valid UUID, but was: " + credentialIdentifier);
             }
         }
     }
@@ -550,43 +497,33 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         PreAuthorizedCode preAuthorizedCode = ctx.credentialsOffer.getGrants().getPreAuthorizedCode();
 
         // Step 1: Request token without authorization_details parameter (no scope needed)
-        HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, preAuthorizedCode.getPreAuthorizedCode()));
-
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
+        AccessTokenResponse tokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(preAuthorizedCode.getPreAuthorizedCode())
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .send();
 
         String credentialIdentifier;
         String credentialConfigurationId;
         OID4VCAuthorizationDetailResponse authDetailResponse;
-        String preAuthorizedToken;
-        try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
 
-            // Extract access token from the response
-            AccessTokenResponse accessTokenResponse = JsonSerialization.readValue(responseBody, AccessTokenResponse.class);
-            preAuthorizedToken = accessTokenResponse.getToken();
-            assertNotNull("Access token should be present in pre-authorized code token response", preAuthorizedToken);
+        assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
-            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
-            assertNotNull("authorization_details should be present in the response", authDetailsResponse);
-            assertEquals("Should have authorization_details for each credential configuration in the offer",
-                    ctx.credentialsOffer.getCredentialConfigurationIds().size(), authDetailsResponse.size());
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+        assertEquals("Should have authorization_details for each credential configuration in the offer",
+                ctx.credentialsOffer.getCredentialConfigurationIds().size(), authDetailsResponse.size());
 
-            // Use the first authorization detail for credential request
-            authDetailResponse = authDetailsResponse.get(0);
-            assertNotNull("Credential identifiers should be present", authDetailResponse.getCredentialIdentifiers());
-            assertEquals(1, authDetailResponse.getCredentialIdentifiers().size());
+        // Use the first authorization detail for credential request
+        authDetailResponse = authDetailsResponse.get(0);
+        assertNotNull("Credential identifiers should be present", authDetailResponse.getCredentialIdentifiers());
+        assertEquals(1, authDetailResponse.getCredentialIdentifiers().size());
 
-            credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
-            assertNotNull("Credential identifier should not be null", credentialIdentifier);
+        credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
+        assertNotNull("Credential identifier should not be null", credentialIdentifier);
 
-            credentialConfigurationId = authDetailResponse.getCredentialConfigurationId();
-            assertNotNull("Credential configuration id should not be null", credentialConfigurationId);
-        }
+        credentialConfigurationId = authDetailResponse.getCredentialConfigurationId();
+        assertNotNull("Credential configuration id should not be null", credentialConfigurationId);
+
 
         // Step 2: Request the actual credential using ONLY the identifier (no credential_configuration_id)
         // This tests that the mapping from credential identifier to credential configuration ID works as expected.
@@ -601,72 +538,39 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
             // Clear events before credential request
             events.clear();
 
-            HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
-            postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-            postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+            Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+                    .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
+                    .bearerToken(tokenResponse.getAccessToken())
+                    .credentialIdentifier(credentialIdentifier)
+                    .send();
 
-            CredentialRequest credentialRequest = new CredentialRequest();
-            credentialRequest.setCredentialIdentifier(credentialIdentifier);
+            assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusCode());
 
-            String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
-            postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));
+            // Verify CREDENTIAL_REQUEST event was fired
+            events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST)
+                    .client(client.getClientId())
+                    .user(AssertEvents.isUUID())
+                    .session(AssertEvents.isSessionId())
+                    .detail(Details.USERNAME, "john")
+                    .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
+                    .assertEvent();
 
-            try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-                assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusLine().getStatusCode());
+            // Parse the credential response
+            CredentialResponse parsedResponse = credentialResponse.getCredentialResponse();
+            assertNotNull("Credential response should not be null", parsedResponse);
+            assertNotNull("Credentials should be present", parsedResponse.getCredentials());
+            assertEquals("Should have exactly one credential", 1, parsedResponse.getCredentials().size());
 
-                // Verify CREDENTIAL_REQUEST event was fired
-                events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST)
-                        .client(client.getClientId())
-                        .user(AssertEvents.isUUID())
-                        .session(AssertEvents.isSessionId())
-                        .detail(Details.USERNAME, "john")
-                        .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
-                        .assertEvent();
-                String responseBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+            // Step 3: Verify that the issued credential structure is valid
+            CredentialResponse.Credential credentialWrapper = parsedResponse.getCredentials().get(0);
+            assertNotNull("Credential wrapper should not be null", credentialWrapper);
 
-                // Parse the credential response
-                CredentialResponse parsedResponse = JsonSerialization.readValue(responseBody, CredentialResponse.class);
-                assertNotNull("Credential response should not be null", parsedResponse);
-                assertNotNull("Credentials should be present", parsedResponse.getCredentials());
-                assertEquals("Should have exactly one credential", 1, parsedResponse.getCredentials().size());
+            // The credential is stored as Object, so we need to cast it
+            Object credentialObj = credentialWrapper.getCredential();
+            assertNotNull("Credential object should not be null", credentialObj);
 
-                // Step 3: Verify that the issued credential structure is valid
-                CredentialResponse.Credential credentialWrapper = parsedResponse.getCredentials().get(0);
-                assertNotNull("Credential wrapper should not be null", credentialWrapper);
-
-                // The credential is stored as Object, so we need to cast it
-                Object credentialObj = credentialWrapper.getCredential();
-                assertNotNull("Credential object should not be null", credentialObj);
-
-                // Verify the credential structure based on format
-                verifyCredentialStructure(credentialObj);
-            }
-        }
-
-        // Step 3: Verify that using credential_configuration_id with a token that has authorization_details fails
-        // When authorization_details are present in the token, credential_identifier (not credential_configuration_id) must be used
-        {
-            // Clear events before credential request
-            events.clear();
-
-            HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
-            postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + preAuthorizedToken);
-            postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-
-            CredentialRequest credentialRequest = new CredentialRequest();
-            credentialRequest.setCredentialConfigurationId(credentialConfigurationId);
-
-            String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
-            postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));
-
-            try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-                assertEquals("Using credential_configuration_id with token that has authorization_details should fail",
-                        HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusLine().getStatusCode());
-
-                String errorBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-                assertTrue("Error should indicate that credential_identifier must be used. Actual error: " + errorBody,
-                        errorBody.contains("credential_identifier") || errorBody.contains("authorization_details"));
-            }
+            // Verify the credential structure based on format
+            verifyCredentialStructure(credentialObj);
         }
     }
 
@@ -677,50 +581,38 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         PreAuthorizedCode preAuthorizedCode = ctx.credentialsOffer.getGrants().getPreAuthorizedCode();
 
         // Step 1: Get pre-authorized code token
-        HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, preAuthorizedCode.getPreAuthorizedCode()));
+        AccessTokenResponse accessTokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(preAuthorizedCode.getPreAuthorizedCode())
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .send();
 
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
+        assertEquals(HttpStatus.SC_OK, accessTokenResponse.getStatusCode());
+        String preAuthorizedToken = accessTokenResponse.getAccessToken();
+        assertNotNull("Access token should be present", preAuthorizedToken);
 
-        String preAuthorizedToken;
-        String credentialIdentifier;
-        try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = accessTokenResponse.getOid4vcAuthorizationDetails();
+        assertNotNull("authorization_details should be present", authDetailsResponse);
+        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
 
-            AccessTokenResponse accessTokenResponse = JsonSerialization.readValue(responseBody, AccessTokenResponse.class);
-            preAuthorizedToken = accessTokenResponse.getToken();
-            assertNotNull("Access token should be present", preAuthorizedToken);
-
-            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
-            assertNotNull("authorization_details should be present", authDetailsResponse);
-            assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
-
-            credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
-            assertNotNull("Credential identifier should be present", credentialIdentifier);
-        }
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+        assertNotNull("Credential identifier should be present", credentialIdentifier);
 
         // Step 2: Verify token works at credential endpoint (should succeed)
-        CredentialRequest credentialRequest = new CredentialRequest();
-        credentialRequest.setCredentialIdentifier(credentialIdentifier);
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc()
+                .credentialRequest()
+                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
+                .bearerToken(preAuthorizedToken)
+                .credentialIdentifier(credentialIdentifier)
+                .send();
 
-        HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
-        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + preAuthorizedToken);
-        postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-        postCredential.setEntity(new StringEntity(JsonSerialization.writeValueAsString(credentialRequest), StandardCharsets.UTF_8));
-
-        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-            assertEquals("Pre-authorized code token should work at credential endpoint",
-                    HttpStatus.SC_OK, credentialResponse.getStatusLine().getStatusCode());
-        }
+        assertEquals("Pre-authorized code token should work at credential endpoint",
+                HttpStatus.SC_OK, credentialResponse.getStatusCode());
 
         // Step 3: Verify token is rejected at Account REST API endpoint (uses BearerTokenAuthenticator)
         // Account endpoint uses BearerTokenAuthenticator which enforces the restriction
         // Use versioned path to get REST API (not HTML UI)
         String accountEndpoint = OAuthClient.AUTH_SERVER_ROOT + "/realms/" + oauth.getRealm() + "/account/v1";
+
         HttpGet getAccount = new HttpGet(accountEndpoint);
         getAccount.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + preAuthorizedToken);
         getAccount.addHeader(HttpHeaders.ACCEPT, "application/json");
@@ -788,56 +680,50 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
                         !ctx.credentialsOffer.getCredentialConfigurationIds().isEmpty());
 
         // Step 1: Request token without authorization_details parameter
-        HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
+        AccessTokenResponse tokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .send();
 
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
+        assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
-        try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
 
-            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
-            assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+        // Verify that we have authorization_details for each credential configuration in the offer
+        assertEquals("Should have authorization_details for each credential configuration in the offer",
+                ctx.credentialsOffer.getCredentialConfigurationIds().size(), authDetailsResponse.size());
 
-            // Verify that we have authorization_details for each credential configuration in the offer
-            assertEquals("Should have authorization_details for each credential configuration in the offer",
-                    ctx.credentialsOffer.getCredentialConfigurationIds().size(), authDetailsResponse.size());
+        // Verify each authorization detail
+        for (int i = 0; i < authDetailsResponse.size(); i++) {
+            OID4VCAuthorizationDetailResponse authDetail = authDetailsResponse.get(i);
+            String expectedConfigId = ctx.credentialsOffer.getCredentialConfigurationIds().get(i);
 
-            // Verify each authorization detail
-            for (int i = 0; i < authDetailsResponse.size(); i++) {
-                OID4VCAuthorizationDetailResponse authDetail = authDetailsResponse.get(i);
-                String expectedConfigId = ctx.credentialsOffer.getCredentialConfigurationIds().get(i);
+            // Verify structure
+            assertEquals("Type should be openid_credential", OPENID_CREDENTIAL, authDetail.getType());
+            assertEquals("Credential configuration ID should match the one from the offer",
+                    expectedConfigId, authDetail.getCredentialConfigurationId());
+            assertNotNull("Credential identifiers should be present", authDetail.getCredentialIdentifiers());
+            assertEquals("Should have exactly one credential identifier per configuration",
+                    1, authDetail.getCredentialIdentifiers().size());
 
-                // Verify structure
-                assertEquals("Type should be openid_credential", OPENID_CREDENTIAL, authDetail.getType());
-                assertEquals("Credential configuration ID should match the one from the offer",
-                        expectedConfigId, authDetail.getCredentialConfigurationId());
-                assertNotNull("Credential identifiers should be present", authDetail.getCredentialIdentifiers());
-                assertEquals("Should have exactly one credential identifier per configuration",
-                        1, authDetail.getCredentialIdentifiers().size());
-
-                // Verify identifier format
-                String credentialIdentifier = authDetail.getCredentialIdentifiers().get(0);
-                assertNotNull("Credential identifier should not be null", credentialIdentifier);
-                assertFalse("Credential identifier should not be empty", credentialIdentifier.isEmpty());
-                try {
-                    UUID.fromString(credentialIdentifier);
-                } catch (IllegalArgumentException e) {
-                    fail("Credential identifier should be a valid UUID, but was: " + credentialIdentifier);
-                }
+            // Verify identifier format
+            String credentialIdentifier = authDetail.getCredentialIdentifiers().get(0);
+            assertNotNull("Credential identifier should not be null", credentialIdentifier);
+            assertFalse("Credential identifier should not be empty", credentialIdentifier.isEmpty());
+            try {
+                UUID.fromString(credentialIdentifier);
+            } catch (IllegalArgumentException e) {
+                fail("Credential identifier should be a valid UUID, but was: " + credentialIdentifier);
             }
-
-            // Verify that all credential identifiers are unique
-            Set<String> allIdentifiers = authDetailsResponse.stream()
-                    .flatMap(auth -> auth.getCredentialIdentifiers().stream())
-                    .collect(Collectors.toSet());
-            assertEquals("All credential identifiers should be unique",
-                    authDetailsResponse.size(), allIdentifiers.size());
         }
+
+        // Verify that all credential identifiers are unique
+        Set<String> allIdentifiers = authDetailsResponse.stream()
+                .flatMap(auth -> auth.getCredentialIdentifiers().stream())
+                .collect(Collectors.toSet());
+        assertEquals("All credential identifiers should be unique",
+                authDetailsResponse.size(), allIdentifiers.size());
     }
 
     @Test
@@ -869,79 +755,68 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.valueAsString(authDetails);
 
-        HttpPost postPreAuthorizedCode = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
-        parameters.add(new BasicNameValuePair("authorization_details", authDetailsJson));
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
+        AccessTokenResponse tokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .addParameter("authorization_details", authDetailsJson)
+                .send();
 
         String credentialIdentifier;
         String credentialConfigurationId;
         OID4VCAuthorizationDetailResponse authDetailResponse;
-        try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
-            assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(responseBody);
-            assertNotNull("authorization_details should be present in the response", authDetailsResponse);
-            assertEquals(1, authDetailsResponse.size());
 
-            authDetailResponse = authDetailsResponse.get(0);
-            assertNotNull("Credential identifiers should be present", authDetailResponse.getCredentialIdentifiers());
-            assertEquals(1, authDetailResponse.getCredentialIdentifiers().size());
+        assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+        assertEquals(1, authDetailsResponse.size());
 
-            credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
-            assertNotNull("Credential identifier should not be null", credentialIdentifier);
+        authDetailResponse = authDetailsResponse.get(0);
+        assertNotNull("Credential identifiers should be present", authDetailResponse.getCredentialIdentifiers());
+        assertEquals(1, authDetailResponse.getCredentialIdentifiers().size());
 
-            credentialConfigurationId = authDetailResponse.getCredentialConfigurationId();
-            assertNotNull("Credential configuration id should not be null", credentialConfigurationId);
-        }
+        credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
+        assertNotNull("Credential identifier should not be null", credentialIdentifier);
+
+        credentialConfigurationId = authDetailResponse.getCredentialConfigurationId();
+        assertNotNull("Credential configuration id should not be null", credentialConfigurationId);
 
         // Step 2: Request the actual credential using the identifier and config id
         // Clear events before credential request
         events.clear();
 
-        HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
-        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
+                .bearerToken(token)
+                .credentialIdentifier(credentialIdentifier)
+                .send();
 
-        CredentialRequest credentialRequest = new CredentialRequest();
-        credentialRequest.setCredentialIdentifier(credentialIdentifier);
+        assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusCode());
 
-        String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
-        postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));
+        // Verify CREDENTIAL_REQUEST event was fired
+        events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST)
+                .client(client.getClientId())
+                .user(AssertEvents.isUUID())
+                .session(AssertEvents.isSessionId())
+                .detail(Details.USERNAME, "john")
+                .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
+                .assertEvent();
 
-        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-            assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusLine().getStatusCode());
+        // Parse the credential response
+        CredentialResponse parsedResponse = credentialResponse.getCredentialResponse();
+        assertNotNull("Credential response should not be null", parsedResponse);
+        assertNotNull("Credentials should be present", parsedResponse.getCredentials());
+        assertEquals("Should have exactly one credential", 1, parsedResponse.getCredentials().size());
 
-            // Verify CREDENTIAL_REQUEST event was fired
-            events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST)
-                    .client(client.getClientId())
-                    .user(AssertEvents.isUUID())
-                    .session(AssertEvents.isSessionId())
-                    .detail(Details.USERNAME, "john")
-                    .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
-                    .assertEvent();
-            String responseBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+        // Step 3: Verify that the issued credential contains the requested claims AND may contain additional claims
+        CredentialResponse.Credential credentialWrapper = parsedResponse.getCredentials().get(0);
+        assertNotNull("Credential wrapper should not be null", credentialWrapper);
 
-            // Parse the credential response
-            CredentialResponse parsedResponse = JsonSerialization.readValue(responseBody, CredentialResponse.class);
-            assertNotNull("Credential response should not be null", parsedResponse);
-            assertNotNull("Credentials should be present", parsedResponse.getCredentials());
-            assertEquals("Should have exactly one credential", 1, parsedResponse.getCredentials().size());
+        // The credential is stored as Object, so we need to cast it
+        Object credentialObj = credentialWrapper.getCredential();
+        assertNotNull("Credential object should not be null", credentialObj);
 
-            // Step 3: Verify that the issued credential contains the requested claims AND may contain additional claims
-            CredentialResponse.Credential credentialWrapper = parsedResponse.getCredentials().get(0);
-            assertNotNull("Credential wrapper should not be null", credentialWrapper);
-
-            // The credential is stored as Object, so we need to cast it
-            Object credentialObj = credentialWrapper.getCredential();
-            assertNotNull("Credential object should not be null", credentialObj);
-
-            // Verify the credential structure based on format
-            verifyCredentialStructure(credentialObj);
-        }
+        // Verify the credential structure based on format
+        verifyCredentialStructure(credentialObj);
     }
 
     @Test
@@ -952,24 +827,23 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         events.clear();
 
         // Request credential with empty payload
-        HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
-        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-        postCredential.setEntity(new StringEntity("", StandardCharsets.UTF_8));
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
+                .bearerToken(token)
+                .emptyBody()
+                .send();
 
-        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-            assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusLine().getStatusCode());
+        assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
 
-            // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
-            // Note: When payload is empty, error is thrown before authentication, so user/session are null
-            events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
-                    .client((String) null)
-                    .user((String) null)
-                    .session((String) null)
-                    .error(Errors.INVALID_REQUEST)
-                    .detail(Details.REASON, "Request payload is null or empty.")
-                    .assertEvent();
-        }
+        // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
+        // Note: When payload is empty, error is thrown before authentication, so user/session are null
+        events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                .client((String) null)
+                .user((String) null)
+                .session((String) null)
+                .error(Errors.INVALID_REQUEST)
+                .detail(Details.REASON, "Request payload is null or empty.")
+                .assertEvent();
     }
 
     @Test
@@ -980,27 +854,21 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         events.clear();
 
         // Request credential with invalid credential identifier
-        HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
-        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
+                .bearerToken(token)
+                .credentialIdentifier("invalid-credential-identifier")
+                .send();
 
-        CredentialRequest credentialRequest = new CredentialRequest();
-        credentialRequest.setCredentialIdentifier("invalid-credential-identifier");
+        assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
 
-        String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
-        postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));
-
-        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-            assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusLine().getStatusCode());
-
-            // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
-            events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
-                    .client(client.getClientId())
-                    .user(AssertEvents.isUUID())
-                    .session(AssertEvents.isSessionId())
-                    .error(Errors.INVALID_REQUEST)
-                    .assertEvent();
-        }
+        // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
+        events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                .client(client.getClientId())
+                .user(AssertEvents.isUUID())
+                .session(AssertEvents.isSessionId())
+                .error(Errors.INVALID_REQUEST)
+                .assertEvent();
     }
 
     /**
@@ -1012,25 +880,4 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         assertNotNull("Credential object should not be null", credentialObj);
     }
 
-    /**
-     * Parse authorization details from the token response.
-     */
-    protected List<OID4VCAuthorizationDetailResponse> parseAuthorizationDetails(String responseBody) {
-        try {
-            // Parse the JSON response to extract authorization_details
-            Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, Map.class);
-            Object authDetailsObj = responseMap.get("authorization_details");
-
-            if (authDetailsObj == null) {
-                return Collections.emptyList();
-            }
-
-            // Convert to list of OID4VCAuthorizationDetailResponse
-            return JsonSerialization.readValue(JsonSerialization.writeValueAsString(authDetailsObj),
-                    new TypeReference<List<OID4VCAuthorizationDetailResponse>>() {
-                    });
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to parse authorization_details from response", e);
-        }
-    }
 }
