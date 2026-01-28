@@ -51,6 +51,7 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
     private Set<String> cachedRoleMappings = new HashSet<>();
     private final LazyLoader<GroupModel, Set<String>> subGroups;
     private final Type type;
+    private final String organizationId;
 
     public CachedGroup(Long revision, RealmModel realm, GroupModel group) {
         super(revision, group.getId());
@@ -62,6 +63,7 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
         this.roleMappings = new DefaultLazyLoader<>(source -> source.getRoleMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()), Collections::emptySet);
         this.subGroups = new DefaultLazyLoader<>(source -> source.getSubGroupsStream().map(GroupModel::getId).collect(Collectors.toSet()), Collections::emptySet);
         this.type = group.getType();
+        this.organizationId = group.getOrganization() == null ? null : group.getOrganization().getId();
     }
 
     @Override
@@ -104,5 +106,9 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
 
     public Type getType() {
         return type;
+    }
+
+    public String getOrganizationId() {
+        return organizationId;
     }
 }

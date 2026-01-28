@@ -130,6 +130,11 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             adapter.setEnabled(true);
 
             em.persist(adapter.getEntity());
+
+            // Set organization-group relationship for the internal group
+            // Must be done after persist so the organization entity is managed
+            GroupEntity groupEntity = em.find(GroupEntity.class, group.getId());
+            groupEntity.setOrganization(entity);
         } finally {
             session.getContext().setOrganization(null);
         }
@@ -490,10 +495,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             parentGroup = getOrganizationGroup(organization);
         } else {
             // Validate the parent group
-            if (!Objects.equals(toParent.getType(), Type.ORGANIZATION)) {
-                throw new ModelValidationException("Parent group must be of type ORGANIZATION");
-            }
-            if (!Objects.equals(toParent.getOrganization().getId(), organization.getId())) {
+            if (!Organizations.isOrganizationGroup(toParent) ||
+                    !Objects.equals(toParent.getOrganization().getId(), organization.getId())) {
                 throw new ModelValidationException("Parent group does not belong to the specified organization");
             }
             parentGroup = toParent;
@@ -532,7 +535,6 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         return closing(paginateQuery(em.createQuery(queryBuilder), firstResult, maxResults).getResultStream()
                 .map(realm::getGroupById)
-                .sorted(GroupModel.COMPARE_BY_NAME)
         );
     }
 
@@ -553,6 +555,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         predicates.add(builder.equal(root.get("realm"), realm.getId()));
         predicates.add(builder.equal(root.get("type"), Type.ORGANIZATION.intValue()));
         predicates.add(builder.equal(root.get("organization").get("id"), organization.getId()));
+        predicates.add(builder.notEqual(root.get("id"), getOrganizationGroup(organization).getId())); // Exclude internal group
 
         if (Boolean.TRUE.equals(exact)) {
             predicates.add(builder.equal(root.get("name"), search));
@@ -568,7 +571,6 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         return closing(paginateQuery(em.createQuery(queryBuilder), firstResult, maxResults).getResultStream()
                         .map(realm::getGroupById)
-                        .sorted(GroupModel.COMPARE_BY_NAME)
         );
     }
 
@@ -589,6 +591,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         predicates.add(builder.equal(root.get("realm"), realm.getId()));
         predicates.add(builder.equal(root.get("type"), Type.ORGANIZATION.intValue()));
         predicates.add(builder.equal(root.get("organization").get("id"), organization.getId()));
+        predicates.add(builder.notEqual(root.get("id"), getOrganizationGroup(organization).getId())); // Exclude internal group
 
         Join<GroupEntity, GroupAttributeEntity> attributesJoin = root.join("attributes", JoinType.LEFT);
 
@@ -607,7 +610,6 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         return closing(paginateQuery(em.createQuery(queryBuilder), firstResult, maxResults).getResultStream()
                         .map(realm::getGroupById)
-                        .sorted(GroupModel.COMPARE_BY_NAME)
         );
     }
 

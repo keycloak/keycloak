@@ -18,6 +18,7 @@
 package org.keycloak.models.cache.infinispan.organization;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -26,6 +27,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.OrganizationProviderFactory;
+import org.keycloak.organization.utils.Organizations;
 
 public class InfinispanOrganizationProviderFactory implements OrganizationProviderFactory {
 
@@ -54,6 +56,12 @@ public class InfinispanOrganizationProviderFactory implements OrganizationProvid
                 InfinispanOrganizationProvider orgProvider = (InfinispanOrganizationProvider) session.getProvider(OrganizationProvider.class, getId());
                 orgProvider.getByMember(event.getUser()).forEach(organization -> orgProvider.registerMemberInvalidation(organization, event.getUser()));
             }
+            if (e instanceof GroupModel.GroupRemovedEvent event) {
+                registerOrgGroupInvalidation(event);
+            }
+            if (e instanceof GroupModel.GroupUpdatedEvent event) {
+                registerOrgGroupInvalidation(event);
+            }
         });
     }
 
@@ -64,6 +72,22 @@ public class InfinispanOrganizationProviderFactory implements OrganizationProvid
                 OrganizationModel organization = orgProvider.getById(idp.getOrganizationId());
                 orgProvider.registerOrganizationInvalidation(organization);
             }
+        }
+    }
+
+    private void registerOrgGroupInvalidation(GroupModel.GroupEvent event) {
+        GroupModel group = event.getGroup();
+
+        // Only handle organization groups
+        if (!Organizations.isOrganizationGroup(group)) {
+            return;
+        }
+
+        KeycloakSession session = event.getKeycloakSession();
+        InfinispanOrganizationProvider orgProvider = (InfinispanOrganizationProvider) session.getProvider(OrganizationProvider.class, getId());
+        if (orgProvider != null) {
+            // Organization groups are not cached - only invalidate organization itself
+            orgProvider.registerOrganizationInvalidation(group.getOrganization());
         }
     }
 
