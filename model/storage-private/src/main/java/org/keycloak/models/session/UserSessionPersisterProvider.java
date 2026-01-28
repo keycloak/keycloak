@@ -83,7 +83,9 @@ public interface UserSessionPersisterProvider extends Provider {
      * @param firstResult
      * @param maxResults
      * @return
+     * @deprecated use the {@link #readOnlyUserSessionStream(RealmModel, ClientModel, boolean)} instead.
      */
+    @Deprecated(since = "26.6", forRemoval = true)
     Stream<UserSessionModel> loadUserSessionsStream(RealmModel realm, ClientModel client, boolean offline, Integer firstResult, Integer maxResults);
 
     default UserSessionModel loadUserSessionsStreamByBrokerSessionId(RealmModel realm, String brokerSessionId, boolean offline) {
@@ -98,7 +100,9 @@ public interface UserSessionPersisterProvider extends Provider {
      * @param lastUserSessionId {@code String} Id of the user session. It will return only user sessions with id's lexicographically greater than this.
      * it will compare the id in dictionary order and takes only those created later.
      * @return Stream of {@link UserSessionModel}. Never returns {@code null}.
+     * @deprecated User sessions will no longer be loaded at startup as this does not scale.
      */
+    @Deprecated(since = "26.6", forRemoval = true)
     Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
                                                     String lastUserSessionId);
 

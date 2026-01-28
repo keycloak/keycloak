@@ -112,7 +112,9 @@ public interface UserSessionProvider extends Provider {
      * @param realm a reference to the realm.
      * @param client the client whose user sessions are being searched.
      * @return a non-null {@link Stream} of online user sessions.
+     * @deprecated Instead use {@link #readOnlyStreamUserSessions(RealmModel, ClientModel)}
      */
+    @Deprecated(since = "26.6", forRemoval = true)
     Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, ClientModel client);
 
     /**
@@ -124,7 +126,9 @@ public interface UserSessionProvider extends Provider {
      * @param firstResult first result to return. Ignored if negative or {@code null}.
      * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a non-null {@link Stream} of online user sessions.
+     * @deprecated Instead use {@link #readOnlyStreamUserSessions(RealmModel, ClientModel)}
      */
+    @Deprecated(since = "26.6", forRemoval = true)
     Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults);
 
     /**
@@ -245,7 +249,9 @@ public interface UserSessionProvider extends Provider {
      * @param firstResult first result to return. Ignored if negative or {@code null}.
      * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a non-null {@link Stream} of offline user sessions.
+     * @deprecated Instead use {@link #readOnlyStreamOfflineUserSessions(RealmModel, ClientModel)}
      */
+    @Deprecated(since = "26.6", forRemoval = true)
     Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults);
 
     /** Triggered by persister during pre-load. It imports authenticatedClientSessions too.
@@ -282,7 +288,7 @@ public interface UserSessionProvider extends Provider {
     /**
      * Stream all the regular sessions in the realm.
      * <p>
-     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the JPA and any
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the transaction and any
      * modification may throw an {@link UnsupportedOperationException}.
      *
      * @param realm The {@link RealmModel} instance.
@@ -299,7 +305,7 @@ public interface UserSessionProvider extends Provider {
     /**
      * Stream all the offline sessions in the realm.
      * <p>
-     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the JPA and any
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the transaction and any
      * modification may throw an {@link UnsupportedOperationException}.
      *
      * @param realm The {@link RealmModel} instance.
@@ -316,7 +322,7 @@ public interface UserSessionProvider extends Provider {
     /**
      * Stream all the regular sessions belonging to the realm and having a client session from the client.
      * <p>
-     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the JPA and any
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the transaction and any
      * modification may throw an {@link UnsupportedOperationException}.
      *
      * @param realm  The {@link RealmModel} instance.
@@ -330,7 +336,7 @@ public interface UserSessionProvider extends Provider {
     /**
      * Stream all the offline sessions belonging to the realm and having a client session from the client.
      * <p>
-     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the JPA and any
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the transaction and any
      * modification may throw an {@link UnsupportedOperationException}.
      *
      * @param realm   The {@link RealmModel} instance.

@@ -74,9 +74,13 @@ See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to 
 
 === `UserSessionProvider` API changes
 
-The `UserSessionProvider` interface receives new methods for efficient streaming of user sessions, in both speed and memory.
+The internal `UserSessionProvider` interface received new methods for efficient streaming of user sessions, in both speed and memory.
 The streaming instances are read-only, meaning they will not change.
-In addition, the implementation **should** avoid keeping them in memory, in case the invoker needs to analyze all data.
+The previous methods have been deprecated.
+Custom providers should implement these new methods to avoid performance penalties.
+They should avoid keeping the returned items in memory by for example binding them to the current transaction, in case the invoker needs to analyze all data.
+
+A similar change was done for the `UserSessionPersisterProvider`.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
