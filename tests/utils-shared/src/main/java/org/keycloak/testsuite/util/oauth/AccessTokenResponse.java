@@ -2,14 +2,17 @@ package org.keycloak.testsuite.util.oauth;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.representations.AuthorizationDetailsResponse;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class AccessTokenResponse extends AbstractHttpResponse {
@@ -23,7 +26,8 @@ public class AccessTokenResponse extends AbstractHttpResponse {
     private String refreshToken;
     private String scope;
     private String sessionState;
-    private List<AuthorizationDetailsResponse> authorizationDetails;
+    private List<AuthorizationDetailsJSONRepresentation> authorizationDetails;
+    private Map<String, Object> responseJson;
 
     private Map<String, Object> otherClaims;
 
@@ -32,8 +36,8 @@ public class AccessTokenResponse extends AbstractHttpResponse {
     }
 
     protected void parseContent() throws IOException {
-        @SuppressWarnings("unchecked")
         Map<String, Object> responseJson = asJson(Map.class);
+        this.responseJson = responseJson;
 
         otherClaims = new HashMap<>();
 
@@ -68,7 +72,7 @@ public class AccessTokenResponse extends AbstractHttpResponse {
                     break;
                 case OAuth2Constants.AUTHORIZATION_DETAILS:
                     var valJson = JsonSerialization.valueAsString(entry.getValue());
-                    var arr = JsonSerialization.valueFromString(valJson, AuthorizationDetailsResponse[].class);
+                    var arr = JsonSerialization.valueFromString(valJson, AuthorizationDetailsJSONRepresentation[].class);
                     authorizationDetails = Arrays.asList(arr);
                     break;
                 default:
@@ -118,17 +122,42 @@ public class AccessTokenResponse extends AbstractHttpResponse {
         return otherClaims;
     }
 
-    public List<AuthorizationDetailsResponse> getAuthorizationDetails() {
+    public List<AuthorizationDetailsJSONRepresentation> getAuthorizationDetails() {
         return authorizationDetails;
     }
 
-    public <ADR extends AuthorizationDetailsResponse> List<ADR> getAuthorizationDetails(Class<ADR> clazz) {
-        if (getAuthorizationDetails() == null) {
+    public <ADR extends AuthorizationDetailsJSONRepresentation> List<ADR> getAuthorizationDetails(Class<ADR> clazz) {
+        if (authorizationDetails == null) {
             return null;
-        } else {
-            return getAuthorizationDetails().stream()
-                    .map(authzResponse -> authzResponse.asSubtype(clazz))
-                    .toList();
+        }
+        return authorizationDetails.stream()
+                .map(authzResponse -> authzResponse.asSubtype(clazz))
+                .toList();
+    }
+
+    /**
+     * Get authorization details as OID4VC-specific response objects.
+     * This is useful when you need to access OID4VC-specific fields like credential_identifiers.
+     *
+     * @return a list of authorization details, or an empty list if none are present.
+     * @throws RuntimeException if there's an error parsing the JSON response
+     */
+    public List<OID4VCAuthorizationDetailResponse> getOid4vcAuthorizationDetails() {
+        if (responseJson == null) {
+            return Collections.emptyList();
+        }
+        Object authDetailsObj = responseJson.get(OAuth2Constants.AUTHORIZATION_DETAILS);
+        if (authDetailsObj == null) {
+            return Collections.emptyList();
+        }
+        try {
+            return JsonSerialization.readValue(
+                    JsonSerialization.writeValueAsString(authDetailsObj),
+                    new TypeReference<List<OID4VCAuthorizationDetailResponse>>() {
+                    }
+            );
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse authorization_details from token response", e);
         }
     }
 }

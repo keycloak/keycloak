@@ -112,7 +112,7 @@ import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.AuthorizationDetailsResponse;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.saml.processing.api.util.DeflateUtil;
 import org.keycloak.services.CorsErrorResponseException;
@@ -298,8 +298,8 @@ public class OID4VCIssuerEndpoint {
      * the OpenId4VCI nonce-endpoint
      *
      * @return a short-lived c_nonce value that must be presented in key-bound proofs at the credential endpoint.
-     * @see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html#name-nonce-endpoint
-     * @see https://datatracker.ietf.org/doc/html/draft-demarco-nonce-endpoint#name-nonce-response
+     * @see <a href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html#name-nonce-endpoint">Nonce endpoint</a>
+     * @see <a href="https://datatracker.ietf.org/doc/html/draft-demarco-nonce-endpoint#name-nonce-response">Nonce response</a>
      */
     @POST
     @Produces({MediaType.APPLICATION_JSON})
@@ -391,7 +391,7 @@ public class OID4VCIssuerEndpoint {
      * @param type          The response type, which can be 'uri' or 'qr-code'
      * @param width         The width of the QR code image
      * @param height        The height of the QR code image
-     * @see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-offer-endpoint
+     * @see <a href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-offer-endpoint">Credential offer endpoint</a>
      */
     @GET
     @Produces({MediaType.APPLICATION_JSON, RESPONSE_TYPE_IMG_PNG})
@@ -852,7 +852,6 @@ public class OID4VCIssuerEndpoint {
             }
 
             // Find the configured scope in the login client
-            //
             ClientScopeModel clientScope = clientModel.getClientScopes(false).get(credConfig.getScope());
             if (clientScope == null) {
                 var errorMessage = String.format("Client scope not found: %s", credConfig.getScope());
@@ -935,7 +934,7 @@ public class OID4VCIssuerEndpoint {
     }
 
     private OID4VCAuthorizationDetailResponse getAuthorizationDetailFromToken(AccessToken accessToken) {
-        List<AuthorizationDetailsResponse> tokenAuthDetails = accessToken.getAuthorizationDetails();
+        List<AuthorizationDetailsJSONRepresentation> tokenAuthDetails = accessToken.getAuthorizationDetails();
         AuthorizationDetailsProcessor<OID4VCAuthorizationDetailResponse> oid4vcProcessor = session.getProvider(AuthorizationDetailsProcessor.class, OPENID_CREDENTIAL);
         List<OID4VCAuthorizationDetailResponse> oid4vcResponses = oid4vcProcessor.getSupportedAuthorizationDetails(tokenAuthDetails);
         return oid4vcResponses == null || oid4vcResponses.isEmpty() ? null : oid4vcResponses.get(0);

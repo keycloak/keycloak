@@ -155,6 +155,10 @@ public class LoginPage extends LanguageComboboxAwarePage {
         return !driver.findElements(By.id("username")).isEmpty();
     }
 
+    public boolean isEmailInputPresent() {
+        return !driver.findElements(By.id("email")).isEmpty();
+    }
+
     public boolean isRegisterLinkPresent() {
         return !driver.findElements(By.linkText("Register")).isEmpty();
     }

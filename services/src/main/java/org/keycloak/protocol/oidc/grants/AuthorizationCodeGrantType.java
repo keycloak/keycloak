@@ -39,7 +39,7 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
-import org.keycloak.representations.AuthorizationDetailsResponse;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
@@ -215,7 +215,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, codeData.getNonce());
 
         // Process authorization_details using provider discovery (if present in request)
-        List<AuthorizationDetailsResponse> authorizationDetailsResponse = null;
+        List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponse = null;
         if (formParams.getFirst(AUTHORIZATION_DETAILS) != null) {
             authorizationDetailsResponse = processAuthorizationDetails(userSession, clientSessionCtx);
             if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
@@ -252,7 +252,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
 
         return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, s -> {
             // Add authorization_details to the access token and refresh token if they were processed
-            List<AuthorizationDetailsResponse> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
+            List<AuthorizationDetailsJSONRepresentation> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
             if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
                 s.getAccessToken().setAuthorizationDetails(authDetailsResponse);
                 // Also add to refresh token if one is generated

@@ -43,7 +43,7 @@ import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.rar.InvalidAuthorizationDetailsException;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
-import org.keycloak.representations.AuthorizationDetailsResponse;
+import org.keycloak.util.AuthorizationDetailsParser;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
@@ -81,7 +81,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
 
     @Override
     public OID4VCAuthorizationDetailResponse process(UserSessionModel userSession, ClientSessionContext clientSessionCtx, AuthorizationDetailsJSONRepresentation authzDetail) {
-        OID4VCAuthorizationDetail detail = convertRequestType(authzDetail);
+        OID4VCAuthorizationDetail detail = authzDetail.asSubtype(OID4VCAuthorizationDetail.class);
         Map<String, SupportedCredentialConfiguration> supportedCredentials = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
 
         // Retrieve authorization servers and issuer identifier for locations check
@@ -264,7 +264,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         String credentialConfigurationId = detail.getCredentialConfigurationId();
 
         // Try to reuse identifier from authorizationDetailsResponse in client session context
-        List<AuthorizationDetailsResponse> previousResponses = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
+        List<AuthorizationDetailsJSONRepresentation> previousResponses = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
         List<OID4VCAuthorizationDetailResponse> oid4vcPreviousResponses = getSupportedAuthorizationDetails(previousResponses);
         List<String> credentialIdentifiers = oid4vcPreviousResponses != null && !oid4vcPreviousResponses.isEmpty()
                 ? oid4vcPreviousResponses.get(0).getCredentialIdentifiers()
@@ -400,49 +400,52 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
     }
 
 
-    public static class OID4VCAuthorizationDetailsParser implements AuthorizationDetailsResponse.AuthorizationDetailsResponseParser<OID4VCAuthorizationDetailResponse> {
+    public static class OID4VCAuthorizationDetailsParser implements AuthorizationDetailsParser {
 
         @Override
-        public OID4VCAuthorizationDetailResponse asSubtype(AuthorizationDetailsResponse response) {
-            if (response instanceof OID4VCAuthorizationDetailResponse) {
-                return (OID4VCAuthorizationDetailResponse) response;
+        public <T extends AuthorizationDetailsJSONRepresentation> T asSubtype(AuthorizationDetailsJSONRepresentation authzDetail, Class<T> clazz) {
+            if (OID4VCAuthorizationDetail.class.equals(clazz)) {
+                if (authzDetail instanceof OID4VCAuthorizationDetail) {
+                    return clazz.cast(authzDetail);
+                } else {
+                    OID4VCAuthorizationDetail detail = new OID4VCAuthorizationDetail();
+                    fillFields(authzDetail, detail);
+                    return clazz.cast(detail);
+                }
+            } else if (OID4VCAuthorizationDetailResponse.class.equals(clazz)) {
+                if (authzDetail instanceof OID4VCAuthorizationDetailResponse) {
+                    return clazz.cast(authzDetail);
+                } else {
+                    OID4VCAuthorizationDetailResponse detail = new OID4VCAuthorizationDetailResponse();
+                    fillFields(authzDetail, detail);
+                    detail.setCredentialIdentifiers((List<String>) authzDetail.getCustomData().get(CREDENTIAL_IDENTIFIERS));
+                    return clazz.cast(detail);
+                }
             } else {
-                OID4VCAuthorizationDetailResponse detail = new OID4VCAuthorizationDetailResponse();
-                detail.setType(response.getType());
-                detail.setLocations(response.getLocations());
-                detail.setCredentialConfigurationId((String) response.getCustomData().get(CREDENTIAL_CONFIGURATION_ID));
-                detail.setClaims(parseClaims((List<Map>) response.getCustomData().get(CLAIMS)));
-                detail.setCredentialIdentifiers((List<String>) response.getCustomData().get(CREDENTIAL_IDENTIFIERS));
-                return detail;
+                throw new IllegalArgumentException("Authorization details '" + authzDetail + "' is unsupported to be parsed to '" + clazz + "'.");
             }
         }
-    }
 
+        private void fillFields(AuthorizationDetailsJSONRepresentation inDetail, OID4VCAuthorizationDetail outDetail) {
+            outDetail.setType(inDetail.getType());
+            outDetail.setLocations(inDetail.getLocations());
+            outDetail.setCredentialConfigurationId((String) inDetail.getCustomData().get(CREDENTIAL_CONFIGURATION_ID));
+            outDetail.setClaims(parseClaims((List<Map>) inDetail.getCustomData().get(CLAIMS)));
+        }
 
-    private static OID4VCAuthorizationDetail convertRequestType(AuthorizationDetailsJSONRepresentation request) {
-        if (request instanceof OID4VCAuthorizationDetail) {
-            return (OID4VCAuthorizationDetail) request;
-        } else {
-            OID4VCAuthorizationDetail detail = new OID4VCAuthorizationDetail();
-            detail.setType(request.getType());
-            detail.setLocations(request.getLocations());
-            detail.setCredentialConfigurationId((String) request.getCustomData().get(CREDENTIAL_CONFIGURATION_ID));
-            detail.setClaims(parseClaims((List<Map>) request.getCustomData().get(CLAIMS)));
-            return detail;
+        private static List<ClaimsDescription> parseClaims(List<Map> genericClaims) {
+            if (genericClaims == null) {
+                return null;
+            }
+
+            return genericClaims.stream()
+                    .map(claim -> {
+                        List<Object> path = (List<Object>) claim.get(PATH);
+                        Boolean mandatory = (Boolean) claim.get(MANDATORY);
+                        return new ClaimsDescription(path, mandatory);
+                    })
+                    .toList();
         }
     }
 
-    private static List<ClaimsDescription> parseClaims(List<Map> genericClaims) {
-        if (genericClaims == null) {
-            return null;
-        }
-
-        return genericClaims.stream()
-                .map(claim -> {
-                    List<Object> path = (List<Object>) claim.get(PATH);
-                    Boolean mandatory = (Boolean) claim.get(MANDATORY);
-                    return new ClaimsDescription(path, mandatory);
-                })
-                .toList();
-    }
 }

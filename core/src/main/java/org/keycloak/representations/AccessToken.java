@@ -150,7 +150,7 @@ public class AccessToken extends IDToken {
     protected String scope;
 
     @JsonProperty(OAuth2Constants.AUTHORIZATION_DETAILS)
-    protected List<AuthorizationDetailsResponse> authorizationDetails;
+    protected List<AuthorizationDetailsJSONRepresentation> authorizationDetails;
 
     @JsonIgnore
     public Map<String, Access> getResourceAccess() {
@@ -279,11 +279,11 @@ public class AccessToken extends IDToken {
         this.scope = scope;
     }
 
-    public List<AuthorizationDetailsResponse> getAuthorizationDetails() {
+    public List<AuthorizationDetailsJSONRepresentation> getAuthorizationDetails() {
         return authorizationDetails;
     }
 
-    public void setAuthorizationDetails(List<AuthorizationDetailsResponse> authorizationDetails) {
+    public void setAuthorizationDetails(List<AuthorizationDetailsJSONRepresentation> authorizationDetails) {
         this.authorizationDetails = authorizationDetails;
     }
 

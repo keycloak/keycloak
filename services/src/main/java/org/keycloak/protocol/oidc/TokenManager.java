@@ -104,7 +104,6 @@ import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
-import org.keycloak.representations.AuthorizationDetailsResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.LogoutToken;
@@ -355,7 +354,7 @@ public class TokenManager {
             validation.userSession, validation.clientSessionCtx).offlineToken( TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType())).accessToken(validation.newToken);
 
         // Copy authorization_details from refresh token to new access token and to acessTokenResponse (if present)
-        List<AuthorizationDetailsResponse> authorizationDetails = refreshToken.getAuthorizationDetails();
+        List<AuthorizationDetailsJSONRepresentation> authorizationDetails = refreshToken.getAuthorizationDetails();
         if (authorizationDetails != null) {
             validation.newToken.setAuthorizationDetails(authorizationDetails);
             validation.clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetails);
@@ -1404,7 +1403,7 @@ public class TokenManager {
             res.setScope(responseScope);
             event.detail(Details.SCOPE, responseScope);
 
-            List<AuthorizationDetailsResponse> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
+            List<AuthorizationDetailsJSONRepresentation> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
             if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
                 res.setAuthorizationDetails(authDetailsResponse);
             }

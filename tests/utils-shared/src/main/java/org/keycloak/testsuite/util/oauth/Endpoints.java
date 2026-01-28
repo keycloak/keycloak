@@ -78,6 +78,31 @@ public class Endpoints {
         return asString(CibaGrantType.authenticationUrl(getBase()));
     }
 
+    public String getOid4vcIssuerMetadata() {
+        return asString(getBase().path(RealmsResource.class).path("{realm}/.well-known/openid-credential-issuer"));
+    }
+
+    public String getOid4vcCredential() {
+        return asString(getBase().path(RealmsResource.class).path("{realm}/protocol/oid4vc/credential"));
+    }
+
+    public String getOid4vcNonce() {
+        return asString(getBase().path(RealmsResource.class).path("{realm}/protocol/oid4vc/nonce"));
+    }
+
+    public String getOid4vcCredentialOffer(String nonce) {
+        return asString(getBase().path(RealmsResource.class).path("{realm}/protocol/oid4vc/credential-offer/").path(nonce));
+    }
+
+    public String getOid4vcCredentialOfferUri(String configId, Boolean preAuthorized, String username, String appClientId) {
+        UriBuilder builder = getBase().path(RealmsResource.class).path("{realm}/protocol/oid4vc/credential-offer-uri");
+        if (configId != null && !configId.isBlank()) builder.queryParam("credential_configuration_id", configId);
+        if (preAuthorized != null) builder.queryParam("pre_authorized", preAuthorized);
+        if (username != null && !username.isBlank()) builder.queryParam("username", username);
+        if (appClientId != null && !appClientId.isBlank()) builder.queryParam("client_id", appClientId);
+        return asString(builder);
+    }
+
     UriBuilder getBase() {
         return UriBuilder.fromUri(baseUrl);
     }

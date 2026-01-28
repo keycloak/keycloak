@@ -41,13 +41,5 @@ https://www.npmjs.com/package/*
 https://docs.kantarainitiative.org*
 https://saml.xml.org*
 
-# To be removed once KC 26.5.0 is released
-https://www.keycloak.org/observability/telemetry
-https://www.keycloak.org/securing-apps/jwt-authorization-grant
+# To be removed once KC 26.6.0 is released
 https://www.keycloak.org/securing-apps/dpop
-https://www.keycloak.org/server/windows-service
-https://www.keycloak.org/server/db#multiple-datasources
-https://www.keycloak.org/server/logging#http-access-logging
-https://www.keycloak.org/server/logging#mdc
-https://www.keycloak.org/securing-apps/mcp-authz-server
-https://www.keycloak.org/docs/latest/server_admin/index.html#_identity_broker_kubernetes

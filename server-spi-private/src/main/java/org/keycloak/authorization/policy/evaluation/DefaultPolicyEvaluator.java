@@ -132,15 +132,17 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
 
     protected Consumer<Policy> createPolicyEvaluator(ResourcePermission permission, AuthorizationProvider authorizationProvider, EvaluationContext executionContext, Decision decision, AtomicBoolean verified, Map<Policy, Map<Object, Decision.Effect>> decisionCache) {
         return parentPolicy -> {
-            PolicyProvider policyProvider = authorizationProvider.getProvider(parentPolicy.getType());
+            if (parentPolicy != null) {
+                PolicyProvider policyProvider = authorizationProvider.getProvider(parentPolicy.getType());
 
-            if (policyProvider == null) {
-                throw new RuntimeException("Unknown parentPolicy provider for type [" + parentPolicy.getType() + "].");
+                if (policyProvider == null) {
+                    throw new RuntimeException("Unknown parentPolicy provider for type [" + parentPolicy.getType() + "].");
+                }
+
+                policyProvider.evaluate(new DefaultEvaluation(permission, executionContext, parentPolicy, decision, authorizationProvider, decisionCache));
+
+                verified.compareAndSet(false, true);
             }
-
-            policyProvider.evaluate(new DefaultEvaluation(permission, executionContext, parentPolicy, decision, authorizationProvider, decisionCache));
-
-            verified.compareAndSet(false, true);
         };
     }
 }

@@ -65,7 +65,7 @@ public class AccessTokenResponse {
     protected String scope;
 
     @JsonProperty(OAuth2Constants.AUTHORIZATION_DETAILS)
-    protected List<AuthorizationDetailsResponse> authorizationDetails;
+    protected List<AuthorizationDetailsJSONRepresentation> authorizationDetails;
 
     @JsonProperty("error")
     protected String error;
@@ -84,11 +84,11 @@ public class AccessTokenResponse {
         this.scope = scope;
     }
 
-    public List<AuthorizationDetailsResponse> getAuthorizationDetails() {
+    public List<AuthorizationDetailsJSONRepresentation> getAuthorizationDetails() {
         return authorizationDetails;
     }
 
-    public void setAuthorizationDetails(List<AuthorizationDetailsResponse> authorizationDetails) {
+    public void setAuthorizationDetails(List<AuthorizationDetailsJSONRepresentation> authorizationDetails) {
         this.authorizationDetails = authorizationDetails;
     }
 

@@ -34,6 +34,11 @@ public class TelemetryOptions {
             .description("OpenTelemetry resource attributes characterize the telemetry producer. Values in format 'key1=val1,key2=val2'.")
             .build();
 
+    public static final Option<String> TELEMETRY_HEADER = new OptionBuilder<>("telemetry-header-<header>", String.class)
+            .category(OptionCategory.TELEMETRY)
+            .description("General OpenTelemetry header that will be part of the exporter request (mainly useful for providing Authorization header). Check the documentation on how to set environment variables for headers containing special characters or custom case-sensitive headers.")
+            .build();
+
     // Telemetry Logs
     public static final Option<Boolean> TELEMETRY_LOGS_ENABLED = new OptionBuilder<>("telemetry-logs-enabled", Boolean.class)
             .category(OptionCategory.TELEMETRY)
@@ -60,6 +65,17 @@ public class TelemetryOptions {
             .caseInsensitiveExpectedValues(true)
             .build();
 
+    public static final Option<String> TELEMETRY_LOGS_HEADER = new OptionBuilder<>("telemetry-logs-header-<header>", String.class)
+            .category(OptionCategory.TELEMETRY)
+            .description("OpenTelemetry header that will be part of the log exporter request (mainly useful for providing Authorization header). Check the documentation on how to set environment variables for headers containing special characters or custom case-sensitive headers.")
+            .build();
+
+    public static final Option<List<String>> TELEMETRY_LOGS_HEADERS = OptionBuilder.listOptionBuilder("telemetry-logs-headers", String.class)
+            .category(OptionCategory.TELEMETRY)
+            .hidden()
+            .description("Hidden option for OpenTelemetry headers that will be part of the exporter request. Values in format 'key1=val1,key2=val2'. Overrides the 'telemetry-logs-header-<header>' options.")
+            .build();
+
     // Telemetry Metrics
     public static final Option<Boolean> TELEMETRY_METRICS_ENABLED = new OptionBuilder<>("telemetry-metrics-enabled", Boolean.class)
             .category(OptionCategory.TELEMETRY)
@@ -83,5 +99,16 @@ public class TelemetryOptions {
             .category(OptionCategory.TELEMETRY)
             .description("The interval between the start of two metric export attempts to the destination handling OpenTelemetry metrics data. It accepts simplified format for time units as java.time.Duration (like 5000ms, 30s, 5m, 1h). If the value is only a number, it represents time in seconds.")
             .defaultValue("60s")
+            .build();
+
+    public static final Option<String> TELEMETRY_METRICS_HEADER = new OptionBuilder<>("telemetry-metrics-header-<header>", String.class)
+            .category(OptionCategory.TELEMETRY)
+            .description("OpenTelemetry header that will be part of the metrics exporter request (mainly useful for providing Authorization header). Check the documentation on how to set environment variables for headers containing special characters or custom case-sensitive headers.")
+            .build();
+
+    public static final Option<List<String>> TELEMETRY_METRICS_HEADERS = OptionBuilder.listOptionBuilder("telemetry-metrics-headers", String.class)
+            .category(OptionCategory.TELEMETRY)
+            .hidden()
+            .description("Hidden option for OpenTelemetry headers that will be part of the exporter request. Values in format 'key1=val1,key2=val2'. Overrides the 'telemetry-metrics-header-<header>' options.")
             .build();
 }

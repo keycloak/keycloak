@@ -4,13 +4,30 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
-=== <TODO>
+=== JavaScript-based policies can only be deployed now if the `scripts` feature is enabled
+
+In this version, JavaScript-based policies can only be deployed if the `scripts` feature is enabled.
+
+Until now, JavaScript-based policies were always enabled regardless of the `scripts` feature flag. However, this behavior
+was causing confusion as users expected that disabling the `scripts` feature would also disable JavaScript-based policies.
+It was also not aligned with how other script-based features work in {project_name}.
+
+If you have existing JavaScript-based policies, make sure to enable the `scripts` feature when starting {project_name}.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
+
+=== Dev Mode defaults to localhost
+
+When running the server in dev mode on a platform other than Windows Subsystem For Linux, the `http-host` setting will default to localhost. This ensures your dev instance won't be accessible from 
+other machines. If you want the previous behavior of binding to all interfaces, then explicitly set `http-host` to `0.0.0.0`.
+
+=== `X-Forwarded-Prefix` Header is now supported
+
+With `proxy-headers` set to `xforwarded`, the server can determine the proxy context path from the `X-Forwarded-Prefix` header.
 
 === New database indexes on the `BROKER_LINK` table
 

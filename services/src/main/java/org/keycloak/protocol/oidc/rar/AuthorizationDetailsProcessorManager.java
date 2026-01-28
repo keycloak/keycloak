@@ -12,7 +12,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
-import org.keycloak.representations.AuthorizationDetailsResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -22,14 +21,14 @@ public class AuthorizationDetailsProcessorManager {
 
     private static final Logger logger = Logger.getLogger(AuthorizationDetailsProcessorManager.class);
 
-    public List<AuthorizationDetailsResponse> processAuthorizationDetails(KeycloakSession session, UserSessionModel userSession, ClientSessionContext clientSessionCtx,
+    public List<AuthorizationDetailsJSONRepresentation> processAuthorizationDetails(KeycloakSession session, UserSessionModel userSession, ClientSessionContext clientSessionCtx,
                                                                           String authorizationDetailsParam) throws InvalidAuthorizationDetailsException {
         return processAuthzDetailsImpl(session, authorizationDetailsParam,
                 (processor, authzDetail) -> processor.process(userSession, clientSessionCtx, authzDetail));
     }
 
 
-    public List<AuthorizationDetailsResponse> processStoredAuthorizationDetails(KeycloakSession session, UserSessionModel userSession,
+    public List<AuthorizationDetailsJSONRepresentation> processStoredAuthorizationDetails(KeycloakSession session, UserSessionModel userSession,
                                                                                 ClientSessionContext clientSessionCtx,
                                                                                 String authorizationDetailsParam) throws InvalidAuthorizationDetailsException {
         return processAuthzDetailsImpl(session, authorizationDetailsParam,
@@ -39,8 +38,8 @@ public class AuthorizationDetailsProcessorManager {
     }
 
 
-    public List<AuthorizationDetailsResponse> handleMissingAuthorizationDetails(KeycloakSession session, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-        List<AuthorizationDetailsResponse> allAuthzDetails = new ArrayList<>();
+    public List<AuthorizationDetailsJSONRepresentation> handleMissingAuthorizationDetails(KeycloakSession session, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        List<AuthorizationDetailsJSONRepresentation> allAuthzDetails = new ArrayList<>();
         session.getKeycloakSessionFactory()
                 .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
                 .sorted((f1, f2) -> f2.order() - f1.order())
@@ -52,15 +51,19 @@ public class AuthorizationDetailsProcessorManager {
     }
 
 
-    private List<AuthorizationDetailsResponse> processAuthzDetailsImpl(KeycloakSession session, String authorizationDetailsParam,
-                                    BiFunction<AuthorizationDetailsProcessor<?>, AuthorizationDetailsJSONRepresentation, AuthorizationDetailsResponse> function) throws InvalidAuthorizationDetailsException {
+    private List<AuthorizationDetailsJSONRepresentation> processAuthzDetailsImpl(KeycloakSession session, String authorizationDetailsParam,
+                                    BiFunction<AuthorizationDetailsProcessor<?>, AuthorizationDetailsJSONRepresentation, AuthorizationDetailsJSONRepresentation> function) throws InvalidAuthorizationDetailsException {
         if (authorizationDetailsParam == null) {
             return null;
         }
 
-        List<AuthorizationDetailsResponse> authzResponses = new ArrayList<>();
+        List<AuthorizationDetailsJSONRepresentation> authzResponses = new ArrayList<>();
 
         List<AuthorizationDetailsJSONRepresentation> authzDetails = parseAuthorizationDetails(authorizationDetailsParam);
+
+        if (authzDetails.isEmpty()) {
+            throw new InvalidAuthorizationDetailsException("Authorization_Details parameter cannot be empty");
+        }
 
         Map<String, AuthorizationDetailsProcessor<?>> processors = getProcessors(session);
 
@@ -76,7 +79,7 @@ public class AuthorizationDetailsProcessorManager {
                 throw new InvalidAuthorizationDetailsException(errorDetails);
             }
             function.apply(processor, authzDetail);
-            AuthorizationDetailsResponse response = function.apply(processor, authzDetail);
+            AuthorizationDetailsJSONRepresentation response = function.apply(processor, authzDetail);
             if (response != null) {
                 authzResponses.add(response);
             } else {
