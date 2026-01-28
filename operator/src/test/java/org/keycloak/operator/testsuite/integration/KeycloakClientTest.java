@@ -34,11 +34,15 @@ import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientBuilder;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientRepresentation.AuthWithSecretRef;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.AdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreBuilder;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
@@ -58,6 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 public class KeycloakClientTest extends BaseOperatorTest {
 
     private static final String CLIENT_SECRET = "client-secret";
+    private static final String CLIENT_TRUSTSTORE_SECRET = "client-truststore-secret";
 
     private static final String NODEPORT_SERVICE = "nodeport-service";
 
@@ -101,6 +106,15 @@ public class KeycloakClientTest extends BaseOperatorTest {
         if (!https) {
             kc.getSpec().getHttpSpec().setTlsSecret(null);
             kc.getSpec().getHttpSpec().setHttpEnabled(true);
+        } else {
+            AdminSpec adminSpec = new AdminSpec();
+            K8sUtils.set(k8sclient, K8sUtils.getResourceFromFile("/example-mtls-secret.yaml", Secret.class));
+            adminSpec.setTlsSecret("example-mtls-secret");
+            kc.getSpec().setAdminSpec(adminSpec);
+            K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-mtls-truststore-secret.yaml"));
+            kc.getSpec().getTruststores().put("example", new TruststoreBuilder().withNewSecret().withName("example-mtls-truststore-secret").endSecret().build());
+            kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("https-client-auth", "required"));
+            kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("https-management-client-auth", "none"));
         }
 
         // TODO: for the sake of testing, this uses the built-in bootstrap admin
