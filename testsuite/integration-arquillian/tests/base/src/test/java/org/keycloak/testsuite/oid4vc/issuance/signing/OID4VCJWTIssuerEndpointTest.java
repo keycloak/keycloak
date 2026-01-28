@@ -956,7 +956,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 TEST_DID.toString(),
                 "optional-jwt-credential-config-id",
                 null, null,
-                Format.JWT_VC,
+                VCFormat.JWT_VC,
                 null, null);
         
         ClientRepresentation testClient = testRealm().clients().findByClientId(client.getClientId()).get(0);
@@ -1000,7 +1000,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 TEST_DID.toString(),
                 "test-oid4vci-config-id",
                 null, null,
-                Format.JWT_VC,
+                VCFormat.JWT_VC,
                 null, null);
         
         ClientRepresentation testClient = testRealm().clients().findByClientId(client.getClientId()).get(0);
@@ -1023,7 +1023,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 TEST_DID.toString(),
                 "test-oid4vci-realm-config-id",
                 null, null,
-                Format.JWT_VC,
+                VCFormat.JWT_VC,
                 null, null);
         
         try {
@@ -1046,7 +1046,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 TEST_DID.toString(),
                 "test-oid4vci-disabled-config-id",
                 null, null,
-                Format.JWT_VC,
+                VCFormat.JWT_VC,
                 null, null);
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
