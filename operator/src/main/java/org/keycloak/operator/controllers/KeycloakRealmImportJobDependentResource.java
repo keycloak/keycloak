@@ -25,12 +25,12 @@ import java.util.Set;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.ImportSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportSpec;
-import org.keycloak.operator.crds.v2alpha1.realmimport.Placeholder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.ImportSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.SchedulingSpec;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportSpec;
+import org.keycloak.operator.crds.v2beta1.realmimport.Placeholder;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;

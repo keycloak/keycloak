@@ -3,8 +3,8 @@ package org.keycloak.operator.testsuite.integration;
 import java.util.List;
 
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 

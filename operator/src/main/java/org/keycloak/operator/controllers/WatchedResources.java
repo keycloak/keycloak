@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;

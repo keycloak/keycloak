@@ -2,7 +2,7 @@ package org.keycloak.operator.controllers;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImport;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;

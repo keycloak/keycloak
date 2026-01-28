@@ -76,6 +76,11 @@ yq ea -i 'del(.spec.nativeAPIs[] | select(.kind == "ServiceMonitor"))' "$CSV_PAT
 yq ea -i 'del(.spec.customresourcedefinitions.owned[] | select(.kind == "KeycloakOIDCClient" or .kind == "KeycloakSAMLClient"))' "$CSV_PATH"
 rm ../olm/$VERSION/manifests/keycloak*clients.k8s.keycloak.org-v1.crd.yml
 
+# Create entries for both alpha1 and beta1 - the indexing is dependent on whether the client crs are present
+yq ea -i '.spec.customresourcedefinitions.owned += [.spec.customresourcedefinitions.owned[] | select(.version == "v2beta1")]' "$CSV_PATH" 
+yq ea -i '.spec.customresourcedefinitions.owned[2].version = "v2alpha1"' "$CSV_PATH"
+yq ea -i '.spec.customresourcedefinitions.owned[3].version = "v2alpha1"' "$CSV_PATH"
+
 { set +x; } 2>/dev/null
 echo ""
 echo "Created OLM bundle ok!"
