@@ -48,21 +48,44 @@ public class FederatedClientAuthConflictsTest {
         createIdp("idp1", "http://127.0.0.1:8500");
         createIdp("idp2", "http://127.0.0.1:8500");
 
+        createClient("myclient", "external1", "idp1");
+
+        // Should fail as there are two IdPs with the same issuer URL
+        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500")).send();
+        Assertions.assertFalse(response.isSuccess());
+        Assertions.assertEquals("Invalid client or Invalid client credentials", response.getErrorDescription());
+    }
+
+    @Test
+    public void testChangedIssuer() {
+        IdentityProviderRepresentation idp1 = createIdp("idp1", "http://127.0.0.1:8500");
+
         ClientRepresentation clientRep = createClient("myclient", "external1", "idp1");
 
-        // Should pass as the first matching IdP by alias is always used
+        // Should fail as there are two IdPs with the same issuer URL
         AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500")).send();
         Assertions.assertTrue(response.isSuccess());
         Assertions.assertEquals("myclient", events.poll().getClientId());
 
-        clientRep.getAttributes().put(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, "idp2");
+        createIdp("idp2", "http://127.0.0.1:8500");
 
+        clientRep.getAttributes().put(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, "idp2");
         realm.admin().clients().get(clientRep.getId()).update(clientRep);
 
-        // Should fail since it's using the second IdP
+        // Should fail since the old entry is still cached
         response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500")).send();
         Assertions.assertFalse(response.isSuccess());
-        Assertions.assertNull(events.poll().getClientId());
+        Assertions.assertEquals("Invalid client or Invalid client credentials", response.getErrorDescription());
+
+        // Update old entry, so next read will invalidate it
+        idp1.getConfig().put(IdentityProviderModel.ISSUER, "http://127.0.0.1:8501");
+        realm.admin().identityProviders().get(idp1.getAlias()).update(idp1);
+
+        // Should succeed as entry is updated in the cache
+        events.clear();
+        response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500")).send();
+        Assertions.assertTrue(response.isSuccess());
+        Assertions.assertEquals("myclient", events.poll().getClientId());
     }
 
     @Test
