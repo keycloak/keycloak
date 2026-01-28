@@ -82,7 +82,7 @@ import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
             """
                 [
                   {
-                    "apiVersion": "k8s.keycloak.org/v2alpha1",
+                    "apiVersion": "k8s.keycloak.org/v2beta1",
                     "kind": "Keycloak",
                     "metadata": {
                       "name": "example-keycloak",
@@ -101,7 +101,7 @@ import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
                     }
                   },
                   {
-                    "apiVersion": "k8s.keycloak.org/v2alpha1",
+                    "apiVersion": "k8s.keycloak.org/v2beta1",
                     "kind": "KeycloakRealmImport",
                     "metadata": {
                       "name": "example-keycloak-realm-import",

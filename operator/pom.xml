@@ -48,6 +48,10 @@
         <!-- Fabric8 -->
         <dependency>
             <groupId>io.fabric8</groupId>
+            <artifactId>crd-generator-api-v2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
             <artifactId>generator-annotations</artifactId>
             <scope>provided</scope>
         </dependency>

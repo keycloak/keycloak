@@ -23,11 +23,12 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
 
 public final class Constants {
     public static final String CRDS_GROUP = "k8s.keycloak.org";
-    public static final String CRDS_VERSION = "v2alpha1";
+    public static final String CRDS_VERSION = "v2beta1";
+    public static final String CRDS_VERSION_ALPHA = "v2alpha1";
     public static final String SHORT_NAME = "kc";
     public static final String NAME = "keycloak";
     public static final String PLURAL_NAME = "keycloaks";

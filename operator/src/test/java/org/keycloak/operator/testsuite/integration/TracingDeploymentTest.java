@@ -22,10 +22,10 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.TelemetrySpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.TelemetrySpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.TracingSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.TracingSpecBuilder;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 

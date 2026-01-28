@@ -37,19 +37,19 @@ import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.CRDUtils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
+import org.keycloak.operator.crds.v2beta1.CRDUtils;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.CacheSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpManagementSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.ProbeSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.SchedulingSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.Truststore;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.TruststoreSource;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.UnsupportedSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.UpdateSpec;
 import org.keycloak.operator.update.impl.RecreateOnImageChangeUpdateLogic;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -76,9 +76,9 @@ import io.quarkus.logging.Log;
 
 import static org.keycloak.operator.Utils.addResources;
 import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.LEGACY_MANAGEMENT_ENABLED;
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
-import static org.keycloak.operator.crds.v2alpha1.deployment.spec.TelemetrySpec.convertResourceAttributesToString;
+import static org.keycloak.operator.crds.v2beta1.CRDUtils.LEGACY_MANAGEMENT_ENABLED;
+import static org.keycloak.operator.crds.v2beta1.CRDUtils.isTlsConfigured;
+import static org.keycloak.operator.crds.v2beta1.deployment.spec.TelemetrySpec.convertResourceAttributesToString;
 
 @KubernetesDependent(
         informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
