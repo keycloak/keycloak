@@ -84,8 +84,7 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
         return PROTOCOL;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_ABSENT)
-    public static class Auth {
+    public static class Auth extends BaseRepresentation {
 
         @JsonPropertyDescription("Which authentication method is used for this client")
         private String method;
@@ -122,7 +121,9 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Auth auth)) return false;
+            if (!(o instanceof Auth auth)) {
+                return false;
+            }
             return Objects.equals(method, auth.method) && Objects.equals(secret, auth.secret) && Objects.equals(certificate, auth.certificate);
         }
 
@@ -134,8 +135,12 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof OIDCClientRepresentation that)) return false;
-        if (!super.equals(o)) return false;
+        if (!(o instanceof OIDCClientRepresentation that)) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
         return Objects.equals(loginFlows, that.loginFlows) && Objects.equals(auth, that.auth) && Objects.equals(webOrigins, that.webOrigins) && Objects.equals(serviceAccountRoles, that.serviceAccountRoles);
     }
 

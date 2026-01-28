@@ -19,6 +19,8 @@ package org.keycloak.operator.testsuite.apiserver;
 
 import java.io.FileNotFoundException;
 
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
@@ -50,6 +52,25 @@ public class CRDTest {
     @BeforeAll
     public static void before() throws FileNotFoundException {
         BaseOperatorTest.createCRDs(client);
+    }
+
+    @Test
+    public void testOIDCCLientWithoutRequiredFields() {
+        KeycloakOIDCClient cr = new KeycloakOIDCClientBuilder()
+                .withNewMetadata()
+                    .withName("invalid-client")
+                .endMetadata()
+                .withNewSpec()
+                .endSpec()
+                .build();
+
+        var eMsg = assertThrows(KubernetesClientException.class, () -> client.resource(cr).create()).getMessage();
+        assertThat(eMsg).contains("spec.keycloakCRName: Required value", "spec.client: Required value", "spec.realm: Required value");
+    }
+
+    @Test
+    public void testOIDCCLient() {
+        roundTrip("/test-serialization-keycloak-oidc-client-cr.yml", KeycloakOIDCClient.class);
     }
 
     @Test
