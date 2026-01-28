@@ -37,6 +37,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBuilder;
@@ -56,13 +57,13 @@ import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -346,20 +347,37 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         postPreAuthorizedCode.setEntity(formEntity);
-        AccessTokenResponse accessTokenResponse = new AccessTokenResponse(httpClient.execute(postPreAuthorizedCode));
-        assertEquals(HttpStatus.SC_OK, accessTokenResponse.getStatusCode());
-        String theToken = accessTokenResponse.getAccessToken();
+
+        String theToken;
+        String credentialIdentifier;
+        try (CloseableHttpResponse tokenResponse = httpClient.execute(postPreAuthorizedCode)) {
+            assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusLine().getStatusCode());
+            String tokenResponseBody = IOUtils.toString(tokenResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+
+            // Extract access token
+            AccessTokenResponse accessTokenResponse =
+                    JsonSerialization.readValue(tokenResponseBody, AccessTokenResponse.class);
+            theToken = accessTokenResponse.getToken();
+            assertNotNull("Access token should be present", theToken);
+
+            // Extract credential_identifier from authorization_details in token response
+            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = parseAuthorizationDetails(tokenResponseBody);
+            assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+            assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+            credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+            assertNotNull("Credential identifier should be present", credentialIdentifier);
+        }
 
         final String vct = clientScope.getAttributes().get(CredentialScopeModel.VCT);
 
-        // 6. Get the credential
+        // 6. Get the credential using credential_identifier (required when authorization_details are present)
         credentialsOffer.getCredentialConfigurationIds().stream()
                 .map(offeredCredentialId -> credentialIssuer.getCredentialsSupported().get(offeredCredentialId))
                 .forEach(supportedCredential -> {
                     try {
-                        requestCredential(theToken,
+                        requestCredentialWithIdentifier(theToken,
                                 credentialIssuer.getCredentialEndpoint(),
-                                supportedCredential,
+                                credentialIdentifier,
                                 new TestCredentialResponseHandler(vct),
                                 sdJwtTypeCredentialClientScope);
                     } catch (IOException e) {

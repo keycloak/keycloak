@@ -626,6 +626,32 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         responseHandler.handleCredentialResponse(credentialResponse, expectedClientScope);
     }
 
+    protected void requestCredentialWithIdentifier(String token,
+                                                   String credentialEndpoint,
+                                                   String credentialIdentifier,
+                                                   CredentialResponseHandler responseHandler,
+                                                   ClientScopeRepresentation expectedClientScope) throws IOException, VerificationException {
+        CredentialRequest request = new CredentialRequest();
+        request.setCredentialIdentifier(credentialIdentifier);
+
+        StringEntity stringEntity = new StringEntity(JsonSerialization.writeValueAsString(request),
+                ContentType.APPLICATION_JSON);
+
+        HttpPost postCredential = new HttpPost(credentialEndpoint);
+        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        postCredential.setEntity(stringEntity);
+
+        CredentialResponse credentialResponse;
+        try (CloseableHttpResponse credentialRequestResponse = httpClient.execute(postCredential)) {
+            assertEquals(HttpStatus.SC_OK, credentialRequestResponse.getStatusLine().getStatusCode());
+            String s = IOUtils.toString(credentialRequestResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+            credentialResponse = JsonSerialization.readValue(s, CredentialResponse.class);
+        }
+
+        // Use response handler to customize checks based on formats.
+        responseHandler.handleCredentialResponse(credentialResponse, expectedClientScope);
+    }
+
     public CredentialIssuer getCredentialIssuerMetadata() {
         final String endpoint = getRealmMetadataPath(TEST_REALM_NAME);
         HttpGet getMetadataRequest = new HttpGet(endpoint);

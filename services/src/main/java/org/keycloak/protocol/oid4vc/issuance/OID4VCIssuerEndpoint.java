@@ -789,6 +789,8 @@ public class OID4VCIssuerEndpoint {
         // When the CredentialRequest contains a credential identifier the caller must have gone through the
         // CredentialOffer process or otherwise have set up a valid CredentialOfferState
 
+        AccessToken accessToken = authResult.token();
+
         if (credentialIdentifier != null) {
 
             // First check if the credential identifier exists
@@ -801,22 +803,21 @@ public class OID4VCIssuerEndpoint {
                 throw new BadRequestException(getErrorResponse(UNKNOWN_CREDENTIAL_IDENTIFIER, errorMessage));
             }
 
-            // Get the credential_configuration_id from AuthorizationDetails
-            // First check if offer state has authorization_details (for pre-authorized flows)
+            // Get the credential_configuration_id from the offer state authorization details
             authDetails = offerState.getAuthorizationDetails();
 
             // Validate authorization_details: either in token or in offer state
             // For pre-authorized flows, offer state is the source of truth
             // For authorization code flows, token must contain authorization_details
             if (authDetails == null) {
-                authDetails = getAuthorizationDetailFromToken(authResult.token());
+                authDetails = getAuthorizationDetailFromToken(accessToken);
             }
 
             if (authDetails == null) {
                 var errorMessage = "No authorization_details found in offer state or token";
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
             }
-            
+
             String credConfigId = authDetails.getCredentialConfigurationId();
             if (credConfigId == null) {
                 var errorMessage = "No credential_configuration_id in AuthorizationDetails";
@@ -864,6 +865,12 @@ public class OID4VCIssuerEndpoint {
             LOGGER.debugf("Successfully mapped credential identifier %s to scope %s", credentialIdentifier, clientScope.getName());
             eventBuilder.detail(Details.CREDENTIAL_TYPE, credConfigId);
 
+            // After determining requested credential and scope, validate authorization_details if present in the token
+            AuthorizationDetailsValidator.getValidatedAuthorizationDetails(
+                    offerState,
+                    accessToken,
+                    (errorType, errorDescription) -> getErrorResponseBuilder(errorType, errorDescription));
+
         } else if (credentialConfigurationId != null) {
             // Use credential_configuration_id for direct lookup
             requestedCredential = credentialRequestVO.findCredentialScope(session).orElseThrow(() -> {
@@ -873,7 +880,24 @@ public class OID4VCIssuerEndpoint {
             });
             eventBuilder.detail(Details.CREDENTIAL_TYPE, credentialConfigurationId);
 
-            authDetails = getAuthorizationDetailFromToken(authResult.token()); // Get authorization_details always from token for this case
+            // No authorization_details for direct credential_configuration_id lookup
+            authDetails = null;
+
+            // Per OID4VCI §8.2: when authorization_details with credential_identifiers are present in the token,
+            // only credential_identifier is allowed in the request (not credential_configuration_id).
+            Object tokenAuthDetails = accessToken.getOtherClaims().get(OAuth2Constants.AUTHORIZATION_DETAILS);
+            
+            // Also check if authorization_details were set directly on the token object
+            List<AuthorizationDetailsJSONRepresentation> authDetailsFromToken = accessToken.getAuthorizationDetails();
+
+            if (tokenAuthDetails != null || authDetailsFromToken != null) {
+                var errorMessage = "Access token contains authorization_details with credential_identifiers. " +
+                        "When authorization_details are present in the token, credential_identifier (not credential_configuration_id) " +
+                        "must be used in the credential request.";
+                LOGGER.debugf(errorMessage);
+                eventBuilder.detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+            }
         } else {
             // Neither provided - this should not happen due to earlier validation
             String errorMessage = "Missing both credential_configuration_id and credential_identifier";
@@ -1497,18 +1521,21 @@ public class OID4VCIssuerEndpoint {
         return new CredentialScopeModel(clientScopeModel);
     }
 
-    private Response getErrorResponse(ErrorType errorType) {
-        return getErrorResponse(errorType, null);
-    }
-
-    private Response getErrorResponse(ErrorType errorType, String errorDescription) {
+    private Response.ResponseBuilder getErrorResponseBuilder(ErrorType errorType, String errorDescription) {
         var errorResponse = new ErrorResponse();
         errorResponse.setError(errorType).setErrorDescription(errorDescription);
         return Response
                 .status(Response.Status.BAD_REQUEST)
                 .entity(errorResponse)
-                .type(MediaType.APPLICATION_JSON)
-                .build();
+                .type(MediaType.APPLICATION_JSON);
+    }
+
+    private Response getErrorResponse(ErrorType errorType) {
+        return getErrorResponseBuilder(errorType, null).build();
+    }
+
+    private Response getErrorResponse(ErrorType errorType, String errorDescription) {
+        return getErrorResponseBuilder(errorType, errorDescription).build();
     }
 
     // builds the unsigned credential by applying all protocol mappers.

@@ -224,12 +224,13 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         }
 
         // Step 5: Request the actual credential using the identifier
+        // When authorization_details are present in the token, credential_identifier must be used
         HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
         postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + tokenResponse.getToken());
         postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
         CredentialRequest credentialRequest = new CredentialRequest();
-        credentialRequest.setCredentialConfigurationId(credentialConfigurationId);
+        credentialRequest.setCredentialIdentifier(credentialIdentifier);
 
         String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
         postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));

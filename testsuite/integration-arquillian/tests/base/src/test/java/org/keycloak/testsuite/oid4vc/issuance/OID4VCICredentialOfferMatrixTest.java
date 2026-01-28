@@ -51,6 +51,7 @@ import org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.io.IOUtils;
 import org.apache.directory.api.util.Strings;
 import org.apache.http.HttpEntity;
@@ -141,7 +142,6 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testCredentialWithoutOffer() throws Exception {
-
         var ctx = newTestContext(false, null, appUsername);
 
         OID4VCAuthorizationDetailResponse authDetail = new OID4VCAuthorizationDetailResponse();
@@ -153,7 +153,31 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         // https://github.com/keycloak/keycloak/issues/44320
         String accessToken = getBearerToken(issClientId, ctx.appUser, credScopeName, convertToAuthzDetail(authDetail));
 
-        CredentialResponse credResponse = getCredentialByAuthDetail(ctx, accessToken, authDetail);
+        // Extract credential_identifier from the access token's authorization_details
+        JsonWebToken tokenDecoded = new JWSInput(accessToken).readJsonContent(JsonWebToken.class);
+        Object tokenAuthDetails = tokenDecoded.getOtherClaims().get(OAuth2Constants.AUTHORIZATION_DETAILS);
+        assertNotNull("authorization_details not found in access token", tokenAuthDetails);
+
+        // When authorization_details are sent in token request, they are returned in token response with credential_identifiers
+        // The credential request MUST use credential_identifier (not credential_configuration_id)
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = JsonSerialization.readValue(
+                JsonSerialization.writeValueAsString(tokenAuthDetails),
+                new TypeReference<List<OID4VCAuthorizationDetailResponse>>() {
+                }
+        );
+        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+
+        OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(0);
+        List<String> credentialIdentifiers = authDetailResponse.getCredentialIdentifiers();
+        assertNotNull("credential_identifiers should be present", credentialIdentifiers);
+        assertFalse("credential_identifiers should not be empty", credentialIdentifiers.isEmpty());
+        String credentialIdentifier = credentialIdentifiers.get(0);
+
+        var credentialRequest = new CredentialRequest();
+        credentialRequest.setCredentialIdentifier(credentialIdentifier);
+
+        CredentialResponse credResponse = sendCredentialRequest(ctx, accessToken, credentialRequest);
         verifyCredentialResponse(ctx, credResponse);
     }
 
