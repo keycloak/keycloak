@@ -19,6 +19,11 @@ package org.keycloak.tests.admin;
 
 import java.net.URL;
 
+import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.client.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -71,6 +76,23 @@ class ClientVaultTest {
         assertEquals(401, response.getStatusCode());
     }
 
+    @Test
+    void testClientVaultWithJwtClientSecretAuthenticator() {
+        String clientId = "myclient-jwt-client-secret-authenticator";
+        JWTClientSecretCredentialsProvider jwtProvider = new JWTClientSecretCredentialsProvider();
+        jwtProvider.setClientSecret("mysecret", Algorithm.HS256);
+        String jwt = jwtProvider.createSignedRequestToken(clientId, oauthClient.getEndpoints().getIssuer(), Algorithm.HS256);
+
+        AccessTokenResponse response = oauthClient
+                .passwordGrantRequest("test-user@localhost", "password")
+                .client(clientId)
+                .clientJwt(jwt)
+                .send();
+
+        assertEquals(200, response.getStatusCode());
+        assertNotNull(response.getAccessToken());
+    }
+
     public static class ClientVaultConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
@@ -94,6 +116,12 @@ class ClientVaultTest {
                     .publicClient(false)
                     .directAccessGrantsEnabled(true)
                     .secret("${vault.non_existing_client_secret}");
+
+            realm.addClient("myclient-jwt-client-secret-authenticator")
+                    .publicClient(false)
+                    .directAccessGrantsEnabled(true)
+                    .authenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID)
+                    .secret("${vault.client_secret}");
 
             realm.addUser("test-user@localhost")
                     .email("test-user@localhost")

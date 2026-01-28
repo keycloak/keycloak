@@ -153,7 +153,8 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
         //   }
         // }
         Map<String, Object> props = new HashMap<>();
-        props.put("secret", client.getSecret());
+        String secret = client.getSecret();
+        props.put("secret", session.vault().getStringSecret(secret).get().orElse(secret));
         String algorithm = client.getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG);
         if (algorithm != null) {
             props.put("algorithm", algorithm);
