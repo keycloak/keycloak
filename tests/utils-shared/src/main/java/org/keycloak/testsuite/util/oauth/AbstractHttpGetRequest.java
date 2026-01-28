@@ -27,6 +27,13 @@ public abstract class AbstractHttpGetRequest<T, R> {
 
     protected abstract void initRequest();
 
+    /**
+     * Override the endpoint URL for this request.
+     * When specified, this takes precedence over {@link #getEndpoint()}.
+     *
+     * @param endpoint the endpoint URL to use
+     * @return this request instance for method chaining
+     */
     public T endpoint(String endpoint) {
         this.endpointOverride = endpoint;
         return request();
@@ -38,12 +45,16 @@ public abstract class AbstractHttpGetRequest<T, R> {
     }
 
     public T header(String name, String value) {
-        this.headers.put(name, value);
+        if (value != null) {
+            this.headers.put(name, value);
+        }
         return request();
     }
 
     public R send() {
         get = new HttpGet(endpointOverride != null ? endpointOverride : getEndpoint());
+
+        initRequest();
 
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             get.setHeader(entry.getKey(), entry.getValue());
@@ -52,8 +63,7 @@ public abstract class AbstractHttpGetRequest<T, R> {
         if (bearerToken != null) {
             get.addHeader("Authorization", "Bearer " + bearerToken);
         }
-        
-        initRequest();
+
         try {
             return toResponse(client.httpClient().get().execute(get));
         } catch (IOException e) {
@@ -61,14 +71,9 @@ public abstract class AbstractHttpGetRequest<T, R> {
         }
     }
 
-    protected void addHeader(String name, String value) {
-        if (value != null) {
-            get.addHeader(name, value);
-        }
-    }
-
     protected abstract R toResponse(CloseableHttpResponse response) throws IOException;
 
+    @SuppressWarnings("unchecked")
     private T request() {
         return (T) this;
     }

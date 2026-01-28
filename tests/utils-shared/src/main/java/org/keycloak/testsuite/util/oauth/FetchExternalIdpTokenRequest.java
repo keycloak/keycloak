@@ -42,10 +42,10 @@ public class FetchExternalIdpTokenRequest extends AbstractHttpGetRequest<FetchEx
     }
 
     protected void initRequest() {
-        addHeader("Authorization", "Bearer " + accessToken);
+        header("Authorization", "Bearer " + accessToken);
 
         if (client.config.getOrigin() != null) {
-            addHeader("Origin", client.config.getOrigin());
+            header("Origin", client.config.getOrigin());
         }
     }
 

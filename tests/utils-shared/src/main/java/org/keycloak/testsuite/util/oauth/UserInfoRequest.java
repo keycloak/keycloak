@@ -32,8 +32,8 @@ public class UserInfoRequest extends AbstractHttpGetRequest<UserInfoRequest, Use
     @Override
     protected void initRequest() {
         String authorization = (dpop ? "DPoP" : "Bearer") + " " + token;
-        addHeader("Authorization", authorization);
-        addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
+        header("Authorization", authorization);
+        header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
     }
 
     @Override

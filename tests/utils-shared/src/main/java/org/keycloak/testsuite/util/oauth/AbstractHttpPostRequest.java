@@ -42,6 +42,13 @@ public abstract class AbstractHttpPostRequest<T, R> {
 
     protected abstract String getEndpoint();
 
+    /**
+     * Override the endpoint URL for this request.
+     * When specified, this takes precedence over {@link #getEndpoint()}.
+     *
+     * @param endpoint the endpoint URL to use
+     * @return this request instance for method chaining
+     */
     public T endpoint(String endpoint) {
         this.endpoint = endpoint;
         return request();
@@ -135,6 +142,7 @@ public abstract class AbstractHttpPostRequest<T, R> {
 
     protected abstract R toResponse(CloseableHttpResponse response) throws IOException;
 
+    @SuppressWarnings("unchecked")
     private T request() {
         return (T) this;
     }
