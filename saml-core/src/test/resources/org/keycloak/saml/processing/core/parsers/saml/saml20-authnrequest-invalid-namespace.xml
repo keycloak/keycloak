@@ -1,0 +1,9 @@
+<samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:3.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:3.0:assertion"
+                    ID="aaf23196-1773-2113-474a-fe114412ab72" Version="2.0" IssueInstant="2004-12-05T09:21:59">
+    <saml:Issuer>https://sp/</saml:Issuer>
+    <samlp:NameIDPolicy AllowCreate="true" Format="urn:oasis:names:tc:SAML:2.0:nameid-format:transient"/>
+    <samlp:RequestedAuthnContext Comparison="exact">
+        <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</saml:AuthnContextClassRef>
+        <saml:AuthnContextDeclRef>urn:kc:SAML:2.0:ac:ref:demo:decl</saml:AuthnContextDeclRef>
+    </samlp:RequestedAuthnContext>
+</samlp:AuthnRequest>

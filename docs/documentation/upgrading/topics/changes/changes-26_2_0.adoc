@@ -1,0 +1,188 @@
+== Breaking changes
+
+Breaking changes are identified as requiring changes from existing users to their configurations.
+
+=== Changes to port behaviour with the `X-Forwarded-Host` header
+
+The `X-Forwarded-Host` header can optionally also contain the port. In previous versions when the port was omitted from the header,
+{project_name} fell back to the actual request port. For example if {project_name} was listening on port 8080 and the request contained
+`X-Forwarded-Host: example.com` header, the resolved URL was `+http://example.com:8080+`.
+
+This is now changed and omitting the port results in removing it from the resolved URL. The resolved URL from the previous example
+would now be `+http://example.com+`.
+
+To mitigate that, either make your reverse proxy include the port in the `X-Forwarded-Host` header or configure it to set
+the `X-Forwarded-Port` header with the desired port.
+
+=== Changes to installing Oracle JDBC driver
+
+The required JAR for the Oracle JDBC driver that needs to be explicitly added to the distribution has changed.
+Instead of providing `ojdbc11` JAR, use `ojdbc17` JAR as stated in the https://www.keycloak.org/server/db#_installing_the_oracle_database_driver[Installing the Oracle Database driver] guide.
+
+=== H2 Credentials
+
+With this version, the default H2 based `dev-file` database changed its credentials. While migrating from an instance using this dev only database is not supported, you may be able to continue to use your existing H2 database if you explicitly provide the old defaults for the database username and password. For example in the `keycloak.conf` specify:
+
+[example]
+====
+db-username=sa
+
+db-password=password
+====
+
+=== JWT Client authentication aligned with the latest OIDC specification
+
+The latest draft version of the link:https://openid.net/specs/openid-connect-core-1_0-36.html#rfc.section.9[OpenID Connect core specification] changed the rules for
+audience validation in JWT client assertions for the Client Authentication methods `private_key_jwt` and `client_secret_jwt`.
+
+Previously, the `aud` claim of a JWT client assertion was loosely defined as `The Audience SHOULD be the URL of the Authorization Server's Token Endpoint`, which did not exclude the usage of other URLs.
+
+The revised OIDC Core specification uses a stricter audience check: `The Audience value MUST be the OP's Issuer Identifier passed as a string, and not a single-element array.`.
+
+We adapted the JWT client authentication authenticators of both `private_key_jwt` and `client_secret_jwt` to allow only a single audience in the token by default. For now, the audience can be
+issuer, token endpoint, introspection endpoint or some other OAuth/OIDC endpoint, which is used by client JWT authentication. However since there is single audience allowed now, it means that it is not possible
+to use other unrelated audience values, which is to make sure that JWT token is really only useful by the {project_name} for client authentication.
+
+This strict audience check can be reverted to the previous more lenient check with a new option of OIDC login protocol SPI. It will be still allowed to use multiple audiences in JWT if server is started with the option:
+
+`--spi-login-protocol-openid-connect-allow-multiple-audiences-for-jwt-client-authentication=true`
+
+Note that this option might be removed in the future. Possibly in {project_name} 27. So it is highly recommended to update your clients to use single audience instead of using this option. It is also
+recommended that your clients use the issuer URL for the audience when sending JWT for client authentication as that is going to be compatible with the future version of OIDC specification.
+
+== Notable changes
+
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== `proxy-trusted-addresses` enforced for built-in X509 client certificate lookup providers
+
+Built-in X.509 client certificate lookup providers now reflect the `proxy-trusted-addresses` config option. A certificate provided through the HTTP headers will now be processed only if the proxy is trusted, or `proxy-trusted-addresses` is unset.
+
+=== Zero-configuration secure cluster communication
+
+For clustering multiple nodes, {project_name} uses distributed caches.
+Starting with this release for all TCP-based transport stacks, the communication between the nodes is encrypted with TLS and secured with automatically generated ephemeral keys and certificates.
+
+If you are not using a TCP-based transport stack, it is recommended to migrate to the `jdbc-ping` transport stack to benefit from the simplified configuration and enhanced security.
+
+If you provided your own keystore and truststore to secure the TCP transport stack communication in previous releases, it is now recommended to migrate to the automatically generated ephemeral keys and certificates to benefit from the simplified setup.
+
+If you are using a custom transport stack, this default behavior can be disabled by setting the option `cache-embedded-mtls-enabled` to `false`.
+
+If you are using a service mesh, configure it to allow direct mTLS communication between the {project_name} Pods.
+
+For more information, check the link:https://www.keycloak.org/server/caching#_securing_transport_stacks[Securing Transport Stacks] in the distributed caches guide.
+
+=== Operator creates NetworkPolicies to restrict traffic
+
+The {project_name} Operator now creates by default a NetworkPolicy to restrict traffic to internal ports used for {project_name}'s distributed caches.
+
+This strengthens a secure-by-default setup and minimizes the configuration steps of new setups.
+We expect this to be backwards compatible to existing deployment, so no additional steps are necessary at the time of the upgrade.
+You can return to the previous behavior by disabling the creation of NetworkPolicies in the Keycloak CR.
+
+If your deployment scripts add explicit NetworkPolicies for {project_name}, you should consider removing those and migrate to the new functionality provided in the Keycloak CR as a follow-up to the upgrade.
+
+Read more about this in the https://www.keycloak.org/operator/advanced-configuration[Operator Advanced configuration].
+
+=== Supported standard token exchange
+
+In this release, {project_name} added support for the link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange] (Feature `token-exchange-standard:v2`). In the past {project_name} releases,
+{project_name} had only a preview token exchange feature, which is now referred to as link:{securing_apps_token_exchange_link}#_legacy-token-exchange[Legacy token exchange] (Feature `token-exchange:v1`).
+The legacy token exchange is still in preview and it works the same way as in previous releases. If you used the link:{securing_apps_token_exchange_link}#_internal-token-to-internal-token-exchange[internal-internal token exchange],
+consider migrating to the new standard token exchange.
+
+If you prefer to continue using the legacy token exchange, you will find it operates as in previous releases. No need exists to disable the standard token exchange feature. Your clients will use the standard token exchange only if it is enabled on the {project_name} client. However, migration to the standard token exchange is recommended. It is the officially supported method and the priority for enhancements.
+
+Consider the following notes as you plan for migration to the new standard token exchange:
+
+* The feature `token-exchange-standard`, which represents the new Standard token exchange, is enabled by default. It is recommended to
+disable the `token-exchange` feature, which represents the Legacy token exchange, to make sure that requests will be served by the new standard token exchange.
+
+* You can have both the standard and legacy token exchange features enabled, which can be useful if you need to cover standard use cases (internal-internal) together with the other token exchange use cases that are implemented only by legacy token exchange. For instance, link:{securing_apps_token_exchange_link}#_external-token-to-internal-token-exchange[external to internal token exchange] is implemented only by the
+legacy token exchange. In this case, {project_name} serves the standard internal-to-internal requests preferably by the standard token exchange while the other requests are served by the legacy token exchange. The choice of standard or legacy token exchange is determined based on the
+parameters of the particular request. For example, requests containing non-standard parameters such as `requested_issuer` or `requested_subject` are considered legacy.
++
+If you still need legacy token exchange, you also need link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 1] enabled (FGAP:v1) because
+link:{adminguide_link}#_fine_grained_permissions[version 2 (FGAP:v2)] does not have support for token exchange permissions. This is on purpose
+because token-exchange is conceptually not really an "admin" permission and therefore token exchange permissions were not added to FGAP:v2.
+
+* Standard token exchange requires enabling a switch on the client as described in the link:{securing_apps_token_exchange_link}#_standard-token-exchange-enable[{securing_apps_token_exchange_name}].
+
+Consider these additional changes in the behavior of the two types of token exchange:
+
+* Fine-grained admin permissions are no longer needed or supported for the standard token exchange.
+
+* The most notable change regarding the behavior of scopes and audiences is that the applied client scopes are based on the client triggering the token exchange request rather than the "target" client specified by the `audience` parameter.
+Support exists for multiple values of the `audience` parameter as mentioned in the specification. The details are described in the link:{securing_apps_token_exchange_link}#_standard-token-exchange-scope[{securing_apps_token_exchange_name}].
+
+* Public clients are no longer allowed to send the token exchange requests. Legacy token exchange allowed public clients to exchange tokens with themselves to downscope the original token. This use case can
+instead be covered by using the refresh token grant, in which the `scope` parameter can be used to downscope the refreshed access token, as mentioned in
+the https://datatracker.ietf.org/doc/html/rfc6749#section-6[OAuth2 specification].
+
+* Exchanging an access token for a SAML assertion is not supported in this release. In other words, using `requested_token_type=urn:ietf:params:oauth:token-type:saml2` is not supported.
+
+* Exchanging an access token for a refresh token is allowed only if it is explicitly enabled on the client as mentioned in the link:{securing_apps_token_exchange_link}#_standard-token-exchange-details[{securing_apps_token_exchange_name}].
+Currently, it is not supported to request offline tokens or exchange a refresh token when the subject token was issued from an offline session. The recommended approach is to exchange for access tokens instead of
+refresh token when possible.
+
+=== Fine-grained admin permissions supported
+
+Starting with this release, {project_name} introduces *fine-grained admin permissions V2*, offering an improved and more flexible authorization model for administrative permissions.
+
+* FGAP:V2 feature is enabled by default.
+* FGAP:V1 feature remains in preview and can be enabled using `--features=admin-fine-grained-authz:v1`. However, V1 may be deprecated and removed in a future releases.
+
+==== Migration from V1 to V2
+
+Due to fundamental changes in the permission model, **automatic migration from V1 to V2 is not available**. To simplify the transition:
+
+* A new `admin-permissions` client is introduced. This client is created when you enable the capability for the realm. The client holds the authorization model for FGAP:V2.
+* The existing FGAP:V1 authorization model remains unchanged within the `realm-management` client.
+* Administrators must _recreate permissions and policies_ using the new model, which can be configured in the updated *Permissions* section of the Admin Console.
+
+==== Key Differences Between FGAP:V1 and FGAP:V2
+
+* Realm-level enablement:
+  ** FGAP:V2 can be enabled for a realm using the new *Admin Permissions* switch in *Realm Settings*.
+* Centralized management:
+  ** The resource-specific *Permissions* tabs (for users, groups, clients, and roles) have been removed.
+  ** A new *Permissions* section provides centralized management for all administrative permissions from a single place in the Admin Console.
+* Explicit operation scoping:
+  ** Transitive dependencies between permissions have been removed.
+  ** Administrators must now explicitly assign each required permission.
+  ** Example: To both view and manage a resource, both *view* and *manage* scopes for a permissions must be assigned separately.
+* Permission model changes:
+  ** The *user-impersonated* user permission has been _removed_.
+  ** The *configure* client permission has been _removed_. With the introduction of explicit operation scoping in V2, the distinction between manage and configure became ambiguous.
+  ** The *user-impersonated* user permission has been _removed_. Instead, you can use the `impersonate-members` scope of the `Groups` resource type to allow or deny impersonation of group members.
+  ** Permissions to `manage-members` of a group do not allow a realm administrator to unassign members from groups. The reason for that is that in V1 this was allowing a member of a group to become
+     a regular realm user, and workaround permissions to create users in a realm. In the future, we will be working to provide additional scopes to allow deleting members from groups.
+* Flexible resource scoping:
+  ** Unlike V1, where permissions were granted either to *a single resource* (for clients, groups, and roles) or *all resources* (for users), V2 introduces greater flexibility.
+  ** Administrators can now define permissions for:
+    *** A *specific resource*
+    *** A *set of selected resources*
+    *** *All resources* of a given type
+    *** This applies to *all resource types*: clients, users,groups, and roles.
+
+=== LDAP provider now can store new users, groups, and roles in a sub-DN of the base DN
+
+When adding new users, groups, or roles, the LDAP provider would always store them in the same base DN configured for the searches. However, in some deployments admins may want to configure a broader DN with `subtree` scope to fetch users (or groups/roles) from multiple sub-DNs, but they don't want new users (or groups/roles) to be stored in this base DN in LDAP. Instead, they would like to chose one of the sub-DNs for that.
+
+It is now possible to control where new users, groups, or roles will be created using the new `Relative User Creation DN` config option in the LDAP provider and also in the LDAP group and role mappers. For more details, check the link:{adminguide_link}#_ldap[LDAP admin guide]
+
+=== Removal of the `X-XSS-Protection` header
+
+Because the https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-XSS-Protection[`X-XSS-Protection` header] is no longer supported by any user agents that are supported by Keycloak, it has been removed. This header was a feature of Internet Explorer, Chrome, and Safari that stopped pages from loading when they detected reflected cross-site scripting (XSS) attacks.
+
+We don't expect that this will impact any deployments due to the lack of support in user agents, as well as this feature being supplanted by https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP[Content Security Policy (CSP)].
+
+=== JWT client authentication defines a new max expiration option for the token
+
+When a client is configured to authenticate using the *Signed JWT* or *Signed JWT with Client Secret* type, {project_name} now enforces a maximum expiration for the token. This means that, although the `exp` (expiration) claim in the token may be much later, {project_name} will not accept tokens issued before that max expiration time. The default value is 60 seconds. Note that JWT tokens should be issued right before being sent for authentication. This way, the client has one minute window to send the token for login. Nevertheless this expiration can be tuned using the *Max expiration* configuration option in the client *Credentials* tab (see link:{adminguide_link}#_client-credentials[Confidential client credentials in the {adminguide_name}] for more information).
+
+=== Updates to the `user-profile-commons.ftl` theme template
+The `user-profile-commons.ftl` changed to improve support for localization. See https://github.com/keycloak/keycloak/issues/38029.
+As a result, and if you are extending this template, pages might start displaying a `locale` field. To avoid that, update
+the theme template with the changes aforementioned.

@@ -1,0 +1,20 @@
+
+==== Bitbucket
+
+To log in with Bitbucket, perform the following procedure.
+
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the *Add provider* list, select *Bitbucket*.
++
+.Add identity provider
+image:images/bitbucket-add-identity-provider.png[Add Identity Provider]
++
+. Copy the value of *Redirect URI* to your clipboard.
+. In a separate browser tab, perform the https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/[OAuth on Bitbucket Cloud] process. When you click *Add Consumer*:
+.. Paste the value of *Redirect URI* into the *Callback URL* field.
+.. Ensure you select *Email* and *Read* in the *Account* section to permit your application to read email.
+. Note the *Key* and *Secret* values Bitbucket displays when you create your consumer.
+. In {project_name}, paste the value of the `Key` into the *Client ID* field.
+. In {project_name}, paste the value of the `Secret` into the *Client Secret* field.
+. Click *Add*.

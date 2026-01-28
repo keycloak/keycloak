@@ -1,0 +1,5 @@
+
+=== Limit token audience
+
+In environments with low levels of trust among services, limit the audiences on the token. See the https://datatracker.ietf.org/doc/html/rfc6819#section-5.1.5.5[OAuth2 Threat Model] and the
+<<audience-support, Audience Support>> section for more information.

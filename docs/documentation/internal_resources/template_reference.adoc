@@ -1,0 +1,13 @@
+[[reference_module]]
+
+= Reference Template and Guidelines
+
+_In the title, include nouns that are used in the body text — this helps readers and search engines find information quickly._
+
+A reference module lists things (such as a list of commands) or has a very regimented structure (such as the consistent structure of man pages). A reference module explains the details that a customer needs to know to do a task.  A reference module is well-organized if users can scan it to quickly find the details they want.
+
+* A reference module that is a list of things may be made easier to scan if its content is organized alphabetically or formatted as a table. Think of an alphabetical list of commands that can be used with an application, or of an alphabetical list of system components with brief definitions formatted as a 2-column table.
+
+* If you have a large volume of the same type of information to document, figure out a consistent structure that the information details can fit into and then document each logical unit of information as 1 reference module. Think of man pages, which document very different information details, but that use consistent titles and formats to present those details in a consistent information structure.
+
+

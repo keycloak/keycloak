@@ -1,0 +1,387 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/features.adoc" as features>
+
+<@tmpl.guide
+title="Configuring logging"
+summary="Configure logging for {project_name}.">
+
+Logging is a key mechanism for understanding and operating {project_name}.
+It should help you to monitor {project_name}'s health, debug issues, and maintain an audit trail of important events.
+
+You can configure logging for the root log level or for more specific categories such as `org.hibernate` or `org.keycloak`.
+It is also possible to tailor log levels for each particular log handler.
+
+In {project_name}, logging goes beyond setting log levels — you can direct output to different handlers, use asynchronous logging for performance, capture HTTP access logs, and more.
+These features make it possible to adapt logging to your operational needs and integrate with observability platforms.
+
+{project_name} uses the JBoss Logging framework under the hood.
+
+== Available log handlers
+
+[cols="^1,^1,^1", frame=none, grid=all]
+|===
+| *Console* +
+Logs to standard output
+| *File* +
+Persists logs to disk
+| *Syslog* +
+Sends logs to Syslog server
+|===
+
+To enable log handlers, enter the following command:
+
+<@kc.start parameters="--log=\"<handler1>,<handler2>\""/>
+
+For more details on how to configure specific log handlers, see:
+
+* <@links.server id="logging-console"/>
+* <@links.server id="logging-file"/>
+* <@links.server id="logging-syslog"/>
+
+== Log levels
+
+The following table defines the available log levels.
+
+[%autowidth]
+|===
+|Level|Description
+
+|FATAL|Critical failures with complete inability to serve any kind of request.
+|ERROR|A significant error or problem leading to the inability to process requests.
+|WARN|A non-critical error or problem that might not require immediate correction.
+|INFO|{project_name} lifecycle events or important information. Low frequency.
+|DEBUG|More detailed information for debugging purposes, such as database logs. Higher frequency.
+|TRACE|Most detailed debugging information. Very high frequency.
+|ALL|Special level for all log messages.
+|OFF|Special level to turn logging off entirely (not recommended).
+|===
+
+=== Configuring the root log level
+When no log level configuration exists for a more specific category logger, the enclosing category is used instead. When there is no enclosing category, the root logger level is used.
+
+To set the root log level, enter the following command:
+
+<@kc.start parameters="--log-level=<root-level>"/>
+
+Use these guidelines for this command:
+
+* For `_<root-level>_`, supply a level defined in the preceding table.
+* The log level is case-insensitive. For example, you could either use `DEBUG` or `debug`.
+* If you were to accidentally set the log level twice, the last occurrence in the list becomes the log level. For example, if you included the syntax `--log-level="info,...,DEBUG,..."`, the root logger would be `DEBUG`.
+
+=== Configuring category-specific log levels
+You can set different log levels for specific areas in {project_name}. Use this command to provide a comma-separated list of categories for which you want a different log level:
+
+<@kc.start parameters="--log-level=\"<root-level>,<org.category1>:<org.category1-level>\""/>
+
+A configuration that applies to a category also applies to its sub-categories unless you include a more specific matching sub-category.
+
+.Example
+<@kc.start parameters="--log-level=\"INFO,org.hibernate:debug,org.hibernate.hql.internal.ast:info\""/>
+
+This example sets the following log levels:
+
+* Root log level for all loggers is set to INFO.
+* The hibernate log level in general is set to debug.
+* To keep SQL abstract syntax trees from creating verbose log output, the specific subcategory `org.hibernate.hql.internal.ast` is set to info. As a result, the SQL abstract syntax trees are omitted instead of appearing at the `debug` level.
+
+=== Configuring levels as individual options
+When configuring category-specific log levels, you can also set the log levels as individual `log-level-<category>` options instead of using the `log-level` option for that.
+This is useful when you want to set the log levels for selected categories without overwriting the previously set `log-level` option.
+
+.Example
+If you start the server as:
+
+<@kc.start parameters="--log-level=\"INFO,org.hibernate:debug\""/>
+
+you can then set an environmental variable `KC_LOG_LEVEL_ORG_KEYCLOAK=trace` to change the log level for the `org.keycloak` category.
+
+The `log-level-<category>` options take precedence over `log-level`. This allows you to override what was set in the `log-level` option.
+For instance if you set `KC_LOG_LEVEL_ORG_HIBERNATE=trace` for the CLI example above, the  `org.hibernate` category will use the `trace` level instead of `debug`.
+
+Bear in mind that when using the environmental variables, the category name must be in uppercase and the dots must be replaced with underscores.
+When using other config sources, the category name must be specified "as is", for example:
+
+<@kc.start parameters="--log-level=\"INFO,org.hibernate:debug\" --log-level-org.keycloak=trace"/>
+
+=== Specify log level for each handler
+
+The `log-level` property specifies the global root log level and levels for selected categories.
+However, a more fine-grained approach for log levels is necessary to comply with the modern application requirements.
+
+To set log levels for particular handlers, properties in format `log-<handler>-level` (where `<handler>` is available log handler) were introduced.
+
+It means properties for log level settings look like this:
+
+* `log-console-level` - Console log handler
+* `log-file-level` - File log handler
+* `log-syslog-level` - Syslog log handler
+
+NOTE: The `log-<handler>-level` properties are available only when the particular log handlers are enabled.
+More information in log handlers settings below.
+
+Only log levels specified in <<Log levels>> section are accepted, and *must be in lowercase*.
+There is no support for specifying particular categories for log handlers yet.
+
+==== General principle
+
+It is necessary to understand that setting the log levels for each particular handler *does not override the root level* specified in the `log-level` property.
+Log handlers respect the root log level, which represents the maximal verbosity for the whole logging system.
+It means individual log handlers can be configured to be less verbose than the root logger, but not more.
+
+Specifically, when an arbitrary log level is defined for the handler, it does not mean the log records with the log level will be present in the output.
+In that case, the root `log-level` must also be assessed.
+Log handler levels provide the *restriction for the root log level*, and the default log level for log handlers is `all` - without any restriction.
+
+==== Examples
+
+.Example: `debug` for file handler, but `info` for console handler:
+<@kc.start parameters="--log=console,file --log-level=debug --log-console-level=info"/>
+
+The root log level is set to `debug`, so every log handler inherits the value - so does the file log handler.
+To hide `debug` records in the console, we need to set the minimal (least severe) level to `info` for the console handler.
+
+.Example: `warn` for all handlers, but `debug` for file handler:
+<@kc.start parameters="--log=console,file,syslog --log-level=debug --log-console-level=warn --log-syslog-level=warn"/>
+
+The root level must be set to the most verbose required level (`debug` in this case), and other log handlers must be amended accordingly.
+
+.Example: `info` for all handlers, but `debug`+`org.keycloak.events:trace` for Syslog handler:
+<@kc.start parameters="--log=console,file,syslog --log-level=debug,org.keycloak.events:trace, --log-syslog-level=trace --log-console-level=info --log-file-level=info"/>
+
+In order to see the `org.keycloak.events:trace`, the `trace` level must be set for the Syslog handler.
+
+[[mdc]]
+== Adding context for log messages
+
+You can enable additional context information for each log line like the current realm and client that is executing the request.
+
+Use the option `log-mdc-enabled` to enable it.
+
+.Example configuration
+<@kc.start parameters="--log-mdc-enabled=true"/>
+
+.Example output
+----
+2025-06-20 14:13:01,772 {kc.clientId=security-admin-console, kc.realmName=master} INFO ...
+----
+
+Specify which keys to be added by setting the configuration option `log-mdc-keys`.
+
+== Use different JSON format for log handlers
+Every log handler provides the ability to have structured log output in JSON format.
+It can be enabled by properties in the format `log-<handler>-output=json` (where `<handler>` is a log handler).
+
+If you need a different format of the produced JSON, you can leverage the following JSON output formats:
+
+* `default` (default)
+* `ecs`
+
+The `ecs` value refers to the https://www.elastic.co/guide/en/ecs-logging/overview/current/intro.html[ECS] (Elastic Common Schema).
+
+ECS is an open-source, community-driven specification that defines a common set of fields to be used with Elastic solutions.
+The ECS specification is being converged with https://opentelemetry.io/docs/concepts/semantic-conventions/[OpenTelemetry Semantic Conventions] with the goal of creating a single standard maintained by OpenTelemetry.
+
+In order to change the JSON output format, properties in the format `log-<handler>-json-format` (where `<handler>` is a log handler) were introduced:
+
+* `log-console-json-format` - Console log handler
+* `log-file-json-format` - File log handler
+* `log-syslog-json-format` - Syslog log handler
+
+=== Example
+If you want to have JSON logs in *ECS* (Elastic Common Schema) format for the console log handler, you can enter the following command:
+
+<@kc.start parameters="--log-console-output=json --log-console-json-format=ecs"/>
+
+.Example Log Message
+[source,json]
+----
+{"@timestamp":"2025-02-03T14:53:22.539484211+01:00","event.sequence":9608,"log.logger":"io.quarkus","log.level":"INFO","message":"Keycloak 999.0.0-SNAPSHOT on JVM (powered by Quarkus 3.17.8) started in 4.615s. Listening on: http://0.0.0.0:8080","process.thread.name":"main","process.thread.id":1,"mdc":{},"ndc":"","host.hostname":"host-name","process.name":"/usr/lib/jvm/jdk-21.0.3+9/bin/java","process.pid":77561,"data_stream.type":"logs","ecs.version":"1.12.2","service.environment":"prod","service.name":"Keycloak","service.version":"999.0.0-SNAPSHOT"}
+----
+
+== Asynchronous logging
+{project_name} supports asynchronous logging, which might be useful for deployments requiring **high throughput** and **low latency**.
+Asynchronous logging uses a separate thread to take care of processing all log records.
+The logging handlers are invoked in exactly the same way as with synchronous logging, only done in separate threads.
+You can enable asynchronous logging for all {project_name} log handlers.
+A dedicated thread will be created for every log handler with enabled asynchronous logging.
+
+The underlying mechanism for asynchronous logging uses a queue for processing log records.
+Every new log record is added to the queue and then published to the particular log handler with enabled asynchronous logging.
+Every log handler has a different queue.
+
+If the queue is already full, it blocks the main thread and waits for free space in the queue.
+
+=== When to use asynchronous logging
+
+* You need **lower latencies** for incoming requests
+* You need **higher throughput**
+* You have **small worker thread pool** and want to offload logging to separate threads
+* You want to reduce the impact of **I/O-heavy log handlers**
+* You are logging to **remote destinations** (e.g., network syslog servers) and want to avoid blocking worker threads
+
+WARNING: Be aware that enabling asynchronous logging might bring some **additional memory overhead** due to the additional separate thread and the inner queue.
+In that case, it is not recommended to use it for resource-constrained environments.
+Additionally, unexpected server shutdowns create a risk of **losing log records**.
+
+=== Enable asynchronous logging
+You can enable asynchronous logging globally for all log handlers by using `log-async` property as follows:
+
+<@kc.start parameters="--log-async=true"/>
+
+Or you can enable the asynchronous logging for every specific handler by using properties in the format `log-<handler>-async` (where `<handler>` is a log handler).
+If the property for a specific handler is not set, the value from the parent `log-async` property is used.
+
+You can use these properties as follows:
+
+<@kc.start parameters="--log-console-async=true --log-file-async=true --log-syslog-async=true"/>
+
+* `log-console-async` - Console log handler
+* `log-file-async` - File log handler
+* `log-syslog-async` - Syslog log handler
+
+=== Change queue length
+You can change the size of the queue used for the asynchronous logging.
+The default size is **512** log records in the queue.
+
+You can change the queue length as follows:
+
+<@kc.start parameters="--log-console-async-queue-length=512 --log-file-async-queue-length=512 --log-syslog-async-queue-length=512"/>
+
+These properties are available only when asynchronous logging is enabled for these specific log handlers.
+
+[[http-access-logging]]
+== HTTP Access Logging
+
+{project_name} supports HTTP access logging to record details of incoming HTTP requests.
+While access logs are often used for debugging and traffic analysis, they are also important for security auditing and compliance monitoring, helping administrators track access patterns, identify suspicious activity, and maintain audit trails.
+
+These logs are written at the `INFO` level, so make sure your logging configuration includes this level — either globally (e.g. `log-level=info`) or specifically for the access log category (e.g. `log-level=org.keycloak.http.access-log:info`).
+When HTTP access logs are enabled, they are shown by default, as `INFO` level is the default log level for {project_name}.
+
+=== How to enable
+
+You can enable HTTP access logging by using `http-access-log-enabled` property as follows:
+
+<@kc.start parameters="--http-access-log-enabled=true"/>
+
+=== Change log format/pattern
+
+You can change format/pattern of the access log records by using `http-access-log-pattern` property as follows:
+
+<@kc.start parameters="--http-access-log-pattern=combined"/>
+
+Predefined named patterns:
+
+* `common` (default) - prints basic information about the request
+* `combined` - prints basic information about the request + information about referer and user agent
+* `long` - prints comprehensive information about the request with all its headers
+
+You can even specify your own pattern with your required data to be logged, such as:
+
+<@kc.start parameters="--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'"/>
+
+WARNING: HTTP Access logs may contain sensitive HTTP headers like `Authorization`, `Cookie`, or external API keys references.
+The `Authorization` header and selected sensitive cookies are automatically masked in the HTTP Access log. However, the list of masked items might not be complete. Be careful with using the `long` pattern or printing the headers by the custom format - you should use it only for development purposes. To extend the list of the masked items, see below.
+
+Consult the https://quarkus.io/guides/http-reference#configuring-http-access-logs[Quarkus documentation] for the full list of variables that can be used.
+
+=== Mask specific HTTP headers and cookies
+
+Selected sensitive HTTP headers and cookies are automatically masked in the HTTP Access log.
+
+Masked sensitive HTTP headers:
+
+* `Authorization`
+
+Masked sensitive {project_name} cookies:
+
+* `AUTH_SESSION_ID`
+* `KC_AUTH_SESSION_HASH`
+* `KEYCLOAK_IDENTITY`
+* `KEYCLOAK_SESSION`
+* `AUTH_SESSION_ID_LEGACY`
+* `KEYCLOAK_IDENTITY_LEGACY`
+* `KEYCLOAK_SESSION_LEGACY`
+
+In order to extend the list of the masked items (e.g. to accommodate for headers and cookies used by your custom extensions), configure the `http-access-log-masked-headers` and `http-access-log-masked-cookies` options.
+
+<@kc.start parameters="--http-access-log-enabled=true --http-access-log-masked-headers=X-Custom,Y-Api-Token --http-access-log-masked-cookies=MY_COOKIE,MY_SECOND_COOKIE"/>
+
+=== Exclude specific URL paths
+
+It is possible to exclude specific URL paths from the HTTP access logging, so they will not be recorded.
+
+You can use regular expressions to exclude them, such as:
+
+<@kc.start parameters="--http-access-log-exclude='/realms/my-internal-realm/.*'"/>
+
+In this case, all calls to the `/realms/my-internal-realm/` and subsequent paths will be excluded from the HTTP Access log.
+
+=== Log to dedicated file with rotation
+
+Instead of keeping the HTTP access logs in the normal server log, you can write them to a dedicated log file.
+This helps you separate HTTP access logs from the server logs and maintain audit trails.
+When file logging is enabled, HTTP access logs are not written to the console.
+
+==== Enable file logging
+
+You can enable file logging as follows:
+
+<@kc.start parameters="--http-access-log-enabled=true --http-access-log-file-enabled=true"/>
+
+This automatically creates a file called `keycloak-http-access.log` in the `/data` directory of your distribution.
+
+==== Change file name and suffix
+
+You can change the name of the log file using the `http-access-log-file-name` property.
+To change the file suffix (`.log` is the default), use the `http-access-log-file-suffix` property.
+
+For example, to write HTTP access logs to the file `my-http-logs.txt`:
+
+<@kc.start parameters="--http-access-log-enabled=true --http-access-log-file-enabled=true --http-access-log-file-name=my-http-logs --http-access-log-file-suffix=txt"/>
+
+==== File rotation
+
+By default, the HTTP access log file is rotated daily.
+
+When the daily rotation occurs, a date-based suffix '.+{yyyy-MM-dd}+' is added to the log file name from the previous day, keeping access logs separated by date (for example, `keycloak-http-access.2052-02-29.log`).
+
+To disable rotation, use the following configuration:
+
+<@kc.start parameters="--http-access-log-enabled=true --http-access-log-file-enabled=true --http-access-log-file-rotate=false"/>
+
+[[logs-export-opentelemetry]]
+== Telemetry Logs export (OpenTelemetry)
+
+It is possible to export OpenTelemetry logs from your deployment to the OpenTelemetry collector for centralized log management.
+
+For more details, see the <@links.observability id="telemetry"/> guide.
+
+<@opts.printRelevantOptions includedOptions="log log-*" excludedOptions="log-console-* log-file log-file-* log-syslog-* log-mdc* telemetry-logs-*">
+
+=== Console
+<@opts.includeOptions includedOptions="log-console-*"/>
+
+=== File
+<@opts.includeOptions includedOptions="log-file log-file-*"/>
+
+=== Syslog
+<@opts.includeOptions includedOptions="log-syslog-*"/>
+
+=== HTTP Access log
+<@opts.includeOptions includedOptions="http-access-log-*"/>
+
+=== Mapped Diagnostic Context (MDC)
+<@opts.includeOptions includedOptions="log-mdc*"/>
+
+=== Telemetry Logs (OpenTelemetry)
+<@opts.includeOptions includedOptions="telemetry-logs-*"/>
+
+</@opts.printRelevantOptions>
+
+</@tmpl.guide>

@@ -1,0 +1,39 @@
+= Highlights
+
+== Drools Policy Removed
+
+The Drools Policy was finally removed after the deprecation period. If you need more complex policies you can still use JavaScript-based policies.
+
+== Pagination support for clients
+
+Pagination support was added to clients in the Admin Console and REST API. Thanks to https://github.com/saibot94[saibot94].
+
+== New Elytron Credential Store Vault Provider
+
+A new built-in vault provider that reads secrets from a keystore-backed Elytron credential store has been added as a WildFly
+extension. The creation and management of the credential store is handled by Elytron using either the `elytron` subsystem or the
+`elytron-tool.sh` script.
+
+== More updates to W3C WebAuthn and Authentication flows
+
+In this release, we did some usability improvements to the authentication flows. It should be easier for the end user to choose between
+available authentication mechanisms for two-factor authentication. It should be more intuitive to log in with OTP or WebAuthn
+considering the fact that user can have more OTP or WebAuthn credentials. There is also better support for passwordless WebAuthn authentication.
+Finally, we did some work on defects related to the authentication flows.
+
+== Improved handling of user locale
+
+A number of improvements have been made to how the locale for the login page is selected, as well as when the locale
+is updated for a user.
+
+////
+This section is no longer included. We will need to create a new section and move the anchor.
+See the link:{adminguide_link}#_user_locale_selection[{adminguide_name}] for more details.
+////
+
+== Other improvements
+
+* Authorization Header token is only considered now when type is Bearer on Gatekeeper. Thanks to https://github.com/HansK-p[HansK-p]
+
+* More algorithms are supported for the client authentication with signed client secret JWT. Namely HS384 and HS512 algorithms were added.
+Thanks to https://github.com/tnorimat[tnorimat]

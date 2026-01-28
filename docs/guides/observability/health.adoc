@@ -1,0 +1,132 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Tracking instance status with health checks"
+summary="Check if an instance has finished its start up and is ready to serve requests by calling its health REST endpoints."
+includedOptions="health-enabled">
+
+{project_name} has built in support for health checks. This {section} describes how to enable and use the {project_name} health checks.
+The {project_name} health checks are exposed on the management port `9000` by default. For more details, see <@links.server id="management-interface" />
+
+When the `http-management-health-enabled` option is `false` the health endpoints will remain on the main HTTP(S) ports, rather than being exposed on the management port.
+When this option is `false` you should block unwanted external traffic to `/health` at your proxy.
+
+== {project_name} health check endpoints
+
+{project_name} exposes 4 health endpoints:
+
+* `/health/started` - Startup probe used for initial startup of {project_name} before the liveness probe takes over.
+* `/health/live` - Check if {project_name} is running. If this fails the application should be discarded (terminated, shutdown) and started again.
+* `/health/ready` - Checks if {project_name} is ready to process requests or not. Only direct traffic to a newly started instance once the readiness probe succeeds. If this procedure fails, the application is temporarily unavailable to serve new requests, and traffic should be directed elsewhere.
+* `/health` - accumulates all health check procedures in the application.
+
+These endpoints respond with HTTP status `200 OK` on success or `503 Service Unavailable` on failure, and a JSON object like the following:
+
+.Successful response for endpoints without additional per-check information:
+[source, json]
+----
+{
+    "status": "UP",
+    "checks": []
+}
+----
+
+.Successful response for endpoints with information on the database connection:
+[source, json]
+----
+{
+    "status": "UP",
+    "checks": [
+        {
+            "name": "Keycloak cluster health check",
+            "status": "UP"
+        },
+        {
+            "name": "Keycloak database connections async health check",
+            "status": "UP"
+        }
+    ]
+}
+----
+
+See the https://github.com/microprofile/microprofile-health/blob/main/spec/src/main/asciidoc/protocol-wireformat.asciidoc[wire format] for a more detailed description.
+
+== Enabling the health checks
+It is possible to enable the health checks using the build time option `health-enabled`:
+
+<@kc.build parameters="--health-enabled=true"/>
+
+By default, no check is returned from the health endpoints.
+
+== Using the health checks
+
+Due to security measures that remove `curl` and other packages from the {project_name} container image, you are not able to run checks against HTTPS endpoints from within the container.
+
+If you are not using {project_name} in a container, or if you are running the health checks outside of the container, use any tool to access the health check endpoints.
+
+=== curl
+
+You may use a simple HTTP HEAD request to determine the `+live+` or `+ready+` state of {project_name}. `+curl+` is a good HTTP client for this purpose.
+
+If {project_name} is deployed in a container, you must use a custom image or run this command from outside it due to the previously mentioned security measures. For example:
+
+[source, bash]
+----
+curl --head -fsS http://localhost:9000/health/ready
+----
+
+If the command returns with status 0, then {project_name} is `+live+` or `+ready+`, depending on which endpoint you called. Otherwise there is a problem.
+
+=== Kubernetes
+
+Define a https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#http-probes[HTTP Probe] so that Kubernetes may externally monitor the health endpoints. Do not use a liveness command.
+
+NOTE: If you configure mTLS with `https-client-auth` set to `required`, this configuration is inherited by the management interface. If you have not otherwise configured the usage of HTTP for the health endpoints, you will likely want to set `https-management-client-auth` to `request` or `none` so that a valid client certificate is not required for probe requests.
+
+=== HEALTHCHECK
+
+The Containerfile `+HEALTHCHECK+` instruction defines a command that will be periodically executed inside the container as it runs. While the {project_name} container does not have any CLI HTTP clients installed, it is possible to leverage BASH support for redirects to TCP sockets and craft a simple HTTP request to the healthcheck endpoint:
+
+[source, bash]
+----
+{ printf 'HEAD /health/ready HTTP/1.0\r\n\r\n' >&0; grep 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000
+----
+
+The above code depends on the values of the {project_name} options such as `http-relative-path` (`http-management-relative-path`) and `http-management-port`. In case those are changed the code needs to be modified accordingly.
+
+NOTE: the `+HEALTHCHECK+` shown is based upon the ready endpoint. This is appropriate for informational purposes or to determine if the container should receive requests. It should not be used to determine if the container needs restarted.
+
+If you enable TLS as shown in <@links.server id="enabletls" />, the management interface will also use TLS. Depending upon how the management interface endpoints are intended to be used you can still have plain HTTP health checks if:
+
+- the management interface uses HTTP, not HTTPS, by setting `http-management-scheme` to `http`.
+- or the health checks are enabled for the main interface by setting `http-management-health-enabled` to `false` and accessible via HTTP with setting `http-enabled` to `true`. In this scenario external traffic to the HTTP port (defaults to 8080) or to the health endpoints (defaults to /health) should not be allowed by your proxy.
+
+== Available Checks
+
+The table below shows the available checks.
+
+[%autowidth]
+|===
+|Check | Description | Requires Metrics
+
+|Database
+|Returns the status of the database connection pool.
+|Yes
+
+|Cluster
+|Returns the status of the cluster (network partitions).
+|No
+
+|===
+
+For some checks, you'll need to also enable metrics as indicated by the `Requires Metrics` column. To enable metrics
+use the `metrics-enabled` option as follows:
+
+<@kc.build parameters="--health-enabled=true --metrics-enabled=true"/>
+
+The cluster health check is only available for clustered setups when the cache transport stacks `jdbc-ping` or `jdbc-ping-udp` are used.
+
+</@tmpl.guide>

@@ -1,0 +1,114 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Health checks for multi-cluster deployments"
+summary="Validate the health of a multi-cluster deployment."
+tileVisible="false" >
+
+When running the <@links.ha id="multi-cluster-introduction" /> in a {kubernetes} environment,
+you should automate checks to see if everything is up and running as expected.
+
+This page provides an overview of URLs,
+{kubernetes} resources, and Healthcheck endpoints available to verify a multi-cluster setup of {project_name}.
+
+== Overview
+
+A proactive monitoring strategy aims to detect and alert about issues before they impact users. This strategy is the key for a highly resilient and highly available {project_name} application.
+
+Health checks across various architectural components (such as application health, load balancing, caching, and overall system status) are critical for:
+
+Ensuring high availability:: Verifying that all sites and the load balancer are operational is a key to ensure that a system can handle requests even if one site goes down.
+
+Maintaining performance:: Checking the health and distribution of the {jdgserver_name} cache ensures that {project_name} can maintain optimal performance by efficiently handling sessions and other temporary data.
+
+Operational resilience:: By continuously monitoring the health of both {project_name} and its dependencies within the {kubernetes} environment, the system can quickly identify and possibly auto-remediate issues, reducing downtime.
+
+== Prerequisites
+
+. https://kubernetes.io/docs/tasks/tools/#kubectl[Kubectl CLI is installed and configured].
+
+. Install https://jqlang.github.io/jq/download/[jq] if it is not already installed on your operating system.
+
+== Specific health checks
+
+=== {project_name} load balancer and sites
+
+Verifies the health of the {project_name} application through its load balancer and both primary and backup sites. This ensures that {project_name} is accessible and that the load balancing mechanism is functioning correctly across different geographical or network locations.
+
+This command returns the health status of the {project_name} application's connection to its configured database, thus confirming the reliability of database connections.
+This command is available only on the management port and not from the external URL.
+In a {kubernetes} setup, the sub-status `health/ready` is checked periodically to make the Pod as ready.
+
+[source,bash]
+----
+curl -s https://keycloak:managementport/health
+----
+
+This command verifies the `lb-check` endpoint of the load balancer and ensures the {project_name} application cluster is up and running.
+[source,bash]
+----
+curl -s https://keycloak-load-balancer-url/lb-check
+----
+
+These commands will return the running status of the Site A and Site B of the {project_name} in a multi-cluster setup.
+
+[source,bash]
+----
+curl -s https://keycloak_site_a_url/lb-check
+curl -s https://keycloak_site_b_url/lb-check
+----
+
+=== {jdgserver_name} Cache health
+Check the health of the default cache manager and individual caches in an external {jdgserver_name} cluster.
+This check is vital for {project_name} performance and reliability,
+as {jdgserver_name} is often used for distributed caching and session clustering in {project_name} deployments.
+
+This command returns the overall health of the {jdgserver_name} cache manager, which is useful as the Admin user does not need to provide user credentials to get the health status.
+[source,bash]
+----
+curl -s https://infinispan_rest_url/rest/v2/cache-managers/default/health/status
+----
+
+In contrast to the preceding health checks, the following health checks require the Admin user to provide the {jdgserver_name} user credentials as part of the request to peek into the overall health of the external {jdgserver_name} cluster caches.
+[source,bash]
+----
+curl -u <infinispan_user>:<infinispan_pwd> -s https://infinispan_rest_url/rest/v2/cache-managers/default/health \
+ | jq 'if .cluster_health.health_status == "HEALTHY" and (all(.cache_health[].status; . == "HEALTHY")) then "HEALTHY" else "UNHEALTHY" end'
+----
+
+The `jq` filter is a convenience to compute the overall health based on the individual cache health.
+You can also choose to run the above command without the `jq` filter to see the full details.
+
+=== {jdgserver_name} Cluster distribution
+Assesses the distribution health of the {jdgserver_name} cluster, ensuring that the cluster's nodes are correctly distributing data. This step is essential for the scalability and fault tolerance of the caching layer.
+
+You can modify the `expectedCount 3` argument to match the total nodes in the cluster and validate if they are healthy or not.
+[source,bash]
+----
+curl <infinispan_user>:<infinispan_pwd> -s https://infinispan_rest_url/rest/v2/cluster\?action\=distribution \
+ | jq --argjson expectedCount 3 'if map(select(.node_addresses | length > 0)) | length == $expectedCount then "HEALTHY" else "UNHEALTHY" end'
+----
+
+=== Overall, {jdgserver_name} system health
+Uses the `kubectl` CLI tool to query the health status of {jdgserver_name} clusters and the {project_name} service in the specified namespace. This comprehensive check ensures that all components of the {project_name} deployment are operational and correctly configured within the {kubernetes} environment.
+
+[source,bash]
+----
+kubectl get infinispan -n <NAMESPACE> -o json  \
+| jq '.items[].status.conditions' \
+| jq 'map({(.type): .status})' \
+| jq 'reduce .[] as $item ([]; . + [keys[] | select($item[.] != "True")]) | if length == 0 then "HEALTHY" else "UNHEALTHY: " + (join(", ")) end'
+----
+
+=== {project_name} readiness in {kubernetes}
+Specifically, checks for the readiness and rolling update conditions of {project_name} deployments in {kubernetes},
+ensuring that the {project_name} instances are fully operational and not undergoing updates that could impact availability.
+
+[source,bash]
+----
+kubectl wait --for=condition=Ready --timeout=10s keycloaks.k8s.keycloak.org/keycloak -n <NAMESPACE>
+kubectl wait --for=condition=RollingUpdate=False --timeout=10s keycloaks.k8s.keycloak.org/keycloak -n <NAMESPACE>
+----
+
+</@tmpl.guide>

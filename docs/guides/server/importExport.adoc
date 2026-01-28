@@ -1,0 +1,191 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+    title="Importing and exporting realms"
+    summary="Import and export realms as JSON files.">
+
+In this {section}, you are going to understand the different approaches for importing and exporting realms using JSON files.
+
+== Import / Export Commands
+
+[NOTE]
+====
+Exporting and importing into single files can produce large files which may run the export / import process out of memory. If your database contains more than 50,000 users, export to a directory and not a single file.
+The default count of users per file is fifty, but you may use a much larger value if desired.
+
+The `import` and `export` commands are essentially server launches that exit before bringing up the full server. They are not currently designed to be run from the same machine as a running server instance, which may result in port or other conflicts.
+
+It is recommended that all {project_name} nodes are stopped prior to using the `kc.[sh|bat] export` command. This ensures that the results will have no consistency issues with user or realm modifications during the export.
+
+It is required that all {project_name} nodes are stopped prior to performing an `kc.[sh|bat] import` command with the override option. 
+The command does not attach to the cache cluster, so overwriting a realm will lead to inconsistent caches in the cluster, which then would show and use inconsistent or outdated information. Instead of overwriting a realm with the import command, consider using the Admin API to delete realms that need to be overwritten prior to running the import.
+====
+
+=== Providing options for database connection parameters
+
+When using the `export` and the `import` commands below, {project_name} needs to know how to connect to the database where the information about realms, clients, users and other entities is stored.
+As described in <@links.server id="configuration"/> that information can be provided as command line parameters, environment variables or a configuration file.
+Use the `--help` command line option for each command to see the available options.
+
+Some of the configuration options are build time configuration options.
+As default, {project_name} will re-build automatically for the `export` and `import` commands if it detects a change of a build time parameter.
+
+If you have built an optimized version of {project_name} with the `build` command as outlined in <@links.server id="configuration"/>, use the command line option `--optimized` to have {project_name} skip the build check for a faster startup time.
+When doing this, remove the build time options from the command line and keep only the runtime options.
+
+NOTE: if you do not use `--optimized` keep in mind that an `import` or `export` command may implicitly create or update an optimized build for you - if you are running the command from the same machine as a server instance, this may impact the next start of your server.
+
+=== Exporting a Realm to a Directory
+
+To export a realm, you can use the `export` command. Your {project_name} server instance must not be started when invoking this command.
+
+<@kc.export parameters="--help"/>
+
+To export a realm to a directory, you can use the `--dir <dir>` option.
+
+<@kc.export parameters="--dir <dir>"/>
+
+When exporting realms to a directory, the server is going to create separate files for each realm being exported.
+
+==== Configuring how users are exported
+
+You are also able to configure how users are going to be exported by setting the `--users <strategy>` option. The values available for this
+option are:
+
+`different_files`:: Users export into different json files, depending on the maximum number of users per file set by `--users-per-file`. This is the default value.
+
+`skip`:: Skips exporting users.
+
+`realm_file`::  Users will be exported to the same file as the realm settings. For a realm named "foo", this would be "foo-realm.json" with realm data and users.
+
+`same_file`::  All users are exported to one explicit file. So you will get two json files for a realm, one with realm data and one with users.
+
+If you are exporting users using the `different_files` strategy, you can set how many users per file you want by setting the `--users-per-file` option. The default value is `50`.
+
+<@kc.export parameters="--dir <dir> --users different_files --users-per-file 100"/>
+
+=== Exporting a Realm to a File
+
+To export a realm to a file, you can use the `--file <file>` option.
+
+<@kc.export parameters="--file <file>"/>
+
+When exporting realms to a file, the server is going to use the same file to store the configuration for all the realms being exported.
+
+=== Exporting a specific realm
+
+If you do not specify a specific realm to export, all realms are exported. To export a single realm, you can use the `--realm` option as follows:
+
+<@kc.export parameters="[--dir|--file] <path> --realm my-realm"/>
+
+=== Import File Naming Conventions
+
+When you export a realm specific file name conventions are used, which must also be used for importing from a directory or import at startup. The realm file to be imported must be named <realm name>-realm.json. 
+Regular and federated user files associated with a realm must be named <realm-name>-users-<file number>.json and <realm-name>-federated-users-<file number>.json. Failure to use this convention will result in errors or 
+user files not being imported.
+
+=== Importing a Realm from a Directory
+
+To import a realm, you can use the `import` command. Your {project_name} server instance must not be started when invoking this command.
+
+<@kc.import parameters="--help"/>
+
+After exporting a realm to a directory, you can use the `--dir <dir>` option to import the realm back to the server as follows:
+
+<@kc.import parameters="--dir <dir>"/>
+
+When importing realms using the `import` command, you are able to set if existing realms should be skipped, or if they should be overridden with the new configuration. For that,
+you can set the `--override` option as follows:
+
+<@kc.import parameters="--dir <dir> --override false"/>
+
+By default, the `--override` option is set to `true` so that realms are always overridden with the new configuration.
+
+=== Importing a Realm from a File
+
+To import a realm previously exported in a single file, you can use the `--file <file>` option as follows:
+
+<@kc.import parameters="--file <file>"/>
+
+=== Using Environment Variables within the Realm Configuration Files
+
+You are able to use placeholders to resolve values from environment variables for any realm configuration.
+
+.Realm configuration using placeholders
+[source, bash]
+----
+{
+    "realm": "${r"${MY_REALM_NAME}"}",
+    "enabled": true,
+    ...
+}
+----
+
+In the example above, the value set to the `MY_REALM_NAME` environment variable is going to be used to set the `realm` property.
+
+NOTE: there are currently no restrictions on what environment variables may be referenced. When environment variables are used to convey sensitive information, take care to ensure placeholders references do not inappropriately expose sensitive environment variable values.
+
+== Importing a Realm during Startup
+
+You are also able to import realms when the server is starting by using the `--import-realm` option.
+
+<@kc.start parameters="--import-realm"/>
+
+When you set the `--import-realm` option, the server is going to try to import any realm configuration file from the `data/import` directory. Only regular files using the `.json` extension are read from this directory, sub-directories are ignored.
+
+NOTE: For the {project_name} containers, the import directory is `/opt/keycloak/data/import`
+
+If a realm already exists in the server, the import operation is skipped. The main reason behind this behavior is to avoid re-creating
+realms and potentially lose state between server restarts.
+
+To re-create realms you should explicitly run the `import` command prior to starting the server.
+
+NOTE: The server will not fully start until the imports are complete.
+
+== Importing and Exporting by using the Admin Console
+
+You can also import and export a realm using the Admin Console. This functionality is
+different from the other CLI options described in previous sections because the Admin Console requires the cluster to be online.
+The Admin Console also offers only the capability to _partially_  export a realm. In this case, the current realm settings, along with some resources like clients,
+roles, and groups, can be exported. The users for that realm _cannot_ be exported using this method.
+
+NOTE: When using the Admin Console export, the realm and the selected resources are always exported to a file
+named `realm-export.json`. Also, all sensitive values like passwords and client secrets will be masked with `+*+` symbols.
+
+To export a realm using the Admin Console, perform these steps:
+
+. Select a realm.
+. Click *Realm settings* in the menu.
+. Point to the *Action* menu in the top right corner of the realm settings screen, and select  *Partial export*.
++
+A list of resources appears along with the realm configuration.
+. Select the resources you want to export.
+. Click *Export*.
+
+NOTE: Realms exported from the Admin Console are not suitable for backups or data transfer between servers.
+Only CLI exports are suitable for backups or data transfer between servers.
+
+WARNING: If the realm contains many groups, roles, and clients, the operation may cause the server to be
+unresponsive to user requests for a while. Use this feature with caution, especially on a production system.
+
+In a similar way, you can import a previously exported realm. Perform these steps:
+
+. Click *Realm settings* in the menu.
+. Point to the *Action* menu in the top right corner of the realm settings screen, and select  *Partial import*.
++
+A prompt appears where you can select the file you want to import. Based on  this file, you see the resources you can import along with the realm settings.
+. Click *Import*.
+
+You can also control what {project_name} should do if the imported resource already exists. These options exist:
+
+Fail import:: Abort the import.
+Skip:: Skip the duplicate resources without aborting the process
+Overwrite:: Replace the existing resources with the ones being imported.
+
+NOTE: The Admin Console partial import can also import files created by the CLI `export` command. In other words, full exports created
+by the CLI can be imported by using the Admin Console. If the file contains users, those users will also be available for importing into the
+current realm.
+
+</@tmpl.guide>

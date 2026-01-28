@@ -1,0 +1,237 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Using the client registration service"
+priority=100
+summary="Use the client registration service.">
+
+In order for an application or service to utilize {project_name} it has to register a client in {project_name}.
+An admin can do this through the admin console (or admin REST endpoints), but clients can also register themselves through the {project_name} client registration service.
+
+The Client Registration Service provides built-in support for {project_name} Client Representations, OpenID Connect Client Meta Data and SAML Entity Descriptors.
+The Client Registration Service endpoint is `/realms/<realm>/clients-registrations/<provider>`.
+
+The built-in supported `providers` are:
+
+* default - {project_name} Client Representation (JSON)
+* install - {project_name} Adapter Configuration (JSON)
+* openid-connect - OpenID Connect Client Metadata Description (JSON)
+* saml2-entity-descriptor - SAML Entity Descriptor (XML)
+
+The following sections will describe how to use the different providers.
+
+[#_authentication]
+== Authentication
+
+To invoke the Client Registration Services you usually need a token. The token can be a bearer token, an initial access token or a registration access token.
+There is an alternative to register new client without any token as well, but then you need to configure Client Registration Policies (see below).
+
+=== Bearer token
+
+The bearer token can be issued on behalf of a user or a Service Account. The following permissions are required to invoke the endpoints (see link:{adminguide_link}[{adminguide_name}] for more details):
+
+* create-client or manage-client - To create clients
+* view-client or manage-client - To view clients
+* manage-client - To update or delete client
+
+If you are using a bearer token to create clients it's recommend to use a token from a Service Account with only the `create-client` role (see link:{adminguide_link}[{adminguide_name}] for more details).
+
+[[_initial_access_token]]
+=== Initial Access Token
+
+The recommended approach to registering new clients is by using initial access tokens.
+An initial access token can only be used to create clients and has a configurable expiration as well as a configurable limit on how many clients can be created.
+
+An initial access token can be created through the admin console.
+To create a new initial access token first select the realm in the admin console, then click on `Client` in the menu on the left, followed by
+`Initial access token` in the tabs displayed in the page.
+
+You will now be able to see any existing initial access tokens. If you have access you can delete tokens that are no longer required. You can only retrieve the
+value of the token when you are creating it. To create a new token click on `Create`. You can now optionally add how long the token should be valid, also how
+many clients can be created using the token. After you click on `Save` the token value is displayed.
+
+It is important that you copy/paste this token now as you won't be able to retrieve it later. If you forget to copy/paste it, then delete the token and create another one.
+
+The token value is used as a standard bearer token when invoking the Client Registration Services, by adding it to the Authorization header in the request.
+For example:
+
+[source]
+----
+Authorization: bearer eyJhbGciOiJSUz...
+----
+
+[[_registration_access_token]]
+=== Registration Access Token
+
+When you create a client through the Client Registration Service the response will include a registration access token.
+The registration access token provides access to retrieve the client configuration later, but also to update or delete the client.
+The registration access token is included with the request in the same way as a bearer token or initial access token.
+
+By default, registration access token rotation is enabled. This means a registration access token is only valid once. When the token is used, the response will include a new token. Note that registration access token rotation can be disabled by using link:{adminguide_link}#_client_policies[Client Policies].
+
+If a client was created outside of the Client Registration Service it won't have a registration access token associated with it.
+You can create one through the admin console. This can also be useful if you lose the token for a particular client.
+To create a new token find the client in the admin console and click on `Credentials`. Then click on `Generate registration access token`.
+
+=== Cross-Origin Resource Sharing (CORS)
+
+In case when clients are registered through the user-agent it is required to configure what web origins are permitted
+for client registration.
+
+For bearer tokens the permitted web origin can be configured in the client the token was issued to. When creating an
+initial access token, the permitted web origins can be supplied directly.
+
+For anonymous access, or as a realm wide configuration, permitted web origins can be configured by going to
+clients, then client registration and updating the `Allowed Registration Web Origins` policy to list web origins
+that should be allowed.
+
+== {project_name} Representations
+
+The `default` client registration provider can be used to create, retrieve, update and delete a client.
+It uses {project_name} Client Representation format which provides support for configuring clients exactly as they can be configured through the admin
+console, including for example configuring protocol mappers.
+
+To create a client create a Client Representation (JSON) then perform an HTTP POST request to `/realms/<realm>/clients-registrations/default`.
+
+It will return a Client Representation that also includes the registration access token.
+You should save the registration access token somewhere if you want to retrieve the config, update or delete the client later.
+
+To retrieve the Client Representation perform an HTTP GET request to `/realms/<realm>/clients-registrations/default/<client id>`.
+
+It will also return a new registration access token.
+
+To update the Client Representation perform an HTTP PUT request with the updated Client Representation to:
+`/realms/<realm>/clients-registrations/default/<client id>`.
+
+It will also return a new registration access token.
+
+To delete the Client Representation perform an HTTP DELETE request to:
+`/realms/<realm>/clients-registrations/default/<client id>`
+
+== {project_name} adapter configuration
+
+The `installation` client registration provider can be used to retrieve the adapter configuration for a client.
+In addition to token authentication you can also authenticate with client credentials using HTTP basic authentication.
+To do this include the following header in the request:
+
+[source]
+----
+Authorization: basic BASE64(client-id + ':' + client-secret)
+----
+
+To retrieve the Adapter Configuration then perform an HTTP GET request to `/realms/<realm>/clients-registrations/install/<client id>`.
+
+No authentication is required for public clients.
+This means that for the JavaScript adapter you can load the client configuration directly from {project_name} using the above URL.
+
+== OpenID Connect Dynamic Client Registration
+
+{project_name} implements https://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dynamic Client Registration], which extends https://datatracker.ietf.org/doc/html/rfc7591[OAuth 2.0 Dynamic Client Registration Protocol] and https://datatracker.ietf.org/doc/html/rfc7592[OAuth 2.0 Dynamic Client Registration Management Protocol].
+
+The endpoint to use these specifications to register clients in {project_name} is `/realms/<realm>/clients-registrations/openid-connect[/<client id>]`.
+
+This endpoint can also be found in the OpenID Connect Discovery endpoint for the realm, `/realms/<realm>/.well-known/openid-configuration`.
+
+== SAML Entity Descriptors
+
+The SAML Entity Descriptor endpoint only supports using SAML v2 Entity Descriptors to create clients.
+It doesn't support retrieving, updating or deleting clients.
+For those operations the {project_name} representation endpoints should be used.
+When creating a client a {project_name} Client Representation is returned with details about the created client, including a registration access token.
+
+To create a client perform an HTTP POST request with the SAML Entity Descriptor to `/realms/<realm>/clients-registrations/saml2-entity-descriptor`.
+
+== Example using CURL
+
+The following example creates a client with the clientId `myclient` using CURL. You need to replace `eyJhbGciOiJSUz...` with a proper initial access token or
+bearer token.
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+    -d '{ "clientId": "myclient" }' \
+    -H "Content-Type:application/json" \
+    -H "Authorization: bearer eyJhbGciOiJSUz..." \
+    http://localhost:8080/realms/master/clients-registrations/default
+----
+
+== Example using Java Client Registration API
+
+The Client Registration Java API makes it easy to use the Client Registration Service using Java.
+To use include the dependency `org.keycloak:keycloak-client-registration-api:>VERSION<` from Maven.
+
+For full instructions on using the Client Registration refer to the JavaDocs.
+Below is an example of creating a client. You need to replace `eyJhbGciOiJSUz...` with a proper initial access token or bearer token.
+
+[source,java,subs="attributes+"]
+----
+String token = "eyJhbGciOiJSUz...";
+
+ClientRepresentation client = new ClientRepresentation();
+client.setClientId(CLIENT_ID);
+
+ClientRegistration reg = ClientRegistration.create()
+    .url("http://localhost:8080", "myrealm")
+    .build();
+
+reg.auth(Auth.token(token));
+
+client = reg.create(client);
+
+String registrationAccessToken = client.getRegistrationAccessToken();
+----
+
+[[_client_registration_policies]]
+== Client Registration Policies
+
+NOTE: The current plans are for the Client Registration Policies to be removed in favor of the Client Policies described in the link:{adminguide_link}#_client_policies[{adminguide_name}].
+Client Policies are more flexible and support more use cases.
+
+{project_name} currently supports two ways how new clients can be registered through Client Registration Service.
+
+* Authenticated requests - Request to register new client must contain either `Initial Access Token` or `Bearer Token` as mentioned above.
+
+* Anonymous requests - Request to register new client doesn't need to contain any token at all
+
+Anonymous client registration requests are very interesting and powerful feature, however you usually don't want that anyone is able to register new
+client without any limitations. Hence we have `Client Registration Policy SPI`, which provide a way to limit who can register new clients and under which conditions.
+
+In {project_name} admin console, you can click to `Client Registration` tab and then `Client Registration Policies` sub-tab. Here you will see what policies
+are configured by default for anonymous requests and what policies are configured for authenticated requests.
+
+NOTE: The anonymous requests (requests without any token) are allowed just for creating (registration) of new clients. So when you register
+new client through anonymous request, the response will contain Registration Access Token, which must be used for Read, Update or Delete request of particular client.
+However using this Registration Access Token from anonymous registration will be then subject to Anonymous Policy too! This means that for example request for update
+client also needs to come from Trusted Host if you have `Trusted Hosts` policy. Also for example it won't be allowed to disable `Consent Required` when updating client and
+when `Consent Required` policy is present etc.
+
+Currently we have these policy implementations:
+
+* Trusted Hosts Policy - You can configure list of trusted hosts and trusted domains. Request to Client Registration Service can be sent just from those hosts or domains.
+Request sent from some untrusted IP will be rejected. URLs of newly registered client must also use just those trusted hosts or domains. For example it won't be allowed
+to set `Redirect URI` of client pointing to some untrusted host. By default, there is not any whitelisted host, so anonymous client registration is de-facto disabled.
+
+NOTE: {project_name} normalizes loopback addresses to `localhost` to avoid platform-specific
+reverse-DNS differences (for example on Windows a reverse lookup of loopback may return the numeric IP rather than `localhost`). All other trusted domains must be based upon the primary reverse-DNS lookup returned by the platform.
+
+* Consent Required Policy - Newly registered clients will have `Consent Allowed` switch enabled. So after successful authentication, user will always
+see consent screen when he needs to approve permissions (client scopes). It means that client won't have access to any personal
+info or permission of user unless user approves it.
+
+* Protocol Mappers Policy - Allows to configure list of whitelisted protocol mapper implementations. New client can't be registered
+or updated if it contains some non-whitelisted protocol mapper. Note that this policy is used for authenticated requests as well, so
+even for authenticated request there are some limitations which protocol mappers can be used.
+
+* Client Scope Policy - Allow to whitelist `Client Scopes`, which can be used with newly registered or updated clients.
+There are no whitelisted scopes by default; only the client scopes, which are defined as `Realm Default Client Scopes` are whitelisted by default.
+
+* Full Scope Policy - Newly registered clients will have `Full Scope Allowed` switch disabled. This means they won't have any scoped
+realm roles or client roles of other clients.
+
+* Max Clients Policy - Rejects registration if current number of clients in the realm is same or bigger than specified limit. It's 200 by default for anonymous registrations.
+
+* Client Disabled Policy - Newly registered client will be disabled. This means that admin needs to manually approve and enable all newly registered clients.
+This policy is not used by default even for anonymous registration.
+
+</@tmpl.guide>

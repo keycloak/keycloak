@@ -1,0 +1,91 @@
+[[_sp-idp-httpclient]]
+
+== IDP HttpClient sub element
+
+The `HttpClient` optional sub element defines the properties of HTTP client used
+for automatic obtaining of certificates containing public keys for IDP signature
+verification via SAML descriptor of the IDP when
+<<_sp-idp-keys-automatic,enabled>>.
+
+[source,xml]
+----
+<HttpClient connectionPoolSize="10"
+            disableTrustManager="false"
+            allowAnyHostname="false"
+            clientKeystore="classpath:keystore.jks"
+            clientKeystorePassword="pwd"
+            truststore="classpath:truststore.jks"
+            truststorePassword="pwd"
+            proxyUrl="http://proxy/"
+            socketTimeout="5000"
+            connectionTimeout="6000"
+            connectionTtl="500" />
+----
+
+connectionPoolSize::
+  This config option defines how many connections to the {project_name} server should be pooled.
+  This is _OPTIONAL_.
+  The default value is `10`.
+
+disableTrustManager::
+  If the {project_name} server requires HTTPS and this config option is set to `true` you do not have to specify a truststore.
+  This setting should only be used during development and *never* in production as it will disable verification of SSL certificates.
+  This is _OPTIONAL_.
+  The default value is `false`.
+
+allowAnyHostname::
+  If the {project_name} server requires HTTPS and this config option is set to `true`
+  the {project_name} server's certificate is validated via the truststore,
+  but host name validation is not done.
+  This setting should only be used during development and *never* in production
+  as it will partly disable verification of SSL certificates.
+  This setting may be useful in test environments. This is _OPTIONAL_.
+  The default value is `false`.
+
+truststore::
+  The value is the file path to a truststore file.
+  If you prefix the path with `classpath:`, then the truststore will be obtained from the deployment's classpath instead.
+  Used for outgoing HTTPS communications to the {project_name} server.
+  Client making HTTPS requests need a way to verify the host of the server they are talking to.
+  This is what the truststore does.
+  The keystore contains one or more trusted host certificates or certificate authorities.
+  You can create this truststore by extracting the public certificate of the {project_name} server's SSL keystore.
+  This is _REQUIRED_ unless `disableTrustManager` is `true`.
+
+truststorePassword::
+  Password for the truststore.
+  This is _REQUIRED_ if `truststore` is set and the truststore requires a password.
+
+clientKeystore::
+  This is the file path to a keystore file.
+  This keystore contains client certificate for two-way SSL when the adapter makes HTTPS requests to the {project_name} server.
+  This is _OPTIONAL_.
+
+clientKeystorePassword::
+  Password for the client keystore and for the client's key.
+  This is _REQUIRED_ if `clientKeystore` is set.
+
+proxyUrl::
+  URL to HTTP proxy to use for HTTP connections.
+  This is _OPTIONAL_.
+
+socketTimeout::
+  Timeout for socket waiting for data after establishing the connection in milliseconds.
+  Maximum time of inactivity between two data packets.
+  A timeout value of zero is interpreted as an infinite timeout.
+  A negative value is interpreted as undefined (system default if applicable).
+  The default value is `-1`.
+  This is _OPTIONAL_.
+
+connectionTimeout::
+  Timeout for establishing the connection with the remote host in milliseconds.
+  A timeout value of zero is interpreted as an infinite timeout.
+  A negative value is interpreted as undefined (system default if applicable).
+  The default value is `-1`.
+  This is _OPTIONAL_.
+
+connectionTtl::
+  Connection time-to-live for client in milliseconds.
+  A value less than or equal to zero is interpreted as an infinite value.
+  The default value is `-1`.
+  This is _OPTIONAL_.

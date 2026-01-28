@@ -1,0 +1,63 @@
+{
+	"attributes": [
+		{
+			"name": "username",
+			"displayName": "${username}",
+			"permissions": {
+				"view": ["admin", "user"],
+				"edit": ["admin", "user"]
+			},
+			"validations": {
+				"length": { "min": 3, "max": 255 },
+				"username-prohibited-characters": {},
+				"up-username-not-idn-homograph": {}
+			}
+		},
+		{
+			"name": "email",
+			"displayName": "${email}",
+			"required": {"roles" : ["user"]},
+			"permissions": {
+				"view": ["admin", "user"],
+				"edit": ["admin", "user"]
+			},
+			"validations": {
+				"email" : {},
+				"length": { "max": 255 }
+			}
+		},
+		{
+			"name": "firstName",
+			"displayName": "${firstName}",
+	        "required": {"roles" : ["user"]},
+			"permissions": {
+				"view": ["admin", "user"],
+				"edit": ["admin", "user"]
+			},
+			"validations": {
+				"length": { "max": 255 },
+				"person-name-prohibited-characters": {}
+			}
+		},
+		{
+			"name": "lastName",
+			"displayName": "${lastName}",
+	        "required": {"roles" : ["user"]},
+			"permissions": {
+				"view": ["admin", "user"],
+				"edit": ["admin", "user"]
+			},
+			"validations": {
+				"length": { "max": 255 },
+				"person-name-prohibited-characters": {}
+			}
+		}
+	],
+	"groups": [
+		{
+			"name": "user-metadata",
+			"displayHeader": "User metadata",
+			"displayDescription": "Attributes, which refer to user metadata"
+		}
+	]
+}

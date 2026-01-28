@@ -1,0 +1,24 @@
+[[_policy_evaluation_overview]]
+= Evaluating and testing policies
+
+When designing your policies, you can simulate authorization requests to test how your policies are being evaluated.
+
+You can access the Policy Evaluation Tool by clicking the `Evaluate` tab when editing a resource server. There you can specify different inputs to simulate real authorization requests and test the effect of your policies.
+
+.Policy evaluation tool
+image:images/policy-evaluation-tool/policy-evaluation-tool.png[alt="Policy evaluation tool"]
+
+== Providing identity information
+
+The *Identity Information* filters can be used to specify the user requesting permissions.
+
+== Providing contextual information
+
+The *Contextual Information* filters can be used to define additional attributes to the evaluation context, so that policies can obtain these same attributes.
+
+== Providing the permissions
+
+The *Permissions* filters can be used to build an authorization request. You can request permissions for a set of one or more resources and scopes. If you want
+to simulate authorization requests based on all protected resources and scopes, click *Add* without specifying any `Resources` or `Scopes`.
+
+When you've specified your desired values, click *Evaluate*.

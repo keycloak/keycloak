@@ -1,0 +1,10 @@
+.kc-wizard-section-header__title {
+  margin-bottom: var(--pf-v5-global--spacer--lg);
+}
+.kc-wizard-section-header__title--has-description {
+  margin-bottom: var(--pf-v5-global--spacer--sm);
+}
+
+.kc-wizard-section-header__description {
+  margin-bottom: var(--pf-v5-global--spacer--lg);
+}

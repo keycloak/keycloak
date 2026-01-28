@@ -1,0 +1,147 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
+
+<@tmpl.guide
+title="{project_name} Operator Installation"
+summary="Install the {project_name} Operator on Kubernetes and OpenShift.">
+
+== Installing the {project_name} Operator
+This {section} describes how to install the {project_name} Operator in a Kubernetes or OpenShift cluster.
+
+=== Installing by using the Operator Lifecycle Manager
+
+The recommended way to install the {project_name} Operator in Kubernetes environments is to use the Operator Lifecycle Manager (OLM).
+
+==== Prerequisites
+*  Make sure OLM is installed in your environment. For details, see https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/install/install.md#install-a-release[Installing OLM].
+
+* Be sure that you have cluster-admin permission or an equivalent level of permissions granted by an administrator.
+
+==== Using the OpenShift web console
+
+The following procedure describes how to install the {project_name} Operator. However, for general instructions on installing Operators using OLM, see https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/[Install your operator with OLM]. In the default Catalog, the Keycloak Operator is named `keycloak-operator`. Make sure to use the `fast` channel to find the operator.
+
+Perform this procedure on an OpenShift cluster.
+
+. Open the OpenShift Container Platform web console.
+
+. In the left column, click *Home*, *Operators*, *OperatorHub*.
+
+. Search for "keycloak" on the search input box.
++
+image::select-operator.jpeg["Select the {project_name} Operator in the UI"]
+
+. Select the {project_name} Operator from the list of results.
+. Follow the instructions on the screen.
++
+Make sure you are installing from the *fast* channel:
++
+image::configure-operator.png["Configure {project_name} Operator"]
+
+You may select to either have the Operator watch the namespace where it is installed, or to watch a single namespace of your choosing.
+
+==== Configuring Manual Approval for OLM Upgrades
+
+[WARNING]
+====
+*Important: Automatic OLM Upgrades*
+
+By default, OLM automatically updates the {project_name} Operator when a new version is released. This can cause several significant issues:
+
+* When using the default {project_name} image, the Operator uses a matching image of the corresponding {project_name} version, resulting in *unintended {project_name} upgrades* when the Operator is upgraded
+* *Even when using custom images*, major Operator upgrades can introduce significant compatibility issues with your existing Keycloak CR configuration, potentially requiring manual intervention
+* New fields in Keycloak CR or behavioral changes could impact existing deployments
+* No option to downgrade to the previous {project_name} version due to changes related to database migration
+
+*Recommendation:*
+
+*We strongly recommend using manual approval mode for the Keycloak Operator.* This ensures you can:
+
+1. Review release notes and follow migration changes before approving upgrades
+2. Schedule maintenance windows for upgrades
+3. Test upgrades in a non-production environment first
+4. Back up the database to allow downgrading to the previous {project_name} in case of issues
+====
+
+To prevent automatic upgrades by OLM, set the approval strategy to `Manual` when installing the Operator:
+
+===== Using the OpenShift web console
+
+When installing the Operator, select `Manual` approval in the update approval strategy section:
+
+image::manual-approval-olm.png["Configure manual approval in OLM"]
+
+===== Using the CLI
+
+For command-line installation, create a Subscription with `installPlanApproval: Manual`:
+
+[source,yaml]
+----
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: keycloak-operator
+  namespace: <target-namespace>
+spec:
+  channel: fast
+  name: keycloak-operator
+  source: <catalog-source>
+  sourceNamespace: <catalog-namespace>
+  installPlanApproval: Manual
+----
+
+After installation, any upgrade will require manual approval through the OLM interface or via the CLI.
+
+<@profile.ifCommunity>
+=== Installing by using kubectl without Operator Lifecycle Manager
+
+You can install the Operator on a vanilla Kubernetes cluster by using `kubectl` commands:
+
+. Install the CRDs by entering the following commands:
++
+[source,bash,subs="attributes+"]
+----
+kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
+kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
+----
+
+. Install the {project_name} Operator deployment in the `keycloak` namespace by executing the following commands:
++
+[source,bash,subs="attributes+"]
+----
+kubectl create namespace keycloak
+kubectl -n keycloak apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/kubernetes.yml
+----
+
+The Operator will watch the namespace where it is installed. You may utilise a different namespace with the `-n` option,
+however you must also update the `ClusterRoleBinding` subject. For example, to install in the namespace `custom-namespace`,
+execute the following commands:
++
+[source,bash,subs="attributes+"]
+----
+kubectl create namespace custom-namespace
+kubectl -n custom-namespace apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/kubernetes.yml
+kubectl patch clusterrolebinding keycloak-operator-clusterrole-binding --type='json' -p='[{"op": "replace", "path": "/subjects/0/namespace", "value":"custom-namespace"}]'
+# if you have existing keycloaks, restart the operator after patching the clusterrolebinding
+kubectl rollout restart -n custom-namespace Deployment/keycloak-operator
+----
+</@profile.ifCommunity>
+
+=== Installing Multiple Operators
+
+It is currently not fully supported for the operator to watch multiple or all namespaces. In circumstances where you want to watch multiple namespaces, you can install multiple operators.
+
+If you do this please be aware:
+
+- all Operators share the CRDs (Custom Resource Definitions) as they are installed cluster wide.
+- CRD revisions from newer Operator versions won't introduce breaking changes except for the eventual removal of fields that have been well deprecated. Thus newer CRDs are generally backward compatible.
+- the CRDs installed last will be the ones in use. This applies to OLM installations as well where the Operator version, that is installed as the last, also installs and overrides the CRDs if they exists in the cluster already.
+- older CRDs may not be forwards compatible with new fields used by newer operators. When using OLM it will check if your custom resources are compatible with the CRDs being installed, so the usage of new fields can prevent the simultaneous installation of older operator versions.
+- fields introduced by newer CRDs will not be supported by older Operators. Older operators will fail to handle CRs that use such new fields with an error deserializing an unrecognized field.
+
+It is therefore recommended in a multiple Operator install scenario that you keep versions aligned as closely as possible to minimize the potential problems with different versions.
+
+</@tmpl.guide>

@@ -1,0 +1,10 @@
+////
+See https://www.cloudping.co/ for an overview of AWS latencies inside of a region, for example, from eu-west-1 to eu-west-1.
+The latency within a region is the latency between AZs.
+////
+
+A round-trip latency of less than 5 ms is suggested and below 10 ms is required, together with a reliable network between the zones to avoid unexpected problems with latency, throughput or connectivity.
+
+Network latency and latency spikes amplify in the response time of the service and can lead to queued requests, timeouts, and failed requests.
+Networking problems can cause downtimes until the failure detection isolates problematic nodes.
+

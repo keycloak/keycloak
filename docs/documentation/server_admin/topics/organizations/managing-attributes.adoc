@@ -1,0 +1,15 @@
+[id="managing-organization-attributes_{context}"]
+
+[[_managing_attributes_]]
+=  Managing attributes
+[role="_abstract"]
+
+An administrator can store additional metadata about an organization using attributes. An organization attribute is a key/value pair that can hold multiple string values.
+
+For that, click the *Attributes* tab and set any attribute you want by providing a key and a value.
+
+To provide multiple values for the same attribute, and key, just add another attribute with the same key but with a different value.
+
+.Managing organization attributes
+image:images/organizations-manage-attributes.png[alt="Managing organization attributes"]
+

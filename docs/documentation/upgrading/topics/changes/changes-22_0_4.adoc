@@ -1,0 +1,8 @@
+= A new parameter for specify max length of email local part
+
+A new parameter `--spi-user-profile-declarative-user-profile-max-email-local-part-length` is added to set max email local part length taking backwards compatibility
+into consideration. The default value is 64. Example of usage:
+
+```
+kc.[sh|bat] start --spi-user-profile-declarative-user-profile-max-email-local-part-length=100 ...
+```

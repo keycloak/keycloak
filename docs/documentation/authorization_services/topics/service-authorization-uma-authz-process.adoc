@@ -1,0 +1,68 @@
+[[_service_uma_authorization_process]]
+= Authorization process
+
+In UMA, the authorization process starts when a client tries to access a UMA protected resource server.
+
+A UMA protected resource server expects a bearer token in the request where the token is an RPT. When a client requests
+a resource at the resource server without an RPT:
+
+.Client requests a protected resource without sending an RPT
+```bash
+curl -X GET \
+  http://${host}:${port}/my-resource-server/resource/1bfdfe78-a4e1-4c2d-b142-fc92b75b986f
+```
+
+The resource server sends a response back to the client with a permission `ticket` and an `as_uri` parameter with the location
+of a {project_name} server to where the ticket should be sent in order to obtain an RPT.
+
+.Resource server responds with a permission ticket
+[source,bash,subs="attributes+"]
+----
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: UMA realm="${realm-name}",
+    as_uri="https://${host}:${port}{kc_realms_path}/${realm-name}",
+    ticket="016f84e8-f9b9-11e0-bd6f-0021cc6004de"
+----
+
+The permission ticket is a special type of token issued by {project_name} Permission API. They represent the permissions being requested (e.g.: resources and scopes)
+as well any other information associated with the request. Only resource servers are allowed to create those tokens.
+
+Now that the client has a permission ticket and also the location of a {project_name} server, the client can use the discovery document
+to obtain the location of the token endpoint and send an authorization request.
+
+.Client sends an authorization request to the token endpoint to obtain an RPT
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token \
+  -H "Authorization: Bearer ${access_token}" \
+  --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
+  --data "ticket=${permission_ticket}
+----
+
+If {project_name} assessment process results in issuance of permissions, it issues the RPT with which it has associated
+the permissions:
+
+.{project_name} responds to the client with the RPT
+```bash
+HTTP/1.1 200 OK
+Content-Type: application/json
+...
+{
+    "access_token": "${rpt}",
+}
+```
+
+The response from the server is just like any other response from the token endpoint when using some other grant type. The RPT can be obtained from
+the `access_token` response parameter. In case the client is not authorized to have permissions {project_name} responds with a `403` HTTP status code:
+
+.{project_name} denies the authorization request
+```bash
+HTTP/1.1 403 Forbidden
+Content-Type: application/json
+...
+{
+    "error": "access_denied",
+    "error_description": "request_denied"
+}
+```

@@ -1,0 +1,36 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="External {jdgserver_name} metrics"
+summary="Use metrics to monitor external {jdgserver_name} performance."
+tileVisible="false"
+>
+
+:jgrp_application: {jdgserver_name}
+:clustered_caches: true
+:external_infinispan: true
+
+This is part of the <@links.observability id="metrics-for-troubleshooting"/> {section}.
+
+== Prerequisites
+
+include::partials/ispn_enable_metrics.adoc[leveloffset=+2]
+
+== Clustering and Network
+
+This section describes metrics that are useful for monitoring the communication between {jdgserver_name} nodes to identify possible network issues.
+
+include::partials/jgrp_metrics.adoc[leveloffset=+1]
+
+== {jdgserver_name} Caches
+
+The metrics in this section help monitoring the {jdgserver_name} caches health and the cluster replication.
+
+include::partials/ispn_metrics.adoc[leveloffset=+1]
+
+== Next steps
+
+Return back to the <@links.observability id="metrics-for-troubleshooting"/>.
+
+</@tmpl.guide>

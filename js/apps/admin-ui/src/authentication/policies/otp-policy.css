@@ -1,0 +1,15 @@
+.keycloak__otp_policies_authentication__policy-type {
+  display: inline-grid;
+  padding-right: var(--pf-v5-global--spacer--lg);
+}
+
+.keycloak__otp_policies_authentication__number-of-digits {
+  display: inline-grid;
+  padding-right: var(--pf-v5-global--spacer--lg);
+}
+
+@media (min-width: 768px) {
+  .keycloak__otp_policies_authentication__form .pf-v5-c-form__group {
+    --pf-v5-c-form--m-horizontal__group-label--md--GridColumnWidth: 11rem;
+  }
+}

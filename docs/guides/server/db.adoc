@@ -1,0 +1,566 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
+
+<@tmpl.guide
+    title="Configuring the database"
+    summary="Configure a relational database for {project_name} to store user, client, and realm data.">
+
+This {section} explains how to configure the {project_name} server to store data in a relational database.
+
+== Supported databases
+
+The server has built-in support for different databases. You can query the available databases by viewing the expected values for the `db` configuration option. The following table lists the supported databases and their tested versions.
+
+[%autowidth]
+|===
+|Database | Option value | Tested Version | Supported Versions
+
+|MariaDB Server | `mariadb` | ${properties["mariadb.version"]} | 11.8 (LTS), 11.4 (LTS), 10.11 (LTS), 10.6 (LTS)
+|Microsoft SQL Server | `mssql` | ${properties["mssql.version"]} | 2022, 2019
+|MySQL | `mysql` | ${properties["mysql.version"]} | 8.4 (LTS), 8.0 (LTS)
+|Oracle Database | `oracle` | ${properties["oracledb.version"]} | 23.x (i.e 23.5+), 19c (19.3+) (*Note:* Oracle RAC is also supported if using the same database engine version, e.g 23.5+, 19.3+)
+|PostgreSQL | `postgres` | ${properties["postgresql.version"]} | 18.x, 17.x, 16.x, 15.x, 14.x
+|EnterpriseDB Advanced | `postgres` | ${properties["edb.version"]} | 18.x, 17.x
+|Amazon Aurora PostgreSQL | `postgres` | ${properties["aurora-postgresql.version"]} | 17.x, 16.x, 15.x
+|Azure SQL Database | `mssql` | latest | latest
+|Azure SQL Managed Instance | `mssql` | latest | latest
+|===
+
+NOTE: It is not a supported configuration if the underlying database specific Hibernate dialect allows the use of a version that differs from those shown.
+
+By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
+only exists for development use-cases. The `dev-file` database is not suitable for production use-cases, and must be replaced before deploying to production.
+
+== Installing a database driver
+
+Database drivers are shipped as part of {project_name} except for the
+<@profile.ifProduct>
+Oracle Database and Microsoft SQL Server drivers.
+</@profile.ifProduct>
+<@profile.ifCommunity>
+Oracle Database driver.
+</@profile.ifCommunity>
+
+Install the necessary missing driver manually if you want to connect to
+<@profile.ifProduct>
+one of these databases
+</@profile.ifProduct>
+<@profile.ifCommunity>
+this database
+</@profile.ifCommunity>
+or skip this section if you want to connect to a different database for which the database driver is already included.
+
+NOTE: Overriding the built-in database drivers or supplying your own drivers is considered unsupported.
+The only supported exceptions are explicitly documented in this guide, such as the Oracle Database driver.
+
+=== Installing the Oracle Database driver
+
+To install the Oracle Database driver for {project_name}:
+
+. Download the `ojdbc17` and `orai18n` JAR files from one of the following sources:
+
+.. *Zipped JDBC driver and Companion Jars* version ${properties["oracle-jdbc.version"]} from the https://www.oracle.com/database/technologies/appdev/jdbc-downloads.html[Oracle driver download page].
+
+.. Maven Central via `link:++https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc17/${properties["oracle-jdbc.version"]}/ojdbc17-${properties["oracle-jdbc.version"]}.jar++[ojdbc17]` and `link:++https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar++[orai18n]`.
+
+.. Installation media recommended by the database vendor for the specific database in use.
+
+. When running the unzipped distribution: Place the `ojdbc17` and `orai18n` JAR files in {project_name}'s `providers` folder
+
+. When running containers: Build a custom {project_name} image and add the JARs in the `providers` folder. When building a custom image for the Operator, those images need to be optimized images with all build-time options of {project_name} set.
++
+A minimal Containerfile to build an image which can be used with the {project_name} Operator and includes Oracle Database JDBC drivers downloaded from Maven Central looks like the following:
++
+[source,dockerfile,subs="attributes+"]
+----
+FROM quay.io/keycloak/keycloak:{containerlabel}
+ADD --chown=keycloak:keycloak --chmod=644 https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc17/${properties["oracle-jdbc.version"]}/ojdbc17-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/ojdbc17.jar
+ADD --chown=keycloak:keycloak --chmod=644 https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/orai18n.jar
+# Setting the build parameter for the database:
+ENV KC_DB=oracle
+# Add all other build parameters needed, for example enable health and metrics:
+ENV KC_HEALTH_ENABLED=true
+ENV KC_METRICS_ENABLED=true
+# To be able to use the image with the {project_name} Operator, it needs to be optimized, which requires {project_name}'s build step:
+RUN /opt/keycloak/bin/kc.sh build
+----
++
+See the <@links.server id="containers" /> {section} for details on how to build optimized images.
+
+Then continue configuring the database as described in the next section.
+
+<@profile.ifProduct>
+
+=== Installing the Microsoft SQL Server driver
+
+To install the Microsoft SQL Server driver for {project_name}:
+
+. Download the `mssql-jdbc` JAR file from one of the following sources:
+
+.. Download a version from the https://learn.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server[Microsoft JDBC Driver for SQL Server page].
+
+.. Maven Central via `link:++https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${properties["mssql-jdbc.version"]}/mssql-jdbc-${properties["mssql-jdbc.version"]}.jar++[mssql-jdbc]`.
+
+.. Installation media recommended by the database vendor for the specific database in use.
+
+. When running the unzipped distribution: Place the `mssql-jdbc` in {project_name}'s `providers` folder
+
+. When running containers: Build a custom {project_name} image and add the JARs in the `providers` folder. When building a custom image for the {project_name} Operator, those images need to be optimized images with all build-time options of {project_name} set.
++
+A minimal Containerfile to build an image which can be used with the {project_name} Operator and includes Microsoft SQL Server JDBC drivers downloaded from Maven Central looks like the following:
++
+[source,dockerfile,subs="attributes+"]
+----
+FROM quay.io/keycloak/keycloak:{containerlabel}
+ADD --chown=keycloak:keycloak --chmod=644 https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${properties["mssql-jdbc.version"]}/mssql-jdbc-${properties["mssql-jdbc.version"]}.jar /opt/keycloak/providers/mssql-jdbc.jar
+# Setting the build parameter for the database:
+ENV KC_DB=mssql
+# Add all other build parameters needed, for example enable health and metrics:
+ENV KC_HEALTH_ENABLED=true
+ENV KC_METRICS_ENABLED=true
+# To be able to use the image with the {project_name} Operator, it needs to be optimized, which requires {project_name}'s build step:
+RUN /opt/keycloak/bin/kc.sh build
+----
++
+See the <@links.server id="containers" /> {section} for details on how to build optimized images.
+
+Then continue configuring the database as described in the next section.
+
+</@profile.ifProduct>
+
+== Configuring a database
+
+For each supported database, the server provides some opinionated defaults to simplify database configuration. You complete the configuration by providing some key settings such as the database host and credentials.
+
+The configuration can be set during a `build` command OR a `start` command:
+
+. Using a `build` command followed by an optimized `start` command (recommended)
++
+First, the minimum settings needed to connect to the database can be specified in `conf/keycloak.conf`:
++
+----
+# The database vendor.
+db=postgres
+
+# The username of the database user.
+db-username=keycloak
+
+# The password of the database user.
+db-password=change_me
+
+# Sets the hostname of the default JDBC URL of the chosen vendor
+db-url-host=keycloak-postgres
+----
++
+
+Then, the following commands create a new and optimized server image based on the configuration options and start the server.
++
+----
+bin/kc.[sh|bat] build
+bin/kc.[sh|bat] start --optimized
+----
++
+
+. Using *only a `start`* command (without `--optimized`)
++
+<@kc.start parameters="--db postgres --db-url-host keycloak-postgres --db-username keycloak --db-password change_me"/>
+
+WARNING: The examples above include the minimum settings needed to connect to the database but it exposes the database password and is not recommended. Use the `conf/keycloak.conf` as shown above, environment variables, or keystore for at least the password.
+
+The default schema is `keycloak`, but you can change it by using the `db-schema` configuration option.
+
+It is also possible to configure the database when <@links.server id="importExport"/> or <@links.server id="bootstrap-admin-recovery"/>:
+----
+bin/kc.[sh|bat] import --help
+bin/kc.[sh|bat] export --help
+bin/kc.[sh|bat] bootstrap-admin --help
+----
+
+For more information, see <@links.server id="configuration"/>.
+
+== Overriding default connection settings
+
+The server uses JDBC as the underlying technology to communicate with the database. If the default connection settings are insufficient, you can specify a JDBC URL using the `db-url` configuration option.
+
+The following is a sample command for a PostgreSQL database.
+
+<@kc.start parameters="--db postgres --db-url jdbc:postgresql://mypostgres/mydatabase"/>
+
+Be aware that you need to escape characters when invoking commands containing special shell characters such as `;` using the CLI, so you might want to set it in the configuration file instead.
+
+== Configuring Unicode support for the database
+
+Unicode support for all fields depends on whether the database allows VARCHAR and CHAR fields to use the Unicode character set.
+
+* If these fields can be set, Unicode is likely to work, usually at the expense of field length.
+* If the database only supports Unicode in the NVARCHAR and NCHAR fields, Unicode support for all text fields is unlikely to work because the server schema uses VARCHAR and CHAR fields extensively.
+
+The database schema provides support for Unicode strings only for the following special fields:
+
+* *Realms*: display name, HTML display name, localization texts (keys and values)
+
+* *Federation* Providers: display name
+
+* *Users*: username, given name, last name, attribute names and values
+
+* *Groups*: name, attribute names and values
+
+* *Roles*: name
+
+* Descriptions of objects
+
+Otherwise, characters are limited to those contained in database encoding, which is often 8-bit. However, for some database systems, you can enable UTF-8 encoding of Unicode characters and use the full Unicode character set in all text fields. For a given database, this choice might result in a shorter maximum string length than the maximum string length supported by 8-bit encodings.
+
+=== Configuring Unicode support for an Oracle database
+
+Unicode characters are supported in an Oracle database if the database was created with Unicode support in the VARCHAR and CHAR fields. For example, you configured AL32UTF8 as the database character set. In this case, the JDBC driver requires no special settings.
+
+If the database was not created with Unicode support, you need to configure the JDBC driver to support Unicode characters in the special fields. You configure two properties. Note that you can configure these properties as system properties or as connection properties.
+
+. Set `oracle.jdbc.defaultNChar` to `true`.
+
+. Optionally, set `oracle.jdbc.convertNcharLiterals` to `true`.
++
+[NOTE]
+====
+For details on these properties and any performance implications, see the Oracle JDBC driver configuration documentation.
+====
+
+=== Unicode support for a Microsoft SQL Server database
+
+Unicode characters are supported only for the special fields for a Microsoft SQL Server database. The database requires no special settings.
+
+The `sendStringParametersAsUnicode` property of JDBC driver should be set to `false` to significantly improve performance. Without this parameter,
+the Microsoft SQL Server might be unable to use indexes.
+
+=== Configuring Unicode support for a MySQL/MariaDB database
+
+Unicode characters are supported in a MySQL/MariaDB database if the database was created with Unicode support in the VARCHAR and CHAR fields when using the following SQL statement.
+
+[source,sql]
+----
+create database keycloak character set utf8mb3;
+----
+
+Note that the utf8mb4 character set is not supported due to different storage requirements for the utf8 character set. See MySQL documentation for details. In that situation, the length restriction on non-special fields does not apply because columns are created to accommodate the number of characters, not bytes.  If the database default character set does not allow Unicode storage, only the special fields allow storing Unicode values.
+
+. Start MySQL/MariaDB Server.
+. Under JDBC driver settings, locate the *JDBC connection settings*.
+. Add this connection property: `characterEncoding=UTF-8`
+
+==== Database default charset and collation considerations
+
+Different MySQL and MariaDB versions may have different default settings for character sets and collations. {project_name} uses the database default charset and collation when creating new tables and columns. This design allows you to manage your own data lifecycle by defining the charset and collation that best fits your requirements.
+
+[IMPORTANT]
+====
+Before migrating {project_name} to a new version, ensure that your database has a consistent charset and collation configuration. Inconsistent settings between existing tables can cause foreign key constraint errors during migration.
+
+To avoid potential mismatches:
+
+. Set your desired charset and collation as the database default *before* installing or upgrading {project_name}.
+. Ensure all existing {project_name} tables use the same charset and collation.
+. When upgrading, {project_name} will align new tables and columns with your database default settings.
+
+By relying on the database default, {project_name} respects your intent and allows you to maintain control over your database configuration throughout its lifecycle.
+====
+
+=== Configuring Unicode support for a PostgreSQL database
+
+Unicode is supported for a PostgreSQL database when the database character set is UTF8. Unicode characters can be used in any field with no reduction of field length for non-special fields. The JDBC driver requires no special settings. The character set is determined when the PostgreSQL database is created.
+
+. Check the default character set for a PostgreSQL cluster by entering the following SQL command.
++
+[source]
+----
+show server_encoding;
+----
+
+. If the default character set is not UTF 8, create the database with the UTF8 as the default character set using a command such as:
+
++
+[source]
+----
+create database keycloak with encoding 'UTF8';
+----
+
+== Preparing for PostgreSQL
+
+=== Writer and reader instances
+
+When running PostgreSQL reader and writer instances, {project_name} needs to always connect to the writer instance to do its work.
+When using the original PostgreSQL driver, {project_name} sets the `targetServerType` property of the PostgreSQL JDBC driver to `primary` to ensure that it always connects to a writable primary instance and never connects to a secondary reader instance in failover or switchover scenarios.
+
+You can override this behavior by setting your own value for `targetServerType` in the DB URL or additional properties.
+
+[NOTE]
+====
+The `targetServerType` is only applied automatically to the primary datasource, as requirements might be different for additional datasources.
+====
+
+=== Permissions of the database user
+
+Ensure that the database user has `SELECT` permissions to the following tables to ensure an efficient upgrade: `pg_class`, `pg_namespace`.
+
+This is used during upgrades of {project_name} to determine an estimated number of rows in a table.
+If {project_name} does not have permissions to access these tables, it will log a warning and proceed with the less efficient `+SELECT COUNT(*) ...+` operation during the upgrade to determine the number of rows in tables affected by schema changes.
+
+=== Secure your connection
+
+To secure your database connection, configure your PostgreSQL server to use TLS and perform full server certificate verification on the client side.
+
+**Server-side Configuration (Prerequisites):**
+Before using the properties below, ensure your PostgreSQL server is configured for TLS.
+
+**Client-side Configuration:**
+Secure the connection by adding the following properties to your connection URL:
+
+[source]
+----
+db-url=jdbc:postgresql://...?sslmode=verify-full&sslrootcert=/path/to/certificate
+----
+
+* `sslmode=verify-full`: Forces TLS and verifies the server's identity against the trusted certificate.
+* `sslrootcert=/path/to/certificate`: The path to the server's public certificate file on the client machine.
+
+[[preparing-keycloak-for-amazon-aurora-postgresql]]
+== Preparing for Amazon Aurora PostgreSQL
+
+When using Amazon Aurora PostgreSQL, the https://github.com/awslabs/aws-advanced-jdbc-wrapper[Amazon Web Services JDBC Driver] offers additional features like transfer of database connections when a writer instance changes in a Multi-AZ setup.
+This driver is not part of the distribution and needs to be installed before it can be used.
+
+To install this driver, apply the following steps:
+
+. When running the unzipped distribution: Download the JAR file from the https://github.com/awslabs/aws-advanced-jdbc-wrapper/releases/[Amazon Web Services JDBC Driver releases page] and place it in {project_name}'s `providers` folder.
+
+. When running containers: Build a custom {project_name} image and add the JAR in the `providers` folder.
++
+A minimal Containerfile to build an image which can be used with the {project_name} Operator looks like the following:
++
+[source,dockerfile,subs="attributes+"]
+----
+FROM quay.io/keycloak/keycloak:{containerlabel}
+ADD --chmod=0666 https://github.com/awslabs/aws-advanced-jdbc-wrapper/releases/download/${properties["aws-jdbc-wrapper.version"]}/aws-advanced-jdbc-wrapper-${properties["aws-jdbc-wrapper.version"]}.jar /opt/keycloak/providers/aws-advanced-jdbc-wrapper.jar
+----
++
+See the <@links.server id="containers" /> {section} for details on how to build optimized images, and the <@links.operator id="customizing-keycloak" /> {section} on how to run optimized and non-optimized images with the {project_name} Operator.
+. Configure {project_name} to run with the following parameters:
+`db-url`:: Insert `aws-wrapper` to the regular PostgreSQL JDBC URL resulting in a URL like `+jdbc:aws-wrapper:postgresql://...+`.
+`db-driver`:: Set to `software.amazon.jdbc.Driver` to use the AWS JDBC wrapper.
+
+NOTE: When overriding the `wrapperPlugins` option of the AWS JDBC Driver, always include the `failover` or `failover2` plugin to ensure that {project_name} always connects to the writer instance even in failover or switchover scenarios.
+
+[TIP]
+.Secure Your Aurora PostgreSQL Connection
+====
+Amazon Aurora PostgreSQL 17.0 or later requires TLS connections by default.
+
+While this encrypts the connection, you must still perform a full server certificate verification.
+To do this download the https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.SSL.html[certificate bundle] for your AWS region.
+
+Secure the connection by adding the `sslmode=verify-full` and `sslrootcert=/path/to/certificate` properties to your connection URL:
+
+[source]
+----
+db-url=jdbc:aws-wrapper:postgresql://...?sslmode=verify-full&sslrootcert=/path/to/certificate
+----
+
+* `sslmode=verify-full`: Forces TLS and verifies the server's identity against the trusted certificate.
+* `sslrootcert=/path/to/certificate`: The path to the downloaded certificate bundle.
+====
+
+== Preparing for MySQL server
+
+Beginning with MySQL 8.0.30, MySQL supports generated invisible primary keys for any InnoDB table that is created without an explicit primary key (more information https://dev.mysql.com/doc/refman/8.0/en/create-table-gipks.html[here]).
+If this feature is enabled, the database schema initialization and also migrations will fail with the error message `Multiple primary key defined (1068)`.
+You then need to disable it by setting the parameter `sql_generate_invisible_primary_key` to `OFF` in your MySQL server configuration before installing or upgrading {project_name}.
+
+== Preparing for MS SQL server
+
+On MS SQL Server, the default transaction isolation level is `READ_COMMITTED`, which can lead to deadlocks during high load. Therefore, the recommended isolation level for {project_name} is `READ_COMMITTED_SNAPSHOT`. This isolation level is used by default on Azure SQL.
+
+However, on MS SQL Server, the database isolation level needs to be modified by executing the following command on your database:
+
+[source,sql]
+----
+ALTER DATABASE <your-database-name> SET READ_COMMITTED_SNAPSHOT ON;
+----
+
+== Changing database locking timeout in a cluster configuration
+
+Because cluster nodes can boot concurrently, they take extra time for database actions. For example, a booting server instance may perform some database migration, importing, or first time initializations. A database lock prevents start actions from conflicting with each other when cluster nodes boot up concurrently.
+
+The maximum timeout for this lock is 900 seconds. If a node waits on this lock for more than the timeout, the boot fails. The need to change the default value is unlikely, but you can change it by entering this command:
+
+<@kc.start parameters="--spi-dblock--jpa--lock-wait-timeout 900"/>
+
+== Using Database Vendors with XA transaction support
+{project_name} uses non-XA transactions and the appropriate database drivers by default.
+
+If you wish to use the XA transaction support offered by your driver, enter the following command:
+
+<@kc.build parameters="--db=<vendor> --transaction-xa-enabled=true"/>
+
+{project_name} automatically chooses the appropriate JDBC driver for your vendor.
+
+NOTE: Certain vendors, such as Azure SQL and MariaDB Galera, do not support or rely on the XA transaction mechanism.
+
+XA recovery defaults to enabled and will use the file system location `KEYCLOAK_HOME/data/transaction-logs` to store transaction logs.
+
+NOTE: Enabling XA transactions in a containerized environment does not fully support XA recovery unless stable storage is available at that path.
+
+== Setting JPA provider configuration option for migrationStrategy
+
+To setup the JPA migrationStrategy (manual/update/validate) you should setup JPA provider as follows:
+
+.Setting the `migration-strategy` for the `quarkus` provider of the `connections-jpa` SPI
+<@kc.start parameters="--spi-connections-jpa--quarkus--migration-strategy=manual"/>
+
+If you want to get a SQL file for DB initialization, too, you have to add this additional SPI initializeEmpty (true/false):
+
+.Setting the `initialize-empty` for the `quarkus` provider of the `connections-jpa` SPI
+<@kc.start parameters="--spi-connections-jpa--quarkus--initialize-empty=false"/>
+
+In the same way the migrationExport to point to a specific file and location:
+
+.Setting the `migration-export` for the `quarkus` provider of the `connections-jpa` SPI
+<@kc.start parameters="--spi-connections-jpa--quarkus--migration-export=<path>/<file.sql>"/>
+
+For more information, check the link:{upgrading_guide_link}#_migrate_db[Migrating the database] documentation.
+
+== Configuring the connection pool
+
+=== MySQL and MariaDB
+
+In order to prevent 'No operations allowed after connection closed' exceptions from being thrown, it is necessary to ensure
+that {project_name}'s connection pool has a connection maximum lifetime that is less than the server's configured `wait_timeout`.
+When using the MySQL and MariaDB database, {project_name} configures a default max lifetime of 7 hours and 50 minutes, as
+this is less than the default server value of 8 hours.
+
+If you are explicitly configuring the `wait_timeout` in your database, it is necessary to ensure that you configure a
+`db-pool-max-lifetime` value that is less than the `wait_timeout`. The recommended best practice, is to define this value
+to be your `wait_timeout` minus a few minutes. Failure to correctly configure the `db-pool-max-lifetime` will result in
+{project_name} logging a warning on startup.
+
+[[multiple-datasources]]
+== Configure multiple datasources
+
+{project_name} allows you to specify additional datasources in case you need to access another database from your extensions. This is useful when using the main {project_name} datasource is not a viable option for storing custom data, like users.
+
+You can find more details on how to connect to your own users database in the link:{developerguide_userstoragespi_link}[{developerguide_userstoragespi_name}] documentation.
+
+Defining multiple datasources works like defining a single datasource, with one important change - you have to specify a name for each datasource as part of the config option name.
+
+=== Required configuration
+
+In order to enable an additional datasource, you need to set up 2 things - the JPA `persistence.xml` file and {project_name} configuration.
+The `persistence.xml` file serves to specify persistence units as part of the Jakarta Persistence API standard, and is required for proper configuration propagation to the Hibernate ORM framework.
+When you complete the part with the `persistence.xml` file, you need to set up {project_name} configuration accordingly.
+
+The additional datasource properties might be specified via the standard config sources like CLI, `keycloak.conf`, or environment variables.
+
+The additional datasources can be configured in a similar way as the main datasource.
+This is achieved by using analogous names for config options, which additionally include the name of the additional datasource.
+For example, when the main datasource uses the `db-username`, the additional one would be `db-username-<datasource>`.
+See the Relevant options chapter for the complete list of them.
+
+==== 1. JPA `persistence.xml` file
+
+The `persistence.xml` provides configuration for Jakarta Persistence API (JPA) such as what entities it should manage, the datasource name, JDBC settings, JPA/Hibernate custom settings, and more.
+The file needs to be placed in the `META-INF/persistence.xml` folder of your custom {project_name} extension.
+
+NOTE: Be aware that Quarkus provides the ability to set up the JPA persistence unit via Hibernate ORM properties instead of using the `persistence.xml` file.
+However, the supported way for {project_name} is using the `persistence.xml` file, and if the file is present, the Quarkus properties are ignored.
+
+In {project_name}, most of the configuration is automatic, and you just need to provide fundamental configuration details - the datasource name and transaction type.
+
+{project_name} requires setting the transaction type for the additional datasource to `JTA`.
+You can set the transaction type and datasource name as follows for this minimal `persistence.xml` file:
+
+[source,xml]
+----
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                         xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+                         version="3.0">
+    <persistence-unit name="user-store-pu" transaction-type="JTA">
+        <class>org.your.extension.UserEntity</class>
+        <properties>
+            <property name="jakarta.persistence.jtaDataSource" value="user-store" />
+        </properties>
+    </persistence-unit>
+</persistence>
+----
+
+NOTE: To properly set the datasource name, you should set the `jakarta.persistence.jtaDataSource` property.
+If it is not set, the persistence unit name will be used as the datasource name instead (so `user-store-pu` in this case).
+In the example above, the resulting datasource name is `user-store`. The datasource name can be the same as the persistence unit name.
+
+In order to use your own JPA entities, you need to provide the `<class>` properties that mark JPA entities that will be managed by this persistence unit, directed to a specific datasource.
+In the example above, the `org.your.extension.UserEntity` JPA entity will be managed by the persistence unit `user-store-pu`, directed to the `user-store` datasource.
+
+==== 2. Required properties
+
+Once you have set up your `persistence.xml`, the minimal configuration on the {project_name} side is the setup of the DB kind/vendor for the specified datasource.
+You need to specify the build time option `db-kind-<name>`, where the `<name>` is the name of your datasource and must be the **same** as specified in the `persistence.xml` file.
+
+Therefore, you can enable the additional datasource `user-store` as follows (`postgres` as an example):
+
+<@kc.start parameters="--db-kind-user-store=postgres"/>
+
+After specifying the db-kind for the datasource, all database-kind–specific defaults (such as the driver and dialect) are automatically applied, just like for the main datasource.
+
+=== Configuration via environment variables
+If you do not want to configure the datasource via CLI or `keycloak.conf` properties, you can use the environment variables.
+
+You can set the DB kind via environment variables (for the `user-store` datasource) as follows:
+
+[source,bash]
+----
+export KC_DB_KIND_USER_STORE=postgres
+export KC_DB_USERNAME_USER_STORE=my-username
+----
+
+It maps to the `db-kind-user-store` and `db-username-user-store` {project_name} properties due to the default mapping of the `\_` (underscore) to the `-` (dash) for environment variables.
+However, sometimes, the name of the datasource might contain some special characters like `_`, `$` or `.`
+
+In order to have it properly configured via the {project_name} environment variables, you need to explicitly say what the key for the datasource should look like.
+You can use a pair of unique {project_name} environment variables with a special case of the `KCKEY_`.
+
+For instance, for a datasource with the name __user_store$marketing__, you can set environment variables as follows:
+
+[source,bash]
+----
+export KC_USER_STORE_DB_KIND=mariadb
+export KCKEY_USER_STORE_DB_KIND=db-kind-user_store$marketing
+----
+
+You can find more information in the guide <@links.server id="configuration"/>, in subsection _Formats for environment variable keys with special characters_.
+
+=== Backward compatibility for the `quarkus.properties`
+In the past, we instructed users to use raw Quarkus properties to configure additional datasources in some places.
+However, as using Quarkus properties in the `conf/quarkus.properties` file is considered **unsupported**, it is strongly recommended to use the dedicated additional datasources options as described above.
+
+Before you are able to migrate to the dedicated options, you can still specify the datasource settings via the Quarkus properties as follows:
+
+[source,properties]
+----
+quarkus.datasource.user-store.db-kind=h2
+quarkus.datasource.user-store.username=sa
+quarkus.datasource.user-store.jdbc.url=jdbc:h2:mem:user-store;DB_CLOSE_DELAY=-1
+quarkus.datasource.user-store.jdbc.transactions=xa
+----
+
+WARNING: Use Quarkus properties **without quotation** for the datasource name, as properties with the quoted datasource name clash with the new datasource options mapping.
+Therefore, use `quarkus.datasource.user-store.db-kind=h2`, instead of `quarkus.datasource."user-store".db-kind=h2` to prevent any issues.
+
+<@opts.printRelevantOptions includedOptions="db db-* transaction-xa-enabled" excludedOptions="db-*-<datasource>">
+
+=== Additional datasources options
+<@opts.includeOptions includedOptions="*-<datasource>"/>
+
+</@opts.printRelevantOptions>
+</@tmpl.guide>

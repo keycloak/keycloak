@@ -1,0 +1,39 @@
+== Recommendations
+
+This section describes some recommendations when securing your applications with {project_name}.
+
+=== Validating access tokens
+
+If you need to manually validate access tokens issued by {project_name}, you can invoke the <<_token_introspection_endpoint,Introspection Endpoint>>.
+The downside to this approach is that you have to make a network invocation to the {project_name} server.  This can be slow and possibly overload the
+server if you have too many validation requests going on at the same time.  {project_name} issued access tokens are https://datatracker.ietf.org/doc/html/rfc7519[JSON Web Tokens (JWT)] digitally signed and encoded using https://datatracker.ietf.org/doc/html/rfc7515[JSON Web Signature (JWS)].
+Because they are encoded in this way, you can locally validate access tokens using the public key of the issuing realm.  You can either hard code the
+realm's public key in your validation code, or lookup and cache the public key using the <<_certificate_endpoint, certificate endpoint>> with the Key ID (KID) embedded within the
+JWS.  Depending on what language you code in, many third party libraries exist and they can help you with JWS validation.
+
+=== Redirect URIs
+
+When using the redirect based flows, be sure to use valid redirect uris for your clients. The redirect uris should be as specific as possible. This
+especially applies to client-side (public clients) applications. Failing to do so could result in:
+
+* Open redirects - this can allow attackers to create spoof links that looks like they are coming from your domain
+* Unauthorized entry - when users are already authenticated with {project_name}, an attacker can use a public client where redirect uris have not be configured correctly to gain access by redirecting the user without the users knowledge
+
+In production for web applications always use `https` for all redirect URIs. Do not allow redirects to http.
+
+A few special redirect URIs also exist:
+
+[[_installed_applications_url]]
+`$$http://127.0.0.1$$`::
+
+  This redirect URI is useful for native applications and allows the native application to create a web server on a random port that can be used to obtain the
+  authorization code. This redirect uri allows any port. Note that per https://datatracker.ietf.org/doc/html/rfc8252#section-8.3[OAuth 2.0 for Native Apps], the use of
+  `localhost` is *not* recommended and the IP literal `127.0.0.1` should be used instead.
+
+[[_installed_applications_urn]]
+`urn:ietf:wg:oauth:2.0:oob`::
+
+  If you cannot start a web server in the client (or a browser is not available), you can use the special `urn:ietf:wg:oauth:2.0:oob` redirect uri.
+  When this redirect uri is used, {project_name} displays a page with the code in the title and in a box on the page.
+  The application can either detect that the browser title has changed, or the user can copy and paste the code manually to the application.
+  With this redirect uri, a user can use a different device to obtain a code to paste back to the application.

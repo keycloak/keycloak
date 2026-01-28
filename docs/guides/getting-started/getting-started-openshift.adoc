@@ -1,0 +1,116 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="OpenShift"
+summary="Get started with {project_name} on OpenShift.">
+
+:links-admin-console: {project_name} Admin Console
+:links-account-console: {project_name} Account Console
+
+== Before you start
+
+include::templates/hw-requirements.adoc[]
+
+. Install https://code-ready.github.io/crc/[Red Hat Code Ready Containers] and follow the steps in the documentation to install a
+local OpenShift cluster.
+
+. Make sure the cluster is functional by entering the following command:
++
+[source,bash,subs="attributes+"]
+----
+crc status
+----
+
+. Look for output similar to the following to confirm the cluster is working.
++
+[source,subs="attributes+"]
+----
+CRC VM:          Running
+OpenShift:       Running
+...
+----
+
+. Log in as the user `developer`:
++
+[source,bash,subs="attributes+"]
+----
+oc login -u developer -p developer
+----
+
+. Create a project called `keycloak` by entering the following command:
++
+[source,bash,subs="attributes+"]
+----
+oc new-project keycloak
+----
+
+== Start {project_name}
+
+. To start a {project_name} server in your project, enter the following command:
++
+[source,bash,subs="attributes+"]
+----
+oc process -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/refs/heads/main/openshift/keycloak.yaml \
+    -p KC_BOOTSTRAP_ADMIN_USERNAME=admin \
+    -p KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
+    -p NAMESPACE=keycloak \
+| oc create -f -
+----
++
+In this example, the user name and password are `admin`.
+
+. Once the command above completes, look for a message similar to this:
++
+[source,bash,subs="attributes+"]
+----
+service/keycloak created
+route.route.openshift.io/keycloak created
+deploymentconfig.apps.openshift.io/keycloak created.
+----
++
+At this point, OpenShift will provision a {project_name} pod and related resources. As part of the process, OpenShift will
+try to pull the {project_name} server image. This operation might take some time depending on your network connection.
+
+. To make sure {project_name} is provisioned, execute the following command:
++
+[source,bash,subs="attributes+"]
+----
+oc get pods
+----
+
+. After a while, look for a message similar to the following; it indicates the pod is ready:
++
+[source,bash,subs="attributes+"]
+----
+NAME                READY     STATUS      RESTARTS   AGE
+keycloak-1-deploy   0/1       Completed   0          1h
+keycloak-1-l9kdx    1/1       Running     0          1h
+----
+
+. Once the server is provisioned, enter the following command to find out the {project_name} URLs:
++
+[source,bash,subs="attributes+"]
+----
+KEYCLOAK_URL=https://$(oc get route keycloak --template='{{ .spec.host }}') &&
+echo "" &&
+echo "{project_name}:                 $KEYCLOAK_URL" &&
+echo "{project_name} Admin Console:   $KEYCLOAK_URL/admin" &&
+echo "{project_name} Account Console: $KEYCLOAK_URL/realms/myrealm/account" &&
+echo ""
+----
+
+NOTE: If you will eventually want more than one server replica, please see the <@links.gettingstarted id="getting-started-scaling-and-tuning" anchor="horizontal-scaling" /> {section}.
+
+Remember these URLs as you will need them throughout this {section}. The URL for the account console won't work
+right now as you will need to create the realm first.
+
+include::templates/realm-config.adoc[]
+
+include::templates/login-to-account.adoc[]
+
+include::templates/first-app.adoc[]
+
+include::templates/next.adoc[]
+
+</@tmpl.guide>

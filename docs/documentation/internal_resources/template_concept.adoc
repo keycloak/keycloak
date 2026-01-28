@@ -1,0 +1,17 @@
+[[concept_module]]
+
+= Concept Template and Guidelines
+
+_In the title, include nouns that are used in the body text -- this helps readers and search engines find information quickly._
+
+A concept module describes and explains things such as a product, subsystem, or feature -- what a customer needs to understand to do a task. A concept module may also explain how things relate and interact with other things. The use of graphics and diagrams can speed up understanding of a concept.
+
+* Look at nouns and noun phrases in related task modules and user story assemblies to find the concepts to explain to users. 
+
+* A concept module in product documentation should explain only things that are visible to users. 
+
+* If a product concept is interesting, but not visible to users, the concept probably does not require explanation in a concept module. 
+
+* A concept module should NOT include numbered steps or other wording that instructs a user to execute a command or perform an action. Instead, put that information in a separate task module or user story assembly.
+
+

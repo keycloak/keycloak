@@ -1,0 +1,43 @@
+#
+# Copyright 2016 Red Hat, Inc. and/or its affiliates
+# and other contributors as indicated by the @author tags.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+org.keycloak.broker.provider.HardcodedGroupMapper
+org.keycloak.broker.provider.HardcodedRoleMapper
+org.keycloak.broker.provider.HardcodedAttributeMapper
+org.keycloak.broker.provider.HardcodedUserSessionAttributeMapper
+org.keycloak.broker.oidc.mappers.ClaimToRoleMapper
+org.keycloak.broker.oidc.mappers.AdvancedClaimToRoleMapper
+org.keycloak.broker.oidc.mappers.AdvancedClaimToGroupMapper
+org.keycloak.broker.oidc.mappers.ClaimToUserSessionNoteMapper
+org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper
+org.keycloak.broker.oidc.mappers.UserAttributeMapper
+org.keycloak.broker.oidc.mappers.UsernameTemplateMapper
+org.keycloak.broker.saml.mappers.AdvancedAttributeToRoleMapper
+org.keycloak.broker.saml.mappers.AdvancedAttributeToGroupMapper
+org.keycloak.broker.saml.mappers.AttributeToRoleMapper
+org.keycloak.broker.saml.mappers.UserAttributeMapper
+org.keycloak.broker.saml.mappers.XPathAttributeMapper
+org.keycloak.broker.saml.mappers.UsernameTemplateMapper
+org.keycloak.social.facebook.FacebookUserAttributeMapper
+org.keycloak.social.github.GitHubUserAttributeMapper
+org.keycloak.social.paypal.PayPalUserAttributeMapper
+org.keycloak.social.google.GoogleUserAttributeMapper
+org.keycloak.social.linkedin.LinkedInUserAttributeMapper
+org.keycloak.social.stackoverflow.StackoverflowUserAttributeMapper
+org.keycloak.social.microsoft.MicrosoftUserAttributeMapper
+org.keycloak.social.instagram.InstagramUserAttributeMapper
+org.keycloak.social.openshift.OpenshiftV4AttributeMapper

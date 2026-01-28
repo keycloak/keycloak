@@ -1,0 +1,379 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Deploying an AWS Lambda to disable a non-responding site"
+summary="Deploy an AWS Lambda as part of the load-balancer building block in a multi-cluster deployment."
+tileVisible="false" >
+
+This {section} explains how to resolve split-brain scenarios between two sites in a multi-cluster deployment.
+It also disables replication if one site fails, so the other site can continue to serve requests.
+
+This deployment is intended to be used with the setup described in the <@links.ha id="multi-cluster-concepts"/> {section}.
+Use this deployment with the other building blocks outlined in the <@links.ha id="multi-cluster-building-blocks"/> {section}.
+
+include::../partials/blueprint-disclaimer.adoc[]
+
+== Architecture
+
+In the event of a network communication failure between sites in a multi-cluster deployment, it is no longer possible for the two sites to continue to replicate the data between them.
+The {jdgserver_name} is configured with a `FAIL` failure policy, which ensures consistency over availability. Consequently, all user requests are served with an error message until the failure is resolved, either by restoring the network connection or by disabling cross-site replication.
+
+In such scenarios, a quorum is commonly used to determine which sites are marked as online or offline.
+However, as multi-cluster deployments only consist of two sites, this is not possible.
+Instead, we leverage "`fencing`" to ensure that when one of the sites is unable to connect to the other site, only one site remains in the load balancer configuration, and hence only this site is able to serve subsequent users requests.
+
+In addition to the load balancer configuration, the fencing procedure disables replication between the two {jdgserver_name} clusters to allow serving user requests from the site that remains in the load balancer configuration.
+As a result, the sites will be out-of-sync once the replication has been disabled.
+
+To recover from the out-of-sync state, a manual re-sync is necessary as described in <@links.ha id="multi-cluster-operate-synchronize" />.
+This is why a site which is removed via fencing will not be re-added automatically when the network communication failure is resolved. The remove site should only be re-added once the two sites have been synchronized using the outlined procedure <@links.ha id="multi-cluster-operate-site-online" />.
+
+In this {section} we describe how to implement fencing using a combination of https://prometheus.io/docs/alerting/latest/overview/[Prometheus Alerts]
+and AWS Lambda functions.
+A Prometheus Alert is triggered when split-brain is detected by the {jdgserver_name} server metrics, which results in the Prometheus AlertManager calling the AWS Lambda based webhook.
+The triggered Lambda function inspects the current Global Accelerator configuration and removes the site reported to be offline.
+
+In a true split-brain scenario, where both sites are still up but network communication is down, it is possible that both sites will trigger the webhook simultaneously.
+We guard against this by ensuring that only a single Lambda instance can be executed at a given time.
+The logic in the AWS Lambda ensures that always one site entry remains in the load balancer configuration.
+
+== Prerequisites
+
+* ROSA HCP based multi-cluster Keycloak deployment
+* AWS CLI Installed
+* AWS Global Accelerator load balancer
+* `jq` tool installed
+
+== Procedure
+. Enable OpenShift user alert routing
++
+.Command:
+[source,bash]
+----
+kubectl apply -f - << EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-workload-monitoring-config
+  namespace: openshift-user-workload-monitoring
+data:
+  config.yaml: |
+    alertmanager:
+      enabled: true
+      enableAlertmanagerConfig: true
+EOF
+kubectl -n openshift-user-workload-monitoring rollout status --watch statefulset.apps/alertmanager-user-workload
+----
++
+. [[aws-secret]]Decide upon a username/password combination which will be used to authenticate the Lambda webhook and create an AWS Secret storing the password
++
+.Command:
+[source,bash]
+----
+aws secretsmanager create-secret \
+  --name webhook-password \ # <1>
+  --secret-string changeme \ # <2>
+  --region eu-west-1 # <3>
+----
+<1> The name of the secret
+<2> The password to be used for authentication
+<3> The AWS region that hosts the secret
++
+. Create the Role used to execute the Lambda.
++
+.Command:
+[source,bash]
+----
+<#noparse>
+FUNCTION_NAME= # <1>
+ROLE_ARN=$(aws iam create-role \
+  --role-name ${FUNCTION_NAME} \
+  --assume-role-policy-document \
+  '{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Principal": {
+          "Service": "lambda.amazonaws.com"
+        },
+        "Action": "sts:AssumeRole"
+      }
+    ]
+  }' \
+  --query 'Role.Arn' \
+  --region eu-west-1 \ #<2>
+  --output text
+)
+</#noparse>
+----
+<1> A name of your choice to associate with the Lambda and related resources
+<2> The AWS Region hosting your {kubernetes} clusters
++
+. Create and attach the 'LambdaSecretManager' Policy so that the Lambda can access AWS Secrets
++
+.Command:
+[source,bash]
+----
+<#noparse>
+POLICY_ARN=$(aws iam create-policy \
+  --policy-name LambdaSecretManager \
+  --policy-document \
+  '{
+      "Version": "2012-10-17",
+      "Statement": [
+          {
+              "Effect": "Allow",
+              "Action": [
+                  "secretsmanager:GetSecretValue"
+              ],
+              "Resource": "*"
+          }
+      ]
+  }' \
+  --query 'Policy.Arn' \
+  --output text
+)
+aws iam attach-role-policy \
+  --role-name ${FUNCTION_NAME} \
+  --policy-arn ${POLICY_ARN}
+</#noparse>
+----
++
+. Attach the `ElasticLoadBalancingReadOnly` policy so that the Lambda can query the provisioned Network Load Balancers
++
+.Command:
+[source,bash]
+----
+<#noparse>
+aws iam attach-role-policy \
+  --role-name ${FUNCTION_NAME} \
+  --policy-arn arn:aws:iam::aws:policy/ElasticLoadBalancingReadOnly
+</#noparse>
+----
++
+. Attach the `GlobalAcceleratorFullAccess` policy so that the Lambda can update the Global Accelerator EndpointGroup
++
+.Command:
+[source,bash]
+----
+<#noparse>
+aws iam attach-role-policy \
+  --role-name ${FUNCTION_NAME} \
+  --policy-arn arn:aws:iam::aws:policy/GlobalAcceleratorFullAccess
+</#noparse>
+----
++
+. Create a Lambda ZIP file containing the required fencing logic
++
+.Command:
+[source,bash]
+----
+<#noparse>
+LAMBDA_ZIP=/tmp/lambda.zip
+cat << EOF > /tmp/lambda.py
+
+include::../examples/generated/fencing_lambda.py[]
+
+EOF
+zip -FS --junk-paths ${LAMBDA_ZIP} /tmp/lambda.py
+</#noparse>
+----
++
+. Create the Lambda function.
++
+.Command:
+[source,bash]
+----
+<#noparse>
+aws lambda create-function \
+  --function-name ${FUNCTION_NAME} \
+  --zip-file fileb://${LAMBDA_ZIP} \
+  --handler lambda.handler \
+  --runtime python3.12 \
+  --role ${ROLE_ARN} \
+  --region eu-west-1 #<1>
+</#noparse>
+----
+<1> The AWS Region hosting your {kubernetes} clusters
++
+. Expose a Function URL so the Lambda can be triggered as webhook
++
+.Command:
+[source,bash]
+----
+<#noparse>
+aws lambda create-function-url-config \
+  --function-name ${FUNCTION_NAME} \
+  --auth-type NONE \
+  --region eu-west-1 #<1>
+</#noparse>
+----
+<1> The AWS Region hosting your {kubernetes} clusters
++
+. Allow public invocations of the Function URL
++
+.Command:
+[source,bash]
+----
+<#noparse>
+aws lambda add-permission \
+  --action "lambda:InvokeFunctionUrl" \
+  --function-name ${FUNCTION_NAME} \
+  --principal "*" \
+  --statement-id FunctionURLAllowPublicAccess \
+  --function-url-auth-type NONE \
+  --region eu-west-1 # <1>
+</#noparse>
+----
+<1> The AWS Region hosting your {kubernetes} clusters
++
+. Configure the Lambda's Environment variables:
++
+.. In each {kubernetes} cluster, retrieve the exposed {jdgserver_name} URL endpoint:
++
+[source,bash]
+----
+<#noparse>
+kubectl -n ${NAMESPACE} get route infinispan-external -o jsonpath='{.status.ingress[].host}' # <1>
+</#noparse>
+----
+<1> Replace `$\{NAMESPACE}` with the namespace containing your {jdgserver_name} server
++
+.. Upload the desired Environment variables
++
+[source,bash]
+----
+<#noparse>
+ACCELERATOR_NAME= # <1>
+LAMBDA_REGION= # <2>
+CLUSTER_1_NAME= # <3>
+CLUSTER_1_ISPN_ENDPOINT= # <4>
+CLUSTER_2_NAME= # <5>
+CLUSTER_2_ISPN_ENDPOINT= # <6>
+INFINISPAN_USER= # <7>
+INFINISPAN_USER_SECRET= # <8>
+WEBHOOK_USER= # <9>
+WEBHOOK_USER_SECRET= # <10>
+
+INFINISPAN_SITE_ENDPOINTS=$(echo "{\"${CLUSTER_NAME_1}\":\"${CLUSTER_1_ISPN_ENDPOINT}\",\"${CLUSTER_2_NAME}\":\"${CLUSTER_2_ISPN_ENDPOINT\"}" | jq tostring)
+aws lambda update-function-configuration \
+    --function-name ${ACCELERATOR_NAME} \
+    --region ${LAMBDA_REGION} \
+    --environment "{
+      \"Variables\": {
+        \"INFINISPAN_USER\" : \"${INFINISPAN_USER}\",
+        \"INFINISPAN_USER_SECRET\" : \"${INFINISPAN_USER_SECRET}\",
+        \"INFINISPAN_SITE_ENDPOINTS\" : ${INFINISPAN_SITE_ENDPOINTS},
+        \"WEBHOOK_USER\" : \"${WEBHOOK_USER}\",
+        \"WEBHOOK_USER_SECRET\" : \"${WEBHOOK_USER_SECERT}\",
+        \"SECRETS_REGION\" : \"eu-central-1\"
+      }
+    }"
+</#noparse>
+----
++
+<1> The name of the AWS Global Accelerator used by your deployment
+<2> The AWS Region hosting your {kubernetes} cluster and Lambda function
+<3> The name of one of your {jdgserver_name} sites as defined in <@links.ha id="multi-cluster-deploy-infinispan-kubernetes-crossdc" />
+<4> The {jdgserver_name} endpoint URL associated with the CLUSER_1_NAME site
+<5> The name of the second {jdgserver_name} site
+<6> The {jdgserver_name} endpoint URL associated with the CLUSER_2_NAME site
+<7> The username of a {jdgserver_name} user which has sufficient privileges to perform REST requests on the server
+<8> The name of the AWS secret containing the password associated with the {jdgserver_name} user
+<9> The username used to authenticate requests to the Lambda Function
+<10> The name of the AWS secret containing the password used to authenticate requests to the Lambda function
++
+. Retrieve the Lambda Function URL
++
+.Command:
+[source,bash]
+----
+<#noparse>
+aws lambda get-function-url-config \
+  --function-name ${FUNCTION_NAME} \
+  --query "FunctionUrl" \
+  --region eu-west-1 \#<1>
+  --output text
+</#noparse>
+----
+<1> The AWS region where the Lambda was created
+
++
+.Output:
+[source,bash]
+----
+https://tjqr2vgc664b6noj6vugprakoq0oausj.lambda-url.eu-west-1.on.aws
+----
+. In each {kubernetes} cluster, configure a Prometheus Alert routing to trigger the Lambda on split-brain
++
+.Command:
+[source,bash]
+----
+<#noparse>
+NAMESPACE= # The namespace containing your deployments
+kubectl apply -n ${NAMESPACE} -f - << EOF
+include::../examples/generated/ispn-site-a.yaml[tag=fencing-secret]
+</#noparse>
+---
+include::../examples/generated/ispn-site-a.yaml[tag=fencing-alert-manager-config]
+---
+include::../examples/generated/ispn-site-a.yaml[tag=fencing-prometheus-rule]
+----
+<1> The username required to authenticate Lambda requests
+<2> The password required to authenticate Lambda requests
+<3> The Lambda Function URL
+<4> The namespace value should be the namespace hosting the Infinispan CR and the site should be the remote site defined
+by `spec.service.sites.locations[0].name` in your Infinispan CR
+<5> The name of your local site defined by `spec.service.sites.local.name` in your Infinispan CR
+<6> The DNS of your Global Accelerator
+
+== Verify
+
+To test that the Prometheus alert triggers the webhook as expected, perform the following steps to simulate a split-brain:
+
+. In each of your clusters execute the following:
++
+.Command:
+[source,bash]
+----
+<#noparse>
+kubectl -n openshift-operators scale --replicas=0 deployment/infinispan-operator-controller-manager #<1>
+kubectl -n openshift-operators rollout status -w deployment/infinispan-operator-controller-manager
+kubectl -n ${NAMESPACE} scale --replicas=0 deployment/infinispan-router #<2>
+kubectl -n ${NAMESPACE} rollout status -w deployment/infinispan-router
+</#noparse>
+----
+<1> Scale down the {jdgserver_name} Operator so that the next step does not result in the deployment being recreated by the operator
+<2> Scale down the Gossip Router deployment.Replace `$\{NAMESPACE}` with the namespace containing your {jdgserver_name} server
++
+. Verify the `SiteOffline` event has been fired on a cluster by inspecting the *Observe* -> *Alerting* menu in the OpenShift
+console
++
+. Inspect the Global Accelerator EndpointGroup in the AWS console and there should only be a single endpoint present
++
+. Scale up the {jdgserver_name} Operator and Gossip Router to re-establish a connection between sites:
++
+.Command:
+[source,bash]
+----
+<#noparse>
+kubectl -n openshift-operators scale --replicas=1 deployment/infinispan-operator-controller-manager
+kubectl -n openshift-operators rollout status -w deployment/infinispan-operator-controller-manager
+kubectl -n ${NAMESPACE} scale --replicas=1 deployment/infinispan-router #<1>
+kubectl -n ${NAMESPACE} rollout status -w deployment/infinispan-router
+</#noparse>
+----
+<1> Replace `$\{NAMESPACE}` with the namespace containing your {jdgserver_name} server
++
+. Inspect the `vendor_jgroups_site_view_status` metric in each site. A value of `1` indicates that the site is reachable.
++
+. Update the Accelerator EndpointGroup to contain both Endpoints. See the <@links.ha id="multi-cluster-operate-site-online" /> {section} for details.
+
+== Further reading
+
+* <@links.ha id="multi-cluster-operate-site-online" />
+* <@links.ha id="multi-cluster-operate-site-offline" />
+
+</@tmpl.guide>

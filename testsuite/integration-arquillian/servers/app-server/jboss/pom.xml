@@ -1,0 +1,235 @@
+<?xml version="1.0"?>
+<!--
+~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
+
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <parent>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>integration-arquillian-servers-app-server</artifactId>
+        <version>999.0.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>integration-arquillian-servers-app-server-jboss</artifactId>
+    <packaging>pom</packaging>
+    <name>App Server - JBoss</name>
+
+    <properties>
+        <common.resources>${project.parent.basedir}/common</common.resources>
+        <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
+        <app.server.jboss.home>${containers.home}/${app.server.jboss.unpacked.folder.name}</app.server.jboss.home>
+        <app.server.jboss.unpacked.folder.path>${containers.home}</app.server.jboss.unpacked.folder.path>
+    </properties>
+
+    <profiles>
+
+        <profile>
+            <id>app-server-jboss-submodules</id>
+            <activation>
+                <file>
+                    <exists>src</exists>
+                </file>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>app.server.jboss</property>
+                                            <property>app.server.jboss.groupId</property>
+                                            <property>app.server.jboss.artifactId</property>
+                                            <property>app.server.jboss.version</property>
+                                            <property>app.server.jboss.unpacked.folder.name</property>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enable-jboss-mgmt-admin</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${app.server.jboss.home}/standalone/configuration</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${common.resources}</directory>
+                                            <includes>
+                                                <include>mgmt-users.properties</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                    <overwrite>true</overwrite>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-keystore</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${app.server.jboss.home}/standalone/configuration</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${common.resources}/keystore</directory>
+                                            <includes>
+                                                <include>adapter.jks</include>
+                                                <include>keycloak.truststore</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                    <nonFilteredFileExtensions>
+                                        <nonFilteredFileExtension>jks</nonFilteredFileExtension>
+                                        <nonFilteredFileExtension>truststore</nonFilteredFileExtension>
+                                    </nonFilteredFileExtensions>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-configs-cluster</id>
+                                <phase>generate-test-sources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${app.server.jboss.home}/standalone-cluster</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${app.server.jboss.home}/standalone</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-configs-secured-deployments</id>
+                                <phase>generate-test-sources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${app.server.jboss.home}/standalone-secured-deployments</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${app.server.jboss.home}/standalone</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-configs-crossdc</id>
+                                <phase>generate-test-sources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${app.server.jboss.home}/standalone-crossdc</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${app.server.jboss.home}/standalone</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>create-zip</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <descriptors>
+                                        <descriptor>${assembly.xml}</descriptor>
+                                    </descriptors>
+                                    <appendAssemblyId>false</appendAssemblyId>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    
+                </plugins>
+            </build>
+        </profile>
+        
+        <!-- EAP8 (not available to community yet) -->
+        <profile>
+            <id>app-server-eap8</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>eap8</value>
+                </property>
+            </activation>
+            <modules>
+                <module>galleon</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>app-server-wildfly</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+                <property>
+                    <name>app.server</name>
+                    <value>wildfly</value>
+                </property>
+            </activation>
+            <modules>
+                <module>wildfly</module>
+            </modules>
+        </profile>
+
+        <!-- Build app-server-wildfly on Windows by default -->
+        <!-- See https://github.com/keycloak/keycloak/issues/21284 -->
+        <profile>
+            <id>app-server-wildfly-windows</id>
+            <activation>
+                <property>
+                    <name>!skipAppServerWildfly</name>
+                </property>
+                <os>
+                    <family>Windows</family>
+                </os>
+            </activation>
+            <modules>
+                <module>wildfly</module>
+            </modules>
+        </profile>
+    </profiles>
+
+</project>

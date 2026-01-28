@@ -1,0 +1,504 @@
+[[_authentication-flows]]
+
+=== Authentication flows
+
+An _authentication flow_ is a container of authentications, screens, and actions, during log in, registration, and other {project_name} workflows.
+
+==== Built-in flows
+
+{project_name} has several built-in flows. You cannot modify these flows, but you can alter the flow's requirements to suit your needs.
+
+.Procedure
+. Click *Authentication* in the menu.
+. Click on the _Browser_ item in the list to see the details.
+
+.Browser flow
+image:images/browser-flow.png[Browser Flow]
+
+===== Auth type
+The name of the authentication or the action to execute. If an authentication is indented, it is in a sub-flow. It may or may not be executed, depending on the behavior of its parent.
+
+. Cookie
++
+The first time a user logs in successfully, {project_name} sets a session cookie.  If the cookie is already set, this authentication type is successful. Since the cookie provider returned success and each execution at this level of the flow is _alternative_, {project_name} does not perform any other execution. This results in a successful login.
+
+. Kerberos
++
+This authenticator is disabled by default and is skipped during the Browser Flow.
+
+. Identity Provider Redirector
++
+This action is configured through the *Actions* > *Config* link. It redirects to another IdP for <<_identity_broker, identity brokering>>.
+
+. Forms
++
+Since this sub-flow is marked as _alternative_, it will not be executed if the *Cookie* authentication type passed. This sub-flow contains an additional authentication type that needs to be executed. {project_name} loads the executions for this sub-flow and processes them.
+
+The first execution is the *Username Password Form*, an authentication type that renders the username and password page. It is marked as _required_, so the user must enter a valid username and password.
+
+The second execution is the *Browser - Conditional 2FA* sub-flow. This sub-flow is _conditional_ and executes depending on the result of the *Condition - User Configured* and *Condition - credential* execution. If the result is true, {project_name} loads the executions for this sub-flow and processes them.
+
+The next execution is the *Condition - User Configured* authentication. This authentication checks if {project_name} has configured other executions in the flow for the user. The *Browser - Conditional 2FA* sub-flow executes only when the user has a configured OTP credential.
+
+The next execution is the *Condition - credential* authentication. The step checks if the authentication process has already authenticated the user with a passwordless WebAuthn credential (passkey), avoiding 2FA in that case.
+
+The final execution is the *OTP Form*. {project_name} marks this execution as _alternative_, but it runs only when the user has an OTP credential set up because of the setup in the _conditional_ sub-flow. If the OTP credential is not set up, the user does not see an OTP form.
+
+The default *browser* flow contains two more executions inside the *Browser - Conditional 2FA*, *WebAuthn Authenticator* and *Recovery Authentication Code Form*. These executions are _Disabled_ by default and they are the other 2FA methods that can be added to the flow. Change the requirement from _Disabled_ to _Alternative_ to make them available if the respective credential has been configured for the user. If the user has configured all alternative credential types, the credential with the highest priority is displayed by default. However, the *Try Another Way* option will appear so that the user has the alternative methods to log in.
+
+[[_execution-requirements]]
+===== Requirement
+A drop-down menu that controls the execution of an action.
+
+Required::
+All _Required_ elements in the flow must be successfully sequentially executed. The flow terminates if a required element fails.
+
+Alternative::
+Only a single element must successfully execute for the flow to evaluate as successful. Because the _Required_ flow elements are sufficient to mark a flow as successful, any _Alternative_ flow element within a flow containing _Required_ flow elements will not execute.
+
+Disabled::
+The element does not count to mark a flow as successful.
+
+Conditional::
+This requirement type is only set on sub-flows.
++
+* A _Conditional_ sub-flow contains executions. These executions must evaluate to logical statements.
+* If all executions evaluate as _true_, the _Conditional_ sub-flow acts as _Required_.
+* If any executions evaluate as _false_, the _Conditional_ sub-flow acts as _Disabled_.
+* If you do not set an execution, the _Conditional_ sub-flow acts as _Disabled_.
+* If a flow contains executions and the flow is not set to _Conditional_, {project_name} does not evaluate the executions, and the executions are considered functionally _Disabled_.
+
+==== Creating flows
+
+Important functionality and security considerations apply when you design a flow.
+
+To create a flow, perform the following:
+
+.Procedure
+. Click *Authentication* in the menu.
+. Click *Create flow*.
+
+[NOTE]
+====
+You can copy and then modify an existing flow. Click the "Action list" (the three dots at the end of the row), click *Duplicate*, and enter a name for the new flow.
+====
+
+When creating a new flow, you must create a top-level flow first with the following options:
+
+Name::
+  The name of the flow.
+Description::
+  The description you can set to the flow.
+Top-Level Flow Type::
+  The type of flow. The type *client* is used only for the authentication of clients (applications). For all other cases, choose *basic*.
+
+.Create a top-level flow
+image:images/Create-top-level-flow.png[Top Level Flow]
+
+When {project_name} has created the flow, {project_name} displays the *Add step*, and *Add sub-flow* buttons.
+
+.An empty new flow
+image:images/New-flow.png[New Flow]
+
+Three factors determine the behavior of flows and sub-flows.
+
+* The structure of the flow and sub-flows.
+* The executions within the flows
+* The requirements set within the sub-flows and the executions.
+
+Executions have a wide variety of actions, from sending a reset email to validating an OTP. Add executions with the *Add step* button.
+
+.Adding an authentication execution
+image:images/Create-authentication-execution.png[Adding an Authentication Execution]
+
+Authentication executions can optionally have a reference value configured. This can be utilized by the _Authentication Method Reference (AMR)_ protocol mapper to populate the _amr_ claim in OIDC access and ID tokens (for more information on the
+AMR claim, see https://www.rfc-editor.org/rfc/rfc8176.html[RFC-8176]). When the _Authentication Method Reference (AMR)_ protocol mapper is configured for a client, it will populate the _amr_ claim with the reference value for any authenticator execution the user successfully completes during the authentication flow.
+
+.Adding an authenticator reference value
+image:images/config-authenticator-reference.png[Configuring an Authenticator Reference Value]
+
+Two types of executions exist, _automatic executions_ and _interactive executions_. _Automatic executions_ are similar to the *Cookie* execution and will automatically
+perform their action in the flow. _Interactive executions_ halt the flow to get input. Executions executing successfully set their status to _success_.  For a flow to complete, it needs at least one execution with a status of _success_.
+
+You can add sub-flows to top-level flows with the *Add sub-flow* button. The *Add sub-flow* button displays the *Create Execution Flow* page. This page is similar to the *Create Top Level Form* page. The difference is that the *Flow Type* can be *basic* (default) or *form*. The *form* type constructs a sub-flow that generates a form for the user, similar to the built-in *Registration* flow.
+Sub-flows success depends on how their executions evaluate, including their contained sub-flows. See the <<_execution-requirements, execution requirements section>> for an in-depth explanation of how sub-flows work.
+
+[NOTE]
+====
+After adding an execution, check the requirement has the correct value.
+====
+
+All elements in a flow have a *Delete* option next to the element. Some executions have a *⚙️* menu item (the gear icon) to configure the execution. It is also possible to add executions and sub-flows to sub-flows with the *Add step* and *Add sub-flow* links.
+
+Since the order of execution is important, you can move executions and sub-flows up and down by dragging their names.
+
+[WARNING]
+====
+Make sure to properly test your configuration when you configure the authentication flow to confirm that no security holes exist in your setup. We recommend that you test various
+corner cases. For example, consider testing the authentication behavior for a user when you remove various credentials from the user's account before authentication.
+
+As an example, when 2nd-factor authenticators, such as OTP Form or WebAuthn Authenticator, are configured in the flow as REQUIRED and the user does not have credential of particular
+type, the user will be able to set up the particular credential during authentication itself. This situation means that the user does not authenticate with this credential as he set up
+it right during the authentication. So for browser authentication, make sure to configure your authentication flow with some 1st-factor credentials such as Password or WebAuthn
+Passwordless Authenticator.
+====
+
+==== Creating a password-less browser login flow
+
+To illustrate the creation of flows, this section describes creating an advanced browser login flow. The purpose of this flow is to allow a user a choice between logging in using a password-less manner with xref:webauthn_{context}[WebAuthn], or two-factor authentication with a password and OTP.
+
+.Procedure
+. Click *Authentication* in the menu.
+. Click the *Flows* tab.
+. Click *Create flow*.
+. Enter `Browser Password-less` as a name.
+. Click *Create*.
+. Click *Add execution*.
+. Select *Cookie* from the list.
+. Click *Add*.
+. Select *Alternative* for the *Cookie* authentication type to set its requirement to alternative.
+. Click *Add step*.
+. Select *Kerberos* from the list.
+. Click *Add*.
+. Click *Add step*.
+. Select *Identity Provider Redirector* from the list.
+. Click *Add*.
+. Select *Alternative* for the *Identity Provider Redirector* authentication type to set its requirement to alternative.
+. Click *Add sub-flow*.
+. Enter *Forms* as a name.
+. Click *Add*.
+. Select *Alternative* for the *Forms* authentication type to set its requirement to alternative.
++
+.The common part with the browser flow
+image:images/Passwordless-browser-login-common.png[Passwordless browser login]
++
+. Click *+* menu of the *Forms* execution.
+. Select *Add step*.
+. Select *Username Form* from the list.
+. Click *Add*.
+
+At this stage, the form requires a username but no password. We must enable password authentication to avoid security risks.
+
+. Click *+* menu of the *Forms* sub-flow.
+. Click *Add sub-flow*.
+. Enter `Authentication` as name.
+. Click *Add*.
+. Select *Required* for the *Authentication* authentication type to set its requirement to required.
+. Click *+* menu of the *Authentication* sub-flow.
+. Click *Add step*.
+. Select *WebAuthn Passwordless Authenticator* from the list.
+. Click *Add*.
+. Select *Alternative* for the *Webauthn Passwordless Authenticator* authentication type to set its requirement to alternative.
+. Click *+* menu of the *Authentication* sub-flow.
+. Click *Add sub-flow*.
+. Enter `Password with OTP` as name.
+. Click *Add*.
+. Select *Alternative* for the *Password with OTP* authentication type to set its requirement to alternative.
+. Click *+* menu of the *Password with OTP* sub-flow.
+. Click *Add step*.
+. Select *Password Form* from the list.
+. Click *Add*.
+. Select *Required* for the *Password Form* authentication type to set its requirement to required.
+. Click *+* menu of the *Password with OTP* sub-flow.
+. Click *Add step*.
+. Select *OTP Form* from the list.
+. Click *Add*.
+. Click *Required* for the *OTP Form* authentication type to set its requirement to required.
+
+Finally, change the bindings.
+
+. Click the *Action* menu at the top of the screen.
+. Select *Bind flow* from the menu.
+. Click the *Browser Flow* drop-down list.
+. Click *Save*.
+
+.A password-less browser login
+image:images/Passwordless-browser-login.png[Passwordless browser login]
+
+After entering the username, the flow works as follows:
+
+If users have WebAuthn passwordless credentials recorded, they can use these credentials to log in directly. This is the password-less login. The user can also select *Password with OTP* because the `WebAuthn Passwordless` execution and the `Password with OTP` flow are set to *Alternative*. If they are set to *Required*, the user has to enter WebAuthn, password, and OTP.
+
+If the user selects the *Try another way* link with `WebAuthn passwordless` authentication, the user can choose between `Password` and `Passkey` (WebAuthn passwordless). When selecting the password, the user will need to continue and log in with the assigned OTP. If the user has no WebAuthn credentials, the user must enter the password and then the OTP. If the user has no OTP credential, they will be asked to record one.
+
+[NOTE]
+====
+Since the WebAuthn Passwordless execution is set to *Alternative* rather than  *Required*, this flow will never ask the user to register a WebAuthn credential. For a user to have a Webauthn credential, an administrator must add a required action to the user. Do this by:
+
+. Enabling the *Webauthn Register Passwordless* required action in the realm (see the xref:webauthn_{context}[WebAuthn] documentation).
+. Setting the required action using the *Credential Reset* part of a user's xref:ref-user-credentials_{context}[Credentials] management menu.
+
+Creating an advanced flow such as this can have side effects. For example, if you enable the ability to reset the password for users, this would be accessible from the password form. In the default `Reset Credentials` flow, users must enter their username. Since the user has already entered a username earlier in the `Browser Password-less` flow, this action is unnecessary for {project_name} and suboptimal for user experience. To correct this problem, you can:
+
+* Duplicate the `Reset Credentials` flow. Set its name to `Reset Credentials for password-less`, for example.
+* Click *Delete* (trash icon) of the *Choose user* step.
+* In the *Action* menu, select *Bind flow* and select *Reset credentials flow* from the dropdown and click *Save*
+====
+
+[[_client-policy-auth-flow]]
+==== Using Client Policies to Select an Authentication Flow
+<<_client_policies, Client Policies>> can be used to dynamically select an Authentication Flow based on specific conditions, such as requesting a particular scope or an ACR (Authentication Context Class Reference) using the `AuthenticationFlowSelectorExecutor` in combination with the condition you prefer.
+
+The `AuthenticationFlowSelectorExecutor` allows you to select an appropriate authentication flow and set the level of authentication to be applied once the selected flow is completed.
+
+A possible configuration involves using the `ACRCondition` in combination with the `AuthenticationFlowSelectorExecutor`. This setup enables you to select an authentication flow based on the requested ACR and have the ACR value included in the token using <<_mapping-acr-to-loa-realm,ACR to LoA Mapping>>.
+
+For more details, see <<_client_policies, Client Policies>>.
+
+
+[[_step-up-flow]]
+==== Creating a browser login flow with step-up mechanism
+
+This section describes how to create advanced browser login flow using the step-up mechanism. The purpose of step-up authentication is to allow access to clients or resources based on a specific authentication level of a user.
+
+.Procedure
+. Click *Authentication* in the menu.
+. Click the *Flows* tab.
+. Click *Create flow*.
+. Enter `Browser Incl Step up Mechanism` as a name.
+. Click *Save*.
+. Click *Add execution*.
+. Select *Cookie* from the list.
+. Click *Add*.
+. Select *Alternative* for the *Cookie* authentication type to set its requirement to alternative.
+. Click *Add sub-flow*.
+. Enter *Auth Flow* as a name.
+. Click *Add*.
+. Click *Alternative* for the *Auth Flow* authentication type to set its requirement to alternative.
+
+Now you configure the flow for the first authentication level.
+
+. Click *+* menu of the *Auth Flow*.
+. Click *Add sub-flow*.
+. Enter `1st Condition Flow` as a name.
+. Click *Add*.
+. Click *Conditional* for the *1st Condition Flow* authentication type to set its requirement to conditional.
+. Click *+* menu of the *1st Condition Flow*.
+. Click *Add condition*.
+. Select *Conditional - Level Of Authentication* from the list.
+. Click *Add*.
+. Click *Required* for the *Conditional - Level Of Authentication* authentication type to set its requirement to required.
+. Click *⚙️* (gear icon).
+. Enter `Level 1` as an alias.
+. Enter `1` for the Level of Authentication (LoA).
+. Set Max Age to *36000*. This value is in seconds and it is equivalent to 10 hours, which is the default `SSO Session Max` timeout set in the realm.
+  As a result, when a user authenticates with this level, subsequent SSO logins can reuse this level and the user does not need to authenticate
+  with this level until the end of the user session, which is 10 hours by default.
+. Click *Save*
++
+.Configure the condition for the first authentication level
+image:images/authentication-step-up-condition-1.png[Authentication step up condition 1]
+
+. Click *+* menu of the *1st Condition Flow*.
+. Click *Add step*.
+. Select *Username Password Form* from the list.
+. Click *Add*.
+
+Now you configure the flow for the second authentication level.
+
+. Click *+* menu of the *Auth Flow*.
+. Click *Add sub-flow*.
+. Enter `2nd Condition Flow` as an alias.
+. Click *Add*.
+. Click *Conditional* for the *2nd Condition Flow* authentication type to set its requirement to conditional.
+. Click *+* menu of the *2nd Condition Flow*.
+. Click *Add condition*.
+. Select *Conditional - Level Of Authentication* from the item list.
+. Click *Add*.
+. Click *Required* for the *Conditional - Level Of Authentication* authentication type to set its requirement to required.
+. Click *⚙️* (gear icon).
+. Enter `Level 2` as an alias.
+. Enter `2` for the Level of Authentication (LoA).
+. Set Max Age to *0*. As a result, when a user authenticates, this level is valid just for the current authentication, but not any
+  subsequent SSO authentications. So the user will always need to authenticate again with this level when this level is requested.
+. Click *Save*
++
+.Configure the condition for the second authentication level
+image:images/authentication-step-up-condition-2.png[Autehtnication step up condition 2]
+
+. Click *+* menu of the *2nd Condition Flow*.
+. Click *Add step*.
+. Select *OTP Form* from the list.
+. Click *Add*.
+. Click *Required* for the *OTP Form* authentication type to set its requirement to required.
+
+Finally, change the bindings.
+
+. Click the *Action* menu at the top of the screen.
+. Select *Bind flow* from the list.
+. Select *Browser Flow* in the dropdown.
+. Click *Save*.
+
+.Browser login with step-up mechanism
+image:images/authentication-step-up-flow.png[Authentication step up flow]
+
+.Request a certain authentication level
+To use the step-up mechanism, you specify a requested level of authentication (LoA) in your authentication request. The `claims` parameter is used for this purpose:
+
+[source,subs=+attributes]
+----
+https://{DOMAIN}{kc_realms_path}/{REALMNAME}/protocol/openid-connect/auth?client_id={CLIENT-ID}&redirect_uri={REDIRECT-URI}&scope=openid&response_type=code&response_mode=query&nonce=exg16fxdjcu&claims=%7B%22id_token%22%3A%7B%22acr%22%3A%7B%22essential%22%3Atrue%2C%22values%22%3A%5B%22gold%22%5D%7D%7D%7D
+----
+
+The `claims` parameter is specified in a JSON representation:
+[source]
+----
+claims= {
+            "id_token": {
+                "acr": {
+                    "essential": true,
+                    "values": ["gold"]
+                }
+            }
+        }
+----
+
+The {project_name} javascript adapter has support for easy construct of this JSON and sending it in the login request.
+See *Keycloak JavaScript adapter* in the link:{securing_apps_link}[securing apps] section for more details.
+
+You can also use simpler parameter `acr_values` instead of `claims` parameter to request particular levels as non-essential. This is mentioned
+in the OIDC specification.
+
+You can also configure the default level for the particular client, which is used when the parameter `acr_values` or the parameter `claims` with the `acr` claim is not present.
+For further details, see <<_mapping-acr-to-loa-client,Client ACR configuration>>).
+
+NOTE: To request the acr_values as text (such as `gold`) instead of a numeric value, you configure the mapping between the ACR and the LoA.
+It is possible to configure it at the realm level (recommended) or at the client level. For configuration see <<_mapping-acr-to-loa-realm,ACR to LoA Mapping>>.
+
+For more details see the https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[official OIDC specification].
+
+*Flow logic*
+
+The logic for the previous configured authentication flow is as follows: +
+If a client request a high authentication level, meaning Level of Authentication 2 (LoA 2), a user has to perform full 2-factor authentication: Username/Password + OTP.
+However, if a user already has a session in {project_name}, that was logged in with username and password (LoA 1), the user is only asked for the second authentication factor (OTP).
+
+The option *Max Age* in the condition determines how long (how much seconds) the subsequent authentication level is valid. This setting helps to decide
+whether the user will be asked to present the authentication factor again during a subsequent authentication. If the particular level X is requested
+by the `claims` or `acr_values` parameter and user already authenticated with level X, but it is expired (for example max age is configured to 300 and user authenticated before 310 seconds)
+then the user will be asked to re-authenticate again with the particular level. However if the level is not yet expired, the user will be automatically
+considered as authenticated with that level.
+
+Using *Max Age* with the value 0 means, that particular level is valid just for this single authentication. Hence every re-authentication requesting that level
+will need to authenticate again with that level. This is useful for operations that require higher security in the application (e.g. send payment) and always require authentication
+with the specific level.
+
+WARNING: Note that parameters such as `claims` or `acr_values` might be changed by the user in the URL when the login request is sent from the client to the {project_name} via the user's browser.
+This situation can be mitigated if client uses PAR (Pushed authorization request), a request object, or other mechanisms that prevents the user from rewrite the parameters in the URL.
+Hence after the authentication, clients are encouraged to check the ID Token to double-check that `acr` in the token corresponds to the expected level.
+
+If no explicit level is requested by parameters, the {project_name} will require the authentication with the first LoA
+condition found in the authentication flow, such as the Username/Password in the preceding example. When a user was already authenticated with that level
+and that level expired, the user is not required to re-authenticate, but `acr` in the token will have the value 0. This result is considered as authentication
+based solely on `long-lived browser cookie` as mentioned in the section 2 of OIDC Core 1.0 specification.
+
+NOTE: During the first authentication of the user, the first configured subflow with the *Conditional - Level Of Authentication* is always executed (regardless of the requested level) as
+the user does not yet have any level. Therefore, we recommend that the first level subflow contains the minimal required authenticators for user authentication. In addition, ensure that the subflows with different values of *Conditional - Level Of Authentication* are ordered starting with the lowest as shown
+in the example above. For example, if you configure a subflow with level 2 and then add another subflow with level 1, the level 2 subflow will be always asked during the first authentication, which may
+not be the desired behavior.
+
+NOTE: A conflict situation may arise when an admin specifies several flows, sets different LoA levels to each, and assigns the flows to different clients. However, the rule is always the same: if a user has a certain level, it needs only have that level to connect to a client. It's up to the admin to make sure that the LoA is coherent.
+
+NOTE: Step-up authentication with Level of Authentication conditions is intended for use cases where each level
+requires all authentication methods from the preceding levels.
+For instance, level X must always include all authentication methods required by level X-1.
+For use cases where a specific level, such as level 3, requires a different authentication method from the previous levels,
+it may be more appropriate to use mapping of ACR to a specific flow.
+For more details, see <<_client-policy-auth-flow, Using Client Policies to Select an Authentication Flow>>.
+
+*Example scenario*
+
+. Max Age is configured as 300 seconds for level 1 condition.
+. Login request is sent without requesting any acr. Level 1 will be used and the user needs to authenticate with username and password. The token will have `acr=1`.
+. Another login request is sent after 100 seconds. The user is automatically authenticated due to the SSO and the token will return `acr=1`.
+. Another login request is sent after another 201 seconds (301 seconds since authentication in point 2). The user is automatically authenticated due to the SSO, but the token will return `acr=0` due the level 1 is considered expired.
+. Another login request is sent, but now it will explicitly request ACR of level 1 in the `claims` parameter. User will be asked to re-authenticate with username/password
+  and then `acr=1` will be returned in the token.
+
+*ACR claim in the token*
+
+ACR claim is added to the token by the `acr loa level` protocol mapper defined in the `acr` client scope. This client scope is the realm default client scope
+and hence will be added to all newly created clients in the realm.
+
+In case you do not want `acr` claim inside tokens or you need some custom logic for adding it, you can remove the client scope from your client.
+
+Note when the login request initiates a request with the `claims` parameter requesting `acr` as `essential` claim, then {project_name} will always return
+one of the specified levels. If it is not able to return one of the specified levels (For example if the requested level is unknown or bigger than configured conditions
+in the authentication flow), then {project_name} will throw an error.
+
+[[_registration-rc-client-flows]]
+==== Registration or Reset credentials requested by client
+
+Usually when the user is redirected to the {project_name} from client application, the `browser` flow is triggered. This flow may allow the user to <<con-user-registration_{context}, register>> in case
+that realm registration is enabled and the user clicks `Register` on the login screen. Also, if <<enabling-forgot-password,Forget password>> is enabled for the realm, the user can
+click `Forget password` on the login screen, which triggers the `Reset credentials` flow where users can reset credentials after email address confirmation.
+
+Sometimes it can be useful for the client application to directly redirect the user to the *Registration* screen or to the *Reset credentials* flow. The resulting action will match the action of when the
+user clicks *Register* or *Forget password* on the normal login screen. Automatic redirect to the registration or reset-credentials screen can be done as follows:
+
+* When the client wants the user to be redirected directly to the registration, the OIDC client should add parameter `prompt=create` to the login request. As a deprecated alternative, clients can replace the very last
+snippet from the OIDC login URL path (`/auth`) with `/registrations` . So the full URL might be similar to the following: `https://keycloak.example.com/realms/your_realm/protocol/openid-connect/registrations`.
+The `prompt=create` is recommended as it is https://openid.net/specs/openid-connect-prompt-create-1_0.html[a specification standard].
+
+* When the client wants a user to be redirected directly to the `Reset credentials` flow, the OIDC client should replace the very last snippet from the OIDC login URL path (`/auth`) with `/forgot-credentials` .
+
+WARNING: The preceding steps are the only supported method for a client to directly request a registration or reset-credentials flow. For security
+purposes, it is not supported and recommended for client applications to bypass OIDC/SAML flows and directly redirect to other {project_name} endpoints (such as for instance endpoints under
+`/realms/realm_name/login-actions` or `/realms/realm_name/broker`).
+
+[[_user_session_limits]]
+=== User session limits
+
+Limits on the number of session that a user can have can be configured. Sessions can be limited per realm or per client.
+
+To add session limits to a flow, perform the following steps.
+
+. Click *Add step* for the flow.
+. Select *User session count limiter* from the item list.
+. Click *Add*.
+. Click *Required* for the *User Session Count Limiter* authentication type to set its requirement to required.
+. Click *⚙️* (gear icon) for the *User Session Count Limiter*.
+. Enter an alias for this config.
+. Enter the required maximum number of sessions that a user can have in this realm. For example, if 2 is the value, 2 SSO sessions is the maximum that each user can have in this realm. If 0 is the value, this check is disabled.
+. Enter the required maximum number of sessions a user can have for the client. For example, if 2 is the value, then 2 SSO sessions is the maximum in this realm for each client. So when a user is trying to authenticate to client `foo`, but that user has already authenticated in 2 SSO sessions to client `foo`, either the authentication will be denied or an existing sessions will be killed based on the behavior configured. If a value of 0 is used, this check is disabled.
+If both session limits and client session limits are enabled, it makes sense to have client session limits to be always lower than session limits. The limit per client can never exceed the limit of all SSO sessions of this user.
+. Select the behavior that is required when the user tries to create a session after the limit is reached. Available behaviors are:
+
+  - *Deny new session* - when a new session is requested and the session limit is reached, no new sessions can be created.
+  - *Terminate oldest session* - when a new session is requested and the session limit has been reached, the oldest session will be removed and the new session created.
+
+. Optionally, add a custom error message to be displayed when the limit is reached.
+
+Note that the user session limits should be added to your bound *Browser flow*, *Direct grant flow*, *Reset credentials* and also to any *Post broker login flow*.
+The authenticator should be added at the point when the user is already known during authentication (usually at the end of the authentication flow) and should be typically REQUIRED. Note that it is not possible to have
+ALTERNATIVE and REQUIRED executions at the same level.
+
+For most of authenticators like `Direct grant flow`, `Reset credentials` or `Post broker login flow`, it is recommended to add the authenticator as REQUIRED at the end of the authentication flow.
+Here is an example for the `Reset credentials` flow:
+
+image:images/authentication-user-session-limits-resetcred.png[Authentication User Session Limits Reset Credentials Flow]
+
+For `Browser` flow, consider not adding the Session Limits authenticator at the top level flow. This recommendation is due to the `Cookie` authenticator, which automatically re-authenticates users based
+on SSO cookie. It is at the top level and it is better to not check session limits during SSO re-authentication because a user session already exists. So instead, consider adding a separate ALTERNATIVE
+subflow, such as the following `authenticate-user-with-session-limit` example at the same level like `Cookie`. Then you can add a REQUIRED subflow, in the following `real-authentication-subflow`example, as a nested subflow of `authenticate-user-with-session-limit` and add a `User Session Limit` at the same level as well. Inside the `real-authentication-subflow`,
+you can add real authenticators in a similar fashion to the default browser flow. The following example flow allows to users to authenticate with an identity provider or
+with password and OTP:
+
+image:images/authentication-user-session-limits-browser.png[Authentication User Session Limits Browser Flow]
+
+Regarding `Post Broker login flow`,  you can add the `User Session Limits` as the only authenticator in the authentication flow  as long as you have no other authenticators that you  trigger after authentication with your identity provider.  However, make sure that this flow is configured as `Post Broker Flow` at your identity providers. This requirement exists needed so that
+the authentication with Identity providers also participates in the session limits.
+
+NOTE: Currently, the administrator is responsible for maintaining consistency between the different configurations. So make sure that all your flows use same the configuration
+of `User Session Limits`.
+
+NOTE: User session limit feature is not available for CIBA.
+
+ifeval::[{project_community}==true]
+=== Script Authenticator
+
+Ability to upload scripts through the Admin Console and REST endpoints is deprecated.
+
+For more details see link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
+
+endif::[]

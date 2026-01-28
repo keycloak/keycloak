@@ -1,0 +1,228 @@
+====
+*Global tags*
+
+`cluster=<name>`:: The cluster name.
+If metrics from multiple clusters are being collected, this tag helps identify where they belong to.
+
+`node=<node>`:: The name of the node reporting the metric.
+====
+
+[WARNING]
+====
+All metric names prefixed with `vendor_jgroups_` are provided for troubleshooting and debugging purposes only.
+The metric names can change in upcoming releases of {project_name} without further notice.
+Therefore, we advise not using them in dashboards or in monitoring and alerting.
+====
+
+== Response Time
+
+The following metrics expose the response time for the remote requests.
+The response time is measured between two nodes and includes the processing time.
+All requests are measured by these metrics, and the response time should remain stable through the cluster lifecycle.
+
+TIP: In a healthy cluster, the response time will remain stable.
+An increase in response time may indicate a degraded cluster or a node under heavy load.
+
+====
+*Tags*
+
+`node=<node>`:: It identifies the sender node.
+`target_node=<node>`:: It identifies the receiver node.
+====
+
+|===
+|Metric |Description
+
+m| vendor_jgroups_stats_sync_requests_seconds_count
+| The number of synchronous requests to a receiver node.
+
+m| vendor_jgroups_stats_sync_requests_seconds_sum
+| The total duration of synchronous request to a receiver node
+
+|===
+
+include::histogram_note_ispn.adoc[]
+
+== Bandwidth
+
+All the bytes received and sent by the {jgrp_application} are collected by these metrics.
+Also, all the internal messages, as heartbeats, are counted too.
+They allow computing the bandwidth currently used by each node.
+
+IMPORTANT: The metric name depends on the JGroups transport protocol in use.
+
+|===
+|Metric |Protocol |Description
+
+m| vendor_jgroups_tcp_get_num_bytes_received
+m| TCP
+.3+| The total number of bytes received by a node.
+
+m| vendor_jgroups_udp_get_num_bytes_received
+m| UDP
+
+m| vendor_jgroups_tunnel_get_num_bytes_received
+m| TUNNEL
+
+m| vendor_jgroups_tcp_get_num_bytes_sent
+m| TCP
+.3+| The total number of bytes sent by a node.
+
+m| vendor_jgroups_udp_get_num_bytes_sent
+m| UDP
+
+m| vendor_jgroups_tunnel_get_num_bytes_sent
+m| TUNNEL
+
+
+|===
+
+== Thread Pool
+
+Monitoring the thread pool size is a good indicator that a node is under a heavy load.
+All requests received are added to the thread pool for processing and, when it is full, the request is discarded.
+A retransmission mechanism ensures a reliable communication with an increase of resource usage.
+
+TIP: In a healthy cluster, the thread pool should never be closer to its maximum size (by default, `200` threads).
+
+NOTE: Thread pool metrics are not available with virtual threads. Virtual threads are enabled by default when running with OpenJDK 21.
+
+IMPORTANT: The metric name depends on the JGroups transport protocol in use. The default transport protocol is TCP.
+
+|===
+|Metric |Protocol |Description
+
+m| vendor_jgroups_tcp_get_thread_pool_size
+m| TCP
+.3+|Current number of threads in the thread pool.
+
+m| vendor_jgroups_udp_get_thread_pool_size
+m| UDP
+
+m| vendor_jgroups_tunnel_get_thread_pool_size
+m| TUNNEL
+
+m| vendor_jgroups_tcp_get_largest_size
+m| TCP
+.3+| The largest number of threads that have ever simultaneously been in the pool.
+
+m| vendor_jgroups_udp_get_largest_size
+m| UDP
+
+m| vendor_jgroups_tunnel_get_largest_size
+m| TUNNEL
+
+|===
+
+== Flow Control
+
+Flow control takes care of adjusting the rate of a message sender to the rate of the slowest receiver over time.
+This is implemented through a credit-based system, where each sender decrements its credits when sending.
+The sender blocks when the credits fall below 0, and only resumes sending messages when it receives a replenishment message from the receivers.
+
+The metrics below show the number of blocked messages and the average blocking time.
+When a value is different from zero, it may signal that a receiver is overloaded and may degrade the cluster performance.
+
+Each node has two independent flow control protocols, `UFC` for unicast messages and `MFC` for multicast messages.
+
+TIP: A healthy cluster shows a value of zero for all metrics.
+
+|===
+|Metric |Description
+
+m| vendor_jgroups_ufc_get_number_of_blockings
+| The number of times flow control blocks the sender for unicast messages.
+
+m| vendor_jgroups_ufc_get_average_time_blocked
+| Average time blocked (in ms) in flow control when trying to send an unicast message.
+
+m| vendor_jgroups_mfc_get_number_of_blockings
+| The number of times flow control blocks the sender for multicast messages.
+
+m| vendor_jgroups_mfc_get_average_time_blocked
+| Average time blocked (in ms) in flow control when trying to send a multicast message.
+
+|===
+
+== Retransmissions
+
+JGroups provides reliable delivery of messages.
+When a message is dropped on the network, or the receiver cannot handle the message, a retransmission is required.
+Retransmissions increase resource usage, and it is usually a signal of an overload system.
+
+Random Early Drop (RED) monitors the sender queues.
+When the queues are almost full, the message is dropped, and a retransmission must happen.
+It prevents threads from being blocked by a full sender queue.
+
+TIP: A healthy cluster shows a value of zero for all metrics.
+
+|===
+|Metric |Description
+
+m| vendor_jgroups_unicast3_get_num_xmits
+| The number of retransmitted messages.
+
+m| vendor_jgroups_red_get_dropped_messages
+| The total number of dropped messages by the sender.
+
+m| vendor_jgroups_red_get_drop_rate
+| Percentage of all messages that were dropped by the sender.
+
+|===
+
+== Network Partitions
+
+=== Cluster Size
+
+The cluster size metric reports the number of nodes present in the cluster.
+If it differs, it may signal that a node is joining, shutdown or, in the worst case, a network partition is happening.
+
+TIP: A healthy cluster shows the same value in all nodes.
+
+|===
+|Metric |Description
+
+m| vendor_cluster_size
+| The number of nodes in the cluster.
+
+|===
+
+ifdef::external_infinispan[]
+
+=== Cross-Site Status
+
+The cross-site status reports connection status to the other site.
+It returns a value of `1` if is online or `0` if offline.
+The value of `2` is used on nodes where the status is unknown; not all nodes establish connections to the remote sites and do not contain this information.
+
+TIP: A healthy cluster shows a value greater than zero.
+
+|===
+|Metric |Description
+
+m| vendor_jgroups_site_view_status
+| The single site status (1 if online).
+
+|===
+
+====
+*Tags*
+
+`site=<name>`:: The name of the destination site.
+====
+endif::[]
+
+=== Network Partition Events
+
+Network partitions in a cluster can happen due to various reasons.
+This metrics does not help predict network splits but signals that it happened, and the cluster has been merged.
+
+TIP: A healthy cluster shows a value of zero for this metric.
+
+|===
+|Metric |Description
+
+m| vendor_jgroups_merge3_get_num_merge_events
+| The amount of time a network split was detected and healed.
+
+|===

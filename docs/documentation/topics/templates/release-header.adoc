@@ -1,0 +1,31 @@
+[.top-menu-guides]
+====
+*{release_header_guide}* icon:angle-down[]
+
+ifeval::["{release_header_guide}" != "{gettingstarted_name_short}"]
+* {gettingstarted_link}[{gettingstarted_name_short}]
+endif::[]
+ifeval::["{release_header_guide}" != "{adapterguide_name_short}"]
+* {securing_apps_link}[{securing_apps_name_short}]
+endif::[]
+ifeval::["{release_header_guide}" != "{adminguide_name_short}"]
+* {adminguide_link}[{adminguide_name_short}]
+endif::[]
+ifeval::["{release_header_guide}" != "{developerguide_name_short}"]
+* {developerguide_link}[{developerguide_name_short}]
+endif::[]
+ifeval::["{release_header_guide}" != "{authorizationguide_name_short}"]
+* {authorizationguide_link}[{authorizationguide_name_short}]
+endif::[]
+ifeval::["{release_header_guide}" != "{upgradingguide_name_short}"]
+* {upgradingguide_link}[{upgradingguide_name_short}]
+endif::[]
+ifeval::["{release_header_guide}" != "{releasenotes_name_short}"]
+* {releasenotes_link}[{releasenotes_name_short}]
+endif::[]
+====
+
+[.top-menu-version]
+====
+Version *{project_version}*
+====

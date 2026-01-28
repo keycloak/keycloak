@@ -1,0 +1,9 @@
+= Highlights
+
+== SameSite cookie changes with upcoming Google Chrome update
+
+Starting with version 80, Google Chrome will change the default value for the `SameSite` cookie parameter to `Lax`.
+Therefore, changes were required to several {project_name} cookies (especially those which are used within the
+Javascript adapter for checking the session status using the iframe) to set `SameSite` parameter to `None`. Please note
+that this setting also requires setting the `Secure` parameter, hence starting with this version, the Javascript
+adapter will only be fully functional when using the SSL / TLS connection on the {project_name} side.

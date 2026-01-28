@@ -1,0 +1,506 @@
+Import data from a directory or a file.
+
+Usage:
+
+kc.sh import [OPTIONS]
+
+Import data from a directory or a file.
+
+Options:
+
+-h, --help           This help message.
+--help-all           This same help message but with additional options.
+--optimized          Use this option to achieve an optimal startup time if you have previously
+                       built a server image using the 'build' command.
+-v, --verbose        Print out error details when running this command.
+
+Config:
+
+--config-keystore <config-keystore>
+                     Specifies a path to the KeyStore Configuration Source.
+--config-keystore-password <config-keystore-password>
+                     Specifies a password to the KeyStore Configuration Source.
+--config-keystore-type <config-keystore-type>
+                     Specifies a type of the KeyStore Configuration Source. Default: PKCS12.
+
+Database:
+
+--db <vendor>        The database vendor. In production mode the default value of 'dev-file' is
+                       deprecated, you should explicitly specify the db instead. Possible values
+                       are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres, tidb.
+                       Default: dev-file.
+--db-debug-jpql <true|false>
+                     Add JPQL information as comments to SQL statements to debug JPA SQL statement
+                       generation. Default: false.
+--db-driver <driver> The fully qualified class name of the JDBC driver. If not set, a default
+                       driver is set accordingly to the chosen database.
+--db-log-slow-queries-threshold <milliseconds>
+                     Log SQL statements slower than the configured threshold with logger org.
+                       hibernate.SQL_SLOW and log-level info. Default: 10000.
+--db-password <password>
+                     The password of the database user.
+--db-pool-initial-size <size>
+                     The initial size of the connection pool.
+--db-pool-max-lifetime <duration>
+                     The maximum time a connection remains in the pool, after which it will be
+                       closed upon return and replaced as necessary. May be an ISO 8601 duration
+                       value, an integer number of seconds, or an integer followed by one of [ms,
+                       h, m, s, d].
+--db-pool-max-size <size>
+                     The maximum size of the connection pool. Default: 100.
+--db-pool-min-size <size>
+                     The minimal size of the connection pool.
+--db-schema <schema> The database schema to be used.
+--db-url <jdbc-url>  The full database JDBC URL. If not provided, a default URL is set based on the
+                       selected database vendor. For instance, if using 'postgres', the default
+                       JDBC URL would be 'jdbc:postgresql://localhost/keycloak'.
+--db-url-database <dbname>
+                     Sets the database name of the default JDBC URL of the chosen vendor. If the
+                       `db-url` option is set, this option is ignored.
+--db-url-host <hostname>
+                     Sets the hostname of the default JDBC URL of the chosen vendor. If the
+                       `db-url` option is set, this option is ignored.
+--db-url-port <port> Sets the port of the default JDBC URL of the chosen vendor. If the `db-url`
+                       option is set, this option is ignored.
+--db-url-properties <properties>
+                     Sets the properties of the default JDBC URL of the chosen vendor. Make sure to
+                       set the properties accordingly to the format expected by the database
+                       vendor, as well as appending the right character at the beginning of this
+                       property value. If the `db-url` option is set, this option is ignored.
+--db-username <username>
+                     The username of the database user.
+
+Database - additional datasources:
+
+--db-debug-jpql-<datasource> <true|false>
+                     Used for named <datasource>. Add JPQL information as comments to SQL
+                       statements to debug JPA SQL statement generation. Default: false.
+--db-driver-<datasource> <driver>
+                     Used for named <datasource>. The fully qualified class name of the JDBC
+                       driver. If not set, a default driver is set accordingly to the chosen
+                       database.
+--db-enabled-<datasource> <true|false>
+                     If the named datasource <datasource> should be enabled at runtime. Default:
+                       true.
+--db-kind-<datasource> <vendor>
+                     Used for named <datasource>. The database vendor. In production mode the
+                       default value of 'dev-file' is deprecated, you should explicitly specify the
+                       db instead. Possible values are: dev-file, dev-mem, mariadb, mssql, mysql,
+                       oracle, postgres, tidb.
+--db-log-slow-queries-threshold-<datasource> <milliseconds>
+                     Used for named <datasource>. Log SQL statements slower than the configured
+                       threshold with logger org.hibernate.SQL_SLOW and log-level info. Default:
+                       10000.
+--db-password-<datasource> <password>
+                     Used for named <datasource>. The password of the database user.
+--db-pool-initial-size-<datasource> <size>
+                     Used for named <datasource>. The initial size of the connection pool.
+--db-pool-max-size-<datasource> <size>
+                     Used for named <datasource>. The maximum size of the connection pool. Default:
+                       100.
+--db-pool-min-size-<datasource> <size>
+                     Used for named <datasource>. The minimal size of the connection pool.
+--db-schema-<datasource> <schema>
+                     Used for named <datasource>. The database schema to be used.
+--db-url-database-<datasource> <dbname>
+                     Used for named <datasource>. Sets the database name of the default JDBC URL of
+                       the chosen vendor. If the `db-url` option is set, this option is ignored.
+--db-url-full-<datasource> <jdbc-url>
+                     Used for named <datasource>. The full database JDBC URL. If not provided, a
+                       default URL is set based on the selected database vendor. For instance, if
+                       using 'postgres', the default JDBC URL would be 'jdbc:postgresql:
+                       //localhost/keycloak'.
+--db-url-host-<datasource> <hostname>
+                     Used for named <datasource>. Sets the hostname of the default JDBC URL of the
+                       chosen vendor. If the `db-url` option is set, this option is ignored.
+--db-url-port-<datasource> <port>
+                     Used for named <datasource>. Sets the port of the default JDBC URL of the
+                       chosen vendor. If the `db-url` option is set, this option is ignored.
+--db-url-properties-<datasource> <properties>
+                     Used for named <datasource>. Sets the properties of the default JDBC URL of
+                       the chosen vendor. Make sure to set the properties accordingly to the format
+                       expected by the database vendor, as well as appending the right character at
+                       the beginning of this property value. If the `db-url` option is set, this
+                       option is ignored.
+--db-username-<datasource> <username>
+                     Used for named <datasource>. The username of the database user.
+
+Transaction:
+
+--transaction-xa-enabled <true|false>
+                     If set to true, XA datasources will be used. Default: false.
+--transaction-xa-enabled-<datasource> <true|false>
+                     If set to true, XA for <datasource> datasource will be used. Default: true.
+
+Feature:
+
+--feature-<name> <enabled|disabled|vX(X is version)>
+                     Enable/Disable specific feature <feature>. It takes precedence over the
+                       'features', and 'features-disabled' options. Possible values are: 'enabled',
+                       'disabled', or specific version (lowercase) that will be enabled (f.e. 'v2')
+--features <feature> Enables a set of one or more features. Possible values are: <...>.
+--features-disabled <feature>
+                     Disables a set of one or more features. Possible values are: <...>.
+
+Vault:
+
+--vault <provider>   Enables a vault provider. Possible values are: file, keystore.
+--vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
+                       given directory.
+--vault-file <file>  Path to the keystore file.
+--vault-pass <pass>  Password for the vault keystore.
+--vault-type <type>  Specifies the type of the keystore file. Default: PKCS12.
+
+Logging:
+
+--log <handler>      Enable one or more log handlers in a comma-separated list. Possible values
+                       are: console, file, syslog. Default: console.
+--log-async <true|false>
+                     Indicates whether to log asynchronously to all handlers. Default: false.
+--log-console-async <true|false>
+                     Indicates whether to log asynchronously to console. If not set, value from the
+                       parent property 'log-async' is used. Default: false. Available only when
+                       Console log handler is activated.
+--log-console-async-queue-length <queue-length>
+                     The queue length to use before flushing writing when logging to console.
+                       Default: 512. Available only when Console log handler is activated and
+                       asynchronous logging is enabled.
+--log-console-color <true|false>
+                     Enable or disable colors when logging to console. If this is not present then
+                       an attempt will be made to guess if the terminal supports color. Available
+                       only when Console log handler is activated.
+--log-console-format <format>
+                     The format of unstructured console log entries. If the format has spaces in
+                       it, escape the value using "<format>". Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
+                       -5p [%c] (%t) %s%e%n. Available only when Console log handler is activated.
+--log-console-include-mdc <true|false>
+                     Include mdc information in the console log. If the 'log-console-format' option
+                       is specified, this option has no effect. Default: true. Available only when
+                       Console log handler and MDC logging are activated.
+--log-console-include-trace <true|false>
+                     Include tracing information in the console log. If the 'log-console-format'
+                       option is specified, this option has no effect. Default: true. Available
+                       only when Console log handler and Tracing is activated.
+--log-console-json-format <format>
+                     Set the format of the produced JSON. Possible values are: default, ecs.
+                       Default: default. Available only when Console log handler is activated and
+                       output is set to 'json'.
+--log-console-level <level>
+                     Set the log level for the console handler. It specifies the most verbose log
+                       level for logs shown in the output. It respects levels specified in the
+                       'log-level' option, which represents the maximal verbosity for the whole
+                       logging system. For more information, check the Logging guide. Possible
+                       values are (case insensitive): off, fatal, error, warn, info, debug, trace,
+                       all. Default: all. Available only when Console log handler is activated.
+--log-console-output <output>
+                     Set the log output to JSON or default (plain) unstructured logging. Possible
+                       values are: default, json. Default: default. Available only when Console log
+                       handler is activated.
+--log-file <file>    Set the log file path and filename. Default: data/log/keycloak.log. Available
+                       only when File log handler is activated.
+--log-file-async <true|false>
+                     Indicates whether to log asynchronously to file log. If not set, value from
+                       the parent property 'log-async' is used. Default: false. Available only when
+                       File log handler is activated.
+--log-file-async-queue-length <queue-length>
+                     The queue length to use before flushing writing when logging to file log.
+                       Default: 512. Available only when File log handler is activated and
+                       asynchronous logging is enabled.
+--log-file-format <format>
+                     Set a format specific to file log entries. Default: %d{yyyy-MM-dd HH:mm:ss,
+                       SSS} %-5p [%c] (%t) %s%e%n. Available only when File log handler is
+                       activated.
+--log-file-include-mdc <true|false>
+                     Include MDC information in the file log. If the 'log-file-format' option is
+                       specified, this option has no effect. Default: true. Available only when
+                       File log handler and MDC logging are activated.
+--log-file-include-trace <true|false>
+                     Include tracing information in the file log. If the 'log-file-format' option
+                       is specified, this option has no effect. Default: true. Available only when
+                       File log handler and Tracing is activated.
+--log-file-json-format <format>
+                     Set the format of the produced JSON. Possible values are: default, ecs.
+                       Default: default. Available only when File log handler is activated and
+                       output is set to 'json'.
+--log-file-level <level>
+                     Set the log level for the file handler. It specifies the most verbose log
+                       level for logs shown in the output. It respects levels specified in the
+                       'log-level' option, which represents the maximal verbosity for the whole
+                       logging system. For more information, check the Logging guide. Possible
+                       values are (case insensitive): off, fatal, error, warn, info, debug, trace,
+                       all. Default: all. Available only when File log handler is activated.
+--log-file-output <output>
+                     Set the log output to JSON or default (plain) unstructured logging. Possible
+                       values are: default, json. Default: default. Available only when File log
+                       handler is activated.
+--log-level <category:level>
+                     The log level of the root category or a comma-separated list of individual
+                       categories and their levels. For the root category, you don't need to
+                       specify a category. Default: info.
+--log-level-<category> <level>
+                     The log level of a category. Takes precedence over the 'log-level' option.
+                       Possible values are (case insensitive): off, fatal, error, warn, info,
+                       debug, trace, all.
+--log-mdc-enabled <true|false>
+                     Indicates whether to add information about the realm and other information to
+                       the mapped diagnostic context. All elements will be prefixed with 'kc.'
+                       Default: false. Available only when log-mdc preview feature is enabled.
+--log-mdc-keys <keys>
+                     Defines which information should be added to the mapped diagnostic context as
+                       a comma-separated list. Possible values are: realmName, clientId, userId,
+                       ipAddress, org, sessionId, authenticationSessionId, authenticationTabId.
+                       Default: realmName,clientId,org,sessionId,authenticationSessionId,
+                       authenticationTabId. Available only when MDC logging is enabled.
+--log-syslog-app-name <name>
+                     Set the app name used when formatting the message in RFC5424 format. Default:
+                       keycloak. Available only when Syslog is activated.
+--log-syslog-async <true|false>
+                     Indicates whether to log asynchronously to Syslog. If not set, value from the
+                       parent property 'log-async' is used. Default: false. Available only when
+                       Syslog is activated.
+--log-syslog-async-queue-length <queue-length>
+                     The queue length to use before flushing writing when logging to Syslog.
+                       Default: 512. Available only when Syslog is activated and asynchronous
+                       logging is enabled.
+--log-syslog-counting-framing <strategy>
+                     If 'true', the message being sent is prefixed with the size of the message. If
+                       'protocol-dependent', the default value is 'true' when 'log-syslog-protocol'
+                       is 'tcp' or 'ssl-tcp', otherwise 'false'. Possible values are: true, false,
+                       protocol-dependent. Default: protocol-dependent. Available only when Syslog
+                       is activated.
+--log-syslog-endpoint <host:port>
+                     Set the IP address and port of the Syslog server. Default: localhost:514.
+                       Available only when Syslog is activated.
+--log-syslog-format <format>
+                     Set a format specific to Syslog entries. Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
+                       -5p [%c] (%t) %s%e%n. Available only when Syslog is activated.
+--log-syslog-include-mdc <true|false>
+                     Include MDC information in the Syslog. If the 'log-syslog-format' option is
+                       specified, this option has no effect. Default: true. Available only when
+                       Syslog handler and MDC logging are activated.
+--log-syslog-include-trace <true|false>
+                     Include tracing information in the Syslog. If the 'log-syslog-format' option
+                       is specified, this option has no effect. Default: true. Available only when
+                       Syslog handler and Tracing is activated.
+--log-syslog-json-format <format>
+                     Set the format of the produced JSON. Possible values are: default, ecs.
+                       Default: default. Available only when Syslog is activated and output is set
+                       to 'json'.
+--log-syslog-level <level>
+                     Set the log level for the Syslog handler. It specifies the most verbose log
+                       level for logs shown in the output. It respects levels specified in the
+                       'log-level' option, which represents the maximal verbosity for the whole
+                       logging system. For more information, check the Logging guide. Possible
+                       values are (case insensitive): off, fatal, error, warn, info, debug, trace,
+                       all. Default: all. Available only when Syslog is activated.
+--log-syslog-max-length <max-length>
+                     Set the maximum length, in bytes, of the message allowed to be sent. The
+                       length includes the header and the message. If not set, the default value is
+                       2048 when 'log-syslog-type' is rfc5424 (default) and 1024 when
+                       'log-syslog-type' is rfc3164. Available only when Syslog is activated.
+--log-syslog-output <output>
+                     Set the Syslog output to JSON or default (plain) unstructured logging.
+                       Possible values are: default, json. Default: default. Available only when
+                       Syslog is activated.
+--log-syslog-protocol <protocol>
+                     Set the protocol used to connect to the Syslog server. Possible values are:
+                       tcp, udp, ssl-tcp. Default: tcp. Available only when Syslog is activated.
+--log-syslog-type <type>
+                     Set the Syslog type used to format the sent message. Possible values are:
+                       rfc5424, rfc3164. Default: rfc5424. Available only when Syslog is activated.
+
+Telemetry (OpenTelemetry):
+
+--telemetry-endpoint <url>
+                     OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
+                       Available only when any of available OpenTelemetry components (Logs,
+                       Metrics, Traces) is turned on.
+--telemetry-header-<header> <value>
+                     General OpenTelemetry header that will be part of the exporter request (mainly
+                       useful for providing Authorization header). Check the documentation on how
+                       to set environment variables for headers containing special characters or
+                       custom case-sensitive headers. Available only when any of available
+                       OpenTelemetry components (Logs, Metrics, Traces) is turned on.
+--telemetry-logs-enabled <true|false>
+                     Enables exporting logs to a destination handling OpenTelemetry logs. Default:
+                       false. Available only when feature 'opentelemetry-logs:v1' is enabled.
+--telemetry-logs-endpoint <url>
+                     OpenTelemetry endpoint to export logs to. If not given, the value is inherited
+                       from the 'telemetry-endpoint' option. Available only when Telemetry Logs
+                       functionality ('telemetry-logs-enabled') is enabled.
+--telemetry-logs-header-<header> <value>
+                     OpenTelemetry header that will be part of the log exporter request (mainly
+                       useful for providing Authorization header). Check the documentation on how
+                       to set environment variables for headers containing special characters or
+                       custom case-sensitive headers. Available only when Telemetry Logs
+                       functionality ('telemetry-logs-enabled') is enabled.
+--telemetry-logs-level <level>
+                     The most verbose log level exported to the telemetry endpoint. For more
+                       information, check the Telemetry guide. Possible values are (case
+                       insensitive): off, fatal, error, warn, info, debug, trace, all. Default:
+                       all. Available only when Telemetry Logs functionality
+                       ('telemetry-logs-enabled') is enabled.
+--telemetry-logs-protocol <protocol>
+                     OpenTelemetry protocol used for exporting logs. If not given, the value is
+                       inherited from the 'telemetry-protocol' option. Possible values are: grpc,
+                       http/protobuf. Available only when Telemetry Logs functionality
+                       ('telemetry-logs-enabled') is enabled.
+--telemetry-metrics-enabled <true|false>
+                     Enables exporting metrics to a destination handling OpenTelemetry metrics.
+                       Default: false. Available only when metrics and feature
+                       'opentelemetry-metrics:v1' are enabled.
+--telemetry-metrics-endpoint <url>
+                     OpenTelemetry endpoint to connect to for Metrics. If not given, the value is
+                       inherited from the 'telemetry-endpoint' option. Available only when metrics
+                       ('metrics-enabled') and Telemetry Metrics functionality
+                       ('telemetry-metrics-enabled') are enabled.
+--telemetry-metrics-header-<header> <value>
+                     OpenTelemetry header that will be part of the metrics exporter request (mainly
+                       useful for providing Authorization header). Check the documentation on how
+                       to set environment variables for headers containing special characters or
+                       custom case-sensitive headers. Available only when metrics
+                       ('metrics-enabled') and Telemetry Metrics functionality
+                       ('telemetry-metrics-enabled') are enabled.
+--telemetry-metrics-interval <duration>
+                     The interval between the start of two metric export attempts to the
+                       destination handling OpenTelemetry metrics data. It accepts simplified
+                       format for time units as java.time.Duration (like 5000ms, 30s, 5m, 1h). If
+                       the value is only a number, it represents time in seconds. Default: 60s.
+                       Available only when metrics ('metrics-enabled') and Telemetry Metrics
+                       functionality ('telemetry-metrics-enabled') are enabled.
+--telemetry-metrics-protocol <protocol>
+                     OpenTelemetry protocol used for the metrics telemetry data. If not given, the
+                       value is inherited from the 'telemetry-protocol' option. Possible values
+                       are: grpc, http/protobuf. Available only when metrics ('metrics-enabled')
+                       and Telemetry Metrics functionality ('telemetry-metrics-enabled') are
+                       enabled.
+--telemetry-protocol <protocol>
+                     OpenTelemetry protocol used for the communication between server and
+                       OpenTelemetry collector. Possible values are: grpc, http/protobuf. Default:
+                       grpc. Available only when any of available OpenTelemetry components (Logs,
+                       Metrics, Traces) is turned on.
+--telemetry-resource-attributes <attributes>
+                     OpenTelemetry resource attributes characterize the telemetry producer. Values
+                       in format 'key1=val1,key2=val2'. Available only when any of available
+                       OpenTelemetry components (Logs, Metrics, Traces) is turned on.
+--telemetry-service-name <name>
+                     OpenTelemetry service name. Takes precedence over 'service.name' defined in
+                       the 'telemetry-resource-attributes' property. Default: keycloak. Available
+                       only when any of available OpenTelemetry components (Logs, Metrics, Traces)
+                       is turned on.
+
+Tracing:
+
+--tracing-compression <method>
+                     OpenTelemetry compression method used to compress payloads. If unset,
+                       compression is disabled. Possible values are: gzip, none. Default: none.
+                       Available only when Tracing is enabled.
+--tracing-enabled <true|false>
+                     Enables the OpenTelemetry tracing. Default: false. Available only when
+                       'opentelemetry' feature is enabled.
+--tracing-endpoint <url>
+                     OpenTelemetry endpoint to connect to for traces. If not given, the value is
+                       inherited from the 'telemetry-endpoint' option. Default: http://localhost:
+                       4317. Available only when Tracing is enabled.
+--tracing-header-<header> <value>
+                     OpenTelemetry header that will be part of the exporter request (mainly useful
+                       for providing Authorization header). Check the documentation on how to set
+                       environment variables for headers containing special characters or custom
+                       case-sensitive headers. Available only when Tracing is enabled.
+--tracing-infinispan-enabled <true|false>
+                     Enables the OpenTelemetry tracing for embedded Infinispan. Default: true.
+                       Available only when tracing and embedded Infinispan is enabled.
+--tracing-jdbc-enabled <true|false>
+                     Enables the OpenTelemetry JDBC tracing. Default: true. Available only when
+                       Tracing is enabled.
+--tracing-protocol <protocol>
+                     OpenTelemetry protocol used for the telemetry data. If not given, the value is
+                       inherited from the 'telemetry-protocol' option. Possible values are: grpc,
+                       http/protobuf. Default: grpc. Available only when Tracing is enabled.
+--tracing-resource-attributes <attributes>
+                     DEPRECATED. OpenTelemetry resource attributes present in the exported trace to
+                       characterize the telemetry producer. Values in format 'key1=val1,key2=val2'.
+                       If not given, the value is inherited from the
+                       'telemetry-resource-attributes' option. For more information, check the
+                       Tracing guide. Available only when Tracing is enabled. Resource attributes
+                       are not directly related to Tracing and you should use the Telemetry option
+                       which takes precedence. Use the following option instead:
+                       telemetry-resource-attributes.
+--tracing-sampler-ratio <ratio>
+                     OpenTelemetry sampler ratio. Probability that a span will be sampled. Expected
+                       double value in interval [0,1]. Default: 1.0. Available only when Tracing is
+                       enabled.
+--tracing-sampler-type <type>
+                     OpenTelemetry sampler to use for tracing. Possible values are: always_on,
+                       always_off, traceidratio, parentbased_always_on, parentbased_always_off,
+                       parentbased_traceidratio. Default: traceidratio. Available only when Tracing
+                       is enabled.
+--tracing-service-name <name>
+                     DEPRECATED. OpenTelemetry service name. Takes precedence over 'service.name'
+                       defined in the 'tracing-resource-attributes' property. If not given, the
+                       value is inherited from the 'telemetry-service-name' option. Default:
+                       keycloak. Available only when Tracing is enabled. Service name is not
+                       directly related to Tracing and you should use the Telemetry option which
+                       takes precedence. Use the following option instead: telemetry-service-name.
+
+Events:
+
+--event-metrics-user-enabled <true|false>
+                     Create metrics based on user events. Default: false. Available only when
+                       metrics are enabled and feature user-event-metrics is enabled.
+--event-metrics-user-events <events>
+                     Comma-separated list of events to be collected for user event metrics. This
+                       option can be used to reduce the number of metrics created as by default all
+                       user events create a metric. Possible values are:<...>
+--event-metrics-user-tags <tags>
+                     Comma-separated list of tags to be collected for user event metrics. By
+                       default only 'realm' is enabled to avoid a high metrics cardinality.
+                       Possible values are: realm, idp, clientId. Default: realm. Available only
+                       when user event metrics are enabled.
+
+Truststore:
+
+--tls-hostname-verifier <tls-hostname-verifier>
+                     The TLS hostname verification policy for out-going HTTPS and SMTP requests.
+                       ANY should not be used in production. Possible values are: ANY, WILDCARD
+                       (deprecated), STRICT (deprecated), DEFAULT. Default: DEFAULT.
+--truststore-paths <truststore-paths>
+                     List of pkcs12 (p12, pfx, or pkcs12 file extensions), PEM files, or
+                       directories containing those files that will be used as a system truststore.
+
+Import:
+
+--dir <dir>          Set the path to a directory where files will be read from.
+--file <file>        Set the path to a file that will be read.
+--override <true|false>
+                     Set if existing data should be overwritten. If set to false, data will be
+                       ignored. Default: true.
+
+OpenAPI configuration:
+
+--openapi-enabled <true|false>
+                     If the server should expose OpenAPI Endpoint. If enabled, OpenAPI is available
+                       at '/openapi'. Default: false. Available only when OpenAPI feature is
+                       enabled.
+--openapi-ui-enabled <true|false>
+                     If the server should expose OpenApi-UI Endpoint. If enabled, OpenAPI UI is
+                       available at '/openapi/ui'. Default: false. Available only when OpenAPI
+                       Endpoint is enabled.
+
+Bootstrap Admin:
+
+--bootstrap-admin-client-id <client id>
+                     Client id for the temporary bootstrap admin service account. Used only when
+                       the master realm is created. Available only when bootstrap admin client
+                       secret is set. Default: temp-admin.
+--bootstrap-admin-client-secret <client secret>
+                     Client secret for the temporary bootstrap admin service account. Used only
+                       when the master realm is created. Use a non-CLI configuration option for
+                       this option if possible.
+--bootstrap-admin-password <password>
+                     Temporary bootstrap admin password. Used only when the master realm is
+                       created. Use a non-CLI configuration option for this option if possible.
+--bootstrap-admin-username <username>
+                     Temporary bootstrap admin username. Used only when the master realm is
+                       created. Available only when bootstrap admin password is set. Default:
+                       temp-admin.

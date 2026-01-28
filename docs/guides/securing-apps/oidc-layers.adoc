@@ -1,0 +1,21 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Securing applications and services with OpenID Connect"
+priority=20
+summary="Use OpenID Connect with {project_name} to secure applications and services.">
+
+<#include "partials/oidc/available-endpoints.adoc" />
+
+include::partials/oidc/supported-grant-types.adoc[]
+
+include::partials/oidc/oidc-errors.adoc[]
+
+include::partials/oidc/fapi-support.adoc[]
+
+include::partials/oidc/oauth21-support.adoc[]
+
+include::partials/oidc/recommendations.adoc[]
+
+</@tmpl.guide>

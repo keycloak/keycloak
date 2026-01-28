@@ -1,0 +1,65 @@
+name: Build Keycloak
+description: Builds Keycloak providing Maven repository with all artifacts
+
+inputs:
+  upload-m2-repo:
+    description: Upload Maven repository for org.keycloak artifacts
+    required: false
+    default: "true"
+  upload-dist:
+    description: Upload distribution
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - id: setup-java
+      name: Setup Java
+      uses: ./.github/actions/java-setup
+
+    - id: maven-cache
+      name: Maven cache
+      uses: ./.github/actions/maven-cache
+      with:
+        create-cache-if-it-doesnt-exist: true
+
+    - id: pnpm-store-cache
+      name: PNPM store cache
+      uses: ./.github/actions/pnpm-store-cache
+
+    - id: build-keycloak
+      name: Build Keycloak
+      shell: bash
+      run: |
+        # Ensure this plugin is built first to avoid warnings in the build
+        ./mvnw install -Pdistribution -am -pl distribution/maven-plugins/licenses-processor
+        # By using "dependency:resolve", it will download all dependencies used in later stages for running the tests
+        ./mvnw install dependency:resolve -V -e -DskipTests -DskipExamples -DexcludeGroupIds=org.keycloak -Dsilent=true -DcommitProtoLockChanges=true
+
+    - id: compress-keycloak-maven-repository
+      name: Compress Keycloak Maven artifacts
+      if: inputs.upload-m2-repo == 'true'
+      shell: bash
+      run: |
+        tar -C ~/ --use-compress-program zstd -cf m2-keycloak.tzts \
+        --exclude '*.tar.gz' \
+        .m2/repository/org/keycloak
+
+    - id: upload-keycloak-maven-repository
+      name: Upload Keycloak Maven artifacts
+      if: inputs.upload-m2-repo == 'true'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: m2-keycloak.tzts
+        path: m2-keycloak.tzts
+        retention-days: 1
+
+    - id: upload-keycloak-dist
+      name: Upload Keycloak dist
+      if: inputs.upload-dist == 'true'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: keycloak-dist
+        path: quarkus/dist/target/keycloak*.tar.gz
+        retention-days: 1

@@ -1,0 +1,10 @@
+[#${parent}-verify-deployment]
+== Verifying the deployment
+
+Confirm that the {project_name} deployment is ready.
+
+[source,bash]
+----
+kubectl wait --for=condition=Ready keycloaks.k8s.keycloak.org/keycloak
+kubectl wait --for=condition=RollingUpdate=False keycloaks.k8s.keycloak.org/keycloak
+----

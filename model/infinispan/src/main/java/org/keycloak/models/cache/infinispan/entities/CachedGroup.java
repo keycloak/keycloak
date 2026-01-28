@@ -1,0 +1,108 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.models.cache.infinispan.entities;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.Type;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
+import org.keycloak.models.cache.infinispan.LazyLoader;
+
+/**
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
+ */
+public class CachedGroup extends AbstractRevisioned implements InRealm {
+
+    private final String realm;
+    private final String name;
+    private final String description;
+    private final String parentId;
+    private final LazyLoader<GroupModel, MultivaluedHashMap<String, String>> attributes;
+    private final LazyLoader<GroupModel, Set<String>> roleMappings;
+    /**
+     * Use this so the cache invalidation can retrieve any previously cached role mappings to determine if this
+     * items should be evicted.
+     */
+    private Set<String> cachedRoleMappings = new HashSet<>();
+    private final LazyLoader<GroupModel, Set<String>> subGroups;
+    private final Type type;
+
+    public CachedGroup(Long revision, RealmModel realm, GroupModel group) {
+        super(revision, group.getId());
+        this.realm = realm.getId();
+        this.name = group.getName();
+        this.description = group.getDescription();
+        this.parentId = group.getParentId();
+        this.attributes = new DefaultLazyLoader<>(source -> new MultivaluedHashMap<>(source.getAttributes()), MultivaluedHashMap::new);
+        this.roleMappings = new DefaultLazyLoader<>(source -> source.getRoleMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()), Collections::emptySet);
+        this.subGroups = new DefaultLazyLoader<>(source -> source.getSubGroupsStream().map(GroupModel::getId).collect(Collectors.toSet()), Collections::emptySet);
+        this.type = group.getType();
+    }
+
+    @Override
+    public String getRealm() {
+        return realm;
+    }
+
+    public MultivaluedHashMap<String, String> getAttributes(KeycloakSession session, Supplier<GroupModel> group) {
+        return attributes.get(session, group);
+    }
+
+    public Set<String> getRoleMappings(KeycloakSession session, Supplier<GroupModel> group) {
+        cachedRoleMappings = roleMappings.get(session, group);
+        return cachedRoleMappings;
+    }
+
+    /**
+     * Use this so the cache invalidation can retrieve any previously cached role mappings to determine if this
+     * items should be evicted. Will return an empty list if it hasn't been cached yet (and then no invalidation is necessary)
+     */
+    public Set<String> getCachedRoleMappings() {
+        return cachedRoleMappings;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getParentId() {
+        return parentId;
+    }
+
+    public Set<String> getSubGroups(KeycloakSession session, Supplier<GroupModel> group) {
+        return subGroups.get(session, group);
+    }
+
+    public Type getType() {
+        return type;
+    }
+}

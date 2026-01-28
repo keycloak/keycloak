@@ -1,0 +1,32 @@
+packages:
+  - apps/*
+  - libs/*
+  - themes-vendor
+
+onlyBuiltDependencies:
+  - '@swc/core'
+  - esbuild
+
+ignoredOptionalDependencies:
+  - '@types/c3'
+  - bootstrap-datepicker
+  - bootstrap-sass
+  - bootstrap-select
+  - bootstrap-slider
+  - bootstrap-switch
+  - bootstrap-touchspin
+  - 'c3'
+  - 'd3'
+  - datatables.net
+  - datatables.net-colreorder
+  - datatables.net-colreorder-bs
+  - datatables.net-select
+  - drmonty-datatables-colvis
+  - eonasdan-bootstrap-datetimepicker
+  - font-awesome-sass
+  - google-code-prettify
+  - jquery-match-height
+  - moment
+  - moment-timezone
+  - patternfly-bootstrap-combobox
+  - patternfly-bootstrap-treeview

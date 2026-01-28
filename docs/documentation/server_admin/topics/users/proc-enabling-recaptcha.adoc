@@ -1,0 +1,94 @@
+// Module included in the following assemblies:
+//
+// server_admin/topics/users.adoc
+
+[id="proc-enabling-recaptcha_{context}"]
+= Enabling reCAPTCHA
+
+[role="_abstract"]
+To safeguard registration against bots, {project_name} has integration with Google reCAPTCHA (see <<procedure_recaptcha>>) and reCAPTCHA Enterprise (see <<procedure_recaptcha_enterprise>>).
+The default theme (`register.ftl`) supports both v2 (visible, checkbox-based) and v3 (score-based, invisible) reCAPTCHA (see https://docs.cloud.google.com/recaptcha/docs/choose-key-type[Choose the appropriate reCAPTCHA key type]).
+
+[[procedure_recaptcha]]
+== Setting up Google reCAPTCHA
+
+. Enter the following URL in a browser:
++
+[source,bash,subs=+attributes]
+----
+https://www.google.com/recaptcha/admin/create
+----
+
+. Create a reCAPTCHA and choose between Challenge v2 (visible checkbox) or Score-based, v3 (invisible) to get your reCAPTCHA site key and secret. Note them down for future use in this procedure.
++
+NOTE: localhost domains are not supported by default. If you wish to continue supporting them for development you can add them to the list of supported domains for your site key.
++
+. Navigate to the {project_name} admin console.
+. Click *Authentication* in the menu.
+. Click the *Flows* tab.
+. Select *Registration* from the list.
+. Set the *reCAPTCHA* requirement to *Required*. This enables
+reCAPTCHA.
+. Click the *gear icon* ⚙️ on the *reCAPTCHA* row.
+
++
+.reCAPTCHA config
+image:images/recaptcha-config.png[]
+
+.. Enter the *reCAPTCHA Site Key* generated from the Google reCAPTCHA website.
+.. Enter the *reCAPTCHA Secret* generated from the Google reCAPTCHA website.
+.. Toggle **reCAPTCHA v3** according to your Site Key type: on for score-based reCAPTCHA (v3), off for challenge reCAPTCHA (v2).
+.. (Optional) Toggle *Use recaptcha.net* to use `www.recaptcha.net` instead of `www.google.com` domain for cookies. See https://developers.google.com/recaptcha/docs/faq[reCAPTCHA faq] for more information.
+. Authorize Google to use the registration page as an iframe.
++
+NOTE: In {project_name}, websites cannot include a login page dialog in an iframe. This restriction is to prevent clickjacking attacks. You need to change the default HTTP response headers that is set in {project_name}.
++
+.. Click *Realm Settings* in the menu.
+.. Click the *Security Defenses* tab.
+.. Enter `https://www.google.com` in the field for the *X-Frame-Options* header (or `https//www.recaptcha.net` if you enabled *Use recaptcha.net*).
+.. Enter `https://www.google.com` in the field for the *Content-Security-Policy* header (or `https//www.recaptcha.net` if you enabled *Use recaptcha.net*).
+
+
+[[procedure_recaptcha_enterprise]]
+== Setting up Google reCAPTCHA Enterprise
+. Enter the following URL in a browser:
++
+[source,bash,subs=+attributes]
+----
+https://developers.google.com/recaptcha/
+----
+
+. Create a key for a "Website" platform, and choose the desired key type. Leave the defaults for v3 reCAPTCHA (invisible), or toggle *Use checkbox challenge* for a v2 reCAPTCHA (visible). Note the site key for future use in this procedure.
++
+NOTE: The localhost works by default. You do not have to specify a domain.
++
+. On your Google Cloud Project, go to *Credentials* and create an API key.
++
+NOTE: For better security, click on *edit api key* and add an API restriction to restrict the key to the *reCAPTCHA Enterprise API* only.
++
+. Navigate to the {project_name} Admin Console.
+. Click *Authentication* in the menu.
+. Click the *Flows* tab.
+. Duplicate the "registration" flow.
+. Bind the new flow to the *Registration flow*.
+. Edit the new flow:
+.. Delete the *reCAPTCHA* step.
+.. Add the step *reCAPTCHA Enterprise* as a sub-step of "registration form" (first step of the flow).
+. Set the *reCAPTCHA Enterprise* requirement to *Required*.
+. Click the *gear icon* ⚙️ on the *reCAPTCHA Enterprise* row.
+
++
+.reCAPTCHA Enterprise config
+image:images/recaptcha-enterprise-config.png[]
+
+.. Enter the *Recaptcha Project ID* of your Google Cloud console project.
+.. Enter the *Recaptcha Site Key* generated at the beginning of the procedure.
+.. Enter the *Recaptcha API Key* generated at the beginning of the procedure.
+.. Toggle **reCAPTCHA v3** according to your Site Key type: on for score-based reCAPTCHA (v3), off for challenge reCAPTCHA (v2).
+.. (Optional) Customize the *Min. Score Threshold* as you see fit. Set it to the minimum score, between 0.0 and 1.0, that a user should achieve on reCAPTCHA to be allowed to register. See https://docs.cloud.google.com/recaptcha/docs/interpret-assessment-website#interpret_scores[interpret scores].
+.. (Optional) Toggle *Use recaptcha.net* to use `www.recaptcha.net` instead of `www.google.com` domain for cookies. See https://developers.google.com/recaptcha/docs/faq[reCAPTCHA faq] for more information.
+. Authorize Google to use the registration page as an iframe. See the last steps of <<procedure_recaptcha>> for a detailed procedure.
+
+[role="_additional-resources"]
+.Additional resources
+* For more information on extending and creating themes, see the link:{developerguide_link}[{developerguide_name}].

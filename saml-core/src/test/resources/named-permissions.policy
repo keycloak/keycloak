@@ -1,0 +1,15 @@
+grant {
+    permission java.io.FilePermission "<<ALL FILES>>", "read";
+    permission java.io.FilePermission "${maven.basedir}${/}-", "read,write,delete";
+
+    // SUREFIRE-859
+    permission "java.util.PropertyPermission" "*", "read,write";
+
+    permission "java.lang.RuntimePermission" "accessDeclaredMembers";
+    permission "java.lang.RuntimePermission" "getProtectionDomain";
+    permission "java.lang.RuntimePermission" "setIO";
+
+    permission "java.lang.RuntimePermission" "defineClassInPackage.java.lang";
+
+    permission "java.security.SecurityPermission" "getPolicy";
+};

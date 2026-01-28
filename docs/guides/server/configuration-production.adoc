@@ -1,0 +1,112 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/features.adoc" as features>
+
+<@tmpl.guide
+title="Configuring {project_name} for production"
+summary="Prepare {project_name} for use in production."
+includedOptions="">
+
+A {project_name} production environment provides secure authentication and authorization for deployments that range from on-premise deployments that support a few thousand users to deployments that serve millions of users.
+
+This {section} describes the general areas of configuration required for a production ready {project_name} environment. This information focuses on the general concepts instead of the actual implementation, which depends on your environment. The key aspects covered in this {section} apply to all environments, whether it is containerized, on-premise, GitOps, or Ansible.
+
+== TLS for secure communication
+{project_name} continually exchanges sensitive data, which means that all communication to and from {project_name} requires a secure communication channel. To prevent several attack vectors, you enable HTTP over TLS, or HTTPS, for that channel.
+
+To configure secure communication channels for {project_name}, see <@links.server id="enabletls"/> and <@links.server id="outgoinghttp"/>.
+
+To secure the cache communication for {project_name}, see <@links.server id="caching"/>.
+
+== The hostname for {project_name}
+In a production environment, {project_name} instances usually run in a private network, but {project_name} needs to expose certain public facing endpoints to communicate with the applications to be secured.
+
+For details on the endpoint categories and instructions on how to configure the public hostname for them, see <@links.server id="hostname"/>.
+
+=== Exposing the {project_name} Administration APIs and UI on a different hostname
+
+It is considered a best practice to expose the {project_name} Administration REST API and Console on a different hostname or context-path than the one used for the public frontend URLs that are used e.g. by login flows. This separation ensures that the Administration interfaces are not exposed to the public internet, which reduces the attack surface.
+
+WARNING: Access to REST APIs needs to be blocked on the reverse proxy level, if they are not intended to be publicly exposed.
+
+For details, see <@links.server id="hostname"/>.
+
+== Reverse proxy in a distributed environment
+Apart from <@links.server id="hostname"/>, production environments usually include a reverse proxy / load balancer component. It separates and unifies access to the network used by your company or organization. For a {project_name} production environment, this component is recommended.
+
+For details on configuring proxy communication modes in {project_name}, see <@links.server id="reverseproxy"/>. That {section} also recommends which paths should be hidden from public access and which paths should be exposed so that {project_name} can secure your applications.
+
+== Limit the number of queued requests
+
+A production environment should protect itself from an overload situation, so that it responds to as many valid requests as possible, and to continue regular operations once the situation returns to normal again.
+One way of doing this is rejecting additional requests once a certain threshold is reached.
+
+Load shedding should be implemented on all levels, including the load balancers in your environment.
+In addition to that, there is a feature in {project_Name} to limit the number of requests that can't be processed right away and need to be queued.
+By default, there is no limit set.
+Set the option `http-max-queued-requests` to limit the number of queued requests to a given threshold matching your environment.
+Any request that exceeds this limit would return with an immediate `503 Server not Available` response.
+
+== Production grade database
+The database used by {project_name} is crucial for the overall performance, availability, reliability and integrity of {project_name}. For details on how to configure a supported database, see <@links.server id="db"/>.
+
+== Running {project_name} in a cluster
+To ensure that users can continue to log in when a {project_name} instance goes down, a typical production environment contains two or more {project_name} instances.
+
+{project_name} runs on top of JGroups and Infinispan, which provide a reliable, high-availability stack for a clustered scenario. In the default setup, communication between the nodes is encrypted using TLS.
+
+To find out more about using multiple nodes, the different caches and an appropriate stack for your environment, see <@links.server id="caching"/>.
+
+=== Configure Firewall ports
+
+A set of network ports must be open to allow a healthy network communication between {project_name} servers.
+See <@links.server id="caching" anchor="network-ports"/>.
+It describes what ports need to be open and their usage.
+
+== Configure {project_name} Server with IPv4 or IPv6
+The system properties `java.net.preferIPv4Stack` and `java.net.preferIPv6Addresses` are used to configure the JVM for use with IPv4 or IPv6 addresses.
+
+By default, {project_name} is accessible via IPv4 and IPv6 addresses at the same time.
+In order to run only with IPv4 addresses, you need to specify the property `java.net.preferIPv4Stack=true`.
+The latter ensures that any hostname to IP address conversions always return IPv4 address variants.
+
+These system properties are conveniently set by the `JAVA_OPTS_APPEND` environment variable.
+For example, to change the IP stack preference to IPv4, set an environment variable as follows:
+
+[source, bash]
+----
+export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=true"
+----
+
+To set up the server for IPv6 only, set an environment variable as follows for the distributed caches to form a cluster:
+
+[source, bash]
+----
+export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true"
+----
+
+See <@links.server id="caching" anchor="network-bind-address"/> for more details.
+
+== Preview of enhanced HTTP performance
+<@features.techpreview feature="http-optimized-serializers" additionalCommunityText="We gather more feedback on this feature to promote it to supported. Please, share your feedback about any issue in https://github.com/keycloak/keycloak/discussions/43484[this discussion]."/>
+
+In production environments, the performance of the HTTP layer is critical.
+Every request passes through it, making it a key factor in overall system responsiveness, scalability, and user experience.
+
+This feature improves how {project_name} handles JSON data in HTTP requests and responses.
+The result is a more efficient runtime with measurable benefits:
+
+- ~5% increase in throughput
+- More stable response times
+- Reduced system resource usage
+
+These improvements help ensure smoother, more predictable performance at scale while also lowering the operational cost of running production systems.
+
+The only known tradeoff is that build time increases by ~6% as certain actions were moved to the build time instead of runtime.
+
+You can enable this feature as follows:
+
+<@kc.start parameters="--features=http-optimized-serializers"/>
+
+</@tmpl.guide>

@@ -1,0 +1,18 @@
+Commands for bootstrapping admin access
+
+Usage:
+
+kc.sh bootstrap-admin [OPTIONS] [COMMAND]
+
+Commands for bootstrapping admin access
+
+Options:
+
+-h, --help           This help message.
+--no-prompt          Run non-interactive without prompting
+-v, --verbose        Print out error details when running this command.
+
+Commands:
+
+  user     Add an admin user with a password
+  service  Add an admin service account

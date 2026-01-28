@@ -1,0 +1,54 @@
+<infinispan>
+    <jgroups>
+        <stack name="bridge" extends="udp">
+            <UDP bind_addr="${jgroups.bind.address,jgroups.udp.address:127.0.0.1}"
+                 mcast_addr="228.6.7.12"
+                 ip_mcast="false"/>
+            <!-- LOCAL_PING: discovery in the same JVM -->
+            <LOCAL_PING stack.combine="REPLACE" stack.position="PING"/>
+            <!-- FD_SOCK2: remove failure detection, tests do not require it -->
+            <FD_SOCK2 stack.combine="REMOVE"/>
+        </stack>
+        <!-- Extends the default UDP stack. -->
+        <stack name="xsite" extends="udp">
+            <UDP bind_addr="${jgroups.bind.address,jgroups.udp.address:127.0.0.1}"
+                 bind_port="${jgroups.bind.port,jgroups.udp.port:0}"
+                 mcast_addr="${jgroups.udp.mcast_addr,jgroups.mcast_addr:228.6.7.10}"
+                 mcast_port="${jgroups.udp.mcast_port,jgroups.mcast_port:46655}"
+                 tos="0"
+                 ucast_send_buf_size="1m"
+                 mcast_send_buf_size="1m"
+                 ucast_recv_buf_size="20m"
+                 mcast_recv_buf_size="25m"
+                 ip_ttl="${jgroups.ip_ttl:2}"
+                 ip_mcast="false"
+                 thread_naming_pattern="pl"
+                 diag.enabled="${jgroups.diag.enabled:false}"
+                 bundler_type="transfer-queue"
+                 bundler.max_size="${jgroups.bundler.max_size:64000}"
+
+                 thread_pool.min_threads="${jgroups.thread_pool.min_threads:0}"
+                 thread_pool.max_threads="${jgroups.thread_pool.max_threads:200}"
+                 thread_pool.keep_alive_time="60000"
+            />
+            <!-- LOCAL_PING: discovery in the same JVM -->
+            <LOCAL_PING stack.combine="REPLACE" stack.position="PING"/>
+            <!-- FD_SOCK2: remove failure detection, tests do not require it -->
+            <FD_SOCK2 stack.combine="REMOVE"/>
+            <!-- Adds RELAY2 for cross-site replication. -->
+            <!-- Names the local site as site-1. -->
+            <!-- Specifies 1000 nodes as the maximum number of site masters. -->
+            <relay.RELAY2 site="site-1" xmlns="urn:org:jgroups" max_site_masters="1000"/>
+            <!-- Uses the default UDP stack for inter-cluster communication. -->
+            <!-- Names all sites that act as backup locations. -->
+            <remote-sites default-stack="bridge">
+                <remote-site name="site-1"/>
+                <remote-site name="site-2"/>
+            </remote-sites>
+        </stack>
+    </jgroups>
+    <cache-container name="site-1" statistics="true">
+        <!-- Use the "xsite" stack for cluster transport. -->
+        <transport cluster="external-site-1" stack="xsite"/>
+    </cache-container>
+</infinispan>

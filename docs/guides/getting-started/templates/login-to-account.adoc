@@ -1,0 +1,10 @@
+== Log in to the Account Console
+
+You can now log in to the Account Console to verify this user is configured correctly.
+
+. Open the {links-account-console}.
+. Log in with `myuser` and the password you created earlier.
+
+As a user in the Account Console, you can manage your account including modifying your profile, adding two-factor authentication, and including identity provider accounts.
+
+image::account-console.png[{project_name} Account Console]

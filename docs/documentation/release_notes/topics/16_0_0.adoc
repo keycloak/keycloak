@@ -1,0 +1,13 @@
+= Highlights
+
+== Upgrade to Wildfly 25.0.1
+
+Keycloak server was upgraded to use Wildfly 25.0.1.Final as the underlying container.
+
+WildFly 25 drops support for the legacy security subsystem, which is being replaced fully by Elytron. This requires significant changes to how Keycloak is configured. Please, refer to the migration guide for more details.
+
+For more information on WildFly 25 refer to the https://www.wildfly.org/news/2021/10/05/WildFly-25-is-released/[WildFly 25 release notes].
+
+== Upgrade to Quarkus 2.5.3
+
+Keycloak.X Quarkus preview distribution was upgraded to Quarkus 2.5.3.

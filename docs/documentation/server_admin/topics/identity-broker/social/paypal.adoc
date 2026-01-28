@@ -1,0 +1,25 @@
+
+==== PayPal
+
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the *Add provider* list, select *PayPal*.
++
+.Add identity provider
+image:images/paypal-add-identity-provider.png[Add Identity Provider]
++
+. Copy the value of *Redirect URI* to your clipboard.
+. In a separate browser tab, open the https://developer.paypal.com/developer/applications[PayPal Developer applications area].
+.. Click *Create App* to create a PayPal app.
+.. Note the *Client ID* and *Client Secret*. Click the *Show* link to view the secret.
+.. Ensure *Log in with PayPal* is checked.
+.. Under Log in with PayPal click on *Advanced Settings*.
+.. Set the value of the *Return URL* field to the value of *Redirect URI* from {project_name}. Note that the URL can not contain `localhost`. If you want to use {project_name} locally, replace the `localhost` in the *Return URL* by `127.0.0.1` and then access {project_name} using `127.0.0.1` in the browser instead of `localhost`.
+.. Ensure *Full Name* and *Email* fields are checked.
+.. Click *Save* and then *Save Changes*.
+. In {project_name}, paste the value of the `Client ID` into the *Client ID* field.
+. In {project_name}, paste the value of the `Secret key 1` into the *Client Secret* field.
+
+. Click *Add*.
+
+

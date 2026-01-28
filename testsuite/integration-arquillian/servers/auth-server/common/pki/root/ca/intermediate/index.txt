@@ -1,0 +1,5 @@
+V	450708200730Z		1000	unknown	/C=US/ST=MA/L=Boston/O=Red Hat/OU=Keycloak/CN=test-user
+R	460730105428Z	190314110930Z	1009	unknown	/C=US/ST=MA/L=Westford/O=Red Hat/OU=Keycloak/CN=test-user@localhost/emailAddress=test-user@localhost
+V	300222160951Z		2009	unknown	/C=US/ST=MA/L=Boston/O=Red Hat/OU=My Org Unit/CN=Foo
+V	300222161112Z		200A	unknown	/C=US/ST=MA/L=Boston/O=Red Hat/OU=My Org Unit/serialNumber=2009/businessCategory=Business Entity/jurisdictionC=BR/CN=Foo
+V	30500728112531Z		200B	unknown	/C=US/ST=MA/L=Boston/O=Red Hat/OU=Keycloak/CN=test-user/emailAddress=test-user@localhost

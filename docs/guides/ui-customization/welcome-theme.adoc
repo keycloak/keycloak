@@ -1,0 +1,20 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Customizing the Welcome Theme"
+priority=60
+summary="Learn how to customize the welcome theme.">
+
+The welcome theme is the web page that is served when you request the default page from the {project_name} server.  For instance, if your server is deployed on your local machine at port 8080, http://localhost:8080 serves the welcome theme.
+
+By default, the welcome theme is only used during the initial setup to create the first admin user. Once an initial admin exists, navigating to the welcome page redirects to the Admin Console. However, this behavior can be changed and the welcome theme can be completely customized or replaced.
+
+Since the welcome theme is not associated with a realm, it cannot be selected in the admin console like other themes.
+
+To change the welcome theme, create and deploy a new welcome theme as described in <<_creating-a-theme,Creating a theme>>.  Then, start the {project_name} server using the `spi-theme--welcome-theme` option.
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-theme--welcome-theme=custom-theme
+----
+</@tmpl.guide>

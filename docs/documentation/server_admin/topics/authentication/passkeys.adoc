@@ -1,0 +1,64 @@
+
+[id="passkeys_{context}"]
+=== Passkeys
+
+{project_name} provides support for https://fidoalliance.org/passkeys/[Passkeys]. {project_name} works as a Passkeys Relying Party (RP).
+
+Passkey registration and authentication are performed using the same features of xref:webauthn_{context}[WebAuthn]. More specifically *Passkeys* are related to xref:_webauthn_loginless[LoginLess WebAuthn] as they try to avoid any password during login.
+Therefore, users of {project_name} can do Passkey registration and authentication by existing xref:webauthn_{context}[WebAuthn registration and authentication], using the *passwordless* variants.
+
+The *Passkeys* feature has been integrated seamlessly in the default authentication forms in two different ways. When activated, both conditional UI and modal UI are available in the forms in which the username input is displayed (for example *Username Password Form*  or *Username Form*). Besides, the password forms, when the username was already selected, always show the modal UI button to login by passkey if the current user has passwordless WebAuthn credentials associated. This way modal and conditional UI can be used to perform a complete login from scratch that needs username and password, and only modal UI is presented when the username is already selected in the authentication process (because of re-authentication or because the user was selected before in the process not using a passkey).
+
+*Passkeys* have been added to the following authenticator implementations:
+
+. *Username Password Form*: The username and password form used by default in {project_name}.
+. *Username Form*: The form in which the username is displayed alone and is typically followed by the password form. This authenticator is used when the username and password fields want to be presented to the user in two different steps.
+. *Password Form*: Authenticating using *Passkeys* in the *Username Form* skips the next *Password Form* execution. The *Password Form* implementation checks if the user was already authenticated using a passwordless WebAuthn credential and, if that is the case, no password is requested. If the *Password Form* cannot be skipped, it allows using modal UI to authenticate the user if the account has passkey credentials associated.
+. *Organization Identity - First Login*: The organization form that is used when the <<_enabling_organization_, organizations>> feature is enabled for the realm. Using *Passkeys* in this step avoids the subsequent execution of the username and password form in the same way than in the username form.
+. *Username Password Form for identity provider re-authentication*: Similar to the default *Username Password Form* but used in the first login flow to re-authenticate and prove ownership of the account. Now the modal UI button is available to use passkeys to re-authenticate.
+
+Finally, the default *browser* flow is modified to skip the flow *Browser - Conditional 2FA* if a passkey was used previously to authenticate the account. So now, when passkeys are enabled in the realm, 2FA is only presented if the user introduced a common password to login, not if a passkey was used. The new *Condition - credential* is added to the sub-flow to check the credential presented before. If you want to always use 2FA, you can just change the requirement from *Required* to *Disabled* for this condition. See <<conditions-in-conditional-flows, Conditions in conditional flows>> for more information.
+
+[NOTE]
+====
+Both synced Passkeys and device-bound Passkeys can be used for both Same-Device and Cross-Device Authentication (CDA).
+However, Passkeys operations success depends on the user's environment. Make sure which operations can succeed in https://passkeys.dev/device-support/[the environment].
+====
+
+[[_passkeys-conditional-ui]]
+==== Passkey Authentication with Conditional UI or autofill
+
+The Conditional User Interface (UI) or autofill is a feature related to passkeys in which the username input (the field in which the username to login is typed) is tagged with a `webauthn` autofill detail token (for example using the attribute `autocomplete="username webauthn"`). When the user clicks in such an input field, the user agent (browser) can render a list of discovered credentials for the user to select from, and perhaps also give the user the option to _try another way_. If the user selects one of the presented passkeys, {project_name} initiates the WebAuthn authentication with that key and avoids any password typing.
+
+Compared with xref:_webauthn_loginless[LoginLess WebAuthn], the authentication improves the user's experience of authentication.
+
+.Passkey Authentication with Conditional UI Autofill using Chrome browser
+image:images/passkey-conditional-ui-autofill.png[Passkey Authentication with Conditional UI Autofill using Chrome browser]
+
+[NOTE]
+====
+This authentication uses the https://github.com/w3c/webauthn/wiki/Explainer:-WebAuthn-Conditional-UI/[WebAuthn Conditional UI].
+Therefore, this authentication success depends on the user's environment.
+If the environment does not support WebAuthn Conditional UI, the user should use the direct modal UI or username and password login.
+====
+
+==== Passkeys Authentication with Modal UI
+
+Nevertheless, because conditional UI can sometimes not show all the credentials to the user, the modal UI can always be initiated using the button *Sign in with Passkey*. The Modal User Interface (UI) ensures all passkeys are usable, including the ones stored in hardware tokens or on other devices that cannot be enumerated without user interaction.
+
+The modal UI button is also presented in the password forms when the user is already selected, for example when re-authenticating in the common *Username Password Form*. In this case, the modal UI is limited to the passwordless WebAuthn credentials that {project_name} has defined for the account.
+
+.Passkey Authentication with Modal UI using Chrome browser
+image:images/passkey-modal-ui.png[Passkey Authentication with Modal UI using Chrome browser]
+
+==== Setup
+
+Set up Passkey Authentication for the default forms as follows:
+
+. (If not already done) Check the required action for *WebAuthn Register Passwordless* is enabled. Use the steps described in <<_webauthn-register, Enable WebAuthn Authenticator Registration>>, but using *WebAuthn Register Passwordless* instead of *WebAuthn Register*.
+
+. Configure the *WebAuthn Passwordless Policy* in the same way that is explained in xref:_webauthn_loginless[LoginLess WebAuthn]. Perform the configuration in the Admin Console, `Authentication` section,  in the tab `Policies` →  `WebAuthn Passwordless Policy`. The default configuration for the passwordless policy is usually enough for correct passkeys integration.
++
+NOTE: Storage capacity is usually very limited on hardware passkeys meaning that you cannot store many discoverable credentials on your passkey. However, this limitation may be mitigated for instance if you use an Android phone backed by a Google account as a passkey device or an iPhone backed by Bitwarden.
++
+. In the *WebAuthn Passwordless Policy* tab, activate the *Enable Passkeys* option at the bottom. This switch is the one that really enables passkeys in the realm.

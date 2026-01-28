@@ -1,0 +1,56 @@
+name: Snyk
+
+on: 
+  workflow_dispatch:
+
+env:
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: read
+
+jobs:
+  analysis:
+    name: Analysis of Quarkus and Operator
+    runs-on: ubuntu-latest
+    if: github.repository == 'keycloak/keycloak'
+    permissions:
+      security-events: write # Required for SARIF uploads
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Build Keycloak
+        uses: ./.github/actions/build-keycloak
+
+      - uses: snyk/actions/setup@9adf32b1121593767fc3c057af55b55db032dc04 # master
+
+      - name: Check for vulnerabilities in Quarkus
+        run: snyk test --policy-path=${GITHUB_WORKSPACE}/.github/snyk/.snyk --all-projects --prune-repeated-subdependencies --exclude=tests --sarif-file-output=quarkus-report.sarif quarkus/deployment
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Upload Quarkus scanner results to GitHub
+        uses: github/codeql-action/upload-sarif@5d4e8d1aca955e8d8589aabd499c5cae939e33c7 # v4.31.9
+        continue-on-error: true
+        with:
+          sarif_file: quarkus-report.sarif
+          category: snyk-quarkus-report
+
+      - name: Check for vulnerabilities in Operator
+        run: |
+          ./mvnw -Poperator -pl operator -am -DskipTests clean install
+          snyk test --policy-path=${GITHUB_WORKSPACE}/.github/snyk/.snyk --all-projects --prune-repeated-subdependencies --exclude=tests --sarif-file-output=operator-report.sarif operator
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Upload Operator scanner results to GitHub
+        uses: github/codeql-action/upload-sarif@5d4e8d1aca955e8d8589aabd499c5cae939e33c7 # v4.31.9
+        with:
+          sarif_file: operator-report.sarif
+          category: snyk-operator-report

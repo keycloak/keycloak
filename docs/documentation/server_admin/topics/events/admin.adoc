@@ -1,0 +1,43 @@
+
+=== Auditing admin events
+
+You can record all actions that are performed by an administrator in the Admin Console. The Admin Console performs administrative actions by invoking the {project_name} REST interface and {project_name} audits these REST invocations. You can view the resulting events in the Admin Console.
+
+.Procedure
+
+Use this procedure to start auditing admin actions.
+
+. Click *Realm settings* in the menu.
+. Click the *Events* tab.
+. Click the *Admin events settings* tab.
+. Toggle *Save events* to *ON*.
++
+{project_name} displays the *Include representation* switch.
++
+. Toggle *Include representation* to *ON*.
++
+The `Include Representation` switch includes JSON documents sent through the admin REST API so you can view the administrators actions.
++
+.Admin events settings
+image:images/admin-events-settings.png[Admin events settings]
+
+. Click *Save*.
+
+. To clear the database of stored actions, click *Clear admin events*.
+
+.Procedure
+
+You can now view admin events.
+
+. Click *Events* in the menu.
+. Click the *Admin events* tab.
++
+.Admin events
+image:images/admin-events.png[Admin events]
+
+When the `Include Representation` switch is ON, it can lead to storing a lot of information in the database. You can set a maximum length of the representation by using the `+--spi-events-store--jpa--max-field-length+` argument. This setting is useful if you want to adhere to the underlying storage limitation. For example:
+
+[source,bash]
+----
+kc.[sh|bat] --spi-events-store--jpa--max-field-length=2500
+----

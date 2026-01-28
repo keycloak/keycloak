@@ -1,0 +1,152 @@
+[[_policy_js]]
+= JavaScript-based policy
+
+WARNING: If your policy implementation is using Attribute based access control (ABAC) as in the examples below, then please make sure that
+users are not able to edit the protected attributes and the corresponding attributes are read-only. See the details in the link:{adminguide_link}#mitigating_security_threats[Threat model mitigation] chapter.
+
+You can use this type of policy to define conditions for your permissions using JavaScript. It is one of the rule-based policy types
+supported by {project_name}, and provides flexibility to write any policy based on the <<_policy_evaluation_api, Evaluation API>>.
+
+To create a new JavaScript-based policy, select *JavaScript* in the item list in the upper right corner of the policy listing.
+
+NOTE: By default, JavaScript Policies can not be uploaded to the server. You should prefer deploying your JS Policies directly to
+the server as described in link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
+
+== Creating a JS policy from a deployed JAR file
+
+{project_name} allows you to deploy a JAR file in order to deploy scripts to the server. Please, take a look at link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}]
+for more details.
+
+Once you have your scripts deployed, you should be able to select the scripts you deployed from the list of available policy providers.
+
+== Examples
+
+=== Checking for attributes from the evaluation context
+Here is a simple example of a JavaScript-based policy that uses attribute-based access control (ABAC) to define a condition based on an attribute
+obtained from the execution context:
+
+```javascript
+const context = $evaluation.getContext();
+const contextAttributes = context.getAttributes();
+
+if (contextAttributes.containsValue('kc.client.network.ip_address', '127.0.0.1')) {
+    $evaluation.grant();
+}
+```
+
+=== Checking for attributes from the current identity
+Here is a simple example of a JavaScript-based policy that uses attribute-based access control (ABAC) to define a condition based on an attribute
+obtained associated with the current identity:
+
+```javascript
+const context = $evaluation.getContext();
+const identity = context.getIdentity();
+const attributes = identity.getAttributes();
+const email = attributes.getValue('email').asString(0);
+
+if (email.endsWith('@keycloak.org')) {
+    $evaluation.grant();
+}
+```
+
+Where these attributes are mapped from whatever claim is defined in the token that was used in the authorization request.
+
+=== Checking for roles granted to the current identity
+You can also use Role-Based Access Control (RBAC) in your policies. In the example below, we check if a user is granted with a `keycloak_user` *realm* role:
+
+```javascript
+const context = $evaluation.getContext();
+const identity = context.getIdentity();
+
+if (identity.hasRealmRole('keycloak_user')) {
+    $evaluation.grant();
+}
+```
+
+Or you can check if a user is granted with a `my-client-role` *client* role, where `my-client` is the client id of the client application:
+
+```javascript
+const context = $evaluation.getContext();
+const identity = context.getIdentity();
+
+if (identity.hasClientRole('my-client', 'my-client-role')) {
+    $evaluation.grant();
+}
+```
+
+=== Checking for roles granted to a user
+To check for realm roles granted to a user:
+
+```javascript
+const realm = $evaluation.getRealm();
+
+if (realm.isUserInRealmRole('marta', 'role-a')) {
+    $evaluation.grant();
+}
+```
+
+Or for client roles granted to a user:
+
+```javascript
+const realm = $evaluation.getRealm();
+
+if (realm.isUserInClientRole('marta', 'my-client', 'some-client-role')) {
+    $evaluation.grant();
+}
+```
+
+=== Checking for roles granted to a group
+To check for realm roles granted to a group:
+
+```javascript
+const realm = $evaluation.getRealm();
+
+if (realm.isGroupInRole('/Group A/Group D', 'role-a')) {
+    $evaluation.grant();
+}
+```
+
+=== Pushing arbitrary claims to the resource server
+To push arbitrary claims to the resource server in order to provide additional information on how permissions should be
+enforced:
+
+```javascript
+const permission = $evaluation.getPermission();
+
+// decide if permission should be granted
+
+if (granted) {
+    permission.addClaim('claim-a', 'claim-a');
+    permission.addClaim('claim-a', 'claim-a1');
+    permission.addClaim('claim-b', 'claim-b');
+}
+
+```
+
+=== Checking for group membership
+
+```javascript
+const realm = $evaluation.getRealm();
+
+if (realm.isUserInGroup('marta', '/Group A/Group B')) {
+    $evaluation.grant();
+}
+```
+
+=== Mixing different access control mechanisms
+You can also use a combination of several access control mechanisms. The example below shows how roles(RBAC) and
+claims/attributes(ABAC) checks can be used within the same policy. In this case we check if user is granted with `admin` role
+or has an e-mail from `keycloak.org` domain:
+
+```javascript
+const context = $evaluation.getContext();
+const identity = context.getIdentity();
+const attributes = identity.getAttributes();
+const email = attributes.getValue('email').asString(0);
+
+if (identity.hasRealmRole('admin') || email.endsWith('@keycloak.org')) {
+    $evaluation.grant();
+}
+```
+
+NOTE: When writing your own rules, keep in mind that the *$evaluation* object is an object implementing *org.keycloak.authorization.policy.evaluation.Evaluation*. For more information about what you can access from this interface, see the <<_policy_evaluation_api, Evaluation API>>.

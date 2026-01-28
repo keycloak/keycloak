@@ -1,0 +1,548 @@
+[[_oid4vci]]
+== Configuring {project_name} as a Verifiable Credential Issuer
+
+[IMPORTANT]
+====
+This is an experimental feature and should not be used in production. Backward compatibility is not guaranteed, and future updates may introduce breaking changes.
+====
+
+{project_name} provides experimental support for https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OpenID for Verifiable Credential Issuance].
+
+=== Introduction
+
+This chapter provides step-by-step instructions for configuring {project_name} as a Verifiable Credential Issuer using the OpenID for Verifiable Credential Issuance (OID4VCI) protocol. It outlines the process for setting up a {project_name} instance to securely issue and manage Verifiable Credentials (VCs), supporting decentralized identity solutions.
+
+=== What are Verifiable Credentials (VCs)?
+
+Verifiable Credentials (VCs) are cryptographically signed, tamper-evident data structures that represent claims about an entity, such as a person, organization, or device. They are foundational to decentralized identity systems, allowing secure and privacy-preserving identity verification without reliance on centralized authorities. VCs support advanced features like selective disclosure and zero-knowledge proofs, enhancing user privacy and security.
+
+=== What is OID4VCI?
+
+OpenID for Verifiable Credential Issuance (OID4VCI) is an extension of the OpenID Connect (OIDC) protocol. It defines a standardized, interoperable framework for credential issuers to deliver VCs to holders, who can then present them to verifiers. OID4VCI leverages {project_name}'s existing authentication and authorization capabilities to streamline VC issuance.
+
+=== Scope of This Chapter
+
+This chapter covers the following technical configurations:
+
+- Creating a dedicated realm for VC issuance.
+- Setting up a test user for credential testing.
+- Configuring custom cryptographic keys for signing and encrypting VCs.
+- Defining realm attributes to specify VC metadata.
+- Establishing client scopes and mappers to include user attributes in VCs.
+- Registering a client to handle VC requests.
+- Verifying the configuration using the issuer metadata endpoint.
+
+=== Prerequisites
+
+Ensure the following requirements are met before configuring {project_name} as a Verifiable Credential Issuer:
+
+=== {project_name} Instance
+
+A running {project_name} server with the OID4VCI feature enabled.
+
+To enable the feature, add the following flag to the startup command:
+
+[source,bash]
+----
+--features=oid4vc-vci
+----
+
+Verify activation by checking the server logs for the `OID4VC_VCI` initialization message.
+
+=== Configuring Credential Issuance in Keycloak
+
+In {project_name}, Verifiable Credentials are managed through *ClientScopes*, with each ClientScope representing a single Verifiable Credential type. To enable the issuance of a credential, the corresponding ClientScope must be assigned to an OpenID Connect client - ideally as *optional*.
+
+During the OAuth2 authorization process, the credential-specific scope can be requested by including the ClientScope's name in the `scope` parameter of the authorization request. Once the user has successfully authenticated, the resulting Access Token *MUST* include the requested ClientScope in its `scope` claim. To ensure this, make sure the ClientScope option *Include in token scope* is enabled.
+
+With this Access Token, the Verifiable Credential can be issued at the Credential Endpoint.
+
+=== Authentication
+
+An access token is required to authenticate API requests.
+
+Refer to the following {project_name} documentation sections for detailed steps on:
+
+- <<proc-creating-oidc-client_{context},Creating a Client>>
+- <<_oidc-auth-flows-direct, Obtaining an Access Token>>
+
+=== Configuration Steps
+
+Follow these steps to configure {project_name} as a Verifiable Credential Issuer. Each section is detailed with procedures, explanations, and examples where applicable.
+
+=== Creating a Realm
+
+A realm in {project_name} is a logical container that manages users, clients, roles, and authentication flows.
+For Verifiable Credential (VC) issuance, create a dedicated realm to ensure isolation and maintain a clear separation of functionality.
+
+[NOTE]
+====
+For detailed instructions on creating a realm, refer to the {project_name} documentation:
+<<proc-creating-a-realm_{context},Creating a Realm>>.
+====
+
+=== Creating a User Account
+
+A test user is required to simulate credential issuance and verify the setup.
+
+[NOTE]
+====
+For step-by-step instructions on creating a user, refer to the {project_name} documentation:
+<<assembly-managing-users_{context},Creating a User>>.
+====
+
+Ensure that the user has a valid username, email, and password. If the password should not be reset upon first login, disable the "Temporary" toggle during password configuration.
+
+=== Key Management Configuration
+
+{project_name} uses cryptographic keys for signing and encrypting Verifiable Credentials (VCs). To ensure secure and standards-compliant issuance, configure **ECDSA (ES256) for signing**, **RSA (RS256) for signing**, and **RSA-OAEP for encryption** using a keystore.
+
+[NOTE]
+====
+For a detailed guide on configuring realm keys, refer to the {project_name} documentation:
+<<realm_keys,Managing Realm Keys>>.
+====
+
+==== Configuring Key Providers
+
+To enable cryptographic operations for VC issuance:
+
+- **ECDSA (ES256) Key**: Used for signing VCs with the ES256 algorithm.
+- **RSA (RS256) Key**: Alternative signing mechanism using RS256.
+- **RSA-OAEP Key**: Used for encrypting sensitive data in VCs.
+
+Each key must be registered as a **java-keystore provider** within the **Realm Settings** > **Keys** section, ensuring:
+- The keystore file is correctly specified and securely stored.
+- The appropriate algorithm (ES256, RS256, or RSA-OAEP) is selected.
+- The key is active, enabled, and configured with the correct usage (signing or encryption).
+- Priority values are set to define precedence among keys.
+
+[WARNING]
+====
+Ensure the keystore file is **securely stored** and accessible to the {project_name} server. Use **strong passwords** to protect both the keystore and the private keys.
+====
+
+=== Registering Realm Attributes
+
+Realm attributes define metadata for Verifiable Credentials (VCs), such as **expiration times, supported formats, and scope definitions**. These attributes allow {project_name} to issue VCs with predefined settings.
+
+Since the **{project_name} Admin Console does not support direct attribute creation**, use the **{project_name} Admin REST API** to configure these attributes.
+
+==== Define Realm Attributes
+
+Create a JSON file (e.g., `realm-attributes.json`) with the following content:
+
+[source,json]
+----
+{
+  "realm": "oid4vc-vci",
+  "enabled": true,
+  "attributes": {
+    "preAuthorizedCodeLifespanS": 120
+  }
+}
+----
+
+==== Attribute Breakdown
+
+The attributes section contains issuer-specific metadata:
+- **preAuthorizedCodeLifespanS** – Defines how long pre-authorized codes remain valid (in seconds).
+- **oid4vc.attestation.trusted_keys** – JSON array of trusted JWK (JSON Web Key) objects for attestation proof validation. Each JWK must include a `kid` (key ID) field. These keys take precedence over realm session keys when there are conflicts. Useful for configuring additional trusted keys beyond the realm's default keys. Format: JSON array of JWK objects, e.g., `[{"kid":"key1","kty":"EC",...},{"kid":"key2","kty":"RSA",...}]`.
+- **oid4vc.attestation.trusted_key_ids** – Comma-separated list of key IDs from the realm's key providers to use for attestation proof validation. Keys are looked up by their `kid` regardless of enabled status, allowing the use of disabled keys that are not exposed in well-known endpoints. This attribute takes the highest priority when merging trusted keys. Format: comma-separated list of key IDs, e.g., `key-id-1,key-id-2,key-id-3`.
+
+==== Import Realm Attributes
+
+Use the following `curl` command to import the attributes into {project_name}:
+
+[source,bash]
+----
+curl -X PUT "https://localhost:8443/admin/realms/oid4vc-vci" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d @realm-attributes.json
+----
+
+[NOTE]
+====
+- Replace `$ACCESS_TOKEN` with a valid **{project_name} Admin API access token**.
+- **Avoid using `-k` in production**; instead, configure a **trusted TLS certificate**.
+====
+
+==== Time-claim correlation mitigation
+
+To reduce unintended correlation across multiple issuances or presentations, you can normalize time-related claims by either randomizing them within a time window or rounding them to a coarse time unit. This behavior is opt-in and controlled by the following realm attributes:
+
+[cols="1,1,2", options="header"]
+|===
+| Attribute
+| Default
+| Description
+
+| `oid4vci.time.claims.strategy`
+| `off`
+| Strategy to apply to time claims. Supported values: `off`, `randomize`, `round`.
+
+| `oid4vci.time.randomize.window.seconds`
+| `86400`
+| When strategy is `randomize`, subtract a random number of seconds between 0 and the value of this attribute from the original timestamp to mitigate correlation attacks.
+
+| `oid4vci.time.round.unit`
+| `SECOND`
+| When strategy is `round`, truncate timestamps to the selected unit boundary (UTC). Supported values: `SECOND`, `MINUTE`, `HOUR`, `DAY`.
+|===
+
+How it is applied during issuance:
+
+- For JWT-VC, the credential `issuanceDate` is normalized at issuance; the JWT `nbf` is derived from the normalized value. If a mapper sets a VC `expirationDate`, it is normalized and emitted as JWT `exp`.
+- For SD-JWT VCs, time-related claims (`iat`, `nbf`, `exp`) are typically set using protocol mappers. Use the available OID4VC mappers, such as the Issued At Time Claim Mapper for `iat`, to populate these claims. Values are automatically normalized according to the realm strategy.
+
+Examples:
+
+[source,bash]
+----
+# Round to start of day (UTC)
+curl -X PUT "https://localhost:8443/admin/realms/oid4vc-vci" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "attributes": {
+          "oid4vci.time.claims.strategy": "round",
+          "oid4vci.time.round.unit": "DAY"
+        }
+      }'
+
+# Randomize within the last 24 hours
+curl -X PUT "https://localhost:8443/admin/realms/oid4vc-vci" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "attributes": {
+          "oid4vci.time.claims.strategy": "randomize",
+          "oid4vci.time.randomize.window.seconds": "86400"
+        }
+      }'
+----
+
+=== Create Client Scopes with Mappers
+
+Client scopes define **which user attributes** are included in Verifiable Credentials (VCs). Therefore, they are considered the Verifiable Credential configuration itself. These scopes use **protocol mappers** to map specific claims into VCs and the protocol mappers will also contain the corresponding metadata for claims that is displayed at the Credential Issuer Metadata Endpoint.
+
+You can create the ClientScopes using the {project_name} web Administration Console, but the web Administration Console does not yet support adding metadata configuration. For metadata configuration, you will need to use the Admin REST API.
+
+==== Define a Client Scope with a Mapper
+
+Create a JSON file (e.g., `client-scopes.json`) with the following content:
+
+[source,json]
+----
+{
+  "name": "vc-scope-mapping",
+  "protocol": "oid4vc",
+  "attributes": {
+    "include.in.token.scope": "true",
+    "vc.issuer_did": "did:web:vc.example.com",
+    "vc.credential_configuration_id": "my-credential-configuration-id",
+    "vc.credential_identifier": "my-credential-identifier",
+    "vc.format": "jwt_vc",
+    "vc.expiry_in_seconds": 31536000,
+    "vc.verifiable_credential_type": "my-vct",
+    "vc.supported_credential_types": "credential-type-1,credential-type-2",
+    "vc.credential_contexts": "context-1,context-2",
+    "vc.credential_signing_alg": "ES256",
+    "vc.cryptographic_binding_methods_supported": "jwk",
+    "vc.signing_key_id": "key-id-123456",
+    "vc.display": "[{\"name\": \"IdentityCredential\", \"logo\": {\"uri\": \"https://university.example.edu/public/logo.png\", \"alt_text\": \"a square logo of a university\"}, \"locale\": \"en-US\", \"background_color\": \"#12107c\", \"text_color\": \"#FFFFFF\"}]",
+    "vc.sd_jwt.number_of_decoys": "2",
+    "vc.credential_build_config.sd_jwt.visible_claims": "iat,jti,nbf,exp,given_name",
+    "vc.credential_build_config.hash_algorithm": "SHA-256",
+    "vc.credential_build_config.token_jws_type": "JWS",
+    "vc.include_in_metadata": "true"
+  },
+  "protocolMappers": [
+    {
+      "name": "academic_title-mapper-bsk",
+      "protocol": "oid4vc",
+      "protocolMapper": "oid4vc-static-claim-mapper",
+      "config": {
+        "claim.name": "academic_title",
+        "staticValue": "N/A"
+      }
+    },
+    {
+      "name": "givenName",
+      "protocol": "oid4vc",
+      "protocolMapper": "oid4vc-user-attribute-mapper",
+      "config": {
+        "claim.name": "given_name",
+        "userAttribute": "firstName",
+        "vc.mandatory": "false",
+        "vc.display": "[{\"name\": \"الاسم الشخصي\", \"locale\": \"ar-SA\"}, {\"name\": \"Vorname\", \"locale\": \"de-DE\"}, {\"name\": \"Given Name\", \"locale\": \"en-US\"}, {\"name\": \"Nombre\", \"locale\": \"es-ES\"}, {\"name\": \"نام\", \"locale\": \"fa-IR\"}, {\"name\": \"Etunimi\", \"locale\": \"fi-FI\"}, {\"name\": \"Prénom\", \"locale\": \"fr-FR\"}, {\"name\": \"पहचानी गई नाम\", \"locale\": \"hi-IN\"}, {\"name\": \"Nome\", \"locale\": \"it-IT\"}, {\"name\": \"名\", \"locale\": \"ja-JP\"}, {\"name\": \"Овог нэр\", \"locale\": \"mn-MN\"}, {\"name\": \"Voornaam\", \"locale\": \"nl-NL\"}, {\"name\": \"Nome Próprio\", \"locale\": \"pt-PT\"}, {\"name\": \"Förnamn\", \"locale\": \"sv-SE\"}, {\"name\": \"مسلمان نام\", \"locale\": \"ur-PK\"}]"
+      }
+    }
+  ]
+}
+----
+
+[NOTE]
+====
+This is a **sample configuration**.
+You can define **additional protocol mappers** to support different claim mappings, such as:
+
+- Dynamic attribute values instead of static ones.
+- Mapping multiple attributes per credential type.
+- Alternative supported credential types.
+====
+
+From the example above:
+
+- It is important to set `include.in.token.scope=true`, see <<include.in.token.scope, Attribute table: include.in.token.scope>>.
+- Most of the named attributes above are optional. See below: <<client-scope-attribute-breakdown,Attribute Breakdown>>.
+- You can determine the appropriate `protocolMapper` names by first creating them through the Web Administration Console and then retrieving their definitions via the Admin REST API.
+
+==== Attribute Breakdown - ClientScope [[client-scope-attribute-breakdown]]
+
+[cols="1,1,2", options="header"]
+|===
+| Property
+| Required
+| Description / Default
+
+| `name`
+| required
+| Name of the client scope.
+
+| `protocol`
+| required
+| Protocol used by the client scope. Use `oid4vc` for OpenID for Verifiable Credential Issuance, which is an OAuth2 extension (like `openid-connect`).
+
+| `include.in.token.scope`
+| required
+| [[include.in.token.scope]] This value MUST be `true`. It ensures that the scope’s name is included in the `scope` claim of the issued Access Token.
+
+| `protocolMappers`
+| optional
+| Defines how claims are mapped into the credential and how metadata is exposed via the issuer’s metadata endpoint.
+
+| `vc.issuer_did`
+| optional
+| The Decentralized Identifier (DID) of the issuer. +
+_Default_: `$\{name}`
+
+| `vc.credential_configuration_id`
+| optional
+| The credentials configuration ID. +
+_Default_: `$\{name}+`
+
+| `vc.credential_identifier`
+| optional
+| The credentials identifier. +
+_Default_: `$\{name}+`
+
+| `vc.format`
+| optional
+| Defines the VC format (e.g., `jwt_vc`). +
+_Default_: `dc+sd-jwt`
+
+| `vc.verifiable_credential_type`
+| optional
+| The Verifiable Credential Type (VCT). +
+_Default_: `$\{name}+`
+
+| `vc.supported_credential_types`
+| optional
+| The type values of the Verifiable Credential Type. +
+_Default_: `$\{name}+`
+
+| `vc.credential_contexts`
+| optional
+| The context values of the Verifiable Credential Type. +
+_Default_: `$\{name}+`
+
+| `vc.credential_signing_alg`
+| optional
+| Supported signature algorithm for this credential. +
+_Default_: All asymmetric signing algorithms backed by realm keys.
+
+| `vc.cryptographic_binding_methods_supported`
+| optional
+| Supported cryptographic methods (if applicable). +
+_Default_: `jwk`
+
+| `vc.signing_key_id`
+| optional
+| The ID of the key to sign this credential. +
+_Default_: _none_
+
+| `vc.display`
+| optional
+| Display information shown in the user's wallet about the issued credential. +
+_Default_: _none_
+
+| `vc.sd_jwt.number_of_decoys`
+| optional
+| Used only with format `dc+sd-jwt`. Number of decoy hashes in the SD-JWT. +
+_Default_: `10`
+
+| `vc.credential_build_config.sd_jwt.visible_claims`
+| optional
+| Used only with format `dc+sd-jwt`. Claims always disclosed in the SD-JWT body. +
+_Default_: `id,iat,nbf,exp,jti`
+
+| `vc.credential_build_config.hash_algorithm`
+| optional
+| Hash algorithm used before signing the credential. +
+_Default_: `SHA-256`
+
+| `vc.credential_build_config.token_jws_type`
+| optional
+| JWT type written into the `typ` header of the token. +
+_Default_: `JWS`
+
+| `vc.expiry_in_s`
+| optional
+| Credential expiration time in seconds. +
+_Default_: `31536000` (one year)
+
+| `vc.include_in_metadata`
+| optional
+| If this claim should be listed in the credentials metadata. +
+_Default_: `true` but depends on the mapper-type. Claims like `jti`, `nbf`, `exp`, etc. are set to `false` by default.
+
+| `vc.key_attestations_required`
+| optional
+| Indicates whether issuing this credential requires a key attestation. +
+_Default_: `false`.
+
+| `vc.key_attestations_required.key_storage`
+| optional
+| Comma separated list of accepted key-storage attack potential levels (see ISO 18045 levels, e.g. `iso_18045_high`). +
+Only relevant if `vc.key_attestations_required` is present. +
+_Default_: none
+
+| `vc.key_attestations_required.user_authentication`
+| optional
+| Comma separated list of accepted user-authentication attack potential levels (see ISO 18045 levels). +
+Only relevant if `vc.key_attestations_required` is present. +
+_Default_: none
+|===
+
+==== Attribute Breakdown - ProtocolMappers
+
+- **name** – Mapper identifier.
+- **protocol** – Must be `oid4vc` for Verifiable Credentials.
+- **protocolMapper** – Specifies the claim mapping strategy (e.g., `oid4vc-static-claim-mapper`).
+- **config**: contains the protocol-mappers specific attributes.
+
+Most claims are dependent on the `protocolMapper`-value, but there are also commonly used claims available for all ProtocolMappers:
+
+[cols="1,1,2", options="header"]
+|===
+| Property
+| Required
+| Description / Default
+
+| `claim.name`
+| required
+| The name of the attribute that will be added into the Verifiable Credential. +
+_Default_: _none_
+
+| `userAttribute`
+| required
+| The name of the users-attribute that will be used to map the value into the `claim.name` of the Verifiable Credential. +
+_Default_: _none_
+
+| `vc.mandatory`
+| optional
+| If the credential must be issued with this claim. +
+_Default_: `false`
+
+| `vc.display`
+| optional
+| Metadata information that is displayed at the credential-issuer metadata-endpoint. +
+_Default_: _none_
+|===
+
+==== Import the Client Scope
+
+Use the following `curl` command to import the client scope into {project_name}:
+
+[source,bash]
+----
+curl -X POST "https://localhost:8443/admin/realms/oid4vc-vci/client-scopes" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d @client-scopes.json
+----
+
+[NOTE]
+====
+- Replace `$ACCESS_TOKEN` with a valid **{project_name} Admin API access token**.
+- **Avoid using `-k` in production**; instead, configure a **trusted TLS certificate**.
+- If updating an existing scope, use `PUT` instead of `POST`.
+====
+
+=== Create the Client
+
+Set up a client to handle Verifiable Credential (VC) requests and assign the necessary scopes.
+The client does not differ from regular OpenID Connect clients — with one exception: it must have the appropriate **optional ClientScopes** assigned that define the Verifiable Credentials it is allowed to issue.
+
+. Create a JSON file (e.g., `oid4vc-rest-api-client.json`) with the following content:
++
+[source,json]
+----
+{
+  "clientId": "oid4vc-rest-api",
+  "enabled": true,
+  "protocol": "openid-connect",
+  "publicClient": false,
+  "serviceAccountsEnabled": true,
+  "clientAuthenticatorType": "client-secret",
+  "redirectUris": ["http://localhost:8080/*"],
+  "directAccessGrantsEnabled": true,
+  "defaultClientScopes": ["profile"],
+  "optionalClientScopes": ["vc-scope-mapping"],
+  "attributes": {
+    "client.secret.creation.time": "1719785014",
+    "client.introspection.response.allow.jwt.claim.enabled": "false",
+    "login_theme": "keycloak",
+    "post.logout.redirect.uris": "http://localhost:8080"
+  }
+}
+----
++
+- **clientId**: Unique identifier for the client.
+- **optionalClientScopes**: Links the `vc-scope-mapping` scope for VC requests.
+
+. Import the client using the following `curl` command:
++
+[source,bash]
+----
+curl -k -X POST "https://localhost:8443/admin/realms/oid4vc-vci/clients" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d @oid4vc-rest-api-client.json
+----
+
+=== Verify the Configuration
+
+Validate the setup by accessing the **issuer metadata endpoint**:
+
+. Open a browser or use a tool like `curl` to visit:
++
+[source,bash]
+----
+https://localhost:8443/.well-known/openid-credential-issuer/realms/oid4vc-vci
+----
+
+A successful response returns a JSON object containing details such as:
+- **Supported claims**
+- **Credential formats**
+- **Issuer metadata**
+
+=== Conclusion
+
+You have successfully configured **{project_name} as a Verifiable Credential Issuer** using the **OID4VCI protocol**.
+This setup leverages {project_name}'s robust **identity management capabilities** to issue secure, **standards-compliant VCs**.
+
+For a **complete reference implementation**, see the sample project:
+https://github.com/adorsys/{project_name}-ssi-deployment/tree/main[{project_name} SSI Deployment^].

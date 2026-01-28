@@ -1,0 +1,11 @@
+[[_mapping-acr-to-loa-realm]]
+== ACR to Level of Authentication (LoA) Mapping
+
+In the general settings of a realm, you can define which `Authentication Context Class Reference (ACR)` value is mapped to which `Level of Authentication (LoA)`. The ACR can be any value, whereas the LoA must be numeric.
+The acr claim can be requested in the `claims` or `acr_values` parameter sent in the OIDC request and it is also included in the access token and ID token. The mapped number is used in the authentication flow conditions.
+
+Mapping can be also specified at the client level in case that particular client needs to use different values than realm. However, a best practice is to stick to realm mappings.
+
+image:images/realm-oidc-map-acr-to-loa.png[alt="ACR to LoA mapping"]
+
+For further details see  <<_step-up-flow,Step-up Authentication>> and  https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[the official OIDC specification].

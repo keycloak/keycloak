@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<licenseSummary>
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-adapter-spi</artifactId>
+            <licenses>
+                <license>
+                    <name>Apache License 2.0</name>
+                    <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
+                </license>
+            </licenses>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-common</artifactId>
+            <licenses>
+                <license>
+                    <name>Apache License 2.0</name>
+                    <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
+                </license>
+            </licenses>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+            <licenses>
+                <license>
+                    <name>Apache License 2.0</name>
+                    <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
+                </license>
+            </licenses>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-crypto-default</artifactId>
+            <licenses>
+                <license>
+                    <name>Apache License 2.0</name>
+                    <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
+                </license>
+            </licenses>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-jboss-adapter-core</artifactId>
+            <licenses>
+                <license>
+                    <name>Apache License 2.0</name>
+                    <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
+                </license>
+            </licenses>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-adapter-api-public</artifactId>
+            <licenses>
+                <license>
+                    <name>Apache License 2.0</name>
+                    <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
+                </license>
+            </licenses>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-adapter-core</artifactId>
+            <licenses>
+                <license>
+                    <name>Apache License 2.0</name>
+                    <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
+                </license>
+            </licenses>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-core</artifactId>
+            <licenses>
+                <license>
+                    <name>Apache License 2.0</name>
+                    <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
+                </license>
+            </licenses>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-core-public</artifactId>
+            <licenses>
+                <license>
+                    <name>Apache License 2.0</name>
+                    <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
+                </license>
+            </licenses>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-wildfly-elytron-adapter</artifactId>
+            <licenses>
+                <license>
+                    <name>Apache License 2.0</name>
+                    <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
+                </license>
+            </licenses>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-wildfly-subsystem</artifactId>
+            <licenses>
+                <license>
+                    <name>Apache License 2.0</name>
+                    <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
+                </license>
+            </licenses>
+        </dependency>
+    </dependencies>
+</licenseSummary>
+

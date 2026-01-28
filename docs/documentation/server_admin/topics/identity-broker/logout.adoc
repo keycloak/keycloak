@@ -1,0 +1,4 @@
+
+=== Identity broker logout
+
+When logging out, {project_name} sends a request to the external identity provider that is used to log in initially and logs the user out of this identity provider.

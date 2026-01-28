@@ -1,0 +1,171 @@
+
+[[_sssd]]
+
+=== SSSD and FreeIPA Identity Management integration
+
+{project_name} includes the https://fedoraproject.org/wiki/Features/SSSD[System Security Services Daemon (SSSD)] plugin. SSSD is part of the Fedora and Red Hat Enterprise Linux (RHEL), and it provides access to multiple identities and authentication providers. SSSD also provides benefits such as failover and offline support. For more information, see https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/system-level_authentication_guide/sssd[the Red Hat Enterprise Linux Identity Management documentation].
+
+SSSD integrates with the FreeIPA identity management (IdM) server, providing authentication and access control. With this integration, {project_name} can authenticate against privileged access management (PAM) services and retrieve user data from SSSD. For more information about using Red Hat Identity Management in Linux environments, see https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/linux_domain_identity_authentication_and_policy_guide/index[the Red Hat Enterprise Linux Identity Management documentation].
+
+image:images/keycloak-sssd-freeipa-integration-overview.png[]
+
+{project_name} and SSSD communicate through read-only D-Bus interfaces. For this reason, the way to provision and update users is to use the FreeIPA/IdM administration interface. By default, the interface imports the username, email, first name, and last name.
+
+[NOTE]
+====
+{project_name} registers groups and roles automatically but does not synchronize them. The groups are imported from SSSD the first time the user is accessed and then they are managed entirely inside {project_name}. Any changes made by the administrator in {project_name} do not synchronize with SSSD or vice-versa.
+====
+
+==== FreeIPA/IdM server
+
+The https://quay.io/repository/freeipa/freeipa-server?tab=tags/[FreeIPA Container image] is available at https://quay.io/[Quay.io]. To set up the FreeIPA server, see the https://www.freeipa.org/page/Quick_Start_Guide[FreeIPA documentation].
+
+.Procedure
+. Run your FreeIPA server using this command:
++
+[source,bash,subs=+attributes]
+----
+ docker run --name freeipa-server-container -it \
+ -h server.freeipa.local -e PASSWORD=YOUR_PASSWORD \
+ -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+ -v /var/lib/ipa-data:/data:Z freeipa/freeipa-server
+----
++
+The parameter `-h` with `server.freeipa.local` represents the FreeIPA/IdM server hostname.
+Change `YOUR_PASSWORD` to a password of your own.
+
+. After the container starts, change the `/etc/hosts` file to include:
++
+[source,bash,subs=+attributes]
+----
+x.x.x.x     server.freeipa.local
+----
++
+If you do not make this change, you must set up a DNS server.
+
+. Use the following command to enroll your Linux server in the IPA domain so that the SSSD federation provider starts and runs on {project_name}:
++
+[source,bash,subs=+attributes]
+----
+ ipa-client-install --mkhomedir -p admin -w password
+----
+
+. Run the following command on the client to verify the installation is working:
++
+[source,bash,subs=+attributes]
+----
+ kinit admin
+----
+
+. Enter your password.
+. Add users to the IPA server using this command:
++
+[source,bash,subs=+attributes]
+----
+$ ipa user-add <username> --first=<first name> --last=<surname> --email=<email address> --phone=<telephoneNumber> --street=<street> --city=<city> --state=<state> --postalcode=<postal code> --password
+----
+
+. Force set the user's password using kinit.
++
+[source,bash,subs=+attributes]
+----
+ kinit <username>
+----
+
+. Enter the following to restore normal IPA operation:
++
+[source,bash,subs=+attributes]
+----
+kdestroy -A
+kinit admin
+----
+
+==== SSSD and D-Bus
+
+The federation provider obtains the data from SSSD using D-BUS. It authenticates the data using PAM.
+
+.Procedure
+. Install the sssd-dbus RPM.
++
+[source,bash,subs=+attributes]
+----
+$ sudo yum install sssd-dbus
+----
+
+. Run the following provisioning script:
++
+[source,bash,subs=+attributes]
+----
+$ bin/federation-sssd-setup.sh
+----
++
+The script can also be used as a guide to configure SSSD and PAM for {project_name}. It makes the following changes to `/etc/sssd/sssd.conf`:
++
+[source,bash,subs=+attributes]
+----
+  [domain/your-hostname.local]
+  ...
+  ldap_user_extra_attrs = mail:mail, sn:sn, givenname:givenname, telephoneNumber:telephoneNumber
+  ...
+  [sssd]
+  services = nss, sudo, pam, ssh, ifp
+  ...
+  [ifp]
+  allowed_uids = root, yourOSUsername
+  user_attributes = +mail, +telephoneNumber, +givenname, +sn
+----
++
+The `ifp` service is added to SSSD and configured to allow the OS user to interrogate the IPA server through this interface.
++
+The script also creates a new PAM service `/etc/pam.d/keycloak` to authenticate users via SSSD:
++
+[source,bash,subs=+attributes]
+----
+auth    required   pam_sss.so
+account required   pam_sss.so
+----
+
+. Run `dbus-send` to ensure the setup is successful.
++
+[source,bash,subs=+attributes]
+----
+dbus-send --print-reply --system --dest=org.freedesktop.sssd.infopipe /org/freedesktop/sssd/infopipe org.freedesktop.sssd.infopipe.GetUserAttr string:<username> array:string:mail,givenname,sn,telephoneNumber
+
+dbus-send --print-reply --system --dest=org.freedesktop.sssd.infopipe /org/freedesktop/sssd/infopipe org.freedesktop.sssd.infopipe.GetUserGroups string:<username>
+----
++
+If the setup is successful, each command displays the user's attributes and groups respectively. If there is a timeout or an error, the federation provider running on {project_name} cannot retrieve any data. This error usually happens because the server is not enrolled in the FreeIPA IdM server, or does not have permission to access the SSSD service.
++
+If you do not have permission to access the SSSD service, ensure that the user running the {project_name} server is in the `/etc/sssd/sssd.conf` file in the following section:
++
+[source,bash,subs=+attributes]
+----
+[ifp]
+allowed_uids = root, yourOSUsername
+----
++
+And the `ipaapi` system user is created inside the host. This user is necessary for the `ifp` service. Check the user is created in the system.
++
+[source,bash,subs=+attributes]
+----
+grep ipaapi /etc/passwd
+ipaapi:x:992:988:IPA Framework User:/:/sbin/nologin
+----
+
+==== Enabling the SSSD federation provider
+
+{project_name} uses https://github.com/hypfvieh/dbus-java[DBus-Java] project to communicate at a low level with D-Bus and https://github.com/java-native-access/jna[JNA] to authenticate via Operating System Pluggable Authentication Modules (PAM).
+
+Although now {project_name} contains all the needed libraries to run the `SSSD` provider, JDK version 21 is needed. Therefore the `SSSD` provider will only be displayed when the host configuration is correct and JDK 21 is used to run {project_name}.
+
+==== Configuring a federated SSSD store
+
+After the installation, configure a federated SSSD store.
+
+.Procedure
+. Click *User Federation* in the menu.
+. If everything is setup successfully the *Add Sssd providers* button will be displayed in the page. Click on it.
+. Assign a name to the new provider.
+. Click *Save*.
+
+You can now authenticate against {project_name} using a FreeIPA/IdM user and credentials.

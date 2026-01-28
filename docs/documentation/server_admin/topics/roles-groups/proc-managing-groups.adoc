@@ -1,0 +1,63 @@
+[id="proc-managing-groups_{context}"]
+= Groups
+[role="_abstract"]
+Groups in {project_name} manage a common set of attributes and role mappings for each user. Users can be members of any number of groups and inherit the attributes and role mappings assigned to each group.
+
+To manage groups, click *Groups* in the menu.
+
+.Groups
+image:images/groups.png[]
+
+Groups are hierarchical. A group can have multiple subgroups but a group can have only one parent. Subgroups inherit the attributes and role mappings from their parent. Users inherit the attributes and role mappings from their parent as well.
+
+If you have a parent group and a child group, and a user that belongs only to the child group, the user in the child group inherits the attributes and role mappings of both the parent group and the child group.
+
+The hierarchy of a group is sometimes represented using the group path. The path is the complete list of names that represents the hierarchy of a specific group, from top to bottom and separated by slashes `/` (similar to files in a File System). For example a path can be `/top/level1/level2` which means that `top` is a top level group and is parent of `level1`, which in turn is parent of `level2`. This path represents unambiguously the hierarchy for the group `level2`.
+
+Because of historical reasons {project_name}, does not escape slashes in the group name itself. Therefore a group named `level1/group` under `top` uses the path `/top/level1/group`, which is misleading. {project_name} can be started with the option `+--spi-group--jpa--escape-slashes-in-group-path+` to `true` and then the slashes in the name are escaped with the character `~`. The escape char marks that the slash is part of the name and has no hierarchical meaning. The previous path example would be `/top/level1~/group` when escaped.
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-group--jpa--escape-slashes-in-group-path=true
+----
+
+The following example includes a top-level *Sales* group and a child *North America* subgroup.
+
+To add a group:
+
+. Click the group.
+. Click *Create group*.
+. Enter a group name.
+. Click *Create*.
+. Click the group name.
++
+The group management page is displayed.
++
+.Group
+image:images/group.png[]
+
+Attributes and role mappings you define are inherited by the groups and users that are members of the group.
+
+To add a user to a group:
+
+. Click *Users* in the menu.
+. Click the user that you want to perform a role mapping on. If the user is not displayed, click *View all users*.
+. Click *Groups*.
+. Click *Join Group*.
+. Select a group from the dialog.
+. Select a group from the *Available Groups* tree.
+. Click *Join*.
++
+.Join group
+image:images/user-groups.png[]
+
+To remove a group from a user:
+
+. Click *Users* in the menu.
+. Click the user to be removed from the group.
+. Click *Leave* on the group table row.
+
+In this example, the user _jimlincoln_ is in the _North America_ group.  You can see _jimlincoln_ displayed under the *Members* tab for the group.
+
+.Group membership
+image:images/group-membership.png[]

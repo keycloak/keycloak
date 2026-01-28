@@ -1,0 +1,30 @@
+[id="con-role-scope-mappings_{context}"]
+
+[[_role_scope_mappings]]
+
+= Role scope mappings
+[role="_abstract"]
+On creation of an OIDC access token or SAML assertion, the user role mappings become claims within the token or assertion.  Applications use these claims to make access decisions on the resources controlled by the application.  {project_name} digitally signs access tokens and applications reuse them to invoke remotely secured REST services.  However, these tokens have an associated risk. An attacker can obtain these tokens and use their permissions to compromise your networks. To prevent this situation, use _Role Scope Mappings_.
+
+_Role Scope Mappings_ limit the roles declared inside an access token. When a client requests user authentication, the access token it receives contains only the role mappings that are explicitly specified for the client's scope. The result is that the permissions of each individual access token are limited instead of giving the client access to all the user's permissions.
+
+By default, each client gets all the role mappings of the user.
+You can view the role mappings for a client.
+
+.Procedure
+. Click *Clients* in the menu.
+. Click the client to go to the details.
+. Click the *Client scopes* tab.
+. Click the link in the row with _Dedicated scope and mappers for this client_
+. Click the *Scope* tab.
+
+.Full scope
+image:images/full-client-scope.png[Full scope]
+
+By default, the effective roles of scopes are every declared role in the realm. To change this default behavior, toggle *Full Scope Allowed* to *OFF* and declare the specific roles you want in each client.
+You can also use <<_client_scopes, client scopes>> to define the same role scope mappings for a set of clients.
+
+.Partial scope
+image:images/client-scope.png[Partial scope]
+
+See the <<_oidc_token_role_mappings, Token Role mappings section>> for details about the algorithm that adds the roles to the token.

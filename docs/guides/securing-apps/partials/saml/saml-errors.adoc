@@ -1,0 +1,21 @@
+
+[[_saml-errors]]
+== {project_name} specific errors
+
+{project_name} server can send an error to the client application in the SAML response, which may contain a SAML status such as:
+
+[source,xml]
+----
+<samlp:Status>
+  <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Responder">
+    <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:AuthnFailed"/>
+  </samlp:StatusCode>
+  <samlp:StatusMessage>authentication_expired</samlp:StatusMessage>
+</samlp:Status>
+----
+
+{project_name} sends this error when a user is authenticated and has an SSO session, but the authentication session expired in the current browser tab and hence {project_name} server cannot automatically do SSO
+re-authentication of the user and redirect back to client with successful response. When a client application receives this type of error, it is ideal to retry authentication immediately and send a new
+SAML request to the {project_name} server, which should typically always authenticate the user due to the SSO session and redirect back.
+The SAML adapter performs that retry automatically if the commented status is returned by the server.
+More details in the link:{adminguide_link}#_authentication-sessions[{adminguide_name}].

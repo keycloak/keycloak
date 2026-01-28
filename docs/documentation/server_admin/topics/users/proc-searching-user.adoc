@@ -1,0 +1,41 @@
+// Module included in the following assemblies:
+//
+// server_admin/topics/users.adoc
+
+[id="proc-searching-user_{context}"]
+= Searching for a user
+
+Search for a user to view detailed information about the user, such as the user's groups and roles. 
+
+.Prerequisite
+* You are in the realm where the user exists.
+
+== Default search
+
+.Procedure
+. Click *Users* in the main menu. This *Users* page is displayed.
+. Type the full name, last name, first name, or email address of the user you want to search for in the search box. The search returns all users that match your criteria.
++
+The criteria used to match users depends on the syntax used on the search box:
++
+.. `"somevalue"` -> performs exact search of the string `"somevalue"`;
+.. `\*somevalue*` -> performs infix search, akin to a `LIKE '%somevalue%'` DB query;
+.. `somevalue*` or `somevalue` -> performs prefix search, akin to a `LIKE 'somevalue%'` DB query.
+
+== Attribute search
+
+.Procedure
+. Click *Users* in the main menu. This *Users* page is displayed.
+. Click *Default search* button and switch it to *Attribute search*.
+. Click *Select attributes* button and specify the attributes to search by.
+. Check *Exact search* checkbox to perform exact match or keep it unchecked to use an infix search for attribute values.
+. Click *Search* button to perform the search. It returns all users that match the criteria.
+
+
+[NOTE]
+====
+Searches performed in the *Users* page encompass both {project_name}'s database and configured user federation backends, such as LDAP. Users found in federated backends will be imported into {project_name}'s database if they don't already exist there.
+====
+
+.Additional Resources
+* For more information on user federation, see <<_user-storage-federation,User Federation>>.

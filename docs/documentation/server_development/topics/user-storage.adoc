@@ -1,0 +1,30 @@
+[[_user-storage-spi]]
+== User Storage SPI
+
+You can use the User Storage SPI to write extensions to {project_name} to connect to external user databases and credential stores. The built-in LDAP and ActiveDirectory support is an implementation of this SPI in action. Out of the box, {project_name} uses its local database to create, update, and look up users and validate credentials. Often though, organizations have existing external proprietary user databases that they cannot migrate to {project_name}'s data model. For those situations, application developers can write implementations of the User Storage SPI to bridge the external user store and the internal user object model that {project_name} uses to log in users and manage them.
+
+When the {project_name} runtime needs to look up a user, such as when a user is logging in, it performs a number of steps to locate the user. It first looks to see if the user is in the user cache; if the user is found it uses that in-memory representation. Then it looks for the user within the {project_name} local database. If the user is not found, it then loops through User Storage SPI provider implementations to perform the user query until one of them returns the user the runtime is looking for. The provider queries the external user store for the user and maps the external data representation of the user to {project_name}'s user metamodel.
+
+User Storage SPI provider implementations can also perform complex criteria queries, perform CRUD operations on users, validate and manage credentials, or perform bulk updates of many users at once. It depends on the capabilities of the external store.
+
+User Storage SPI provider implementations are packaged and deployed similarly to (and often are) Jakarta EE components. They are not enabled by default, but instead must be enabled and configured per realm under the `User Federation` tab in the administration console.
+
+WARNING: If your user provider implementation is using some user attributes as the metadata attributes for linking/establishing the user identity,
+then please make sure that users are not able to edit the attributes and the corresponding attributes are read-only. The example is the `LDAP_ID` attribute, which the built-in {project_name}
+LDAP provider is using for to store the ID of the user on the LDAP server side. See the details in the link:{adminguide_link}#read_only_user_attributes[Threat model mitigation chapter].
+
+There are two sample projects in link:{quickstartRepo_link}[{quickstartRepo_name}]. Each quickstart has a `README` file with instructions on how to build, deploy, and test the sample project. The following table provides a brief description of the available User Storage SPI quickstarts:
+
+.User Storage SPI Quickstarts
+|===
+|Name |Description
+
+| {quickstartRepo_link}/tree/main/extension/user-storage-jpa[user-storage-jpa]
+| Demonstrates implementing a user storage provider using JPA.
+
+| {quickstartRepo_link}/tree/main/extension/user-storage-simple[user-storage-simple]
+| Demonstrates implementing a user storage provider using a simple properties file that contains username/password key pairs.
+
+|===
+
+In order to connect to the external database, you should use the {project_name} properties for the additional datasources described in the link:https://www.keycloak.org/server/db#multiple-datasources[Configure multiple datasources] guide.

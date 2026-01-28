@@ -1,0 +1,24 @@
+[id="proc_evaluating_client_scopes_{context}"]
+
+[role="_abstract"]
+The *Mappers* tab contains the protocol mappers and the *Scope* tab contains the role scope mappings declared for this client. They do not contain the mappers and scope mappings inherited from client scopes. It is possible to see the effective protocol mappers (that is the protocol mappers defined on the client itself as well as inherited from the linked client scopes) and the effective role scope mappings used when generating a token for a client.
+
+.Procedure
+. Click the *Client Scopes* tab for the client.
+. Open the sub-tab *Evaluate*.
+. Select the optional client scopes that you want to apply.
+
+This will also show you the value of the *scope* parameter. This parameter needs to be sent from the application to the {project_name} OpenID Connect authorization endpoint.
+
+[NOTE]
+====
+If your application uses the {securing_apps_base_link}/javascript-adapter[{project_name} JavaScript adapter], see its section to learn how to send the *scope* parameter with the desired value.
+====
+
+You can also simulate how the access token, ID token, or UserInfo response issued to this client looks for a particular selected user and for a specific value of the `audience` parameter. Note
+that the `audience` parameter is currently only supported for the token exchange grant. It is recommended to leave it empty when simulating any other grant.
+
+.Evaluating client scopes
+image:images/client-scopes-evaluate.png[]
+
+All examples are generated for the particular user and issued for the particular client, with the specified value of the *scope* parameter. The examples include all of the claims and role mappings used.

@@ -1,0 +1,458 @@
+---
+# Source: keycloak/templates/keycloak-db-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: keycloak-db-secret
+  namespace: keycloak
+type: Opaque
+data:
+  username: a2V5Y2xvYWs= # keycloak
+  password: c2VjcmV0OTk= # secret99
+---
+# Source: keycloak/templates/keycloak-initial-admin-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak-preconfigured-admin
+  namespace: keycloak
+type: kubernetes.io/basic-auth
+data:
+  password: YWRtaW4= # admin by default
+  username: YWRtaW4= # admin
+---
+# Source: keycloak/templates/keycloak-tls-secret.yaml
+apiVersion: v1
+data:
+  tls.crt: ...
+  tls.key: ...
+kind: Secret
+metadata:
+  name: keycloak-tls-secret
+  namespace: keycloak
+type: kubernetes.io/tls
+---
+# Source: keycloak/templates/keycloak-aurora-rootcert.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-aurora-rootcert
+  namespace: keycloak
+binaryData:
+  # https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.SSL.html
+  aurora.pem: ...
+---
+# Source: keycloak/templates/keycloak-providers-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-providers
+  namespace: keycloak
+binaryData:
+  keycloak-benchmark-dataset-999.0.0-SNAPSHOT.jar: ...
+---
+# Source: keycloak/templates/postgres/postgres-exporter-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-exporter
+  namespace: keycloak
+data:
+  pgexporter-queries.yaml: |
+    # This is configuration file for postgres_exporter.
+    # Add custom metrics via SQL statements here as described here: https://github.com/prometheus-community/postgres_exporter#adding-new-metrics-via-a-config-file
+    # See https://github.com/prometheus-community/postgres_exporter/blob/master/queries.yaml for examples.
+    pg_locks_waiting:
+      # language=SQL
+      query: |
+        WITH q_locks AS (select * from pg_locks where granted = false and pid != pg_backend_pid())
+        SELECT (select current_database()) as datname, lower(lockmodes) AS mode, coalesce((select count(*) FROM q_locks WHERE mode = lockmodes), 0) AS count FROM
+        unnest('{AccessShareLock, ExclusiveLock, RowShareLock, RowExclusiveLock, ShareLock, ShareRowExclusiveLock, AccessExclusiveLock, ShareUpdateExclusiveLock}'::text[]) lockmodes;
+      metrics:
+        - datname:
+            usage: "LABEL"
+            description: "Database name"
+        - mode:
+            usage: "LABEL"
+            description: "Lock type"
+        - count:
+            usage: "GAUGE"
+            description: "Number of locks"
+---
+# Source: keycloak/templates/keycloak-jvmdebug-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak-jvmdebug
+  namespace: keycloak
+spec:
+  type: NodePort
+  ports:
+    - name: jvmdebug
+      port: 8787
+      protocol: TCP
+      nodePort: 30012
+  selector:
+    app: keycloak
+  sessionAffinity: None
+---
+# Source: keycloak/templates/postgres/postgres-deployment.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-headless
+  namespace: keycloak
+  labels:
+    app: postgres
+spec:
+  clusterIP: None
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
+  selector:
+    app: postgres
+---
+# Source: keycloak/templates/postgres/postgres-exporter.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: postgres-exporter
+  name: postgres-exporter
+  namespace: keycloak
+spec:
+  ports:
+    - port: 9187
+      name: metrics
+      protocol: TCP
+      targetPort: 9187
+  selector:
+    app: postgres-exporter
+  sessionAffinity: None
+  type: ClusterIP
+---
+# Source: keycloak/templates/postgres/postgres-nodeport.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-nodeport
+  namespace: keycloak
+  labels:
+    app: postgres
+spec:
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 5432
+      nodePort: 30009
+  selector:
+    app: postgres
+---
+# Source: keycloak/templates/postgres/postgres-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: postgres
+  name: postgres
+  namespace: keycloak
+spec:
+  ports:
+    - port: 5432
+      protocol: TCP
+      targetPort: 5432
+  selector:
+    app: postgres
+  sessionAffinity: None
+  type: ClusterIP
+---
+# Source: keycloak/templates/postgres/postgres-exporter.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: postgres-exporter
+  name: postgres-exporter
+  namespace: keycloak
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: postgres-exporter
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: postgres-exporter
+      annotations:
+        checksum: ea6be7f450cc15ae55e469caf5a789a1cfd67ff8612d737ec5d85c83d528ee52
+    spec:
+      containers:
+        - env:
+            - name: DATA_SOURCE_NAME
+              value: postgresql://keycloak:secret99@postgres:5432/keycloak?sslmode=disable
+            - name: PG_EXPORTER_EXTEND_QUERY_PATH
+              value: /conf/pgexporter-queries.yaml
+          image: quay.io/prometheuscommunity/postgres-exporter:v0.10.1
+          imagePullPolicy: Always
+          startupProbe:
+            httpGet:
+              path: /metrics
+              port: 9187
+            failureThreshold: 20
+            initialDelaySeconds: 10
+            periodSeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: 9187
+            failureThreshold: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 9187
+            failureThreshold: 10
+            periodSeconds: 10
+          name: postgres-exporter
+          ports:
+            - containerPort: 9187
+              name: metrics
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /conf
+              name: config
+      restartPolicy: Always
+      volumes:
+        - name: config
+          configMap:
+            name: postgres-exporter
+---
+# Source: keycloak/templates/postgres/postgres-deployment.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: postgres
+  name: postgres
+  namespace: keycloak
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: postgres
+  serviceName: postgres-headless
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - imagePullPolicy: Always
+          env:
+            - name: POSTGRES_PASSWORD
+              value: secret99
+            - name: POSTGRES_USER
+              value: keycloak
+            - name: POSTGRES_DB
+              value: keycloak
+          image: mirror.gcr.io/postgres:15
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgres-data
+          resources:
+            requests:
+              cpu: "2"
+          startupProbe:
+            tcpSocket:
+              port: 5432
+            failureThreshold: 20
+            initialDelaySeconds: 10
+            periodSeconds: 2
+          readinessProbe:
+            tcpSocket:
+              port: 5432
+            failureThreshold: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 5432
+            failureThreshold: 10
+            periodSeconds: 10
+          name: postgres
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+      restartPolicy: Always
+      # The rhel9/postgresql-13 is known to take ~30 seconds to shut down
+      # As this is a deployment with ephemeral storage, there is no need to wait as the data will be gone anyway
+      terminationGracePeriodSeconds: 0
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Retain
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+# Source: keycloak/templates/keycloak.yaml
+# There are several callouts in this YAML marked with `# <1>' etc. See 'running/keycloak-deployment.adoc` for the details.
+# tag::keycloak[]
+# tag::keycloak-ispn[]
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak
+  namespace: keycloak
+spec:
+  # end::keycloak-ispn[]
+  hostname:
+    hostname: <KEYCLOAK_URL_HERE>
+  resources:
+    requests:
+      cpu: "2"
+      memory: "1250M"
+    limits:
+      cpu: "6"
+      memory: "2250M"
+  db:
+    vendor: postgres
+    url: jdbc:aws-wrapper:postgresql://<AWS_AURORA_URL_HERE>:5432/keycloak?sslmode=verify-full&sslrootcert=/opt/keycloak/conf/truststores/configmap-keycloak-aurora-rootcert/aurora.pem # <1>
+    poolMinSize: 30 # <2>
+    poolInitialSize: 30
+    poolMaxSize: 30
+    usernameSecret:
+      name: keycloak-db-secret
+      key: username
+    passwordSecret:
+      name: keycloak-db-secret
+      key: password
+  image: <KEYCLOAK_IMAGE_HERE> # <3>
+  startOptimized: false # <3>
+  features:
+    enabled:
+      - multi-site # <4>
+  # tag::keycloak-ispn[]
+  additionalOptions:
+    # end::keycloak-ispn[]
+    # end::keycloak[]
+    - name: http-metrics-histograms-enabled
+      value: 'true'
+    - name: http-metrics-slos
+      value: '5,10,25,50,250,500'
+    # tag::keycloak[]
+    # end::keycloak[]
+    # tag::keycloak-queue-size[]
+    - name: http-max-queued-requests
+      value: "1000"
+    # end::keycloak-queue-size[]
+    # tag::keycloak[]
+    - name: log-console-output
+      value: json
+    - name: metrics-enabled # <5>
+      value: 'true'
+    - name: event-metrics-user-enabled
+      value: 'true'
+    # end::keycloak[]
+    # This block is just for documentation purposes as we need both versions of Infinispan config, with and without numbers to corresponding options
+    # tag::keycloak[]
+    - name: cache-remote-host
+      value: "infinispan.keycloak.svc"
+    - name: cache-remote-port
+      value: "11222"
+    - name: cache-remote-username
+      secret:
+        name: remote-store-secret
+        key: username
+    - name: cache-remote-password
+      secret:
+        name: remote-store-secret
+        key: password
+    - name: db-driver
+      value: software.amazon.jdbc.Driver
+  http:
+    tlsSecret: keycloak-tls-secret
+  instances: 3
+  # end::keycloak[]
+  serviceMonitor:
+    enabled: true
+  # tag::keycloak[]
+  truststores:
+    aurora:
+      configMap:
+        name: keycloak-aurora-rootcert # <6>
+  # end::keycloak[]
+  unsupported:
+    podTemplate:
+      metadata:
+        annotations:
+          checksum/config: ab21fb8e92d83105cdb82d375d7eba40bef80b0542bc0d594c5e46de50b07d34-93971346f578300330ab5caf025f596730a3c95c08feb9ec53787b03b9f407b8-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+      spec:
+        containers:
+          - env:
+              # We want to have an externally provided username and password, therefore, we override those two environment variables
+              - name: KC_BOOTSTRAP_ADMIN_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: keycloak-preconfigured-admin
+                    key: username
+                    optional: false
+              - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: keycloak-preconfigured-admin
+                    key: password
+                    optional: false
+              - name: JAVA_OPTS_APPEND
+                value: >
+                  -Djdk.tracePinnedThreads=full
+
+            ports:
+            # readinessProbe:
+            #   exec:
+            #     command:
+            #       - 'true'
+            # livenessProbe:
+            #   exec:
+            #     command:
+            #       - 'true'
+            volumeMounts:
+              - name: keycloak-providers
+                mountPath: /opt/keycloak/providers/keycloak-benchmark-dataset-999.0.0-SNAPSHOT.jar
+                subPath: keycloak-benchmark-dataset-999.0.0-SNAPSHOT.jar
+                readOnly: true
+        volumes:
+          - name: keycloak-providers
+            configMap:
+              name: keycloak-providers
+---
+# Source: keycloak/templates/postgres/postgres-exporter.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: postgres-exporter
+  name: postgres-exporter
+  namespace: keycloak
+spec:
+  endpoints:
+    - port: metrics
+  jobLabel: jobLabel
+  selector:
+    matchLabels:
+      app: postgres-exporter

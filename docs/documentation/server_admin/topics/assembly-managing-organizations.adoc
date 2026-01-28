@@ -1,0 +1,12 @@
+[id="assembly-managing-organizations_{context}"]
+[[_managing_organizations]]
+==  Managing organizations
+
+include::organizations/intro.adoc[leveloffset=+2]
+include::organizations/managing-organization.adoc[leveloffset=+2]
+include::organizations/managing-attributes.adoc[leveloffset=+2]
+include::organizations/managing-members.adoc[leveloffset=+2]
+include::organizations/managing-identity-providers.adoc[leveloffset=+2]
+include::organizations/authenticating-members.adoc[leveloffset=+2]
+include::organizations/mapping-organization-claims.adoc[leveloffset=+2]
+

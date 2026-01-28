@@ -1,0 +1,11 @@
+<#macro ifProduct>
+ifeval::[{project_product} == true]
+<#nested>
+endif::[]
+</#macro>
+
+<#macro ifCommunity>
+ifeval::[{project_product} != true]
+<#nested>
+endif::[]
+</#macro>

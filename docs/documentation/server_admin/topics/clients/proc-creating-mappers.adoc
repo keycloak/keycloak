@@ -1,0 +1,13 @@
+[id="proc-creating-mappers_{context}"]
+
+[role="_abstract"]
+You can add mapper types as follows:
+
+.Procedure
+. Go to the *Mappers* tab.
+. Click *Configure a new mapper*.
++
+.Add mapper
+image:images/add-mapper.png[]
++
+. Select a *Mapper Type* from the list box.

@@ -1,0 +1,94 @@
+[id="con-protocol-mappers_{context}"]
+[[_protocol-mappers]]
+
+= OIDC token and SAML assertion mappings
+
+[role="_abstract"]
+Applications receiving ID tokens, access tokens, or SAML assertions may require different roles and user metadata.
+
+You can use {project_name} to:
+
+* Hardcode roles, claims and custom attributes.
+* Pull user metadata into a token or assertion.
+* Rename roles.
+
+You perform these actions in the *Mappers* tab in the Admin Console.
+
+.Mappers tab
+image:images/mappers-oidc.png[]
+
+New clients do not have built-in mappers, but they can inherit some mappers from client scopes. See the <<_client_scopes, client scopes section>> for more details.
+
+Protocol mappers map items (such as an email address, for example) to
+a specific claim in the identity and access token. The function of a mapper should be self-explanatory from its name. You  add pre-configured mappers by clicking *Add Builtin*.
+
+Each mapper has a set of common settings. Additional settings are available, depending on the mapper type. Click *Edit* next to a mapper to access the configuration screen to adjust these settings.
+
+.Mapper config
+image:images/mapper-config.png[]
+
+Details on each option can be viewed by hovering over its tooltip.
+
+You can use most OIDC mappers to control where the claim gets placed. You opt to include or exclude the claim from the _id_ and _access_ tokens by adjusting the *Add to ID token* and *Add to access token* switches.
+
+include::proc-creating-mappers.adoc[]
+
+[[_protocol-mappers_priority]]
+== Priority order
+
+Mapper implementations have _priority order_. _Priority order_ is not the configuration property of the mapper. It is the property of the concrete implementation of the mapper.
+
+Mappers are sorted by the order in the list of mappers. The changes in the token or assertion are applied in that order with the lowest applying first. Therefore, the implementations that are dependent on other implementations are processed in the necessary order.
+
+For example, to compute the roles which will be included with a token:
+
+. Resolve audiences based on those roles.
+. Process a JavaScript script that uses the roles and audiences already available in the token.
+
+[[_protocol-mappers_oidc-user-session-note-mappers]]
+== OIDC user session note mappers
+
+User session details are defined using mappers and are automatically included when you use or enable a feature on a client. Click *Add builtin* to include session details.
+
+Impersonated user sessions provide the following details:
+
+* *IMPERSONATOR_ID*: The ID of an impersonating user.
+* *IMPERSONATOR_USERNAME*: The username of an impersonating user.
+
+Service account sessions provide the following details:
+
+* *clientId*: The client ID of the service account.
+* *client_id*: The client ID of the service account.
+* *clientAddress*: The remote host IP of the service account's authenticated device.
+* *clientHost*: The remote host name of the service account's authenticated device.
+
+== Script mapper
+
+Use the *Script Mapper* to map claims to tokens by running user-defined JavaScript code. For more details about deploying scripts to the server, see link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
+
+When scripts deploy, you should be able to select the deployed scripts from the list of available mappers.
+
+== Pairwise subject identifier mapper
+
+Subject claim _sub_ is mapped by default by *Subject (sub)* protocol mapper in the default client scope *basic*.
+
+To use a pairwise subject identifier by using a protocol mapper such as *Pairwise subject identifier*, you can remove the *Subject (sub)* protocol mapper from the *basic* client scope.
+However it is not strictly needed as the *Subject (sub)* protocol mapper is executed before the *Pairwise subject identifier* mapper and hence the pairwise value will override the value added
+by the Subject mapper. This is due to the <<_protocol-mappers_priority, priority>> of the Subject mapper. So the only advantage of removing the built-in *Subject (sub)* mapper might be to
+save a little bit of performance by avoiding the use of the protocol mapper, which may not have any effect.
+
+[[_using_lightweight_access_token]]
+== Using lightweight access token
+The access token in {project_name} contains sensitive information, including Personal Identifiable Information (PII).
+Therefore, if the resource server does not want to disclose this type of information to third party entities such as clients, {project_name} supports lightweight access tokens that remove PII from access tokens.
+Further, when the resource server acquires the PII removed from the access token, it can acquire the PII by sending the access token to {project_name}'s token introspection endpoint.
+
+Information that cannot be removed from a lightweight access token::
+  Protocol mappers can controls which information is put onto an access token and the lightweight access token use the protocol mappers. Therefore, the following information cannot be removed from the lightweight access. +
+  `exp`, `iat`, `jti`, `iss`, `typ`, `azp`, `sid`, `scope`, `cnf`
+
+Using a lightweight access token in {project_name}::
+  By applying `use-lightweight-access-token` executor of <<_client_policies, client policies>> to a client, the client can receive a lightweight access token instead of an access token. The lightweight access token contains a claim controlled by a protocol mapper where its setting `Add to lightweight access token`(default OFF) is turned ON. Also, by turning ON its setting `Add to token introspection` of the protocol mapper, the client can obtain the claim by sending the access token to {project_name}'s token introspection endpoint.
+
+Introspection endpoint::
+  In some cases, it might be useful to trigger the token introspection endpoint with the HTTP header `Accept: application/jwt` instead of `Accept: application/json`, which can be useful especially for lightweight access tokens. See the details of *Token Introspection endpoint* in the link:{securing_apps_link}[securing apps] section.

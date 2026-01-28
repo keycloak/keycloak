@@ -1,0 +1,7 @@
+{
+  "vct": "https://credentials.example.com/identity_credential",
+  "given_name": "John",
+  "cat": 123,
+  "addr": {"city": "Douala", "country": "CM"},
+  "colors": ["red", "green"]
+}

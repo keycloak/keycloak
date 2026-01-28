@@ -1,0 +1,12 @@
+
+[[managing-user-sessions]]
+== Managing user sessions
+
+When users log into realms, {project_name} maintains a user session for each user and remembers each client visited by the user within the session. Realm administrators can perform multiple actions on each user session:
+
+* View login statistics for the realm.
+* View active users and where they logged in.
+* Log a user out of their session.
+* Revoke tokens.
+* Set up token timeouts.
+* Set up session timeouts.

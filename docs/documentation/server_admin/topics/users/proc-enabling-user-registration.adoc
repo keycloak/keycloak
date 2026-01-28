@@ -1,0 +1,16 @@
+// Module included in the following assemblies:
+//
+// con-user-registration.adoc
+
+[id="proc-enabling-user-registration_{context}"]
+= Enabling user registration
+
+[role="_abstract"]
+Enable users to self-register.
+
+.Procedure
+. Click *Realm Settings* in the main menu.  
+. Click the *Login* tab.  
+. Toggle *User Registration* to *ON*. 
+
+After you enable this setting, a *Register* link displays on the login page of the Admin Console.

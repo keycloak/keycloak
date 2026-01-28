@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~ Copyright 2022 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<cache xmlns="http://maven.apache.org/BUILD-CACHE-CONFIG/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://maven.apache.org/BUILD-CACHE-CONFIG/1.0.0 https://maven.apache.org/xsd/build-cache-config-1.0.0.xsd">
+    <configuration>
+        <enabled>false</enabled>
+        <hashAlgorithm>XX</hashAlgorithm>
+    </configuration>
+    <input>
+        <global>
+            <!-- matching all files, as there is no good file pattern to match files in META-INF/services by their file name -->
+            <glob>{*}</glob>
+        </global>
+        <plugins>
+            <plugin groupId="com.github.eirslett" artifactId="frontend-maven-plugin">
+                <dirScan>
+                    <excludes>
+                        <exclude tagName="installDirectory" />
+                    </excludes>
+                </dirScan>
+            </plugin>
+        </plugins>
+    </input>
+    <executionControl>
+        <runAlways>
+            <plugins>
+                <plugin artifactId="maven-failsafe-plugin"/>
+                <!-- The Maven Frontend plugin will build all JS parts in the subfolders, and has its own caching, therefore, run it always -->
+                <plugin groupId="com.github.eirslett" artifactId="frontend-maven-plugin"/>
+            </plugins>
+            <goalsLists>
+                <goalsList artifactId="maven-install-plugin">
+                    <goals>
+                        <goal>install</goal>
+                    </goals>
+                </goalsList>
+            </goalsLists>
+        </runAlways>
+        <reconcile>
+            <plugins>
+                <plugin artifactId="maven-surefire-plugin" goal="test">
+                    <reconciles>
+                        <!-- might reconsider later: if not putting them here, it might be simpler to run local tests incrementally -->
+                        <reconcile propertyName="skip" skipValue="true"/>
+                        <reconcile propertyName="skipExec" skipValue="true"/>
+                        <reconcile propertyName="skipTests" skipValue="true"/>
+                        <reconcile propertyName="testFailureIgnore" skipValue="true"/>
+                    </reconciles>
+                </plugin>
+            </plugins>
+        </reconcile>
+    </executionControl>
+</cache>

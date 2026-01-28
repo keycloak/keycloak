@@ -1,0 +1,60 @@
+[[_migrate_db]]
+
+== Migrating the database
+
+{project_name} can automatically migrate the database schema, or you can choose to do it manually. By default the
+database is automatically migrated when you start the new installation for the first time.
+
+[NOTE]
+====
+Before you migrate the database, shut down all {project_name} nodes running the old version of {project_name}.
+====
+
+[NOTE]
+====
+Migration is not supported with the default H2 based `dev-file` database type.
+====
+
+=== Automatic relational database migration
+
+To perform an automatic migration, start the server connected to the desired database.  If the database schema has changed for the new server version, the migration starts automatically unless the database has too many records.
+
+For example, creating an index on tables with millions of records can be time-consuming and cause a major service disruption.  Therefore, a threshold of `300000` records exists for automatic migration.  If the number of records exceeds this threshold, the index is not created. Instead, you find a warning in the server logs with the SQL commands that you can apply manually.
+
+To change the threshold, set the `index-creation-threshold` property, value for the `connections-liquibase` provider:
+
+[source,bash]
+----
+kc.[sh|bat] start --spi-connections-liquibase--quarkus--index-creation-threshold=300000
+----
+
+You can disable this feature by setting it to zero or a negative number:
+
+[source,bash]
+----
+kc.[sh|bat] start --spi-connections-liquibase--quarkus--index-creation-threshold=0
+----
+
+=== Manual relational database migration
+
+To enable manual upgrading of the database schema, set the `migration-strategy` property value to "manual" for the
+default `connections-jpa` provider:
+
+[source,bash]
+----
+kc.[sh|bat] start --spi-connections-jpa--quarkus--migration-strategy=manual
+----
+
+When you start the server with this configuration, the server checks if the database needs to be migrated. If migration is needed, the required changes are written to the `bin/keycloak-database-update.sql` SQL file. You can review and manually run these commands against the database.
+
+To change the path and name of the exported SQL file, set the `migration-export` property for the
+default `connections-jpa` provider:
+
+[source,bash]
+----
+kc.[sh|bat] start --spi-connections-jpa--quarkus--migration-export=<path>/<file.sql>
+----
+
+For further details on how to apply this file to the database, see the documentation for your relational database.
+After the changes have been written to the file, the server exits.
+

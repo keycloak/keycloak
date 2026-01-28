@@ -1,0 +1,146 @@
+[[red-hat-single-sign-on-conventions]]
+=== Red Hat Single Sign-On Terms and Conventions
+
+[discrete]
+==== ID (noun)
+[[ssoID]]
+*Description*: as in, service ID
+
+*Use it*: with caution
+
+*Incorrect forms*: id
+
+*See also*:
+
+
+[discrete]
+==== identity management (noun)
+[[identitymanage]]
+*Description*:
+
+*Use it*: yes
+
+*Incorrect forms*: 
+
+*See also*: xref:idm[IdM]
+
+[discrete]
+==== IdM (noun)
+[[idm]]
+*Description*: acceptable abbreviation for identity management
+
+*Use it*: yes
+
+*Incorrect forms*: IDM, idm
+
+*See also*: xref:identitymanage[identity management]
+
+[discrete]
+==== identity provider (noun)
+[[identityprovider]]
+*Description*:
+
+*Use it*: yes
+
+*Incorrect forms*: 
+
+*See also*: xref:idp[IdP]
+
+[discrete]
+==== IdP (noun)
+[[idp]]
+*Description*: acceptable abbreviation for identity provider
+
+*Use it*: yes
+
+*Incorrect forms*: IDP, idp
+
+*See also*: xref:identityprovider[identity provider]
+
+[discrete]
+==== Red Hat Single Sign-On (noun)
+[[redhatsinglesignon]]
+*Description*: Product name for Red Hat Single Sign-On
+
+*Use it*: yes
+
+*Incorrect forms*: Red Hat single sign-on, Red Hat Single Sign-on, single sign-on
+
+*See also*: xref:rhsso[RH-SSO]
+
+[discrete]
+==== Red Hat Single Sign-On Server (noun)
+[[redhatsinglesignonserver]]
+*Description*: Product name for Red Hat Single Sign-On Server
+
+*Use it*: yes
+
+*Incorrect forms*: Red Hat single sign-on server, Red Hat Single Sign-on server, single sign-on server
+
+*See also*: 
+
+[discrete]
+==== RH-SSO (noun)
+[[rhsso]]
+*Description*: Product abbreviation for Red Hat Single Sign-On
+
+*Use it*: yes
+
+*Incorrect forms*: RHSSO, SSO
+
+*See also*: xref:redhatsinglesignon[Red Hat Single Sign-On]
+
+[discrete]
+==== SAML (noun)
+[[saml]]
+*Description*: Abbreviation for Security Assertion Markup Language
+
+*Use it*: yes
+
+*Incorrect forms*: saml
+
+*See also*: 
+
+[discrete]
+==== service provider (noun)
+[[serviceprovider]]
+*Description*: 
+
+*Use it*: yes
+
+*Incorrect forms*: Service Provider
+
+*See also*: xref:sp[SP]
+
+[discrete]
+==== single sign-on (noun)
+[[sso]]
+*Description*: Generic term for single sign-on
+
+*Use it*: yes
+
+*Incorrect forms*: sso
+
+*See also*: 
+
+[discrete]
+==== SP (noun)
+[[sp]]
+*Description*: Acceptable abbreviation for service provider
+
+*Use it*: yes
+
+*Incorrect forms*: sp
+
+*See also*: xref:serviceprovider[service provider]
+
+[discrete]
+==== SSSD (noun)
+[[sssd]]
+*Description*: Abbreviation for system security services daemon
+
+*Use it*: yes
+
+*Incorrect forms*: sssd
+
+*See also*: 

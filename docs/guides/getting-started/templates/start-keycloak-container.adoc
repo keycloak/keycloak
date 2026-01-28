@@ -1,0 +1,17 @@
+<#import "/templates/profile.adoc" as profile>
+
+== Start {project_name}
+
+From a terminal, enter the following command to start {project_name}:
+
+[source,bash,subs="attributes+"]
+----
+{containerCommand} run -p 127.0.0.1:8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:{version} start-dev
+----
+
+This command starts {project_name} exposed on the local port 8080 and creates an initial admin user with the username `admin`
+and password `admin`.
+
+<@profile.ifCommunity>
+Container images are published at https://quay.io/repository/keycloak/keycloak?tab=tags[Keycloak's Quay.io organization].
+</@profile.ifCommunity>

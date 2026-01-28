@@ -1,0 +1,104 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Kubernetes"
+summary="Get started with {project_name} on Kubernetes.">
+
+:links-admin-console: {project_name} Admin Console
+:links-account-console: {project_name} Account Console
+
+== Before you start
+
+include::templates/hw-requirements.adoc[]
+
+Make sure you have Minikube installed, ideally with the Ingress addon enabled.
+
+To check if you have the Ingress addon enabled, enter the following command:
+
+[source,bash,subs="attributes+"]
+----
+minikube addons list
+----
+
+If the Ingress addon is not enabled, enter the following command to enable it:
+
+[source,bash,subs="attributes+"]
+----
+minikube addons enable ingress
+----
+
+== Start {project_name}
+
+The {project_name} QuickStarts repository includes some example files to help deploy {project_name} to Kubernetes.
+
+As a first step, create the {project_name} statefulset and service by entering the following command:
+
+[source,bash,subs="attributes+"]
+----
+kubectl create -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/refs/heads/main/kubernetes/keycloak.yaml
+----
+
+This command starts {project_name} on Kubernetes and creates an initial admin user with the username `admin` and password
+`admin`.
+
+NOTE: If you will eventually want more than one server replica, please see the <@links.gettingstarted id="getting-started-scaling-and-tuning" anchor="horizontal-scaling" /> {section}.
+
+=== Access {project_name} with Ingress addon enabled
+
+Now create an Ingress for {project_name} by entering the following command:
+
+[source,bash,subs="attributes+"]
+----
+wget -q -O - https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/refs/heads/main/kubernetes/keycloak-ingress.yaml | \
+sed "s/KEYCLOAK_HOST/keycloak.$(minikube ip).nip.io/" | \
+kubectl create -f -
+----
+
+If `wget` and `sed` are not available, download the file and manually edit the file replacing `KEYCLOAK_HOST`
+with `keycloak.<minikube ip address>.nip.io`.
+
+Enter the following command to see the {project_name} URLs:
+
+[source,bash,subs="attributes+"]
+----
+KEYCLOAK_URL=https://keycloak.$(minikube ip).nip.io &&
+echo "" &&
+echo "{project_name}:                 $KEYCLOAK_URL" &&
+echo "{project_name} Admin Console:   $KEYCLOAK_URL/admin" &&
+echo "{project_name} Account Console: $KEYCLOAK_URL/realms/myrealm/account" &&
+echo ""
+----
+
+=== Access {project_name} without Ingress
+
+If the Ingress addon is not enabled, enter the following command in a separate shell:
+
+[source,bash,subs="attributes+"]
+----
+minikube tunnel
+----
+
+You can now access {project_name} from the following URL:
+
+[source,bash,subs="attributes+"]
+----
+KEYCLOAK_URL=http://$(minikube ip):$(kubectl get services/keycloak -o go-template='{{(index .spec.ports 0).nodePort}}') &&
+echo "" &&
+echo "{project_name}:                 $KEYCLOAK_URL" &&
+echo "{project_name} Admin Console:   $KEYCLOAK_URL/admin" &&
+echo "{project_name} Account Console: $KEYCLOAK_URL/realms/myrealm/account" &&
+echo ""
+----
+
+Remember these URLs. You need them as you follow the instructions in this {section}. The URL for the Account Console does not work yet as you need to create the realm first.
+
+include::templates/realm-config.adoc[]
+
+include::templates/login-to-account.adoc[]
+
+include::templates/first-app.adoc[]
+
+include::templates/next.adoc[]
+
+</@tmpl.guide>

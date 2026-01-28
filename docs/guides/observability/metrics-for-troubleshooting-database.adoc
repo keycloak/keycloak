@@ -1,0 +1,43 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Database Metrics"
+summary="Use metrics to describe {project_name}'s connection to the database."
+tileVisible="false"
+>
+
+<#include "partials/prerequisites-metrics-troubleshooting.adoc" />
+
+== Database connection pool metrics
+
+Configure {project_name} to use a fixed size database connection pool.
+See the <@links.ha id="single-cluster-concepts-database-connections"/> {section} for more information.
+
+[TIP]
+====
+If there is a high count of threads waiting for a database connection, increasing the database connection pool size is not always the best option. It might overload the database which would then become the bottleneck. Consider the following options instead:
+
+* Reduce the number of HTTP worker threads using the option `http-pool-max-threads` to make it match the available database connections, and thereby reduce contention and resource usage in {project_name} and increase throughput.
+* Check which database statements are executed on the database. If you see, for example, a lot of information about clients and groups being fetched, and the `users` and `realms` cache are full, this might indicate that it is time to increase the sizes of those caches and see if this reduces your database load.
+====
+
+|===
+|Metric |Description
+
+m| agroal_available_count
+| Idle database connections.
+
+m| agroal_active_count
+| Database connections used in ongoing transactions.
+
+m| agroal_awaiting_count
+| Threads waiting for a database connection to become available.
+
+|===
+
+== Next steps
+
+Return back to the <@links.observability id="metrics-for-troubleshooting"/> or proceed to <@links.observability id="metrics-for-troubleshooting-http"/>.
+
+</@tmpl.guide>

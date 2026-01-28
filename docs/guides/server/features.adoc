@@ -1,0 +1,112 @@
+<#import "/templates/features.adoc" as features>
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+
+<@tmpl.guide
+title="Enabling and disabling features"
+summary="Configure {project_name} to use optional features."
+includedOptions="features features-* feature-*">
+
+{project_name} has packed some functionality in features, including some disabled features, such as Technology Preview and deprecated features. Other features are enabled by default, but you can disable them if they do not apply to your use of {project_name}.
+
+== Enabling features
+
+Some supported features, and all preview features, are disabled by default.
+You can enable feature either via single option or including it into the list of enabled feature.
+
+=== Single option
+
+You can enable the specific feature `<name>` as follows:
+
+<@kc.build parameters="--feature-<name>=enabled|disabled|vX"/>
+
+Possible values are `enabled`, `disabled`, or a specific version of the feature that should be enabled.
+For example, to enable `rolling-updates:v2` and `token-exchange`, enter this command:
+
+<@kc.build parameters="--feature-rolling-updates=v2 --feature-token-exchange=enabled"/>
+
+The single-option mechanism is useful when updating long feature lists is cumbersome or when you want to modify a specific feature without overriding the entire list in a pre-built image.
+
+=== List of enabled features
+
+<@kc.build parameters="--features=\"<name>[,<name>]\""/>
+
+For example, to enable `docker` and `token-exchange`, enter this command:
+
+<@kc.build parameters="--features=\"docker,token-exchange\""/>
+
+To enable all preview features, enter this command:
+
+<@kc.build parameters="--features=\"preview\""/>
+
+=== Versioning
+
+Enabled feature may be versioned, or unversioned.  If you use a versioned feature name, e.g. feature:v1, that exact feature version will be enabled as long as it still exists in the runtime.  If you instead use an unversioned name, e.g. just feature, the selection of the particular supported feature version may change from release to release according to the following precedence:
+
+. The highest default supported version
+. The highest non-default supported version
+. The highest deprecated version
+. The highest preview version
+. The highest experimental version
+
+== Disabling features
+
+To disable a feature that is enabled by default, you can use a single option or a list of disabled features.
+When a feature is disabled, all versions of that feature are disabled.
+
+=== Single option
+
+You can disable the specific feature `<name>` as follows:
+
+<@kc.build parameters="--feature-<name>=disabled"/>
+
+For example, to disable `dpop` and `recovery-codes`, enter this command:
+
+<@kc.build parameters="--feature-dpop=disabled --feature-recovery-codes=disabled"/>
+
+The single-option mechanism is useful when updating long feature lists is cumbersome or when you want to modify a specific feature without overriding the entire list in a pre-built image.
+
+=== List of disabled features
+
+<@kc.build parameters="--features-disabled=\"<name>[,<name>]\""/>
+
+For example to disable `impersonation`, enter this command:
+
+<@kc.build parameters="--features-disabled=\"impersonation\""/>
+
+It is not allowed to have a feature in both the `features-disabled` list and the `features` list.
+
+== Supported features
+
+The following list contains supported features that are enabled by default, and can be disabled if not needed.
+
+<@features.table ctx.features.supported/>
+
+=== Disabled by default
+
+The following list contains supported features that are disabled by default, and can be enabled if needed.
+
+<@features.table ctx.features.supportedDisabledByDefault/>
+
+== Preview features
+
+Preview features are disabled by default and are not recommended for use in production.
+These features may change or be removed at a future release.
+
+<@features.table ctx.features.preview/>
+
+== Deprecated features
+
+<#if ctx.features.deprecated?has_content>
+
+The following list contains deprecated features that will be removed in a future release. These features are disabled by default.
+
+<@features.table ctx.features.deprecated/>
+
+<#else>
+
+There are no deprecated features in this {project_name} release.
+
+</#if>
+
+</@tmpl.guide>

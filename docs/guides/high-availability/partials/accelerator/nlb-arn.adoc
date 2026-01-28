@@ -1,0 +1,21 @@
+.Command:
+[source,bash]
+----
+<#noparse>
+NAMESPACE= # <1>
+REGION= # <2>
+HOSTNAME=$(kubectl -n $NAMESPACE get svc accelerator-loadbalancer --template="{{range .status.loadBalancer.ingress}}{{.hostname}}{{end}}")
+aws elbv2 describe-load-balancers \
+  --query "LoadBalancers[?DNSName=='${HOSTNAME}'].LoadBalancerArn" \
+  --region ${REGION} \
+  --output text
+</#noparse>
+----
+<1> The {kubernetes} namespace containing the Keycloak deployment
+<2> The AWS Region hosting the {kubernetes} cluster
++
+.Output:
+[source,bash]
+----
+arn:aws:elasticloadbalancing:eu-west-1:606671647913:loadbalancer/net/a49e56e51e16843b9a3bc686327c907b/9b786f80ed4eba3d
+----

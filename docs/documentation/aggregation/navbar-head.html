@@ -1,0 +1,208 @@
+<style>
+/* Top menu */
+
+@media only screen and (min-width: 768px) {
+       div.top-menu-guides {
+              position: fixed;
+              display: inline-block;
+              top: 0;
+              left: 0;
+              z-index: 9999;
+       }
+
+       div.top-menu-guides p {
+              margin: 0;
+              padding: 0;
+       }
+
+       div.top-menu-guides .content {
+              margin: 0;
+              padding: 7px 20px 0 20px;
+              background-color: #ededed;
+              height: 48px;
+              width: 20em;
+       }
+
+       @media only screen and (max-width: 1280px) {
+              div.top-menu-guides .content {
+                     width: 15em;
+              }
+       }
+
+       div.top-menu-guides .ulist {
+              display: none;
+              position: absolute;
+              background-color: #f9f9f9;
+              min-width: 160px;
+              box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+              padding: 0px;
+              margin-top: 12px;
+       }
+
+       div.top-menu-guides .ulist ul {
+              list-style: none;
+              padding: 5px;
+              margin: 0;
+       }
+
+       div.top-menu-guides .ulist li {
+              padding: 5px 10px;
+       }
+
+       div.top-menu-guides:hover .ulist {
+           display: block;
+       }
+
+       div.top-menu-version {
+           position: fixed;
+           top: 0;
+           z-index: 9999;
+       }
+
+       div.top-menu-version .content {
+           padding: 0;
+           margin: 0;
+           background-color: #eee;
+           height: 48px;
+           padding: 7px;
+       }
+
+        div.top-menu-version p {
+            margin: 0;
+            padding: 2px 5px 2px 10px;
+        }
+
+}
+
+/* TOC */
+
+#tocbot a.toc-link.node-name--H1{ font-style: italic }
+@media screen{
+#tocbot > ul.toc-list{ margin-bottom: 0.5em; margin-left: 0.125em }
+#tocbot ul.sectlevel0, #tocbot a.toc-link.node-name--H1 + ul{
+  padding-left: 0 }
+#tocbot a.toc-link{ height:100% }
+.is-collapsible{ max-height:3000px; overflow:hidden; }
+.is-collapsed{ max-height:0 }
+.is-active-link{ font-weight:700 }
+}
+@media print{
+#tocbot a.toc-link.node-name--H4{ display:none }
+}
+
+/* Fix scroll to anchor hides title */
+h1::before, h2::before, h3::before, h4::before, h5::before, h6::before {
+    display: block;
+    content: " ";
+    height: 70px;
+    margin-top: -70px;
+}
+
+h1 {
+    border-bottom: none !important
+}
+
+#toc.toc2 {
+    top: 30px;
+    bottom: 0px;
+    height: unset;
+}
+
+body.toc2 {
+    padding-top: 30px;
+}
+
+@media only screen and (min-width:768px) {
+    #toc.toc2 {
+        top: 40px;
+    }
+
+    body.toc2 {
+        padding-top: 40px;
+    }
+}
+
+@media only screen and (min-width:1280px) {
+    #toc.toc2 {
+        top: 48px;
+    }
+
+    body.toc2 {
+        padding-top: 48px;
+    }
+}
+
+
+/* General Changes */
+
+h1, h2, h3, #toctitle, .sidebarblock>.content>.title, h4, h5, h6 {
+    color: #444444;
+    font-weight: 500;
+}
+
+a {
+    color: #004670;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #7da1dc;
+}
+
+body {
+    font-family: "Open Sans","DejaVu Sans",sans-serif;
+    color: #444444;
+}
+
+.subheader, .admonitionblock td.content>.title, .audioblock>.title, .exampleblock>.title, .imageblock>.title, .listingblock>.title, .literalblock>.title, .stemblock>.title, .openblock>.title, .paragraph>.title, .quoteblock>.title, table.tableblock>.title, .verseblock>.title, .videoblock>.title, .dlist>.title, .olist>.title, .ulist>.title, .qlist>.title, .hdlist>.title {
+    color: #444444;
+}
+
+.admonitionblock td.content>.title, .audioblock>.title, .exampleblock>.title, .imageblock>.title, .listingblock>.title, .literalblock>.title, .stemblock>.title, .openblock>.title, .paragraph>.title, .quoteblock>.title, table.tableblock>.title, .verseblock>.title, .videoblock>.title, .dlist>.title, .olist>.title, .ulist>.title, .qlist>.title, .hdlist>.title {
+    font-family: "Open Sans","DejaVu Sans",sans-serif;
+    font-style: normal;
+}
+
+span.image img {
+    border:1px solid #ccc;
+    -webkit-box-shadow: 3px 3px 15px 0px rgba(0,0,0,0.5);
+    -moz-box-shadow: 3px 3px 15px 0px rgba(0,0,0,0.5);
+    box-shadow: 3px 3px 15px 0px rgba(0,0,0,0.5);
+}
+
+.sect1+.sect1 {
+    border-top: none;
+}
+
+.page-links {
+    border-bottom: 1px solid #efefed;
+    border-top: none;
+    background: none;
+    position: relative;
+    left: 0em;
+    width: 100%;
+    top: -5em;
+    height: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.sect2 .page-links {
+    top: -3.5em;
+}
+
+.page-links .content {
+    background: #f8f8f7;
+    border: 1px solid #e0e0dc;
+    float: right;
+    font-size: 0.8em;
+    margin: 0;
+    padding: 5px;
+}
+
+.page-links a {
+    display: block;
+    padding: 5px;
+}
+</style>
+

@@ -1,0 +1,48 @@
+<!--
+  JDBC_PING2 for Postgresql
+-->
+<config xmlns="urn:org:jgroups"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="urn:org:jgroups http://www.jgroups.org/schema/jgroups.xsd">
+    <TCP
+            bind_addr="localhost"
+            bind_port="0"
+            recv_buf_size="150000"
+            send_buf_size="640000"
+            sock_conn_timeout="300ms"
+    />
+
+    <org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2_FOR_TESTING
+            connection_driver="org.h2.Driver"
+            connection_url="jdbc:h2:mem:test;DB_CLOSE_DELAY=-1"
+            connection_username=""
+            connection_password=""
+            remove_all_data_on_view_change="true"
+            register_shutdown_hook="true"
+            return_entire_cache="false"
+            write_data_on_find="true"
+    />
+    <!-- very aggressive merging to speed up the test -->
+    <MERGE3 min_interval="2000"
+            max_interval="4000"/>
+    <FD_ALL3 timeout="40s" interval="5s" />
+    <VERIFY_SUSPECT2 />
+    <pbcast.NAKACK2
+            use_mcast_xmit="false"
+            xmit_interval="500ms"/>
+    <UNICAST3
+            xmit_interval="500ms"/>
+    <pbcast.STABLE
+            desired_avg_gossip="5s"
+            max_bytes="1000000"/>
+    <pbcast.GMS
+            print_local_addr="false"
+            join_timeout="3s"
+            max_join_attempts="5"/>
+    <UFC max_credits="2M"
+         min_threshold="0.40"/>
+    <MFC max_credits="2M"
+         min_threshold="0.4"/>
+    <FRAG3 frag_size="60000"  />
+    <pbcast.STATE_TRANSFER/>
+</config>

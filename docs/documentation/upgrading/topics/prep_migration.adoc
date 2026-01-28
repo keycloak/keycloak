@@ -1,0 +1,29 @@
+[[_prep_migration]]
+
+== Preparing for an upgrade
+
+Perform the following steps before you upgrade the server.
+
+.Procedure
+. Shut down {project_name}.
+. Back up the old installation, such as configuration, themes, and so on.
+. If XA transactions are enabled, handle any open transactions and delete the `data/transaction-logs/` transaction directory.
+. Back up the database using the instructions in the documentation for your relational database.
+
+[WARNING]
+====
+The database schema will no longer be compatible with the old server after the upgrade. Because {project_name} does not support rolling back the database changes, if you need to roll back to the previous version, first restore the old installation, and then restore the database from the backup copy.
+====
+
+[NOTE]
+====
+If the `persistent-user-sessions` feature is disabled in your current setup and the server is upgraded, all user sessions will be lost except for offline user sessions.
+Users with these sessions will have to log in again.
+Note that the `persistent-user-sessions` feature is disabled by default in {project_name} server releases prior to 26.0.0.
+====
+
+[WARNING]
+====
+Information about failed logins for brute force detection and currently ongoing authentication flows is only stored in the internal caches that are cleared when {project_name} is shut down.
+Users currently authenticating, changing their passwords, or resetting their passwords will need to restart the authentication flow once {project_name} is up and running again.
+====

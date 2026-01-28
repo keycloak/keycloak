@@ -1,0 +1,9 @@
+== {project_name} features and concepts
+
+{project_name} is a single sign on solution for web apps and RESTful web services.  The goal of {project_name}
+is to make security simple so that it is easy for application developers to secure the apps and services they have deployed
+in their organization.  Security features that developers normally have to write for themselves are provided out of the box
+and are easily tailorable to the individual requirements of your organization.  {project_name} provides customizable
+user interfaces for login, registration, administration, and account management.  You can also use {project_name} as an
+integration platform to hook it into existing LDAP and Active Directory servers.  You can also delegate authentication to third
+party identity providers like Facebook and Google.

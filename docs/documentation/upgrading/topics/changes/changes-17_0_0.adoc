@@ -1,0 +1,37 @@
+= Default distribution is now powered by Quarkus
+
+The default distribution of Keycloak is now powered by Quarkus, which brings a number of breaking changes to you configure Keycloak and deploy custom providers. For more information check out the https://www.keycloak.org/migration/migrating-to-quarkus[Quarkus Migration Guide].
+
+The WildFly distribution of Keycloak is now deprecated, with support ending June 2022. We recommend migrating to the Quarkus distribution as soon as possible. However, if you need to remain on the legacy WildFly distribution for some time, there are some changes to consider:
+
+* Container images for the legacy distribution tags have changed. To use the legacy distribution use the tags `legacy` or `17.0.0-legacy`.
+* Download on the website for the legacy distribution has changed to `keycloak-legacy-17.0.0.[zip|tar.gz]`.
+
+If you encounter problems migrating to the Quarkus distribution, missing ability to configure something, or have general ideas and feedback, please open a discussion in https://github.com/keycloak/keycloak/discussions/categories/keycloak-x-quarkus-distribution[GitHub Discussions].
+
+= Migrating from the preview Quarkus distribution
+
+A number of things have changed since the preview Quarkus distribution was released in Keycloak 15.1.0. The ideal way to learn about what's changed is to check out the new https://www.keycloak.org/guides#server[Server guides]. In summary, the changes include:
+
+* Container now published to `quay.io/keycloak/keycloak:latest` and `quay.io/keycloak/keycloak:17.0.0`
+* Download on website renamed to `keycloak-17.0.0.[zip|tar.gz]`.
+* `conf/keycloak.properties` changed to `conf/keycloak.conf`, which unifies configuration keys between the config file and CLI arguments.
+* Clearer separation between `build options` and `runtime configuration`.
+* Custom Quarkus configuration is done through `conf/quarkus.properties`.
+* `h2-mem` and `h2-file` databases renamed to `dev-mem` and `dev-file`.
+* Features are now enabled/disabled with `--features` and `--features-disabled` replacing the previous approach that had a separate config key for each feature.
+* Runtime configuration can no longer be passed to `kc.[sh|bat] build` and is no longer persisted in the build
+* Logging level and format is now configured with `--log-level` and `--log-format`, while in the past these had to be configured using unsupported Quarkus properties.
+
+= Client Policies Migration : client-scopes
+
+If you used a policy including client-scopes condition and edited JSON document directly, you will need to change the "scope" field name in a JSON document to "scopes".
+
+= Liquibase upgraded to version 4.6.2
+
+Liquibase was updated from version 3.5.5 to 4.6.2, which includes, among other things, several bug fixes, and a new way of registering custom extensions
+using `ServiceLoader`.
+
+Migration from previous Keycloak versions to Keycloak 17.0.0 has been extensively tested with all currently supported databases,
+but we would like to stress the importance of closely following the <<_upgrading,Upgrading Guide>>, specifically of *backing up
+existing database before upgrade*. While we did our best to test the consequences of the Liquibase upgrade, some installations could be using specific setup unknown to us.

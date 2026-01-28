@@ -1,0 +1,250 @@
+= Account Console v2 theme removed
+
+The Account Console v2 theme has been removed from {project_name}. This theme was deprecated in {project_name} 24 and replaced by the Account Console v3 theme. If you are still using this theme, you should migrate to the Account Console v3 theme.
+
+= Java 21 support
+
+{project_name} now supports OpenJDK 21, as we want to stick to the latest LTS OpenJDK versions.
+
+= Java 17 support is deprecated
+
+OpenJDK 17 support is deprecated in {project_name}, and will be removed in a following release in favor of OpenJDK 21.
+
+= Most of Java adapters removed
+
+As stated in the release notes of previous {project_name} version, the most of Java adapters are now removed from the {project_name} codebase and downloads pages.
+
+For OAuth 2.0/OIDC, this includes removal of the Tomcat adapter, WildFly/EAP adapter, Servlet Filter adapter, `KeycloakInstalled` desktop adapter, the `jaxrs-oauth-client` adapter, JAAS login modules, Spring adapter and SpringBoot adapters.
+You can check https://www.keycloak.org/2023/03/adapter-deprecation-update.html[our older post] for the list of some alternatives.
+
+For SAML, this includes removal of the Tomcat adapter and Servlet filter adapter. SAML adapters are still supported with WildFly and JBoss EAP.
+
+The generic Authorization Client library is still supported, and we still plan to support it. It aims to be used in combination with any other OAuth 2.0 or OpenID Connect libraries. You can
+check the https://github.com/keycloak/keycloak-quickstarts[quickstarts] for some examples where this authorization client library is used together with the 3rd party Java adapters like
+Elytron OIDC or SpringBoot. You can check the quickstarts also for the example of SAML adapter used with WildFly.
+
+= Upgrade to PatternFly 5
+
+In {project_name} 24, the Welcome page is updated to use https://www.patternfly.org/[PatternFly 5], the latest version of the design system that underpins the user interface of {project_name}. In this release, the  Admin Console and Account Console are also updated to use PatternFly 5. If you want to extend and customize the Admin Console and Account Console, review https://www.patternfly.org/get-started/upgrade/[the changes in PatternFly 5] and update your customizations accordingly.
+
+= Argon2 password hashing
+
+Argon2 is now the default password hashing algorithm used by {project_name} in a non-FIPS environment.
+
+Argon2 was the winner of the https://en.wikipedia.org/wiki/Password_Hashing_Competition[2015 password hashing competition]
+and is the recommended hashing algorithm by https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id[OWASP].
+
+In {project_name} 24 the default hashing iterations for PBKDF2 were increased from 27.5K to 210K, resulting in a more than
+10 times increase in the amount of CPU time required to generate a password hash. With Argon2 it is possible to achieve
+better security, with almost the same CPU time as previous releases of {project_name}. One downside is Argon2 requires more
+memory, which is a requirement to be resistant against GPU attacks. The defaults for Argon2 in {project_name} requires 7MB
+per-hashing request.
+To prevent excessive memory and CPU usage, the parallel computation of hashes by Argon2 is by default limited to the number of cores available to the JVM.
+To support the memory intensive nature of Argon2, we have updated the default GC from ParallelGC to G1GC for a better heap utilization.
+
+Note that Argon2 is not compliant with FIPS 140-2. So if you are in the FIPS environment, the default algorithm will be still PBKDF2. Also note that if you are on non-FIPS environment and
+you plan to migrate to the FIPS environment, consider changing the password policy to a FIPS compliant algorithm such as `pbkdf2-sha512` at the outset. Otherwise, users will not be able to log in after they switch to the FIPS environment.
+
+= New Hostname options
+
+In response to the complexity and lack of intuitiveness experienced with previous hostname configuration settings, we are proud to introduce Hostname v2 options.
+
+We have listened to your feedback, tackled the tricky issues, and created a smoother experience for managing hostname configuration.
+Be aware that even the behavior behind these options has changed and requires your attention - if you are dealing with custom hostname settings.
+
+Hostname v2 options are supported by default, as the old hostname options are deprecated and will be removed in the following releases.
+You should migrate to them as soon as possible.
+
+New options are activated by default, so {project_name} will not recognize the old ones.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Persistent user sessions
+
+Previous versions of {project_name} stored only offline user and offline client sessions in the databases.
+The new feature `persistent-user-sessions` stores online user sessions and online client sessions not only in memory, but also in the database.
+This will allow a user to stay logged in even if all instances of {project_name} are restarted or upgraded.
+
+The feature is a preview feature and disabled by default. To use it, add the following to your build command:
+
+----
+bin/kc.sh build --features=persistent-user-sessions ...
+----
+
+For more details see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
+The https://www.keycloak.org/high-availability/single-cluster/concepts-memory-and-cpu-sizing[sizing guide] contains a new paragraph describing the updated resource requirements when this feature is enabled.
+
+For information on how to upgrade, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Cookies updates
+
+== SameSite attribute set for all cookies
+
+The following cookies did not use to set the `SameSite` attribute, which in recent browser versions results in them
+defaulting to `SameSite=Lax`:
+
+* `KC_STATE_CHECKER` now sets `SameSite=Strict`
+* `KC_RESTART` now sets `SameSite=None`
+* `KEYCLOAK_LOCALE` now sets `SameSite=None`
+* `KEYCLOAK_REMEMBER_ME` now sets `SameSite=None`
+
+The default value `SameSite=Lax` causes issues with POST based bindings, mostly applicable to SAML, but also used in
+some OpenID Connect / OAuth 2.0 flows.
+
+== Removing KC_AUTH_STATE cookie
+
+The cookie `KC_AUTH_STATE` is removed and it is no longer set by the {project_name} server as this server no longer needs this cookie.
+
+= Deprecated cookie methods removed
+
+The following APIs for setting custom cookies have been removed:
+
+* `ServerCookie` - replaced by `NewCookie.Builder`
+* `LocaleSelectorProvider.KEYCLOAK_LOCALE` - replaced by `CookieType.LOCALE`
+* `HttpCookie` - replaced by `NewCookie.Builder`
+* `HttpResponse.setCookieIfAbsent(HttpCookie cookie)` - replaced by `HttpResponse.setCookieIfAbsent(NewCookie cookie)`
+
+= Addressed 'You are already logged in' for expired authentication sessions
+
+The Keycloak 23 release provided improvements for when a user is authenticated in parallel in multiple browser tabs. However, this improvement did not address the case when an authentication session
+expired. Now for the case when user is already logged-in in one browser tab and an authentication session expired in other browser tabs, {project_name} is able to redirect back to the client
+application with an OIDC/SAML error, so the client application can immediately retry authentication, which should usually automatically log in the application because of the SSO session. For more
+details, see link:{adminguide_link}#_authentication-sessions[{adminguide_name} authentication sessions].
+
+= Lightweight access token to be even more lightweight
+
+In previous releases, the support for lightweight access token was added. In this release, we managed to remove even more built-in claims from the lightweight access token. The claims are added
+by protocol mappers. Some of them affect even the regular access tokens or ID tokens as they were not strictly required by the OIDC specification.
+
+* Claims `sub` and `auth_time` are added by protocol mappers now, which are configured by default on the new client scope `basic`, which is added automatically to all the clients. The claims are still added to the ID token and access token as before, but not to lightweight access token.
+* Claim `nonce` is added only to the ID token now.  It is not added to a regular access token or lightweight access token. For backwards compatibility, you can add this claim to an access token by protocol mapper, which needs to be explicitly configured.
+* Claim `session_state` is not added to any token now. It is still possible to add it by protocol mapper if needed. There is still the other dedicated claim `sid` supported by the specification, which was available in previous versions as well and which has exactly the same value.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}]..
+
+= Support for application/jwt media-type in token introspection endpoint
+
+You can use the HTTP Header `Accept: application/jwt` when invoking a token introspection endpoint. When enabled for a particular client, it returns a claim `jwt` from the
+token introspection endpoint with the full JWT access token, which can be useful especially for the use-cases when the client calling introspection endpoint used lightweight access
+token. Thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
+
+= Password policy for check if password contains Username
+
+Keycloak supports a new password policy that allows you to deny user passwords which contains the user username.
+
+= Required actions improvements
+
+In the Admin Console, you can now configure some required actions in the *Required actions* tab of a particular realm. Currently, the *Update password* is the only built-in configurable required action. It supports setting *Maximum Age of Authentication*, which is the maximum time users can update their password
+by the `kc_action` parameter (used for instance when updating password in the Account Console) without re-authentication. The sorting of required actions is also improved. When there are multiple required
+actions during authentication, all actions are sorted together regardless of whether those are actions set during authentication (for instance by the `kc_action` parameter) or actions added to the user account manually by an administrator.
+Thanks to https://github.com/thomasdarimont[Thomas Darimont] and https://github.com/danielFesenmeyer[Daniel Fesenmeyer] for the contributions.
+
+= Passkeys improvements
+
+The support for Passkeys conditional UI was added. When the Passkeys preview feature is enabled, there is a dedicated authenticator available, which means you can select from a list of available passkeys accounts
+and authenticate a user based on that. Thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
+
+= Default client profile for SAML
+
+The default client profile to have secured SAML clients was added. When browsing through client policies of a realm in the Admin Console, you see a new client profile `saml-security-profile`. When it is used, there are
+security best practices applied for SAML clients such as signatures are enforced, SAML Redirect binding is disabled, and wildcard redirect URLs are prohibited.
+
+= Authenticator for override existing IDP link during first-broker-login
+
+There was new authenticator `Confirm override existing link` added. This authenticator allows to override linked IDP username for the {project_name} user, which was already linked to different
+IDP identity before. More details in the link:{adminguide_link}#_override_existing_broker_link[{adminguide_name}]. Thanks to https://github.com/lexcao[Lex Cao] for the contribution.
+
+= OpenID for Verifiable Credential Issuance - experimental support
+
+There is work in progress on the support of OpenID for Verifiable Credential Issuance (OID4VCI). Right now, this is still work in progress, but things are being gradually added. {project_name}
+can act as an OID4VC Issuer with support of Pre-Authorized code flow. There is support for verifiable credentials in the JWT-VC, SD-JWT-VC and VCDM formats. Thanks to the members of the OAuth SIG
+groups for the contributions and feedback and especially thanks to https://github.com/wistefan[Stefan Wiedemann], https://github.com/francis-pouatcha[Francis Pouatcha], https://github.com/tnorimat[Takashi Norimatsu]
+and https://github.com/bucchi[Yutaka Obuchi].
+
+= Searching by user attribute no longer case insensitive
+
+When searching for users by user attribute, {project_name} no longer searches for user attribute names forcing lower case comparisons. The goal of this change was to speed up searches by using {project_name}'s native index on the user attribute table. If your database collation is case-insensitive, your search results will stay the same. If your database collation is case-sensitive, you might see less search results than before.
+
+= Breaking fix in authorization client library
+
+For users of the `keycloak-authz-client` library, calling `AuthorizationResource.getPermissions(...)` now correctly returns a `List<Permission>`.
+
+Previously, it would return a `List<Map>` at runtime, even though the method declaration advertised `List<Permission>`.
+
+This fix will break code that relied on casting the List or its contents to `List<Map>`. If you have used this method in any capacity, you are likely to have done this and be affected.
+
+= IDs are no longer set when exporting authorization settings for a client
+
+When exporting the authorization settings for a client, the IDs for resources, scopes, and policies are no longer set. As a
+result, you can now import the settings from a client to another client.
+
+= Management port for metrics and health endpoints
+
+Metrics and health checks endpoints are no longer accessible through the standard {project_name} server port.
+As these endpoints should be hidden from the outside world, they can be accessed on a separate default management port `9000`.
+
+It allows to not expose it to the users as standard Keycloak endpoints in Kubernetes environments.
+The new management interface provides a new set of options and is fully configurable.
+
+{project_name} Operator assumes the management interface is turned on by default.
+For more details, see https://www.keycloak.org/server/management-interface[Configuring the Management Interface].
+
+= Syslog for remote logging
+
+{project_name} now supports https://en.wikipedia.org/wiki/Syslog[Syslog] protocol for remote logging.
+It utilizes the protocol defined in https://datatracker.ietf.org/doc/html/rfc5424[RFC 5424].
+By default, the syslog handler is disabled, but when enabled, it sends all log events to a remote syslog server.
+
+For more information, see the https://www.keycloak.org/server/logging[Configuring logging] guide.
+
+= Change to class `EnvironmentDependentProviderFactory`
+
+The method `EnvironmentDependentProviderFactory.isSupported()` was deprecated for several releases and has now been removed.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= All `cache` options are runtime
+
+It is now possible to specify the `cache`, `cache-stack`, and `cache-config-file` options during runtime.
+This eliminates the need to execute the build phase and rebuild your image due to them.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= High availability guide enhanced
+
+The high availability guide now contains a {section} on how to configure an AWS Lambda to prevent an intended automatic failback from the Backup site to the Primary site.
+
+= Removing deprecated methods from `AccessToken`, `IDToken`, and `JsonWebToken` classes
+
+In this release, we are finally removing deprecated methods from the following classes:
+
+* `AccessToken`
+* `IDToken`
+* `JsonWebToken`
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Method `getExp` added to `SingleUseObjectKeyModel`
+
+As a consequence of the removal of deprecated methods from `AccessToken`, `IDToken`, and `JsonWebToken`,
+the `SingleUseObjectKeyModel` also changed to keep consistency with the method names related to expiration values.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Support for PostgreSQL 16
+
+The supported and tested databases now include PostgreSQL 16.
+
+= Introducing support for Customer Identity and Access Management (CIAM) and Multi-tenancy
+
+In this release, we are delivering Keycloak Organizations as a technology preview feature.
+
+This feature provides a realm with some core CIAM capabilities, which will serve as the baseline for more capabilities
+in the future to address Business-to-Business (B2B) and Business-to-Business-to-Customers (B2B2C) use cases.
+
+In terms of functionality, the feature is completed. However, we still have work to do to make it fully supported in the next major release.
+This remaining work is mainly about preparing the feature for production deployments with a focus on scalability. Also, depending
+on the feedback we get until the next major release, we might eventually accept additional capabilities and add more value to
+the feature, without compromising its roadmap.
+
+For more details, see link:{adminguide_link}#_managing_organizations[{adminguide_name}].

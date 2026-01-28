@@ -1,0 +1,19 @@
+:toc: left
+:toclevels: 3
+:sectanchors:
+:linkattrs:
+
+include::topics/templates/document-attributes.adoc[]
+
+:server_administration_guide:
+:context: server_administration_guide
+
+= {adminguide_name}
+
+:release_header_guide: {adminguide_name_short}
+:release_header_latest_link: {adminguide_link_latest}
+include::topics/templates/release-header.adoc[]
+
+include::topics.adoc[]
+
+:context:

@@ -1,0 +1,69 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Using the npm UI packages"
+priority=80
+summary="Learn how to use UI modules in your own application.">
+
+A final approach to customization is to just take pieces of the Admin Console or Account Console and use it in your own React application.
+
+To fully customize these consoles, you can use the aformentioned React based npm packages.
+Two packages exist:
+
+* `@keycloak/keycloak-admin-ui`: This is the base theme for the Admin Console.
+* `@keycloak/keycloak-account-ui`: This is the base theme for the Account Console.
+Both packages are available in the public npm repository.
+
+== Installing the packages
+
+To install the packages, run the following command:
+
+[source,bash]
+----
+pnpm install @keycloak/keycloak-account-ui
+----
+
+== Using the packages
+
+To use these pages, you add KeycloakProvider in your component hierarchy to choose the client, realm, and URL that you need.
+
+[source,javascript]
+----
+import { KeycloakProvider } from "@keycloak/keycloak-ui-shared";
+
+//...
+
+<KeycloakProvider environment={{
+      serverBaseUrl: "http://localhost:8080",
+      realm: "master",
+      clientId: "security-admin-console"
+  }}>
+  {/* rest of you application */}
+</KeycloakProvider>
+----
+
+== Translating the pages
+
+The pages are translated using the `i18next` library.
+You can set it up as described on the https://react.i18next.com/[react-i18next Website].
+If you want to use the translations that are provided, add i18next-http-backend to your project and add the following:
+
+[source,javascript]
+----
+backend: {
+  loadPath: `http://localhost:8080/resources/master/account/{lng}}`,
+  parse: (data: string) => {
+    const messages = JSON.parse(data);
+
+    const result: Record<string, string> = {};
+    messages.forEach((v) => (result[v.key] = v.value)); //need to convert to record
+    return result;
+  },
+},
+----
+
+== Using the pages
+
+To see how to further integrate the pages, we recommend that you take a look at the output of the tool in the <<creating-your-own-console,Creating your own Console>> chapter.
+</@tmpl.guide>

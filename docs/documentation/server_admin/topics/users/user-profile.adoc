@@ -1,0 +1,909 @@
+[[user-profile]]
+= Managing user attributes
+
+In {project_name} a user is associated with a set of attributes. These attributes are used to better describe and identify
+users within {project_name} as well as to pass over additional information about them to applications.
+
+A user profile defines a well-defined schema for representing user attributes and how they are managed within a realm.
+By providing a consistent view over user information, it allows administrators to control the different aspects on how
+attributes are managed as well as to make it much easier to extend {project_name} to support additional attributes.
+
+Although the user profile is mainly targeted for attributes that end-users can manage (e.g.: first and last names, phone, etc)
+it also serves for managing any other metadata you want to associate with your users.
+
+Among other capabilities, user profile enables administrators to:
+
+* Define a schema for user attributes
+* Define whether an attribute is required based on contextual information (e.g.: if required only for users, or admins, or both, or depending on the scope being requested.)
+* Define specific permissions for viewing and editing user attributes, making possible to adhere to strong privacy requirements where some attributes can not be seen or be changed by third-parties (including administrators)
+* Dynamically enforce user profile compliance so that user information is always updated and in compliance with the metadata and rules associated with attributes
+* Define validation rules on a per-attribute basis by leveraging the built-in validators or writing custom ones
+* Dynamically render forms that users interact with like registration, update profile, brokering, and personal information in the account console, according to the attribute definitions and without any need to manually change themes.
+* Customize user management interfaces in the administration console so that attributes are rendered dynamically based on the user profile schema
+
+The user profile schema or configuration uses a <<_user-profile-json-configuration,JSON>> format to represent attributes and their metadata. From the administration console,
+you are able to manage the configuration by clicking on the `Realm Settings` on the left side menu and then clicking on the `User Profile` tab on that page.
+
+In the next sections, we'll be looking at how to create your own user profile schema or configuration, and how to manage attributes.
+
+== Understanding the Default Configuration
+
+By default, {project_name} provides a basic user profile configuration covering some of the most common user attributes:
+
+[cols="2*", options="header"]
+|===
+|Name
+|Description
+| `username` | The username
+| `email` | End-User's preferred e-mail address.
+| `firstName` | Given name(s) or first name(s) of the end-user
+| `lastName` | Surname(s) or last name(s) of the End-User
+|===
+
+In {project_name}, both `username` and `email` attributes have a special handling as they are often used to identify, authenticate,
+and link user accounts. For those attributes, you are limited to changing their settings, and you can not remove them.
+
+[NOTE]
+====
+The behavior of both `username` and `email` attributes changes accordingly to the `Login` settings of your realm. For instance,
+changing the `Email as username` or the `Edit username` settings will override any configuration you have set in the user profile configuration.
+====
+
+As you will see in the following sections, you are free to change the default configuration by bringing your own attributes
+or changing the settings for any of the available attributes to better fit it to your needs.
+
+== Understanding the User Profile Contexts
+
+In {project_name}, users are managed through different contexts:
+
+* Registration
+* Update Profile
+* Reviewing Profile when authenticating through a broker or social provider
+* Account Console
+* Administrative (e.g.: administration console and Admin REST API)
+
+Except for the `Administrative` context, all other contexts are considered end-user contexts as they are related to user self-service
+flows.
+
+Knowing these contexts is important to understand where your user profile configuration will take effect when managing users.
+Regardless of the context where the user is being managed, the same user profile configuration will be used to render UIs and validate
+attribute values.
+
+As you will see in the following sections, you might restrict certain attributes to be available only from the administrative context and disable them
+completely for end-users. The other way around is also true if you don't want administrators to have access to certain user attributes but only the end-user.
+
+[[_understanding-managed-and-unmanaged-attributes]]
+== Understanding Managed and Unmanaged Attributes
+
+By default, {project_name} will only recognize the attributes defined in your user profile configuration.
+The server ignores any other attribute not explicitly defined there.
+
+By being strict about which user attributes can be set to your users, as well as how their values are validated,
+{project_name} can add another defense barrier to your realm and help you to prevent unexpected attributes and values associated to your users.
+
+That said, user attributes can be categorized as follows:
+
+* *Managed*. These are attributes controlled by your user profile, to which you want to allow end-users and administrators
+to manage from any user profile context.
+For these attributes, you want complete control on how and when they are managed.
+* *Unmanaged*. These are attributes you do not explicitly define in your user profile so that they are completely ignored by {project_name}, by default.
+
+Although unmanaged attributes are disabled by default, you can configure your realm using different policies to define how they are handled by the server.
+For that, click on the `Realm Settings` at the left side menu, click on the `General` tab, and then choose any of the following options from the `Unmanaged Attributes` setting:
+
+* *Disabled*. This is the default policy so that unmanaged attributes are disabled from all user profile contexts.
+* *Enabled*. This policy enables unmanaged attributes to all user profile contexts.
+* *Admin can view*. This policy enables unmanaged attributes only from the administrative context as read-only.
+* *Admin can edit*. This policy enables unmanaged attributes only from the administrative context for reads and writes.
+
+These policies give you a fine-grained control over how the server will handle unmanaged attributes.
+You can choose to completely disable or only support unmanaged attributes when managing users through the administrative context.
+
+When unmanaged attributes are enabled (even if partially) you can manage them from the administration console at the `Attributes` tab in the User Details UI.
+If the policy is set to `Disabled` this tab is not available.
+
+As a security recommendation, try to adhere to the most strict policy as much as possible (e.g.: `Disabled` or `Admin can edit`) to prevent unexpected
+attributes (and values) set to your users when they are managing their profile through end-user contexts.
+Avoid setting the `Enabled` policy and prefer defining all the attributes that end-users can manage in your user profile configuration, under your control.
+
+[NOTE]
+====
+The `Enabled` policy is targeted for realms migrating from previous versions of {project_name} and to avoid breaking
+behavior when using custom themes and extending the server with their own custom user attributes.
+====
+
+As you will see in the following sections, you can also restrict the audience for an attribute by choosing if it should be visible or writable by users and/or administrators.
+
+For unmanaged attributes, the maximum length is 2048 characters.
+To specify a different minimum or maximum length, change the unmanaged attribute to a managed attribute and add a `length` validator.
+
+WARNING: {project_name} caches user-related objects in its internal caches.
+The longer the attributes are, the more memory the cache consumes.
+Therefore, limiting the size of the length attributes is recommended.
+Consider storing large objects outside {project_Name} and reference them by ID or URL.
+
+== Managing the User Profile
+
+The user profile configuration is managed on a per-realm basis. For that, click on the
+`Realm Settings` link on the left side menu and then click on the `User Profile` tab.
+
+.User Profile Tab
+image:images/user-profile-tab.png[]
+
+In the `Attributes` sub-tab you have a list of all managed attributes.
+
+In the `Attribute Groups` sub-tab you can manage attribute groups. An attribute group allows you to correlate attributes so that they are displayed together when rendering user facing forms.
+
+In the `JSON Editor` sub-tab you can view and edit the <<_user-profile-json-configuration,JSON>> configuration. You can use this tab
+to grab your current configuration or manage it manually. Any change you make to this tab is reflected in the other tabs, and vice-versa.
+
+In the next section, you are going to learn how to manage attributes.
+
+== Managing Attributes
+
+At the `Attributes` sub-tab you can create, edit, and delete the managed attributes.
+
+To define a new attribute and associate it with the user profile, click on the *Create attribute* button at the top of the attribute listing.
+
+.Attribute Configuration
+image:images/user-profile-create-attribute.png[]
+
+When configuring the attribute you can define the following settings:
+
+Name::
+The name of the attribute, used to uniquely identify an attribute.
+
+Display name::
+A user-friendly name for the attribute, mainly used when rendering user-facing forms. It also supports <<_using-internationalized-messages,Using Internationalized Messages>>.
+
+Multivalued::
+If enabled, the attribute supports multiple values and UIs are rendered accordingly to allow setting many values. When enabling this
+setting, make sure to add a validator to set a hard limit to the number of values.
+
+Default Value::
+Defines the value that will be automatically assigned to the attribute if the user does not provide one.
+Ensure that this default value complies with all configured validators for the attribute.
+
+Attribute Group::
+The attribute group to which the attribute belongs to, if any.
+
+Enabled when::
+Enables or disables an attribute. If set to `Always`, the attribute is available from any user profile context.
+If set to `Scopes are requested`, the attribute is only available when the client acting on behalf of the user is requesting a
+set of one or more scopes. You can use this option to dynamically enforce certain attributes depending on the client scopes
+being requested. For the administration console, scopes are not evaluated and the attribute is always enabled.
+That is because filtering attributes by scopes only works when running end-user authentication flows.
+
+Required::
+Set the conditions to mark an attribute as required. If disabled, the attribute is optional.
+If enabled, you can set the `Required for` setting to mark the attribute as required depending on the user profile context so that
+the attribute is required for end-users (via end-user contexts) or to administrators (via administrative context), or both.
+You can also set the `Required when` setting to mark the attribute as required only when a set of one or more client scopes are requested.
+If set to `Always`, the attribute is required from any user profile context.
+If set to `Scopes are requested`, the attribute is only required when the client acting on behalf of the user is requesting a
+set of one or more scopes. For the account and administration consoles, scopes are not evaluated and the attribute is not required.
+That is because filtering attributes by scopes only works when running authentication flows.
+
+Permission::
+In this section, you can define read and write permissions when the attribute is being managed from an end-user or administrative context.
+The `Who can edit` setting mark an attribute as writable by `User` and/or `Admin`, from an end-user and administrative context, respectively.
+The `Who can view` setting mark an attribute as read-only by `User` and/or `Admin` from an end-user and administrative context, respectively.
+
+Validation::
+In this section, you can define the validations that will be performed when managing the attribute value.
+{project_name} provides a set of built-in validators you can choose from with the possibility to add your own. For more details, look at
+the <<_validating-attributes,Validating Attributes>> section.
+
+Annotation::
+In this section, you can associate annotations to the attribute. Annotations are mainly useful to pass over additional metadata to frontends for rendering purposes.
+For more details, look at the <<_defining-ui-annotations,Defining UI Annotations>> section.
+
+When you create an attribute, the attribute is only available from administrative contexts to avoid unexpectedly exposing attributes to end-users.
+Effectively, the attribute won't be accessible to end-users when they are managing their profile through the end-user contexts. You can change the `Permissions` settings anytime accordingly
+to your needs.
+
+[[_validating-attributes]]
+== Validating Attributes
+
+You can enable validation to managed attributes to make sure the attribute value conforms to specific rules.
+For that, you can add or remove validators from the `Validations` settings when managing an attribute.
+
+.Attribute Validation
+image:images/user-profile-validation.png[]
+
+Validation happens at any time when writing to an attribute, and they can throw errors that will be shown in UIs when the value
+fails a validation.
+
+For security reasons, every attribute that is editable by users should have a validation to restrict the size of the values users enter.
+If no `length` validator has been specified, {project_name} defaults to a maximum length of 2048 characters.
+
+=== Built-in Validators
+
+{project_name} provides some built-in validators that you can choose from, and you are also able to provide
+your own validators by extending the `Validator SPI`.
+
+The list below provides a list of all the built-in validators:
+
+[cols="3*", options="header"]
+|===
+|Name
+|Description
+|Configuration
+
+|length
+|Check the length of a string value based on a minimum and maximum length.
+|
+
+*min*: an integer to define the minimum allowed length.
+
+*max*: an integer to define the maximum allowed length.
+
+*trim-disabled*: a boolean to define whether the value is trimmed prior to validation.
+
+|integer
+|Check if the value is an integer and within a lower and/or upper range. If no range is defined, the validator only checks whether the value is a valid number.
+|
+
+*min*: an integer to define the lower range.
+
+*max*: an integer to define the upper range.
+
+|double
+|Check if the value is a double and within a lower and/or upper range. If no range is defined, the validator only checks whether the value is a valid number.
+|
+
+*min*: an integer to define the lower range.
+
+*max*: an integer to define the upper range.
+
+|uri
+|Check if the value is a valid URI.
+| None
+
+|pattern
+|Check if the value matches a specific RegEx pattern.
+|
+
+*pattern*: the RegEx pattern to use when validating values.
+
+*error-message*: the key of the error message in i18n bundle. If not set a generic message is used.
+
+|email
+|Check if the value has a valid e-mail format. If <<_email, the realm is configured to send emails>> and the option *Allow UTF-8* is not enabled to support internationalized emails, this validator also checks that the local part of the address contains only ASCII characters.
+|
+*max-local-length*: an integer to define the maximum length for the local part of the email. It defaults to 64 per specification.
+
+|local-date
+|Check if the value has a valid format based on the realm and/or user locale.
+| None
+
+|iso-date
+|Check if the value has a valid format based on ISO 8601. This validator can be used with inputs using the html5-date input type.
+| None
+
+|person-name-prohibited-characters
+| Check if the value is a valid person name as an additional barrier for attacks such as script injection. The validation is based on a default RegEx pattern that blocks characters not common in person names.
+|
+
+*error-message*: the key of the error message in i18n bundle. If not set a generic message is used.
+
+|username-prohibited-characters
+| Check if the value is a valid username as an additional barrier for attacks such as script injection. The validation is based on a default RegEx pattern that blocks characters not common in usernames.
+When the realm setting `Email as username` is enabled, this validator is skipped to allow email values.
+|
+
+*error-message*: the key of the error message in i18n bundle. If not set a generic message is used.
+
+|options
+|Check if the value is from the defined set of allowed values. Useful to validate values entered through select and multiselect fields.
+|
+
+*options*: array of strings containing allowed values.
+
+|up-username-not-idn-homograph
+|The field can contain only latin characters and common unicode characters. Useful for the fields, which can be subject of IDN homograph attacks (typically username).
+|
+
+*error-message*: the key of the error message in i18n bundle. If not set a generic message is used.
+
+|multivalued
+|Validates the size of a multivalued attribute.
+|
+
+*min*: an integer to define the minimum allowed count of attribute values.
+
+*max*: an integer to define the maximum allowed count of attribute values.
+
+
+|===
+
+[[_defining-ui-annotations]]
+== Defining UI Annotations
+
+In order to pass additional information to frontends, attributes can be decorated with
+annotations to dictate how attributes are rendered. This capability is mainly useful when extending {project_name} themes
+to render pages dynamically based on the annotations associated with attributes.
+
+Annotations are used, for example, for <<_changing-the-html-type-for-an-attribute,Changing the HTML `type` for an Attribute>> and <<_changing-the-dom-representation-of-an-attribute,Changing the DOM representation of an Attribute>>, as you will
+see in the following sections.
+
+.Attribute Annotation
+image:images/user-profile-annotation.png[]
+
+An annotation is a key/value pair shared with the UI so that they can change how the HTML element corresponding to the attribute is rendered.
+You can set any annotation you want to an attribute as long as the annotation is supported by the theme your realm is using.
+
+[NOTE]
+====
+The only restriction you have is to avoid using annotations using the `kc` prefix in their keys because these annotations
+using this prefix are reserved for {project_name}.
+====
+
+=== Built-in Annotations
+
+The following annotations are supported by {project_name} built-in themes:
+
+[cols="2*", options="header"]
+|===
+|Name
+|Description
+
+|inputType
+|Type of the form input field. Available types are described in a table below.
+
+|inputHelperTextBefore
+|Helper text rendered before (above) the input field. Direct text or internationalization pattern (like `${i18n.key}`) can be used here.
+Text is NOT html escaped when rendered into the page, so you can use html tags here to format the text, but you also have to correctly escape html control characters.
+
+|inputHelperTextAfter
+|Helper text rendered after (under) the input field. Direct text or internationalization pattern (like `${i18n.key}`) can be used here.
+Text is NOT html escaped when rendered into the page, so you can use html tags here to format the text, but you also have to correctly escape html control characters.
+
+|inputOptionsFromValidation
+|Annotation for select and multiselect types. Optional name of custom attribute validation to get input options from. See the <<_managing_options_for_select_fields,detailed description>> below.
+
+|inputOptionLabelsI18nPrefix
+|Annotation for select and multiselect types. Internationalization key prefix to render options in UI. See the <<_managing_options_for_select_fields,detailed description>> below.
+
+|inputOptionLabels
+|Annotation for select and multiselect types. Optional map to define UI labels for options (directly or using internationalization). See the <<_managing_options_for_select_fields,detailed description>> below.
+
+|inputTypePlaceholder
+|HTML input `placeholder` attribute applied to the field - specifies a short hint that describes the expected value of an input field (e.g. a sample value
+or a short description of the expected format). The short hint is displayed in the input field before the user enters a value.
+
+|inputTypeSize
+|HTML input `size` attribute applied to the field - specifies the width, in characters, of a single line input field. For fields based on HTML `select` type
+it specifies number of rows with options shown. May not work, depending on css in used theme!
+
+|inputTypeCols
+|HTML input `cols` attribute applied to the field - specifies the width, in characters, for `textarea` type. May not work, depending on css in used theme!
+
+|inputTypeRows
+|HTML input `rows` attribute applied to the field - specifies the height, in characters, for `textarea` type. For select fields it specifies number
+of rows with options shown. May not work, depending on css in used theme!
+
+|inputTypePattern
+|HTML input `pattern` attribute applied to the field providing client side validation - specifies a regular expression that an input field's value
+is checked against. Useful for single line inputs.
+
+|inputTypeMaxLength
+|HTML input `maxlength` attribute applied to the field providing client side validation - maximal length of the text which can be entered into the input
+field. Useful for text fields.
+
+|inputTypeMinLength
+|HTML input `minlength` attribute applied to the field providing client side validation - minimal length of the text which can be entered into the input
+field. Useful for text fields.
+
+|inputTypeMax
+|HTML input `max` attribute applied to the field providing client side validation - maximal value which can be entered into the input field.
+Useful for numeric fields.
+
+|inputTypeMin
+|HTML input `min` attribute applied to the field providing client side validation - minimal value which can be entered into the input field.
+Useful for numeric fields.
+
+|inputTypeStep
+|HTML input `step` attribute applied to the field - Specifies the interval between legal numbers in an input field. Useful for numeric fields.
+
+|Number Format
+|If set, the `data-kcNumberFormat` attribute is added to the field to format the value based on a given format. This annotation is targeted for numbers where the format is based on the
+number of digits expected in a determined position. For instance, a format `(\{2}) \{5}-\{4}` will format the field value to `(00) 00000-0000`.
+
+|Number UnFormat
+|If set, the `data-kcNumberUnFormat` attribute is added to the field to format the value based on a given format before submitting the form. This annotation
+is useful if you do not want to store any format for a specific attribute but only format the value on the client side. For instance, if the current value
+is `(00) 00000-0000`, the value will change to `00000000000` if you set the value `\{11}` to this annotation or any other format you want by specifying a set of one or more group of digits.
+Make sure to add validators to perform server-side validations before storing values.
+
+|===
+
+[NOTE]
+====
+Field types use HTML form field tags and attributes applied to them - they behave based on the HTML specifications and browser support for them.
+
+Visual rendering also depends on css styles applied in the used theme.
+====
+
+[[_changing-the-html-type-for-an-attribute]]
+=== Changing the HTML `type` for an Attribute
+
+You can change the `type` of a HTML5 input element by setting the `inputType` annotation. The available types are:
+
+[cols="3*", options="header"]
+|===
+|Name
+|Description
+|HTML tag used
+
+|text
+|Single line text input.
+|input
+
+|textarea
+|Multiple line text input.
+|textarea
+
+|select
+|Common single select input. See the <<_managing_options_for_select_fields,description of how to configure options>> below.
+|select
+
+|select-radiobuttons
+|Single select input through group of radio buttons. See the <<_managing_options_for_select_fields,description of how to configure options>> below.
+|group of input
+
+|multiselect
+|Common multiselect input. See the <<_managing_options_for_select_fields,description of how to configure options>> below.
+|select
+
+|multiselect-checkboxes
+|Multiselect input through group of checkboxes. See the <<_managing_options_for_select_fields,description of how to configure options>> below.
+|group of input
+
+|html5-email
+|Single line text input for email address based on HTML 5 spec.
+|input
+
+|html5-tel
+|Single line text input for phone number based on HTML 5 spec.
+|input
+
+|html5-url
+|Single line text input for URL based on HTML 5 spec.
+|input
+
+|html5-number
+|Single line input for number (integer or float depending on `step`) based on HTML 5 spec.
+|input
+
+|html5-range
+|Slider for number entering based on HTML 5 spec.
+|input
+
+|html5-datetime-local
+|Date Time input based on HTML 5 spec.
+|input
+
+|html5-date
+|Date input based on HTML 5 spec.
+|input
+
+|html5-month
+|Month input based on HTML 5 spec.
+|input
+
+|html5-week
+|Week input based on HTML 5 spec.
+|input
+
+|html5-time
+|Time input based on HTML 5 spec.
+|input
+
+|===
+
+[[_managing_options_for_select_fields]]
+=== Defining options for select and multiselect fields
+
+Options for select and multiselect fields are taken from validation applied to the attribute to be
+sure validation and field options presented in UI are always consistent. By default, options are taken from built-in `options` validation.
+
+You can use various ways to provide nice human-readable labels for select and multiselect options. The simplest
+case is when attribute values are same as UI labels. No extra configuration is necessary in this case.
+
+.Option values same as UI labels
+image:images/user-profile-select-options-simple.png[]
+
+When attribute value is kind of ID not suitable for UI, you can use simple internationalization support provided
+by `inputOptionLabelsI18nPrefix` annotation. It defines prefix for internationalization keys, option value is dot appended to this prefix.
+
+.Simple internationalization for UI labels using i18n key prefix
+image:images/user-profile-select-options-simple-i18n.png[]
+
+Localized UI label texts for option value have to be provided by `userprofile.jobtitle.sweng` and `userprofile.jobtitle.swarch`
+keys then, using common localization mechanism.
+
+You can also use `inputOptionLabels` annotation to provide labels for individual options. It contains a map of labels for option - key in the map is
+option value (defined in validation), and value in the map is UI label text itself or its internationalization pattern (like `${i18n.key}`) for that option.
+
+[NOTE]
+====
+You have to use User Profile `JSON Editor` to enter map as `inputOptionLabels` annotation value.
+====
+
+
+Example of directly entered labels for individual options without internationalization:
+[source,json]
+----
+"attributes": [
+<...
+{
+  "name": "jobTitle",
+  "validations": {
+    "options": {
+      "options":[
+        "sweng",
+        "swarch"
+      ]
+    }
+  },
+  "annotations": {
+    "inputType": "select",
+    "inputOptionLabels": {
+      "sweng": "Software Engineer",
+      "swarch": "Software Architect"
+    }
+  }
+}
+...
+]
+----
+
+Example of the internationalized labels for individual options:
+[source,json]
+----
+"attributes": [
+...
+{
+  "name": "jobTitle",
+  "validations": {
+    "options": {
+      "options":[
+        "sweng",
+        "swarch"
+      ]
+    }
+  },
+  "annotations": {
+    "inputType": "select-radiobuttons",
+    "inputOptionLabels": {
+      "sweng": "${jobtitle.swengineer}",
+      "swarch": "${jobtitle.swarchitect}"
+    }
+  }
+}
+...
+]
+----
+Localized texts have to be provided by `jobtitle.swengineer` and `jobtitle.swarchitect` keys then, using common localization mechanism.
+
+Custom validator can be used to provide options thanks to `inputOptionsFromValidation` attribute annotation.
+This validation have to have `options` config providing array of options. Internationalization works the same way as for options
+provided by built-in `options` validation.
+
+.Options provided by custom validator
+image:images/user-profile-select-options-custom-validator.png[]
+
+[[_changing-the-dom-representation-of-an-attribute]]
+=== Changing the DOM representation of an Attribute
+
+You can enable additional client-side behavior by setting annotations with the `kc` prefix. These annotations are going to
+translate into an HTML attribute in the corresponding element of an attribute, prefixed with `data-`, and a script with
+the same name will be loaded to the dynamic pages so that you can select elements from the DOM based on the custom `data-` attribute
+and decorate them accordingly by modifying their DOM representation.
+
+For instance, if you add a `kcMyCustomValidation` annotation to an attribute, the HTML attribute `data-kcMyCustomValidation` is added to
+the corresponding HTML element for the attribute, and a JavaScript module is loaded from your custom theme at `<THEME TYPE>/resources/js/kcMyCustomValidation.js`.
+See the {developerguide_link}[{developerguide_name}] for more information about how to deploy a custom JavaScript module to your theme.
+
+The JavaScript module can run any code to customize the DOM and the elements rendered for each attribute. For that,
+you can use the `userProfile.js` module to register an annotation descriptor for your custom annotation as follows:
+
+[source,javascript]
+----
+import { registerElementAnnotatedBy } from "./userProfile.js";
+
+registerElementAnnotatedBy({
+  name: 'kcMyCustomValidation',
+  onAdd(element) {
+    var listener = function (event) {
+        // do something on keyup
+    };
+
+    element.addEventListener("keyup", listener);
+
+    // returns a cleanup function to remove the event listener
+    return () => element.removeEventListener("keyup", listener);
+  }
+});
+----
+
+The `registerElementAnnotatedBy` is a method to register annotation descriptors. A descriptor is an object with a `name`,
+referencing the annotation name,
+and a `onAdd` function. Whenever the page is rendered or an attribute with the annotation is added to the DOM, the `onAdd`
+function is invoked so that you can customize the behavior for the element.
+
+The `onAdd` function can also return a function to perform a cleanup. For instance, if you are adding event listeners
+to elements, you might want to remove them in case the element is removed from the DOM.
+
+Alternatively, you can also use any JavaScript code you want if the `userProfile.js` is not enough for your needs:
+
+[source,javascript]
+----
+document.querySelectorAll(`[data-kcMyCustomValidation]`).forEach((element) => {
+    var listener = function (evt) {
+        // do something on keyup
+    };
+
+    element.addEventListener("keyup", listener);
+  });
+----
+
+== Managing Attribute Groups
+
+At the `Attribute Groups` sub-tab you can create, edit, and delete attribute groups. An attribute group allows you to define a container for correlated attributes so that they are rendered together when at the user-facing forms.
+
+.Attribute Group List
+image:images/user-profile-attribute-group-list.png[]
+
+[NOTE]
+====
+You can't delete attribute groups that are bound to attributes. For that, you should first update the attributes to remove the binding.
+====
+
+To create a new group, click on the *Create attributes group* button on the top of the attribute groups listing.
+
+.Attribute Group Configuration
+image:images/user-profile-create-attribute-group.png[]
+
+When configuring the group you can define the following settings:
+
+Name::
+The name of the attribute, used to uniquely identify an attribute.
+
+Display name::
+A user-friendly name for the attribute, mainly used when rendering user-facing forms. It also supports <<_using-internationalized-messages,Using Internationalized Messages>>.
+
+Display description::
+A user-friendly text that will be displayed as a tooltip when rendering user-facing forms. It also supports <<_using-internationalized-messages,Using Internationalized Messages>>.
+
+Annotation::
+In this section, you can associate annotations to the attribute. Annotations are mainly useful to pass over additional metadata to frontends for rendering purposes.
+
+[[_user-profile-json-configuration]]
+== Using the JSON configuration
+
+The user profile configuration is stored using a well-defined JSON schema. You can choose from editing the user profile configuration directly by clicking on the `JSON Editor` sub-tab.
+
+.JSON Configuration
+image:images/user-profile-json-config.png[]
+
+The JSON schema is defined as follows:
+
+[source,json]
+----
+{
+  "unmanagedAttributePolicy": "DISABLED",
+  "attributes": [
+    {
+      "name": "myattribute",
+      "multivalued": false,
+      "displayName": "My Attribute",
+      "group": "personalInfo",
+      "required": {
+        "roles": [ "user", "admin" ],
+        "scopes": [ "foo", "bar" ]
+      },
+      "permissions": {
+        "view": [ "admin", "user" ],
+        "edit": [ "admin", "user" ]
+      },
+      "validations": {
+        "email": {
+          "max-local-length": 64
+        },
+        "length": {
+          "max": 255
+        }
+      },
+      "annotations": {
+        "myannotation": "myannotation-value"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "personalInfo",
+      "displayHeader": "Personal Information",
+      "annotations": {
+        "foo": ["foo-value"],
+        "bar": ["bar-value"]
+      }
+    }
+  ]
+}
+----
+
+The schema supports as many attributes and groups as you need.
+
+The `unmanagedAttributePolicy` property defines the unmanaged attribute policy by setting one of following values. For more details,
+look at the <<_understanding-managed-and-unmanaged-attributes,Understanding Managed and Unmanaged Attributes>>.
+
+* `DISABLED`
+* `ENABLED`
+* `ADMIN_VIEW`
+* `ADMIN_EDIT`
+
+=== Attribute Schema
+
+For each attribute you should define a `name` and, optionally, the `required`, `permission`, and the `annotations` settings.
+
+The `required` property defines whether an attribute is required. {project_name} allows you to set an attribute as required based on different conditions.
+
+When the `required` property is defined as an empty object, the attribute is always required.
+
+[source,json]
+----
+{
+  "attributes": [
+    {
+      "name": "myattribute",
+      "required": {}
+  ]
+}
+----
+
+On the other hand, you can choose to make the attribute required only for users, or administrators, or both. As well as mark the attribute as required only in case a specific scope is requested when the user is authenticating in {project_name}.
+
+To mark an attribute as required for a user and/or administrator, set the `roles` property as follows:
+
+[source,json]
+----
+{
+  "attributes": [
+    {
+      "name": "myattribute",
+      "required": {
+        "roles": ["user"]
+      }
+  ]
+}
+----
+
+The `roles` property expects an array whose values can be either `user` or `admin`, depending on whether the attribute is required by the user or the administrator, respectively.
+
+Similarly, you can choose to make the attribute required when a set of one or more scopes is requested by a client when authenticating a user. For that, you can use the `scopes` property as follows:
+
+[source,json]
+----
+{
+  "attributes": [
+    {
+      "name": "myattribute",
+      "required": {
+        "scopes": ["foo"]
+      }
+  ]
+}
+----
+
+The `scopes` property is an array whose values can be any string representing a client scope.
+
+The attribute-level `permissions` property can be used to define the read and write permissions to an attribute. The permissions are set based on whether these operations can be performed on the attribute by a user, or administrator, or both.
+
+[source,json]
+----
+{
+  "attributes": [
+    {
+      "name": "myattribute",
+      "permissions": {
+        "view": ["admin"],
+        "edit": ["user"]
+      }
+  ]
+}
+----
+
+Both `view` and `edit` properties expect an array whose values can be either `user` or `admin`, depending on whether the attribute is viewable or editable by the user or the administrator, respectively.
+
+When the `edit` permission is granted, the `view` permission is implicitly granted.
+
+The attribute-level `annotation` property can be used to associate additional metadata to attributes. Annotations are mainly useful for passing over additional information about attributes to frontends rendering user attributes based on the user profile configuration. Each annotation is a key/value pair.
+
+[source,json]
+----
+{
+  "attributes": [
+    {
+      "name": "myattribute",
+      "annotations": {
+        "foo": ["foo-value"],
+        "bar": ["bar-value"]
+      }
+  ]
+}
+----
+
+=== Attribute Group Schema
+
+For each attribute group you should define a `name` and, optionally, the `annotations` settings.
+
+The attribute-level `annotation` property can be used to associate additional metadata to attributes. Annotations are mainly useful for passing over additional information about attributes to frontends rendering user attributes based on the user profile configuration. Each annotation is a key/value pair.
+
+== Customizing How UIs are Rendered
+
+The UIs from all the user profile contexts (including the administration console) are rendered dynamically accordingly to your
+user profile configuration.
+
+The default rendering mechanism provides the following capabilities:
+
+* Show or hide fields based on the permissions set to attributes.
+* Render markers for required fields based on the constraints set to the attributes.
+* Change the field input type (text, date, number, select, multiselect) set to an attribute.
+* Mark fields as read-only depending on the permissions set to an attribute.
+* Order fields depending on the order set to the attributes.
+* Group fields that belong to the same attribute group.
+* Dynamically group fields that belong to the same attribute group.
+
+=== Ordering attributes
+
+The attribute order is set by dragging and dropping the attribute rows on the attribute listing page.
+
+.Ordering Attributes
+image:images/user-profile-attribute-list-order.png[]
+
+The order you set in this page is respected when fields are rendered in dynamic forms.
+
+=== Grouping attributes
+
+When dynamic forms are rendered, they will try to group together attributes that belong to the same attribute group.
+
+.Dynamic Update Profile Form
+image:images/user-profile-update-profile.png[]
+
+[NOTE]
+====
+When attributes are linked to an attribute group, the attribute order is also important to make sure attributes within the same group are close together, within a same group header. Otherwise, if attributes within a group do not have a sequential order you might have the same group header rendered multiple times in the dynamic form.
+====
+
+== Enabling Progressive Profiling
+
+In order to make sure end-user profiles are in compliance with the configuration, administrators can use the `VerifyProfile` required action to eventually force users to update their profiles when authenticating to {project_name}.
+
+[NOTE]
+====
+The `VerifyProfile` action is similar to the `UpdateProfile` action. However, it leverages all the capabilities provided by the user profile to automatically enforce compliance with the user profile configuration.
+====
+
+When enabled, the `VerifyProfile` action is going to perform the following steps when the user is authenticating:
+
+* Check whether the user profile is fully compliant with the user profile configuration set to the realm. That means running
+validations and make sure all of them are successful.
+* If not, perform an additional step during the authentication so that the user can update any missing or invalid attribute.
+* If the user profile is compliant with the configuration, no additional step is performed, and the user continues with the authentication process.
+
+The `VerifyProfile` action is enabled by default. To disable it, click on the
+`Authentication` link on the left side menu and then click on the `Required Actions` tab. At this tab, use the *Enabled* switch of the `VerifyProfile` action to disable it.
+
+.Registering the VerifyProfile Required Action
+image:images/user-profile-register-verify-profile-action.png[]
+
+[[_using-internationalized-messages]]
+== Using Internationalized Messages
+
+If you want to use internationalized messages when configuring attributes, attributes groups, and annotations, you can
+set their display name, description, and values, using a placeholder that will translate to a message from a message bundle.
+
+For that, you can use a placeholder to resolve messages keys such as `${myAttributeName}`, where `myAttributeName` is the key for a message in a message bundle. For more details,
+look at link:https://www.keycloak.org/ui-customization/localization#_localizing_messages_in_a_theme[Localizing messages in a theme] about how to add message bundles to custom themes.

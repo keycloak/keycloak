@@ -1,0 +1,5 @@
+= Improving performance for deletion of user consents
+
+When a client scope or the full realm are deleted the associated user consents should also be removed. A new index over the table `USER_CONSENT_CLIENT_SCOPE` has been added to increase the performance.
+
+Note that, if the table contains more than 300.000 entries, by default {project_name} skips the creation of the indexes during the automatic schema migration and logs the SQL statements to the console instead. The statements must be run manually in the DB after {project_name}'s startup. Check the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.

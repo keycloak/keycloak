@@ -1,0 +1,555 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Copyright 2021 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<xs:schema version="1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="urn:keycloak:saml:adapter"
+           targetNamespace="urn:keycloak:saml:adapter"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+    <xs:element name="keycloak-saml-adapter" type="adapter-type"/>
+    <xs:complexType name="adapter-type">
+        <xs:annotation>
+            <xs:documentation>Keycloak SAML Adapter configuration file.</xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="SP" maxOccurs="1" minOccurs="0" type="sp-type">
+                <xs:annotation>
+                    <xs:documentation>Describes SAML service provider configuration.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="sp-type">
+        <xs:all>
+            <xs:element name="Keys" type="keys-type" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        List of service provider encryption and validation keys.
+
+                        If the IDP requires that the client application (SP) sign all of its requests and/or if the IDP will encrypt assertions, you must define the keys used to do this. For client signed documents you must define both the private and public key or certificate that will be used to sign documents. For encryption, you only have to define the private key that will be used to decrypt.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="PrincipalNameMapping" type="principal-name-mapping-type" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>When creating a Java Principal object that you obtain from methods like HttpServletRequest.getUserPrincipal(), you can define what name that is returned by the Principal.getName() method.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="RoleIdentifiers" type="role-identifiers-type" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>Defines what SAML attributes within the assertion received from the user should be used as role identifiers within the Java EE Security Context for the user.
+                    By default Role attribute values are converted to Java EE roles. Some IDPs send roles via a member or memberOf attribute assertion. You can define one or more Attribute elements to specify which SAML attributes must be converted into roles.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="RoleMappingsProvider" type="role-mappings-provider-type" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>Specifies the role mappings provider implementation that will be used to map the roles extracted from the SAML assertion into the final set of roles
+                    that will be assigned to the principal. A provider is typically used to map roles retrieved from third party IDPs into roles that exist in the JEE application environment. It can also
+                    assign extra roles to the assertion principal (for example, by connecting to an LDAP server to obtain more roles) or remove some of the roles that were set by the IDP.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="IDP" type="idp-type" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>Describes configuration of SAML identity provider for this service provider.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="entityID" type="xs:string" use="required">
+                <xs:annotation>
+                    <xs:documentation>This is the identifier for this client. The IDP needs this value to determine who the client is that is communicating with it.</xs:documentation>
+                </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="sslPolicy" type="ssl-policy-type" use="optional">
+                <xs:annotation>
+                    <xs:documentation>SSL policy the adapter will enforce.</xs:documentation>
+                </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="nameIDPolicyFormat" type="xs:string" use="optional">
+                <xs:annotation>
+                    <xs:documentation>SAML clients can request a specific NameID Subject format. Fill in this value if you want a specific format. It must be a standard SAML format identifier, i.e. urn:oasis:names:tc:SAML:2.0:nameid-format:transient. By default, no special format is requested.</xs:documentation>
+                </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="logoutPage" type="xs:string" use="optional">
+                <xs:annotation>
+                    <xs:documentation>URL of the logout page.</xs:documentation>
+                </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="forceAuthentication" type="xs:boolean" use="optional">
+                <xs:annotation>
+                    <xs:documentation>SAML clients can request that a user is re-authenticated even if they are already logged in at the IDP. Default value is false.</xs:documentation>
+                </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="keepDOMAssertion" type="xs:boolean" use="optional">
+                <xs:annotation>
+                    <xs:documentation>Attribute to inject the DOM representation of the assertion into the SamlPrincipal (respecting the original syntax). Default value is false</xs:documentation>
+                </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="isPassive" type="xs:boolean" use="optional">
+                <xs:annotation>
+                    <xs:documentation>SAML clients can request that a user is never asked to authenticate even if they are not logged in at the IDP. Set this to true if you want this. Do not use together with forceAuthentication as they are opposite. Default value is false.</xs:documentation>
+                </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="turnOffChangeSessionIdOnLogin" type="xs:boolean" use="optional">
+                <xs:annotation>
+                    <xs:documentation>The session id is changed by default on a successful login on some platforms to plug a security attack vector. Change this to true to disable this. It is recommended you do not turn it off. Default value is false.</xs:documentation>
+                </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="autodetectBearerOnly" type="xs:boolean" use="optional" default="false">
+                <xs:annotation>
+                  <xs:documentation>This should be set to true if your application serves both a web application and web services (e.g. SOAP or REST). It allows you to redirect unauthenticated users of the web application to the Keycloak login page, but send an HTTP 401 status code to unauthenticated SOAP or REST clients instead as they would not understand a redirect to the login page. Keycloak auto-detects SOAP or REST clients based on typical headers like X-Requested-With, SOAPAction or Accept. The default value is false.</xs:documentation>
+                </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="keys-type">
+        <xs:sequence>
+            <xs:element name="Key" type="key-type" minOccurs="1" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>Describes a single key used for signing or encryption.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="key-type">
+        <xs:all>
+            <xs:element name="KeyStore" maxOccurs="1" minOccurs="0" type="key-store-type">
+                <xs:annotation>
+                    <xs:documentation>Java keystore to load keys and certificates from.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="PrivateKeyPem" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>Private key (PEM format)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="PublicKeyPem" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>Public key (PEM format)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="CertificatePem" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>Certificate key (PEM format)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="signing" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>Flag defining whether the key should be used for signing.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="encryption" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>Flag defining whether the key should be used for encryption</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="key-store-type">
+        <xs:all>
+            <xs:element name="PrivateKey" maxOccurs="1" minOccurs="0" type="private-key-type">
+                <xs:annotation>
+                    <xs:documentation>Private key declaration</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Certificate" type="certificate-type" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>Certificate declaration</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="file" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>File path to the key store.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="resource" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>WAR resource path to the key store. This is a path used in method call to ServletContext.getResourceAsStream().</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="password" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The password of the key store.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="type" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>Key store format</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="alias" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>Key alias</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="private-key-type">
+        <xs:attribute name="alias" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>Alias that points to the key or cert within the keystore.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="password" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>Keystores require an additional password to access private keys. In the PrivateKey element you must define this password within a password attribute.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="certificate-type">
+        <xs:attribute name="alias" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>Alias that points to the key or cert within the keystore.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="principal-name-mapping-type">
+        <xs:attribute name="policy" type="principal-name-mapping-policy-type" use="required">
+            <xs:annotation>
+                <xs:documentation>Policy used to populate value of Java Principal object obtained from methods like HttpServletRequest.getUserPrincipal().</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="attribute" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>Name of the SAML assertion attribute to use within.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:simpleType name="principal-name-mapping-policy-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="FROM_NAME_ID">
+                <xs:annotation>
+                    <xs:documentation>This policy just uses whatever the SAML subject value is. This is the default setting</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="FROM_ATTRIBUTE">
+                <xs:annotation>
+                    <xs:documentation>This will pull the value from one of the attributes declared in the SAML assertion received from the server. You'll need to specify the name of the SAML assertion attribute to use within the attribute XML attribute.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="ssl-policy-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ALL">
+                <xs:annotation>
+                    <xs:documentation>All requests must come in via HTTPS.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="EXTERNAL">
+                <xs:annotation>
+                    <xs:documentation>Only non-private IP addresses must come over the wire via HTTPS.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="NONE">
+                <xs:annotation>
+                    <xs:documentation>no requests are required to come over via HTTPS.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="signature-algorithm-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="RSA_SHA1"/>
+            <xs:enumeration value="RSA_SHA256"/>
+            <xs:enumeration value="RSA_SHA512"/>
+            <xs:enumeration value="DSA_SHA1"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="binding-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="POST"/>
+            <xs:enumeration value="REDIRECT"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="role-identifiers-type">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="Attribute" maxOccurs="unbounded" minOccurs="0" type="attribute-type">
+                <xs:annotation>
+                    <xs:documentation>Specifies SAML attribute to be converted into roles.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="attribute-type">
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>Specifies name of the SAML attribute to be converted into roles.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="role-mappings-provider-type">
+        <xs:sequence>
+            <xs:element name="Property" type="property-type" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>Specifies a configuration property for the provider.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="id" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The id of the role mappings provider that is to be used. Example: properties-based-provider.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="property-type">
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The name (key) of the configuration property.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="value" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The value of the configuration property.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="idp-type">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="SingleSignOnService" maxOccurs="1" minOccurs="1" type="sign-on-type">
+                <xs:annotation>
+                    <xs:documentation>Configuration of the login SAML endpoint of the IDP.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="SingleLogoutService" type="logout-type" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>Configuration of the logout SAML endpoint of the IDP</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Keys" type="keys-type" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>The Keys sub element of IDP is only used to define the certificate or public key to use to verify documents signed by the IDP.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="HttpClient" type="http-client-type" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>Configuration of HTTP client used for automatic obtaining of certificates containing public keys for IDP signature verification via SAML descriptor of the IDP.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="AllowedClockSkew" type="allowed-clock-skew-type" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>This defines the allowed clock skew between IDP and SP in milliseconds. The default value is 0.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="entityID" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>issuer ID of the IDP.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="signaturesRequired" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>If set to true, the client adapter will sign every document it sends to the IDP. Also, the client will expect that the IDP will be signing any documents sent to it. This switch sets the default for all request and response types.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="signatureAlgorithm" type="signature-algorithm-type" use="optional">
+            <xs:annotation>
+                <xs:documentation>Signature algorithm that the IDP expects signed documents to use. Defaults to RSA_SHA256</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="signatureCanonicalizationMethod" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>This is the signature canonicalization method that the IDP expects signed documents to use. The default value is https://www.w3.org/2001/10/xml-exc-c14n# and should be good for most IDPs.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="encryption" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation></xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="metadataUrl" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The URL used to retrieve the IDP metadata, currently this is only used to pick up signing and encryption keys periodically which allow cycling of these keys on the IDP without manual changes on the SP side.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="sign-on-type">
+        <xs:attribute name="signRequest" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>Should the client sign authn requests? Defaults to whatever the IDP signaturesRequired element value is.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="validateResponseSignature" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>Should the client expect the IDP to sign the assertion response document sent back from an auhtn request? Defaults to whatever the IDP signaturesRequired element value is.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="validateAssertionSignature" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>Should the client expect the IDP to sign the individual assertions sent back from an auhtn request? Defaults to whatever the IDP signaturesRequired element value is.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="requestBinding" type="binding-type" use="optional">
+            <xs:annotation>
+                <xs:documentation>SAML binding type used for communicating with the IDP. The default value is POST, but you can set it to REDIRECT as well.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="responseBinding" type="binding-type" use="optional">
+            <xs:annotation>
+                <xs:documentation>SAML allows the client to request what binding type it wants authn responses to use. This value maps to ProtocolBinding attribute in SAML AuthnRequest. The default is that the client will not request a specific binding type for responses.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="bindingUrl" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>This is the URL for the IDP login service that the client will send requests to.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="assertionConsumerServiceUrl" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>URL of the assertion consumer service (ACS) where the IDP login service should send responses to. By default it is unset, relying on the IdP settings. When set, it must end in "/saml". This property is typically accompanied by the responseBinding attribute.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="logout-type">
+        <xs:attribute name="signRequest" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>Should the client sign authn requests? Defaults to whatever the IDP signaturesRequired element value is.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="signResponse" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>Should the client sign logout responses it sends to the IDP requests? Defaults to whatever the IDP signaturesRequired element value is.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="validateRequestSignature" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>Should the client expect signed logout request documents from the IDP? Defaults to whatever the IDP signaturesRequired element value is.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="validateResponseSignature" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>Should the client expect signed logout response documents from the IDP? Defaults to whatever the IDP signaturesRequired element value is.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="requestBinding" type="binding-type" use="optional">
+            <xs:annotation>
+                <xs:documentation>This is the SAML binding type used for communicating SAML requests to the IDP. The default value is POST.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="responseBinding" type="binding-type" use="optional">
+            <xs:annotation>
+                <xs:documentation>This is the SAML binding type used for communicating SAML responses to the IDP. The default value is POST.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="postBindingUrl" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>This is the URL for the IDP's logout service when using the POST binding. This setting is REQUIRED if using the POST binding.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="redirectBindingUrl" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>This is the URL for the IDP's logout service when using the REDIRECT binding. This setting is REQUIRED if using the REDIRECT binding.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="http-client-type">
+        <xs:attribute name="allowAnyHostname" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>If the the IDP server requires HTTPS and this config option is set to true the IDP's certificate
+                    is validated via the truststore, but host name validation is not done. This setting should only be used during
+                    development and never in production as it will partly disable verification of SSL certificates.
+                    This seting may be useful in test environments. The default value is false.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="clientKeystore" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>This is the file path to a keystore file. This keystore contains client certificate
+                    for two-way SSL when the adapter makes HTTPS requests to the IDP server.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="clientKeystorePassword" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>Password for the client keystore and for the client's key.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="connectionPoolSize" type="xs:int" use="optional" default="10">
+            <xs:annotation>
+                <xs:documentation>Defines number of pooled connections.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="disableTrustManager" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>If the the IDP server requires HTTPS and this config option is set to true you do not have to specify a truststore.
+                    This setting should only be used during development and never in production as it will disable verification of SSL certificates.
+                    The default value is false.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="proxyUrl" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>URL to HTTP proxy to use for HTTP connections.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="truststore" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The value is the file path to a keystore file. If you prefix the path with classpath:,
+                    then the truststore will be obtained from the deployment's classpath instead. Used for outgoing
+                    HTTPS communications to the IDP server. Client making HTTPS requests need
+                    a way to verify the host of the server they are talking to. This is what the truststore does.
+                    The keystore contains one or more trusted host certificates or certificate authorities.
+                    You can create this truststore by extracting the public certificate of the IDP's SSL keystore.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="truststorePassword" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>Password for the truststore keystore.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="socketTimeout" type="xs:long" default="-1">
+            <xs:annotation>
+                <xs:documentation>Defines timeout for socket waiting for data in milliseconds.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="connectionTimeout" type="xs:long" default="-1">
+            <xs:annotation>
+                <xs:documentation>Defines timeout for establishing the connection with the remote host in milliseconds.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="connectionTtl" type="xs:long" default="-1">
+            <xs:annotation>
+                <xs:documentation>Defines the connection time to live in milliseconds.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="allowed-clock-skew-type">
+        <xs:annotation>
+            <xs:documentation>The value is the allowed clock skew between the IDP and the SP.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:positiveInteger">
+                <xs:attribute name="unit" type="clock-skew-unit-type"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:simpleType name="clock-skew-unit-type">
+        <xs:annotation>
+            <xs:documentation>Time unit for the value of the clock skew.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="MINUTES" />
+            <xs:enumeration value="SECONDS" />
+            <xs:enumeration value="MILLISECONDS" />
+            <xs:enumeration value="MICROSECONDS" />
+            <xs:enumeration value="NANOSECONDS" />
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

@@ -1,0 +1,139 @@
+:root {
+    --keycloak-logo-url: url('../img/keycloak-logo-text.svg');
+    --keycloak-bg-logo-url: url("../img/keycloak-bg-darken.svg");
+    --keycloak-logo-height: 63px;
+    --keycloak-logo-width: 300px;
+    --keycloak-card-top-color: var(--pf-v5-global--palette--blue-400);
+}
+
+.pf-v5-c-login__container {
+    grid-template-columns: 34rem;
+    grid-template-areas: "header"
+                         "main"
+}
+
+.pf-v5-c-login__main-header {
+    border-top: 4px solid var(--keycloak-card-top-color);
+}
+
+/* Info section - top margin + bottom padding */
+.pf-v5-c-login__main-footer-band:first-child {
+    margin-block-start: var(--pf-v5-global--spacer--lg);
+}
+
+.pf-v5-c-login__main-footer-band:last-child {
+    padding-bottom: 0;
+}
+/* Info section */
+
+.login-pf body {
+    background: var(--keycloak-bg-logo-url) no-repeat center center fixed;
+    background-size: cover;
+    height: 100%;
+}
+
+div.kc-logo-text {
+    background-image: var(--keycloak-logo-url);
+    height: var(--keycloak-logo-height);
+    width: var(--keycloak-logo-width);
+    background-repeat: no-repeat;
+    background-size: contain;
+    margin: 0 auto;
+}
+
+div.kc-logo-text span {
+    display: none;
+}
+
+.kc-login-tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.kc-login-tooltip .kc-tooltip-text{
+    top:-3px;
+    left:160%;
+    background-color: black;
+    visibility: hidden;
+    color: #fff;
+
+    min-width:130px;
+    text-align: center;
+    border-radius: 2px;
+    box-shadow:0 1px 8px rgba(0,0,0,0.6);
+    padding: 5px;
+
+    position: absolute;
+    opacity:0;
+    transition:opacity 0.5s;
+}
+
+/* Show tooltip */
+.kc-login-tooltip:hover .kc-tooltip-text {
+    visibility: visible;
+    opacity:0.7;
+}
+
+/* Arrow for tooltip */
+.kc-login-tooltip .kc-tooltip-text::after {
+    content: " ";
+    position: absolute;
+    top: 15px;
+    right: 100%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+
+#kc-recovery-codes-list {
+    columns: 2;
+}
+
+#certificate_subjectDN {
+    overflow-wrap: break-word
+}
+
+#kc-verify-email-form {
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
+#kc-header-wrapper {
+    font-size: 29px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    line-height: 1.2em;
+    white-space: normal;
+    color: var(--pf-v5-global--Color--light-100) !important;
+    text-align: center;
+}
+
+#kc-code pre code {
+    word-break: break-all;
+}
+
+hr {
+    margin-top: var(--pf-v5-global--spacer--sm);
+    margin-bottom: var(--pf-v5-global--spacer--md);
+}
+
+#kc-social-providers svg:not(.google) {
+    filter: invert(47%) sepia(88%) saturate(7486%) hue-rotate(199deg) brightness(91%) contrast(101%);
+}
+
+#kc-social-providers svg {
+    height: var(--pf-v5-global--FontSize--xl);
+}
+
+@media (prefers-color-scheme: dark) {
+    #kc-social-providers svg:not(.google) {
+        filter: invert(54%) sepia(96%) saturate(2028%) hue-rotate(174deg) brightness(99%) contrast(97%);
+    }
+}
+
+@media (min-width: 768px) {
+    div.pf-v5-c-login__main-header {
+        grid-template-columns: 70% 30%;
+    }
+}

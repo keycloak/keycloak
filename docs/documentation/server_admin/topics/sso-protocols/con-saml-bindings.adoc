@@ -1,0 +1,41 @@
+[id="con-saml-bindings_{context}"]
+
+==== SAML bindings
+[role="_abstract"]
+{project_name} supports three binding types.
+
+===== Redirect binding
+
+_Redirect_ binding uses a series of browser redirect URIs to exchange information.
+
+. A user connects to an application using a browser. The application detects the user is not authenticated. 
+. The application generates an XML authentication request document and encodes it as a query parameter in a URI. The URI is used to redirect to the {project_name} server. Depending on your settings, the application can also digitally sign the XML document and include the signature as a query parameter in the redirect URI to {project_name}.  This signature is used to validate the client that sends the request.
+. The browser redirects to {project_name}.  
+. The server extracts the XML auth request document and verifies the digital signature, if required.
+. The user enters their authentication credentials.
+. After authentication, the server generates an XML authentication response document. The document contains a SAML assertion that holds metadata about the user, including name, address, email, and any role mappings the user has.  The document is usually digitally signed using XML signatures, and may also be encrypted.
+. The XML authentication response document is encoded as a query parameter in a redirect URI. The URI brings the browser back to the application.  The digital signature is also included as a query parameter.
+. The application receives the redirect URI and extracts the XML document.
+. The application verifies the realm's signature to ensure it is receiving a valid authentication response.  The information inside the SAML assertion is used to make access decisions or display user data.
+
+===== POST binding
+
+_POST_ binding is similar to _Redirect_ binding but _POST_ binding exchanges XML documents using POST requests instead of using GET requests. _POST_ binding uses JavaScript to make the browser send a POST request to the {project_name} server or application when exchanging documents. HTTP responds with an HTML document which contains an HTML form containing embedded JavaScript.  When the page loads, the JavaScript automatically invokes the form.
+
+_POST_ binding is recommended due to two restrictions:
+
+* *Security* -- With _Redirect_ binding, the SAML response is part of the URL. It is less secure as it is possible to capture the response in logs.
+
+* *Size* -- Sending the document in the HTTP payload provides more scope for large amounts of data than in a limited URL.
+
+===== ECP
+
+Enhanced Client or Proxy (ECP) is a SAML v.2.0 profile which allows the exchange of SAML attributes outside the context of a web browser. It is often used by REST or SOAP-based clients.
+
+====  {project_name} Server SAML URI Endpoints
+
+{project_name} has one endpoint for all SAML requests.
+
+`http(s)://authserver.host{kc_realms_path}/{realm-name}/protocol/saml`
+
+All bindings use this endpoint.

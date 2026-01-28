@@ -1,0 +1,31 @@
+
+[[_stackoverflow]]
+
+==== Stack Overflow
+
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the *Add provider* list, select *Stack Overflow*.
++
+.Add identity provider
+image:images/stack-overflow-add-identity-provider.png[Add Identity Provider]
++
+. In a separate browser tab, log into https://stackapps.com/apps/oauth/register[registering your application on Stack Apps].
++
+.Register application
+image:images/stack-overflow-app-register.png[Register Application]
++
+.. Enter your application name into the *Application Name* field.
+.. Enter the OAuth domain into the *OAuth Domain* field.
+.. Click *Register Your Application*.
++
+.Settings
+image:images/stack-overflow-app-settings.png[Settings]
++
+. Note the *Client Id*, *Client Secret*, and *Key*.
+. In {project_name}, paste the value of the `Client Id` into the *Client ID* field.
+. In {project_name}, paste the value of the `Client Secret` into the *Client Secret* field.
+. In {project_name}, paste the value of the `Key` into the *Key* field.
+. Click *Add*.
+
+

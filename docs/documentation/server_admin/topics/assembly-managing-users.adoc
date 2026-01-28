@@ -1,0 +1,35 @@
+
+[id="assembly-managing-users_{context}"]
+==  Managing users
+
+From the Admin Console, you have a wide range of actions you can perform to manage users.
+
+include::users/proc-creating-user.adoc[leveloffset=+2]
+include::users/user-profile.adoc[leveloffset=+2]
+
+include::users/ref-user-credentials.adoc[leveloffset=+2]
+include::users/proc-setting-password-user.adoc[leveloffset=+3]
+include::users/proc-creating-otp.adoc[leveloffset=+3]
+
+include::users/con-user-registration.adoc[leveloffset=+2]
+include::users/proc-enabling-user-registration.adoc[leveloffset=3]
+include::users/proc-registering-new-user.adoc[leveloffset=3]
+include::users/proc-requiring-tac-agreement-at-registration.adoc[leveloffset=3]
+
+include::users/con-required-actions.adoc[leveloffset=+2]
+include::users/proc-setting-required-actions.adoc[leveloffset=+3]
+include::users/proc-setting-default-required-actions.adoc[leveloffset=+3]
+include::users/proc-enabling-terms-conditions.adoc[leveloffset=+3]
+
+include::users/con-aia.adoc[leveloffset=+2]
+
+include::users/proc-searching-user.adoc[leveloffset=+2]
+
+include::users/proc-deleting-user.adoc[leveloffset=+2]
+include::users/proc-allow-user-to-delete-account.adoc[leveloffset=+2]
+
+include::users/con-user-impersonation.adoc[leveloffset=+2]
+include::users/proc-enabling-recaptcha.adoc[leveloffset=+2]
+
+include::users/ref-personal-data-collected.adoc[leveloffset=+2]
+

@@ -1,0 +1,121 @@
+ifeval::[{project_community}==true]
+
+[[_identity_broker_kubernetes]]
+=== Kubernetes identity providers
+
+:tech_feature_name: Kubernetes service accounts trust relationship provider
+:tech_feature_id: kubernetes
+include::../../topics/templates/techpreview.adoc[]
+
+:tech_feature_name: Authenticate clients based on assertions issued by an identity provider
+:tech_feature_id: client-auth-federated
+include::../../topics/templates/techpreview.adoc[]
+
+A Kubernetes identity provider supports authenticating clients with Kubernetes service account tokens.
+It depends on the preview feature `client-auth-federated`.
+
+The default issuer URL for a Kubernetes cluster is `\https://kubernetes.default.svc.cluster.local`. You can discover
+this value by decoding a service account token to retrieve the value of the `iss` claim.
+
+Keycloak must be able to invoke the endpoint `<ISSUER>/.well-known/openid-configuration` and additionally the
+JWKS endpoint returned in the well-known configuration. By default, these endpoints require authentication with a
+service account token. ${project_name} will automatically use the token from `/var/run/secrets/kubernetes.io/serviceaccount/token`
+if available and the token issuer matches the configured issuer.
+
+Each identity provider must have a unique issuer. Each client must also have a unique subject identifier for each
+issuer. As the subject identifier is built from the namespace and service account name, each client must have its own
+service account if multiple clients share a namespace.
+
+As a security best practice, do not use the `default` service account in a namespace, as it is shared with all Pods in a namespace.
+Instead, create an individual service account for each client.
+
+Kubernetes service account tokens can be reused multiple times. As a security best practice, reduce the expiration time
+and make sure tokens can not be intercepted in communication between the client and {project_name}.
+
+
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `Kubernetes`.
++
+. Enter your initial configuration options or proceed with the defaults.
++
+.Kubernetes settings
+|===
+|Configuration|Description
+
+|Alias
+|The alias for the identity provider is used to link a client to the provider
+
+|Kubernetes Issuer URL
+|The issuer URL of service account tokens. The URL `<ISSUER>.well-known/openid-configuration` must be available to {project_name})
+
+|===
++
+. When you create a new realm with the preview feature `client-auth-federated` enabled, the client authentication flow is already configured correctly. For existing realms, add to the client authentication flow the execution of *Signed JWT - Federated* as an alternative step. As built-in flows can not be updated, and if the default flow is your default, you will first need to duplicate the existing clients
+. For each confidential OpenID Connect client that should authenticate via this provider:
+.. Change in the *Credentials* tab the *Client Authenticator* to *Signed JWT - Federated*.
+.. As *Identity provider*, enter the alias of the Kubernetes identity provider added in step 3.
+.. As *Federated Subject*, enter the subject identifier as issued by Kubernetes. This is usually `system:serviceaccount:<namespace>:<serviceaccount>`.
++
+
+. For the Pod in Kubernetes add a service account:
++
+--
+[source]
+----
+apiVersion: v1
+kind: Pod
+...
+spec:
+  serviceAccountName: <serviceaccount>
+  ...
+  volumes:
+  - name: aud-token
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          audience: https://example.com:8443/realms/test <1>
+          expirationSeconds: 600 <2>
+          path: my-aud-token
+----
+. Issuer URL of the {project_name} realm.
+. Maximum time allowed by Kubernetes and {project_name} is 3600 seconds
+--
++
+
+To verify your setup, assuming the client has a service account configured:
+
+. In the Pod, retrieve the token
++
+[source]
+----
+cat /var/run/secrets/tokens/my-aud-token
+----
+. Use the token as the client credentials
++
+[source]
+----
+curl -k https://example.com:8443/realms/<realm>/protocol/openid-connect/token \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  --data-urlencode grant_type=client_credentials \
+  --data-urlencode client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer \
+  --data-urlencode client_assertion=<token>
+----
+. Verify the response
++
+[source,json]
+----
+{
+  "access_token": "ey...bw",
+  "expires_in": 300,
+  "refresh_expires_in": 0,
+  "token_type": "Bearer",
+  "not-before-policy": 0,
+  "scope": "profile email"
+}
+----
+
+NOTE: While the service account functionality is helpful to test that the setup is working, disabled this feature after the test if it is not needed for the client to follow the least-privileges security best practice.
+
+endif::[]

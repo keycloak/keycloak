@@ -1,0 +1,358 @@
+= Added iss parameter to OAuth 2.0/OpenID Connect Authentication Response
+
+RFC 9207 OAuth 2.0 Authorization Server Issuer Identification specification adds the parameter `iss` in the OAuth 2.0/OpenID Connect Authentication Response for realizing secure authorization responses.
+
+In past releases, we did not have this parameter, but now {project_name} adds this parameter by default, as required by the specification.
+
+However, some OpenID Connect / OAuth2 adapters, and especially older {project_name} adapters, may have issues with this new parameter.
+
+For example, the parameter will be always present in the browser URL after successful authentication to the client application.
+In these cases, it may be useful to disable adding the `iss` parameter to the authentication response. This can be done
+for the particular client in the {project_name} Admin Console, in client details in the section with `OpenID Connect Compatibility Modes`,
+described in <<_compatibility_with_older_adapters>>. Dedicated `Exclude Issuer From Authentication Response` switch exists,
+which can be turned on to prevent adding the `iss` parameter to the authentication response.
+
+= Wildcard characters handling
+
+JPA allows wildcards `%` and `+_+` when searching, while other providers like LDAP allow only `+*+`.
+As `+*+` is a natural wildcard character in LDAP, it works in all places, while with JPA it only
+worked at the beginning and the end of the search string. Starting with this release the only
+wildcard character is `+*+` which work consistently across all providers in all places in the search
+string. All special characters in a specific provider like `%` and `+_+` for JPA are escaped. For exact
+search, with added quotes such as `+"w*ord"+`, the behavior remains the same as in previous releases.
+
+= Language files for themes default to UTF-8 encoding
+This release now follows the standard mechanisms of Java and later, which assumes resource bundle files to be encoded in UTF-8.
+
+Previous versions of {project_name} supported specifying the encoding in the first line with a comment like `# encoding: UTF-8`, which is no longer supported and is ignored.
+
+Message properties files for themes are now read in UTF-8 encoding, with an automatic fallback to ISO-8859-1 encoding.
+If you are using a different encoding, convert the files to UTF-8.
+
+= Changes to the value format of claims mapped by the realm and client role mappers
+
+Before this release, both realm (`User Realm Role`) and client (`User Client Role`) protocol mappers
+were mapping a stringfied JSON array when the `Multivalued` setting was disabled.
+
+However, the `Multivalued` setting indicates whether the claim should be mapped as a list or, if disabled, only a single value
+from the same list of values.
+
+In this release, the role and client mappers now map to a single value from the effective roles of a user when
+they are marked as single-valued (`Multivalued` disabled).
+
+= Changes to password fields in Login UI
+
+In this version we want to introduce a toggle to hide/show password inputs.
+
+.Affected pages:
+- login.ftl
+- login-password.ftl
+- login-update-password.ftl
+- register.ftl
+- register-user-profile.ftl
+
+In general all `<input type="password" name="password" />` are encapsulated within a div now. The input element is followed by a button which toggles the visibility of the password input.
+
+Old code example:
+[source,html]
+----
+<input type="password" id="password" name="password" autocomplete="current-password" style="display:none;"/>
+----
+
+New code example:
+[source,html]
+----
+<div class="${properties.kcInputGroup!}">
+    <input type="password" id="password" name="password" autocomplete="current-password" style="display:none;"/>
+    <button class="pf-c-button pf-m-control" type="button" aria-label="${msg('showPassword')}"
+            aria-controls="password" data-password-toggle
+            data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}">
+        <i class="fa fa-eye" aria-hidden="true"></i>
+    </button>
+</div>
+----
+
+= Default Keycloak CR Hostname
+
+When running on OpenShift, with ingress enabled, and with the spec.ingress.classname set to openshift-default, you may leave the spec.hostname.hostname unpopulated in the Keycloak CR.
+The operator will assign a default hostname to the stored version of the CR similar to what would be created by an OpenShift Route without an explicit host - that is ingress-namespace.appsDomain
+If the appsDomain changes, or should you need a different hostname for any reason, then update the Keycloak CR.
+
+= The deprecated `auto-build` CLI option was removed
+
+The `auto-build` CLI option has been marked as deprecated for a long time.
+In this release, it was completely removed, and it is no longer supported.
+
+When executing the `start` command, the server is automatically built based on the configuration.
+In order to prevent this behavior, set the `--optimized` flag.
+
+
+= kc.sh and shell metacharacters
+
+The kc.sh no longer uses an additional shell eval on parameters and the environment variables JAVA_OPTS_APPEND and JAVA_ADD_OPENS, thus the continued use of double escaping/quoting will result in the parameter being misunderstood.  For example instead of 
+
+```
+bin/kc.sh start --db postgres --db-username keycloak --db-url "\"jdbc:postgresql://localhost:5432/keycloak?ssl=false&connectTimeout=30\"" --db-password keycloak --hostname localhost
+```
+
+Use a single escape:
+
+```
+bin/kc.sh start --db postgres --db-username keycloak --db-url "jdbc:postgresql://localhost:5432/keycloak?ssl=false&connectTimeout=30" --db-password keycloak --hostname localhost
+```
+
+This change also means you cannot invoke kc.sh using a single quoted value of all arguments.  For example you can no longer use 
+
+```
+bin/kc.sh "start --help"
+```
+
+it must instead be individual arguments
+
+```
+bin/kc.sh start --help
+```
+
+Similarly instead of
+
+```
+bin/kc.sh build "--db postgres"
+```
+
+it must instead be individual arguments
+
+```
+bin/kc.sh build --db postgres
+```
+
+The usage of individual arguments is also required in Dockerfile run commands.
+
+= Removed RegistrationProfile form action
+
+The form action `RegistrationProfile` (displayed in the UI of authentication flows as `Profile Validation`) was removed from the codebase and also from all authentication flows. By default, it was in
+the built-in registration flow of every realm. The validation of user attributes as well as creation of the user including all that user's attributes is handled by `RegistrationUserCreation` form action and
+hence `RegistrationProfile` is not needed anymore. There is usually no further action needed in relation to this change, unless you used `RegistrationProfile` class in your own providers.
+
+= Deprecated methods from data providers and models
+
+* `RealmModel#getTopLevelGroupsStream()` and overloaded methods are now deprecated
+
+= `GroupProvider` changes
+
+A new method has been added to allow for searching and paging through top level groups.
+If you implement this interface you will need to implement the following method:
+[source,java]
+----
+Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm,
+                                           String search,
+                                           Boolean exact,
+                                           Integer firstResult,
+                                           Integer maxResults)
+----
+
+= `GroupRepresentation` changes
+
+* new field `subGroupCount` added to inform client how many subgroups are on any given group
+* `subGroups` list is now only populated on queries that request hierarchy data
+  * This field is populated from the "bottom up" so cannot be relied on for getting all subgroups for a group. Use a `GroupProvider` or request the subgroups from `GET {keycloak server}/realms/{realm-name}/groups/{group_id}/children`
+
+= New endpoint for Group Admin API
+
+Endpoint `GET {keycloak server}/realms/{realm-name}/groups/{group_id}/children` added as a way to get subgroups of specific groups that support pagination
+
+= RESTEeasy Reactive
+Relying on RESTEasy Classic is not longer an option because it is not available anymore. Migration will be needed for SPI's and code that is relying on RESTEasy Classic and related packages part of  `org.jboss.resteasy.spi.*`.
+
+= Partial export requires manage-realm permission
+
+The endpoint `POST {keycloak server}/realms/{realm-name}/partial-export` and the corresponding action in the admin console now require `manage-realm` permission for execution instead of `view-realm`. This endpoint exports the realm configuration into a JSON file and the new permission is more appropriate. The parameters `exportGroupsAndRoles` and `exportClients`, which include the realm groups/roles and clients in the export respectively, continue managing the same permissions (`query-groups` and `view-clients`).
+
+= Removal of the options to trim the event's details length
+
+Since this release, {project_name} supports long value for `EventEntity` details column. Therefore, it no longer supports options for trimming event detail length `--spi-events-store-jpa-max-detail-length` and `--spi-events-store-jpa-max-field-length`.
+
+= User Profile updates
+
+This release includes many fixes and updates that are related to user profile as we are working on promoting this feature from preview to officially supported.
+Minor changes exist for the SPI such as the newly added method `boolean isEnabled(RealmModel realm)` on `UserProfileProvider` interface. Also
+some user profile classes and some validator related classes (but not builtin validator implementations) were moved from `keycloak-server-spi-private` to
+`keycloak-server-spi` module. However, the packages for java classes remain the same. You might be affected in some corner cases, such as when you
+are overriding the built-in implementation with your own `UserProfileProvider` implementation. However, note that `UserProfileProvider` is an unsupported SPI.
+
+ifeval::[{project_community}==true]
+= Removal of the Map Store
+
+The Map Store has been an experimental feature in previous releases.
+Starting with this release, it is removed and users should continue to use the current JPA store.
+
+Since this release, it is no longer possible to use `--storage` related CLI options.
+The modules `keycloak-model-map*` have been removed.
+endif::[]
+
+= Removed namespaces from our translations
+All translations are moved into one file for the Admin Console. If you have made your own translations or extended the Admin Console you will need to migrate them to this new format.
+Also if you have "overrides" in your database, you will have to remove the namespace from the keys.
+Some keys are the same only in different namespaces, this is most obvious to help.
+In these cases we have postfix the key with `Help`.
+
+If you want you can use this node script to help with the migration.
+It will take all the single files and put them into a new one and also take care of some of the mapping:
+
+[source,js]
+----
+import { readFileSync, writeFileSync, appendFileSync } from "node:fs";
+
+const ns = [
+  "common",
+  "common-help",
+  "dashboard",
+  "clients",
+  "clients-help",
+  "client-scopes",
+  "client-scopes-help",
+  "groups",
+  "realm",
+  "roles",
+  "users",
+  "users-help",
+  "sessions",
+  "events",
+  "realm-settings",
+  "realm-settings-help",
+  "authentication",
+  "authentication-help",
+  "user-federation",
+  "user-federation-help",
+  "identity-providers",
+  "identity-providers-help",
+  "dynamic",
+];
+
+const map = new Map();
+const dup = [];
+
+ns.forEach((n) => {
+  const rawData = readFileSync(n + ".json");
+  const translation = JSON.parse(rawData);
+  Object.entries(translation).map((e) => {
+    const name = e[0];
+    const value = e[1];
+    if (map.has(name) && map.get(name) !== value) {
+      if (n.includes("help")) {
+        map.set(name + "Help", value);
+      } else {
+        map.set(name, value);
+        dup.push({
+          name: name,
+          value: map.get(name),
+          dup: { ns: n, value: value },
+        });
+      }
+    } else {
+      map.set(name, value);
+    }
+  });
+});
+
+writeFileSync(
+  "translation.json",
+  JSON.stringify(Object.fromEntries(map.entries()), undefined, 2),
+);
+
+const mapping = [
+  ["common:clientScope", "clientScopeType"],
+  ["identity-providers:createSuccess", "createIdentityProviderSuccess"],
+  ["identity-providers:createError", "createIdentityProviderError"],
+  ["clients:createError", "createClientError"],
+  ["clients:createSuccess", "createClientSuccess"],
+  ["user-federation:createSuccess", "createUserProviderSuccess"],
+  ["user-federation:createError", "createUserProviderError"],
+  ["authentication-help:name", "flowNameHelp"],
+  ["authentication-help:description", "flowDescriptionHelp"],
+  ["clientScopes:noRoles", "noRoles-clientScope"],
+  ["clientScopes:noRolesInstructions", "noRolesInstructions-clientScope"],
+  ["users:noRoles", "noRoles-user"],
+  ["users:noRolesInstructions", "noRolesInstructions-user"],
+  ["clients:noRoles", "noRoles-client"],
+  ["clients:noRolesInstructions", "noRolesInstructions-client"],
+  ["groups:noRoles", "noRoles-group"],
+  ["groups:noRolesInstructions", "noRolesInstructions-group"],
+  ["roles:noRoles", "noRoles-roles"],
+  ["roles:noRolesInstructions", "noRolesInstructions-roles"],
+  ["realm:realmName:", "realmNameField"],
+  ["client-scopes:searchFor", "searchForClientScope"],
+  ["roles:searchFor", "searchForRoles"],
+  ["authentication:title", "titleAuthentication"],
+  ["events:title", "titleEvents"],
+  ["roles:title", "titleRoles"],
+  ["users:title", "titleUsers"],
+  ["sessions:title", "titleSessions"],
+  ["client-scopes:deleteConfirm", "deleteConfirmClientScopes"],
+  ["users:deleteConfirm", "deleteConfirmUsers"],
+  ["groups:deleteConfirm_one", "deleteConfirmGroup_one"],
+  ["groups:deleteConfirm_other", "deleteConfirmGroup_other"],
+  ["identity-providers:deleteConfirm", "deleteConfirmIdentityProvider"],
+  ["realm-settings:deleteConfirm", "deleteConfirmRealmSetting"],
+  ["roles:whoWillAppearLinkText", "whoWillAppearLinkTextRoles"],
+  ["users:whoWillAppearLinkText", "whoWillAppearLinkTextUsers"],
+  ["roles:whoWillAppearPopoverText", "whoWillAppearPopoverTextRoles"],
+  ["users:whoWillAppearPopoverText", "whoWillAppearPopoverTextUsers"],
+  ["client-scopes:deletedSuccess", "deletedSuccessClientScope"],
+  ["identity-providers:deletedSuccess", "deletedSuccessIdentityProvider"],
+  ["realm-settings:deleteSuccess", "deletedSuccessRealmSetting"],
+  ["client-scopes:deleteError", "deletedErrorClientScope"],
+  ["identity-providers:deleteError", "deletedErrorIdentityProvider"],
+  ["realm-settings:deleteError", "deletedErrorRealmSetting"],
+  ["realm-settings:saveSuccess", "realmSaveSuccess"],
+  ["user-federation:saveSuccess", "userProviderSaveSuccess"],
+  ["realm-settings:saveError", "realmSaveError"],
+  ["user-federation:saveError", "userProviderSaveError"],
+  ["realm-settings:validateName", "validateAttributeName"],
+  ["identity-providers:disableConfirm", "disableConfirmIdentityProvider"],
+  ["realm-settings:disableConfirm", "disableConfirmRealm"],
+  ["client-scopes:updateSuccess", "updateSuccessClientScope"],
+  ["client-scopes:updateError", "updateErrorClientScope"],
+  ["identity-providers:updateSuccess", "updateSuccessIdentityProvider"],
+  ["identity-providers:updateError", "updateErrorIdentityProvider"],
+  ["user-federation:orderChangeSuccess", "orderChangeSuccessUserFed"],
+  ["user-federation:orderChangeError", "orderChangeErrorUserFed"],
+  ["authentication-help:alias", "authenticationAliasHelp"],
+  ["authentication-help:flowType", "authenticationFlowTypeHelp"],
+  ["authentication:createFlow", "authenticationCreateFlowHelp"],
+  ["client-scopes-help:rolesScope", "clientScopesRolesScope"],
+  ["client-scopes-help:name", "scopeNameHelp"],
+  ["client-scopes-help:description", "scopeDescriptionHelp"],
+  ["client-scopes-help:type", "scopeTypeHelp"],
+  ["clients-help:description", "clientDescriptionHelp"],
+  ["clients-help:clientType", "clientsClientTypeHelp"],
+  ["clients-help:scopes", "clientsClientScopesHelp"],
+  ["common:clientScope", "clientScopeTypes"],
+  ["dashboard:realmName", "realmNameTitle"],
+  ["common:description", "description"],
+];
+
+mapping.forEach((m) => {
+  const key = m[0].split(":");
+  try {
+    const data = readFileSync(key[0] + ".json");
+    const translation = JSON.parse(data);
+    const value = translation[key[1]];
+    if (value) {
+      appendFileSync(
+        "translation.json",
+        '"' + m[1] + '": ' + JSON.stringify(value) + ',\n',
+      );
+    }
+  } catch (error) {
+    console.error("skipping namespace key: " + key);
+  }
+});
+----
+
+Save this into a file called `transform.mjs` in your `public/locale/<language>` folder and run it with:
+
+[source]
+----
+node ./transform.mjs
+----
+NOTE: This might not do a complete transform, but very close to it.

@@ -1,0 +1,188 @@
+[[realm_keys]]
+=== Configuring realm keys
+
+The authentication protocols that are used by {project_name} require cryptographic signatures and sometimes
+encryption.  {project_name} uses asymmetric key pairs, a private and public key, to accomplish this.
+
+{project_name} has a single active key pair at a time, but can have several passive keys as well. The active key pair
+is used to create new signatures, while the passive key pair can be used to verify previous signatures. This makes it
+possible to regularly rotate the keys without any downtime or interruption to users.
+
+When a realm is created, a key pair and a self-signed certificate is automatically generated.
+
+.Procedure
+. Click *Realm settings* in the menu.
+. Click *Keys*.
+. Select *Passive keys* from the filter dropdown to view passive keys.
+. Select *Disabled keys* from the filter dropdown to view disabled keys.
+
+A key pair can have the status `Active`, but still not be selected as the currently active key pair for the realm.
+The selected active pair which is used for signatures is selected based on the first key provider sorted by priority
+that is able to provide an active key pair.
+
+==== Rotating keys
+
+We recommend that you regularly rotate keys. Start by creating new keys with a higher priority than the existing active keys. You can instead create new keys with the same priority and making the previous keys passive.
+
+Once new keys are available, all new tokens and cookies will be signed with the new keys. When a user authenticates to an
+application, the SSO cookie is updated with the new signature. When OpenID Connect tokens are refreshed new tokens are
+signed with the new keys. Eventually, all cookies and tokens use the new keys and after a while the old keys can be removed.
+
+The frequency of deleting old keys is a tradeoff between security and making sure all cookies and tokens are updated. Consider creating new keys every three to six months and deleting old keys one to two months after you create the new keys. If a user was inactive in the period between the new keys being added and the old keys being removed, that user will have to re-authenticate.
+
+Rotating keys also applies to offline tokens. To make sure they are updated, the applications need to refresh the tokens before the old keys are removed.
+
+==== Adding a generated key pair
+
+Use this procedure to generate a key pair including a self-signed certificate.
+
+.Procedure
+. Select the realm in the Admin Console.
+. Click *Realm settings* in the menu.
+. Click the *Keys* tab.
+. Click the *Providers* tab.
+. Click *Add provider* and select *rsa-generated*.
+. Enter a number in the *Priority* field. This number determines if the new key pair becomes the active key pair. The highest number makes the key pair active.
+. Select a value for *AES Key size*.
+. Click *Save*.
+
+Changing the priority for a provider will not cause the keys to be re-generated, but if you want to change the keysize
+you can edit the provider and new keys will be generated.
+
+==== Rotating keys by extracting a certificate
+
+You can rotate keys by extracting a certificate from an RSA generated key pair and using that certificate in a new keystore.
+
+.Prerequisites
+* A generated key pair 
+
+.Procedure
+. Select the realm in the Admin Console.
+. Click *Realm Settings*.
+. Click the *Keys* tab.
++
+A list of *Active* keys appears.
+. On a row with an RSA key, click *Certificate* under *Public Keys*.
++
+The certificate appears in text form.
+. Save the certificate to a file and enclose it in these lines.
++
+[source,bash,subs=+attributes]
+----
+----Begin Certificate---- 
+<Output>
+----End Certificate---- 
+----
+. Use the *keytool* command to convert the key file to PEM Format.
+
+. Remove the current RSA public key certificate from the keystore.
++
+[source,bash,subs=+attributes]
+----
+keytool -delete -keystore <keystore>.jks -storepass <password> -alias <key>
+----
+. Import the new certificate into the keystore
++
+[source,bash,subs=+attributes]
+----
+keytool -importcert -file domain.crt -keystore <keystore>.jks -storepass <password>  -alias <key>
+----
+. Rebuild the application.
++
+[source,bash,subs=+attributes]
+----
+mvn clean install wildfly:deploy
+----
+
+==== Adding an existing key pair and certificate
+
+To add a key pair and certificate obtained elsewhere select `Providers` and choose `rsa` from the dropdown. You can change
+the priority to make sure the new key pair becomes the active key pair.
+
+.Prerequisites
+* A private key file. The file must be PEM formatted.
+
+.Procedure
+. Select the realm in the Admin Console.
+. Click *Realm settings*.
+. Click the *Keys* tab.
+. Click the *Providers* tab.
+. Click *Add provider* and select *rsa*.
+. Enter a number in the *Priority* field. This number determines if the new key pair becomes the active key pair.
+. Click *Browse...* beside *Private RSA Key* to upload the private key file.
+. If you have a signed certificate for your private key,  click *Browse...* beside *X509 Certificate* to upload the certificate file. {project_name} automatically generates a self-signed certificate if you do not upload a certificate.
+. Click *Save*.
+
+==== Loading keys from a Java Keystore
+
+To add a key pair and certificate stored in a Java Keystore file on the host select `Providers` and choose `java-keystore`
+from the dropdown. You can change the priority to make sure the new key pair becomes the active key pair.
+
+For the associated certificate chain to be loaded it must be imported to the Java Keystore file with the same `Key Alias` used to load the key pair.
+
+.Procedure
+. Select the realm in the Admin Console.
+. Click *Realm settings* in the menu.
+. Click the *Keys* tab.
+. Click the *Providers* tab.
+. Click *Add provider* and select *java-keystore*.
+. Enter a number in the *Priority* field. This number determines if the new key pair becomes the active key pair.
+. Enter the desired *Algorithm*. Note that the algorithm should match the key type (for example `RS256` requires a RSA private key, `ES256` a EC private key or `AES` an AES secret key).
+. Enter a value for *Keystore*. Path to the keystore file.
+. Enter the *Keystore Password*. The option can refer a value from an external <<_vault-administration,vault>>.
+. Enter a value for *Keystore Type* (`JKS`, `PKCS12` or `BCFKS`).
+. Enter a value for the *Key Alias* to load from the keystore.
+. Enter the *Key Password*. The option can refer a value from an external <<_vault-administration,vault>>.
+. Enter a value for *Key Use* (`sig` for signing or `enc` for encryption). Note that the use should match the algorithm type (for example `RS256` is `sig` but `RSA-OAEP` is `enc`)
+. Click *Save*.
+
+[WARNING]
+====
+Not all the keystore types support all types of keys. For example, `JKS` in all modes and `PKCS12` in fips mode (`BCFIPS` provider) cannot store secret key entries.
+====
+
+==== Making keys passive
+
+.Procedure
+. Select the realm in the Admin Console.
+. Click *Realm settings* in the menu.
+. Click the *Keys* tab.
+. Click the *Providers* tab.
+. Click the provider of the key you want to make passive.
+. Toggle *Active* to *Off*.
+. Click *Save*.
+
+==== Disabling keys
+
+.Procedure
+. Select the realm in the Admin Console.
+. Click *Realm settings* in the menu.
+. Click the *Keys* tab.
+. Click the *Providers* tab.
+. Click the provider of the key you want to make passive.
+. Toggle *Enabled* to *Off*.
+. Click *Save*.
+
+==== Compromised keys
+
+{project_name} has the signing keys stored just locally and they are never shared with the client applications, users or other
+entities. However, if you think that your realm signing key was compromised, you should first generate new key pair as described above and
+then immediately remove the compromised key pair.
+
+Alternatively, you can delete the provider from the `Providers` table.
+
+.Procedure
+. Click *Clients* in the menu.
+. Click *security-admin-console*.
+. Scroll down to the *Access settings* section.
+. Fill in the *Admin URL* field.
+. Click the *Advanced* tab.
+. Click *Set to now* in the *Revocation* section.
+. Click *Push*.
+
+Pushing the not-before policy ensures that client applications do not accept the existing tokens signed by the compromised key. The client application is forced to download new key pairs from {project_name} also so the tokens signed by the compromised key will be invalid.
+
+[NOTE]
+====
+REST and confidential clients must set *Admin URL* so {project_name} can send clients the pushed not-before policy request.
+====

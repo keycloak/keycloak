@@ -1,0 +1,98 @@
+<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" ID="_8e8dc5f69a98cc4c1ff3427e5ce34606fd672f91e6" Version="2.0" IssueInstant="2014-07-17T01:01:48Z" Destination="http://sp.example.com/demo1/index.php?acs" InResponseTo="ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685">
+    <saml:Issuer>http://idp.example.com/metadata.php</saml:Issuer>
+    <samlp:Status>
+        <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/>
+    </samlp:Status>
+    <saml:Assertion xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" ID="_d71a3a8e9fcc45c9e9d248ef7049393fc8f04e5f75" Version="2.0" IssueInstant="2014-07-17T01:01:48Z">
+        <saml:Issuer>http://idp.example.com/metadata.php</saml:Issuer>
+        <saml:Subject>
+            <saml:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
+                <saml:SubjectConfirmationData NotOnOrAfter="2024-01-18T06:21:48Z" Recipient="http://sp.example.com/demo1/index.php?acs" InResponseTo="ONELOGIN_4fee3b046395c4e751011e97f8900b5273d56685"/>
+            </saml:SubjectConfirmation>
+<!-- PEM Certificate containing keys for this test
+-BEGIN RSA PRIVATE KEY-
+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
+-END RSA PRIVATE KEY-
+
+Unencrypted NameID was (mind the namespace declaration!)
+<saml:NameID xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+             SPNameQualifier="http://sp.example.com/demo1/metadata.php"
+             Format="urn:oasis:names:tc:SAML:2.0:nameid-format:transient">myTestId</saml:NameID>
+-->
+            <saml:EncryptedID><xenc:EncryptedData xmlns:xenc="http://www.w3.org/2001/04/xmlenc#" xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" Type="http://www.w3.org/2001/04/xmlenc#Element"><xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes128-cbc"/><dsig:KeyInfo xmlns:dsig="http://www.w3.org/2000/09/xmldsig#"><xenc:EncryptedKey><xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"/><xenc:CipherData><xenc:CipherValue>jx39rtgIfnKhdSDYqPoj/heRt60HWRztXvnsp8cx3ETN9FkdKunzl2UcfHy1s7YIQQzFj5duLHpTePyYunHzyRGq+s5oZvJs78me1M1RfxZ7dwb+3Grb66fshF7fHnBvSogmGlo9e6+q0a2TTiaTO+GIXkJdbRzZGgeThTdz6kjZwMw9vJ7/Aq2cmbSCgjQMy8yT9JlDgcyGn6pyL51L6OuHNQ6UmTmZ1qRR8lghLo78hCQWkkt9MNHF4Z5BkSKovjlZgzef5GYIXNczA2kQuDoX/Pdm21tkE63HlluqpjSALGFmvgv7fGQ3t/QImtal992osnaAkE18pjm8wndvdlQIiYDKHezwtkhcdtzVRtvSXrN68Vnwhyl0vw3g4My8XiK0OgVYrP5vwRQZ+/MV0sd8YiG4Qtb1KxqLQY1L3aRnXOLeYwArtktTSmE537SS0189GeDngwFOOiRhkFrJ7xeVnLQ1wdDYsc3+ktFmXf7lQptCG1f93+erh66OFL3IFT/9uYWEqBsZLEY//Xd4bAYUQm6gKYgTqT9a+lztu/k55fzkuiSSNcY5v1xhHLdHeZVPz1BBDsDIVjJa+yb9G4X8qURMv5DqEq3X+Gnui/r2r5+mTZwUNaGx2HJ8CKwixHaEeI8FBKaA93dy7SqZKQl4YgRyjnsprGmlSFG+RbM=</xenc:CipherValue></xenc:CipherData></xenc:EncryptedKey></dsig:KeyInfo>
+                <xenc:CipherData>
+                    <xenc:CipherValue>yqORcbX52pH6GNSnqB4niJVqx02itNmoY6/IGr909sv18Cx9pTLyrPqWWeqdBF2tomkKKp7ZE+rzGxzdV7dR1RWELE7Q/r/s2HQXJgA26pOCCfXnQ7drxcMMjpsUU46qVsekyTPlUp+Tmn4ubqP/aGBeIJCXmvgkMijYFhRmt640ianfpLYSW2wxwmfrgVQP7CenxTkKKnNT56N2LYBPFcMEoIb0tvR3tHKmW2uA10S8QagWaWY8b+WEWJ7IYW49zS8zp94JZElQGnzZ/d0ay+iNDTBWFNaJsDQaykbayds=</xenc:CipherValue>
+                </xenc:CipherData>
+            </xenc:EncryptedData></saml:EncryptedID></saml:Subject>
+        <saml:Conditions NotBefore="2014-07-17T01:01:18Z" NotOnOrAfter="2024-01-18T06:21:48Z">
+            <saml:AudienceRestriction>
+                <saml:Audience>http://sp.example.com/demo1/metadata.php</saml:Audience>
+            </saml:AudienceRestriction>
+        </saml:Conditions>
+        <saml:AuthnStatement AuthnInstant="2014-07-17T01:01:48Z" SessionNotOnOrAfter="2024-07-17T09:01:48Z" SessionIndex="_be9967abd904ddcae3c0eb4189adbe3f71e327cf93">
+            <saml:AuthnContext>
+                <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</saml:AuthnContextClassRef>
+            </saml:AuthnContext>
+        </saml:AuthnStatement>
+        <saml:AttributeStatement>
+            <saml:Attribute Name="uid" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic">
+                <saml:AttributeValue xsi:type="xs:string">test</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="mail" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic">
+                <saml:AttributeValue xsi:type="xs:string">test@example.com</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="eduPersonAffiliation" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic">
+                <saml:AttributeValue xsi:type="xs:string">users</saml:AttributeValue>
+                <saml:AttributeValue xsi:type="xs:string">examplerole1</saml:AttributeValue>
+            </saml:Attribute>
+        </saml:AttributeStatement>
+    </saml:Assertion>
+</samlp:Response>

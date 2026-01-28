@@ -1,0 +1,19 @@
+[[_oauth21-support]]
+== OAuth 2.1 Support
+
+{project_name} makes it easier for administrators to make sure that their clients are compliant with these specifications:
+
+* https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-13[The OAuth 2.1 Authorization Framework - draft specification]
+
+This compliance means that the {project_name} server will verify the requirements
+for the authorization server, which are mentioned in the specifications. {project_name} adapters do not have any specific support for the OAuth 2.1, hence the required validations on the client (application)
+side may need to be still done manually or through some other third-party solutions.
+
+=== OAuth 2.1 client profiles
+
+To make sure that your clients are OAuth 2.1 compliant, you can configure Client Policies in your realm as described in the link:{adminguide_link}#_client_policies[{adminguide_name}]
+and link them to the global client profiles for OAuth 2.1 support, which are automatically available in each realm. You can use either `oauth-2-1-for-confidential-client` profile for confidential clients or `oauth-2-1-for-public-client` profile for public clients.
+
+NOTE: OAuth 2.1 specification is still a draft and it may change in the future. Hence the {project_name} built-in OAuth 2.1 client profiles can change as well.
+
+NOTE: When using OAuth 2.1 profile for public clients, it is recommended to use DPoP preview feature as described in the link:{adminguide_link}#_dpop-bound-tokens[{adminguide_name}] because DPoP binds an access token and a refresh token together with the public part of a client's key pair. This binding prevents an attacker from using stolen tokens.

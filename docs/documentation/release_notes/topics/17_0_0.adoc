@@ -1,0 +1,37 @@
+= Highlights
+
+== Quarkus distribution is now fully supported
+
+The default Keycloak distribution is now based on Quarkus. The new distribution is faster, leaner, and a lot easier to configure!
+
+We appreciate migrating from the WildFly distribution is not going to be straightforward for everyone, since how you start and configure Keycloak has radically changed. With that in mind we will continue to support the WildFly distribution until June 2022.
+
+For information on how to migrate to the new distribution check out the https://www.keycloak.org/migration/migrating-to-quarkus[Quarkus Migration Guide].
+
+== Quarkus distribution updates
+
+A lot of effort went into polishing and improving the Quarkus distribution to make it as good as an experience as possible. A few highlights include:
+
+* A new approach to documentation in form of server guides to help you install and configure Keycloak
+* Upgraded Quarkus to 2.7.0.Final
+* Configuration file is no longer Java specific, and aligns configuration keys with CLI arguments
+* Clearer separation between `build options` and `runtime configuration`.
+* `h2-mem` and `h2-file` databases renamed to `dev-mem` and `dev-file`.
+* Simplified enabling and disabling features
+* Custom, and unsupported, Quarkus configuration is done through `conf/quarkus.properties`.
+* Ability to add custom Java Options via JAVA_OPTS_APPEND (thanks to https://github.com/dasniko[dasniko])
+* Initial logging capabilities
+* Initial support for Cross-DC
+* User-defined profiles are no longer supported but using different configuration files to achieve the same goal
+* Quickstarts updated to use the new distribution
+
+== Other improvements
+
+=== Offline sessions lazily loaded
+
+The offline sessions are now lazily fetched from the database by default instead of preloading during the server startup.
+
+=== Improved User Search
+
+{project_name} now supports a glob-like syntax for the user search when listing users in the Admin Console,
+which allows for three different types of searches: prefix (`foo*` which became the default search), infix (`\*foo*`), and exact `"foo"`)

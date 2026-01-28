@@ -1,0 +1,55 @@
+name: Report flaky test
+description: Finds flaky tests and uploads reports
+inputs:
+  job-name:
+    description: 'Job name to help identify the job'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - id: flaky-tests
+      name: Find flaky tests
+      if: github.repository == 'keycloak/keycloak'
+      shell: bash
+      # language=bash
+      run: |
+        FLAKES=""
+        SEP=""
+        for dir in $(find -type d -name 'surefire-reports*'); do
+          for i in $(grep -l -E '<flakyFailure|<flakyError' $dir/TEST-*.xml); do
+            FLAKES="$FLAKES$SEP$i"
+            SEP=$'\n'
+          done
+        done
+        
+        if [ "$FLAKES" != "" ]; then
+          PR="${{ github.event.number }}"
+          JOB_NAME="${{ inputs.job-name }}"
+        
+          MATRIX="${{ join(matrix.*, ' - ') }}"
+          if [ "$MATRIX" != "" ]; then
+            JOB_NAME="$JOB_NAME ($MATRIX)"
+          fi
+        
+          JOB_URL=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs --paginate --jq ".jobs | map(select(.name == \"$JOB_NAME\")) | .[].html_url")
+        
+          echo "job_name=$JOB_NAME" >> job-summary.properties
+          echo "job_url=$JOB_URL" >> job-summary.properties
+          if [ "$PR" != "" ]; then
+            echo "pr=$PR" >> job-summary.properties
+            echo "pr_url=https://github.com/${{ github.repository }}/pull/$PR" >> job-summary.properties
+          fi
+        
+          echo "flakes<<EOF" >> $GITHUB_OUTPUT
+          echo "job-summary.properties" >> $GITHUB_OUTPUT
+          echo "$FLAKES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        fi
+
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      if: ${{ steps.flaky-tests.outputs.flakes }}
+      with:
+        name: flaky-tests-${{ github.job }}-${{ join(matrix.*, '-') }}
+        path: ${{ steps.flaky-tests.outputs.flakes }}
+        if-no-files-found: error

@@ -1,0 +1,37 @@
+<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Destination="http://localhost:8080/sales-post-sig/saml" ID="ID_670a76c7-8506-4081-80b3-5ef16df98af8" InResponseTo="ID_cc0ff6f7-b481-4c98-9a79-481d50958290" IssueInstant="2016-12-15T12:42:49.788Z" Version="2.0">
+    <saml:Issuer>http://localhost:11080/auth/realms/saml-demo</saml:Issuer>
+    <samlp:Status>
+        <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/>
+    </samlp:Status>
+    <saml:Assertion xmlns="urn:oasis:names:tc:SAML:2.0:assertion" ID="ID_cf2e2b00-dfb0-4163-b8b5-f2d85586a235" IssueInstant="2016-12-15T12:42:49.787Z" Version="2.0">
+        <saml:Issuer>http://localhost:11080/auth/realms/saml-demo</saml:Issuer>
+        <saml:Subject>
+            <saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified">roàåאבčéèíñòøöùüßåäöü汉字</saml:NameID>
+            <saml:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
+                <saml:SubjectConfirmationData InResponseTo="ID_cc0ff6f7-b481-4c98-9a79-481d50958290" NotOnOrAfter="2016-12-15T12:47:47.787Z" Recipient="http://localhost:8080/sales-post-sig/saml">
+                    <KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
+                        <a>should be ignored</a>
+                        <X509Data>
+                            <X509Certificate>MIIFUjCCBDqgAwIBAgIDBbH0MA0GCSqGSIb3DQEBBQUAMGExCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1HZW9UcnVzdCBJbmMuMR0wGwYDVQQLExREb21haW4gVmFsaWRhdGVkIFNTTDEbMBkGA1UEAxMSR2VvVHJ1c3QgRFYgU1NMIENBMB4XDTEyMTIxODAyMjcxOVoXDTE2MTIyMDAwNTYwMFowgckxKTAnBgNVBAUTIHlMbC1HNjFUWWtiaHBaL1JMTnNIYU8vTmJyWEVQOXc1MRMwEQYDVQQLEwpHVDQ4MjA0OTU4MTEwLwYDVQQLEyhTZWUgd3d3Lmdlb3RydXN0LmNvbS9yZXNvdXJjZXMvY3BzIChjKTEyMTcwNQYDVQQLEy5Eb21haW4gQ29udHJvbCBWYWxpZGF0ZWQgLSBRdWlja1NTTChSKSBQcmVtaXVtMRswGQYDVQQDExJzYW1sLnNoYXJlZmlsZS5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDPUZyhTw3RmP7Y7v06aHgTNuv/Fm0PbGWbGlZEwqr8TGabocPbnb8iTBWAL2ECXMbx+VrpaHiSOVxqC2Y/vDXOs+1r0CzRKeMC6oQPsXZbieW6HxOAv3UVShxc9nfWI6+immo/o3BYI5WKcOaeZieVlDq7a7ctfSUJXHEBhpaSJNhghb+cUZtp1/EXs8/LyVQ31coo1q726WjCvFVB8OUU2u6BQLcbJF5aG3qh5CkNyivwM3NtNAyHhSXRmwyE+Yv5YNo5QAtUagCGYmS2saEJj8FxhXsNRtfW5B6vVhgmNreTcHCcWTpFGhjvferPjsjaIQAs3P2zx/pW/GSCXHy1AgMBAAGjggGoMIIBpDAfBgNVHSMEGDAWgBSM9NmTCke8AKBKzkt1bqC2sLJ+/DAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMB0GA1UdEQQWMBSCEnNhbWwuc2hhcmVmaWxlLmNvbTBBBgNVHR8EOjA4MDagNKAyhjBodHRwOi8vZ3Rzc2xkdi1jcmwuZ2VvdHJ1c3QuY29tL2NybHMvZ3Rzc2xkdi5jcmwwHQYDVR0OBBYEFIDTam2PfOzLpQoclHMwfsUtSi3kMAwGA1UdEwEB/wQCMAAwdQYIKwYBBQUHAQEEaTBnMCwGCCsGAQUFBzABhiBodHRwOi8vZ3Rzc2xkdi1vY3NwLmdlb3RydXN0LmNvbTA3BggrBgEFBQcwAoYraHR0cDovL2d0c3NsZHYtYWlhLmdlb3RydXN0LmNvbS9ndHNzbGR2LmNydDBMBgNVHSAERTBDMEEGCmCGSAGG+EUBBzYwMzAxBggrBgEFBQcCARYlaHR0cDovL3d3dy5nZW90cnVzdC5jb20vcmVzb3VyY2VzL2NwczANBgkqhkiG9w0BAQUFAAOCAQEAU0I6sMe1ZgJ27pdu9qhQLMIgt0w7CuEbLfsSZZdo5TXEj15SGQwU2A0F6o5ivdAvMWTCISJsjHdqCkvB6ZOdMHIfSqA9ARLqX7wLKYfM8X/4RM3koHfqHOvxXBLqCLj2mn34oZrMU5CVI6rqbMoU4D61io7DVswR7Dss0rCh1b1o52ZEBjy5w9oJhRTEFwL7ekf6tR9UioyxQ37pGfD8qOpX1hj5gqcZ5+qUSVNjOjeh+9e9OO5Y/ns3jjHK5ieZPdYeLLOp+D6qzAnOERgvKvkPyRIHZA9tAjxj5KIEzQUopmbP7oH4Ovo6YXT+iIuMVvX3dDu00ExOSZjEeDzo/w==</X509Certificate>
+                        </X509Data>
+                    </KeyInfo>
+                </saml:SubjectConfirmationData>
+            </saml:SubjectConfirmation>
+        </saml:Subject>
+        <saml:Conditions NotBefore="2016-12-15T12:42:47.787Z" NotOnOrAfter="2016-12-15T12:43:47.787Z">
+            <saml:AudienceRestriction>
+                <saml:Audience>http://localhost:8080/sales-post-sig/</saml:Audience>
+            </saml:AudienceRestriction>
+        </saml:Conditions>
+        <saml:AuthnStatement AuthnInstant="2016-12-15T12:42:49.788Z" SessionIndex="fb5d5a23-aa34-4528-a29a-6aad8c0ef0e8">
+            <saml:AuthnContext>
+                <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified</saml:AuthnContextClassRef>
+            </saml:AuthnContext>
+        </saml:AuthnStatement>
+        <saml:AttributeStatement>
+            <saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic">
+                <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">view-profile</saml:AttributeValue>
+            </saml:Attribute>
+        </saml:AttributeStatement>
+    </saml:Assertion>
+</samlp:Response>

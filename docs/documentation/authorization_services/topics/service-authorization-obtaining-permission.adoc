@@ -1,0 +1,166 @@
+[[_service_obtaining_permissions]]
+= Obtaining permissions
+
+To obtain permissions from {project_name} you send an authorization request to the token endpoint. As a result, {project_name} will
+evaluate all policies associated with the resource(s) and scope(s) being requested and issue an RPT with all permissions
+granted by the server.
+
+Clients are allowed to send authorization requests to the token endpoint using the following parameters:
+
+* *grant_type*
++
+This parameter is *required*. Must be `urn:ietf:params:oauth:grant-type:uma-ticket`.
++
+* **ticket**
++
+This parameter is *optional*. The most recent permission ticket received by the client as part of the UMA authorization process.
++
+* **claim_token**
++
+This parameter is *optional*. A string representing additional claims that should be considered by the server when evaluating
+permissions for the resource(s) and scope(s) being requested. This parameter allows clients to push claims to {project_name}. For more details about all supported token formats see `claim_token_format` parameter.
++
+* **claim_token_format**
++
+This parameter is *optional*. A string indicating the format of the token specified in the `claim_token` parameter. {project_name} supports two token
+formats: `urn:ietf:params:oauth:token-type:jwt` and `https://openid.net/specs/openid-connect-core-1_0.html#IDToken`. The `urn:ietf:params:oauth:token-type:jwt` format
+indicates that the `claim_token` parameter references an access token. The `https://openid.net/specs/openid-connect-core-1_0.html#IDToken` indicates that the
+`claim_token` parameter references an OpenID Connect ID Token.
++
+* **rpt**
++
+This parameter is *optional*. A previously issued RPT whose permissions should also be evaluated and added in a new one. This parameter
+allows clients in possession of an RPT to perform incremental authorization where permissions are added on demand.
++
+* **permission**
++
+This parameter is *optional*. A string representing a set of one or more resources and scopes the client is seeking access. This parameter can be defined multiple times
+in order to request permission for multiple resources and scopes. This parameter is an extension to `urn:ietf:params:oauth:grant-type:uma-ticket` grant type in order to allow clients to send authorization requests without a
+permission ticket. The format of the string must be: `RESOURCE_ID#SCOPE_ID`. For instance: `Resource A#Scope A`, `Resource A#Scope A, Scope B, Scope C`, `Resource A`, `#Scope A`.
++
+* **permission_resource_format**
++
+This parameter is *optional*. A string representing a format indicating the resource in the `permission` parameter. Possible values are `id` and `uri`. `id` indicates the format is `RESOURCE_ID`. `uri` indicates the format is `URI`. If not specified, the default is `id`.
++
+* **permission_resource_matching_uri**
++
+This parameter is *optional*. A boolean value that indicates whether to use path matching when representing resources in URI format in the `permission` parameter. If not specified, the default is false.
++
+* **audience**
++
+This parameter is *optional*. The client identifier of the resource server to which the client is seeking access. This parameter is mandatory
+in case the `permission` parameter is defined. It serves as a hint to {project_name} to indicate the context in which permissions should be evaluated.
++
+* **response_include_resource_name**
++
+This parameter is *optional*. A boolean value indicating to the server whether resource names should be included in the RPT's permissions. If false, only the resource
+identifier is included.
++
+* **response_permissions_limit**
++
+This parameter is *optional*. An integer N that defines a limit for the amount of permissions an RPT can have. When used together with an 
+`rpt` parameter, only the last N requested permissions will be kept in the RPT.
++
+* **submit_request**
++
+This parameter is *optional*. A boolean value indicating whether the server should create permission requests to the resources and scopes referenced by a permission ticket.
+This parameter only has effect if used together with the `ticket` parameter as part of a UMA authorization process.
++
+* **response_mode**
++
+This parameter is *optional*. A string value indicating how the server should respond to authorization requests. This parameter is specially useful when
+you are mainly interested in either the overall decision or the permissions granted by the server, instead of a standard OAuth2 response. Possible values are:
++
+*** `decision`
++
+Indicates that responses from the server should only represent the overall decision by returning a JSON with the following format:
++
+```json
+{
+    'result': true
+}
+```
++
+If the authorization request does not map to any permission, a `403` HTTP status code is returned instead.
++
+*** `permissions`
++
+Indicates that responses from the server should contain any permission granted by the server by returning a JSON with the following format:
++
+```json
+[
+    {
+        'rsid': 'My Resource'
+        'scopes': ['view', 'update']
+    },
+
+    ...
+]
+```
++
+If the authorization request does not map to any permission, a `403` HTTP status code is returned instead.
+
+Example of an authorization request when a client is seeking access to two resources protected by a resource server.
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token \
+  -H "Authorization: Bearer ${access_token}" \
+  --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
+  --data "audience={resource_server_client_id}" \
+  --data "permission=Resource A#Scope A" \
+  --data "permission=Resource B#Scope B"
+----
+
+Example of an authorization request when a client is seeking access to any resource and scope protected by a resource server.
+NOTE: This will not evaluate the permissions for all resources. Instead, the permissions for resources owned by the resource server, owned by the requesting user,
+and explicitly granted to the requesting user by other owners are evaluated.
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token \
+  -H "Authorization: Bearer ${access_token}" \
+  --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
+  --data "audience={resource_server_client_id}"
+----
+
+Example of an authorization request when a client is seeking access to a UMA protected resource after receiving a permission ticket from
+the resource server as part of the authorization process:
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token \
+  -H "Authorization: Bearer ${access_token}" \
+  --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
+  --data "ticket=${permission_ticket}
+----
+
+If {project_name} assessment process results in issuance of permissions, it issues the RPT with which it has associated
+the permissions:
+
+.{project_name} responds to the client with the RPT
+```bash
+HTTP/1.1 200 OK
+Content-Type: application/json
+...
+{
+    "access_token": "${rpt}",
+}
+```
+
+The response from the server is just like any other response from the token endpoint when using some other grant type. The RPT can be obtained from
+the `access_token` response parameter. If the client is not authorized, {project_name} responds with a `403` HTTP status code:
+
+.{project_name} denies the authorization request
+```bash
+HTTP/1.1 403 Forbidden
+Content-Type: application/json
+...
+{
+    "error": "access_denied",
+    "error_description": "request_denied"
+}
+```

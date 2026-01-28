@@ -1,0 +1,10 @@
+= Partial update to user attributes when updating users through the Admin User API is no longer supported
+
+When updating user attributes through the Admin User API, you cannot execute partial updates when updating the
+user attributes, including the root attributes like `username`, `email`, `firstName`, and `lastName`.
+
+If you are updating user attributes through the Admin User API without passing all the attributes that the administrator
+has write permissions, the missing attributes will be removed. On the other hand, if an attribute is marked as read-only for
+administrators, not sending the attribute won't remove it.
+
+See the link:{adminguide_link}#user-profile[User Profile Documentation] for the details about the user profile settings.

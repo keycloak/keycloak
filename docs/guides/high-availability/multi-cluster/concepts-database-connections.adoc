@@ -1,0 +1,17 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Concepts for database connection pools"
+summary="Understand concepts for avoiding resource exhaustion and congestion."
+tileVisible="false" >
+
+This section is intended when you want to understand considerations and best practices on how to configure database connection pools for {project_name}.
+For a configuration where this is applied, visit <@links.ha id="multi-cluster-deploy-keycloak-kubernetes" />.
+
+[#multi-cluster-db-concepts]
+== Concepts
+
+include::../partials/database-connections/configure-db-connection-pool-best-practices.adoc[]
+
+</@tmpl.guide>

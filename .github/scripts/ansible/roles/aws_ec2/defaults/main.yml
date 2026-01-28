@@ -1,0 +1,14 @@
+cluster_identifier: "{{ lookup('env', 'USER') }}"
+cluster_name: "keycloak_{{ cluster_identifier }}"
+cluster_size: 1
+
+cidr_ip: "{{ control_host_ip.stdout }}/32"
+
+# aws ec2 describe-images --owners 309956199498 --filters "Name=architecture,Values=x86_64" "Name=virtualization-type,Values=hvm"  --region eu-west-1 --no-include-deprecated     --query 'Images[] | sort_by(@, &CreationDate)[].Name'
+ami_name: RHEL-9.4_HVM_GA-20240827-x86_64-0-Hourly2-GP3
+
+instance_type: t3.large
+instance_volume_size: 20
+instance_device: /dev/sda1
+
+no_log_sensitive: true

@@ -1,0 +1,16 @@
+<samlp:AuthnRequest IsPassive="true"
+                    xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
+                    xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+                    ID="_c327a0622c69920a4bdefa8a2fd98847b67cf18473"
+                    Version="2.0"
+                    IssueInstant="2017-11-16T07:09:05Z"
+                    Destination="https://idp.example.com/auth/realms/MYIDP/protocol/saml"
+                    AssertionConsumerServiceURL="https://iif.example.com/idp/module.php/saml/sp/saml2-acs.php/default-sp"
+                    ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+                    ForceAuthn="true"
+                    >
+    <saml:Issuer>https://iif.example.com/idp/module.php/saml/sp/metadata.php/default-sp</saml:Issuer>
+    <samlp:Scoping>
+        <samlp:RequesterID>https://some.domain/sp</samlp:RequesterID>
+    </samlp:Scoping>
+</samlp:AuthnRequest>

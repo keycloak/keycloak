@@ -1,0 +1,6 @@
+auth:
+  token:
+    realm: http://localhost:8080/auth/auth/realms/docker-test-realm/protocol/docker-v2/auth
+    service: docker-test-client
+    issuer: http://localhost:8080/auth/auth/realms/docker-test-realm
+

@@ -1,0 +1,157 @@
+<saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                ID="_3c39bc0fe7b13769cab2f6f45eba801b1245264310738"
+                IssueInstant="2009-06-17T18:45:10.738Z" Version="2.0">
+    <saml:Issuer Format="urn:oasis:names:tc:SAML:2.0:nameid-format:entity">
+        https://www.salesforce.com
+    </saml:Issuer>
+
+    <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+        <SignedInfo>
+            <CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+            <SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+            <Reference URI="#_3c39bc0fe7b13769cab2f6f45eba801b1245264310738">
+                <Transforms>
+                    <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+                    <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+                        <ec:InclusiveNamespaces PrefixList="ds saml xs" xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                    </Transform>
+                </Transforms>
+                <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                <DigestValue>vzR9Hfp8d16576tEDeq/zhpmLoo=
+                </DigestValue>
+            </Reference>
+        </SignedInfo>
+        <SignatureValue>
+            AzID5hhJeJlG2llUDvZswNUrlrPtR7S37QYH2W+Un1n8c6kTC
+            Xr/lihEKPcA2PZt86eBntFBVDWTRlh/W3yUgGOqQBJMFOVbhK
+            M/CbLHbBUVT5TcxIqvsNvIFdjIGNkf1W0SBqRKZOJ6tzxCcLo
+            9dXqAyAUkqDpX5+AyltwrdCPNmncUM4dtRPjI05CL1rRaGeyX
+            3kkqOL8p0vjm0fazU5tCAJLbYuYgU1LivPSahWNcpvRSlCI4e
+            Pn2oiVDyrcc4et12inPMTc2lGIWWWWJyHOPSiXRSkEAIwQVjf
+            Qm5cpli44Pv8FCrdGWpEE0yXsPBvDkM9jIzwCYGG2fKaLBag==
+        </SignatureValue>
+        <KeyInfo>
+            <X509Data>
+                <X509Certificate>
+                    MIIEATCCAumgAwIBAgIBBTANBgkqhkiG9w0BAQ0FADCBgzELM
+                    [Certificate truncated for readability...]
+                </X509Certificate>
+            </X509Data>
+        </KeyInfo>
+    </Signature>
+
+    <saml:Subject>
+        <saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified">
+            saml01@salesforce.com
+        </saml:NameID>
+
+        <saml:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
+            <saml:SubjectConfirmationData NotOnOrAfter="2009-06-17T18:50:10.738Z"
+                                          Recipient="https://login.salesforce.com">
+                <dsig:KeyInfo xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
+                    <dsig:KeyValue>
+                        <dsig:RSAKeyValue>
+                            <dsig:Modulus>
+                                2+5MCT5BnVN+IYnKZcH6ev1pjXGi4feE0nOycq/VJ3aeaZMi4G9AxOxCBPupErOC7Kgm/Bw5AdJyw+Q12wSRXfJ9FhqCrLXpb7YOhbVSTJ8De5O8mW35DxAlh/cxe9FXjqPb286wKTUZ3LfGYR+X235UQeCTAPS/Ufi21EXaEik=
+                            </dsig:Modulus>
+                            <dsig:Exponent>AQAB</dsig:Exponent>
+                        </dsig:RSAKeyValue>
+                    </dsig:KeyValue>
+                </dsig:KeyInfo>
+            </saml:SubjectConfirmationData>
+        </saml:SubjectConfirmation>
+    </saml:Subject>
+
+    <saml:Conditions NotBefore="2009-06-17T18:45:10.738Z"
+                     NotOnOrAfter="2009-06-17T18:50:10.738Z">
+
+        <saml:AudienceRestriction>
+            <saml:Audience>https://saml.salesforce.com</saml:Audience>
+        </saml:AudienceRestriction>
+    </saml:Conditions>
+
+    <saml:AuthnStatement AuthnInstant="2009-06-17T18:45:10.738Z" SessionNotOnOrAfter="2009-06-17T18:55:10.738Z">
+        <saml:AuthnContext>
+            <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified
+            </saml:AuthnContextClassRef>
+        </saml:AuthnContext>
+    </saml:AuthnStatement>
+
+    <saml:AttributeStatement>
+
+        <saml:Attribute Name="portal_id">
+            <saml:AttributeValue xsi:type="xs:anyType">060D00000000SHZ
+            </saml:AttributeValue>
+        </saml:Attribute>
+
+        <saml:Attribute Name="organization_id">
+            <saml:AttributeValue xsi:type="xs:anyType">
+                <n1:elem2 xmlns:n1="http://example.net" xml:lang="en">
+                    <n3:stuff xmlns:n3="ftp://example.org">00DD0000000F7L5</n3:stuff>
+                </n1:elem2>
+            </saml:AttributeValue>
+        </saml:Attribute>
+
+        <saml:Attribute Name="status">
+            <saml:AttributeValue xsi:type="xs:anyType">
+                <status>
+                    <code>
+                        <status>XYZ</status>
+                    </code>
+                </status>
+            </saml:AttributeValue>
+        </saml:Attribute>
+
+        <saml:Attribute Name="has_sub_organization">
+            <saml:AttributeValue xsi:type="xs:boolean">true</saml:AttributeValue>
+        </saml:Attribute>
+
+        <saml:Attribute Name="anytype_test">
+            <saml:AttributeValue>
+                <elem1 atttr1="en">
+                    <elem2>val2</elem2>
+                </elem1>
+            </saml:AttributeValue>
+        </saml:Attribute>
+
+        <saml:Attribute Name="anytype_no_xml_test">
+            <saml:AttributeValue>value_no_xml</saml:AttributeValue>
+        </saml:Attribute>
+
+        <saml:Attribute Name="anytype_xml_fragment">
+            <saml:AttributeValue xsi:type="xs:anyType">
+                <elem1>Foo</elem1>
+                <elem2>Bar</elem2>
+            </saml:AttributeValue>
+        </saml:Attribute>
+
+        <saml:Attribute Name="ssostartpage"
+                        NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified">
+
+            <saml:AttributeValue xsi:type="xs:anyType">
+                http://www.salesforce.com/security/saml/saml20-gen.jsp
+            </saml:AttributeValue>
+        </saml:Attribute>
+
+        <saml:Attribute Name="logouturl"
+                        NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+
+            <saml:AttributeValue xsi:type="xs:string">
+                http://www.salesforce.com/security/del_auth/SsoLogoutPage.html
+            </saml:AttributeValue>
+        </saml:Attribute>
+
+        <saml:Attribute Name="nil_value_attribute">
+            <saml:AttributeValue xsi:nil="true" xsi:type="xs:anyType"/>
+        </saml:Attribute>
+
+        <saml:Attribute Name="userDefined">
+            <saml:AttributeValue xsi:type="MyType"><A><B>Foo</B><C>Bar</C></A></saml:AttributeValue>
+        </saml:Attribute>
+
+        <saml:Attribute Name="userDefinedFragmentWithNamespace">
+            <saml:AttributeValue xmlns:myPrefix="urn:myNamespace" xsi:type="myPrefix:MyType"><myPrefix:B>Foo</myPrefix:B><myPrefix:C>Bar</myPrefix:C></saml:AttributeValue>
+        </saml:Attribute>
+
+    </saml:AttributeStatement>
+</saml:Assertion>

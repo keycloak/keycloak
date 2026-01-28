@@ -1,0 +1,3 @@
+paths-ignore:
+  # This file is invalid on purpose for testing. Exclude it to prevent an "Unexpected token" error in CodeQL being reported.
+  - testsuite/integration-arquillian/servers/auth-server/services/testsuite-providers-deployment/src/main/resources/scripts/test-bad-script-mapper3.js

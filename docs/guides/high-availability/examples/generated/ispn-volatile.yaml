@@ -1,0 +1,585 @@
+---
+# Source: ispn-helm/templates/infinispan-alerts.yaml
+# tag::fencing-secret[]
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/basic-auth
+metadata:
+  name: webhook-credentials
+stringData:
+  username: 'keycloak' # <1>
+  password: 'changme' # <2>
+# end::fencing-secret[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# There are several callouts in this YAML marked with `# <1>' etc. See 'running/infinispan-deployment.adoc` for the details.# tag::infinispan-credentials[]
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: connect-secret
+  namespace: keycloak
+data:
+  identities.yaml: Y3JlZGVudGlhbHM6CiAgLSB1c2VybmFtZTogZGV2ZWxvcGVyCiAgICBwYXNzd29yZDogc3Ryb25nLXBhc3N3b3JkCiAgICByb2xlczoKICAgICAgLSBhZG1pbgo= # <1>
+# end::infinispan-credentials[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-config
+  namespace: keycloak
+data:
+  infinispan-config.yaml: >
+    infinispan:
+      cacheContainer:
+        metrics:
+          namesAsTags: true
+          histograms: false
+        tracing:
+          enabled: true
+          collector-endpoint: "http://tempo-tempo.monitoring.svc:4318"
+          exporter-protocol: "OTLP"
+          service-name: "infinispan-server"
+          security: false
+      server:
+        endpoints:
+          - securityRealm: default
+            socketBinding: default
+            connectors:
+              rest:
+                restConnector:
+                  authentication:
+                    mechanisms: BASIC
+              hotrod:
+                hotrodConnector: null
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# tag::infinispan-crossdc-status[]
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crossdc-status
+  namespace: keycloak
+data:
+  batch: site status --all-caches --site=site-b
+# end::infinispan-crossdc-status[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# tag::infinispan-crossdc-disconnect[]
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crossdc-disconnect
+  namespace: keycloak
+data:
+  batch: site take-offline --all-caches --site=site-b
+# end::infinispan-crossdc-disconnect[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# tag::infinispan-crossdc-connect[]
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crossdc-connect
+  namespace: keycloak
+data:
+  batch: site bring-online --all-caches --site=site-b
+# end::infinispan-crossdc-connect[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# tag::infinispan-crossdc-push-state[]
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crossdc-push-state
+  namespace: keycloak
+data:
+  batch: site push-site-state --all-caches --site=site-b
+# end::infinispan-crossdc-push-state[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# tag::infinispan-crossdc-push-state-status[]
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crossdc-push-state-status
+  namespace: keycloak
+data:
+  batch: |-
+    site push-site-status --cache=actionTokens
+    site push-site-status --cache=authenticationSessions
+    site push-site-status --cache=clientSessions
+    site push-site-status --cache=loginFailures
+    site push-site-status --cache=offlineClientSessions
+    site push-site-status --cache=offlineSessions
+    site push-site-status --cache=sessions
+    site push-site-status --cache=work
+# end::infinispan-crossdc-push-state-status[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# tag::infinispan-crossdc-reset-push-state-status[]
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crossdc-reset-push-state-status
+  namespace: keycloak
+data:
+  batch: |-
+    site clear-push-site-status --cache=actionTokens
+    site clear-push-site-status --cache=authenticationSessions
+    site clear-push-site-status --cache=clientSessions
+    site clear-push-site-status --cache=loginFailures
+    site clear-push-site-status --cache=offlineClientSessions
+    site clear-push-site-status --cache=offlineSessions
+    site clear-push-site-status --cache=sessions
+    site clear-push-site-status --cache=work
+# end::infinispan-crossdc-reset-push-state-status[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# tag::infinispan-crossdc-clear-caches[]
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crossdc-clear-caches
+  namespace: keycloak
+data:
+  batch: |-
+    clearcache actionTokens
+    clearcache authenticationSessions
+    clearcache clientSessions
+    clearcache loginFailures
+    clearcache offlineClientSessions
+    clearcache offlineSessions
+    clearcache sessions
+    clearcache work
+# end::infinispan-crossdc-clear-caches[]
+---
+# Source: ispn-helm/templates/infinispan-alerts.yaml
+# tag::fencing-alert-manager-config[]
+apiVersion: monitoring.coreos.com/v1beta1
+kind: AlertmanagerConfig
+metadata:
+  name: example-routing
+spec:
+  route:
+    receiver: default
+    groupBy:
+      - accelerator
+    groupInterval: 90s
+    groupWait: 60s
+    matchers:
+      - matchType: =
+        name: alertname
+        value: SiteOffline
+  receivers:
+    - name: default
+      webhookConfigs:
+        - url: 'https://tjqr2vgc664b6noj6vugprakoq0oausj.lambda-url.eu-west-1.on.aws/' # <3>
+          httpConfig:
+            basicAuth:
+              username:
+                key: username
+                name: webhook-credentials
+              password:
+                key: password
+                name: webhook-credentials
+            tlsConfig:
+              insecureSkipVerify: true
+# end::fencing-alert-manager-config[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# tag::infinispan-cache-actionTokens[]
+apiVersion: infinispan.org/v2alpha1
+kind: Cache
+metadata:
+  name: actiontokens
+  namespace: keycloak
+spec:
+  clusterName: infinispan
+  name: actionTokens
+  template: |-
+    distributedCache:
+      mode: "SYNC"
+      owners: "2"
+      statistics: "true"
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NON_DURABLE_XA" # <1>
+        locking: "PESSIMISTIC" # <2>
+      stateTransfer:
+        chunkSize: "16"
+      backups:
+        site-b: # <3>
+          backup:
+            strategy: "SYNC" # <4>
+            timeout: "4500" # <5>
+            failurePolicy: "FAIL" # <6>
+            stateTransfer:
+              chunkSize: "16"
+# end::infinispan-cache-actionTokens[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# tag::infinispan-cache-authenticationSessions[]
+apiVersion: infinispan.org/v2alpha1
+kind: Cache
+metadata:
+  name: authenticationsessions
+  namespace: keycloak
+spec:
+  clusterName: infinispan
+  name: authenticationSessions
+  template: |-
+    distributedCache:
+      mode: "SYNC"
+      owners: "2"
+      statistics: "true"
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NON_DURABLE_XA" # <1>
+        locking: "PESSIMISTIC" # <2>
+      stateTransfer:
+        chunkSize: "16"
+      indexing:
+        enabled: true
+        indexed-entities:
+        - keycloak.RootAuthenticationSessionEntity
+      backups:
+        site-b: # <3>
+          backup:
+            strategy: "SYNC" # <4>
+            timeout: "4500" # <5>
+            failurePolicy: "FAIL" # <6>
+            stateTransfer:
+              chunkSize: "16"
+# end::infinispan-cache-authenticationSessions[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# tag::infinispan-cache-clientSessions[]
+apiVersion: infinispan.org/v2alpha1
+kind: Cache
+metadata:
+  name: clientsessions
+  namespace: keycloak
+spec:
+  clusterName: infinispan
+  name: clientSessions
+  template: |-
+    distributedCache:
+      mode: "SYNC"
+      owners: "2"
+      statistics: "true"
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NON_DURABLE_XA" # <1>
+        locking: "PESSIMISTIC" # <2>
+      stateTransfer:
+        chunkSize: "16"
+      indexing:
+        enabled: true
+        indexed-entities:
+        - keycloak.RemoteAuthenticatedClientSessionEntity
+      backups:
+        site-b: # <3>
+          backup:
+            strategy: "SYNC" # <4>
+            timeout: "4500" # <5>
+            failurePolicy: "FAIL" # <6>
+            stateTransfer:
+              chunkSize: "16"
+# end::infinispan-cache-clientSessions[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# tag::infinispan-cache-loginFailures[]
+apiVersion: infinispan.org/v2alpha1
+kind: Cache
+metadata:
+  name: loginfailures
+  namespace: keycloak
+spec:
+  clusterName: infinispan
+  name: loginFailures
+  template: |-
+    distributedCache:
+      mode: "SYNC"
+      owners: "2"
+      statistics: "true"
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NON_DURABLE_XA" # <1>
+        locking: "PESSIMISTIC" # <2>
+      stateTransfer:
+        chunkSize: "16"
+      indexing:
+        enabled: true
+        indexed-entities:
+        - keycloak.LoginFailureEntity
+      backups:
+        site-b: # <3>
+          backup:
+            strategy: "SYNC" # <4>
+            timeout: "4500" # <5>
+            failurePolicy: "FAIL" # <6>
+            stateTransfer:
+              chunkSize: "16"
+# end::infinispan-cache-loginFailures[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# tag::infinispan-cache-offlineClientSessions[]
+apiVersion: infinispan.org/v2alpha1
+kind: Cache
+metadata:
+  name: offlineclientsessions
+  namespace: keycloak
+spec:
+  clusterName: infinispan
+  name: offlineClientSessions
+  template: |-
+    distributedCache:
+      mode: "SYNC"
+      owners: "2"
+      statistics: "true"
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NON_DURABLE_XA" # <1>
+        locking: "PESSIMISTIC" # <2>
+      stateTransfer:
+        chunkSize: "16"
+      indexing:
+        enabled: true
+        indexed-entities:
+        - keycloak.RemoteAuthenticatedClientSessionEntity
+      backups:
+        site-b: # <3>
+          backup:
+            strategy: "SYNC" # <4>
+            timeout: "4500" # <5>
+            failurePolicy: "FAIL" # <6>
+            stateTransfer:
+              chunkSize: "16"
+# end::infinispan-cache-offlineClientSessions[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# tag::infinispan-cache-offlineSessions[]
+apiVersion: infinispan.org/v2alpha1
+kind: Cache
+metadata:
+  name: offlinesessions
+  namespace: keycloak
+spec:
+  clusterName: infinispan
+  name: offlineSessions
+  template: |-
+    distributedCache:
+      mode: "SYNC"
+      owners: "2"
+      statistics: "true"
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NON_DURABLE_XA" # <1>
+        locking: "PESSIMISTIC" # <2>
+      stateTransfer:
+        chunkSize: "16"
+      indexing:
+        enabled: true
+        indexed-entities:
+        - keycloak.RemoteUserSessionEntity
+      backups:
+        site-b: # <3>
+          backup:
+            strategy: "SYNC" # <4>
+            timeout: "4500" # <5>
+            failurePolicy: "FAIL" # <6>
+            stateTransfer:
+              chunkSize: "16"
+# end::infinispan-cache-offlineSessions[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# tag::infinispan-cache-sessions[]
+apiVersion: infinispan.org/v2alpha1
+kind: Cache
+metadata:
+  name: sessions
+  namespace: keycloak
+spec:
+  clusterName: infinispan
+  name: sessions
+  template: |-
+    distributedCache:
+      mode: "SYNC"
+      owners: "2"
+      statistics: "true"
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NON_DURABLE_XA" # <1>
+        locking: "PESSIMISTIC" # <2>
+      stateTransfer:
+        chunkSize: "16"
+      indexing:
+        enabled: true
+        indexed-entities:
+        - keycloak.RemoteUserSessionEntity
+      backups:
+        site-b: # <3>
+          backup:
+            strategy: "SYNC" # <4>
+            timeout: "4500" # <5>
+            failurePolicy: "FAIL" # <6>
+            stateTransfer:
+              chunkSize: "16"
+# end::infinispan-cache-sessions[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# tag::infinispan-cache-work[]
+apiVersion: infinispan.org/v2alpha1
+kind: Cache
+metadata:
+  name: work
+  namespace: keycloak
+spec:
+  clusterName: infinispan
+  name: work
+  template: |-
+    distributedCache:
+      mode: "SYNC"
+      owners: "2"
+      statistics: "true"
+      remoteTimeout: "5000"
+      encoding:
+        media-type: "application/x-protostream"
+      locking:
+        acquireTimeout: "4000"
+      transaction:
+        mode: "NON_DURABLE_XA" # <1>
+        locking: "PESSIMISTIC" # <2>
+      stateTransfer:
+        chunkSize: "16"
+      backups:
+        site-b: # <3>
+          backup:
+            strategy: "SYNC" # <4>
+            timeout: "4500" # <5>
+            failurePolicy: "FAIL" # <6>
+            stateTransfer:
+              chunkSize: "16"
+# end::infinispan-cache-work[]
+---
+# Source: ispn-helm/templates/infinispan.yaml
+# tag::infinispan-crossdc[]
+# tag::infinispan-single[]
+apiVersion: infinispan.org/v1
+kind: Infinispan
+metadata:
+  name: infinispan # <1>
+  namespace: keycloak
+  annotations:
+    infinispan.org/monitoring: 'true' # <2>
+spec:
+  replicas: 3
+  jmx:
+    enabled: true
+# end::infinispan-single[]
+# end::infinispan-crossdc[]
+  # This exposes the http endpoint to interact with its caches - more info - https://infinispan.org/docs/stable/titles/rest/rest.html
+  # We can optionally set the host in the below expose yaml block, otherwise it will be set to a default naming pattern.
+  expose:
+    type: Route
+  configMapName: "cluster-config"
+  image: 
+  version: 15.0.19
+  configListener:
+    enabled: false
+  container:
+    extraJvmOpts: '-Dorg.infinispan.openssl=false -Dorg.infinispan.threads.virtual=true -Dinfinispan.cluster.name=ISPN  -Djgroups.xsite.fd.interval=2000 -Djgroups.xsite.fd.timeout=10000 -Dotel.traces.sampler=parentbased_always_off'
+    cpu: 4:2
+    memory: 2Gi:1Gi
+  logging:
+    categories:
+      org.infinispan: info
+      org.jgroups: info
+  # tag::infinispan-crossdc[]
+  # tag::infinispan-single[]
+  security:
+    endpointSecretName: connect-secret # <3>
+  service:
+    type: DataGrid
+    # end::infinispan-single[]
+    sites:
+      local:
+        name: site-1 # <4>
+        # end::infinispan-crossdc[]
+        discovery:
+          launchGossipRouter: true
+          heartbeats:
+            interval: 2000
+            timeout: 8000
+        # tag::infinispan-crossdc[]
+        expose:
+          type: Route # <5>
+        maxRelayNodes: 128
+        encryption:
+          transportKeyStore:
+            secretName: xsite-keystore-secret # <6>
+            alias: xsite # <7>
+            filename: keystore.p12 # <8>
+          routerKeyStore:
+            secretName: xsite-keystore-secret # <6>
+            alias: xsite # <7>
+            filename: keystore.p12 # <8>
+          trustStore:
+            secretName: xsite-truststore-secret # <9>
+            filename: truststore.p12 # <10>
+      locations:
+        - name: site-b # <11>
+          clusterName: infinispan
+          namespace: keycloak # <12>
+          url: openshift://api.site-b # <13>
+          secretName: xsite-token-secret # <14>
+          
+    # end::infinispan-crossdc[]
+---
+# Source: ispn-helm/templates/infinispan-alerts.yaml
+# tag::fencing-prometheus-rule[]
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: xsite-status
+spec:
+  groups:
+    - name: xsite-status
+      rules:
+        - alert: SiteOffline
+          expr: 'min by (namespace, site) (vendor_jgroups_site_view_status{namespace="default",site="site-b"}) == 0' # <4>
+          labels:
+            severity: critical
+            reporter: site-1 # <5>
+            accelerator: a3da6a6cbd4e27b02.awsglobalaccelerator.com # <6>
+# end::fencing-prometheus-rule[]

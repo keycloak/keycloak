@@ -1,0 +1,103 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Localization"
+priority=40
+summary="Learn how to localize strings in the UIs.">
+
+{project_name} supports localized text throughout all user interfaces.
+
+.Prerequisites
+
+* You enable internationalization for a realm in the `Realm settings` section of the Admin Console. See {adminguide_link}#enabling-internationalization[Enabling internationalization].
+
+== Localizing messages in a theme
+
+Text in the templates is loaded from message bundles. When a theme extends another theme, the child theme inherits all messages from the parent's message bundle. You can
+override individual messages by adding `<THEME TYPE>/messages/messages_en.properties` to your theme.
+
+For example, to replace `Username` on the login form with `Your Username` for the `mytheme`, create the file
+`themes/mytheme/login/messages/messages_en.properties` with the following content:
+
+[source]
+----
+usernameOrEmail=Your Username
+----
+
+Within a message, values like `{0}` and `{1}` are replaced with arguments when the message is used. For example {0} in `Log in to {0}` is replaced with the name
+of the realm.
+
+Texts of these message bundles can be overwritten by realm-specific values, which are manageable by the UI and API.
+
+== Adding a language to a theme
+
+.Procedure
+
+. Create the file `<THEME TYPE>/messages/messages_<LOCALE>.properties` in the directory of your theme.
+The `<LOCALE>` follows the conventions of https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ResourceBundle.html#getBundle(java.lang.String,java.util.Locale,java.lang.ClassLoader)[ResourceBunndle#getBundle].
+
+. Add this file to the `locales` property in `<THEME TYPE>/theme.properties`.
+For a language to be available to users in a realm, the login, account, and email theme types must support the language, so you need to add your language for those theme types.
++
+For example, to add Norwegian translations to the `mytheme` theme, create the file `themes/mytheme/login/messages/messages_no.properties` with the
+following content:
++
+[source]
+----
+usernameOrEmail=Brukernavn
+password=Passord
+----
++
+If you omit a translation for messages, those messages appear in English.
+
+. Edit `themes/mytheme/login/theme.properties` and add:
++
+[source]
+----
+locales=en,no
+----
+
+. Make the same changes to the `account` and `email` theme types. To make these changes, create `themes/mytheme/account/messages/messages_no.properties` and
+`themes/mytheme/email/messages/messages_no.properties`. If you leave these files empty, English messages appear.
+
+. Copy `themes/mytheme/login/theme.properties` to `themes/mytheme/account/theme.properties` and `themes/mytheme/email/theme.properties`.
+
+. Add a translation for the language selector by adding a message to the English translation. Add the following to
+`themes/mytheme/account/messages/messages_en.properties` and `themes/mytheme/login/messages/messages_en.properties`:
++
+[source]
+----
+locale_no=Norsk
+----
+
+By default, message properties files should be encoded using UTF-8.
+{project_name} falls back to ISO-8859-1 handling if it cannot read the contents as UTF-8.
+Unicode characters can be escaped as described in Java's documentation for https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/PropertyResourceBundle.html[PropertyResourceBundle].
+
+To simplify migration to the new language codes `zh-Hant` and `zh-Hans`, the classloader and folder based themes pick up for the old language codes `zh-TW` and `zh-CN` also the files `messages_zh_Hant.properties` and `messages_zh_Hant.properties`.
+Entries in `messages_zh_Hant.properties` take precedence over entries in `messages_zh_TW.properties`, and entries in `messages_zh_Hans.properties` take precedence over entries in `messages_zh_CN.properties`.
+
+[role="_additional-resources"]
+.Additional resources
+* For details on how the current locale is selected, see {developerguide_link}#_locale_selector[Locale Selector].
+
+== Overriding localized text for an entire realm
+
+You also have the option to declare translations that take effect for an entire realm.  You specify key/value pairs in the realm settings.  Any key specified in this way overrides the key/value pairs deployed with a theme.
+
+CAUTION: In most cases, using realm overrides is not the recommended way to achieve localization in {project_name}.  Consider carefully if you want every theme in your realm to use a key/value pair declared as a realm override.
+
+.Procedure to add a realm override
+
+. Log into the Admin Console.
+. Select your realm.
+. Click *Realm Settings* from the menu.
+. Click on the *Localization* tab.
+. Click on the *Realm overrides* subtab.
+. Select a language from the option list.
+. Click *Add translation*.
+. Create a key/value pair from the modal dialog.
+
+Notice another subtab called *Effective message bundles*.  This subtab provides a tool to query key/value pairs for a combination of theme, language, and theme type.  You can use this tool to test and make sure your realm overrides took effect.
+</@tmpl.guide>

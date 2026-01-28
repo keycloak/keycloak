@@ -1,0 +1,23 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Embedded Infinispan metrics for single-cluster deployments"
+summary="Use metrics to monitor caching health and cluster replication."
+tileVisible="false"
+>
+
+:jgrp_application: {project_name}
+:clustered_caches: true
+
+<#include "partials/prerequisites-metrics-troubleshooting.adoc" />
+
+== Metrics
+
+include::partials/ispn_metrics.adoc[leveloffset=+1]
+
+== Next steps
+
+Return back to the <@links.observability id="metrics-for-troubleshooting"/>.
+
+</@tmpl.guide>

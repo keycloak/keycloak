@@ -1,0 +1,56 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Deploying AWS Aurora in multiple availability zones"
+summary="Deploy an AWS Aurora as the database building block in a multi-cluster deployment."
+tileVisible="false" >
+
+This topic describes how to deploy an Aurora regional deployment of a PostgreSQL instance across multiple availability zones to tolerate one or more availability zone failures in a given AWS region.
+
+This deployment is intended to be used with the setup described in the <@links.ha id="multi-cluster-concepts"/> {section}.
+Use this deployment with the other building blocks outlined in the <@links.ha id="multi-cluster-building-blocks"/> {section}.
+
+include::../partials/blueprint-disclaimer.adoc[]
+
+<#include "/high-availability/partials/aurora/aurora-architecture.adoc" />
+
+[#multi-cluster-aurora-procedure]
+== Procedure
+
+The following procedure contains two sections:
+
+* Creation of an Aurora Multi-AZ database cluster with the name "keycloak-aurora" in eu-west-1.
+* Creation of a peering connection between the ROSA cluster(s) and the Aurora VPC to allow applications deployed on the ROSA clusters to establish connections with the database.
+
+[#multi-cluster-aurora-create]
+=== Create Aurora database Cluster
+
+include::../partials/aurora/aurora-multiaz-create-procedure.adoc[]
+
+[#multi-cluster-establish-peering-connection-with-rosa-cluster]
+=== Establish Peering Connections with ROSA clusters
+
+Perform these steps once for each ROSA cluster that contains a {project_name} deployment.
+
+include::../partials/aurora/aurora-create-peering-connections.adoc[]
+
+== Verifying the connection
+
+include::../partials/aurora/aurora-verify-peering-connections.adoc[]
+
+[#multi-cluster-aurora-connecting]
+== Connecting Aurora database with {project_name}
+
+Now that an Aurora database has been established and linked with all of your ROSA clusters, here are the relevant {project_name} CR options to connect the Aurora database with {project_name}. These changes will be required in the <@links.ha id="multi-cluster-deploy-keycloak-kubernetes" /> {section}. The JDBC url is configured to use the Aurora database writer endpoint.
+
+. Update `spec.db.url` to be `jdbc:aws-wrapper:postgresql://$HOST:5432/keycloak` where `$HOST` is the
+<<aurora-writer-url, Aurora writer endpoint URL>>.
+
+. Ensure that the Secrets referenced by `spec.db.usernameSecret` and `spec.db.passwordSecret` contain usernames and passwords defined when creating Aurora.
+
+</@tmpl.guide>
+
+== Next steps
+
+After successful deployment of the Aurora database continue with <@links.ha id="multi-cluster-deploy-infinispan-kubernetes-crossdc" />

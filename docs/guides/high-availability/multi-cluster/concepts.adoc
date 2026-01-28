@@ -1,0 +1,150 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Concepts for multi-cluster deployments"
+summary="Understand multi-cluster deployment with synchronous replication."
+tileVisible="false" >
+
+This topic describes a highly available multi-cluster setup and the behavior to expect. It outlines the requirements of the high availability architecture and describes the benefits and tradeoffs.
+
+== When to use this setup
+
+Use this setup to provide {project_name} deployments that are able to tolerate {kubernetes} cluster failures, reducing the likelihood of downtime.
+
+== Deployment, data storage and caching
+
+Two independent {project_name} deployments running in different sites are connected with a low latency network connection.
+Users, realms, clients, sessions, and other entities are stored in a database that is replicated synchronously across the two sites.
+The data is also cached in the {project_name} Infinispan caches as local caches.
+When the data is changed in one {project_name} instance, that data is updated in the database, and an invalidation message is sent to the other site using the `work` cache.
+
+In the following paragraphs and diagrams, references to deploying {jdgserver_name} apply to the external {jdgserver_name}.
+
+image::high-availability/active-active-sync.dio.svg[]
+
+== Causes of data and service loss
+
+While this setup aims for high availability, the following situations can still lead to service or data loss:
+
+* {project_name} site failure may result in requests failing in the period between the failure and the loadbalancer detecting
+it, as requests may still be routed to the failed site.
+
+* Once failures occur in the communication between the sites, manual steps are necessary to re-synchronize a degraded setup.
+
+* Degraded setups can lead to service or data loss if additional components fail.
+Monitoring is necessary to detect degraded setups.
+
+== Failures which this setup can survive
+
+[%autowidth]
+|===
+| Failure | Recovery | RPO^1^ | RT^2^
+
+| Database node
+| If the writer instance fails, the database can promote a reader instance in the same or other site to be the new writer.
+| No data loss
+| Seconds to minutes (depending on the database)
+
+| {project_name} node
+| Multiple {project_name} instances run on each site. If one instance fails some incoming requests might receive an error message or are delayed for some seconds.
+| No data loss
+| Less than 30 seconds
+
+| {jdgserver_name} node
+| Multiple {jdgserver_name} instances run in each site. If one instance fails, it takes a few seconds for the other nodes to notice the change. Entities are stored in at least two {jdgserver_name} nodes, so a single node failure does not lead to data loss.
+| No data loss
+| Less than 30 seconds
+
+| {jdgserver_name} cluster failure
+| If the {jdgserver_name} cluster fails in one of the sites, {project_name} will not be able to communicate with the external {jdgserver_name} on that site, and the {project_name} service will be unavailable.
+The loadbalancer will detect the situation as `/lb-check` returns an error, and will direct all traffic to the other site.
+
+The setup is degraded until the {jdgserver_name} cluster is restored and the data is re-synchronized.
+| No data loss^3^
+| Seconds to minutes (depending on load balancer setup)
+
+| Connectivity {jdgserver_name}
+| If the connectivity between the two sites is lost, data cannot be sent to the other site.
+Incoming requests might receive an error message or are delayed for some seconds.
+The {jdgserver_name} will mark the other site offline, and will stop sending data.
+One of the sites needs to be taken offline in the loadbalancer until the connection is restored and the data is re-synchronized between the two sites.
+In the blueprints, we show how this can be automated.
+| No data loss^3^
+| Seconds to minutes (depending on load balancer setup)
+
+| Connectivity database
+| If the connectivity between the two sites is lost, the synchronous replication will fail.
+Some requests might receive an error message or be delayed for a few seconds.
+Manual operations might be necessary depending on the database.
+| No data loss^3^
+| Seconds to minutes (depending on the database)
+
+| Site failure
+| If none of the {project_name} nodes are available, the loadbalancer will detect the outage and redirect the traffic to the other site.
+Some requests might receive an error message until the loadbalancer detects the failure.
+| No data loss^3^
+| Less than two minutes
+
+|===
+
+.Table footnotes:
+^1^ Tested Recovery Point Objective, assuming all parts of the setup were healthy at the time this occurred. +
+^2^ Maximum Recovery Time observed. +
+^3^ Manual operations needed to restore the degraded setup.
+
+The statement "`No data loss`" depends on the setup not being degraded from previous failures, which includes completing any pending manual operations to resynchronize the state between the sites.
+
+== Known limitations
+
+Site Failure::
+A successful failover requires a setup not degraded from previous failures.
+All manual operations like a re-synchronization after a previous failure must be complete to prevent data loss.
+Use monitoring to ensure degradations are detected and handled in a timely manner.
+
+Out-of-sync sites::
+The sites can become out of sync when a synchronous {jdgserver_name} request fails.
+This situation is currently difficult to monitor, and it would need a full manual re-sync of {jdgserver_name} to recover.
+Monitoring the number of cache entries in both sites and the {project_name} log file can show when resynch would become necessary.
+
+Manual operations::
+Manual operations that re-synchronize the {jdgserver_name} state between the sites will issue a full state transfer which will put a stress on the system.
+
+Two sites restriction::
+This setup is tested and supported only with two sites.
+Each additional site increases overall latency as it is necessary for data to be synchronously written to each site.
+Furthermore, the probability of network failures, and therefore downtime, also increases. Therefore, we do not support more than two sites as we believe it would lead to a deployment with inferior stability and performance.
+
+== Questions and answers
+
+Why synchronous database replication?::
+A synchronously replicated database ensures that data written in one site is always available in the other site after site failures and no data is lost.
+It also ensures that the next request will not return stale data, independent on which site it is served.
+
+Why synchronous {jdgserver_name} replication?::
+A synchronously replicated {jdgserver_name} ensures that cached data in one site are always available on the other site after a site failure and no data is lost.
+It also ensures that the next request will not return stale data, independent on which site it is served.
+
+Why is a low-latency network between sites needed?::
+Synchronous replication defers the response to the caller until the data is received at the other site.
+For synchronous database replication and synchronous {jdgserver_name} replication, a low latency is necessary as each request can have potentially multiple interactions between the sites when data is updated which would amplify the latency.
+
+Is a synchronous cluster less stable than an asynchronous cluster?::
+An asynchronous setup would handle network failures between the sites gracefully, while the synchronous setup would delay requests and will throw errors to the caller where the asynchronous setup would have deferred the writes to {jdgserver_name} or the database on the other site.
+However, as the two sites would never be fully up-to-date, this setup could lead to data loss during failures.
+This would include:
++
+--
+// TODO storing sessions in Infinispan is experimental. Add this bullet point back when we support it
+//* Lost logouts, meaning sessions are logged in one site although they are logged out in the other site at the point of failure when using an asynchronous {jdgserver_name} replication of sessions.
+* Lost changes leading to users being able to log in with an old password because database changes are not replicated to the other site at the point of failure when using an asynchronous database.
+* Invalid caches leading to users being able to log in with an old password because invalidating caches are not propagated at the point of failure to the other site when using an asynchronous {jdgserver_name} replication.
+--
++
+Therefore, tradeoffs exist between high availability and consistency. The focus of this topic is to prioritize consistency over availability with {project_name}.
+
+== Next steps
+
+Continue reading in the <@links.ha id="multi-cluster-building-blocks" /> {section} to find blueprints for the different building blocks.
+
+</@tmpl.guide>

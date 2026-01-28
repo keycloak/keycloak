@@ -1,0 +1,26 @@
+# Start or Stop Instances
+- name: "{{ operation[0]|upper }}{{ operation[1:] }} Instances"
+  amazon.aws.ec2_instance:
+    state: '{{ "stopped" if operation == "stop" else "started" }}'
+    region: '{{ region }}'
+    filters:
+      "tag:Name": '{{ cluster_name }}*'
+      instance-state-name: ['running', 'stopped', 'stopping']
+  no_log: "{{ no_log_sensitive }}"
+
+- when: operation == "start"
+  block:
+  # When starting instances via `ec2_instance` module sometimes the `public_ip_address` is missing in the result.
+  # Added additional `ec2_instance_info` step to work around the issue.
+  - name: Get Instance Information
+    amazon.aws.ec2_instance_info:
+      region: '{{ region }}'
+      filters:
+        "tag:Name": '{{ cluster_name }}*'
+        instance-state-name: ['running']
+    register: instances
+    no_log: "{{ no_log_sensitive }}"
+  - name: Recreate Inventory File
+    template:
+      src: inventory.yml.j2
+      dest: '{{ cluster_name }}_{{ region }}_inventory.yml'

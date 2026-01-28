@@ -1,0 +1,31 @@
+= Signature SPI
+
+The Signature SPI makes it possible to plug-in additional signature algorithms. This enables additional signatures and also enables changing how signatures are generated. For example, using this allows using an HSM device to sign tokens.
+
+Thanks to https://github.com/tnorimat[tnorimat] for contributing a significant part of this work.
+
+= New Signature Algorithms
+
+Alongside the Signature SPI there is now also support for additional signature algorithms.
+
+Keycloak now has support for RS256, RS384, RS512, ES256, ES384, ES512, HS256, HS384 and HS512.
+
+Elliptic Curve Digital Signature Algorithm (ES256/384/512) are very interesting as they provide similar
+security properties as RSA signatures, but use significantly less CPU.
+
+HMAC (HS256/384/512) are also very useful when you do not want your application to verify the signature itself.
+Since these are symmetric signatures only Keycloak is able to verify the signature, which requires the
+application to use the token introspection endpoint to verify tokens.
+
+Thanks to https://github.com/tnorimat[tnorimat] for contributing a significant part of this work.
+
+= Better Audience Support for OpenID Connect clients
+
+It is now possible to specify the audiences in the tokens issued for OpenID Connect clients. There is also support for verification
+of audience on the adapter side.
+
+= Minor improvements
+
+* Added LocaleSelector SPI, which allows to change the way how the locale will be resolved for a particular request. Thanks to https://github.com/knutz3n[knutz3n]
+* Added an authenticator to automatically link Identity Provider identity to an existing account after first Idp authentication. Thanks to https://github.com/slominskir[slominskir]
+

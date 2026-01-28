@@ -1,0 +1,16 @@
+name: Setup unit test
+description: Download Maven caches needed for unit tests
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Java
+      uses: ./.github/actions/java-setup
+
+    - id: maven-cache
+      name: Maven cache
+      uses: ./.github/actions/maven-cache
+
+    - id: pnpm-store-cache
+      name: Frontend Plugin Cache
+      uses: ./.github/actions/pnpm-store-cache

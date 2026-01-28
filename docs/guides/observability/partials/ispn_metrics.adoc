@@ -1,0 +1,305 @@
+====
+*Global tags*
+
+`cache=<name>`:: The cache name.
+====
+
+== Size
+
+Monitor the number of entries in your cache using these two metrics.
+If the cache is clustered, each entry has an owner node and zero or more backup copies of different nodes.
+
+TIP: Sum the unique entry size metric to get a cluster total number of entries.
+
+|===
+|Metric |Description
+
+| `vendor_statistics_approximate_entries`
+| The approximate number of entries stored by the node, including backup copies.
+
+| `vendor_statistics_approximate_entries_unique`
+| The approximate number of entries stored by the node, excluding backup copies.
+
+|===
+
+== Data Access
+
+The following metrics monitor the cache accesses, such as the reads, writes and their duration.
+
+=== Stores
+
+A store operation is a write operation that writes or updates a value stored in the cache.
+
+|===
+|Metric |Description
+
+| `vendor_statistics_store_times_seconds_count`
+| The total number of store requests.
+
+| `vendor_statistics_store_times_seconds_sum`
+| The total duration of all store requests.
+
+|===
+
+include::histogram_note_ispn.adoc[]
+
+=== Reads
+
+A read operation reads a value from the cache.
+It divides into two groups, a hit if a value is found, and a miss if not found.
+
+|===
+|Metric |Description
+
+| `vendor_statistics_hit_times_seconds_count`
+| The total number of read hits requests.
+
+| `vendor_statistics_hit_times_seconds_sum`
+| The total duration of all read hits requests.
+
+| `vendor_statistics_miss_times_seconds_count`
+| The total number of read misses requests.
+
+| `vendor_statistics_miss_times_seconds_sum`
+| The total duration of all read misses requests.
+
+|===
+
+include::histogram_note_ispn.adoc[]
+
+=== Removes
+
+A remove operation removes a value from the cache.
+It divides in two groups, a hit if a value exists, and a miss if the value does not exist.
+
+|===
+|Metric |Description
+
+| `vendor_statistics_remove_hit_times_seconds_count`
+| The total number of remove hits requests.
+
+| `vendor_statistics_remove_hit_times_seconds_sum`
+| The total duration of all remove hits requests.
+
+| `vendor_statistics_remove_miss_times_seconds_count`
+| The total number of remove misses requests.
+
+| `vendor_statistics_remove_miss_times_seconds_sum`
+| The total duration of all remove misses requests.
+
+|===
+
+include::histogram_note_ispn.adoc[]
+
+ifndef::external_infinispan[]
+[TIP]
+====
+For `users` and `realms` cache, the database invalidation translates into a remove operation.
+These metrics are a good indicator of how frequent the database entities are modified and therefore removed from the cache.
+====
+
+====
+*Hit Ratio for read and remove operations*
+
+An expression can be used to compute the hit ratio for a cache in systems such as Prometheus.
+As an example, the hit ratio for read operations can be expressed as:
+
+----
+vendor_statistics_hit_times_seconds_count
+/
+(vendor_statistics_hit_times_seconds_count
+ + vendor_statistics_miss_times_seconds_count)
+----
+
+====
+
+====
+*Read/Write ratio*
+
+An expression can be used to compute the read-write ratio for a cache, using the metrics above:
+
+----
+(vendor_statistics_hit_times_seconds_count
+ + vendor_statistics_miss_times_seconds_count)
+/
+(vendor_statistics_hit_times_seconds_count
+ + vendor_statistics_miss_times_seconds_count
+ + vendor_statistics_remove_hit_times_seconds_count
+ + vendor_statistics_remove_miss_times_seconds_count
+ + vendor_statistics_store_times_seconds_count)
+----
+
+====
+
+=== Eviction
+
+Eviction is the process to limit the cache size and, when full, an entry is removed to make room for a new entry to be cached.
+As {project_name} caches the database entities in the `users`, `realms` and `authorization`, database access always proceeds with an eviction event.
+
+|===
+|Metric |Description
+
+m|vendor_statistics_evictions
+| The total number of eviction events.
+
+|===
+
+====
+*Eviction rate*
+
+A rapid increase of eviction and very high database CPU usage means the `users` or `realms` cache is too small for smooth {project_name} operation, as data needs to be re-loaded very often from the database which slows down responses.
+If enough memory is available, consider increasing the max cache size using the CLI options `cache-embedded-users-max-count` or `cache-embedded-realms-max-count`
+====
+
+endif::[]
+
+ifdef::clustered_caches[]
+== Locking
+
+Write and remove operations hold the lock until the value is replicated in the local cluster and to the remote site.
+
+TIP: On a healthy cluster, the number of locks held should remain constant, but deadlocks may create temporary spikes.
+
+|===
+|Metric |Description
+
+| `vendor_lock_manager_number_of_locks_held`
+| The number of locks currently being held by this node.
+
+|===
+endif::[]
+
+== Transactions
+
+Transactional caches use both One-Phase-Commit and Two-Phase-Commit protocols to complete a transaction.
+These metrics keep track of the operation duration.
+
+NOTE: The `PESSMISTIC` locking mode uses One-Phase-Commit and does not create commit requests.
+
+TIP: In a healthy cluster, the number of rollbacks should remain zero.
+Deadlocks should be rare, but they increase the number of rollbacks.
+
+|===
+|Metric |Description
+
+| `vendor_transactions_prepare_times_seconds_count`
+| The total number of prepare requests.
+
+| `vendor_transactions_prepare_times_seconds_sum`
+| The total duration of all prepare requests.
+
+| `vendor_transactions_rollback_times_seconds_count`
+| The total number of rollback requests.
+
+| `vendor_transactions_rollback_times_seconds_sum`
+| The total duration of all rollback requests.
+
+| `vendor_transactions_commit_times_seconds_count`
+| The total number of commit requests.
+
+| `vendor_transactions_commit_times_seconds_sum`
+| The total duration of all commit requests.
+
+|===
+
+include::histogram_note_ispn.adoc[]
+
+ifdef::clustered_caches[]
+== State Transfer
+
+State transfer happens when a node joins or leaves the cluster.
+It is required to balance the data stored and guarantee the desired number of copies.
+
+This operation increases the resource usage, and it will affect negatively the overall performance.
+
+|===
+|Metric |Description
+
+| `vendor_state_transfer_manager_inflight_transactional_segment_count`
+| The number of in-flight transactional segments the local node requested from other nodes.
+
+| `vendor_state_transfer_manager_inflight_segment_transfer_count`
+| The number of in-flight segments the local node requested from other nodes.
+
+|===
+
+== Cluster Data Replication
+
+The cluster data replication can be the main source of failure.
+These metrics not only report the response time, i.e., the time it takes to replicate an update, but also the failures.
+
+TIP: On a healthy cluster, the average replication time will be stable or with little variance.
+The number of failures should not increase.
+
+|===
+|Metric |Description
+
+| `vendor_rpc_manager_replication_count`
+| The total number of successful replications.
+
+| `vendor_rpc_manager_replication_failures`
+| The total number of failed replications.
+
+| `vendor_rpc_manager_average_replication_time`
+| The average time spent, in milliseconds, replicating data in the cluster.
+
+|===
+
+====
+*Success ratio*
+
+An expression can be used to compute the replication success ratio:
+
+----
+(vendor_rpc_manager_replication_count)
+/
+(vendor_rpc_manager_replication_count
+ + vendor_rpc_manager_replication_failures)
+----
+====
+
+endif::[]
+
+ifdef::external_infinispan[]
+== Cross Site Data Replication
+
+Like cluster data replication, the metrics in this section measure the time it takes to replicate the data to the other sites.
+
+TIP: On a healthy cluster, the average cross-site replication time will be stable or with little variance.
+
+====
+*Tags*
+
+`site=<name>`:: indicates the receiving site.
+====
+
+|===
+|Metric |Description
+
+| `vendor_rpc_manager_cross_site_replication_times_seconds_count`
+| The total number of cross-site requests.
+
+| `vendor_rpc_manager_cross_site_replication_times_seconds_sum`
+| The total duration of all cross-site requests.
+
+| `vendor_rpc_manager_replication_times_to_site_seconds_count`
+| The total number of cross-site requests.
+This metric is more detailed with a per-site counter.
+
+| `vendor_rpc_manager_replication_times_to_site_seconds_sum`
+| The total duration of all cross-site requests.
+This metric is more detailed with a per-site duration.
+
+|`vendor_rpc_manager_number_xsite_requests_received_from_site`
+|The total number of cross-site requests handled by this node.
+This metric is more detailed with a per-site counter.
+
+| `vendor_x_site_admin_status`
+|The site status.
+A value of 1 indicates that it is online.
+This value reacts to the {jdgserver_name} CLI commands `bring-online` and `take-offline`.
+
+|===
+
+include::histogram_note_ispn.adoc[]
+endif::[]

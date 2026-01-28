@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet author="bburke@redhat.com" id="2.1.0-KEYCLOAK-5461">
+        <validCheckSum>7:f1f9fd8710399d725b780f463c6b21cd</validCheckSum>
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <changeSetExecuted id="2.1.0" author="bburke@redhat.com" changeLogFile="META-INF/jpa-changelog-2.1.0.xml"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="BROKER_LINK">
+            <column name="IDENTITY_PROVIDER" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="STORAGE_PROVIDER_ID" type="VARCHAR(255)">
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+            <column name="BROKER_USER_ID" type="VARCHAR(255)" />
+            <column name="BROKER_USERNAME" type="VARCHAR(255)" />
+            <column name="TOKEN" type="TEXT" />
+            <column name="USER_ID" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <createTable tableName="FED_USER_ATTRIBUTE">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STORAGE_PROVIDER_ID" type="VARCHAR(36)"/>
+            <column name="VALUE" type="VARCHAR(2024)"/>
+        </createTable>
+        <createTable tableName="FED_USER_CONSENT">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CLIENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STORAGE_PROVIDER_ID" type="VARCHAR(36)"/>
+        </createTable>
+        <createTable tableName="FED_USER_CONSENT_ROLE">
+            <column name="USER_CONSENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ROLE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="FED_USER_CONSENT_PROT_MAPPER">
+            <column name="USER_CONSENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="PROTOCOL_MAPPER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="FED_USER_CREDENTIAL">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DEVICE" type="VARCHAR(255)"/>
+            <column name="HASH_ITERATIONS" type="INT"/>
+            <column name="SALT" type="TINYBLOB(16)"/>
+            <column name="TYPE" type="VARCHAR(255)"/>
+            <column name="VALUE" type="VARCHAR(255)"/>
+            <column name="CREATED_DATE" type="BIGINT"/>
+            <column name="COUNTER" type="INT" defaultValueNumeric="0">
+                <constraints nullable="true"/>
+            </column>
+            <column name="DIGITS" type="INT" defaultValueNumeric="6">
+                <constraints nullable="true"/>
+            </column>
+            <column name="PERIOD" type="INT" defaultValueNumeric="30">
+                <constraints nullable="true"/>
+            </column>
+            <column name="ALGORITHM" type="VARCHAR(36)" defaultValue="HmacSHA1">
+                <constraints nullable="true"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STORAGE_PROVIDER_ID" type="VARCHAR(36)"/>
+        </createTable>
+        <createTable tableName="FED_USER_GROUP_MEMBERSHIP">
+            <column name="GROUP_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STORAGE_PROVIDER_ID" type="VARCHAR(36)"/>
+        </createTable>
+        <createTable tableName="FED_USER_REQUIRED_ACTION">
+            <column name="REQUIRED_ACTION" type="VARCHAR(255)" defaultValue=" ">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STORAGE_PROVIDER_ID" type="VARCHAR(36)"/>
+        </createTable>
+        <createTable tableName="FED_USER_ROLE_MAPPING">
+            <column name="ROLE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STORAGE_PROVIDER_ID" type="VARCHAR(36)"/>
+        </createTable>
+
+        <createTable tableName="COMPONENT_CONFIG">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="COMPONENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(4000)"/>
+        </createTable>
+        <createTable tableName="COMPONENT">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="PARENT_ID" type="VARCHAR(36)"/>
+            <column name="PROVIDER_ID" type="VARCHAR(36)"/>
+            <column name="PROVIDER_TYPE" type="VARCHAR(255)"/>
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createTable>
+
+
+
+
+        <addPrimaryKey columnNames="IDENTITY_PROVIDER, USER_ID" constraintName="CONSTR_BROKER_LINK_PK" tableName="BROKER_LINK" />
+        <addPrimaryKey columnNames="ID" constraintName="CONSTR_FED_USER_ATTR_PK" tableName="FED_USER_ATTRIBUTE"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTR_FED_USER_CONSENT_PK" tableName="FED_USER_CONSENT"/>
+        <addPrimaryKey columnNames="USER_CONSENT_ID, ROLE_ID" constraintName="CONSTR_USER_CONSENT_ROLE_PK" tableName="FED_USER_CONSENT_ROLE"/>
+        <addPrimaryKey columnNames="USER_CONSENT_ID, PROTOCOL_MAPPER_ID" constraintName="CONSTR_USER_CONSENT_PROTM_PK" tableName="FED_USER_CONSENT_PROT_MAPPER"/>
+        <!--
+        <addForeignKeyConstraint baseColumnNames="USER_CONSENT_ID" baseTableName="FED_USER_CONSENT_ROLE" constraintName="FK_FED_GRNTCSNT_ROLE_GR" referencedColumnNames="ID" referencedTableName="FED_USER_CONSENT"/>
+        <addForeignKeyConstraint baseColumnNames="USER_CONSENT_ID" baseTableName="FED_USER_CONSENT_PROT_MAPPER" constraintName="FK_FED_GRNTCSNT_PRM_GR" referencedColumnNames="ID" referencedTableName="FED_USER_CONSENT"/>
+ -->
+        <addPrimaryKey columnNames="ID" constraintName="CONSTR_FED_USER_CRED_PK" tableName="FED_USER_CREDENTIAL"/>
+        <addPrimaryKey columnNames="GROUP_ID, USER_ID" constraintName="CONSTR_FED_USER_GROUP" tableName="FED_USER_GROUP_MEMBERSHIP"/>
+        <addPrimaryKey columnNames="ROLE_ID, USER_ID" constraintName="CONSTR_FED_USER_ROLE" tableName="FED_USER_ROLE_MAPPING"/>
+        <addPrimaryKey columnNames="REQUIRED_ACTION, USER_ID" constraintName="CONSTR_FED_REQUIRED_ACTION" tableName="FED_USER_REQUIRED_ACTION"/>
+
+        <addPrimaryKey columnNames="ID" constraintName="CONSTR_COMPONENT_PK" tableName="COMPONENT"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTR_COMPONENT_CONFIG_PK" tableName="COMPONENT_CONFIG"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="COMPONENT" constraintName="FK_COMPONENT_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="COMPONENT_ID" baseTableName="COMPONENT_CONFIG" constraintName="FK_COMPONENT_CONFIG" referencedColumnNames="ID" referencedTableName="COMPONENT"/>
+
+    </changeSet>
+
+</databaseChangeLog>

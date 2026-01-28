@@ -1,0 +1,31 @@
+// Module included in the following assemblies:
+//
+// server_admin/topics/users.adoc
+
+[id="con-required-actions_{context}"]
+= Defining actions required at login
+
+You can set the actions that a user must perform at the first login. These actions are required after the user provides credentials. After the first login, these actions are no longer required. You add required actions on the *Details* tab of that user.
+
+Some required actions are automatically triggered for the user during login even if they are not explicitly added to this user by the administrator. For example `Update password` action can be
+triggered if <<_password-policies, Password policies>> are configured in a way that the user password needs to be changed every X days. Or `verify profile`
+action can require the user to update the <<user-profile, User profile>> as long as some user attributes do not match the requirements according to the user profile configuration.
+
+The following are examples of required action types:
+
+Update Password::
+   The user must change their password.
+
+Configure OTP::
+   The user must configure a one-time password generator on their mobile device using either the Free OTP or Google Authenticator application.
+
+Verify Email::
+   The user must verify their email account. An email will be sent to the user with a validation link that they must click. Once this workflow is successfully completed, the user will be allowed to log in.
+
+Update Profile::
+   The user must update profile information, such as name, address, email, and phone number.
+
+NOTE: Some actions do not makes sense to be added to the user account directly. For example, the `Update User Locale` is a helper action to handle some localization related parameters. Another
+example is the `Delete Credential` action, which is supposed to be triggered as a <<con-aia-parameterized_{context}, Parameterized AIA>>.  Regarding this one, if the administrator wants to delete the credential of some
+user, that administrator can do it directly in the Admin Console. The `Delete Credential` action is dedicated to be used for example by the <<_account-service,{project_name} Account Console>>.
+

@@ -1,0 +1,95 @@
+= OpenID Connect and SAML Adapters End-of-life
+
+Some Keycloak OpenID Connect adapters have reached end-of-life and are not included in this release.
+
+== Fuse 6 and 7 (OpenID Connect)
+
+Keycloak will no longer be providing adapters for Fuse 6 or 7. If you need adapters for Fuse please leverage https://access.redhat.com/products/red-hat-single-sign-on/[Red Hat Single Sign-On] 7.x adapters.
+
+== JBoss AS 7 and EAP 6 (OpenID Connect and SAML)
+
+JBoss AS 7 has been unmaintained for a very long time. If you are still using JBoss AS 7 we recommend migrating to WildFly and leveraging the native OIDC support in WildFly.
+
+Red Hat customers using Red Hat JBoss Enterprise Application Platform 6.x should use https://access.redhat.com/products/red-hat-single-sign-on/[Red Hat Single Sign-On] 7.x adapters. These can be used in combination with the Keycloak server.
+
+== Jetty 9.2 and 9.3 (OpenID Connect and SAML)
+
+Jetty 9.2 reached end of life in 2018, while Jetty 9.3 reached end of life in 2020. If you are still using these versions we recommend upgrading to Jetty 9.4 as soon as possible.
+
+== Spring Boot 1 (OpenID Connect)
+
+Spring Boot 1.x reached end of life in 2019. If you are still using Spring Boot 1 we recommend upgrading to Spring Boot 2 as soon as possible.
+
+== WildFly legacy security layer (OpenID Connect and SAML)
+
+In WildFly 25 the legacy security layer was removed, going forward only Elytron will be supported. We recommend anyone using an older version of WildFly to upgrade and leverage native OIDC support in WildFly.
+
+Red Hat customers using Red Hat JBoss Enterprise Application Platform 7.x should use https://access.redhat.com/products/red-hat-single-sign-on/[Red Hat Single Sign-On] 7.x adapters. These can be used in combination with the Keycloak server.
+
+= New Admin Console graduation
+
+The new Admin Console is now graduated to the default admin console, with the old console now deprecated. The old console will be removed in Keycloak 21.
+
+= Changes in Keycloak storage
+
+The Keycloak storage is changing, and the current storage, while still supported, will eventually be replaced with a brand-new implementation.
+This change brings better support for cloud-native storages, no-downtime abilities, and better support for implementing custom storages for additional areas apart from users.
+
+It means several deep changes in the supported features of the current store will become _legacy_ features.
+The legacy store and the new store cannot be used simultaneously; only one store can be active at a time.
+
+The most visible change is that the User Storage SPI is incompatible with the new storage API, the Map Storage API.
+Thus, the User Storage SPI will be deprecated with legacy store and will move to a separate module called `keycloak-model-legacy`.
+This change impacts several areas, especially areas related to user federation and custom user providers.
+
+Furthermore, APIs have been consolidated so that the details of the storage layer will be transparent to the REST service layer.
+Specifically, the services will not be able to differentiate cached and non-cached objects, nor specifically access federated versus local storage.
+
+Hence, custom extensions that access objects in local storage or cache through `KeycloakSession`
+methods must be reviewed.
+See link:{upgradingguide_link}[{upgradingguide_name}] for details.
+
+= OIDC Logout changes
+
+In the previous release, we added support for OIDC logout. This release contains a few other fixes and polishing. The  highlights include:
+
+- Support for the `client_id` parameter, which was added in recent draft of the OIDC RP-Initiated Logout specification. As a result, no need exists to use the `Consent Required` flag of the
+client to show the logout confirmation screen.
+- Configuration option `Valid Post Logout Redirect URIs` added to the OIDC client. This change is aligned with the OIDC specification, which allows you to use a different set of redirect URIs for redirect after login and logout.
+Value `+` used for `Valid Post Logout Redirect URIs` means that the logout will use the same set of redirect URIs as specified by the option of `Valid Redirect URIs`. This change also matches the default behavior when migrating
+from a previous version due to backwards compatibility.
+
+For more details, see the link:{adminguide_link}#_oidc-logout[{adminguide_name}].
+
+= Update Email Workflow
+
+There is new preview feature `UPDATE_EMAIL`. When it is enabled and corresponding flag enabled in the realm, the users will be required
+to confirm updating their email by clicking the link, which will be sent to their new email address. For more details, see the link:{adminguide_link}#_update-email-workflow[{adminguide_name}].
+Thanks to https://github.com/reda-alaoui[Réda Housni Alaoui] for the contribution.
+
+= Deprecated `podDisruptionBudget` in the legacy {project_operator}
+
+With this release, we have deprecated `podDisruptionBudget` field in the Keycloak CR of the https://github.com/keycloak/keycloak-operator[legacy {project_operator}].
+This optional field will be ignored when the Operator is deployed on Kubernetes version 1.25 and higher.
+
+As a workaround, you can manually create the Pod Disruption Budget in your cluster, for example:
+```yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      component: keycloak
+```
+See also the https://kubernetes.io/docs/tasks/run-application/configure-pdb/[Kubernetes Documentation].
+
+= Initial Support for centralized logging
+
+Starting with version 19, Keycloak supports sending logs using GELF to centralized logging solutions like ELK, EFK or Graylog out of the box.
+
+You can find the documentation and examples to get you up and running quickly in the https://www.keycloak.org/server/logging[logging] {section}.

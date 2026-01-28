@@ -1,0 +1,7 @@
+= Deploying Scripts to the Server
+
+Until now, administrators were allowed to upload scripts to the server through the {project_name} Administration Console as well as
+through the RESTful Admin API.
+
+For now on, this capability is *disabled* by default and users should prefer to deploy scripts directly to the server. For more details,
+please take a look at link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].

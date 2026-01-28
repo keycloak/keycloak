@@ -1,0 +1,369 @@
+= Transition from Java EE to Jakarta EE
+
+Keycloak migrated its codebase from Java EE (Enterprise Edition) to its successor Jakarta EE, which brings various changes into Keycloak.
+
+We have upgraded all Jakarta EE specifications in order to support Jakarta EE 10, such as:
+
+* Jakarta Persistence 3.1
+* Jakarta RESTful Web Services 3.1
+* Jakarta Mail API 2.1
+* Jakarta Servlet 6.0
+* Jakarta Activation 2.1
+
+Jakarta EE 10 provides a modernized, simplified, lightweight approach to building cloud-native Java applications.
+The main changes provided within this initiative are changing the namespace from `+javax.*+` to `+jakarta.*+`.
+It does not apply for `+javax.*+` packages provided directly in the JDK, such as `javax.security`, `javax.net`, `javax.crypto`, etc.
+
+You can be affected by these changes in your custom extensions, providers or JPA entities.
+
+= Upgrade to Quarkus 3
+
+Keycloak upgraded to version 3 of the Quarkus Java framework.
+Quarkus 3 continues the tradition of propelling Java development by moving fast and providing a cutting-edge user experience with the latest technologies.
+It continues to improve overall performance and efficiency.
+
+Quarkus 3 is based on Jakarta EE 10, the same as Keycloak, creating smooth interoperability between them.
+In addition, it contains Eclipse MicroProfile 6, which aligns with Jakarta EE 10 Core Profile.
+The central part of the Quarkus 3 upgrade is built-in support for JPA 3.1 and Hibernate ORM 6.
+
+== `quarkus.hibernate-orm.*` properties no longer working
+
+For Quarkus 3, Hibernate ORM configurations must be specified in either the `persistence.xml` file or in Quarkus properties, but not in both places.
+Keycloak uses a `persistence.xml` file, therefore, it is no longer possible to override Keycloak's JPA store configurations via Quarkus`' configuration properties for the default persistence unit whose names start with `quarkus.hibernate-orm`.
+
+= Upgrade to Hibernate ORM 6
+
+Keycloak now benefits from the upgrade to Hibernate ORM 6.2, which includes improved performance, better SQL, modern JDK support, and support for modern RDBMS features.
+The performance improvements primarily affect JDBC, HQL Translation, and Criteria Translation.
+
+If you have custom providers or JPA entities, these changes may affect you.
+
+We recommend reviewing the link:https://github.com/quarkusio/quarkus/wiki/Migration-Guide-3.0:-Hibernate-ORM-5-to-6-migration[Quarkus migration guide] or the link:https://hibernate.org/orm/releases/[Hibernate release notes] for more information.
+
+= Legacy Promise API removed from Keycloak JS adapter
+
+The legacy Promise API methods have been removed from the Keycloak JS adapter. This means that calling `.success()` and `.error()` on promises returned from the adapter is no longer possible. Instead standardized Promise methods such as https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then[`.then()`] and https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch[`.catch()`] should be used.
+
+[source, javascript]
+.Before migration:
+----
+const keycloak = new Keycloak();
+
+keycloak.init()
+  .success(function(authenticated) {
+    alert(authenticated ? 'authenticated' : 'not authenticated');
+  }).error(function() {
+    alert('failed to initialize');
+  });
+----
+
+[source,javascript]
+.After migration:
+----
+const keycloak = new Keycloak();
+
+keycloak.init()
+  .then(function(authenticated) {
+    alert(authenticated ? 'authenticated' : 'not authenticated');
+  }).catch(function() {
+    alert('failed to initialize');
+  });
+----
+
+
+[source,javascript]
+.Or alternatively, when using the https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await[`await`] keyword to unwrap these promises:
+----
+const keycloak = new Keycloak();
+
+try {
+  const authenticated = await keycloak.init();
+  alert(authenticated ? 'authenticated' : 'not authenticated');
+} catch (error) {
+  alert('failed to initialize');
+}
+----
+
+= Export and Import perform an automatic build
+
+In previous releases, the `export` and `import` commands required a `build` command to be run first.
+Starting with this release, the `export` and `import` commands perform an automatic rebuild of Keycloak if a build time configuration has changed.
+
+When migrating existing scripts that run a `build` command first, migrate by adding the `--optimized` command line option to the `export` and `import` command to avoid Keycloak automatically re-building the image.
+Not adding the `--optimized` option in this might make Keycloak trigger a rebuild and revert to the default values, and then connecting to the database for export and import will not work.
+
+The following examples assume that runtime parameters like a database password are provided via a configuration file or an environment variable.
+
+.Before migration: Running the build command before running the export command
+[source,bash]
+----
+bin/kc.[sh|bat] build --db=postgres ...
+bin/kc.[sh|bat] export --dir <dir>
+----
+
+.After migration: Adding `--optimized` to the export command
+[source,bash,subs="+quotes"]
+----
+bin/kc.[sh|bat] build --db=postgres ...
+bin/kc.[sh|bat] export ##--optimized## --dir <dir>
+----
+
+.After migration: Leveraging the auto-build functionality
+[source,bash]
+----
+bin/kc.[sh|bat] export --dir <dir> --db=postgres ...
+----
+
+NOTE:: When the auto-build runs, the build time options will be in effect for all subsequent commands that are started with the `--optimized` flag, including the `start` command.
+
+In previous releases the `export` and `import` commands allowed runtime parameters such as a database URL only in configuration files or environment variables.
+Starting with this release, those runtime parameters are now available on the command line as well.
+Use the `--help` option to find out about the supported parameters.
+
+= Renamed Keycloak Admin client artifacts
+
+After the upgrade to Jakarta EE, artifacts for Keycloak Admin clients were renamed to more descriptive names with consideration for long-term maintainability.
+We still provide two separate Keycloak Admin clients, one with Jakarta EE and the other with Java EE support.
+
+We stopped releasing the `org.keycloak:keycloak-admin-client-jakarta` artifact.
+The default one for the Keycloak Admin client with Jakarta EE support is `org.keycloak:keycloak-admin-client` (since version 22.0.0).
+
+The new artifact with Java EE support is `org.keycloak:keycloak-admin-client-jee`.
+
+== Jakarta EE support
+[source,xml]
+.Before migration:
+----
+<dependency>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-admin-client-jakarta</artifactId>
+    <version>21.0.0</version>
+</dependency>
+----
+
+[source,xml]
+.After migration:
+----
+<dependency>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-admin-client</artifactId>
+    <version>22.0.0</version>
+</dependency>
+----
+
+== Java EE support
+[source,xml]
+.Before migration:
+----
+<dependency>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-admin-client</artifactId>
+    <version>21.0.0</version>
+</dependency>
+----
+
+[source,xml]
+.After migration:
+----
+<dependency>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-admin-client-jee</artifactId>
+    <version>22.0.0</version>
+</dependency>
+----
+
+= Passthrough proxy mode changes
+
+Keycloak's proxy configuration setting for mode *passthrough* no longer parses HTTP forwarding headers in the request, as when a proxy forwards an HTTPS connection in passthrough mode, a proxy is unable to add, remove or update HTTP headers.
+
+Installations that want the HTTP headers in the client's request to be parsed should use the **edge** or **reencrypt** setting.
+
+See https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] for details.
+
+= Consistent fallback message resolving for all themes
+
+This change only may affect you when you are using realm localization messages.
+
+Up to this version, the resolving of fallback messages was inconsistent across themes, when realm localization messages were used. More information can be found in the following https://github.com/keycloak/keycloak/issues/15845[issue].
+
+The implementation has now been unified for all themes. In general, the message for the most specific matching language tag has the highest priority. If there are both a realm localization message and a Theme 18n message, the realm localization message has the higher priority. Summarized, the priority of the messages is as follows  (RL = realm localization, T = Theme i18n files): `RL <variant> > T <variant> > RL <region> > T <region> > RL <language> > T <language> > RL en > T en`.
+
+Probably this can be better explained with an example: When the variant `de-CH-1996` is requested and there is a realm localization message for the variant, this message will be used. If such a realm localization message does not exist, the Theme i18n files are searched for a corresponding message for that variant. If such a message does not exist, a realm localization message for the region (`de-CH`) will be searched. If such a realm localization message does not exist, the Theme i18n files are searched for a message for that region. If still no message is found, a realm localization message for the language (`de`) will be searched. If there is no matching realm localization message, the Theme i18n files are be searched for a message for that language. As last fallback, the English (`en`) translation is used: First, an English realm localization will be searched - if not found, the Theme 18n files are searched for an English message.
+
+= `UserQueryProvider` changes
+
+`UserQueryProvider` interface was split into two. One is `UserQueryMethodsProvider` providing capabilities for querying users. Second one is `UserCountMethodsProvider` which provides capability for counting number of users in particular storage.
+
+Keycloak now has the ability to differentiate between user storage providers that can efficiently execute count queries and those that cannot. The `UserQueryProvider` interface still exists and extends both new interfaces. Therefore, there is no need for any modifications in the existing implementations of `UserQueryProvider` since it retains the same methods.
+
+= `LDAPStorageProvider` search changes
+
+Starting with this release Keycloak uses a pagination mechanism when querying federated LDAP database.
+Searching for users should be consistent with search in local database.
+
+Since this release `LDAPStorageProvider` implements only `UserQueryMethodsProvider`, not `UserQueryProvider`.
+
+= Deprecation of Keycloak OpenID Connect Adapters
+
+Starting with this release, we no longer will invest our time on the following Keycloak OpenID Connect Adapters:
+
+* Keycloak Wildfly OpenID Connect Adapter
+* Keycloak JEE Servlet OpenID Connect Adapter
+* Keycloak Spring Boot and Spring Security OpenID Connect Adapter
+
+This move is already reflected in our documentation and in our quickstart repository. Please, consider looking at the following
+references for more information:
+
+* link:https://github.com/keycloak/keycloak-quickstarts[Keycloak Quickstart GitHub Repository]
+* link:{securing_apps_link}[Keycloak Securing Applications Documentation]
+
+We recommend starting to look into moving your applications to the alternatives from the references above. Those adapters should not be available anymore in future releases.
+
+= Deprecation of Keycloak JEE SAML Adapter
+
+The Keycloak JEE SAML Adapter has been discontinued, and we will no longer invest our time on its development following this release.
+
+The official adapter is now based on Jakarta and should be used as soon as you switch your applications to this technology.
+
+This change is already in our documentation and in our quickstart repository. For more information, please consider looking at the following references:
+
+* link:https://github.com/keycloak/keycloak-quickstarts[Keycloak Quickstart GitHub Repository]
+* link:{securing_apps_link}[Keycloak Securing Applications Documentation]
+
+If you cannot migrate your applications to Jakarta, you can still use the "legacy" SAML JEE adapter and still
+be able to integrate with future releases of the server. However, consider upgrading your applications as soon as possible
+because we are no longer providing support to JEE.
+
+= Changes for openshift-integration feature
+
+The preview feature `openshift-integration` was removed from Keycloak codebase and moved into separate extension. This includes
+moving of related providers such as custom client storage provider and token review endpoint for Openshift integration.
+
+If you used this feature, you should not use the `openshift-integration` feature anymore when starting Keycloak server and instead you need to deploy
+the JAR file from custom extension. You can check the https://github.com/keycloak-extensions/keycloak-openshift-ext/[Openshift extension] and the instructions
+in it's README file for how to deploy the extension to your Keycloak server.
+
+NOTE: The Openshift extension is not officially supported and maintained by Keycloak team. You can use it only at your own risk.
+
+== Http Challenge flow removed
+
+The built-in authentication flow `http challenge` was removed along with the authenticator implementations `no-cookie-redirect`, `basic-auth`, and `basic-auth-otp`.
+The `http challenge` authentication flow was also intended for Openshift integration and therefore it was removed along with other related capabilities as described above.
+Authenticator implementations were moved to the Openshift extension described in the previous paragraph.
+
+If you use the `http challenge` flow as a realm flow or as `First Broker Login` or `Post Broker Login` flow for any of your identity providers, the migration is not possible. Be sure to update
+your realm configuration to eliminate the use of the `http challenge` flow before migration.
+If you use the `http challenge` flow  as `Authentication Flow Binding Override` for any client, the migration would complete, but you could no longer log in to that client.
+After the migration, you would need to re-create the flow and update the configuration of your clients to use the new/differentJson flow.
+
+= Removing third party dependencies
+
+The removal of openshift-integration allows us to remove few third party dependencies from Keycloak distribution. This includes
+`openshift-rest-client`, `okio-jvm`, `okhttp`, `commons-lang`, `commons-compress`, `jboss-dmr` and `kotlin-stdlib`. This means that if you use
+any of these libraries as dependencies of your own providers deployed to Keycloak server, you may also need to copy those `jar` files
+explicitly to the Keycloak distribution `providers` directory as well.
+
+= Context and dependency injection no longer enabled to JAX-RS Resources
+
+In order to provide a better runtime and leverage as much as possible the underlying stack,
+all injection points for contextual data using the `javax.ws.rs.core.Context` annotation were removed. The expected improvement
+in performance involves no longer creating proxies instances multiple times during the request lifecycle, and drastically reducing the amount of reflection code at runtime.
+
+If you are extending one of the following SPIs:
+
+* `PolicySpi`
+* `AdminRealmResourceSpi`
+* `IdentityProviderSpi`
+* `RealmResourceSPI`
+
+You should review your custom JAX-RS (sub)resources in order to obtain any contextual data as follows:
+
+[source,java]
+----
+KeycloakSession session = org.keycloak.common.util.Resteasy.getContextData(KeycloakSession.class);
+----
+
+If you need access to the current request and response objects, you can now obtain their instances directly
+from the `KeycloakSession`:
+
+[source,java]
+----
+@Context
+org.jboss.resteasy.spi.HttpRequest request;
+@Context
+org.jboss.resteasy.spi.HttpResponse response;
+----
+
+was replaced by:
+
+[source,java]
+----
+KeycloakSession session = // obtain the session, which is usually available when creating a custom provider from a factory
+KeycloakContext context = session.getContext();
+
+HttpRequest request = context.getHttpRequest();
+HttpResponse response = context.getHttpResponse();
+----
+
+In case you have no access to a `KeycloakSession` instance when invoking a JAX-RS resource method, you can obtain
+contextual data from the JAX-RS runtime as follows:
+
+[source,java]
+----
+KeycloakSession session = org.keycloak.common.util.Resteasy.getContextData(KeycloakSession.class);
+----
+
+Additional contextual data can be obtained from the runtime through the  `KeycloakContext` instance:
+
+[source,java]
+----
+KeycloakSession session = // obtain the session
+KeycloakContext context = session.getContext();
+MyContextualObject myContextualObject = context.getContextObject(MyContextualObject.class);
+----
+
+= Upgrading your custom JAX-RS resources
+
+If you are extending the server's REST APIs through the following SPIs:
+
+* `PolicySpi`
+* `AdminRealmResourceSpi`
+* `IdentityProviderSpi`
+* `RealmResourceSPI`
+
+You need to add an empty `META-INF/beans.xml` to the JAR file where your custom providers are packaged. Otherwise, they are not recognized by the server
+at runtime.
+
+If you are using `RealmResourceSPI` or `AdminRealmResourceSpi`, you have the choice between adding an empty file named `beans.xml` under `META-INF` or annotating the JAX-RS resource classes with the `jakarta.ws.rs.ext.Provider` annotation.
+
+You should also make sure your JAX-RS methods are declaring the expected media types for input and output by marking them with the `@Consumes` and `@Produces` annotations, respectively.
+
+= Deprecated methods from data providers and models
+
+In earlier versions of Keycloak, provider and model interfaces underwent a cleanup process that involved deprecating certain methods.
+In this release the methods were removed and some additional methods were deprecated. The Javadoc for these methods from Keycloak 21 included information about
+their corresponding replacements.
+
+* `RealmModel#searchForGroupByNameStream(String, Integer, Integer)` was removed.
+* `UserProvider#getUsersStream(RealmModel, boolean)` was removed.
+* `UserSessionPersisterProvider#loadUserSessions(int, int, boolean, int, String)` was removed.
+* Interfaces added for Streamification work were removed. Such as `RoleMapperModel.Streams` and similar.
+* `Streams` interfaces in federated storage provider classes were deprecated.
+* `KeycloakModelUtils#getClientScopeMappings` was removed.
+* Deprecated methods from `KeycloakSession` were removed.
+* `UserQueryProvider#getUsersStream` methods were removed.
+
+= Multiple Keycloak instances
+
+Multiple Keycloak CRs may be created in the same namespace and will be managed independently by the operator.  To allow for this StatefulSets created by older versions of the operator must be re-created.  This will happen automatically when the operator is upgraded and lead to small amount of downtime.
+
+= k8s.keycloak.org/v2alpha1 changes
+
+The condition status field was changed from a boolean to a string for conformance with standard Kubernetes conditions. In the CRD it will temporarily be represented as accepting any content, but it will only ever be a string.  Please make sure any of your usage of this field is updated to expect the values "True", "False", or "Unknown", rather than true or false.
+
+= Keycloak supports IPv4/IPv6 dual stack
+
+Keycloak supports the IPv4/IPv6 dual stack and can be accessible by default via the IPv4 and IPv6 addresses.
+In the older versions of Keycloak, the default approach was to use only IPv4 addresses.
+
+For more details, see https://www.keycloak.org/server/configuration-production#_configure_keycloak_server_with_ipv4_or_ipv6[Configure Keycloak Server with IPv4 or IPv6].

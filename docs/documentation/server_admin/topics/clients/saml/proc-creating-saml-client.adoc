@@ -1,0 +1,182 @@
+
+[[_client-saml-configuration]]
+= Creating a SAML client
+[role="_abstract"]
+{project_name} supports <<_saml,SAML 2.0>> for registered applications.
+POST and Redirect bindings are supported. You can choose to require client signature validation. You can have the server sign and/or encrypt responses as well.
+
+.Procedure
+. Click *Clients* in the menu.
+. Click *Create client* to go to the *Create client* page.
+. Set *Client type* to *SAML*.
++
+.Create client
+image:images/add-client-saml.png[]
+
+. Enter the *Client ID* of the client. This is often a URL and is the expected *issuer* value in SAML requests sent by the application.
+
+. Click *Save*.  This action creates the client and brings you to the *Settings* tab.
+
+The following sections describe each setting on this tab.
+
+== Settings tab
+
+The *Settings* tab includes many options to configure this client.
+
+.Client settings
+image:images/client-settings-saml.png[]
+
+=== General settings
+
+*Client ID*:: The alphanumeric ID string that is used in OIDC requests and in the {project_name} database to identify the client. This value must match the issuer value sent with AuthNRequests. {project_name} pulls the issuer from the Authn SAML request and match it to a client by this value.
+
+*Name*:: The name for the client in a {project_name} UI screen. To localize
+the name, set up a replacement string value. For example, a string value such as $\{myapp}.  See the link:{developerguide_link}[{developerguide_name}] for more information.
+
+*Description*:: The description of the client.  This setting can also be localized.
+
+// *Enabled*:: When set to *On*, the client can request authentication.
+
+*Always Display in Console*:: Always list this client in the Account Console even if this user does not have an active session.
+
+=== Access Settings
+
+*Root URL*:: When {project_name} uses a configured relative URL, this value is prepended to the URL.
+
+*Home URL*:: If {project_name} needs to link to a client, this URL is used.
+
+*Valid Redirect URIs*:: Enter a URL pattern and click the + sign to add.  Click the - sign to remove. Click *Save* to save these changes.
+Wildcards values are allowed only at the end of a URL. For example, http://host.com/*$$.
+This field is used when the exact SAML endpoints are not registered and {project_name} pulls the Assertion Consumer URL from a request.
+
+*IDP-Initiated SSO URL name*:: URL fragment name to reference client when you want to do IDP Initiated SSO. Leaving this empty will disable IDP Initiated SSO. The URL you will reference from your browser will be: _server-root_/realms/{realm-name}/protocol/saml/clients/{client-url-name}
+
+*IDP Initiated SSO Relay State*:: Relay state you want to send with SAML request when you want to do IDP Initiated SSO.
+
+*Master SAML Processing URL*:: This URL is used for all SAML requests and the response is directed to the SP. It is used as the Assertion Consumer Service URL and the Single Logout Service URL.
++
+If login requests contain the Assertion Consumer Service URL then those login requests will take precedence. This URL must be validated by a registered Valid Redirect URI pattern.
+
+=== SAML capabilities
+
+*Name ID Format*:: The Name ID Format for the subject. This format is used if no name ID policy is specified in a request, or if the Force Name ID Format attribute is set to ON.
+
+*Force Name ID Format*:: If a request has a name ID policy, ignore it and use the value configured in the Admin Console under *Name ID Format*.
+
+*Force POST Binding*:: By default, {project_name} responds using the initial SAML binding of the original request. By enabling *Force POST Binding*, {project_name} responds using the SAML POST binding even if the original request used the redirect binding.
+
+*Force artifact binding*:: If enabled, response messages are returned to the client through the SAML ARTIFACT binding system.       
+
+*Include AuthnStatement*:: SAML login responses may specify the  authentication method used, such as password, as well as timestamps of the login and the session expiration.
+*Include AuthnStatement* is enabled by default, so that the *AuthnStatement* element will be included in login responses. Setting this to OFF prevents clients from determining the maximum session length, which can create client sessions that do not expire.
+
+*Include OneTimeUse Condition*:: If enable, a OneTimeUse Condition is included in login responses.
+
+*Optimize REDIRECT signing key lookup*:: When set to ON, the SAML protocol messages include the {project_name} native extension. This extension contains a hint with the signing key ID. The SP uses the extension for signature validation instead of attempting to validate the signature using keys.
++
+This option applies to REDIRECT bindings where the signature is transferred in query parameters and this information is not found in the signature information. This is contrary to POST binding messages where key ID is always included in document signature.
++
+This option is used when {project_name} server and adapter provide the IDP and SP. This option is only relevant when *Sign Documents* is set to ON.
+
+*Allow ECP Flow*:: If true, this application is allowed to use SAML ECP profile for authentication.
+
+=== Signature and Encryption
+
+*Sign Documents*:: When set to ON, {project_name} signs the document using the realms private key.
+
+*Sign Assertions*:: The assertion is signed and embedded in the SAML XML Auth response.
+
+*Signature Algorithm*:: The algorithm used in signing SAML documents. Note that `SHA1` based algorithms are deprecated and may be removed in a future release.
+We recommend the use of some more secure algorithm instead of `*_SHA1`. Also, with `*_SHA1` algorithms, verifying signatures
+do not work if the SAML client runs on Java 17 or higher.
+
+*SAML Signature Key Name*:: Signed SAML documents sent using POST binding contain the identification of the signing key in the *KeyName* element. This action can be controlled by the *SAML Signature Key Name* option. This option controls the contents of the *Keyname*.
++
+--
+* *KEY_ID* The *KeyName* contains the key ID. This option is the default option.
+* *CERT_SUBJECT* The *KeyName* contains the subject from the certificate corresponding to the realm key. This option is expected by Microsoft Active Directory Federation Services.
+* *NONE* The *KeyName* hint is completely omitted from the SAML message.
+--
++
+*Canonicalization Method*:: The canonicalization method for XML signatures.
+
+*Metadata descriptor URL*:: External URL where the client publishes the `SPSSODescriptor` metadata. This URL is used to download the client certificates when the *Use metadata descriptor URL* is enabled.
+
+*Use metadata descriptor URL*:: When *ON*, the certificates to validate signatures (*Client signature required* option is enabled in the *Keys* tab) and encrypt assertions (*Encrypt assertions* in the same tab) are automatically downloaded from the `Metadata descriptor URL` and cached in {project_name}. If a specific certificate is requested to validate a signature (usually in `POST` binding) and it is not in the cache, certificates are automatically refreshed from the URL. If all certificates are requested to validate the signature (`REDIRECT` binding) or any key is requested to encrypt, the refresh is only done after a max cache time. This maximum time can be specified in the descriptor itself, `cacheDuration` or `validUntil` attributes, or the cache provider defines one. See https://www.keycloak.org/server/all-provider-config[public-key-storage] spi in the all provider config guide for more information about how the cache works.
++
+When the option is *OFF*, the key should be generated or imported when activating the respective switch in the *Keys* tab.
+
+*Encryption algorithm*:: Encryption algorithm used for the client. Default value is `AES_256_GCM` when not defined.
+
+*Key transport algorithm*:: Key transport algorithm used for the client to encrypt the secret key used for encryption. Default value is `RSA-OAEP-11` when not defined.
+
+*Digest method for RSA-OAEP*:: Digest method to use when RSA-OAEP is selected as the key transport algorithm. Only available if *Key transport algorithm* is set to any RSA-OAEP algorithm. Default value is `SHA-256` when not defined.
+
+*Mask generation function*:: Mask generation function to use when `RSA-OAEP-11` is selected as the key transport algorithm. Only available if *Key transport algorithm* is set to `RSA-OAEP-11` algorithm. Default value is `mgf1sha256` when no defined.
+
+NOTE: The encryption options are only available if the *Encrypt Assertions* option is enabled in the *Keys* tab. For more information about SAML/XML encryption, see the link:https://www.w3.org/TR/xmlenc-core1/[XML Encryption Syntax and Processing] specification.
+
+=== Login settings
+
+*Login theme*:: A theme to use for login, OTP, grant registration, and forgotten password pages.
+
+*Consent required*:: If enabled, users have to consent to client access.
++
+For client-side clients that perform browser logins. As it is not possible to ensure that secrets can be kept safe with client-side clients, it is important to restrict access by configuring correct redirect URIs.
+
+*Display client on screen*:: This switch applies if *Consent Required* is *Off*.
+* _Off_
++
+The consent screen will contain only the consents corresponding to configured client scopes.
+
+* _On_
++
+There will be also one item on the consent screen about this client itself.
+
+*Client consent screen text*:: Applies if *Consent required* and *Display client on screen* are enabled. Contains the text that will be on the consent screen about permissions for this client.
+
+=== Logout settings
+
+*Front channel logout*:: If *Front Channel Logout* is enabled, the application requires a browser redirect to perform a logout. For example, the application may require a cookie to be reset which could only be done via a redirect. If *Front Channel Logout* is disabled, {project_name} invokes a background SAML request to log out of the application.
+
+== Keys tab
+
+*Client Signature Required*:: If *Client Signature Required* is enabled, documents coming from a client are expected to be signed. {project_name} will validate this signature.
++
+If the option *Use metadata descriptor URL* is enabled in the *Signature and Encryption* section of the *Settings* tab, the public keys used to validate signature are automatically downloaded and cached by {project_name}. If that option is disabled, you need to import or generate the key when *Client Signature Required* is activated.
+
+*Encrypt Assertions*:: Encrypts the assertions in SAML documents with the specified client public key. Default algorithms used for encryption are configured with security in mind. If you need a different configuration, the encryption details can be modified in the *Settings* tab, section *Signature and Encryption*. The encryption options are only visible when this *Encrypt Assertions* option is enabled.
++
+The key used to encrypt the assertions is controlled in the same way as in the case of *Client Signature Required*. If *Use metadata descriptor URL* is enabled, the key is doenloaded and cached by {project_name}. If that option is disabled, you need to import or generate the key when activating the *Encrypt Assertions* option.
+
+== Advanced tab
+
+This tab has many fields for specific situations.  Some fields are covered in other topics. For details on other fields, click the question mark icon.
+
+=== Fine Grain SAML Endpoint Configuration
+
+*Logo URL*:: URL that references a logo for the Client application.
+
+*Policy URL*:: URL that the Relying Party Client provides to the End-User to read about how the profile data will be used.
+
+*Terms of Service URL*:: URL that the Relying Party Client provides to the End-User to read about the Relying Party's terms of service.
+
+*Assertion Consumer Service POST Binding URL*:: POST Binding URL for the Assertion Consumer Service.
+
+*Assertion Consumer Service Redirect Binding URL*:: Redirect Binding URL for the Assertion Consumer Service.
+
+*Logout Service POST Binding URL*:: POST Binding URL for the Logout Service.
+
+*Logout Service Redirect Binding URL*:: Redirect Binding URL for the Logout Service.
+
+*Logout Service Artifact Binding URL*:: _Artifact_ Binding URL for the Logout Service. When set together with the `Force Artifact Binding` option, _Artifact_ binding is forced for both login and logout flows. _Artifact_ binding is not used for logout unless this property is set.
+
+*Logout Service SOAP Binding URL*::  Redirect Binding URL for the Logout Service. Only applicable if *back channel logout* is used.
+
+*Artifact Binding URL*:: URL to send the HTTP artifact messages to.
+
+*Artifact Resolution Service*:: URL of the client SOAP endpoint where to send the `ArtifactResolve` messages to.
+
+=== Advanced settings
+
+*Assertion Lifespan*:: Specific client lifespan set in the SAML assertion conditions. After that time the assertion will be invalid. If not specified the realm *Access Token Lifespan* is used. The `SessionNotOnOrAfter` attribute is not modified and continue using the *SSO Session Max* time defined at realm level.

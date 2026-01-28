@@ -1,0 +1,21 @@
+= Operator deploys nightly build instead of 24.0.0
+
+Due to an issue in the release process when deploying Keycloak using the Operator it installed the `nightly` container
+instead of `24.0.0`.
+
+As a quick fix to the issue, the `24.0.0` container was tagged with `nightly`, and the `nightly` releases was temporarily
+disabled.
+
+If you installed or upgraded to `24.0.0` using the Operator before 5pm CET yesterday the database may have been updated
+with the wrong versions. To check if you are affected connect to your database and run the following SQL command:
+
+```
+SELECT * from migration_model WHERE version = '999.0.0';
+```
+
+If the above returns a matching row you will need to take some actions, otherwise database migrations will not run for
+future releases. To resolve this run the following SQL command:
+
+```
+UPDATE migration_model SET version = '24.0.0' WHERE version = '999.0.0';
+```

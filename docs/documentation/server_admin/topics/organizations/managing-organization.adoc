@@ -1,0 +1,95 @@
+[id="managing-organization_{context}"]
+
+[[_enabling_organization_]]
+= Enabling organizations in {project_name}
+
+To use organizations, you have to enable the feature for the current realm.
+
+.Procedure
+
+. Click *Realm Settings* in the menu.
+
+. Toggle *Organizations* to *On*.
+
+. Click *Save*
+
+.Enabling Organizations
+image:images/organizations-enabling-orgs.png[alt="Enabling Organizations"]
+
+Once the feature is enabled, you are able to manage organizations through the *Organizations* section available from the menu.
+
+= Managing an organization
+[role="_abstract"]
+
+From the *Organizations* section, you can manage all the organizations in your realm.
+
+.Managing organizations
+image:images/organizations-management-screen.png[alt="Managing organizations"]
+
+== Creating an organization
+
+.Procedure
+
+. Click *Create Organization*.
+
+.Creating organization
+image:images/organizations-create-org.png[alt="Creating organization"]
+
+An organization has the following settings:
+
+Name::
+A user-friendly name for the organization. The name is unique within a realm.
+
+Alias::
+An alias for this organization, used to reference the organization internally. The alias is unique within a realm and must be URL-friendly, so characters not usually allowed in URLs will not be allowed in the alias. If not set, {project_name} will attempt to use the name as the alias. If the name is not URL-friendly, you will get an error and will be asked to specify an alias. Once defined, the alias cannot be changed afterwards.
+
+Redirect URL::
+After completing registration or accepting an invitation to the organization sent via email, the user is automatically redirected to the specified redirect url. If left empty, the user will be redirected to the account console by default.
+
+Domains::
+A set of zero or more domains that belongs to this organization. A domain cannot be shared by different organizations within a realm. When no domain is specified, organization members will not be validated against domain restrictions during authentication and profile validation.
+
+Description::
+A free-text field to describe the organization.
+
+Once you create an organization, you can manage the additional settings that are described in the following sections:
+
+* <<_managing_attributes_,Manage attributes>>
+* <<_managing_members_,Manage members>>
+* <<_managing_identity_provider_,Manage identity providers>>
+
+== Understanding organization domains
+
+When managing an organization, the domain associated with an organization plays an important role in how
+organization members authenticate to a realm and how their profiles are validated.
+
+One of the key roles of a domain is to help to identify the organizations where a user is a member. By looking at their email address, {project_name} will match a corresponding organization using the same domain and eventually change the authentication flow based on the organization requirements.
+
+The domain also allows organizations to enforce that users are not allowed to use a domain in their emails
+other than those associated with an organization. This restriction is especially useful when users, and their identities, are federated from identity providers associated with an organization and you want to force a specific email domain for their email addresses.
+
+== Disabling an organization
+
+To disable an organization, toggle *Enabled* to *Off*.
+
+.Disabling organization
+image:images/organizations-disable-org.png[alt="Disabling organization"]
+
+When an organization is disabled, you can still manage it through the management interfaces, but the organization members cannot authenticate to the realm, including authenticating through the identity providers associated with the organization as they are also automatically disabled.
+
+However, the unmanaged members of an organization are still able to authenticate to the realm as they are also realm users, but tokens will not hold metadata about their relationship with an organization that is disabled.
+
+For more details about managed and unmanaged users, see <<_managed_unmanaged_members_,Managed and unmanaged members>> section.
+
+== Deleting an organization
+
+To delete an organization, click the *Delete* action for the corresponding organization in the listing page or when editing an organization.
+
+.Deleting organization
+image:images/organizations-delete-org.png[alt="Deleting organization"]
+
+When removing an organization, all data associated with it will be deleted, including any managed member.
+
+Unmanaged users and identity providers remain in the realm, but they are no longer linked to the organization.
+
+For more details about managed and unmanaged users, see <<_managed_unmanaged_members_,Managed and unmanaged members>>.

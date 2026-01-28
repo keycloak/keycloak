@@ -1,0 +1,9 @@
+
+.permission-label > .pf-v5-c-form__group-label {
+  width: 120%;
+}
+
+.keycloak__permission__permission-table.pf-v5-c-card {
+  border-top: 0;
+  border-bottom: 0;
+}

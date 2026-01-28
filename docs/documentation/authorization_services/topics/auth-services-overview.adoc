@@ -1,0 +1,38 @@
+[[_overview]]
+= Authorization services overview
+
+:tech_feature_name: Authorization Services
+
+{project_name} supports fine-grained authorization policies and is able to combine different access control
+mechanisms such as:
+
+* **Attribute-based access control (ABAC)**
+* **Role-based access control (RBAC)**
+* **User-based access control (UBAC)**
+* **Context-based access control (CBAC)**
+* **Rule-based access control**
+    ** Using JavaScript
+* **Time-based access control**
+* **Support for custom access control mechanisms (ACMs) through a Service Provider Interface (SPI)**
+
+{project_name} is based on a set of administrative UIs and a RESTful API, and provides the necessary means to create permissions
+for your protected resources and scopes, associate those permissions with authorization policies, and enforce authorization decisions in your applications and services.
+
+Resource servers (applications or services serving protected resources) usually rely on some kind of information to decide if access should be granted to a protected resource. For RESTful-based resource servers, that information is usually obtained from a security token, usually sent as a bearer token on every request to the server. For web applications that rely on a session to authenticate users, that information is usually stored in a user's session and retrieved from there for each request.
+
+Frequently, resource servers only perform authorization decisions based on role-based access control (RBAC), where the roles granted to the user trying to access protected resources are checked against the roles mapped to these same resources. While roles are very useful and used by applications, they also have a few limitations:
+
+* Resources and roles are tightly coupled and changes to roles (such as adding, removing, or changing an access context) can impact multiple resources
+* Changes to your security requirements can imply deep changes to application code to reflect these changes
+* Depending on your application size, role management might become difficult and error-prone
+* It is not the most flexible access control mechanism. Roles do not represent who you are and lack contextual information. If you have been granted a role, you have at least some access.
+
+Considering that today we need to consider heterogeneous environments where users are distributed across different regions, with different local policies,
+using different devices, and with a high demand for information sharing, {project_name} Authorization Services can help you improve the authorization capabilities of your applications and services by providing:
+
+* Resource protection using fine-grained authorization policies and different access control mechanisms
+* Centralized Resource, Permission, and Policy Management
+* Centralized Policy Decision Point
+* REST security based on a set of REST-based authorization services
+* Authorization workflows and User-Managed Access
+* The infrastructure to help avoid code replication across projects (and redeploys) and quickly adapt to changes in your security requirements.
