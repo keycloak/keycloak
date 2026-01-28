@@ -44,12 +44,17 @@ public class OASModelFilter implements OASFilter {
         });
     }
 
+    private static final String ADMIN_API_PREFIX = "/admin/api";
+
     @Override
     public void filterOpenAPI(OpenAPI openAPI) {
-        // Sort Paths
+        // Set the server URL since we're stripping the /admin/api prefix from paths
+        openAPI.setServers(java.util.List.of(OASFactory.createServer().url(ADMIN_API_PREFIX)));
+
+        // Sort Paths and strip /admin/api prefix
         Map<String, PathItem> newPaths = openAPI.getPaths().getPathItems().entrySet().stream()
                 .collect(Collectors.toMap(
-                        Map.Entry::getKey,
+                        entry -> stripAdminApiPrefix(entry.getKey()),
                         entry -> sortOperationsByMethod(entry.getValue())
                 ));
 
@@ -109,6 +114,13 @@ public class OASModelFilter implements OASFilter {
                 }
             });
         });
+    }
+
+    private String stripAdminApiPrefix(String path) {
+        if (path.startsWith(ADMIN_API_PREFIX)) {
+            return path.substring(ADMIN_API_PREFIX.length());
+        }
+        return path;
     }
 
     private PathItem sortOperationsByMethod(PathItem pathItem) {
