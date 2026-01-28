@@ -97,4 +97,14 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.6.0-45292-add-realm-display-name-column">
+        <addColumn tableName="REALM">
+            <column name="DISPLAY_NAME" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.6.0-45292-migrate-realm-display-name">
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_6_0_MigrateRealmDisplayName"/>
+    </changeSet>
+
 </databaseChangeLog>
