@@ -34,6 +34,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.datatype.DatatypeConstants;
+import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 
 import jakarta.ws.rs.Consumes;
@@ -109,6 +111,7 @@ import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.saml.processing.core.saml.v2.util.ArtifactResponseUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
@@ -680,6 +683,14 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.EXPIRED_CODE);
                 }
 
+                // Validate SubjectConfirmationData NotOnOrAfter (CVE-2026-1190)
+                if (!validateSubjectConfirmationNotOnOrAfter(assertion, config.getAllowedClockSkew())) {
+                    logger.error("SubjectConfirmationData NotOnOrAfter validation failed - response has expired.");
+                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                    event.error(Errors.INVALID_SAML_RESPONSE);
+                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.EXPIRED_CODE);
+                }
+
                 AuthnStatementType authn = null;
                 for (Object statement : assertion.getStatements()) {
                     if (statement instanceof AuthnStatementType) {
@@ -1011,6 +1022,49 @@ public class SAMLEndpoint {
         SubjectType subject = assertion.getSubject();
         SubjectType.STSubType subType = subject.getSubType();
         return subType != null ? (NameIDType) subType.getBaseID() : null;
+    }
+
+    /**
+     * Validates the NotOnOrAfter attribute in SubjectConfirmationData.
+     * Per SAML 2.0 Core spec section 2.4.1.2, the NotOnOrAfter attribute specifies a time instant
+     * at which the subject can no longer be confirmed.
+     *
+     * @param assertion The SAML assertion to validate
+     * @param allowedClockSkewSecs The allowed clock skew in seconds
+     * @return true if validation passes (no NotOnOrAfter present, or it hasn't expired), false otherwise
+     */
+    private boolean validateSubjectConfirmationNotOnOrAfter(AssertionType assertion, int allowedClockSkewSecs) {
+        if (assertion == null || assertion.getSubject() == null) {
+            return true;
+        }
+
+        SubjectType subject = assertion.getSubject();
+        List<SubjectConfirmationType> confirmations = subject.getConfirmation();
+
+        if (confirmations == null || confirmations.isEmpty()) {
+            return true;
+        }
+
+        XMLGregorianCalendar now = XMLTimeUtil.getIssueInstant();
+        long clockSkewMillis = 1000L * allowedClockSkewSecs;
+
+        for (SubjectConfirmationType confirmation : confirmations) {
+            SubjectConfirmationDataType confirmationData = confirmation.getSubjectConfirmationData();
+            if (confirmationData != null && confirmationData.getNotOnOrAfter() != null) {
+                XMLGregorianCalendar notOnOrAfter = confirmationData.getNotOnOrAfter();
+                // Add clock skew tolerance
+                XMLGregorianCalendar adjustedNotOnOrAfter = XMLTimeUtil.add(notOnOrAfter, clockSkewMillis);
+
+                // Current time must be before NotOnOrAfter (with clock skew)
+                if (now.compare(adjustedNotOnOrAfter) != DatatypeConstants.LESSER) {
+                    logger.debugf("SubjectConfirmationData NotOnOrAfter validation failed. now=%s, notOnOrAfter=%s, adjustedNotOnOrAfter=%s",
+                            now, notOnOrAfter, adjustedNotOnOrAfter);
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private boolean validateInResponseToAttribute(ResponseType responseType, String expectedRequestId) {
