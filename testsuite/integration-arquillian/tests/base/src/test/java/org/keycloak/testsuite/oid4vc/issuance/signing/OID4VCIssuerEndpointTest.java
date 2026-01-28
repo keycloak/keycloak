@@ -209,6 +209,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         client = testRealm().clients().findByClientId(clientId).get(0);
         namedClient = testRealm().clients().findByClientId(namedClientId).get(0);
 
+        // Enable OID4VCI at realm level (required before assigning OID4VCI scopes)
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        realmRep.setVerifiableCredentialsEnabled(true);
+        testRealm().update(realmRep);
+
         // Lookup the pre-installed oid4vc_natural_person client scope
         sdJwtTypeNaturalPersonClientScope = requireExistingClientScope(sdJwtTypeNaturalPersonScopeName);
 
@@ -266,23 +271,21 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return null;
     }
 
-    private ClientScopeRepresentation registerOptionalClientScope(String scopeName,
-                                                                  String issuerDid,
-                                                                  String credentialConfigurationId,
-                                                                  String credentialIdentifier,
-                                                                  String vct,
-                                                                  String format,
-                                                                  String protocolMapperReferenceFile,
-                                                                  List<String> acceptedKeyAttestationValues) {
-        // Check if the client scope already exists
+    protected ClientScopeRepresentation registerOptionalClientScope(String scopeName,
+                                                          String issuerDid,
+                                                          String credentialConfigurationId,
+                                                          String credentialIdentifier,
+                                                          String vct,
+                                                          String format,
+                                                          String protocolMapperReferenceFile,
+                                                          List<String> acceptedKeyAttestationValues) {
         List<ClientScopeRepresentation> existingScopes = testRealm().clientScopes().findAll();
         for (ClientScopeRepresentation existingScope : existingScopes) {
             if (existingScope.getName().equals(scopeName)) {
-                return existingScope; // Reuse existing scope
+                return existingScope;
             }
         }
 
-        // Create a new ClientScope if not found
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName(scopeName);
         clientScope.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
@@ -329,7 +332,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
         clientScope.setId(scopeId);
 
-        // Add protocol mappers to the ClientScope
         List<ProtocolMapperRepresentation> protocolMappers;
         if (protocolMapperReferenceFile == null) {
             protocolMappers = getProtocolMappers(scopeName);

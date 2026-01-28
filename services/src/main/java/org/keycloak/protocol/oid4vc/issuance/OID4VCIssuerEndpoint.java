@@ -852,7 +852,6 @@ public class OID4VCIssuerEndpoint {
             }
 
             // Find the configured scope in the login client
-            //
             ClientScopeModel clientScope = clientModel.getClientScopes(false).get(credConfig.getScope());
             if (clientScope == null) {
                 var errorMessage = String.format("Client scope not found: %s", credConfig.getScope());
