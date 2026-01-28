@@ -27,6 +27,13 @@ permissions:
 
 jobs:
 
+  # Generate version compatibility matrix in a separate job to avoid multiline secret masking issues.
+  version-compatibility:
+    name: Version Compatibility Matrix
+    uses: ./.github/workflows/version-compatibility-matrix.yml
+    permissions:
+      contents: read
+
   conditional:
     name: Check conditional workflows and jobs
     runs-on: ubuntu-latest
@@ -38,7 +45,6 @@ jobs:
       ci-webauthn: ${{ steps.conditional.outputs.ci-webauthn }}
       ci-aurora: ${{ steps.auroradb-tests.outputs.run-aurora-tests }}
       ci-azure: ${{ steps.azure-tests.outputs.run-azure-tests }}
-      ci-compatibility-matrix: ${{ steps.version-compatibility.outputs.matrix }}
       ci-additional-dbs: ${{ steps.additional-dbs-tests.outputs.run-additional-dbs-tests }}
       ci-admin-v2: ${{ steps.conditional.outputs.admin-v2 }}
     permissions:
@@ -78,20 +84,6 @@ jobs:
             RUN_ADDITIONAL_DBS_TESTS=true
           fi
           echo "run-additional-dbs-tests=$RUN_ADDITIONAL_DBS_TESTS" >> $GITHUB_OUTPUT
-
-      - name: Version Compatibility Matrix
-        id: version-compatibility
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            BRANCH="${{ github.base_ref }}"
-          else
-            BRANCH="${{ github.ref_name }}"
-          fi
-          MATRIX_JSON=$(./.github/scripts/version-compatibility.sh "${BRANCH}")
-          echo "${MATRIX_JSON}"
-          echo "matrix=${MATRIX_JSON}" >> $GITHUB_OUTPUT
 
   build:
     name: Build
@@ -1189,15 +1181,15 @@ jobs:
 
   mixed-cluster-compatibility-tests:
     name: Cluster Compatibility Tests
-    if: needs.conditional.outputs.ci-compatibility-matrix != 'skip'
+    if: needs.version-compatibility.outputs.matrix != 'skip'
     runs-on: ubuntu-latest
     needs:
       - build
-      - conditional
+      - version-compatibility
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(needs.conditional.outputs.ci-compatibility-matrix) }}
+        include: ${{ fromJSON(needs.version-compatibility.outputs.matrix) }}
     timeout-minutes: 10
 
     steps:
