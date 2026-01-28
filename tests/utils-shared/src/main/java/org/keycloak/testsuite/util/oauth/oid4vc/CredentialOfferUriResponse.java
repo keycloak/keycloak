@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.util.oauth.oid4vc;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
@@ -21,6 +22,7 @@ public class CredentialOfferUriResponse extends AbstractHttpResponse {
     }
 
     public CredentialOfferURI getCredentialOfferURI() {
-        return credentialOfferURI;
+        return Optional.ofNullable(credentialOfferURI).orElseThrow(() ->
+                new IllegalStateException(String.format("[%s] %s", getError(), getErrorDescription())));
     }
 }
