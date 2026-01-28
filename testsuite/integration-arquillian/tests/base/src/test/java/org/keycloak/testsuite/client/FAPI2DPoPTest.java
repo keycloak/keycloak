@@ -39,6 +39,7 @@ import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.protocol.oidc.utils.PkceGenerator;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -48,7 +49,6 @@ import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.ParResponse;
-import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.util.JWKSUtils;
 
 import org.junit.Before;

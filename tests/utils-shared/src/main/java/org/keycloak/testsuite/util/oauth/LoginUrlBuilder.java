@@ -3,6 +3,7 @@ package org.keycloak.testsuite.util.oauth;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.PkceGenerator;
 import org.keycloak.representations.ClaimsRepresentation;
 
 public class LoginUrlBuilder extends AbstractUrlBuilder {
