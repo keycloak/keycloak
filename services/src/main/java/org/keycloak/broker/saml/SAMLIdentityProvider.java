@@ -43,6 +43,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
 import org.keycloak.broker.provider.IdentityProviderMapper;
+import org.keycloak.broker.provider.IdentityProviderMapperExecutionOrder;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
@@ -431,7 +432,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
             // Create the AttributeConsumingService if at least one attribute importer mapper exists
             List<Entry<IdentityProviderMapperModel, SamlMetadataDescriptorUpdater>> metadataAttrProviders = new ArrayList<>();
-            session.identityProviders().getMappersByAliasStream(getConfig().getAlias())
+            IdentityProviderMapperExecutionOrder.getMappersStream(session, getConfig())
                 .forEach(mapper -> {
                     IdentityProviderMapper target = (IdentityProviderMapper) session.getKeycloakSessionFactory().getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
                     if (target instanceof SamlMetadataDescriptorUpdater samlMetadataDescriptorUpdater)

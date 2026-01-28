@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -37,6 +36,7 @@ import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderMapper;
+import org.keycloak.broker.provider.IdentityProviderMapperExecutionOrder;
 import org.keycloak.broker.provider.IdentityProviderMapperSyncModeDelegate;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.common.ClientConnection;
@@ -319,8 +319,8 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         String providerId = identityProviderConfig.getAlias();
 
         context.getIdp().preprocessFederatedIdentity(session, realm, context);
-        Set<IdentityProviderMapperModel> mappers = session.identityProviders().getMappersByAliasStream(context.getIdpConfig().getAlias())
-                .collect(Collectors.toSet());
+        List<IdentityProviderMapperModel> mappers = IdentityProviderMapperExecutionOrder.getMappersStream(session, context.getIdpConfig())
+                .collect(Collectors.toList());
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         for (IdentityProviderMapperModel mapper : mappers) {
             IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
