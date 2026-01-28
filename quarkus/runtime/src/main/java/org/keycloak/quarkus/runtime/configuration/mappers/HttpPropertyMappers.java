@@ -18,6 +18,7 @@ import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 
+import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.util.ClassPathUtils;
 import io.quarkus.vertx.http.runtime.options.TlsUtils;
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -56,6 +57,28 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
         });
     }
 
+    // taken from VertxConfigBuilder
+    private static boolean isWSL() {
+        var sysEnv = System.getenv();
+        return sysEnv.containsKey("IS_WSL") || sysEnv.containsKey("WSL_DISTRO_NAME");
+    }
+
+    String getHttpHost(String value) {
+        if (value != null) {
+            return value;
+        }
+        // account for modes that always need to be all interfaces
+        if (Boolean.parseBoolean(System.getenv("KC_RUN_IN_CONTAINER")) || LaunchMode.current().isRemoteDev()
+                || isWSL()) {
+            return "0.0.0.0";
+        }
+        // using start-dev from the cli, is not the same as LaunchMode dev or test, so we need a specific override
+        if (Environment.isDevMode()) {
+            return "localhost";
+        }
+        return null;
+    }
+
     @Override
     public List<PropertyMapper<?>> getPropertyMappers() {
         setCustomExceptionTransformer();
@@ -66,6 +89,7 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                         .build(),
                 fromOption(HttpOptions.HTTP_HOST)
                         .to("quarkus.http.host")
+                        .transformer((v, c) -> getHttpHost(v))
                         .paramLabel("host")
                         .build(),
                 fromOption(HttpOptions.HTTP_RELATIVE_PATH)

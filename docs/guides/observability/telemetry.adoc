@@ -51,6 +51,18 @@ You can change the protocol via CLI as follows:
 
 <@kc.start parameters="--telemetry-protocol=http/protobuf"/>
 
+=== Request headers
+You can configure custom request headers that will be sent when exporting telemetry data to the OpenTelemetry collector.
+This is useful for providing authentication tokens or other custom headers required by your telemetry backend.
+
+Use the `telemetry-header-<header>` option to set headers for all telemetry components (logs, metrics, and traces).
+
+Replace `<header>` with your custom header name in the option name.
+
+<@kc.start parameters="--telemetry-header-Authorization='Bearer my-token' --telemetry-header-X-Custom-Header=custom-value"/>
+
+NOTE: Component-specific headers take precedence over general headers for their respective components.
+
 == Configuration via Keycloak CR (Operator)
 The Keycloak CR has first-class citizen configuration options for telemetry. These may be configured under the spec.telemtry stanza as follows:
 
@@ -100,6 +112,11 @@ For example, if you want only to export `WARN` and `ERROR` logs, you can change 
 
 <@kc.start parameters="--telemetry-logs-level=WARN"/>
 
+=== Request headers
+As stated for the general configuration of headers, you can configure custom request headers that will be used when exporting logs.
+
+<@kc.start parameters="--telemetry-logs-header-Authorization='Bearer logs-token'"/>
+
 == Metrics
 
 WARNING: The OpenTelemetry Metrics feature is currently experimental, and it is not recommended for use in production.
@@ -120,6 +137,11 @@ You can enable the OpenTelemetry Metrics via CLI as follows:
 NOTE: Metrics (`metrics-enabled`) needs to be enabled as well
 
 For more information on how to set up metrics, see the configuration options below or visit the https://www.keycloak.org/observability/configuration-metrics[Gaining insights with metrics guide].
+
+=== Request headers
+As stated for the general configuration of headers, you can configure custom request headers that will be used when exporting metrics.
+
+<@kc.start parameters="--telemetry-metrics-header-Authorization='Bearer metrics-token'"/>
 
 <@profile.ifCommunity>
 
