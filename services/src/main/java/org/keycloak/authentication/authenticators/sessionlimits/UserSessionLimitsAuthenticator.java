@@ -174,9 +174,9 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
                         .map(f -> f.get(UserSessionLimitsAuthenticatorFactory.ERROR_MESSAGE))
                         .orElse(SESSION_LIMIT_EXCEEDED);
 
-                context.getEvent().error(Errors.GENERIC_AUTHENTICATION_ERROR);
+                context.getEvent().error(Errors.ACCESS_DENIED);
                 Response challenge = context.form().setError(errorMessage).createErrorPage(Response.Status.FORBIDDEN);
-                context.failure(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, challenge, eventDetails, errorMessage);
+                context.forceChallenge(challenge);
                 return Collections.emptyList();
 
             case UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION:
