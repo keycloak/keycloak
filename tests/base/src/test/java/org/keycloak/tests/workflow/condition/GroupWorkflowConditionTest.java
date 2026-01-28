@@ -129,7 +129,7 @@ public class GroupWorkflowConditionTest extends AbstractWorkflowTest {
                         // check workflow was correctly assigned to the users
                         WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
                         RealmModel realm = session.getContext().getRealm();
-                        List<String> scheduledUsers = stateProvider.getScheduledStepsByWorkflow(workflow)
+                        List<String> scheduledUsers = stateProvider.getScheduledStepsByWorkflow(workflow.getId())
                                 .map(step -> session.users().getUserById(realm, step.resourceId()).getUsername()).toList();
                         assertThat(scheduledUsers, hasSize(10));
 

@@ -50,11 +50,6 @@ public class WorkflowStepRepresentation extends AbstractWorkflowComponentReprese
         this.scheduledAt = scheduledAt;
     }
 
-    @JsonIgnore
-    public String getId() {
-        return super.getId();
-    }
-
     public String getUses() {
         return this.uses;
     }

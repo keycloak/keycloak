@@ -12,6 +12,11 @@ In minor or patch releases, {project_name} will only introduce breaking changes 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== Dev Mode defaults to localhost
+
+When running the server in dev mode on a platform other than Windows Subsystem For Linux, the `http-host` setting will default to localhost. This ensures your dev instance won't be accessible from 
+other machines. If you want the previous behavior of binding to all interfaces, then explicitly set `http-host` to `0.0.0.0`.
+
 === `X-Forwarded-Prefix` Header is now supported
 
 With `proxy-headers` set to `xforwarded`, the server can determine the proxy context path from the `X-Forwarded-Prefix` header.

@@ -35,8 +35,7 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
 
         assertConfig(Map.of(
                 "http-management-port", "9000",
-                "http-management-relative-path", "/",
-                "http-management-host", "0.0.0.0"
+                "http-management-relative-path", "/"
         ));
 
         assertManagementEnabled(false);
@@ -350,6 +349,8 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
         for (var env : envVarChangeState) {
             putEnvVar(env, "true");
         }
+
+        putEnvVar("KC_HTTP_HOST", "0.0.0.0");
 
         initConfig();
 

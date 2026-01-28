@@ -148,14 +148,14 @@ class ConsistentHash {
 
     private void addKeycloakNode(String uuid) {
         if (uuid.startsWith(MEMBER_KEY_PREFIX)) {
-            log.fatalf("Adding a keycloak instance with ID: %s", uuid);
+            log.debugf("Adding a keycloak instance with ID: %s", uuid);
             membership.add(uuid);
         }
     }
 
     private void removeKeycloakNode(String uuid) {
         if (uuid.startsWith(MEMBER_KEY_PREFIX)) {
-            log.fatalf("Removing keycloak instance with ID: %s", uuid);
+            log.debugf("Removing keycloak instance with ID: %s", uuid);
             membership.remove(uuid);
         }
     }

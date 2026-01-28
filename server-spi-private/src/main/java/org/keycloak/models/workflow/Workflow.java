@@ -221,7 +221,7 @@ public class Workflow {
         ComponentModel component = realm.getComponent(id);
 
         if (component == null || !Objects.equals(providerType, component.getProviderType())) {
-            throw new BadRequestException("Not a valid resource workflow: " + id);
+            throw new BadRequestException("Not a valid workflow resource: " + id);
         }
         return component;
     }

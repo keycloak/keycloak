@@ -30,6 +30,17 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
     }
 
     /**
+     * A new execution context for a workflow event. The execution ID is provided as a parameter
+     *
+     * @param workflow the workflow
+     * @param event the event
+     * @param executionId the execution ID
+     */
+    DefaultWorkflowExecutionContext(KeycloakSession session, Workflow workflow, WorkflowEvent event, String executionId) {
+        this(session, workflow, event, null, executionId, event.getResourceId());
+    }
+
+    /**
      * A new execution context for a workflow event, resuming a previously scheduled step. The execution ID is taken from the scheduled step
      * with no current step, indicating that the workflow is being restarted due to an event.
      *

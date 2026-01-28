@@ -73,13 +73,7 @@ public interface WorkflowStateProvider extends Provider {
 
     Stream<ScheduledStep> getScheduledStepsByWorkflow(String workflowId);
 
-    default Stream<ScheduledStep> getScheduledStepsByWorkflow(Workflow workflow) {
-        if (workflow == null) {
-            return Stream.empty();
-        }
-
-        return getScheduledStepsByWorkflow(workflow.getId());
-    }
+    Stream<ScheduledStep> getScheduledStepsByStep(String workflowId, String stepId);
 
     Stream<ScheduledStep> getDueScheduledSteps(Workflow workflow);
 

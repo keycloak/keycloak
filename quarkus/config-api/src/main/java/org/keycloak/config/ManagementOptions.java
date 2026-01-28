@@ -67,7 +67,6 @@ public class ManagementOptions {
             .hidden()
             .category(OptionCategory.MANAGEMENT)
             .description("Host of the management interface. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
-            .defaultValue("0.0.0.0")
             .build();
 
     public enum Scheme {

@@ -94,6 +94,15 @@ public class GoogleIdentityProviderFactory extends AbstractIdentityProviderFacto
                             "authorization grant JWT assertions (Google ID Token) according to RFC 7523, " +
                             "except for the audience claim that must contain the client id of the configured client")
                     .type(ProviderConfigProperty.BOOLEAN_TYPE).add().build());
+
+            providerConfigProperties.addAll(ProviderConfigurationBuilder.create()
+                    .property().name(JWTAuthorizationGrantConfig.JWT_AUTHORIZATION_GRANT_MAX_ALLOWED_ASSERTION_EXPIRATION)
+                    .label("Max allowed assertion expiration")
+                            .defaultValue("3600")
+                    .helpText("This property is used only for JWT Authorization Grant" +
+                            " to set the max accepted duration limit for the assertion. " +
+                            "Note that the Google ID Token expires after 1 hour, so this property can be used to limit the time during which the assertion can be used.")
+                    .type(ProviderConfigProperty.NUMBER_TYPE).add().build());
         }
 
         return providerConfigProperties;
