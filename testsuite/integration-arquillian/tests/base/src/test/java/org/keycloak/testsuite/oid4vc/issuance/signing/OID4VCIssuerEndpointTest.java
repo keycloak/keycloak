@@ -374,7 +374,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         }
     }
 
-    private void assignOptionalClientScopeToClient(String scopeId, String clientId) {
+    protected void assignOptionalClientScopeToClient(String scopeId, String clientId) {
         ClientResource clientResource = findClientByClientId(testRealm(), clientId);
         clientResource.addOptionalClientScope(scopeId);
     }
@@ -481,7 +481,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return out.toByteArray();
     }
 
-    void setClientOid4vciEnabled(String clientId, boolean enabled) {
+    protected void setClientOid4vciEnabled(String clientId, boolean enabled) {
         ClientRepresentation clientRepresentation = adminClient.realm(TEST_REALM_NAME).clients().findByClientId(clientId).get(0);
         ClientResource clientResource = adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId());
 
@@ -527,10 +527,9 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                     URI credentialUri = credentialUriBuilder.build();
                     WebTarget credentialTarget = clientForCredentialRequest.target(credentialUri);
 
-                    CredentialRequest request = new CredentialRequest();
-                    request.setCredentialConfigurationId(oid4vciIssuerConfig.getCredentialsSupported()
-                            .get(testCredentialConfigurationId)
-                            .getId());
+                    CredentialRequest request = new CredentialRequest()
+                            .setCredentialConfigurationId(oid4vciIssuerConfig.getCredentialsSupported()
+                                .get(testCredentialConfigurationId).getId());
 
                     assertEquals(testFormat,
                             oid4vciIssuerConfig.getCredentialsSupported()
@@ -606,11 +605,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                                      SupportedCredentialConfiguration offeredCredential,
                                      CredentialResponseHandler responseHandler,
                                      ClientScopeRepresentation expectedClientScope) throws IOException, VerificationException {
+        CredentialRequest credRequest = new CredentialRequest().setCredentialConfigurationId(offeredCredential.getId());
         Oid4vcCredentialResponse credentialRequestResponse = oauth.oid4vc()
-                .credentialRequest()
+                .credentialRequest(credRequest)
                 .endpoint(credentialEndpoint)
                 .bearerToken(token)
-                .credentialConfigurationId(offeredCredential.getId())
                 .send();
 
         assertEquals(HttpStatus.SC_OK, credentialRequestResponse.getStatusCode());
@@ -770,19 +769,18 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     protected List<OID4VCAuthorizationDetail> parseAuthorizationDetails(String responseBody) throws IOException {
-        Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, new TypeReference<Map<String, Object>>() {
+        Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, new TypeReference<>() {
         });
         Object authDetailsObj = responseMap.get("authorization_details");
         assertNotNull("authorization_details should be present in the response", authDetailsObj);
         return JsonSerialization.readValue(
                 JsonSerialization.writeValueAsString(authDetailsObj),
-                new TypeReference<List<OID4VCAuthorizationDetail>>() {
-                }
+                new TypeReference<>() { }
         );
     }
 
     protected String getAccessToken(String responseBody) throws IOException {
-        Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, new TypeReference<Map<String, Object>>() {
+        Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, new TypeReference<>() {
         });
         String token = (String) responseMap.get("access_token");
         assertNotNull("Access token should be present", token);

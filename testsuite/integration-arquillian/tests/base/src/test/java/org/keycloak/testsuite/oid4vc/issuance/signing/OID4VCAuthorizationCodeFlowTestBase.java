@@ -155,17 +155,13 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         // ===== STEP 4: Verify second token cannot be used for credential requests =====
         String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
-        CredentialRequest credentialRequest = new CredentialRequest();
-        credentialRequest.setCredentialIdentifier(credentialIdentifier);
+        CredentialRequest credentialRequest = new CredentialRequest().setCredentialIdentifier(credentialIdentifier);
 
         // Credential request with second token should fail using OID4VCI utilities
-        Oid4vcCredentialRequest credentialRequestBuilder = oauth.oid4vc()
-                .credentialRequest()
-                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc()
+                .credentialRequest(credentialRequest)
                 .bearerToken(secondTokenResponse.getAccessToken())
-                .credentialIdentifier(credentialIdentifier);
-
-        Oid4vcCredentialResponse credentialResponse = credentialRequestBuilder.send();
+                .send();
 
         // Credential request with second token should fail
         // The second token doesn't have the OID4VCI scope, so it should fail
@@ -184,8 +180,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     @Test
     public void testCompleteFlowWithClaimsValidationAuthorizationCode_credentialRequestWithConfigurationId() throws Exception {
         BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
-            CredentialRequest credentialRequest = new CredentialRequest();
-            credentialRequest.setCredentialConfigurationId(credentialConfigurationId);
+            CredentialRequest credentialRequest = new CredentialRequest().setCredentialConfigurationId(credentialConfigurationId);
             return credentialRequest;
         };
 
@@ -196,8 +191,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     @Test
     public void testCompleteFlowWithClaimsValidationAuthorizationCode_credentialRequestWithCredentialIdentifier() throws Exception {
         BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
-            CredentialRequest credentialRequest = new CredentialRequest();
-            credentialRequest.setCredentialIdentifier(credentialIdentifier);
+            CredentialRequest credentialRequest = new CredentialRequest().setCredentialIdentifier(credentialIdentifier);
             return credentialRequest;
         };
 
@@ -208,8 +202,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     @Test
     public void testCompleteFlowWithClaimsValidationAuthorizationCode_refreshToken() throws Exception {
         BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
-            CredentialRequest credentialRequest = new CredentialRequest();
-            credentialRequest.setCredentialIdentifier(credentialIdentifier);
+            CredentialRequest credentialRequest = new CredentialRequest().setCredentialIdentifier(credentialIdentifier);
             return credentialRequest;
         };
 
@@ -232,16 +225,12 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
                 credentialIdentifier = credentialIdentifiers.get(0);
             }
         }
-        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
-
         // Request the actual credential using the refreshed token
+        CredentialRequest credRequest = new CredentialRequest().setCredentialIdentifier(credentialIdentifier);
         Oid4vcCredentialRequest credentialRequest = oauth.oid4vc()
-                .credentialRequest()
+                .credentialRequest(credRequest)
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                 .bearerToken(accessToken);
-        if (credentialIdentifier != null) {
-            credentialRequest.credentialIdentifier(credentialIdentifier);
-        }
         Oid4vcCredentialResponse credentialResponse = credentialRequest.send();
         assertSuccessfulCredentialResponse(credentialResponse);
     }
@@ -251,8 +240,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     public void testCompleteFlow_mandatoryClaimsInAuthzDetailsParameter() throws Exception {
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
         BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
-            CredentialRequest credentialRequest = new CredentialRequest();
-            credentialRequest.setCredentialIdentifier(credentialIdentifier);
+            CredentialRequest credentialRequest = new CredentialRequest().setCredentialIdentifier(credentialIdentifier);
             return credentialRequest;
         };
 
@@ -302,8 +290,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     @Test
     public void testCorrectAccessTokenUsed() throws Exception {
         BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
-            CredentialRequest credentialRequest = new CredentialRequest();
-            credentialRequest.setCredentialIdentifier(credentialIdentifier);
+            CredentialRequest credentialRequest = new CredentialRequest().setCredentialIdentifier(credentialIdentifier);
             return credentialRequest;
         };
 
@@ -351,8 +338,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     public void testCompleteFlow_mandatoryClaimsInAuthzDetailsParameterAndProtocolMappersConfig() throws Exception {
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
         BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
-            CredentialRequest credentialRequest = new CredentialRequest();
-            credentialRequest.setCredentialIdentifier(credentialIdentifier);
+            CredentialRequest credentialRequest = new CredentialRequest().setCredentialIdentifier(credentialIdentifier);
             return credentialRequest;
         };
 
@@ -512,13 +498,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         authDetail.setClaims(claimsForAuthorizationDetailsParameter);
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
-        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
-
         // Exchange authorization code for tokens with authorization_details
         return oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
                 .client(client.getClientId(), "password")
-                .authorizationDetails(authDetails)
+                .authorizationDetails(authDetail)
                 .send();
     }
 
@@ -549,17 +533,9 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         CredentialRequest credentialRequest = credentialRequestSupplier.apply(credentialConfigurationId, credentialIdentifier);
 
         Oid4vcCredentialRequest request = oauth.oid4vc()
-                .credentialRequest()
+                .credentialRequest(credentialRequest)
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                 .bearerToken(tokenResponse.getAccessToken());
-
-        if (credentialRequest.getCredentialConfigurationId() != null) {
-            request.credentialConfigurationId(credentialRequest.getCredentialConfigurationId());
-        }
-        if (credentialRequest.getCredentialIdentifier() != null) {
-            request.credentialIdentifier(credentialRequest.getCredentialIdentifier());
-        }
-
         return request;
     }
 

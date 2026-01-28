@@ -25,6 +25,7 @@ import java.util.UUID;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -120,14 +121,12 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         authDetail.setClaims(List.of(claim));
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
-        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
-
         // Create PAR request
         ParResponse parResponse = oauth.pushedAuthorizationRequest()
                 .endpoint(ctx.openidConfig.getPushedAuthorizationRequestEndpoint())
                 .client(oauth.getClientId(), "password")
                 .scopeParam(getCredentialClientScope().getName())
-                .authorizationDetails(authDetails)
+                .authorizationDetails(List.of(authDetail))
                 .state("test-state")
                 .nonce("test-nonce")
                 .send();
@@ -183,11 +182,11 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         }
 
         // Step 5: Request the actual credential using the identifier
+        CredentialRequest credRequest = new CredentialRequest().setCredentialConfigurationId(credentialConfigurationId);
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc()
-                .credentialRequest()
+                .credentialRequest(credRequest)
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                 .bearerToken(tokenResponse.getAccessToken())
-                .credentialConfigurationId(credentialConfigurationId)
                 .send();
 
         assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusCode());
@@ -220,14 +219,12 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         authDetail.setCredentialConfigurationId("INVALID_CONFIG_ID"); // This should cause failure
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
-        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
-
         // Create PAR request
         ParResponse parResponse = oauth.pushedAuthorizationRequest()
                 .endpoint(ctx.openidConfig.getPushedAuthorizationRequestEndpoint())
                 .client(oauth.getClientId(), "password")
                 .scopeParam(getCredentialClientScope().getName())
-                .authorizationDetails(authDetails)
+                .authorizationDetails(List.of(authDetail))
                 .state("test-state")
                 .nonce("test-nonce")
                 .send();

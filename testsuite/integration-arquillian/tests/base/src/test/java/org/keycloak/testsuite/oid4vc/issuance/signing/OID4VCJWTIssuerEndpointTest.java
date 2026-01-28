@@ -313,8 +313,8 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     // Prepare the issue endpoint with no credential builders.
                     OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
 
-                    CredentialRequest credentialRequest =
-                            new CredentialRequest().setCredentialConfigurationId(credentialConfigurationId);
+                    CredentialRequest credentialRequest = new CredentialRequest()
+                            .setCredentialConfigurationId(credentialConfigurationId);
 
                     String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
                     issuerEndpoint.requestCredential(requestPayload);
@@ -434,7 +434,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 2. Using the uri to get the actual credential offer
         CredentialsOffer credentialsOffer = oauth.oid4vc()
-                .credentialOfferRequest(credentialOfferURI.getNonce())
+                .credentialOfferRequest(credentialOfferURI)
                 .bearerToken(token)
                 .send()
                 .getCredentialsOffer();
