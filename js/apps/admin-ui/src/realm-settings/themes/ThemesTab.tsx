@@ -12,6 +12,7 @@ import { joinPath } from "../../utils/joinPath";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { ThemesTabType, toThemesTab } from "../routes/ThemesTab";
 import { LogoContext } from "./LogoContext";
+import { BackgroundContext } from "./BackgroundContext";
 import { ThemeColors } from "./ThemeColors";
 import { ThemeSettingsTab } from "./ThemeSettings";
 
@@ -24,6 +25,8 @@ export type ThemeRealmRepresentation = RealmRepresentation & {
   fileName?: string;
   favicon?: File;
   logo?: File;
+  logoWidth?: string;
+  logoHeight?: string;
   bgimage?: File;
 };
 
@@ -84,7 +87,7 @@ styles=css/theme-styles.css
 parent=keycloak.v2
 import=common/quick-theme
 
-styles=css/login.css css/theme-styles.css
+styles=css/styles.css css/login.css css/theme-styles.css
 `,
     );
 
@@ -125,10 +128,10 @@ styles=css/login.css css/theme-styles.css
     zip.file(
       "theme/quick-theme/common/resources/css/theme-styles.css",
       `:root {
-        --keycloak-bg-logo-url: url('../${bgimageName}');
-        --keycloak-logo-url: url('../${logoName}');
-        --keycloak-logo-height: 63px;
-        --keycloak-logo-width: 300px;
+        ${bgimage ? `--keycloak-bg-logo-url: url('../${bgimageName}');` : ""}
+        ${logo ? `--keycloak-logo-url: url('../${logoName}');` : ""}
+        --keycloak-logo-height: ${realm.logoHeight};
+        --keycloak-logo-width: ${realm.logoWidth};
         ${toCss(styles.light)}
       }
       .pf-v5-theme-dark {
@@ -183,7 +186,9 @@ styles=css/login.css css/theme-styles.css
         {...lightColorsTab}
       >
         <LogoContext>
-          <ThemeColors realm={realm} save={saveTheme} theme="light" />
+          <BackgroundContext>
+            <ThemeColors realm={realm} save={saveTheme} theme="light" />
+          </BackgroundContext>
         </LogoContext>
       </Tab>
       <Tab
@@ -193,7 +198,9 @@ styles=css/login.css css/theme-styles.css
         {...darkColorsTab}
       >
         <LogoContext>
-          <ThemeColors realm={realm} save={saveTheme} theme="dark" />
+          <BackgroundContext>
+            <ThemeColors realm={realm} save={saveTheme} theme="dark" />
+          </BackgroundContext>
         </LogoContext>
       </Tab>
     </RoutableTabs>
