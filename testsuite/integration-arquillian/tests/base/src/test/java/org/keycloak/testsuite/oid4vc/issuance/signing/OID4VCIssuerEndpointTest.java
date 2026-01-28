@@ -108,7 +108,13 @@ import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.logging.Logger;
@@ -611,6 +617,32 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
         assertEquals(HttpStatus.SC_OK, credentialRequestResponse.getStatusCode());
         CredentialResponse credentialResponse = credentialRequestResponse.getCredentialResponse();
+
+        // Use response handler to customize checks based on formats.
+        responseHandler.handleCredentialResponse(credentialResponse, expectedClientScope);
+    }
+
+    protected void requestCredentialWithIdentifier(String token,
+                                                   String credentialEndpoint,
+                                                   String credentialIdentifier,
+                                                   CredentialResponseHandler responseHandler,
+                                                   ClientScopeRepresentation expectedClientScope) throws IOException, VerificationException {
+        CredentialRequest request = new CredentialRequest();
+        request.setCredentialIdentifier(credentialIdentifier);
+
+        StringEntity stringEntity = new StringEntity(JsonSerialization.writeValueAsString(request),
+                ContentType.APPLICATION_JSON);
+
+        HttpPost postCredential = new HttpPost(credentialEndpoint);
+        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        postCredential.setEntity(stringEntity);
+
+        CredentialResponse credentialResponse;
+        try (CloseableHttpResponse credentialRequestResponse = httpClient.execute(postCredential)) {
+            assertEquals(HttpStatus.SC_OK, credentialRequestResponse.getStatusLine().getStatusCode());
+            String s = IOUtils.toString(credentialRequestResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+            credentialResponse = JsonSerialization.readValue(s, CredentialResponse.class);
+        }
 
         // Use response handler to customize checks based on formats.
         responseHandler.handleCredentialResponse(credentialResponse, expectedClientScope);
