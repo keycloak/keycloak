@@ -60,6 +60,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
     control,
     formState: { isDirty },
     handleSubmit,
+    reset,
   } = useFormContext<FormFields>();
 
   const clientAuthenticatorType = useWatch({
@@ -221,6 +222,9 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
             <ActionGroup>
               <Button variant="primary" type="submit" isDisabled={!isDirty}>
                 {t("save")}
+              </Button>
+              <Button variant="link" onClick={() => reset()}>
+                {t("revert")}
               </Button>
             </ActionGroup>
           </CardBody>
