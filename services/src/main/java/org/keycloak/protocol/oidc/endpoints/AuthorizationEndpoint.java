@@ -455,5 +455,6 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         paramAction.accept(OIDCLoginProtocol.SCOPE_PARAM, request.getScope());
         paramAction.accept(OIDCLoginProtocol.STATE_PARAM, request.getState());
         paramAction.accept(OIDCLoginProtocol.DPOP_JKT, request.getDpopJkt());
+        paramAction.accept(OIDCLoginProtocol.RESOURCE_PARAM, request.getResource());
     }
 }
