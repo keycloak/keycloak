@@ -80,6 +80,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -871,6 +876,88 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
             assertNotNull("batch_credential_issuance should be present", issuer.getBatchCredentialIssuance());
         } catch (Exception e) {
             throw new RuntimeException("Failed to process old well-known URL response: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Tests that SD-JWT credential metadata contains 'vct' and does NOT contain 'credential_definition'.
+     * This is an end-to-end test using HTTP requests to the well-known endpoint.
+     */
+    @Test
+    public void testSdJwtMetadataContainsVctAndNotCredentialDefinition() {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            String wellKnownUri = getRealmMetadataPath(TEST_REALM_NAME);
+
+            // Configure realm for unsigned metadata
+            testingClient.server(TEST_REALM_NAME).run(session -> {
+                RealmModel realm = session.getContext().getRealm();
+                realm.setAttribute(OID4VCIssuerWellKnownProvider.SIGNED_METADATA_ENABLED_ATTR, "false");
+            });
+
+            HttpGet getJsonMetadata = new HttpGet(wellKnownUri);
+            getJsonMetadata.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+            try (CloseableHttpResponse response = httpClient.execute(getJsonMetadata)) {
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+                String json = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+                CredentialIssuer issuer = JsonSerialization.readValue(json, CredentialIssuer.class);
+                assertNotNull("Response should be a CredentialIssuer object", issuer);
+
+                Map<String, SupportedCredentialConfiguration> credentialsSupported = issuer.getCredentialsSupported();
+                assertNotNull("Credentials supported should not be null", credentialsSupported);
+
+                // Find an SD-JWT credential configuration
+                SupportedCredentialConfiguration sdJwtConfig = credentialsSupported.values().stream()
+                        .filter(config -> Format.SD_JWT_VC.equals(config.getFormat()))
+                        .findFirst()
+                        .orElse(null);
+
+                assertNotNull("SD-JWT credential configuration should be present", sdJwtConfig);
+                assertNotNull("SD-JWT metadata must contain 'vct'", sdJwtConfig.getVct());
+                assertNull("SD-JWT metadata must not contain 'credential_definition'", sdJwtConfig.getCredentialDefinition());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to process metadata response: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Tests that JWT_VC credential metadata contains 'credential_definition' and does NOT contain 'vct'.
+     * This is an end-to-end test using HTTP requests to the well-known endpoint.
+     */
+    @Test
+    public void testJwtVcMetadataContainsCredentialDefinitionAndNotVct() {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            String wellKnownUri = getRealmMetadataPath(TEST_REALM_NAME);
+
+            // Configure realm for unsigned metadata
+            testingClient.server(TEST_REALM_NAME).run(session -> {
+                RealmModel realm = session.getContext().getRealm();
+                realm.setAttribute(OID4VCIssuerWellKnownProvider.SIGNED_METADATA_ENABLED_ATTR, "false");
+            });
+
+            HttpGet getJsonMetadata = new HttpGet(wellKnownUri);
+            getJsonMetadata.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+            try (CloseableHttpResponse response = httpClient.execute(getJsonMetadata)) {
+                assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+                String json = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+                CredentialIssuer issuer = JsonSerialization.readValue(json, CredentialIssuer.class);
+                assertNotNull("Response should be a CredentialIssuer object", issuer);
+
+                Map<String, SupportedCredentialConfiguration> credentialsSupported = issuer.getCredentialsSupported();
+                assertNotNull("Credentials supported should not be null", credentialsSupported);
+
+                // Find a JWT_VC credential configuration
+                SupportedCredentialConfiguration jwtVcConfig = credentialsSupported.values().stream()
+                        .filter(config -> Format.JWT_VC.equals(config.getFormat()))
+                        .findFirst()
+                        .orElse(null);
+
+                assertNotNull("JWT_VC credential configuration should be present", jwtVcConfig);
+                assertNotNull("JWT_VC metadata must contain 'credential_definition'", jwtVcConfig.getCredentialDefinition());
+                assertNull("JWT_VC metadata must not contain 'vct'", jwtVcConfig.getVct());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to process metadata response: " + e.getMessage(), e);
         }
     }
 

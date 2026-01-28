@@ -771,9 +771,9 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         assertNull("credentialSubject.scope-name has no display", claim.getDisplay());
                     }
 
-                    assertEquals("The jwt_vc-credential should offer vct",
-                            verifiableCredentialType,
-                            jwtVcConfig.getVct());
+                    assertNotNull("The jwt_vc-credential should offer credential_definition",
+                            jwtVcConfig.getCredentialDefinition());
+                    assertNull("JWT_VC credentials should not have vct", jwtVcConfig.getVct());
 
                     // We are offering key binding only for identity credential
                     assertTrue("The jwt_vc-credential should contain a cryptographic binding method supported named jwk",
