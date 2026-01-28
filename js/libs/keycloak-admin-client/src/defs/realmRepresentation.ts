@@ -99,6 +99,7 @@ export default interface RealmRepresentation {
   // ProtocolMapperRepresentation
   protocolMappers?: any[];
   quickLoginCheckMilliSeconds?: number;
+  excludedAMRs?: string;
   realm?: string;
   refreshTokenMaxReuse?: number;
   registrationAllowed?: boolean;

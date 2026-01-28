@@ -156,6 +156,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("maxFailureWaitSeconds");
         REALM_EXCLUDED_ATTRIBUTES.add("waitIncrementSeconds");
         REALM_EXCLUDED_ATTRIBUTES.add("quickLoginCheckMilliSeconds");
+        REALM_EXCLUDED_ATTRIBUTES.add("excludedAMRs");
         REALM_EXCLUDED_ATTRIBUTES.add("minimumQuickLoginWaitSeconds");
         REALM_EXCLUDED_ATTRIBUTES.add("maxDeltaTimeSeconds");
         REALM_EXCLUDED_ATTRIBUTES.add("failureFactor");
@@ -478,6 +479,7 @@ public class ModelToRepresentation {
         rep.setMinimumQuickLoginWaitSeconds(realm.getMinimumQuickLoginWaitSeconds());
         rep.setWaitIncrementSeconds(realm.getWaitIncrementSeconds());
         rep.setQuickLoginCheckMilliSeconds(realm.getQuickLoginCheckMilliSeconds());
+        rep.setExcludedAMRs(realm.getExcludedAMRs());
         rep.setMaxDeltaTimeSeconds(realm.getMaxDeltaTimeSeconds());
         rep.setFailureFactor(realm.getFailureFactor());
         if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
