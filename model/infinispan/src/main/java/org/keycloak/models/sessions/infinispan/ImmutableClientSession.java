@@ -25,6 +25,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 
+import static org.keycloak.models.sessions.infinispan.ImmutableSession.readOnly;
+
 /**
  * An immutable {@link AuthenticatedClientSessionModel} implementation.
  * <p>
@@ -37,6 +39,7 @@ record ImmutableClientSession(
         Map<String, String> notes,
         String redirectUri,
         String action,
+        String protocol,
         int timestamp,
         int started
 ) implements AuthenticatedClientSessionModel {
@@ -54,7 +57,7 @@ record ImmutableClientSession(
 
     @Override
     public void setTimestamp(int timestamp) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
@@ -64,7 +67,7 @@ record ImmutableClientSession(
 
     @Override
     public void detachFromUserSession() {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
@@ -79,12 +82,12 @@ record ImmutableClientSession(
 
     @Override
     public void setNote(String name, String value) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
     public void removeNote(String name) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
@@ -99,7 +102,7 @@ record ImmutableClientSession(
 
     @Override
     public void setRedirectUri(String uri) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
@@ -119,16 +122,16 @@ record ImmutableClientSession(
 
     @Override
     public void setAction(String action) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
     public String getProtocol() {
-        return "";
+        return protocol;
     }
 
     @Override
     public void setProtocol(String method) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 }

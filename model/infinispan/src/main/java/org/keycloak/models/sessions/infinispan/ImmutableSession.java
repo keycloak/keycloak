@@ -52,6 +52,10 @@ import org.infinispan.client.hotrod.RemoteCache;
  */
 public final class ImmutableSession {
 
+    public static void readOnly() {
+        throw new UnsupportedOperationException("this instance is read-only");
+    }
+
     public static Stream<UserSessionModel> copyOf(KeycloakSession session,
                                                   Collection<UserSessionEntity> entityList,
                                                   SessionExpirationPredicates expiration,
@@ -166,6 +170,7 @@ public final class ImmutableSession {
                             Map.copyOf(clientSession.getNotes()),
                             clientSession.getRedirectUri(),
                             clientSession.getAction(),
+                            clientSession.getAuthMethod(),
                             clientSession.getTimestamp(),
                             clientSession.getStarted()
                     );
@@ -191,6 +196,7 @@ public final class ImmutableSession {
                     Map.copyOf(entity.getNotes()),
                     entity.getRedirectUri(),
                     entity.getAction(),
+                    entity.getProtocol(),
                     entity.getTimestamp(),
                     entity.getStarted()
             );

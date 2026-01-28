@@ -26,6 +26,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
+import static org.keycloak.models.sessions.infinispan.ImmutableSession.readOnly;
+
 /**
  * An immutable {@link UserSessionModel} implementation.
  * <p>
@@ -106,7 +108,7 @@ record ImmutableUserSessionModel(
 
     @Override
     public void setLastSessionRefresh(int seconds) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
@@ -121,7 +123,7 @@ record ImmutableUserSessionModel(
 
     @Override
     public void removeAuthenticatedClientSessions(Collection<String> removedClientUUIDS) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
@@ -131,12 +133,12 @@ record ImmutableUserSessionModel(
 
     @Override
     public void setNote(String name, String value) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
     public void removeNote(String name) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
@@ -151,11 +153,11 @@ record ImmutableUserSessionModel(
 
     @Override
     public void setState(State state) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
     public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 }

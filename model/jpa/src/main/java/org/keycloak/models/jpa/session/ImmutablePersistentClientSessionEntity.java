@@ -40,7 +40,7 @@ public record ImmutablePersistentClientSessionEntity(
 
     @Override
     public void setUserSessionId(String userSessionId) {
-
+        readOnly();
     }
 
     @Override
@@ -52,7 +52,7 @@ public record ImmutablePersistentClientSessionEntity(
 
     @Override
     public void setClientId(String clientId) {
-
+        readOnly();
     }
 
     @Override
@@ -62,7 +62,7 @@ public record ImmutablePersistentClientSessionEntity(
 
     @Override
     public void setTimestamp(int timestamp) {
-
+        readOnly();
     }
 
     @Override
@@ -72,6 +72,10 @@ public record ImmutablePersistentClientSessionEntity(
 
     @Override
     public void setData(String data) {
+        readOnly();
+    }
 
+    private static void readOnly() {
+        throw new UnsupportedOperationException("this instance is read-only");
     }
 }

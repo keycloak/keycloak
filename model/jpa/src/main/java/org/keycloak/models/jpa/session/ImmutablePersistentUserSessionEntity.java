@@ -40,7 +40,7 @@ public record ImmutablePersistentUserSessionEntity(
 
     @Override
     public void setUserSessionId(String userSessionId) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
@@ -50,7 +50,7 @@ public record ImmutablePersistentUserSessionEntity(
 
     @Override
     public void setStarted(int started) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
@@ -60,7 +60,7 @@ public record ImmutablePersistentUserSessionEntity(
 
     @Override
     public void setLastSessionRefresh(int lastSessionRefresh) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
@@ -70,7 +70,7 @@ public record ImmutablePersistentUserSessionEntity(
 
     @Override
     public void setOffline(boolean offline) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
@@ -80,22 +80,22 @@ public record ImmutablePersistentUserSessionEntity(
 
     @Override
     public void setData(String data) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
     public void setRealmId(String realmId) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
     public void setUserId(String userId) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
     public void setBrokerSessionId(String brokerSessionId) {
-        throw new UnsupportedOperationException();
+        readOnly();
     }
 
     @Override
@@ -105,6 +105,10 @@ public record ImmutablePersistentUserSessionEntity(
 
     @Override
     public void setRememberMe(boolean rememberMe) {
-        throw new UnsupportedOperationException();
+        readOnly();
+    }
+
+    private static void readOnly() {
+        throw new UnsupportedOperationException("this instance is read-only");
     }
 }

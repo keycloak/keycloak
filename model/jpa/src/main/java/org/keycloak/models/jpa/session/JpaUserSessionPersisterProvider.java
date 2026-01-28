@@ -466,7 +466,9 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
                     removedClientUUIDs.forEach(this::onClientRemoved);
 
-                    logger.tracef("Loaded %d batch of user sessions (offline=%s, sessionIds=%s)", batchedUserSessions.size(), offlineStr, sessionsById.keySet());
+                    if (logger.isTraceEnabled()) {
+                        logger.tracef("Loaded %d batch of user sessions (offline=%s, sessionIds=%s)", batchedUserSessions.size(), offlineStr, sessionsById.keySet());
+                    }
 
                     return batchedUserSessions.stream();
                 }).map(UserSessionModel.class::cast));
@@ -505,7 +507,9 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                         userSession.getAuthenticatedClientSessions().put(clientSessionEntity.getClientId(), adapter);
                     });
 
-                    logger.tracef("Loaded %d batch of user sessions (offline=%s, sessionIds=%s)", batchedUserSessions.size(), offlineStr, sessionsById.keySet());
+                    if (logger.isTraceEnabled()) {
+                        logger.tracef("Loaded %d batch of user sessions (offline=%s, sessionIds=%s)", batchedUserSessions.size(), offlineStr, sessionsById.keySet());
+                    }
 
                     return batchedUserSessions.stream();
                 }).map(UserSessionModel.class::cast));
