@@ -69,7 +69,9 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -269,6 +271,14 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         if (authn != null && authn.getSessionIndex() != null) {
             authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
 
+        }
+    }
+
+    @Override
+    public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
+        // When enabled, ensure users created via this SAML broker are not treated as read-only due to organization management state.
+        if (getConfig().isCreatedUsersEditable()) {
+            user.setSingleAttribute(OrganizationModel.ORGANIZATION_MANAGED_MEMBER_EDITABLE_ATTRIBUTE, Boolean.TRUE.toString());
         }
     }
 

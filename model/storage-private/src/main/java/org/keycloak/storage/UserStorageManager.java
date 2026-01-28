@@ -46,6 +46,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -1105,6 +1106,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     private boolean isReadOnlyOrganizationMember(UserModel delegate) {
         if (delegate == null) {
+            return false;
+        }
+
+        // Allow specific users to remain editable even if they would otherwise be treated as read-only.
+        if (Boolean.parseBoolean(delegate.getFirstAttribute(OrganizationModel.ORGANIZATION_MANAGED_MEMBER_EDITABLE_ATTRIBUTE))) {
             return false;
         }
 
