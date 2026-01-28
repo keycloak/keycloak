@@ -38,7 +38,7 @@ const ServerInfoDropdownItem = () => {
   return (
     <DropdownItem
       key="server info"
-      component={(props: React.ComponentProps<typeof Link>) => <Link {...props} to={toDashboard({ realm })} />}
+      component={(props) => <Link {...props} to={toDashboard({ realm })} />}
     >
       {t("realmInfo")}
     </DropdownItem>
