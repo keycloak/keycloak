@@ -85,6 +85,13 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
+/**
+ * Base class for Client controllers.
+ *
+ * @param <R> custom resource type
+ * @param <T> base server type for the Client
+ * @param <S> spec refined type for the Client
+ */
 public abstract class KeycloakClientBaseController<R extends CustomResource<? extends KeycloakClientSpec<S>, KeycloakClientStatus>, T extends BaseClientRepresentation, S extends BaseClientRepresentation>
         implements Reconciler<R>, Cleaner<R> {
 
@@ -353,7 +360,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         byte[] keyBytes = Base64.getDecoder().decode(clientTlsSecret.getData().get("tls.key"));
 
         KeyStore store = null;
-        // TODO: key type algorithm type could be specifyable in the CR, inferred in a better way (not sure where the quarkus logic is for this), or
+        // TODO: key type algorithm type could be specifiable in the CR, inferred in a better way (not sure where the quarkus logic is for this), or
         // in some cases specified in the files - BEGIN RSA PRIVATE KEY
         try {
             store = CertUtils.createKeyStore(new ByteArrayInputStream(certBytes), new ByteArrayInputStream(keyBytes), "RSA", null, null, null);
