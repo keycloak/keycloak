@@ -793,7 +793,7 @@ public class ClientResource {
 
             CredentialRepresentation rep = new CredentialRepresentation();
             rep.setType(CredentialRepresentation.SECRET);
-            rep.setValue(wrapper.getClientRotatedSecret());
+            rep.setValue(wrapper.getClientRotatedSecret(session));
 
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
@@ -825,7 +825,7 @@ public class ClientResource {
         if (!wrapper.hasRotatedSecret())
             throw new NotFoundException("Client does not have a rotated secret");
         else {
-            UserCredentialModel model = UserCredentialModel.secret(wrapper.getClientRotatedSecret());
+            UserCredentialModel model = UserCredentialModel.secret(wrapper.getClientRotatedSecret(session));
             return ModelToRepresentation.toRepresentation(model);
         }
     }

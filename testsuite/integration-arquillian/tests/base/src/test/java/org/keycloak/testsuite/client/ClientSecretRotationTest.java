@@ -232,7 +232,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         assertThat(secondSecret, not(equalTo(firstSecret)));
         assertThat(wrapper.hasRotatedSecret(), is(Boolean.TRUE));
-        assertThat(wrapper.getClientRotatedSecret(), equalTo(firstSecret));
+        assertThat(wrapper.getClientRotatedSecret(null), equalTo(firstSecret));
     }
 
     /**
@@ -265,7 +265,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
                 clientResource.toRepresentation());
         assertThat(wrapper.hasRotatedSecret(), is(Boolean.TRUE));
-        assertThat(wrapper.getClientRotatedSecret(), equalTo(secondSecret));
+        assertThat(wrapper.getClientRotatedSecret(null), equalTo(secondSecret));
         int rotatedCreationTime = wrapper.getClientSecretCreationTime();
         assertThat(rotatedCreationTime, is(notNullValue()));
         assertThat(rotatedCreationTime, greaterThan(0));
@@ -313,7 +313,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
                 clientResource.toRepresentation());
         assertThat(wrapper.getClientSecretCreationTime(), not(equalTo(secretCreationTime)));
         assertThat(wrapper.hasRotatedSecret(), is(Boolean.TRUE));
-        assertThat(wrapper.getClientRotatedSecret(), equalTo(firstSecret));
+        assertThat(wrapper.getClientRotatedSecret(null), equalTo(firstSecret));
     }
 
     /**
@@ -477,7 +477,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         logger.debug("client secret:" + updatedSecret + "\nsecret expiration: " + Time.toDate(
                 wrapper.getClientSecretExpirationTime()) + "\nrotated secret: "
-                + wrapper.getClientRotatedSecret() + "\nrotated expiration: " + Time.toDate(
+                + wrapper.getClientRotatedSecret(null) + "\nrotated expiration: " + Time.toDate(
                 wrapper.getClientRotatedSecretExpirationTime()) + " | Time: " + Time.toDate(
                 Time.currentTime()));
         logger.debug(">>> trying login at time " + Time.toDate(Time.currentTime()));

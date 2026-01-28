@@ -10,6 +10,7 @@ import java.util.Objects;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSecretConstants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.utils.StringUtil;
@@ -101,8 +102,9 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
         return StringUtil.isNotBlank(getAttribute(CLIENT_ROTATED_SECRET)) && StringUtil.isNotBlank(getAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME));
     }
 
-    public String getClientRotatedSecret() {
-        return getAttribute(CLIENT_ROTATED_SECRET);
+    public String getClientRotatedSecret(KeycloakSession session) {
+        String secret = getAttribute(CLIENT_ROTATED_SECRET);
+        return session == null ? getAttribute(CLIENT_ROTATED_SECRET) : session.vault().getStringSecret(secret).get().orElse(secret);
     }
 
     public void setClientRotatedSecret(String secret) {
@@ -180,8 +182,30 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
         return true;
     }
 
+    public boolean validateSecret(KeycloakSession session, String secret) {
+        if (isClientSecretExpired()) {
+            return false;
+        }
+
+        ClientModel wrapper = new ClientModelLazyDelegate(() -> clientModel) {
+            @Override
+            public String getSecret() {
+                final String secret = clientModel.getSecret();
+                final String result = session.vault().getStringSecret(secret).get().orElse(secret);
+                return result;
+            }
+
+            @Override
+            public boolean validateSecret(String secret) {
+                return MessageDigest.isEqual(secret.getBytes(), getSecret().getBytes());
+            }
+        };
+
+        return wrapper.validateSecret(secret);
+    }
+
     //validates the rotated secret (value and expiration)
-    public boolean validateRotatedSecret(String secret) {
+    public boolean validateRotatedSecret(KeycloakSession session, String secret) {
 
         // there must exist a rotated_secret
         if (hasRotatedSecret()) {
@@ -193,7 +217,7 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
             return false;
         }
 
-        return MessageDigest.isEqual(secret.getBytes(), getClientRotatedSecret().getBytes());
+        return MessageDigest.isEqual(secret.getBytes(), getClientRotatedSecret(session).getBytes());
 
     }
 
@@ -218,10 +242,10 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
         }
     }
 
-    public ReadOnlyRotatedSecretClientModel toRotatedClientModel() throws InvalidObjectException {
+    public ReadOnlyRotatedSecretClientModel toRotatedClientModel(KeycloakSession session) throws InvalidObjectException {
         if (Objects.isNull(this.clientModel))
             throw new InvalidObjectException(getClass().getCanonicalName() + " does not have an attribute of type " + ClientModel.class.getCanonicalName());
-        return new ReadOnlyRotatedSecretClientModel(clientModel);
+        return new ReadOnlyRotatedSecretClientModel(session, clientModel);
     }
 
     /**
@@ -229,13 +253,16 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
      */
     public class ReadOnlyRotatedSecretClientModel extends ClientModelLazyDelegate {
 
-        private ReadOnlyRotatedSecretClientModel(ClientModel clientModel) {
+        private final KeycloakSession session;
+
+        private ReadOnlyRotatedSecretClientModel(KeycloakSession session, ClientModel clientModel) {
             super(() -> clientModel);
+            this.session = session;
         }
 
         @Override
         public String getSecret() {
-            return OIDCClientSecretConfigWrapper.this.getClientRotatedSecret();
+            return OIDCClientSecretConfigWrapper.this.getClientRotatedSecret(session);
         }
 
     }
