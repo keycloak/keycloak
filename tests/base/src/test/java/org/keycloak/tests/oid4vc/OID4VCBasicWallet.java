@@ -1,7 +1,9 @@
 package org.keycloak.tests.oid4vc;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +39,10 @@ import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.PreAuthorizedCodeGrantRequest;
 import org.keycloak.util.JsonSerialization;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
@@ -380,8 +386,54 @@ public class OID4VCBasicWallet {
 
         public AuthorizationEndpointResponse send(String username, String password) {
             loginForm.open();
-            client.fillLoginForm(username, password);
-            return client.parseLoginResponse();
+            WebDriver driver = client.getDriver();
+            AuthPageState authPageState = waitForLoginOrError(driver);
+            switch (authPageState) {
+                case ERROR_REDIRECT -> {
+                    return new AuthorizationEndpointResponse(client);
+                }
+                case ERROR_PAGE -> {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("error", "invalid_request");
+                    driver.findElements(By.id("kc-error-message")).stream()
+                            .map(d -> d.getText().trim().split("\\n")[0])
+                            .forEach(s -> params.put("error_description", s));
+                    return new AuthorizationEndpointResponse(params);
+                }
+                // AuthPageState.LOGIN
+                default -> {
+                    client.fillLoginForm(username, password);
+                    return new AuthorizationEndpointResponse(client);
+                }
+            }
+        }
+
+        enum AuthPageState {LOGIN, ERROR_REDIRECT, ERROR_PAGE}
+
+        private AuthPageState waitForLoginOrError(WebDriver driver) {
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+            return wait.until(d -> {
+                String url = d.getCurrentUrl();
+
+                // Error via redirect (some flows)
+                if (url != null && (url.contains("error=") || url.contains("error_description="))) {
+                    return AuthPageState.ERROR_REDIRECT;
+                }
+
+                // Error page rendered by Keycloak
+                if (!d.findElements(By.id("kc-error-message")).isEmpty()) {
+                    return AuthPageState.ERROR_PAGE;
+                }
+
+                // Login form present
+                if (!d.findElements(By.id("username")).isEmpty()
+                        || !d.findElements(By.name("username")).isEmpty()) {
+                    return AuthPageState.LOGIN;
+                }
+
+                return null; // keep waiting
+            });
         }
     }
 }
