@@ -46,7 +46,6 @@ public class OID4VCTestContext {
 
     public OID4VCTestContext(ClientRepresentation client, CredentialScopeRepresentation credentialScope) {
         this.client = client;
-        this.clientId = client.getClientId();
         this.issuer = "john";
         this.holder = "alice";
         this.credentialScope = credentialScope;

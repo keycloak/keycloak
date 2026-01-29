@@ -12,6 +12,7 @@ import java.util.Set;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -22,6 +23,8 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse.Credential;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.ProofType;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -44,7 +47,9 @@ import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.TEST_PASSWORD;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestRealmConfig.TEST_REALM_NAME;
+import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createEcKeyPair;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY;
+import static org.keycloak.tests.oid4vc.OID4VCTestContext.AttachmentKey;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIAL_OFFER_URI_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIAL_RESPONSE_ATTACHMENT_KEY;
@@ -186,6 +191,24 @@ public class OID4VCBasicWallet {
             }
         };
         return request;
+    }
+
+    public Proofs generateJwtProof(OID4VCTestContext ctx, String user) {
+        String aud = getIssuerMetadata(ctx).getCredentialIssuer();
+        String nonce = oauth.oid4vc().nonceRequest().send().getNonce();
+        KeyWrapper kw = getECKeyPair(ctx, user, null);
+        return Proofs.create(ProofType.JWT, OID4VCProofTestUtils.generateJwtProof(aud, kw, nonce));
+    }
+
+    public KeyWrapper getECKeyPair(OID4VCTestContext ctx, String user, String keyId) {
+        String cacheKey = user + (keyId != null ? "_" + keyId : "");
+        AttachmentKey<KeyWrapper> attachmentKey = new AttachmentKey<>(cacheKey, KeyWrapper.class);
+        KeyWrapper kw = ctx.getAttachment(attachmentKey);
+        if (kw == null) {
+            kw = createEcKeyPair();
+            ctx.putAttachment(attachmentKey, kw);
+        }
+        return kw;
     }
 
     public AccessTokenRequest accessTokenRequest(OID4VCTestContext ctx, String authCode) {

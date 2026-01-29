@@ -24,8 +24,6 @@ import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientScopeResource;
-import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -105,7 +103,8 @@ public abstract class OID4VCIssuerTestBase {
 
     protected final Logger log = Logger.getLogger(getClass());
 
-    public static final String OID4VCI_CLIENT_ID = "oid4vci-client";
+    public static final String OID4VCI_CLIENT_ID = "oid4vci-test";
+    public static final String OID4VCI_PUBLIC_CLIENT_ID = "oid4vci-test-pub";
     public static final URI ISSUER_DID = URI.create("did:web:test.org");
     public static final String TEST_CREDENTIAL_MAPPERS_FILE = "/oid4vc/test-credential-mappers.json";
     public static final String TEST_USER = "john";
@@ -123,8 +122,11 @@ public abstract class OID4VCIssuerTestBase {
     @InjectRealm(config = VCTestRealmConfig.class)
     protected ManagedRealm testRealm;
 
-    @InjectClient(ref = "oid4vci-client", config = OID4VCIClient.class)
+    @InjectClient(ref = "oid4vci-client", config = ConfidentialOID4VCIClient.class)
     protected ManagedClient managedClient;
+
+    @InjectClient(ref = OID4VCI_PUBLIC_CLIENT_ID, config = PublicOID4VCIClient.class)
+    ManagedClient managedPublicClient;
 
     @InjectOAuthClient
     protected OAuthClient oauth;
@@ -150,6 +152,7 @@ public abstract class OID4VCIssuerTestBase {
 
     protected String clientId = "test-app";
     protected ClientRepresentation client;
+    protected ClientRepresentation pubClient;
 
     @TestSetup
     public void configureTestRealm() {
@@ -164,6 +167,7 @@ public abstract class OID4VCIssuerTestBase {
     @BeforeEach
     void beforeEachInternal() {
         client = managedClient.admin().toRepresentation();
+        pubClient = managedPublicClient.admin().toRepresentation();
 
         jwtTypeCredentialScope = requireExistingCredentialScope(jwtTypeCredentialScopeName);
         minimalJwtTypeCredentialScope = requireExistingCredentialScope(minimalJwtTypeCredentialScopeName);
@@ -323,12 +327,6 @@ public abstract class OID4VCIssuerTestBase {
                 .orElseThrow(() -> new IllegalStateException("No such credential scope: " + scopeName));
     }
 
-    protected void updateCredentialScope(CredentialScopeRepresentation clientScope) {
-        ClientScopesResource clientScopesResource = testRealm.admin().clientScopes();
-        ClientScopeResource clientScopeResource = clientScopesResource.get(clientScope.getId());
-        clientScopeResource.update(clientScope);
-    }
-
     // Private ---------------------------------------------------------------------------------------------------------
 
     private ComponentRepresentation createRsaKeyProviderComponent(KeyWrapper keyWrapper, String name, int priority) {
@@ -394,7 +392,8 @@ public abstract class OID4VCIssuerTestBase {
             realm.verifiableCredentialsEnabled(true);
             realm.addRole(CREDENTIAL_OFFER_CREATE);
 
-            realm.attribute(CREATE_DEFAULT_CLIENT_SCOPES, String.valueOf(true));
+            // Allow the default client scopes to be added as well
+            realm.attribute(CREATE_DEFAULT_CLIENT_SCOPES, "true");
 
             // Explicitly enable cryptographic binding + proof types for test credential configurations.
             // The issuer metadata only advertises binding/proofs when it is explicitly configured as required.
@@ -544,19 +543,33 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
-    public static class OID4VCIClient implements ClientConfig {
+    public static class ConfidentialOID4VCIClient implements ClientConfig {
 
         @Override
         public ClientConfigBuilder configure(ClientConfigBuilder client) {
             client.clientId(OID4VCI_CLIENT_ID)
                     .serviceAccountsEnabled(true)
                     .directAccessGrantsEnabled(true)
-                    .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
                     .defaultClientScopes("basic", "profile", "roles")
                     .optionalClientScopes(jwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, "email")
+                    .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
                     .redirectUris("*")
                     .secret("test-secret");
+            return client;
+        }
+    }
 
+    public static class PublicOID4VCIClient implements ClientConfig {
+
+        @Override
+        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+            client.clientId(OID4VCI_PUBLIC_CLIENT_ID)
+                    .publicClient(true)
+                    .defaultClientScopes("basic", "profile", "roles")
+                    .optionalClientScopes(jwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, "email")
+                    .redirectUris("http://127.0.0.1:8500/callback/oauth")
+                    .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
+                    .attribute("pkce.code.challenge.method", "S256");  // require PKCE
             return client;
         }
     }
