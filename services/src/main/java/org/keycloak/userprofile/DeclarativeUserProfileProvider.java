@@ -30,8 +30,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -50,6 +52,7 @@ import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.userprofile.validator.AttributeRequiredByMetadataValidator;
 import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
 import org.keycloak.userprofile.validator.MultiValueValidator;
+import org.keycloak.userprofile.validator.ReadOnlyAttributeUnchangedValidator;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidatorConfig;
@@ -126,6 +129,33 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     @Override
     public UserProfile create(UserProfileContext context, Map<String, ?> attributes) {
         return createUserProfile(context, attributes, null);
+    }
+
+    @Override
+    public UserProfile create(UserProfileContext context, Map<String, ?> attributes, UserModel user, boolean terms) {
+        return terms ? createUserProfileWithTerms(context, attributes, user) : createUserProfile(context, attributes, user);
+    }
+
+    private UserProfile createUserProfileWithTerms(UserProfileContext context, Map<String, ?> attributes, UserModel user) {
+        UserProfileMetadata defaultMetadata = contextualMetadataRegistry.get(context);
+
+        if (defaultMetadata == null) {
+            // some contexts (and their metadata) are available enabled when the corresponding feature is enabled
+            throw new RuntimeException("No metadata is bound to the " + context + " context");
+        }
+
+        UserProfileMetadata metadata = configureUserProfile(defaultMetadata, session);
+        List<AttributeValidatorMetadata> readonlyValidators = new ArrayList<>();
+        readonlyValidators.add(createReadOnlyAttributeUnchangedValidator(DeclarativeUserProfileProviderFactory.readOnlyAttributesPattern));
+        metadata.addAttribute(TermsAndConditions.USER_ATTRIBUTE, 1000, readonlyValidators);
+        Attributes profileAttributes = createAttributes(context, attributes, user, metadata);
+        return new DefaultUserProfile(metadata, profileAttributes, createUserFactory(), user, session);
+    }
+
+    private AttributeValidatorMetadata createReadOnlyAttributeUnchangedValidator(Pattern pattern) {
+        return new AttributeValidatorMetadata(ReadOnlyAttributeUnchangedValidator.ID,
+                ValidatorConfig.builder().config(ReadOnlyAttributeUnchangedValidator.CFG_PATTERN, pattern)
+                        .build());
     }
 
     private UserProfile createUserProfile(UserProfileContext context, Map<String, ?> attributes, UserModel user) {
