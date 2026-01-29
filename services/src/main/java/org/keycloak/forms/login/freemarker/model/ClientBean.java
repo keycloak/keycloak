@@ -50,6 +50,10 @@ public class ClientBean {
     }
 
     public String getBaseUrl() {
+        String configuredBaseUrl = client.getBaseUrl();
+        if ((configuredBaseUrl == null || configuredBaseUrl.isBlank()) && client.getRootUrl() != null) {
+            configuredBaseUrl = "/";
+        }
         return ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), client.getBaseUrl());
     }
 
