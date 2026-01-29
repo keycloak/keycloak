@@ -21,6 +21,9 @@ abstract class AbstractMojo extends org.apache.maven.plugin.AbstractMojo {
    @Parameter(property = "db.verify.unsupportedFile", required = true)
    protected String unsupportedFile;
 
+   @Parameter(property = "db.verify.skip", defaultValue = "false")
+   protected boolean skip;
+
    ClassLoader classLoader() throws DependencyResolutionRequiredException, MalformedURLException {
       List<String> elements = project.getRuntimeClasspathElements();
       URL[] urls = new URL[elements.size()];

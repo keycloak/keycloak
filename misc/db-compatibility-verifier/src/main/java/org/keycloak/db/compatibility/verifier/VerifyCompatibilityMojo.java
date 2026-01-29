@@ -18,6 +18,11 @@ public class VerifyCompatibilityMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        if (skip) {
+            getLog().info("Skipping execution");
+            return;
+        }
+
         try {
             File root = project.getBasedir();
             File sFile = new File(root, supportedFile);
