@@ -46,6 +46,9 @@ Alternatively, you can use the Docker image by running:
     
 For more details refer to the [Keycloak Documentation](https://www.keycloak.org/documentation.html).
 
+Note that shell commands throughout the readmes and documentation are written for Linux.
+If running in Windows, use a linux-like shell such as Git Bash.
+
 
 ## Building from Source
 
