@@ -10,13 +10,9 @@ export type { default as OrganizationInvitationRepresentation } from "./defs/org
 export { OrganizationInvitationStatus } from "./defs/organizationInvitationRepresentation.js";
 
 export { Groups } from "./resources/groups.js";
-// V2 API types and classes (Kiota-generated)
-export { createKiotaAdminClient } from "./resources/clientsV2.js";
+// V2 API types (Kiota-generated)
 export type {
   OIDCClientRepresentation,
   SAMLClientRepresentation,
   ClientRepresentationV2,
 } from "./resources/clientsV2.js";
-
-// Re-export Kiota AdminClient type
-export type { AdminClient } from "./generated/adminClient.js";

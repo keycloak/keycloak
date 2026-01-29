@@ -98,14 +98,15 @@ async function main() {
     process.exit(1);
   }
 
-  // Post-process: Fix empty if blocks in adminClient.ts that cause TS2774 errors
+  // Post-process to fix Kiota npm package bug with empty serializer registration blocks
   postProcessGeneratedCode();
 
   console.log("\n🎉 Done! You can now build the project with: npm run build");
 }
 
 /**
- * Fix known issues in Kiota-generated code
+ * Fix Kiota npm package bug: it generates empty if-blocks for serializer registration.
+ * This is a known issue - the serializers/deserializers options don't work in the npm API.
  */
 function postProcessGeneratedCode() {
   const adminClientPath = resolve(OUTPUT_PATH, "adminClient.ts");
@@ -120,9 +121,6 @@ function postProcessGeneratedCode() {
   let content = readFileSync(adminClientPath, "utf-8");
   let modified = false;
 
-  // The Kiota npm package generates empty if-blocks for serializer registration
-  // We need to fill them in with the actual registration calls
-
   // Check if the if-blocks are empty (missing the registration calls)
   if (
     content.includes(
@@ -130,20 +128,16 @@ function postProcessGeneratedCode() {
     )
   ) {
     // Add required imports for serializers/deserializers
-    const serializerImports = `// @ts-ignore
-import { FormParseNodeFactory, FormSerializationWriterFactory } from '@microsoft/kiota-serialization-form';
-// @ts-ignore
-import { JsonParseNodeFactory, JsonSerializationWriterFactory } from '@microsoft/kiota-serialization-json';
-// @ts-ignore
-import { MultipartSerializationWriterFactory } from '@microsoft/kiota-serialization-multipart';
-// @ts-ignore
-import { TextParseNodeFactory, TextSerializationWriterFactory } from '@microsoft/kiota-serialization-text';
+    const serializerImports = `import { FormParseNodeFactory, FormSerializationWriterFactory } from "@microsoft/kiota-serialization-form";
+import { JsonParseNodeFactory, JsonSerializationWriterFactory } from "@microsoft/kiota-serialization-json";
+import { MultipartSerializationWriterFactory } from "@microsoft/kiota-serialization-multipart";
+import { TextParseNodeFactory, TextSerializationWriterFactory } from "@microsoft/kiota-serialization-text";
 `;
 
     // Add imports after the existing imports
     content = content.replace(
       /import \{ apiClientProxifier,/,
-      serializerImports + "\nimport { apiClientProxifier,",
+      serializerImports + "import { apiClientProxifier,",
     );
 
     // Fill in the deserializer registration
