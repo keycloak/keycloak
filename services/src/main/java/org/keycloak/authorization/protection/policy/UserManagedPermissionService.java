@@ -17,6 +17,7 @@
 package org.keycloak.authorization.protection.policy;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -96,9 +97,16 @@ public class UserManagedPermissionService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Failed to parse representation", Status.BAD_REQUEST);
         }
 
-        checkRequest(getAssociatedResourceId(policyId), representation);
+        String resourceId = getAssociatedResourceId(policyId);
+        Set<String> resources = Optional.ofNullable(representation.getResources()).orElse(Set.of());
 
-        return PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).update(payload);
+        if (resources.isEmpty() || (resources.size() == 1 && resources.contains(resourceId))) {
+            checkRequest(resourceId, representation);
+
+            return PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).update(payload);
+        }
+
+        throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Uma permission resource cannot be changed", Response.Status.BAD_REQUEST);
     }
 
     @Path("{policyId}")
