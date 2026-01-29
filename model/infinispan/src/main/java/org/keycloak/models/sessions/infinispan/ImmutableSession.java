@@ -27,8 +27,11 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionKey;
@@ -43,6 +46,8 @@ import org.keycloak.utils.StreamsUtil;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
+
+import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
 
 /**
  * Helper class to map a list of user and client sessions, from Infinispan caches, into an immutable session.
@@ -73,7 +78,12 @@ public final class ImmutableSession {
             if (expiration.isUserSessionExpired(entity)) {
                 return;
             }
-            var user = users.getUserById(expiration.realm(), entity.getUser());
+            UserModel user;
+            if (Profile.isFeatureEnabled(Profile.Feature.TRANSIENT_USERS) && entity.getNotes().containsKey(SESSION_NOTE_LIGHTWEIGHT_USER)) {
+                user = LightweightUserAdapter.fromString(session, expiration.realm(), entity.getNotes().get(SESSION_NOTE_LIGHTWEIGHT_USER));
+            } else {
+                user = users.getUserById(expiration.realm(), entity.getUser());
+            }
             if (user == null) {
                 return;
             }
@@ -120,7 +130,12 @@ public final class ImmutableSession {
             if (expiration.isUserSessionExpired(entity)) {
                 return;
             }
-            var user = users.getUserById(expiration.realm(), entity.getUserId());
+            UserModel user;
+            if (Profile.isFeatureEnabled(Profile.Feature.TRANSIENT_USERS) && entity.getNotes().containsKey(SESSION_NOTE_LIGHTWEIGHT_USER)) {
+                user = LightweightUserAdapter.fromString(session, expiration.realm(), entity.getNotes().get(SESSION_NOTE_LIGHTWEIGHT_USER));
+            } else {
+                user = users.getUserById(expiration.realm(), entity.getUserId());
+            }
             if (user == null) {
                 return;
             }
