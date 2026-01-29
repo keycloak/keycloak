@@ -37,6 +37,10 @@ public class OID4VCClient {
         return new CredentialOfferRequest(client, credOfferUri);
     }
 
+    public CredentialOfferResponse doCredentialOfferRequest(CredentialOfferURI credOfferUri) {
+        return credentialOfferRequest(credOfferUri).send();
+    }
+
     public CredentialOfferRequest credentialOfferRequest(String nonce) {
         return new CredentialOfferRequest(client, nonce);
     }
@@ -47,6 +51,10 @@ public class OID4VCClient {
 
     public Oid4vcCredentialRequest credentialRequest(CredentialRequest credRequest) {
         return new Oid4vcCredentialRequest(client, credRequest);
+    }
+
+    public Oid4vcCredentialResponse doCredentialRequest(CredentialRequest credRequest, String accessToken) {
+        return credentialRequest(credRequest).bearerToken(accessToken).send();
     }
 
     public AccessTokenRequest preAuthAccessTokenRequest(String preAuthorizedCode) {

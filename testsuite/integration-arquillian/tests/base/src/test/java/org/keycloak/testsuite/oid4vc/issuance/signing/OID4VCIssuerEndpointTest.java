@@ -384,7 +384,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         }
     }
 
-    private void assignOptionalClientScopeToClient(String scopeId, String clientId) {
+    protected void assignOptionalClientScopeToClient(String scopeId, String clientId) {
         ClientResource clientResource = findClientByClientId(testRealm(), clientId);
         clientResource.addOptionalClientScope(scopeId);
     }
@@ -643,12 +643,8 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     public CredentialIssuer getCredentialIssuerMetadata() {
-        final String endpoint = getRealmMetadataPath(TEST_REALM_NAME);
         CredentialIssuerMetadataResponse metadataResponse = oauth.oid4vc()
-                .issuerMetadataRequest()
-                .endpoint(endpoint)
-                .send();
-        assertEquals(HttpStatus.SC_OK, metadataResponse.getStatusCode());
+                .doIssuerMetadataRequest();
         return metadataResponse.getMetadata();
     }
 
