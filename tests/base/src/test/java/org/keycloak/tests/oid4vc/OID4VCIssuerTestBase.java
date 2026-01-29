@@ -100,7 +100,8 @@ public abstract class OID4VCIssuerTestBase {
 
     protected final Logger log = Logger.getLogger(getClass());
 
-    public static final String OID4VCI_CLIENT_ID = "oid4vci-client";
+    public static final String CLIENT_ID = "oid4vci-test";
+    public static final String PUBLIC_CLIENT_ID = "oid4vci-test-pub";
     public static final URI ISSUER_DID = URI.create("did:web:test.org");
     public static final String TEST_CREDENTIAL_MAPPERS_FILE = "/oid4vc/test-credential-mappers.json";
 
@@ -118,12 +119,16 @@ public abstract class OID4VCIssuerTestBase {
     protected CredentialScopeRepresentation sdJwtTypeCredentialScope;
 
     protected ClientRepresentation client;
+    protected ClientRepresentation pubClient;
 
     @InjectRealm(config = VCTestRealmConfig.class)
     protected ManagedRealm testRealm;
 
-    @InjectClient(ref = "oid4vci-client", config = OID4VCIClient.class)
+    @InjectClient(ref = "oid4vci-client", config = ConfidentialOID4VCIClient.class)
     protected ManagedClient managedClient;
+
+    @InjectClient(ref = PUBLIC_CLIENT_ID, config = PublicOID4VCIClient.class)
+    ManagedClient managedPublicClient;
 
     @InjectOAuthClient
     protected OAuthClient oauth;
@@ -153,10 +158,11 @@ public abstract class OID4VCIssuerTestBase {
     @BeforeEach
     void beforeEachInternal() {
         client = managedClient.admin().toRepresentation();
+        pubClient = managedPublicClient.admin().toRepresentation();
         jwtTypeCredentialScope = requireExistingCredentialScope(jwtTypeCredentialScopeName);
         minimalJwtTypeCredentialScope = requireExistingCredentialScope(minimalJwtTypeCredentialScopeName);
         sdJwtTypeCredentialScope = requireExistingCredentialScope(sdJwtTypeCredentialScopeName);
-        oauth.client(OID4VCI_CLIENT_ID, "test-secret");
+        oauth.client(CLIENT_ID, "test-secret");
         enableVerifiableCredentialEvents(testRealm);
     }
 
@@ -353,7 +359,7 @@ public abstract class OID4VCIssuerTestBase {
             realm.addRole(CREDENTIAL_OFFER_CREATE);
 
             // Allow the default client scopes to be added as well
-            realm.attribute(CREATE_DEFAULT_CLIENT_SCOPES, String.valueOf(true));
+            realm.attribute(CREATE_DEFAULT_CLIENT_SCOPES, "true");
 
             realm.addClientScope(createCredentialScope(
                     sdJwtTypeCredentialScopeName,
@@ -488,19 +494,33 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
-    public static class OID4VCIClient implements ClientConfig {
+    public static class ConfidentialOID4VCIClient implements ClientConfig {
 
         @Override
         public ClientConfigBuilder configure(ClientConfigBuilder client) {
-            client.clientId(OID4VCI_CLIENT_ID)
+            client.clientId(CLIENT_ID)
                     .serviceAccountsEnabled(true)
                     .directAccessGrantsEnabled(true)
-                    .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
                     .defaultClientScopes("basic", "profile", "roles")
                     .optionalClientScopes(jwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, "email")
+                    .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
                     .redirectUris("*")
                     .secret("test-secret");
+            return client;
+        }
+    }
 
+    public static class PublicOID4VCIClient implements ClientConfig {
+
+        @Override
+        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+            client.clientId(PUBLIC_CLIENT_ID)
+                    .publicClient(true)
+                    .defaultClientScopes("basic", "profile", "roles")
+                    .optionalClientScopes(jwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, "email")
+                    .redirectUris("http://127.0.0.1:8500/callback/oauth")
+                    .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
+                    .attribute("pkce.code.challenge.method", "S256");  // require PKCE
             return client;
         }
     }

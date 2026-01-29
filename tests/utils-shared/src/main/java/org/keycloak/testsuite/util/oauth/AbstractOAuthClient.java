@@ -306,6 +306,10 @@ public abstract class AbstractOAuthClient<T> {
         return client();
     }
 
+    public WebDriver getDriver() {
+        return driver;
+    }
+
     public HttpClientManager httpClient() {
         return httpClientManager;
     }

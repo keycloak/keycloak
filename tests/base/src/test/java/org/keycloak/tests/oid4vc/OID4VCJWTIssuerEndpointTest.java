@@ -1078,7 +1078,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         );
 
         optionalScope = registerOptionalClientScope(optionalScope);
-        ClientRepresentation testClient = testRealm.admin().clients().findByClientId(OID4VCI_CLIENT_ID).get(0);
+        ClientRepresentation testClient = testRealm.admin().clients().findByClientId(CLIENT_ID).get(0);
         testRealm.admin().clients().get(testClient.getId()).addOptionalClientScope(optionalScope.getId());
 
         final String scopeName = optionalScope.getName();
@@ -1135,7 +1135,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         );
 
         oid4vciScope = registerOptionalClientScope(oid4vciScope);
-        ClientRepresentation testClient = testRealm.admin().clients().findByClientId(OID4VCI_CLIENT_ID).get(0);
+        ClientRepresentation testClient = testRealm.admin().clients().findByClientId(CLIENT_ID).get(0);
         ClientResource clientResource = testRealm.admin().clients().get(testClient.getId());
 
         try {
@@ -1190,7 +1190,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         });
 
         try {
-            ClientRepresentation testClient = testRealm.admin().clients().findByClientId(OID4VCI_CLIENT_ID).get(0);
+            ClientRepresentation testClient = testRealm.admin().clients().findByClientId(CLIENT_ID).get(0);
             ClientResource clientResource = testRealm.admin().clients().get(testClient.getId());
 
             try {

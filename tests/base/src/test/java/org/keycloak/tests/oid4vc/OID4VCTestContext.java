@@ -33,11 +33,20 @@ public class OID4VCTestContext {
     static final AttachmentKey<AccessTokenResponse> ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(AccessTokenResponse.class);
     static final AttachmentKey<CredentialResponse> CREDENTIAL_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(CredentialResponse.class);
 
+<<<<<<< HEAD
     public String clientId;
     public String issuer;      // Issuing username (i.e. agent who creates credential offers)
     public String holder;      // Holder who requests the credential
     public String credConfigId;
     public String credScopeName;
+=======
+    ClientRepresentation client;
+    String issuer;      // Issuing username (i.e. agent who creates credential offers)
+    String holder;      // Holder who requests the credential
+    String credConfigId;
+    String credScopeName;
+    CredentialScopeRepresentation credentialScope;
+>>>>>>> 4d538fbe97 ([OID4CVI] Review and fix issuance on public clients)
 
     public ClientRepresentation client;
     public CredentialScopeRepresentation credentialScope;
@@ -46,7 +55,6 @@ public class OID4VCTestContext {
 
     public OID4VCTestContext(ClientRepresentation client, CredentialScopeRepresentation credentialScope) {
         this.client = client;
-        this.clientId = client.getClientId();
         this.issuer = "john";
         this.holder = "alice";
         this.credentialScope = credentialScope;

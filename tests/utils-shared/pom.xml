@@ -31,11 +31,20 @@
     <packaging>jar</packaging>
     <description>Keycloak Testsuite Utilities shared between legacy and new testsuites</description>
 
+    <properties>
+        <selenium.version>4.28.1</selenium.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-api</artifactId>
-            <version>4.25.0</version>
+            <version>${selenium.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-support</artifactId>
+            <version>${selenium.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
