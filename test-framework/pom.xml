@@ -34,6 +34,7 @@
 
     <properties>
         <version.testcontainers>2.0.3</version.testcontainers>
+        <version.shrinkwrap>1.2.6</version.shrinkwrap>
     </properties>
 
     <dependencyManagement>
