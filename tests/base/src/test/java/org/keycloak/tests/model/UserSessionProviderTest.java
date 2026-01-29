@@ -886,6 +886,25 @@ public class UserSessionProviderTest {
         runOnServer.run(UserSessionProviderTest::testOnUserRemovedLazyUserAttributesAreLoaded);
     }
 
+    @TestOnServer
+    public void testReadOnlyStreams(KeycloakSession session) {
+        var sessions = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), UserSessionProviderTest::createSessions);
+
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> {
+            RealmModel realm = kcSession.realms().getRealmByName("test");
+            var readOnlySessionList = kcSession.sessions().readOnlyStreamUserSessions(realm).toList();
+            assertSessions(readOnlySessionList, sessions);
+
+            // all sessions have client sessions from test-app
+            readOnlySessionList = kcSession.sessions().readOnlyStreamUserSessions(realm, realm.getClientByClientId("test-app")).toList();
+            assertSessions(readOnlySessionList, sessions);
+
+            // only the first one have a client session form third-party
+            readOnlySessionList = kcSession.sessions().readOnlyStreamUserSessions(realm, realm.getClientByClientId("third-party")).toList();
+            assertSessions(readOnlySessionList, sessions[0]);
+        });
+    }
+
     public static void testOnUserRemovedLazyUserAttributesAreLoaded(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         UserModel user1 = session.users().getUserByUsername(realm, "user1");

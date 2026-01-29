@@ -40,11 +40,11 @@ See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to 
 
 OIDC specification has multiple client authentication methods. Two of them `client_secret_basic` and `client_secret_post` are implemented in {project_name} by **Client Id and Secret**
 client authenticator. Until now, when the OIDC client registration request was sent with the attribute `token_endpoint_auth_method` set to `client_secret_basic` or `client_secret_post`,
-the {project_name} allowed to authenticate client with both `client_secret_basic` and `client_secret_post` methods and did not preserved the single method specified in the OIDC client
+the {project_name} allowed to authenticate client with both `client_secret_basic` and `client_secret_post` methods and did not preserve the single method specified in the OIDC client
 registration request. Now the specified method is respected, so for example when the OIDC client registration is sent with `token_endpoint_auth_method` set to `client_secret_post`, then
 it is required to authenticate the client really with the client secret sent as a parameter in the POST request body.
 
-It is still possible to make the OIDC client to allow both methods and clients migrated from previous versions are set by default to allow authentication with both methods.
+It is still possible to make the OIDC client allow both methods and clients migrated from previous versions are set by default to allow authentication with both methods.
 
 === Usage of virtual threads for embedded caches
 
@@ -56,11 +56,11 @@ This change should prevent deadlocks due to pinned virtual threads.
 
 Specific sensitive information is omitted from the HTTP Access log, such as the value of the `Authorization` HTTP header. Moreover, values of specific sensitive {project_name} cookies, such as `KEYCLOAK_SESSION`, `KEYCLOAK_IDENTITY`, or `AUTH_SESSION_ID`, are also omitted.
 
-=== Accepting URL paths without a semicolon
+=== Rejecting URL paths with semicolons
 
 Previously {project_name} accepted HTTP requests with paths containing a semicolon (`;`).
-When processing them, it handled them as of RFC 3986 as a separator for matrix parameters, which basically ignored those parts.
-As this has led to a hard-to-configure URL filtering, for example, in reverse proxies, this is now disabled, and {project_name} responds with an HTTP 400 response code.
+When processing them, it handled them according to RFC 3986 as a separator for matrix parameters, which basically ignored those parts.
+As this has led to hard-to-configure URL filtering, for example, in reverse proxies, this is now disabled, and {project_name} responds with an HTTP 400 response code.
 
 To analyze rejected requests in the server log, enable debug logging for `org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter`.
 
@@ -70,7 +70,7 @@ With this configuration, enable and review the HTTP access log to identify probl
 === Adjusted default clock-skew for not-before JWT token checks
 
 Previous versions of {project_name} tested the issued-at timestamp with a clock-skew of zero seconds by default if this value was provided in a token.
-Be default, access tokens issued by {project_name} used for the admin API or for the user info endpoint by default do not contain a not-before claim in the token, but customized setups might have it.
+By default, access tokens issued by {project_name} used for the admin API or for the user info endpoint do not contain a not-before claim in the token, but customized setups might have it.
 In a setup with such a claim configured and with clocks that were not fully synchronized, this could lead to rejecting tokens on a node that lagged behind, as it would consider the tokens not valid yet.
 
 Starting with this version, {project_name} will honor a clock skew of 10 seconds for the issued-at timestamp by default which is aligned with the best practices for example of the https://openid.net/specs/fapi-security-profile-2_0-final.html#section-5.3.2.1-6[FAPI 2.0 Security Profile].
@@ -84,10 +84,20 @@ All the `base` themes are now tagged as **abstract**, and they are not listed in
 
 === New database indexes on the `OFFLINE_CLIENT_SESSION` table
 
-The `OFFLINE_CLIENT_SESSION` table now contains two additional index `IDX_OFFLINE_CSS_BY_CLIENT_AND_REALM` and `IDX_OFFLINE_CSS_BY_USER_SESSION_AND_OFFLINE` to improve performance.
+The `OFFLINE_CLIENT_SESSION` table now contains two additional indexes `IDX_OFFLINE_CSS_BY_CLIENT_AND_REALM` and `IDX_OFFLINE_CSS_BY_USER_SESSION_AND_OFFLINE` to improve performance.
 
 If the table contains more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
 See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
+=== `UserSessionProvider` API changes
+
+The internal `UserSessionProvider` interface received new methods for efficient streaming of user sessions, in both speed and memory.
+The streaming instances are read-only, meaning they will not change.
+The previous methods have been deprecated.
+Custom providers should implement these new methods to avoid performance penalties.
+They should avoid keeping the returned items in memory by for example binding them to the current transaction, in case the invoker needs to analyze all data.
+
+A similar change was done for the `UserSessionPersisterProvider`.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
@@ -97,7 +107,7 @@ The following sections provide details on deprecated features.
 === Deprecation of specific tracing properties in Keycloak CR
 
 The `tracing.serviceName`, and `tracing.resourceAttributes` fields of the Keycloak CR, are now deprecated.
-You should use the new `telemetry.serviceName`, and `telemetry.resourceAttributes` fields citizens that are shared among all OpenTelemetry components - logs, metrics, and traces.
+You should use the new `telemetry.serviceName`, and `telemetry.resourceAttributes` fields that are shared among all OpenTelemetry components - logs, metrics, and traces.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features
