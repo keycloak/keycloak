@@ -442,9 +442,13 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         joinGroup(group, null);
     }
 
+    private boolean hasDirectGroup(GroupModel group) {
+        return em.find(UserGroupMembershipEntity.class, new UserGroupMembershipEntity.Key(user, group.getId())) != null;
+    }
+
     @Override
     public void joinGroup(GroupModel group, MembershipMetadata metadata) {
-        if (RoleUtils.isDirectMember(getGroupsStream(), group)) return;
+        if (hasDirectGroup(group)) return;
         joinGroupImpl(group, metadata);
     }
 
@@ -511,6 +515,11 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         if (hasDirectRole(role)) return;
         grantRoleImpl(role);
         RoleGrantedEvent.fire(role, this, session);
+    }
+
+    @Override
+    public boolean hasDirectRole(RoleModel role) {
+        return em.find(UserRoleMappingEntity.class, new UserRoleMappingEntity.Key(user, role.getId())) != null;
     }
 
     public void grantRoleImpl(RoleModel role) {
