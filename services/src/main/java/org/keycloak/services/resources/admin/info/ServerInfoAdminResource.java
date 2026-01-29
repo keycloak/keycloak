@@ -84,6 +84,7 @@ import org.keycloak.representations.info.ThemeInfoRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.theme.Theme;
 
@@ -121,12 +122,17 @@ public class ServerInfoAdminResource {
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         RealmModel userRealm = session.getContext().getRealm();
-        if (RealmManager.isAdministrationRealm(userRealm)
-                || AdminPermissions.evaluator(session, userRealm, auth).hasOneAdminRole(AdminRoles.VIEW_SYSTEM)) {
+        AdminPermissionEvaluator adminEvaluator = AdminPermissions.evaluator(session, userRealm, auth);
+        if (RealmManager.isAdministrationRealm(userRealm) || adminEvaluator.hasOneAdminRole(AdminRoles.VIEW_SYSTEM)) {
             // system information is only for admins in the administration realm or fallback view-system role
             info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp(), Version.VERSION));
             info.setCpuInfo(CpuInfoRepresentation.create());
             info.setMemoryInfo(MemoryInfoRepresentation.create());
+        } else if (adminEvaluator.realm().canManageRealm()) {
+            // If the user can manage his own realm just add the version information
+            SystemInfoRepresentation systemInfo = new SystemInfoRepresentation();
+            systemInfo.setVersion(Version.VERSION);
+            info.setSystemInfo(systemInfo);
         }
         info.setProfileInfo(createProfileInfo());
         info.setFeatures(createFeatureRepresentations());
