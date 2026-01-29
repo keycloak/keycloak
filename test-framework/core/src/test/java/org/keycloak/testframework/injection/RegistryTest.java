@@ -3,6 +3,7 @@ package org.keycloak.testframework.injection;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import org.keycloak.testframework.TestFrameworkException;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.injection.mocks.MockChildAnnotation;
 import org.keycloak.testframework.injection.mocks.MockChildSupplier;
@@ -18,6 +19,7 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opentest4j.TestAbortedException;
 
 public class RegistryTest {
 
@@ -213,7 +215,7 @@ public class RegistryTest {
     }
 
     @Test
-    public void testMultiplRef() {
+    public void testMultipleRef() {
         MultipleRefTest refTest = new MultipleRefTest();
         runBeforeEach(refTest);
 
@@ -225,12 +227,11 @@ public class RegistryTest {
         Assertions.assertNotSame(refTest.a, refTest.b);
 
         assertRunning(refTest.def, refTest.a, refTest.b);
-        Assertions.assertSame(refTest.a, refTest.a2);
 
         registry.afterEach();
 
         runBeforeEach(refTest);
-        assertRunning(refTest.def, refTest.a2, refTest.b);
+        assertRunning(refTest.def, refTest.a, refTest.b);
 
         Assertions.assertSame(def1, refTest.def);
         Assertions.assertSame(a1, refTest.a);
@@ -301,6 +302,36 @@ public class RegistryTest {
         Assertions.assertNotEquals(child1, test.child);
     }
 
+    @Test
+    public void testAnnotationValueTypeMismatch() {
+        AnnotationValueTypeMismatchTest test = new AnnotationValueTypeMismatchTest();
+
+        Assertions.assertThrows(
+                TestAbortedException.class,
+                () -> runBeforeEach(test)
+        );
+
+        Assertions.assertThrows(
+                TestFrameworkException.class,
+                () -> registry.afterAll()
+        );
+    }
+
+    @Test
+    public void testInstanceRefRequestedMoreThanOnce() {
+        InstanceRefRequestedMoreThanOnceTest test = new InstanceRefRequestedMoreThanOnceTest();
+
+        Assertions.assertThrows(
+                TestAbortedException.class,
+                () -> runBeforeEach(test)
+        );
+
+        Assertions.assertThrows(
+                TestFrameworkException.class,
+                () -> registry.afterAll()
+        );
+    }
+
     private <T extends AbstractTest> void runBeforeEach(T testInstance) {
         try {
             Method testMethod = testInstance.getClass().getMethod("test");
@@ -359,9 +390,6 @@ public class RegistryTest {
         @MockParentAnnotation(ref = "a")
         MockParentValue a;
 
-        @MockParentAnnotation(ref = "a")
-        MockParentValue a2;
-
         @MockParentAnnotation(ref = "b")
         MockParentValue b;
     }
@@ -385,6 +413,19 @@ public class RegistryTest {
         @MockParentAnnotation
         MockParentValue parent;
 
+    }
+
+    public static final class AnnotationValueTypeMismatchTest extends AbstractTest {
+        @MockParentAnnotation
+        MockChildValue child;
+    }
+
+    public static final class InstanceRefRequestedMoreThanOnceTest extends AbstractTest {
+        @MockParentAnnotation(ref = "parent")
+        MockParentValue parent1;
+
+        @MockParentAnnotation(ref = "parent")
+        MockParentValue parent2;
     }
 
 }
