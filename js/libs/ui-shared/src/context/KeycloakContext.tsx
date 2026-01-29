@@ -145,7 +145,18 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
       });
 
     init()
-      .then(() => setInit(true))
+      .then(() => {
+        // After OAuth redirect, TideCloak restores the original URL hash via
+        // replaceState, but this doesn't trigger React Router to re-match.
+        // Force a hash navigation to make the router recognize the correct route.
+        const hash = window.location.hash;
+        if (hash && hash !== "#" && hash !== "#/") {
+          const currentHash = hash;
+          window.location.hash = "";
+          window.location.hash = currentHash;
+        }
+        setInit(true);
+      })
       .catch((err: any) => setError(err));
 
     calledOnce.current = true;
