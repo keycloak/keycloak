@@ -3,6 +3,7 @@ package org.keycloak.testframework.injection;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import org.keycloak.testframework.FatalTestClassException;
 import org.keycloak.testframework.annotations.TestCleanup;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.config.Config;
@@ -20,6 +21,7 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opentest4j.TestAbortedException;
 
 public class RegistryTest {
 
@@ -239,7 +241,7 @@ public class RegistryTest {
     }
 
     @Test
-    public void testMultiplRef() {
+    public void testMultipleRef() {
         MultipleRefTest refTest = new MultipleRefTest();
         runBeforeEach(refTest);
 
@@ -325,6 +327,21 @@ public class RegistryTest {
         Assertions.assertNotEquals(parent1, test.parent);
         Assertions.assertNotNull(test.child);
         Assertions.assertNotEquals(child1, test.child);
+    }
+
+    @Test
+    public void testAnnotationValueTypeMismatch() {
+        AnnotationValueTypeMismatchTest test = new AnnotationValueTypeMismatchTest();
+
+        Assertions.assertThrows(
+                TestAbortedException.class,
+                () -> runBeforeEach(test)
+        );
+
+        Assertions.assertThrows(
+                FatalTestClassException.class,
+                () -> registry.afterAll()
+        );
     }
 
     private <T extends AbstractTest> void runBeforeEach(T testInstance) {
@@ -419,7 +436,7 @@ public class RegistryTest {
         MockParentValue parent;
 
         @MockChildAnnotation
-        MockParentValue child;
+        MockChildValue child;
 
         @TestSetup
         public void setup() {
@@ -438,6 +455,11 @@ public class RegistryTest {
             parent.setStringOption("myvalue");
         }
 
+    }
+
+    public static final class AnnotationValueTypeMismatchTest extends AbstractTest {
+        @MockParentAnnotation
+        MockChildValue child;
     }
 
 }
