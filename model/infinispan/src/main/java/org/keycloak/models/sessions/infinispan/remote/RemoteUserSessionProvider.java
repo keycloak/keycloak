@@ -308,7 +308,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         var clientSessionCache = getClientSessionTransaction(offline).getCache();
         //not very efficient at all.
         return Flowable.fromStream(QueryHelper.streamAll(query, batchSize, Function.identity()))
-                .buffer(batchSize)
+                .buffer(128)
                 .blockingStream()
                 .flatMap(us -> ImmutableSession.copyOf(session, us, expiration, clientSessionCache, batchSize)).filter(Objects::nonNull);
     }
@@ -328,7 +328,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         }
         var userSessionCache = getUserSessionTransaction(offline).getCache();
         return Flowable.fromIterable(QueryHelper.toCollection(userSessionIdQuery, QueryHelper.SINGLE_PROJECTION_TO_STRING))
-                .buffer(batchSize)
+                .buffer(128)
                 .flatMapMaybe(sessionId -> Maybe.fromCompletionStage(userSessionCache.getAllAsync(Set.copyOf(sessionId))), false, MAX_CONCURRENT_REQUESTS)
                 .map(Map::values)
                 .blockingStream()
