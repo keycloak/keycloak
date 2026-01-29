@@ -43,7 +43,6 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
-import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -105,12 +104,12 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         // Clear events before credential offer URI request
         events.clear();
 
-        CredentialOfferUriResponse credentialOfferURIResponse = oauth.oid4vc().credentialOfferUriRequest()
-                .endpoint(getCredentialOfferUriUrl(credentialConfigurationId))
+        CredentialOfferURI credOfferURI = oauth.oid4vc()
+                .credentialOfferUriRequest(credentialConfigurationId)
+                .preAuthorized(true)
                 .bearerToken(token)
-                .send();
-        assertEquals(HttpStatus.SC_OK, credentialOfferURIResponse.getStatusCode());
-        CredentialOfferURI credOfferURI = credentialOfferURIResponse.getCredentialOfferURI();
+                .username("john")
+                .send().getCredentialOfferURI();
 
         // Verify CREDENTIAL_OFFER_REQUEST event was fired
         events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)

@@ -422,8 +422,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
         CredentialOfferURI credentialOfferURI = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .credentialConfigurationId(credentialConfigurationId)
+                .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
                 .username("john")
                 .bearerToken(token)

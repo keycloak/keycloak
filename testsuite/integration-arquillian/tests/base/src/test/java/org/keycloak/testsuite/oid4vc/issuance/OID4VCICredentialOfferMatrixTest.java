@@ -361,10 +361,11 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     private CredentialOfferURI getCredentialOfferUri(OfferTestContext ctx, String token) {
         String credConfigId = ctx.supportedCredentialConfiguration.getId();
-        String credOfferUriUrl = getCredentialOfferUriUrl(credConfigId, ctx.preAuthorized, ctx.targetUser, ctx.targetClient);
         CredentialOfferUriResponse credentialOfferURIResponse = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .endpoint(credOfferUriUrl)
+                .credentialOfferUriRequest(credConfigId)
+                .preAuthorized(ctx.preAuthorized)
+                .clientId(ctx.targetClient)
+                .username(ctx.targetUser)
                 .bearerToken(token)
                 .send();
         CredentialOfferURI credentialOfferURI = credentialOfferURIResponse.getCredentialOfferURI();

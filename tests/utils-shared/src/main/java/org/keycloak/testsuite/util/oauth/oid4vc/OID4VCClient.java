@@ -21,8 +21,8 @@ public class OID4VCClient {
         return issuerMetadataRequest().send();
     }
 
-    public CredentialOfferUriRequest credentialOfferUriRequest() {
-        return new CredentialOfferUriRequest(client);
+    public CredentialOfferUriRequest credentialOfferUriRequest(String credentialConfigurationId) {
+        return new CredentialOfferUriRequest(client, credentialConfigurationId);
     }
 
     public Oid4vcCredentialRequest credentialRequest(CredentialRequest credRequest) {
@@ -33,7 +33,7 @@ public class OID4VCClient {
         return new PreAuthorizedCodeGrantRequest(client, preAuthorizedCode);
     }
 
-    public AccessTokenResponse doPreAuthorizedCodeGrant(String preAuthorizedCode) {
+    public AccessTokenResponse doPreAuthorizedCodeGrantRequest(String preAuthorizedCode) {
         return preAuthorizedCodeGrantRequest(preAuthorizedCode).send();
     }
 
