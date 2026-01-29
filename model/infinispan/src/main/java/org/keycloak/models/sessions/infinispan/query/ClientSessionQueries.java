@@ -17,6 +17,8 @@
 
 package org.keycloak.models.sessions.infinispan.query;
 
+import java.util.Collection;
+
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionKey;
 import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
@@ -38,6 +40,7 @@ public final class ClientSessionQueries {
     private static final String PER_CLIENT_COUNT = "SELECT e.clientId, count(e.clientId) FROM %s as e WHERE e.realmId = :realmId GROUP BY e.clientId ORDER BY e.clientId".formatted(CLIENT_SESSION);
     private static final String CLIENT_SESSION_COUNT = "SELECT count(e) FROM %s as e WHERE e.realmId = :realmId && e.clientId = :clientId".formatted(CLIENT_SESSION);
     private static final String FROM_USER_SESSION = "FROM %s as e WHERE e.userSessionId = :userSessionId ORDER BY e.clientId".formatted(CLIENT_SESSION);
+    private static final String FROM_MULTI_USER_SESSION = "FROM %s as e WHERE e.userSessionId IN (:userSessionIds) ORDER BY e.clientId".formatted(CLIENT_SESSION);
     private static final String IDS_FROM_USER_SESSION = "SELECT e.clientId FROM %s as e WHERE e.userSessionId = :userSessionId ORDER BY e.clientId".formatted(CLIENT_SESSION);
 
     /**
@@ -58,7 +61,7 @@ public final class ClientSessionQueries {
     }
 
     /**
-     * Returns a projection with the sum of all client session belonging to the client ID.
+     * Returns a projection with the sum of all client sessions belonging to the client ID.
      */
     public static Query<Object[]> countClientSessions(RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache, String realmId, String clientId) {
         return cache.<Object[]>query(CLIENT_SESSION_COUNT)
@@ -67,8 +70,7 @@ public final class ClientSessionQueries {
     }
 
     /**
-     * Returns a projection with the client session, and the version of all client sessions belonging to the user
-     * session ID.
+     * Returns the client sessions belonging to the user session ID.
      */
     public static Query<RemoteAuthenticatedClientSessionEntity> fetchClientSessions(RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache, String userSessionId) {
         return cache.<RemoteAuthenticatedClientSessionEntity>query(FROM_USER_SESSION)
@@ -85,5 +87,12 @@ public final class ClientSessionQueries {
                 .setParameter("userSessionId", userSessionId);
     }
 
+    /**
+     * Returns all the client sessions belonging to all user session IDs.
+     */
+    public static Query<RemoteAuthenticatedClientSessionEntity> fetchClientSessions(RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache, Collection<String> userSessionIds) {
+        return cache.<RemoteAuthenticatedClientSessionEntity>query(FROM_MULTI_USER_SESSION)
+                .setParameter("userSessionIds", userSessionIds);
+    }
 
 }
