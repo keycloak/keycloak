@@ -162,6 +162,8 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
+        with:
+          jdk-version: '21'
 
       - name: Build adapter distributions
         run: ./mvnw install -DskipTests -f distribution/pom.xml
@@ -193,6 +195,8 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
+        with:
+          jdk-version: '21'
 
       - name: Build adapter distributions
         run: ./mvnw install -DskipTests -f distribution/pom.xml
@@ -302,7 +306,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         dist: [temurin]
-        version: [17, 25]
+        version: [17, 21]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -1103,6 +1107,8 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
+        with:
+          jdk-version: 21 # Keycloak 24 is not compatible with Java 25+
 
       - name: Run Migration Tests
         run: |
