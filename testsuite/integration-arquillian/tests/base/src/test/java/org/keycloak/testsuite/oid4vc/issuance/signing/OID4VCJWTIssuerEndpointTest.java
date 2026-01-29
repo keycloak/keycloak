@@ -61,6 +61,7 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.HttpStatus;
@@ -884,7 +885,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
      * This test ensures backward compatibility with clients that send 'proof' instead of 'proofs'.
      */
     @Test
-    public void testProofToProofsConversion() throws Exception {
+    public void testProofToProofsConversion() {
         String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
@@ -948,57 +949,49 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
      * preventing multiple retrievals of the same pre-authorized code.
      */
     @Test
-    public void testCredentialOfferReplayProtection() throws Exception {
+    public void testCredentialOfferReplayProtection() {
         String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
-
-        // 1. Retrieving the credential-offer-uri
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
-        HttpGet getCredentialOfferURI = new HttpGet(getCredentialOfferUriUrl(credentialConfigurationId));
-        getCredentialOfferURI.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        CloseableHttpResponse credentialOfferURIResponse = httpClient.execute(getCredentialOfferURI);
 
-        assertEquals("A valid offer uri should be returned",
-                HttpStatus.SC_OK,
-                credentialOfferURIResponse.getStatusLine().getStatusCode());
-        String s = IOUtils.toString(credentialOfferURIResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialOfferURI credentialOfferURI = JsonSerialization.readValue(s, CredentialOfferURI.class);
+        // 1. Retrieving the credential-offer-uri
+        CredentialOfferURI credentialOfferURI = oauth.oid4vc()
+                .credentialOfferUriRequest()
+                .credentialConfigurationId(credentialConfigurationId)
+                .preAuthorized(true)
+                .username("john")
+                .bearerToken(token)
+                .send()
+                .getCredentialOfferURI();
         assertNotNull("Credential offer URI should not be null", credentialOfferURI);
-        assertNotNull("Nonce should not be null", credentialOfferURI.getNonce());
+
+        String nonce = credentialOfferURI.getNonce();
+        assertNotNull("Nonce should not be null", nonce);
 
         // 2. First access to the credential offer URL - should succeed
-        String offerUrl = credentialOfferURI.getIssuer() + "/" + credentialOfferURI.getNonce();
-        HttpGet getCredentialOffer = new HttpGet(offerUrl);
-        CloseableHttpResponse credentialOfferResponse = httpClient.execute(getCredentialOffer);
-
-        assertEquals("First access to credential offer should succeed",
-                HttpStatus.SC_OK,
-                credentialOfferResponse.getStatusLine().getStatusCode());
-        s = IOUtils.toString(credentialOfferResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialsOffer credentialsOffer = JsonSerialization.readValue(s, CredentialsOffer.class);
+        CredentialsOffer credentialsOffer = oauth.oid4vc()
+                .credentialOfferRequest(nonce)
+                .bearerToken(token)
+                .send()
+                .getCredentialsOffer();
         assertNotNull("Credential offer should not be null", credentialsOffer);
-        
-        // Verify that pre-authorized code is present
         assertNotNull("Pre-authorized grant should be present", credentialsOffer.getGrants());
-        assertNotNull("Pre-authorized code should be present", credentialsOffer.getGrants().getPreAuthorizedCode());
         String preAuthorizedCode = credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode();
         assertNotNull("Pre-authorized code value should not be null", preAuthorizedCode);
 
         // 3. Second access to the same credential offer URL - should fail with replay protection error
-        HttpGet getCredentialOfferAgain = new HttpGet(offerUrl);
-        CloseableHttpResponse credentialOfferResponseAgain = httpClient.execute(getCredentialOfferAgain);
+        CredentialOfferResponse response = oauth.oid4vc()
+                .credentialOfferRequest(nonce)
+                .bearerToken(token)
+                .send();
 
         assertEquals("Second access to credential offer should fail with 400 Bad Request",
-                HttpStatus.SC_BAD_REQUEST,
-                credentialOfferResponseAgain.getStatusLine().getStatusCode());
-        s = IOUtils.toString(credentialOfferResponseAgain.getEntity().getContent(), StandardCharsets.UTF_8);
-        ErrorResponse errorResponse = JsonSerialization.readValue(s, ErrorResponse.class);
-        assertNotNull("Error response should not be null", errorResponse);
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
         assertEquals("Error type should be INVALID_CREDENTIAL_OFFER_REQUEST",
-                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST,
-                errorResponse.getError());
+                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.name(),
+                response.getError());
         assertTrue("Error description should mention that offer has been consumed",
-                errorResponse.getErrorDescription().contains("already been consumed"));
+                response.getErrorDescription().contains("already been consumed"));
     }
 
     /**
@@ -1006,92 +999,77 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
      * This verifies that replay protection is per-nonce and doesn't affect other offers.
      */
     @Test
-    public void testCredentialOfferDifferentNoncesIndependent() throws Exception {
+    public void testCredentialOfferDifferentNoncesIndependent() {
         String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
-
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
 
         // 1. Create first credential offer
-        HttpGet getCredentialOfferURI1 = new HttpGet(getCredentialOfferUriUrl(credentialConfigurationId));
-        getCredentialOfferURI1.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        CloseableHttpResponse credentialOfferURIResponse1 = httpClient.execute(getCredentialOfferURI1);
-
-        assertEquals("First offer URI should be returned",
-                HttpStatus.SC_OK,
-                credentialOfferURIResponse1.getStatusLine().getStatusCode());
-        String s = IOUtils.toString(credentialOfferURIResponse1.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialOfferURI credentialOfferURI1 = JsonSerialization.readValue(s, CredentialOfferURI.class);
+        CredentialOfferURI credentialOfferURI1 = oauth.oid4vc()
+                .credentialOfferUriRequest()
+                .credentialConfigurationId(credentialConfigurationId)
+                .preAuthorized(true)
+                .username("john")
+                .bearerToken(token)
+                .send()
+                .getCredentialOfferURI();
         assertNotNull("First credential offer URI should not be null", credentialOfferURI1);
         String nonce1 = credentialOfferURI1.getNonce();
         assertNotNull("First nonce should not be null", nonce1);
 
         // 2. Create second credential offer (should have different nonce)
-        HttpGet getCredentialOfferURI2 = new HttpGet(getCredentialOfferUriUrl(credentialConfigurationId));
-        getCredentialOfferURI2.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        CloseableHttpResponse credentialOfferURIResponse2 = httpClient.execute(getCredentialOfferURI2);
-
-        assertEquals("Second offer URI should be returned",
-                HttpStatus.SC_OK,
-                credentialOfferURIResponse2.getStatusLine().getStatusCode());
-        s = IOUtils.toString(credentialOfferURIResponse2.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialOfferURI credentialOfferURI2 = JsonSerialization.readValue(s, CredentialOfferURI.class);
+        CredentialOfferURI credentialOfferURI2 = oauth.oid4vc()
+                .credentialOfferUriRequest()
+                .credentialConfigurationId(credentialConfigurationId)
+                .preAuthorized(true)
+                .username("john")
+                .bearerToken(token)
+                .send()
+                .getCredentialOfferURI();
         assertNotNull("Second credential offer URI should not be null", credentialOfferURI2);
         String nonce2 = credentialOfferURI2.getNonce();
         assertNotNull("Second nonce should not be null", nonce2);
-
-        // Verify that the nonces are different
         assertNotEquals("Nonces should be different for different offers", nonce1, nonce2);
 
         // 3. Access first offer - should succeed
-        String offerUrl1 = credentialOfferURI1.getIssuer() + "/" + nonce1;
-        HttpGet getCredentialOffer1 = new HttpGet(offerUrl1);
-        CloseableHttpResponse credentialOfferResponse1 = httpClient.execute(getCredentialOffer1);
-
-        assertEquals("First offer should be accessible",
-                HttpStatus.SC_OK,
-                credentialOfferResponse1.getStatusLine().getStatusCode());
-        s = IOUtils.toString(credentialOfferResponse1.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialsOffer credentialsOffer1 = JsonSerialization.readValue(s, CredentialsOffer.class);
+        CredentialsOffer credentialsOffer1 = oauth.oid4vc()
+                .credentialOfferRequest(nonce1)
+                .bearerToken(token)
+                .send()
+                .getCredentialsOffer();
         assertNotNull("First credential offer should not be null", credentialsOffer1);
 
         // 4. Access second offer - should also succeed (different nonce, independent state)
-        String offerUrl2 = credentialOfferURI2.getIssuer() + "/" + nonce2;
-        HttpGet getCredentialOffer2 = new HttpGet(offerUrl2);
-        CloseableHttpResponse credentialOfferResponse2 = httpClient.execute(getCredentialOffer2);
-
-        assertEquals("Second offer should be accessible (different nonce)",
-                HttpStatus.SC_OK,
-                credentialOfferResponse2.getStatusLine().getStatusCode());
-        s = IOUtils.toString(credentialOfferResponse2.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialsOffer credentialsOffer2 = JsonSerialization.readValue(s, CredentialsOffer.class);
+        CredentialsOffer credentialsOffer2 = oauth.oid4vc()
+                .credentialOfferRequest(nonce2)
+                .bearerToken(token)
+                .send()
+                .getCredentialsOffer();
         assertNotNull("Second credential offer should not be null", credentialsOffer2);
 
         // 5. Verify that accessing first offer again fails (replay protection per-nonce)
-        HttpGet getCredentialOffer1Again = new HttpGet(offerUrl1);
-        CloseableHttpResponse credentialOfferResponse1Again = httpClient.execute(getCredentialOffer1Again);
+        CredentialOfferResponse response1 = oauth.oid4vc()
+                .credentialOfferRequest(nonce1)
+                .bearerToken(token)
+                .send();
 
         assertEquals("First offer should fail on second access (replay protection)",
-                HttpStatus.SC_BAD_REQUEST,
-                credentialOfferResponse1Again.getStatusLine().getStatusCode());
-        s = IOUtils.toString(credentialOfferResponse1Again.getEntity().getContent(), StandardCharsets.UTF_8);
-        ErrorResponse errorResponse1 = JsonSerialization.readValue(s, ErrorResponse.class);
+                Response.Status.BAD_REQUEST.getStatusCode(), response1.getStatusCode());
         assertEquals("Error type should be INVALID_CREDENTIAL_OFFER_REQUEST",
-                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST,
-                errorResponse1.getError());
+                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.name(),
+                response1.getError());
 
         // 6. Verify that accessing second offer again also fails (replay protection per-nonce)
-        HttpGet getCredentialOffer2Again = new HttpGet(offerUrl2);
-        CloseableHttpResponse credentialOfferResponse2Again = httpClient.execute(getCredentialOffer2Again);
+        CredentialOfferResponse response2 = oauth.oid4vc()
+                .credentialOfferRequest(nonce2)
+                .bearerToken(token)
+                .send();
 
         assertEquals("Second offer should fail on second access (replay protection)",
-                HttpStatus.SC_BAD_REQUEST,
-                credentialOfferResponse2Again.getStatusLine().getStatusCode());
-        s = IOUtils.toString(credentialOfferResponse2Again.getEntity().getContent(), StandardCharsets.UTF_8);
-        ErrorResponse errorResponse2 = JsonSerialization.readValue(s, ErrorResponse.class);
+                Response.Status.BAD_REQUEST.getStatusCode(), response2.getStatusCode());
         assertEquals("Error type should be INVALID_CREDENTIAL_OFFER_REQUEST",
-                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST,
-                errorResponse2.getError());
+                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.name(),
+                response2.getError());
     }
 
     /**
@@ -1100,71 +1078,55 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
      * interfere with the normal token request flow using the pre-authorized code.
      */
     @Test
-    public void testPreAuthorizedCodeValidAfterOfferConsumed() throws Exception {
+    public void testPreAuthorizedCodeValidAfterOfferConsumed() {
         String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
-
-        // 1. Fetch the Offer URI
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
-        HttpGet getCredentialOfferURI = new HttpGet(getCredentialOfferUriUrl(credentialConfigurationId));
-        getCredentialOfferURI.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        CloseableHttpResponse credentialOfferURIResponse = httpClient.execute(getCredentialOfferURI);
 
-        assertEquals("A valid offer uri should be returned",
-                HttpStatus.SC_OK,
-                credentialOfferURIResponse.getStatusLine().getStatusCode());
-        String s = IOUtils.toString(credentialOfferURIResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialOfferURI credentialOfferURI = JsonSerialization.readValue(s, CredentialOfferURI.class);
+        // 1. Fetch the Offer URI
+        CredentialOfferURI credentialOfferURI = oauth.oid4vc()
+                .credentialOfferUriRequest()
+                .credentialConfigurationId(credentialConfigurationId)
+                .preAuthorized(true)
+                .username("john")
+                .bearerToken(token)
+                .send()
+                .getCredentialOfferURI();
         assertNotNull("Credential offer URI should not be null", credentialOfferURI);
         String nonce = credentialOfferURI.getNonce();
         assertNotNull("Nonce should not be null", nonce);
 
         // 2. Fetch the Offer JSON (this triggers the consumed flag)
-        String offerUrl = credentialOfferURI.getIssuer() + "/" + nonce;
-        HttpGet getCredentialOffer = new HttpGet(offerUrl);
-        CloseableHttpResponse credentialOfferResponse = httpClient.execute(getCredentialOffer);
-
-        assertEquals("Credential offer should be accessible",
-                HttpStatus.SC_OK,
-                credentialOfferResponse.getStatusLine().getStatusCode());
-        s = IOUtils.toString(credentialOfferResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialsOffer credentialsOffer = JsonSerialization.readValue(s, CredentialsOffer.class);
+        CredentialsOffer credentialsOffer = oauth.oid4vc()
+                .credentialOfferRequest(nonce)
+                .bearerToken(token)
+                .send()
+                .getCredentialsOffer();
         assertNotNull("Credential offer should not be null", credentialsOffer);
         assertNotNull("Pre-authorized grant should be present", credentialsOffer.getGrants());
-        assertNotNull("Pre-authorized code should be present", credentialsOffer.getGrants().getPreAuthorizedCode());
         String preAuthorizedCode = credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode();
         assertNotNull("Pre-authorized code value should not be null", preAuthorizedCode);
 
         // 3. Immediately perform the Token Request (Pre-Authorized Code Grant) using the valid code
-        // Get issuer metadata to find the token endpoint
-        HttpGet getIssuerMetadata = new HttpGet(credentialsOffer.getIssuerMetadataUrl());
-        CloseableHttpResponse issuerMetadataResponse = httpClient.execute(getIssuerMetadata);
-        assertEquals(HttpStatus.SC_OK, issuerMetadataResponse.getStatusLine().getStatusCode());
-        s = IOUtils.toString(issuerMetadataResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialIssuer credentialIssuer = JsonSerialization.readValue(s, CredentialIssuer.class);
-
-        // Get the openid-configuration to find the token endpoint
-        HttpGet getOpenidConfiguration = new HttpGet(credentialIssuer.getAuthorizationServers().get(0) + "/.well-known/openid-configuration");
-        CloseableHttpResponse openidConfigResponse = httpClient.execute(getOpenidConfiguration);
-        assertEquals(HttpStatus.SC_OK, openidConfigResponse.getStatusLine().getStatusCode());
-        s = IOUtils.toString(openidConfigResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        OIDCConfigurationRepresentation openidConfig = JsonSerialization.readValue(s, OIDCConfigurationRepresentation.class);
+        CredentialIssuer credentialIssuer = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .endpoint(credentialsOffer.getIssuerMetadataUrl())
+                .send()
+                .getMetadata();
+        OIDCConfigurationRepresentation openidConfig = oauth
+                .wellknownRequest()
+                .url(credentialIssuer.getAuthorizationServers().get(0))
+                .send()
+                .getOidcConfiguration();
         assertNotNull("Token endpoint should be present", openidConfig.getTokenEndpoint());
 
-        // Perform token request with pre-authorized code
-        HttpPost postPreAuthorizedCode = new HttpPost(openidConfig.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, preAuthorizedCode));
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
-        AccessTokenResponse accessTokenResponse = new AccessTokenResponse(httpClient.execute(postPreAuthorizedCode));
-
-        // Verify that the token request succeeds even though the offer was consumed
+        AccessTokenResponse accessTokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(preAuthorizedCode)
+                .send();
         assertEquals("Token request should succeed even after offer is consumed",
                 HttpStatus.SC_OK,
                 accessTokenResponse.getStatusCode());
         assertNotNull("Access token should be present", accessTokenResponse.getAccessToken());
-        assertNotNull("Access token should not be empty", accessTokenResponse.getAccessToken());
+        assertFalse("Access token should not be empty", accessTokenResponse.getAccessToken().isEmpty());
     }
 }
