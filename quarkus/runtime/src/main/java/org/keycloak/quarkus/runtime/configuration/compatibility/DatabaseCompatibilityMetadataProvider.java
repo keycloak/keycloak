@@ -3,7 +3,9 @@ package org.keycloak.quarkus.runtime.configuration.compatibility;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -47,7 +49,13 @@ public class DatabaseCompatibilityMetadataProvider implements CompatibilityMetad
             if (inputStream != null) {
                 // Load the ChangeSet JSON into memory and write to a JSON String in order to avoid whitespace changes impacting the hash
                 Set<ChangeSet> changeSets = objectMapper.readValue(inputStream, new TypeReference<>() {});
-                String changeSetJson = objectMapper.writeValueAsString(changeSets);
+                List<ChangeSet> sortedChanges = changeSets.stream().sorted(
+                      Comparator.comparing(ChangeSet::id)
+                            .thenComparing(ChangeSet::author)
+                            .thenComparing(ChangeSet::filename)
+                ).toList();
+
+                String changeSetJson = objectMapper.writeValueAsString(sortedChanges);
                 String hash = HashUtils.sha256UrlEncodedHash(changeSetJson, StandardCharsets.UTF_8);
                 metadata.put(UNSUPPORTED_CHANGE_SET_HASH_KEY, hash);
             }
