@@ -33,9 +33,9 @@ import static org.junit.Assert.assertFalse;
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 @EnableFeature(value = Profile.Feature.RESOURCE_INDICATOR)
-public class ResourceIndicatorTest extends AbstractClientPoliciesTest {
+public class ResourceIndicatorMapperTest extends AbstractClientPoliciesTest {
 
-    private final static String MAPPER_NAME = "resource-audience-mapper";
+    public final static String MAPPER_NAME = "resource-audience-mapper";
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -49,80 +49,74 @@ public class ResourceIndicatorTest extends AbstractClientPoliciesTest {
         testingClient.server().run(session->{
             RealmModel realm = session.realms().getRealmByName(TEST);
             ClientModel target = realm.getClientByClientId(TEST_CLIENT);
-            target.addProtocolMapper(ResourceIndicatorMapper.create(MAPPER_NAME, true, true,
-                    List.of("https://resource.example.com/v1", "https://example.com/resource")));
+            target.addProtocolMapper(ResourceIndicatorMapper.create(MAPPER_NAME, true, true));
             target.setServiceAccountsEnabled(true);
         });
 
-        // resource specified in an authorization request and included in the permitted resources
-        // resource not specified in a token request
-        // -> bind
-        String resource = "https://resource.example.com/v1";
-        String code = loginUserAndGetCode(TEST_CLIENT, resource);
+        // authorization code grant
+        //  resource specified in an authorization request
+        //  resource not specified in a token request
+        //  -> bind with resource specified in an authorization request
+        String resourceInAuthorizationRequest = "https://resource.example.com/v1";
+        String resourceInTokenRequest = null;
+        String code = loginUserAndGetCode(TEST_CLIENT, resourceInAuthorizationRequest);
         AccessTokenResponse tokenResponse = oauth.
-                client(TEST_CLIENT, TEST_CLIENT_SECRET).accessTokenRequest(code).resource(resource).send();
-        assertTokenValidResponse(tokenResponse, resource);
+                client(TEST_CLIENT, TEST_CLIENT_SECRET).accessTokenRequest(code).resource(resourceInTokenRequest).send();
+        assertTokenValidResponse(tokenResponse, resourceInAuthorizationRequest);
 
         // introspect
+        //  -> bind with resource specified in an authorization request
         IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
-        assertIntrospectValidResponse(introspectionResponse, resource);
+        assertIntrospectValidResponse(introspectionResponse, resourceInAuthorizationRequest);
 
         // refresh
-        // resource not specified in a token refresh request
-        // -> bind
+        //  resource not specified in a token refresh request
+        //  -> bind with resource specified in an authorization request
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
-        assertRefreshTokenResponse(tokenResponse, resource);
+        assertRefreshTokenResponse(tokenResponse, resourceInAuthorizationRequest);
 
         // revoke
         TokenRevocationResponse revokeResponse = oauth.doTokenRevoke(tokenResponse.getAccessToken());
         assertRevokeValidResponse(revokeResponse, tokenResponse);
 
-        // resource not specified in an authorization request
-        // -> not bind
-        code = ssoLoginUserAndGetCode(TEST_CLIENT, null);
+        // authorization code grant
+        //  resource not specified in an authorization request
+        //  resource not specified in a token request
+        //  -> not bind
+        resourceInAuthorizationRequest = null;
+        resourceInTokenRequest = null;
+        code = ssoLoginUserAndGetCode(TEST_CLIENT, resourceInAuthorizationRequest);
         tokenResponse = oauth.
-                client(TEST_CLIENT, TEST_CLIENT_SECRET).accessTokenRequest(code).resource(null).send();
+                client(TEST_CLIENT, TEST_CLIENT_SECRET).accessTokenRequest(code).resource(resourceInTokenRequest).send();
         assertNotBindTokenValidResponse(tokenResponse);
 
-        // resource specified in an authorization request but not included in the permitted resources
-        // -> not bind
-        resource = "https://other.resources.com/";
-        code = ssoLoginUserAndGetCode(TEST_CLIENT, resource);
+        // authorization code grant
+        //  resource specified in an authorization request
+        //  resource specified in a token request
+        //  -> bind with resource specified in an authorization request
+        resourceInAuthorizationRequest = "https://resource.example.com/v1";
+        resourceInTokenRequest = "https://different.resource.example.com/";
+        code = ssoLoginUserAndGetCode(TEST_CLIENT, resourceInAuthorizationRequest);
         tokenResponse = oauth.
-                client(TEST_CLIENT, TEST_CLIENT_SECRET).accessTokenRequest(code).resource(null).send();
-        assertNotBindTokenValidResponse(tokenResponse);
+                client(TEST_CLIENT, TEST_CLIENT_SECRET).accessTokenRequest(code).resource(resourceInTokenRequest).send();
+        assertTokenValidResponse(tokenResponse, resourceInAuthorizationRequest);
 
-        // resource specified in an authorization request and included in the permitted resources
-        // resource specified in a token request but not the same as the one above.
-        // -> not bind
-        resource = "https://resource.example.com/v1";
-        code = ssoLoginUserAndGetCode(TEST_CLIENT, resource);
-        resource = "https://different.resource.example.com/";
+        // authorization code grant
+        // resource specified in an authorization request
+        // resource specified in a token request
+        // -> bind with resource specified in an authorization request
+        resourceInAuthorizationRequest = "https://resource.example.com/v1";
+        resourceInTokenRequest = resourceInAuthorizationRequest;
+        code = ssoLoginUserAndGetCode(TEST_CLIENT, resourceInAuthorizationRequest);
         tokenResponse = oauth.
-                client(TEST_CLIENT, TEST_CLIENT_SECRET).accessTokenRequest(code).resource(resource).send();
-        assertNotBindTokenValidResponse(tokenResponse);
-
-        // resource specified in an authorization request and included in the permitted resources
-        // resource specified in a token request and included in the permitted resources
-        // -> bind
-        resource = "https://resource.example.com/v1";
-        code = ssoLoginUserAndGetCode(TEST_CLIENT, resource);
-        tokenResponse = oauth.
-                client(TEST_CLIENT, TEST_CLIENT_SECRET).accessTokenRequest(code).resource(resource).send();
-        assertTokenValidResponse(tokenResponse, resource);
+                client(TEST_CLIENT, TEST_CLIENT_SECRET).accessTokenRequest(code).resource(resourceInTokenRequest).send();
+        assertTokenValidResponse(tokenResponse, resourceInAuthorizationRequest);
 
         // refresh
-        // resource specified in a token refresh request, and it is the same as one in the authorization request
-        // -> bind
-        tokenResponse = oauth.refreshRequest(tokenResponse.getRefreshToken()).resource(resource).send();
-        assertRefreshTokenResponse(tokenResponse, resource);
-
-        // refresh
-        // resource specified in a token refresh request, but it is different from the one in the authorization request
-        // -> not bind
-        resource = "https://different.resource.example.com/";
-        tokenResponse = oauth.refreshRequest(tokenResponse.getRefreshToken()).resource(resource).send();
-        assertNotBindTokenValidResponse(tokenResponse);
+        //  resource specified in a token refresh request, but it is different from the one in the authorization request
+        //  -> bind with resource specified in an authorization request
+        tokenResponse = oauth.refreshRequest(tokenResponse.getRefreshToken()).resource("https://different.resource.example.com/").send();
+        assertRefreshTokenResponse(tokenResponse, resourceInAuthorizationRequest);
     }
 
     @Test
@@ -130,7 +124,6 @@ public class ResourceIndicatorTest extends AbstractClientPoliciesTest {
         // setup realm
         testingClient.server().run(session->{
             RealmModel realm = session.realms().getRealmByName(TEST);
-
             ClientModel target = realm.getClientByClientId(TEST_CLIENT);
             ProtocolMapperModel model = target.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, MAPPER_NAME);
             if (model != null) {

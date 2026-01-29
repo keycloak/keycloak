@@ -1,7 +1,6 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +15,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.IDToken;
 
 import org.jboss.logging.Logger;
@@ -32,23 +30,7 @@ public class ResourceIndicatorMapper extends AbstractOIDCProtocolMapper implemen
 
     private static final Logger logger = Logger.getLogger(ResourceIndicatorMapper.class);
 
-    public static final String PREFIX_RESOURCE_ON_TOKEN_ENDPOINT = "_KC_ON_TOKEN_ENDPOINT_";
-
-    public static final String PERMITTED_RESOURCES = "allow-permitted-resources";
-    public static final String RESOURCES_LABEL = "Permitted resources";
-    public static final String RESOURCES_HELP_TEXT = "If filled, then the executor only accept resource parameter whose value exactly match one of the permitted resources.";
-
     static {
-        List<ProviderConfigProperty> props = ProviderConfigurationBuilder.create()
-                .property()
-                .name(PERMITTED_RESOURCES)
-                .type(ProviderConfigProperty.MULTIVALUED_STRING_TYPE)
-                .label(RESOURCES_LABEL)
-                .helpText(RESOURCES_HELP_TEXT)
-                .add()
-                .build();
-
-        configProperties.addAll(props);
         OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties, ResourceIndicatorMapper.class);
     }
 
@@ -83,27 +65,17 @@ public class ResourceIndicatorMapper extends AbstractOIDCProtocolMapper implemen
 
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
-        if (clientSessionCtx == null || clientSessionCtx.getClientSession() == null) return;
-
-        String resourceInAuthorizationRequest = clientSessionCtx.getAttribute(OAuth2Constants.RESOURCE, String.class);
-        logger.debugv(" mapper: resource in authorization request = {0}", resourceInAuthorizationRequest);
-        if (resourceInAuthorizationRequest == null) return;
-
-        String resourceOnTokenEndpoint = clientSessionCtx.getAttribute(PREFIX_RESOURCE_ON_TOKEN_ENDPOINT + OAuth2Constants.RESOURCE, String.class);
-        logger.debugv(" mapper: resource in token request = {0}", resourceOnTokenEndpoint);
-        if (resourceOnTokenEndpoint != null && !resourceOnTokenEndpoint.equals(resourceInAuthorizationRequest)) return;
-
-        String permittedResouresString = mappingModel.getConfig().get(PERMITTED_RESOURCES);
-        if (permittedResouresString == null || permittedResouresString.isBlank()) return;
-        if (Arrays.stream(permittedResouresString.split("##")).noneMatch(resourceInAuthorizationRequest::equals)) {
-            logger.debugv("no match with any permitted resource: resource = ", resourceInAuthorizationRequest);
+        if (clientSessionCtx == null || clientSessionCtx.getClientSession() == null) {
             return;
         }
-        
-        token.addAudience(resourceInAuthorizationRequest);
+        String resourceInAuthorizationRequest = clientSessionCtx.getClientSession().getNote(OAuth2Constants.RESOURCE);
+        if (resourceInAuthorizationRequest != null && !resourceInAuthorizationRequest.isBlank()) {
+            logger.debugv(" mapper: resource in authorization request = {0}", resourceInAuthorizationRequest);
+            token.addAudience(resourceInAuthorizationRequest);
+        }
     }
 
-    public static ProtocolMapperModel create(String name, boolean accessToken, boolean introspectionEndpoint, List<String> permittedResources) {
+    public static ProtocolMapperModel create(String name, boolean accessToken, boolean introspectionEndpoint) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(PROVIDER_ID);
@@ -114,9 +86,6 @@ public class ResourceIndicatorMapper extends AbstractOIDCProtocolMapper implemen
         }
         if (introspectionEndpoint) {
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
-        }
-        if (permittedResources != null && !permittedResources.isEmpty()) {
-            config.put(PERMITTED_RESOURCES, String.join("##", permittedResources));
         }
         mapper.setConfig(config);
         return mapper;
