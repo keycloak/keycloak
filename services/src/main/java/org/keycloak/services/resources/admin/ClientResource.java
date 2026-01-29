@@ -89,7 +89,6 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
-import org.keycloak.utils.StreamsUtil;
 import org.keycloak.validation.ValidationUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -577,7 +576,7 @@ public class ClientResource {
 
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-        return StreamsUtil.paginatedStream(session.sessions().readOnlyStreamUserSessions(client.getRealm(), client), firstResult, maxResults)
+        return session.sessions().getUserSessionsStream(client.getRealm(), client, firstResult, maxResults)
                 .map(ModelToRepresentation::toRepresentation);
     }
 
@@ -627,7 +626,7 @@ public class ClientResource {
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
-        return StreamsUtil.paginatedStream(session.sessions().readOnlyStreamOfflineUserSessions(client.getRealm(), client), firstResult, maxResults)
+        return session.sessions().getOfflineUserSessionsStream(client.getRealm(), client, firstResult, maxResults)
                 .map(this::toUserSessionRepresentation);
     }
 

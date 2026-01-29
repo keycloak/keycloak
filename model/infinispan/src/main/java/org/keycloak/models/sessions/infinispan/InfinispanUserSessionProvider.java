@@ -449,7 +449,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         return getUserSessionsStream(realm, client, firstResult, maxResults, false);
     }
 
-    @Deprecated(since = "26.6", forRemoval = true)
     protected Stream<UserSessionModel> getUserSessionsStream(final RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults, final boolean offline) {
         if (offline) {
             // fetch the actual offline user session count from the database

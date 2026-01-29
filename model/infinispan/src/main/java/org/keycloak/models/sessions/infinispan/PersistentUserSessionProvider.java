@@ -345,7 +345,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         return getUserSessionsStream(realm, client, firstResult, maxResults, false);
     }
 
-    @Deprecated(since = "26.6", forRemoval = true)
     protected Stream<UserSessionModel> getUserSessionsStream(final RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults, final boolean offline) {
         UserSessionPredicate predicate = UserSessionPredicate.create(realm.getId()).client(client.getId());
 
