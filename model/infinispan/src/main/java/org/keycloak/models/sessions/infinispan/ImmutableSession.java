@@ -103,50 +103,45 @@ public final class ImmutableSession {
                 .map(UserSessionModel.class::cast);
     }
 
-    public static Stream<UserSessionModel> copyOf(KeycloakSession session,
-                                                  Collection<RemoteUserSessionEntity> entityList,
-                                                  SessionExpirationPredicates expiration,
-                                                  RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache,
-                                                  int batchSize) {
-        var userSessionMap = new LinkedHashMap<String, ImmutableUserSessionModel>();
-        var users = session.users();
-        entityList.forEach(entity -> {
-            if (entity == null) {
-                return;
-            }
-            if (!Objects.equals(entity.getRealmId(), expiration.realm().getId())) {
-                return;
-            }
-            if (expiration.isUserSessionExpired(entity)) {
-                return;
-            }
-            var user = users.getUserById(expiration.realm(), entity.getUserId());
-            if (user == null) {
-                return;
-            }
-            var copy = new ImmutableUserSessionModel(
-                    entity.getUserSessionId(),
-                    expiration.realm(),
-                    user,
-                    entity.getBrokerSessionId(),
-                    entity.getBrokerUserId(),
-                    entity.getLoginUsername(),
-                    entity.getIpAddress(),
-                    entity.getAuthMethod(),
-                    new HashMap<>(), // to break cyclic dependency between user and client session
-                    Map.copyOf(entity.getNotes()),
-                    entity.getState(),
-                    entity.getStarted(),
-                    entity.getLastSessionRefresh(),
-                    entity.isRememberMe(),
-                    expiration.offline()
-            );
-            userSessionMap.put(copy.id(), copy);
-        });
+    public static UserSessionModel copyOf(KeycloakSession session,
+                                          RemoteUserSessionEntity entity,
+                                          SessionExpirationPredicates expiration,
+                                          RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache,
+                                          int batchSize) {
+        if (entity == null) {
+            return null;
+        }
+        if (!Objects.equals(entity.getRealmId(), expiration.realm().getId())) {
+            return null;
+        }
+        if (expiration.isUserSessionExpired(entity)) {
+            return null;
+        }
+        var user = session.users().getUserById(expiration.realm(), entity.getUserId());
+        if (user == null) {
+            return null;
+        }
+        var copy = new ImmutableUserSessionModel(
+                entity.getUserSessionId(),
+                expiration.realm(),
+                user,
+                entity.getBrokerSessionId(),
+                entity.getBrokerUserId(),
+                entity.getLoginUsername(),
+                entity.getIpAddress(),
+                entity.getAuthMethod(),
+                new HashMap<>(), // to break cyclic dependency between user and client session
+                Map.copyOf(entity.getNotes()),
+                entity.getState(),
+                entity.getStarted(),
+                entity.getLastSessionRefresh(),
+                entity.isRememberMe(),
+                expiration.offline()
+        );
 
 
-        populateClientSessions(userSessionMap, expiration, cache, batchSize);
-        return userSessionMap.values().stream().map(UserSessionModel.class::cast);
+        populateClientSessions(copy, expiration, cache, batchSize);
+        return copy;
     }
 
     private static void populateClientSessions(Map<String, ImmutableUserSessionModel> userSessionMap, Set<EmbeddedClientSessionKey> clientSessionKeys, SessionExpirationPredicates expirationPredicates, Cache<EmbeddedClientSessionKey, SessionEntityWrapper<AuthenticatedClientSessionEntity>> cache) {
@@ -178,12 +173,11 @@ public final class ImmutableSession {
                 });
     }
 
-    private static void populateClientSessions(Map<String, ImmutableUserSessionModel> userSessionMap, SessionExpirationPredicates expirationPredicates, RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache, int batchSize) {
-        var query = ClientSessionQueries.fetchClientSessions(cache, userSessionMap.keySet());
+    private static void populateClientSessions(ImmutableUserSessionModel userSession, SessionExpirationPredicates expirationPredicates, RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache, int batchSize) {
+        var query = ClientSessionQueries.fetchClientSessions(cache, userSession.id());
         QueryHelper.streamAll(query, batchSize, Function.identity()).forEach(entity -> {
-            var userSession = userSessionMap.get(entity.getUserSessionId());
             var client = expirationPredicates.realm().getClientById(entity.getClientId());
-            if (client == null || userSession == null) {
+            if (client == null) {
                 return;
             }
             if (expirationPredicates.isClientSessionExpired(entity, userSession.started(), userSession.rememberMe(), client)) {
