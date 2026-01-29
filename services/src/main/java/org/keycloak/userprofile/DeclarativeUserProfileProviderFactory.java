@@ -70,6 +70,7 @@ import org.keycloak.userprofile.validator.UsernameMutationValidator;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.EmailValidator;
+import org.keycloak.validate.validators.PatternValidator;
 
 import static java.util.Optional.ofNullable;
 
@@ -82,6 +83,8 @@ import static org.keycloak.userprofile.UserProfileContext.REGISTRATION;
 import static org.keycloak.userprofile.UserProfileContext.UPDATE_EMAIL;
 import static org.keycloak.userprofile.UserProfileContext.UPDATE_PROFILE;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
 public class DeclarativeUserProfileProviderFactory implements UserProfileProviderFactory, AmphibianProviderFactory<UserProfileProvider> {
 
@@ -105,11 +108,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     private final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry = new HashMap<>();
 
     public static void setDefaultConfig(UPConfig defaultConfig) {
-        setDefaultConfig(defaultConfig, false);
-    }
-
-    public static void setDefaultConfig(UPConfig defaultConfig, boolean force) {
-        if (force || PARSED_DEFAULT_RAW_CONFIG == null) {
+        if (PARSED_DEFAULT_RAW_CONFIG == null) {
             PARSED_DEFAULT_RAW_CONFIG = defaultConfig;
         }
     }
@@ -329,7 +328,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         }
 
         // delete cache so new config is parsed and applied next time it is required
-        // throught #configureUserProfile(metadata, session)
+        // through #configureUserProfile(metadata, session)
         if (model != null) {
             model.removeNote(DeclarativeUserProfileProvider.PARSED_CONFIG_COMPONENT_KEY);
         }
@@ -533,55 +532,31 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         UPConfig parsedConfig = ofNullable(config.get("configFile"))
                 .map(Paths::get)
                 .map(UPConfigUtils::parseConfig)
-                .orElse(null);
-
-        // For all intents and purposes, a Verifiable Credential (VC) is bound to a Holder's Digital Identity (DID).
-        // The Holder's DID is in turn bound to Key Material that the Issuer + Verifier can discover from the DID Document.
-        // In case of "did:key:..." the Public Key is already encoded in the DID.
-        //
-        // Here, we make sure that the default UserProfile has a 'did' attribute when --feature=oid4vc-vci is enabled.
-        // Conceptually, it is however debatable whether the Issuer should know even one of the Holder's DIDs
-        //
-        // In future, it may be possible that ...
-        //
-        //  * The Holder communicates the DID at the time of Authorization
-        //  * The Issuer then verifies Holder possession of the associated Key Material
-        //  * The Issuer then somehow associates the AuthorizationRequest with a registered User
-        //  * The VC is then issued to the Holder without the Issuer needing to remember that Holder DID
-        //
-        // This kind of Authorization protocol is for example required by EBSI, which we aim to become compatible with.
-        // https://hub.ebsi.eu/conformance/build-solutions/issue-to-holder-functional-flows
-        //
-        // Note, that current EBSI Compatibility Tests use the Holder's DID as OIDC client_id in the AuthorizationRequest.
-        // That is something we need to work with, but I don't think we should model it like that in our realm config.
-        //
-        // Here the attribute definition that we add by default (when not defined already)
-        //
-        //   {
-        //     "name": "did",
-        //     "displayName": "DID",
-        //     "permissions": {
-        //       "view": ["admin", "user"],
-        //       "edit": ["admin", "user"]
-        //     },
-        //     "validations": {
-        //       "pattern": {
-        //         "pattern": "^did:.+:.+$",
-        //         "error-message": "Value must start with 'did:scheme:'"
-        //       }
-        //     }
-        //   }
-        if (parsedConfig == null && Profile.isFeatureEnabled(OID4VC_VCI)) {
-            parsedConfig = UPConfigUtils.parseUserProfileConfig("keycloak-oid4vci-user-profile.json");
-        }
+                .orElse(PARSED_DEFAULT_RAW_CONFIG);
 
         // As fallback parse the system default config
-        if (parsedConfig == null && PARSED_DEFAULT_RAW_CONFIG == null) {
+        if (parsedConfig == null) {
             parsedConfig = UPConfigUtils.parseSystemDefaultConfig();
         }
 
-        if (parsedConfig != null) {
-            setDefaultConfig(parsedConfig, true);
+        // Modify the user profile to use when --features=oid4vc-vci is enabled
+        if (Profile.isFeatureEnabled(OID4VC_VCI)) {
+            addUserDidAttribute(parsedConfig);
+        }
+
+        setDefaultConfig(parsedConfig);
+    }
+
+    private void addUserDidAttribute(UPConfig config) {
+        if (config.getAttribute(UserModel.DID) == null) {
+            UPAttribute attr = new UPAttribute(UserModel.DID);
+            attr.setDisplayName("${did}");
+            attr.setPermissions(new UPAttributePermissions(Set.of(ROLE_ADMIN, ROLE_USER), Set.of(ROLE_ADMIN, ROLE_USER)));
+            attr.setValidations(Map.of(PatternValidator.ID, Map.of(
+                    "pattern", "^did:.+:.+$",
+                    "error-message", "Value must start with 'did:scheme:'")));
+            config.addOrReplaceAttribute(attr);
+            PARSED_DEFAULT_RAW_CONFIG = null;
         }
     }
 
