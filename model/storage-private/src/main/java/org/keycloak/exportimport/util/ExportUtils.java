@@ -39,6 +39,7 @@ import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -264,6 +265,12 @@ public class ExportUtils {
                             member.setUsername(user.getUsername());
                             member.setMembershipType(orgProvider.isManagedMember(model, user) ? MembershipType.MANAGED : MembershipType.UNMANAGED);
 
+                            // Export organization group memberships
+                            List<String> groupIds = orgProvider.getOrganizationGroupsByMember(model, user).map(GroupModel::getId).collect(Collectors.toList());
+                            if (!groupIds.isEmpty()) {
+                                member.setGroups(groupIds);
+                            }
+
                             org.addMember(member);
                         });
 
@@ -273,6 +280,10 @@ public class ExportUtils {
                             broker.setAlias(b.getAlias());
                             return broker;
                         }).forEach(org::addIdentityProvider);
+
+                orgProvider.getTopLevelGroups(model, null, null)
+                        .map(group -> ModelToRepresentation.toGroupHierarchy(group, true))
+                        .forEach(org::addGroup);
 
                 return org;
             }).forEach(rep::addOrganization);

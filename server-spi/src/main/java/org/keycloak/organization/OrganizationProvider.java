@@ -215,6 +215,7 @@ public interface OrganizationProvider extends Provider {
 
     /**
      * Creates a new group within the given {@link OrganizationModel}.
+     * The internal ID of the group will be created automatically.
      * The created group will be of type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION}.
      * If {@code toParent} is {@code null}, the group will be created as a top-level organization group,
      * as a direct child of the organization's internal group structure.
@@ -231,7 +232,30 @@ public interface OrganizationProvider extends Provider {
      * @throws ModelValidationException if {@code toParent} is not an organization group or does not
      *                                  belong to the specified organization
      */
-    GroupModel createGroup(OrganizationModel organization, String name, GroupModel toParent);
+    default GroupModel createGroup(OrganizationModel organization, String name, GroupModel toParent) {
+        return createGroup(organization, null, name, toParent);
+    }
+
+    /**
+     * Creates a new group with the given {@code id} within the given {@link OrganizationModel}.
+     * The created group will be of type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION}.
+     * If {@code toParent} is {@code null}, the group will be created as a top-level organization group,
+     * as a direct child of the organization's internal group structure.
+     * If {@code toParent} is provided, the group will be created as a subgroup of the specified parent.
+     *
+     * @param organization the organization to create the group in
+     * @param id the id of the group. If {@code null}, an id will be generated automatically.
+     * @param name the name of the group to create
+     * @param toParent the parent group under which to create the new group. If {@code null},
+     *                 the group is created as a top-level organization group. If provided, must be
+     *                 an organization group (type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION})
+     *                 belonging to the same organization.
+     * @return the newly created {@link GroupModel}
+     * @throws ModelException if {@code organization} or {@code name} is {@code null}
+     * @throws ModelValidationException if {@code toParent} is not an organization group or does not
+     *                                  belong to the specified organization
+     */
+    GroupModel createGroup(OrganizationModel organization, String id, String name, GroupModel toParent);
 
     /**
      * Returns the top-level groups of the given {@link OrganizationModel}.
