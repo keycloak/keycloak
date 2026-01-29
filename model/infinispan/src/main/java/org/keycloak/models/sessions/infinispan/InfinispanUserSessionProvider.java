@@ -477,31 +477,38 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
     @Override
     public Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm) {
-        return readOnlyStreamFromCache(UserSessionPredicate.create(realm.getId()), realm);
+        return readOnlyStreamFromCache(UserSessionPredicate.create(realm.getId()), realm, -1, -1);
     }
 
     @Override
-    public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm, ClientModel client) {
+    public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm, ClientModel client, int skip, int maxResults) {
         var expiration = new SessionExpirationPredicates(realm, true, Time.currentTime());
-        return session.getProvider(UserSessionPersisterProvider.class).readOnlyUserSessionStream(realm, client, true)
+        return session.getProvider(UserSessionPersisterProvider.class)
+                .readOnlyUserSessionStream(realm, client, true, skip, maxResults)
                 .filter(Predicate.not(expiration::isUserSessionExpired));
     }
 
     @Override
-    public Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm, ClientModel client) {
-        return readOnlyStreamFromCache(UserSessionPredicate.create(realm.getId()).client(client.getId()), realm);
+    public Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm, ClientModel client, int skip, int maxResults) {
+        return readOnlyStreamFromCache(UserSessionPredicate.create(realm.getId()).client(client.getId()), realm, skip, maxResults);
     }
 
-    private Stream<UserSessionModel> readOnlyStreamFromCache(UserSessionPredicate cachePredicate, RealmModel realm) {
+    private Stream<UserSessionModel> readOnlyStreamFromCache(UserSessionPredicate cachePredicate, RealmModel realm, int skip, int maxResults) {
+        if (maxResults == 0) {
+            return Stream.empty();
+        }
         var predicates = new SessionExpirationPredicates(realm, false, Time.currentTime());
         var clientSessionCache = getClientSessionCache(false);
 
         // not great, distributed sort not supported, and we're sorting everything locally
         // follow-up, iterate by segment and sort the sessions in that segment.
-        var stream = StreamsUtil.closing(getCache(false).entrySet().stream()
-                .filter(cachePredicate)
-                .map(Mappers.userSessionEntity())
-                .sorted(Comparator.comparing(UserSessionEntity::getId)));
+        var stream = StreamsUtil.paginatedStream(
+                StreamsUtil.closing(getCache(false).entrySet().stream()
+                        .filter(cachePredicate)
+                        .map(Mappers.userSessionEntity())
+                        .sorted(Comparator.comparing(UserSessionEntity::getId))),
+                skip,
+                maxResults);
 
         return Flowable.fromIterable(stream::iterator)
                 .buffer(512)

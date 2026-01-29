@@ -426,13 +426,13 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     }
 
     @Override
-    public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm, ClientModel client) {
-        return readOnlyStream(realm, client, true);
+    public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm, ClientModel client, int skip, int maxResults) {
+        return readOnlyStream(realm, client, true, skip, maxResults);
     }
 
     @Override
-    public Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm, ClientModel client) {
-        return readOnlyStream(realm, client, false);
+    public Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm, ClientModel client, int skip, int maxResults) {
+        return readOnlyStream(realm, client, false, skip, maxResults);
     }
 
     private Stream<UserSessionModel> readOnlyStream(RealmModel realm, boolean offline) {
@@ -441,9 +441,9 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                 .filter(Predicate.not(expiration::isUserSessionExpired));
     }
 
-    private Stream<UserSessionModel> readOnlyStream(RealmModel realm, ClientModel client, boolean offline) {
+    private Stream<UserSessionModel> readOnlyStream(RealmModel realm, ClientModel client, boolean offline, int skip, int maxResults) {
         var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTime());
-        return session.getProvider(UserSessionPersisterProvider.class).readOnlyUserSessionStream(realm, client, offline)
+        return session.getProvider(UserSessionPersisterProvider.class).readOnlyUserSessionStream(realm, client, offline, skip, maxResults)
                 .filter(Predicate.not(expiration::isUserSessionExpired));
     }
 

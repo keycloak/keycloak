@@ -130,12 +130,12 @@ public class SessionsResource {
     }
 
     private Stream<SessionRepresentation> streamRegular(ClientModel client) {
-        return session.sessions().readOnlyStreamUserSessions(realm, client)
+        return session.sessions().readOnlyStreamUserSessions(realm, client, -1, -1)
                 .map(s -> toRepresentation(s, REGULAR));
     }
 
     private Stream<SessionRepresentation> streamOffline(ClientModel client) {
-        return session.sessions().readOnlyStreamOfflineUserSessions(realm, client)
+        return session.sessions().readOnlyStreamOfflineUserSessions(realm, client, -1, -1)
                 .map(s -> toRepresentation(s, OFFLINE));
     }
 
