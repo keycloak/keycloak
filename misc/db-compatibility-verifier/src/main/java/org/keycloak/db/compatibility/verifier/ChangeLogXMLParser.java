@@ -44,7 +44,7 @@ record ChangeLogXMLParser(ClassLoader classLoader) {
       return uniqueSets;
    }
 
-   private List<ChangeSet> extractChangeSets(String filename) {
+   List<ChangeSet> extractChangeSets(String filename) {
       XMLInputFactory factory = XMLInputFactory.newInstance();
       // Security: Disable DTDs to prevent XML External Entity (XXE) attacks
       factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);

@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -35,7 +34,6 @@ public class CreateSnapshotMojo extends AbstractMojo {
         // Write all known ChangeSet defined in the jpa-changelog*.xml files to the supported file
         ChangeLogXMLParser xmlParser = new ChangeLogXMLParser(classLoader);
         Set<ChangeSet> changeSets = xmlParser.discoverAllChangeSets();
-        ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
         objectMapper.writeValue(sFile, changeSets);
 

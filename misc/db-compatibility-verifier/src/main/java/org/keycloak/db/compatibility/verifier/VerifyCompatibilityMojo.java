@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 
@@ -40,9 +39,8 @@ public class VerifyCompatibilityMojo extends AbstractMojo {
         }
 
         // Parse JSON files to determine all committed ChangeSets
-        ObjectMapper mapper = new ObjectMapper();
-        List<ChangeSet> sChanges = mapper.readValue(sFile, new TypeReference<>() {});
-        List<ChangeSet> uChanges = mapper.readValue(uFile, new TypeReference<>() {});
+        List<ChangeSet> sChanges = objectMapper.readValue(sFile, new TypeReference<>() {});
+        List<ChangeSet> uChanges = objectMapper.readValue(uFile, new TypeReference<>() {});
         Set<ChangeSet> recordedChanges = Stream.of(sChanges, uChanges)
               .flatMap(List::stream)
               .collect(Collectors.toSet());
@@ -85,6 +83,7 @@ public class VerifyCompatibilityMojo extends AbstractMojo {
             getLog().error("If the change IS compatible, then it should be committed to the repository in the supported file: '%s'".formatted(sFile.toString()));
             getLog().error("If the change IS NOT compatible, then it should be committed to the repository in the unsupported file: '%s'".formatted(sFile.toString()));
             getLog().error("Adding a ChangeSet to the unsupported file ensures that a rolling upgrade is not attempted when upgrading to the first patch version containing the change");
+            getLog().error("ChangeSets can be added to the supported or unsupported files using the org.keycloak:db-compatibility-verifier-maven-plugin. See the module README for usage instructions");
             throw new MojoExecutionException("One or more ChangeSet definitions are missing from the supported or unsupported files");
         }
     }
