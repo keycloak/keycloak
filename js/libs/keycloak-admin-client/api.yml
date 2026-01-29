@@ -111,6 +111,7 @@ paths:
     get:
       summary: Get all clients
       description: Returns a list of all clients in the realm
+      operationId: getClients
       tags:
       - Clients (v2)
       responses:
@@ -132,6 +133,7 @@ paths:
     post:
       summary: Create a new client
       description: Creates a new client in the realm
+      operationId: createClient
       tags:
       - Clients (v2)
       requestBody:
@@ -167,6 +169,7 @@ paths:
         pattern: v\d+
   /admin/api/{realmName}/clients/{version}/{id}:
     get:
+      operationId: getClient
       tags:
       - Clients (v2)
       responses:
@@ -184,6 +187,7 @@ paths:
                     openid-connect: "#/components/schemas/OIDCClientRepresentation"
                     saml: "#/components/schemas/SAMLClientRepresentation"
     put:
+      operationId: createOrUpdateClient
       tags:
       - Clients (v2)
       requestBody:
@@ -206,14 +210,12 @@ paths:
             application/json:
               schema: {}
     patch:
+      operationId: patchClient
       tags:
       - Clients (v2)
       requestBody:
         content:
-          application/merge-patch+json:
-            schema:
-              type: object
-              additionalProperties: true
+          application/merge-patch+json: {}
         required: true
       responses:
         "200":
@@ -230,6 +232,7 @@ paths:
                     openid-connect: "#/components/schemas/OIDCClientRepresentation"
                     saml: "#/components/schemas/SAMLClientRepresentation"
     delete:
+      operationId: deleteClient
       tags:
       - Clients (v2)
       responses:

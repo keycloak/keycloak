@@ -1,7 +1,6 @@
 import { faker } from "@faker-js/faker";
 import * as chai from "chai";
 import { KeycloakAdminClient } from "../src/client.js";
-import type { AdminClient } from "../src/generated/adminClient.js";
 import type { OIDCClientRepresentation } from "../src/generated/models/index.js";
 import { credentials } from "./constants.js";
 
@@ -9,25 +8,15 @@ const expect = chai.expect;
 
 describe("Clients V2 API", () => {
   let kcAdminClient: KeycloakAdminClient;
-  let adminClient: AdminClient;
   let currentClientId: string;
-
-  // Helper to get the clients endpoint for the realm
-  const getClientsEndpoint = () =>
-    adminClient.admin.api
-      .byRealmName(kcAdminClient.realmName)
-      .clients.byVersion("v2");
 
   before(async () => {
     kcAdminClient = new KeycloakAdminClient();
     await kcAdminClient.auth(credentials);
 
-    // Get the v2 API instance (Kiota AdminClient)
-    adminClient = await kcAdminClient.clients.v2.api();
-
     // Create a client for testing using v2 API
     currentClientId = faker.internet.username();
-    await getClientsEndpoint().post({
+    await kcAdminClient.clients.v2().post({
       clientId: currentClientId,
       protocol: "openid-connect",
       enabled: true,
@@ -37,12 +26,12 @@ describe("Clients V2 API", () => {
   after(async () => {
     // Delete the test client
     if (currentClientId) {
-      await getClientsEndpoint().byId(currentClientId).delete();
+      await kcAdminClient.clients.v2().byId(currentClientId).delete();
     }
   });
 
   it("should list clients", async () => {
-    const clients = await getClientsEndpoint().get();
+    const clients = await kcAdminClient.clients.v2().get();
 
     expect(clients).to.be.ok;
     expect(clients).to.be.an("array");
@@ -56,7 +45,7 @@ describe("Clients V2 API", () => {
   });
 
   it("should get a single client by clientId", async () => {
-    const client = await getClientsEndpoint().byId(currentClientId).get();
+    const client = await kcAdminClient.clients.v2().byId(currentClientId).get();
 
     expect(client).to.be.ok;
     expect((client as OIDCClientRepresentation).clientId).to.equal(
@@ -67,13 +56,13 @@ describe("Clients V2 API", () => {
   it("should update a client with PUT", async () => {
     const updatedDescription = "Updated via V2 API test";
 
-    await getClientsEndpoint().byId(currentClientId).put({
+    await kcAdminClient.clients.v2().byId(currentClientId).put({
       clientId: currentClientId,
       protocol: "openid-connect",
       description: updatedDescription,
     });
 
-    const client = await getClientsEndpoint().byId(currentClientId).get();
+    const client = await kcAdminClient.clients.v2().byId(currentClientId).get();
 
     expect((client as OIDCClientRepresentation).description).to.equal(
       updatedDescription,
@@ -88,7 +77,8 @@ describe("Clients V2 API", () => {
     const encoder = new TextEncoder();
     const patchBuffer = encoder.encode(patchBody).buffer;
 
-    const patchedClient = await getClientsEndpoint()
+    const patchedClient = await kcAdminClient.clients
+      .v2()
       .byId(currentClientId)
       .patch(patchBuffer);
 
@@ -97,7 +87,7 @@ describe("Clients V2 API", () => {
     );
 
     // Verify the change persisted
-    const client = await getClientsEndpoint().byId(currentClientId).get();
+    const client = await kcAdminClient.clients.v2().byId(currentClientId).get();
 
     expect((client as OIDCClientRepresentation).displayName).to.equal(
       patchedDisplayName,
@@ -108,7 +98,7 @@ describe("Clients V2 API", () => {
     const clientId = faker.internet.username();
 
     // Create a new client using v2 API
-    await getClientsEndpoint().post({
+    await kcAdminClient.clients.v2().post({
       clientId,
       protocol: "openid-connect",
       enabled: true,
@@ -116,14 +106,14 @@ describe("Clients V2 API", () => {
     });
 
     // Verify we can get it via v2 API
-    const client = await getClientsEndpoint().byId(clientId).get();
+    const client = await kcAdminClient.clients.v2().byId(clientId).get();
     expect((client as OIDCClientRepresentation).clientId).to.equal(clientId);
 
     // Delete the client using v2 API
-    await getClientsEndpoint().byId(clientId).delete();
+    await kcAdminClient.clients.v2().byId(clientId).delete();
 
     // Verify it's deleted by checking it's no longer in the list
-    const clients = await getClientsEndpoint().get();
+    const clients = await kcAdminClient.clients.v2().get();
 
     const deletedClient = clients!.find(
       (c) => (c as OIDCClientRepresentation).clientId === clientId,
@@ -134,7 +124,7 @@ describe("Clients V2 API", () => {
   it("should create an OIDC client with full configuration", async () => {
     const clientId = `full-config-${faker.internet.username()}`;
 
-    await getClientsEndpoint().post({
+    await kcAdminClient.clients.v2().post({
       clientId,
       protocol: "openid-connect",
       enabled: true,
@@ -145,7 +135,7 @@ describe("Clients V2 API", () => {
     });
 
     // Get via v2 API and verify
-    const client = await getClientsEndpoint().byId(clientId).get();
+    const client = await kcAdminClient.clients.v2().byId(clientId).get();
 
     expect(client).to.be.ok;
     expect((client as OIDCClientRepresentation).displayName).to.equal(
@@ -156,6 +146,6 @@ describe("Clients V2 API", () => {
     );
 
     // Cleanup
-    await getClientsEndpoint().byId(clientId).delete();
+    await kcAdminClient.clients.v2().byId(clientId).delete();
   });
 });
