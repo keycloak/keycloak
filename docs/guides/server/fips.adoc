@@ -53,7 +53,7 @@ You can create either `pkcs12` or `bcfks` keystore to be used for the {project_n
 
 The `p12` (or `pkcs12`) keystore (and/or truststore) works well in BCFIPS non-approved mode.
 
-PKCS12 keystore can be generated with OpenJDK 21 Java on RHEL 9 in the standard way. For instance, the following command can be used to generate the keystore:
+PKCS12 keystore can be generated with OpenJDK on RHEL 9 in the standard way. For instance, the following command can be used to generate the keystore:
 
 [source,bash]
 ----
@@ -170,7 +170,7 @@ that it is not already available in your FIPS security providers:
 fips.provider.7=XMLDSig
 ----
 
-Adding this security provider should work well. In fact, it is FIPS compliant and is already added by default in the OpenJDK 21 and newer versions of OpenJDK 17.
+Adding this security provider should work well. In fact, it is FIPS compliant and is already added by default in the OpenJDK 21 and later, or newer versions of OpenJDK 17.
 Details are in the https://bugzilla.redhat.com/show_bug.cgi?id=1940064[bugzilla].
 
 NOTE: It is recommended to look at `JAVA_HOME/conf/security/java.security` and check all configured providers here and make sure that the number matches. In other words, `fips.provider.7`
@@ -228,7 +228,7 @@ For example in the current directory, you can create sub-directory `files` and a
 
 * BC FIPS jar files as described above
 * Custom keystore file - named for example `keycloak-fips.keystore.bcfks`
-* Security file `kc.java.security` with added provider for SAML (Not needed with OpenJDK 21 or newer OpenJDK 17)
+* Security file `kc.java.security` with added provider for SAML (Not needed with OpenJDK 21 and later, or newer OpenJDK 17)
 
 Then create `Containerfile` in the current directory similar to this:
 
