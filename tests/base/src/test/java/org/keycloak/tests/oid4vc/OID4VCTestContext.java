@@ -34,7 +34,6 @@ public class OID4VCTestContext {
     static final AttachmentKey<CredentialResponse> CREDENTIAL_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(CredentialResponse.class);
 
     ClientRepresentation client;
-    String clientId;
     String issuer;      // Issuing username (i.e. agent who creates credential offers)
     String holder;      // Holder who requests the credential
     String credConfigId;
@@ -45,7 +44,6 @@ public class OID4VCTestContext {
 
     public OID4VCTestContext(ClientRepresentation client, CredentialScopeRepresentation credentialScope) {
         this.client = client;
-        this.clientId = client.getClientId();
         this.issuer = "john";
         this.holder = "alice";
         this.credentialScope = credentialScope;
