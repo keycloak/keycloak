@@ -890,7 +890,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
      * This test ensures backward compatibility with clients that send 'proof' instead of 'proofs'.
      */
     @Test
-    public void testProofToProofsConversion() throws Exception {
+    public void testProofToProofsConversion() {
         String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
@@ -1082,7 +1082,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
      * preventing multiple retrievals of the same pre-authorized code.
      */
     @Test
-    public void testCredentialOfferReplayProtection () {
+    public void testCredentialOfferReplayProtection() {
         String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
@@ -1132,7 +1132,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
      * This verifies that replay protection is per-nonce and doesn't affect other offers.
      */
     @Test
-    public void testCredentialOfferDifferentNoncesIndependent () {
+    public void testCredentialOfferDifferentNoncesIndependent() {
         String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
@@ -1211,7 +1211,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
      * interfere with the normal token request flow using the pre-authorized code.
      */
     @Test
-    public void testPreAuthorizedCodeValidAfterOfferConsumed () {
+    public void testPreAuthorizedCodeValidAfterOfferConsumed() {
         String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
