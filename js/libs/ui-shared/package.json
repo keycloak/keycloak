@@ -50,7 +50,7 @@
     "@patternfly/react-table": "^5.4.16",
     "i18next": "^25.7.3",
     "keycloak-js": "^26.2.2",
-    "lodash-es": "^4.17.22",
+    "lodash-es": "^4.17.23",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "7.70.0",
