@@ -9,7 +9,7 @@ inputs:
   jdk-version:
     description: JDK version
     required: false
-    default: "21"
+    default: "25"
 
 runs:
   using: composite

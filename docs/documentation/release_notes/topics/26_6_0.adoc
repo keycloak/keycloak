@@ -31,3 +31,7 @@ You can specify these headers via the general parent option `telemetry-header-<h
 Or you can use the `telemetry-logs-header-<header>` for OpenTelemetry Logs, or `telemetry-metrics-header-<header>` for OpenTelemetry Metrics.
 
 For more details, see the  link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+= Java 25 support
+
+{project_name} now supports running with JRE 25.

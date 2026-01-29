@@ -1493,7 +1493,6 @@
                 <dependency>
                     <groupId>net.bytebuddy</groupId>
                     <artifactId>byte-buddy</artifactId>
-                    <version>${byte-buddy.version}</version>
                 </dependency>
 
                 <dependency>
