@@ -44,28 +44,6 @@ public class FederatedClientAuthConflictsTest {
     Events events;
 
     @Test
-    public void testDuplicatedIssuers() {
-        createIdp("idp1", "http://127.0.0.1:8500");
-        createIdp("idp2", "http://127.0.0.1:8500");
-
-        ClientRepresentation clientRep = createClient("myclient", "external1", "idp1");
-
-        // Should pass as the first matching IdP by alias is always used
-        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500")).send();
-        Assertions.assertTrue(response.isSuccess());
-        Assertions.assertEquals("myclient", events.poll().getClientId());
-
-        clientRep.getAttributes().put(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, "idp2");
-
-        realm.admin().clients().get(clientRep.getId()).update(clientRep);
-
-        // Should fail since it's using the second IdP
-        response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500")).send();
-        Assertions.assertFalse(response.isSuccess());
-        Assertions.assertNull(events.poll().getClientId());
-    }
-
-    @Test
     public void testDuplicatedClientExternalId() {
         createIdp("idp1", "http://127.0.0.1:8500/one");
         createIdp("idp2", "http://127.0.0.1:8500/two");

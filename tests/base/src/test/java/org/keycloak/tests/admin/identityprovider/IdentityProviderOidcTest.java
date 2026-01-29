@@ -494,6 +494,7 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
         // Successful update when JWKS URL set
         oidcConfig.setJwksUrl("https://foo");
+        oidcConfig.setIssuer("https://foo");
         resource.update(representation);
 
         managedRealm.cleanup().add(r -> r.identityProviders().get(id).remove());
