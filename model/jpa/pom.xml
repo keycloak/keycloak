@@ -184,12 +184,12 @@
                         <goals>
                             <goal>verify-compatibility</goal>
                         </goals>
-                        <configuration>
-                            <supportedFile>${db.compatibility.verifier.supportedFile}</supportedFile>
-                            <unsupportedFile>${db.compatibility.verifier.unsupportedFile}</unsupportedFile>
-                        </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <supportedFile>${db.compatibility.verifier.supportedFile}</supportedFile>
+                    <unsupportedFile>${db.compatibility.verifier.unsupportedFile}</unsupportedFile>
+                </configuration>
             </plugin>
         </plugins>
     </build>
