@@ -18,6 +18,7 @@ to realm administrators but doing so will skip the mechanisms provided by this f
 
 Enforcing access to realm resources only applies when managing resources through the administration console or the Admin API.
 
+[[_understanding_different_types_realm_admins_]]
 ==== Understanding the different types of realm administrators
 
 There are three different types of realm administrators when managing a realm:
@@ -26,7 +27,7 @@ There are three different types of realm administrators when managing a realm:
 
 * **Realm administrators**: These are users (or service accounts) that have been granted with the `realm-admin` role in a specific realm.
 
-* **Delegated realm administrators**: These are users (or service accounts) that do not have the `realm-admin` role but have been granted access to manage
+* **Delegated realm administrators**: These are users (or service accounts) other than the types above but granted access to manage
 a realm through the fine-grained admin permissions feature.
 
 Both server and realm administrators can manage a realm with full access to all their resources and

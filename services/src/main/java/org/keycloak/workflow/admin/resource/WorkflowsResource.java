@@ -47,6 +47,7 @@ public class WorkflowsResource {
         if (!Profile.isFeatureEnabled(Feature.WORKFLOWS)) {
             throw new NotFoundException();
         }
+        auth.requireRealmAdmin();
         this.session = session;
         this.provider = session.getProvider(WorkflowProvider.class);
         this.auth = auth;
@@ -64,8 +65,6 @@ public class WorkflowsResource {
             @APIResponse(responseCode = "400", description = "Bad Request")
     })
     public Response create(WorkflowRepresentation rep) {
-        auth.realm().requireManageRealm();
-
         try {
             Workflow workflow = provider.toModel(rep);
             return Response.created(session.getContext().getUri().getRequestUriBuilder().path(workflow.getId()).build()).build();
@@ -88,8 +87,6 @@ public class WorkflowsResource {
             @Parameter(description = "Workflow identifier")
             @PathParam("id") String id
     ) {
-        auth.realm().requireManageRealm();
-
         Workflow workflow = provider.getWorkflow(id);
 
         if (workflow == null) {
@@ -120,8 +117,6 @@ public class WorkflowsResource {
             @Parameter(description = "The maximum number of results to be returned - defaults to 10")
             @QueryParam("max") @DefaultValue("10") Integer maxResults
     ) {
-        auth.realm().requireManageRealm();
-
         int first = Optional.ofNullable(firstResult).orElse(0);
         int max = Optional.ofNullable(maxResults).orElse(10);
         return provider.getWorkflows(search, exact, first, max).map(provider::toRepresentation).toList();
@@ -143,7 +138,6 @@ public class WorkflowsResource {
             @Parameter(description = "Identifier of the resource associated with the scheduled workflows")
             @PathParam("resource-id") String resourceId
     ) {
-        auth.realm().requireManageRealm();
         return provider.getScheduledWorkflowsByResource(resourceId).toList();
     }
 
