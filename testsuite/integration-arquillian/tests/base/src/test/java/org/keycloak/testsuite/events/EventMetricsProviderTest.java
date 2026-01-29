@@ -111,7 +111,7 @@ public class EventMetricsProviderTest extends AbstractKeycloakTest {
 
         testingClient.server().run(session -> {
             MatcherAssert.assertThat("Searching for metrics match in " + Metrics.globalRegistry.find("keycloak.user").meters(),
-                    Metrics.globalRegistry.counter("keycloak.user", "event", "login", "error", "", "realm", TEST).count() == 1);
+                    Metrics.globalRegistry.counter("keycloak.user", "event", "login", "realm", TEST).count() == 1);
         });
 
         // Show all labels, but filter out events like logout@
@@ -149,7 +149,7 @@ public class EventMetricsProviderTest extends AbstractKeycloakTest {
             MatcherAssert.assertThat("Searching for login error metric",
                     Metrics.globalRegistry.counter("keycloak.user", "event", "login", "error", "ERROR", "realm", TEST, "client.id", CLIENT_ID, "idp", "IDENTITY_PROVIDER").count() == 1);
             MatcherAssert.assertThat("Searching for refresh with unknown client",
-                    Metrics.globalRegistry.counter("keycloak.user", "event", "refresh_token", "error", "client_not_found", "realm", TEST, "client.id", "unknown", "idp", "").count() == 1);
+                    Metrics.globalRegistry.counter("keycloak.user", "event", "refresh_token", "error", "client_not_found", "realm", TEST, "client.id", "unknown").count() == 1);
         });
 
     }

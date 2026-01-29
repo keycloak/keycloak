@@ -81,18 +81,18 @@ public class MicrometerUserEventMetricsEventListenerProvider implements EventLis
         List<Tag> tags = new ArrayList<>(5);
 
         tags.add(Tag.of(EVENT_TAG, eventTag));
-        tags.add(Tag.of(ERROR_TAG, getError(event)));
+        addTag(tags, ERROR_TAG, getError(event));
 
         if (withRealm) {
-            tags.add(Tag.of(REALM_TAG, nullToEmpty(event.getRealmName())));
+            addTag(tags, REALM_TAG, event.getRealmName());
         }
 
         if (withIdp) {
-            tags.add(Tag.of(IDP_TAG, getIdentityProvider(event)));
+            addTag(tags, IDP_TAG, getIdentityProvider(event));
         }
 
         if (withClientId) {
-            tags.add(Tag.of(CLIENT_ID_TAG, getClientId(event)));
+            addTag(tags, CLIENT_ID_TAG, getClientId(event));
         }
 
         meterProvider.withTags(tags).increment();
@@ -108,14 +108,13 @@ public class MicrometerUserEventMetricsEventListenerProvider implements EventLis
         if (event.getDetails() != null) {
             identityProvider = event.getDetails().get(Details.IDENTITY_PROVIDER);
         }
-        return nullToEmpty(identityProvider);
+        return identityProvider;
     }
 
 
     private String getClientId(Event event) {
         // Don't use the clientId as a tag value of the event CLIENT_NOT_FOUND as it would lead to a metrics cardinality explosion
-        return nullToEmpty(Errors.CLIENT_NOT_FOUND.equals(event.getError())
-                ? "unknown" : event.getClientId());
+        return Errors.CLIENT_NOT_FOUND.equals(event.getError()) ? "unknown" : event.getClientId();
     }
 
     private String getError(Event event) {
@@ -123,13 +122,14 @@ public class MicrometerUserEventMetricsEventListenerProvider implements EventLis
         if (error == null && event.getType().name().endsWith("_ERROR")) {
             error = "unknown";
         }
-        return nullToEmpty(error);
+        return error;
     }
 
-    private String nullToEmpty(String value) {
-        return value == null ? "" : value;
+    private void addTag(List<Tag> tags, String tagName, String value) {
+        if (value != null && !value.isEmpty()) {
+            tags.add(Tag.of(tagName, value));
+        }
     }
-
 
     public static String format(EventType type) {
         // Remove the error suffix so that all events have the same tag.
