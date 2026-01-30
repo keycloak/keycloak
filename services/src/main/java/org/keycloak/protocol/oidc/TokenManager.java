@@ -723,10 +723,21 @@ public class TokenManager {
 
         Collection<String> rawScopes = TokenManager.parseScopeParameter(scopes).collect(Collectors.toSet());
 
-        // detect multiple organization scopes
+        // validate organization scopes - allow multiple specific organization scopes, but reject mixed types
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
-            if (rawScopes.stream().filter(scope -> scope.startsWith(ORGANIZATION)).count() > 1) {
-                return false;
+            List<String> orgScopes = rawScopes.stream()
+                    .filter(scope -> scope.equals(ORGANIZATION) || scope.startsWith(ORGANIZATION + ":"))
+                    .toList();
+
+            if (orgScopes.size() > 1) {
+                // multiple organization scopes - only allow if all are specific organizations (not ANY or ALL)
+                boolean hasAnyScope = orgScopes.stream().anyMatch(ORGANIZATION::equals);
+                boolean hasAllScope = orgScopes.stream().anyMatch(s -> s.equals(ORGANIZATION + ":*"));
+
+                if (hasAnyScope || hasAllScope) {
+                    // mixing ANY (organization) or ALL (organization:*) with other organization scopes is not allowed
+                    return false;
+                }
             }
         }
 
