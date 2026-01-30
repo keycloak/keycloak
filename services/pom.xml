@@ -82,8 +82,18 @@
             <artifactId>twitter4j-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss.logging</groupId>
-            <artifactId>jboss-logging</artifactId>
+
+                <groupId>org.twitter4j</groupId>
+                <artifactId>twitter4j-core</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate.validator</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>${hibernate-validator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>
@@ -275,8 +285,8 @@
             <artifactId>keycloak-model-storage-private</artifactId>
         </dependency>
         <dependency>
-        	<groupId>org.keycloak</groupId>
-        	<artifactId>keycloak-config-api</artifactId>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-config-api</artifactId>
         </dependency>
     </dependencies>
     <build>
@@ -353,7 +363,8 @@
                                     <outputDirectory>${project.basedir}/target/apidocs-rest/output</outputDirectory>
                                     <resources>
                                         <resource>
-                                            <directory>${project.build.directory}/apidocs-rest/swagger/apidocs</directory>
+                                            <directory>${project.build.directory}/apidocs-rest/swagger/apidocs
+                                            </directory>
                                             <includes>
                                                 <include>**/openapi.yaml</include>
                                                 <include>**/openapi.json</include>
@@ -372,7 +383,8 @@
                             <scanProfiles>admin</scanProfiles>
                             <outputDirectory>${project.build.directory}/apidocs-rest/swagger/apidocs</outputDirectory>
                             <infoTitle>Keycloak Admin REST API</infoTitle>
-                            <infoDescription>This is a REST API reference for the Keycloak Admin REST API.</infoDescription>
+                            <infoDescription>This is a REST API reference for the Keycloak Admin REST API.
+                            </infoDescription>
                         </configuration>
                         <executions>
                             <execution>
@@ -400,7 +412,8 @@
                                         <modelTests>false</modelTests>
                                         <verbose>false</verbose>
                                     </globalProperties>
-                                    <inputSpec>${project.build.directory}/apidocs-rest/swagger/apidocs/openapi.yaml</inputSpec>
+                                    <inputSpec>${project.build.directory}/apidocs-rest/swagger/apidocs/openapi.yaml
+                                    </inputSpec>
                                     <output>${project.basedir}/target/docs/asciidoc/</output>
                                     <generatorName>asciidoc</generatorName>
                                     <generateApiDocumentation>true</generateApiDocumentation>
@@ -408,7 +421,8 @@
                                     <generateSupportingFiles>true</generateSupportingFiles>
                                     <groupId>${project.groupId}</groupId>
                                     <artifactId>${project.artifactId}</artifactId>
-                                    <templateDirectory>src/docs/openapi-generator-templates/keycloak-admin-api</templateDirectory>
+                                    <templateDirectory>src/docs/openapi-generator-templates/keycloak-admin-api
+                                    </templateDirectory>
                                     <configOptions>
                                         <useIntroduction>true</useIntroduction>
                                         <delegatePattern>false</delegatePattern>
@@ -443,7 +457,7 @@
                                          -->
                                         <toc/>
                                         <toc-position>left</toc-position>
-                                        <sectanchors />
+                                        <sectanchors/>
                                         <generated>${project.basedir}/target/apidocs-rest/asciidoc</generated>
                                         <!-- Boolean attributes are passed as defined/undefined to AsciiDoc, not at their literal value -->
                                         <project_community>true</project_community>
