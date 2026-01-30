@@ -46,6 +46,7 @@ import org.eclipse.aether.resolution.DependencyResolutionException;
 public final class Maven {
 
     private static BootstrapMavenContext context;
+    private static LocalProject rootModuleProject;
 
     public static Path resolveArtifact(String groupId, String artifactId) {
         return getArtifact(groupId, artifactId).getFile().toPath();
@@ -137,8 +138,12 @@ public final class Maven {
         return artifactResults.get(0).getArtifact();
     }
 
-    public static Path getKeycloakQuarkusModulePath() {
-        // Find keycloak-parent module first
+    private static LocalProject getRootModuleProject() {
+        // Find keycloak-parent module
+        if (rootModuleProject != null) {
+            return rootModuleProject;
+        }
+
         BootstrapMavenContext ctx = null;
         try {
             ctx = bootstrapCurrentMavenContext();
@@ -147,12 +152,24 @@ public final class Maven {
         }
         for (LocalProject m = ctx.getCurrentProject(); m != null; m = m.getLocalParent()) {
             if ("keycloak-parent".equals(m.getArtifactId())) {
-                // When found, advance to quarkus module
-                return m.getDir().resolve("quarkus");
+                rootModuleProject = m;
+                return rootModuleProject;
             }
         }
 
         throw new RuntimeException("Failed to find keycloak-parent module.");
+    }
+
+    public static Path getKeycloakQuarkusModulePath() {
+        return getRootModuleProject().getDir().resolve("quarkus");
+    }
+
+    public static LocalProject findLocalModule(String groupId, String artifactId) {
+        LocalProject dependencyModule = getRootModuleProject().getWorkspace().getProject(groupId, artifactId);
+        if (dependencyModule == null) {
+            throw new RuntimeException("Failed to resolve artifact in this project: [" + groupId + ":" + artifactId + "]");
+        }
+        return dependencyModule;
     }
 
     public static BootstrapMavenContext bootstrapCurrentMavenContext() throws BootstrapMavenException, URISyntaxException {

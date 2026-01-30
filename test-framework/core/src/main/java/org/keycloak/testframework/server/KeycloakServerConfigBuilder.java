@@ -12,8 +12,6 @@ import java.util.stream.Collectors;
 import org.keycloak.common.Profile;
 import org.keycloak.testframework.infinispan.CacheType;
 
-import io.quarkus.maven.dependency.Dependency;
-import io.quarkus.maven.dependency.DependencyBuilder;
 import io.smallrye.config.SmallRyeConfig;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -26,7 +24,7 @@ public class KeycloakServerConfigBuilder {
     private final Set<String> features = new HashSet<>();
     private final Set<String> featuresDisabled = new HashSet<>();
     private final LogBuilder log = new LogBuilder();
-    private final Set<Dependency> dependencies = new HashSet<>();
+    private final Set<KeycloakDependency> dependencies = new HashSet<>();
     private CacheType cacheType = CacheType.LOCAL;
     private boolean externalInfinispan = false;
 
@@ -98,7 +96,11 @@ public class KeycloakServerConfigBuilder {
     }
 
     public KeycloakServerConfigBuilder dependency(String groupId, String artifactId) {
-        dependencies.add(new DependencyBuilder().setGroupId(groupId).setArtifactId(artifactId).build());
+        return dependency(groupId, artifactId, false);
+    }
+
+    public KeycloakServerConfigBuilder dependency(String groupId, String artifactId, boolean hotDeployable) {
+        dependencies.add(new KeycloakDependency.Builder().setGroupId(groupId).setArtifactId(artifactId).hotDeployable(hotDeployable).build());
         return this;
     }
 
@@ -214,7 +216,7 @@ public class KeycloakServerConfigBuilder {
         return args;
     }
 
-    Set<Dependency> toDependencies() {
+    Set<KeycloakDependency> toDependencies() {
         return dependencies;
     }
 

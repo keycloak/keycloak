@@ -35,11 +35,11 @@ import org.keycloak.it.utils.Maven;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.testframework.util.FileUtils;
+import org.keycloak.testframework.util.JarUtil;
 import org.keycloak.testframework.util.ProcessUtils;
 import org.keycloak.testframework.util.TmpDir;
 
 import io.quarkus.fs.util.ZipUtils;
-import io.quarkus.maven.dependency.Dependency;
 import org.jboss.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -69,7 +69,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
         this.tlsEnabled = tlsEnabled;
 
         List<String> args = keycloakServerConfigBuilder.toArgs();
-        Set<Dependency> dependencies = keycloakServerConfigBuilder.toDependencies();
+        Set<KeycloakDependency> dependencies = keycloakServerConfigBuilder.toDependencies();
 
         try {
             boolean installationCreated = createInstallation();
@@ -87,7 +87,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
                 String startedWithArgs = startupArgsFile.isFile() ? FileUtils.readStringFromFile(startupArgsFile) : null;
                 String requestedArgs = String.join(" ", args);
 
-                Set<String> requestedDependencies = dependencies.stream().map(d -> d.getGroupId() + "__" + d.getArtifactId() + ".jar").collect(Collectors.toSet());
+                Set<String> requestedDependencies = dependencies.stream().map(DistributionKeycloakServer::getProviderJarName).collect(Collectors.toSet());
                 Set<String> startedWithDependencies = existingProviders.stream().map(File::getName).collect(Collectors.toSet());
 
                 if (requestedArgs.equals(startedWithArgs) && setEquals(requestedDependencies, startedWithDependencies)) {
@@ -174,7 +174,11 @@ public class DistributionKeycloakServer implements KeycloakServer {
         return outputHandler;
     }
 
-    private static void updateProviders(List<File> existingProviders, Set<Dependency> dependencies, File providersDir) throws IOException {
+    private static String getProviderJarName(KeycloakDependency dependency) {
+        return dependency.getGroupId() + "__" + dependency.getArtifactId() + ".jar";
+    }
+
+    private static void updateProviders(List<File> existingProviders, Set<KeycloakDependency> dependencies, File providersDir) throws IOException {
         existingProviders.stream()
                 .filter(f -> f.getName().endsWith(".jar"))
                 .filter(f -> {
@@ -188,20 +192,38 @@ public class DistributionKeycloakServer implements KeycloakServer {
                     FileUtils.delete(new File(f.getAbsolutePath() + ".lastModified"));
                 });
 
+        boolean hotDeployEnabled = KeycloakServer.getDependencyHotDeployEnabled();
         Path providersPath = providersDir.toPath();
-        for (Dependency d : dependencies) {
-            Path dependencyPath = Maven.resolveArtifact(d.getGroupId(), d.getArtifactId());
+
+        for (KeycloakDependency d : dependencies) {
+            boolean shouldBuildFromSources = hotDeployEnabled && d.isHotDeployable();
+
+            String jarName = getProviderJarName(d);
+            Path dependencyPath = getDependencyPath(d, shouldBuildFromSources);
             File dependencyFile = dependencyPath.toFile();
-            Path targetPath = providersPath.resolve(d.getGroupId() + "__" + d.getArtifactId() + ".jar");
+            Path targetPath = providersPath.resolve(jarName);
             File targetFile = targetPath.toFile();
             File targetLastModified = new File(targetFile.getAbsolutePath() + ".lastModified");
             long lastModified = targetLastModified.isFile() ? FileUtils.readLongFromFile(targetLastModified) : -1;
 
             if (lastModified != dependencyPath.toFile().lastModified() || !targetFile.isFile()) {
                 log.trace("Adding or overriding existing provider: " + targetPath.toFile().getAbsolutePath());
-                Files.copy(dependencyPath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+                if (shouldBuildFromSources) {
+                    JarUtil.buildModuleJar(jarName, dependencyPath, targetPath);
+                } else {
+                    Files.copy(dependencyPath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                }
                 Files.writeString(targetLastModified.toPath(), Long.toString(dependencyFile.lastModified()));
             }
+        }
+    }
+
+    private static Path getDependencyPath(KeycloakDependency d, boolean buildFromSources) {
+        if (buildFromSources) {
+            return Maven.findLocalModule(d.getGroupId(), d.getArtifactId()).getClassesDir();
+        } else {
+            return Maven.resolveArtifact(d.getGroupId(), d.getArtifactId());
         }
     }
 
@@ -319,7 +341,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
             return;
         }
         keycloakProcess.destroy();
-        throw new RuntimeException("Keycloak did not start within timeout: " + getErrorOutput());
+        throw new RuntimeException("Keycloak did not start within timeout [" + startTimeout + "s]: " + getErrorOutput());
     }
 
     private File getZipLastModifiedFile(File dir) {
