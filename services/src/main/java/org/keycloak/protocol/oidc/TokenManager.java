@@ -370,6 +370,11 @@ public class TokenManager {
             responseBuilder.getRefreshToken().setAuthorization(validation.newToken.getAuthorization());
         }
 
+        // Ensure authorization_details are also in the new refresh token if present
+        if (authorizationDetails != null && clientConfig.isUseRefreshToken() && responseBuilder.getRefreshToken() != null) {
+            responseBuilder.getRefreshToken().setOtherClaims(OAuth2Constants.AUTHORIZATION_DETAILS, authorizationDetails);
+        }
+
         String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken().generateAccessTokenHash();
@@ -1232,7 +1237,6 @@ public class TokenManager {
                         .map(ClientModel::getClientId)
                         .collect(Collectors.toSet()));
             }
-
             Boolean bindOnlyRefreshToken = session.getAttributeOrDefault(DPoPUtil.DPOP_BINDING_ONLY_REFRESH_TOKEN_SESSION_ATTRIBUTE, false);
             if (bindOnlyRefreshToken) {
                 DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);

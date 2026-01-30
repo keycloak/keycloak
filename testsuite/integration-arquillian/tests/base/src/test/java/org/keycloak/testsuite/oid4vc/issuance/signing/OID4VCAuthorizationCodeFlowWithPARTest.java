@@ -184,11 +184,12 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         }
 
         // Step 5: Request the actual credential using the identifier
+        // When authorization_details are present in the token, credential_identifier must be used
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc()
                 .credentialRequest()
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                 .bearerToken(tokenResponse.getAccessToken())
-                .credentialConfigurationId(credentialConfigurationId)
+                .credentialIdentifier(credentialIdentifier)
                 .send();
 
         assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusCode());

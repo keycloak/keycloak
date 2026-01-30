@@ -30,12 +30,14 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
@@ -464,19 +466,28 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         // 5. Get an access token for the pre-authorized code
         AccessTokenResponse accessTokenResponse = oauth.oid4vc()
                 .preAuthorizedCodeGrantRequest(credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .endpoint(openidConfig.getTokenEndpoint())
                 .send();
 
         assertEquals(HttpStatus.SC_OK, accessTokenResponse.getStatusCode());
         String theToken = accessTokenResponse.getAccessToken();
+        assertNotNull("Access token should be present", theToken);
 
-        // 6. Get the credential
+        // Extract credential_identifier from authorization_details in token response
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = accessTokenResponse.getOid4vcAuthorizationDetails();
+        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+        assertNotNull("Credential identifier should be present", credentialIdentifier);
+
+        // 6. Get the credential using credential_identifier (required when authorization_details are present)
         credentialsOffer.getCredentialConfigurationIds().stream()
                 .map(offeredCredentialId -> credentialIssuer.getCredentialsSupported().get(offeredCredentialId))
                 .forEach(supportedCredential -> {
                     try {
-                        requestCredential(theToken,
+                        requestCredentialWithIdentifier(theToken,
                                 credentialIssuer.getCredentialEndpoint(),
-                                supportedCredential,
+                                credentialIdentifier,
                                 new CredentialResponseHandler(),
                                 jwtTypeCredentialClientScope);
                     } catch (IOException e) {
@@ -489,17 +500,37 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testCredentialIssuanceWithAuthZCodeWithScopeMatched() {
+        final org.keycloak.testsuite.util.oauth.AccessTokenResponse[] responseHolder = new org.keycloak.testsuite.util.oauth.AccessTokenResponse[1];
+
         BiFunction<String, String, String> getAccessToken = (testClientId, testScope) -> {
-            return getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+            // Get full token response to check for authorization_details in otherClaims
+            responseHolder[0] = getBearerTokenCodeFlow(oauth, client, "john", jwtTypeCredentialClientScope.getName());
+            return responseHolder[0].getAccessToken();
         };
 
         Consumer<Map<String, Object>> sendCredentialRequest = m -> {
             String accessToken = (String) m.get("accessToken");
             WebTarget credentialTarget = (WebTarget) m.get("credentialTarget");
             CredentialRequest credentialRequest = (CredentialRequest) m.get("credentialRequest");
-            assertEquals("Credential configuration id should match",
-                    jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID),
-                    credentialRequest.getCredentialConfigurationId());
+
+            // Use the cached token response to check for authorization_details in otherClaims
+            // AuthorizationCodeGrantType adds authorization_details to AccessTokenResponse.otherClaims
+            org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = responseHolder[0];
+            Object responseAuthDetails = tokenResponse.getOtherClaims().get(OAuth2Constants.AUTHORIZATION_DETAILS);
+
+            if (responseAuthDetails instanceof List) {
+                List<OID4VCAuthorizationDetailResponse> authDetails = (List<OID4VCAuthorizationDetailResponse>) responseAuthDetails;
+                if (!authDetails.isEmpty()) {
+                    OID4VCAuthorizationDetailResponse authDetail = authDetails.get(0);
+                    if (authDetail.getCredentialIdentifiers() != null && !authDetail.getCredentialIdentifiers().isEmpty()) {
+                        String credentialIdentifier = authDetail.getCredentialIdentifiers().get(0);
+                        CredentialRequest newRequest = new CredentialRequest();
+                        newRequest.setCredentialIdentifier(credentialIdentifier);
+                        credentialRequest = newRequest;
+                    }
+                }
+            }
+            // If no authorization_details in token response, use credential_configuration_id (already set in credentialRequest)
 
             try (Response response = credentialTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken)
