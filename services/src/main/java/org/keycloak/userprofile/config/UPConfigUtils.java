@@ -298,18 +298,18 @@ public class UPConfigUtils {
         if (isBlank(validator)) {
             errors.add("Validation without validator id is defined for attribute '" + attributeName + "'");
         } else {
-        	if(session!=null) {
-            	if(Validators.validator(session, validator) == null) {
-            		errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' doesn't exist");
-            	} else {
-            		ValidationResult result = Validators.validateConfig(session, validator, ValidatorConfig.configFromMap(validatorConfig));
-            		if(!result.isValid()) {
-            			final StringBuilder sb = new StringBuilder();
-            			result.forEachError(err -> sb.append(err.toString()+", "));
-            			errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' has incorrect configuration: " + sb.toString());
-            		}
-            	}
-        	}
+            if(session!=null) {
+                if(Validators.validator(session, validator) == null) {
+                    errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' doesn't exist");
+                } else {
+                    ValidationResult result = Validators.validateConfig(session, validator, ValidatorConfig.configFromMap(validatorConfig));
+                    if(!result.isValid()) {
+                        final StringBuilder sb = new StringBuilder();
+                        result.forEachError(err -> sb.append(err.toString()+", "));
+                        errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' has incorrect configuration: " + sb.toString());
+                    }
+                }
+            }
         }
     }
 
@@ -339,7 +339,7 @@ public class UPConfigUtils {
         try (InputStream is = new FileInputStream(configPath.toFile())) {
             return parseConfig(is);
         } catch (IOException ioe) {
-            throw new RuntimeException("Failed to reaad default user profile configuration: " + configPath, ioe);
+            throw new RuntimeException("Failed to read default user profile configuration: " + configPath, ioe);
         }
     }
 
