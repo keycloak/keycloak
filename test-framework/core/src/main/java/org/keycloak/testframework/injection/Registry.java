@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.keycloak.testframework.TestFrameworkException;
 import org.keycloak.testframework.TestFrameworkExecutor;
 import org.keycloak.testframework.injection.predicates.DependencyPredicates;
 import org.keycloak.testframework.injection.predicates.InstanceContextPredicates;
@@ -17,6 +18,7 @@ import org.keycloak.testframework.injection.predicates.RequestedInstancePredicat
 import org.keycloak.testframework.injection.predicates.TestFrameworkExecutorPredicates;
 import org.keycloak.testframework.server.KeycloakServer;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -31,6 +33,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     private final Extensions extensions;
     private final List<InstanceContext<?, ?>> deployedInstances = new LinkedList<>();
     private final List<RequestedInstance<?, ?>> requestedInstances = new LinkedList<>();
+    private TestFrameworkException testClassSetupFailure;
 
     public Registry() {
         extensions = Extensions.getInstance();
@@ -113,12 +116,26 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     }
 
     public void beforeEach(Object testInstance, Method testMethod) {
-        findRequestedInstances(testInstance, testMethod);
+        if (testClassSetupFailure != null) {
+            skipTestMethod();
+        }
+
+        try {
+            findRequestedInstances(testInstance, testMethod);
+        } catch (TestFrameworkException e) {
+            requestedInstances.clear();
+            testClassSetupFailure = e;
+            skipTestMethod();
+        }
         destroyIncompatibleInstances();
         matchDeployedInstancesWithRequestedInstances();
         deployRequestedInstances();
         injectFields(testInstance);
         invokeBeforeEachOnSuppliers();
+    }
+
+    private void skipTestMethod() {
+        Assumptions.abort("Skipping test method due to test class setup failure");
     }
 
     public void intercept(InvocationInterceptor.Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext) throws Throwable {
@@ -164,12 +181,17 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             requestedInstances.add(requestedServerInstance);
         }
 
+        List<RequestedInstance<?, ?>> requestedFieldInstances = new LinkedList<>();
         for (Field f : ReflectionUtils.listFields(testClass)) {
             RequestedInstance requestedInstance = createRequestedInstance(f.getAnnotations(), f.getType());
             if (requestedInstance != null) {
-                requestedInstances.add(requestedInstance);
+                if (requestedFieldInstances.stream().anyMatch(RequestedInstancePredicates.matches(requestedInstance.getValueType(), requestedInstance.getRef()))) {
+                    throw TestFrameworkException.instanceAlreadyRequested(requestedInstance, f.getName());
+                }
+                requestedFieldInstances.add(requestedInstance);
             }
         }
+        requestedInstances.addAll(requestedFieldInstances);
 
         DependencyGraphResolver dependencyGraphResolver = new DependencyGraphResolver(this);
         List<RequestedInstance<?, ?>> missingInstances = dependencyGraphResolver.getMissingInstances();
@@ -237,8 +259,14 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
 
     public void afterAll() {
         logger.logAfterAll();
+        TestFrameworkException exception = testClassSetupFailure;
+        testClassSetupFailure = null;
         List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(InstanceContextPredicates.hasLifeCycle(LifeCycle.CLASS)).toList();
         destroy.forEach(this::destroy);
+
+        if (exception != null) {
+            throw exception;
+        }
     }
 
     public void afterEach() {
@@ -274,6 +302,9 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             for (Annotation annotation : annotations) {
                 Supplier<?, ?> supplier = extensions.findSupplierByAnnotation(annotation);
                 if (supplier != null) {
+                    if (!supplier.getValueType().isAssignableFrom(valueType)) {
+                        throw TestFrameworkException.typeMismatch(annotation.annotationType(), supplier.getValueType(), valueType);
+                    }
                     return new RequestedInstance(supplier, annotation, valueType);
                 }
             }
