@@ -3,27 +3,27 @@ package org.keycloak.models.workflow;
 public class WorkflowEvent {
 
     private final ResourceType type;
-    private final ResourceOperationType operation;
     private final String resourceId;
     private final Object event;
+    private final String eventProviderId;
 
-    public WorkflowEvent(ResourceType type, ResourceOperationType operation, String resourceId, Object event) {
+    public WorkflowEvent(ResourceType type, String resourceId, Object event, String eventProviderId) {
         this.type = type;
-        this.operation = operation;
         this.resourceId = resourceId;
         this.event = event;
+        this.eventProviderId = eventProviderId;
     }
 
     public ResourceType getResourceType() {
         return type;
     }
 
-    public ResourceOperationType getOperation() {
-        return operation;
-    }
-
     public String getResourceId() {
         return resourceId;
+    }
+
+    public String getEventProviderId() {
+        return eventProviderId;
     }
 
     public Object getEvent() {

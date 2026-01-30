@@ -28,11 +28,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.workflow.DeleteUserStepProviderFactory;
-import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider;
+import org.keycloak.models.workflow.events.UserAuthenticatedWorkflowEventFactory;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -52,7 +52,7 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
-import org.keycloak.tests.workflow.step.DeleteUserWorkflowStepTest.DeleteUserWorkflowServerConf;
+import org.keycloak.tests.workflow.step.DeleteUserStepTest.DeleteUserWorkflowServerConf;
 import org.keycloak.testsuite.federation.DummyUserFederationProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 
@@ -75,7 +75,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests the execution of the 'delete-user' workflow step.
  */
 @KeycloakIntegrationTest(config = DeleteUserWorkflowServerConf.class)
-public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
+public class DeleteUserStepTest extends AbstractWorkflowTest {
 
     @InjectWebDriver
     ManagedWebDriver driver;
@@ -110,7 +110,7 @@ public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
         }
 
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ResourceOperationType.USER_AUTHENTICATED.toString())
+                .onEvent(UserAuthenticatedWorkflowEventFactory.ID)
                 .withSteps(builder.build()).build()).close();
 
         String componentId = addDummyFederationProvider();
@@ -170,7 +170,7 @@ public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
         // create a couple of workflows that will activate for the test user
         // the first one will run the delete user step before the second one runs its first step
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("workflow1")
-                .onEvent(ResourceOperationType.USER_AUTHENTICATED.toString())
+                .onEvent(UserAuthenticatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(DeleteUserStepProviderFactory.ID)
@@ -178,7 +178,7 @@ public class DeleteUserWorkflowStepTest extends AbstractWorkflowTest {
                                 .build()
                 ).build()).close();
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("workflow2")
-                .onEvent(ResourceOperationType.USER_AUTHENTICATED.toString())
+                .onEvent(UserAuthenticatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(SetUserAttributeStepProviderFactory.ID)

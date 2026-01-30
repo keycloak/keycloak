@@ -9,10 +9,10 @@ import java.util.stream.Collectors;
 import org.keycloak.common.util.DurationConverter;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.workflow.conditions.expression.BooleanConditionParser;
-import org.keycloak.models.workflow.conditions.expression.ConditionNameCollector;
-import org.keycloak.models.workflow.conditions.expression.ConditionTypeCollector;
-import org.keycloak.models.workflow.conditions.expression.EvaluatorUtils;
+import org.keycloak.models.workflow.expression.BooleanConditionParser;
+import org.keycloak.models.workflow.expression.ConditionNameCollector;
+import org.keycloak.models.workflow.expression.ConditionTypeCollector;
+import org.keycloak.models.workflow.expression.EvaluatorUtils;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.utils.StringUtil;
@@ -93,9 +93,9 @@ public class WorkflowValidator {
         // ConditionTypeCollector.visit(ctx) throws a WorkflowInvalidStateException if a provider is not found
         typeCollector.visit(context);
 
-        Set<ResourceType> supporteds = typeCollector.getConditionTypes();
-        if (!supporteds.contains(workflowType)) {
-            String formatted = supporteds.stream().map(Enum::name).collect(Collectors.joining(", "));
+        Set<ResourceType> supportedTypes = typeCollector.getConditionTypes();
+        if (!supportedTypes.contains(workflowType)) {
+            String formatted = supportedTypes.stream().map(Enum::name).collect(Collectors.joining(", "));
             throw new WorkflowInvalidStateException("Provided condition types (%s) are not compatible with workflow type (%s).".formatted(formatted, workflowType));
         }
     }
@@ -135,19 +135,12 @@ public class WorkflowValidator {
         ConditionNameCollector collector = new ConditionNameCollector();
         collector.visit(context);
 
-        // check if there are providers for the conditions used in the expression
+        // check if the providers referenced in the condition and event expressions are valid
         if ("on".equals(fieldName) || "restart-in-progress".equals(fieldName) || "cancel-in-progress".equals(fieldName)) {
-            // check if we can get a ResourceOperationType for the events in the expression
-            for (String name : collector.getConditionNames()) {
-                try {
-                    ResourceOperationType.valueOf(name.replace("-", "_").toUpperCase());
-                } catch (IllegalArgumentException iae) {
-                    throw new WorkflowInvalidStateException("Could not find event: " + name);
-                }
-            }
+            collector.getConditionNames().forEach(name -> Workflows.getEventProviderFactory(session, name.replace("_", "-").toLowerCase()));
         } else if ("if".equals(fieldName)) {
-            // try to get an instance of the provider -> method throws a WorkflowInvalidStateException if provider is not found
-            collector.getConditionNames().forEach(name -> Workflows.getConditionProvider(session, name, expression));
+            // try to get an instance of the provider factory -> method throws a WorkflowInvalidStateException if provider factory is not found
+            collector.getConditionNames().forEach(name -> Workflows.getConditionProviderFactory(session, name.replace("_", "-").toLowerCase()));
         }
     }
 

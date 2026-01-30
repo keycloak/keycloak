@@ -40,7 +40,7 @@ public class DeleteClientStepProviderFactory implements
     }
 
     @Override
-    public Set<ResourceType> getTypes() {
+    public Set<ResourceType> getSupportedResourceTypes() {
         return Set.of(ResourceType.CLIENTS);
     }
 
