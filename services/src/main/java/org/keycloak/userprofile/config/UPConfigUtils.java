@@ -320,7 +320,7 @@ public class UPConfigUtils {
     }
 
     public static String readSystemDefaultConfig() {
-        try (InputStream is = getUserProfileConfig(SYSTEM_DEFAULT_CONFIG_RESOURCE)) {
+        try (InputStream is = getSystemDefaultConfig()) {
             return StreamUtil.readString(is, Charset.defaultCharset());
         } catch (IOException cause) {
             throw new RuntimeException("Failed to load default user profile config file", cause);
@@ -328,21 +328,14 @@ public class UPConfigUtils {
     }
 
     public static UPConfig parseSystemDefaultConfig() {
-        return parseUserProfileConfig(SYSTEM_DEFAULT_CONFIG_RESOURCE);
-    }
-
-    public static UPConfig parseUserProfileConfig(String resource) {
-        try (InputStream inputStream = getUserProfileConfig(resource)) {
-            return parseConfig(inputStream);
-        } catch (IOException ioe) {
-            throw new RuntimeException("Failed to parse user profile configuration: " + resource, ioe);
-        }
+        return parseConfig(getSystemDefaultConfig());
     }
 
     public static UPConfig parseConfig(Path configPath) {
         if (configPath == null) {
             throw new IllegalArgumentException("Null configPath");
         }
+
         try (InputStream is = new FileInputStream(configPath.toFile())) {
             return parseConfig(is);
         } catch (IOException ioe) {
@@ -358,7 +351,7 @@ public class UPConfigUtils {
         }
     }
 
-    private static InputStream getUserProfileConfig(String resource) {
-        return UPConfigUtils.class.getResourceAsStream(resource);
+    private static InputStream getSystemDefaultConfig() {
+        return UPConfigUtils.class.getResourceAsStream(SYSTEM_DEFAULT_CONFIG_RESOURCE);
     }
 }

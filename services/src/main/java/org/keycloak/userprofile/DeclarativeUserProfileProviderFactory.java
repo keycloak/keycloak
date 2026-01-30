@@ -547,7 +547,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         setDefaultConfig(parsedConfig);
     }
 
-    private void addUserDidAttribute(UPConfig config) {
+    public static void addUserDidAttribute(UPConfig config) {
         if (config.getAttribute(UserModel.DID) == null) {
             UPAttribute attr = new UPAttribute(UserModel.DID);
             attr.setDisplayName("${did}");
