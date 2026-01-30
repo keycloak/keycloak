@@ -23,7 +23,7 @@ import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { convertAttributeNameToForm } from "../../util";
 import useToggle from "../../utils/useToggle";
 import { FormFields } from "../ClientDetails";
-import { Certificate } from "./Certificate";
+import { KeyInfoArea } from "./Certificate";
 import { GenerateKeyDialog, getFileExtension } from "./GenerateKeyDialog";
 import { ImportFile, ImportKeyDialog } from "./ImportKeyDialog";
 
@@ -157,9 +157,9 @@ export const Keys = ({
             />
             {useJwksUrl !== "true" &&
               (keyInfo ? (
-                <Certificate plain keyInfo={keyInfo} />
+                <KeyInfoArea keyInfo={keyInfo} />
               ) : (
-                "No client certificate configured"
+                "No public key configured"
               ))}
             {useJwksUrl === "true" && (
               <TextControl
