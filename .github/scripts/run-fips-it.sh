@@ -1,7 +1,7 @@
 #!/bin/bash -x
 
 rm -f /etc/system-fips
-dnf install -y java-25-openjdk-devel
+dnf install -y java-21-openjdk-devel
 fips-mode-setup --enable --no-bootcfg
 fips-mode-setup --is-enabled
 if [ $? -ne 0 ]; then
@@ -16,7 +16,7 @@ fi
 echo "STRICT_OPTIONS: $STRICT_OPTIONS"
 TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh fips`
 echo "Tests: $TESTS"
-export JAVA_HOME=/etc/alternatives/java_sdk_25
+export JAVA_HOME=/etc/alternatives/java_sdk_21
 set -o pipefail
 
 # Build adapter distributions
