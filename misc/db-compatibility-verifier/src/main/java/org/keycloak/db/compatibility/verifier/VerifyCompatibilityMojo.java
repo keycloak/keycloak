@@ -78,7 +78,7 @@ public class VerifyCompatibilityMojo extends AbstractMojo {
             currentChanges.removeAll(recordedChanges);
             currentChanges.forEach(change -> getLog().error("\t\t" + change.toString()));
             getLog().error("You must determine whether the ChangeSet(s) is compatible with rolling upgrades or not");
-            getLog().error("A ChangeSet that requires locking preventing other cluster members accessing the database is NOT compatible with rolling upgrades");
+            getLog().error("A ChangeSet that requires locking preventing other cluster members accessing the database or makes schema changes that breaks functionality in earlier Keycloak versions is NOT compatible with rolling upgrades");
             getLog().error("Rolling upgrade compatibility must be verified against all supported database vendors before the supported file is updated");
             getLog().error("If the change IS compatible, then it should be committed to the repository in the supported file: '%s'".formatted(sFile.toString()));
             getLog().error("If the change IS NOT compatible, then it should be committed to the repository in the unsupported file: '%s'".formatted(sFile.toString()));
