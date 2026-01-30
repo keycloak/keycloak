@@ -105,6 +105,7 @@ First, consider if your use case can be implemented in a different way, and so a
 * A `+RUN curl+` instruction in your Containerfile can be replaced with `+ADD+`, since that instruction natively supports remote URLs.
 * Some common CLI tools can be replaced by creative use of the Linux filesystem. For example, `+ip addr show tap0+` becomes `+cat /sys/class/net/tap0/address+`
 * Tasks that need RPMs can be moved to a former stage of an image build, and the results copied across instead.
+* The Kerberos features of {project_name} do not require the binary parts of `krb5-libs` to be installed. Instead you can `+ADD+` just the relevant text configuration files, e.g. `/etc/krb5.conf`.
 
 Here is an example. Running `+update-ca-trust+` in a former build stage, then copying the result forward:
 
