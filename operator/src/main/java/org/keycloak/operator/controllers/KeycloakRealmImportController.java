@@ -23,10 +23,10 @@ import jakarta.inject.Inject;
 
 import org.keycloak.operator.Config;
 import org.keycloak.operator.ContextUtils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportStatus;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportStatusBuilder;
 
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
