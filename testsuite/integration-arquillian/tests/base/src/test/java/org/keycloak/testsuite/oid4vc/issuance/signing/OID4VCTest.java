@@ -152,10 +152,8 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-        log.debug("Adding test realm for import from testrealm-oid4vci.json");
-        // This realm definition contains a UserProfile with a 'did' attribute, which
-        // is also part of the default realm definition load by DeclarativeUserProfileProviderFactory
-        InputStream inputStream = getClass().getResourceAsStream("/testrealm-oid4vci.json");
+        log.debug("Adding test realm for import from testrealm.json");
+        InputStream inputStream = getClass().getResourceAsStream("/testrealm.json");
         RealmRepresentation testRealm = AbstractAdminTest.loadJson(inputStream, RealmRepresentation.class);
         testRealms.add(testRealm);
         configureTestRealm(testRealm);
