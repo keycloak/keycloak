@@ -10,8 +10,8 @@ on:
 
 env:
   MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
-  MINIKUBE_VERSION: v1.37.0
-  KUBERNETES_VERSION: v1.32.9 # OCP 4.19
+  MINIKUBE_VERSION: v1.38.0
+  KUBERNETES_VERSION: v1.35.0
   MINIKUBE_MEMORY: 4096 # Without explicitly setting memory, minikube uses ~25% of available memory which might be too little on smaller GitHub runners for running the tests
 
 defaults:
