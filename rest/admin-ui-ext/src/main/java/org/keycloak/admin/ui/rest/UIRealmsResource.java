@@ -1,5 +1,7 @@
 package org.keycloak.admin.ui.rest;
 
+import java.util.Comparator;
+import java.util.Locale;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.DefaultValue;
@@ -59,6 +61,7 @@ public class UIRealmsResource {
 
         return session.realms().getRealmsStream(search)
                 .filter(realm -> eval.canView(realm) || eval.isAdmin(realm))
+                .sorted(Comparator.comparing((RealmModel realm) -> realm.getName().toLowerCase(Locale.ROOT)))
                 .skip(first)
                 .limit(max)
                 .map((RealmModel realm) -> new RealmNameRepresentation(realm.getName(), realm.getDisplayName()));
