@@ -116,7 +116,7 @@ public enum OrganizationScope {
                     return Stream.empty();
                 }
 
-                List<OrganizationModel> organizations = getProvider(session).getByMember(user).toList();
+                List<OrganizationModel> organizations = getProvider(session).getByMember(user).filter(OrganizationModel::isEnabled).toList();
 
                 if (organizations.size() == 1) {
                     return organizations.stream();
