@@ -108,7 +108,15 @@ export const SingleSelectControl = <
           >
             <SelectList data-testid={`select-${name}`}>
               {[...options, ...selectedOptions].map((option) => (
-                <SelectOption key={key(option)} value={key(option)}>
+                <SelectOption
+                  key={key(option)}
+                  value={key(option)}
+                  description={
+                    !isString(option) && "description" in option
+                      ? option.description
+                      : undefined
+                  }
+                >
                   {isString(option) ? option : option.value}
                 </SelectOption>
               ))}

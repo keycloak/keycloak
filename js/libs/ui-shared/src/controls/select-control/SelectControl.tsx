@@ -19,6 +19,7 @@ export enum SelectVariant {
 export type SelectControlOption = {
   key: string;
   value: string;
+  description?: string;
 };
 
 export type OptionType = string[] | SelectControlOption[];
