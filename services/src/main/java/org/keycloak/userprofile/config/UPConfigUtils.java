@@ -59,7 +59,7 @@ import static org.keycloak.userprofile.UserProfileUtil.isRootAttribute;
  */
 public class UPConfigUtils {
 
-    public static final String SYSTEM_DEFAULT_CONFIG_RESOURCE = "keycloak-default-user-profile.json";
+    private static final String SYSTEM_DEFAULT_CONFIG_RESOURCE = "keycloak-default-user-profile.json";
     public static final String ROLE_USER = UserProfileConstants.ROLE_USER;
     public static final String ROLE_ADMIN = UserProfileConstants.ROLE_ADMIN;
 
