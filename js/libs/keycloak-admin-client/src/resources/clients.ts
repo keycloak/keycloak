@@ -19,6 +19,7 @@ import type ScopeRepresentation from "../defs/scopeRepresentation.js";
 import type UserRepresentation from "../defs/userRepresentation.js";
 import type UserSessionRepresentation from "../defs/userSessionRepresentation.js";
 import Resource from "./resource.js";
+import { ClientsV2 } from "./clientsV2.js";
 
 export interface PaginatedQuery {
   first?: number;
@@ -53,6 +54,11 @@ export interface PolicyQuery extends PaginatedQuery {
 }
 
 export class Clients extends Resource<{ realm?: string }> {
+  /**
+   * Clients v2 API - New versioned API with OpenAPI-generated client.
+   */
+  #v2: ClientsV2;
+
   public find = this.makeRequest<ClientQuery, ClientRepresentation[]>({
     method: "GET",
   });
@@ -1055,6 +1061,45 @@ export class Clients extends Resource<{ realm?: string }> {
       }),
       getBaseUrl: () => client.baseUrl,
     });
+
+    // Initialize v2 API
+    this.#v2 = new ClientsV2(client);
+  }
+
+  /**
+   * Get the clients v2 API endpoint for the currently configured realm.
+   * Returns a fluent API builder for client operations using the new versioned API.
+   *
+   * @example
+   * ```typescript
+   * // List all clients
+   * const clients = await kcAdminClient.clients.v2().get();
+   *
+   * // Get a single client by clientId
+   * const client = await kcAdminClient.clients.v2().byId("my-client").get();
+   *
+   * // Create a new client
+   * await kcAdminClient.clients.v2().post({
+   *   clientId: "my-client",
+   *   protocol: "openid-connect",
+   *   enabled: true,
+   * });
+   *
+   * // Update a client
+   * await kcAdminClient.clients.v2().byId("my-client").put({
+   *   clientId: "my-client",
+   *   protocol: "openid-connect",
+   *   description: "Updated description",
+   * });
+   *
+   * // Delete a client
+   * await kcAdminClient.clients.v2().byId("my-client").delete();
+   * ```
+   *
+   * @returns A promise that resolves to the clients v2 endpoint
+   */
+  v2() {
+    return this.#v2.api();
   }
 
   /**
