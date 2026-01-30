@@ -38,8 +38,8 @@
         <jdbc.mvn.groupId>com.h2database</jdbc.mvn.groupId>
         <jdbc.mvn.artifactId>h2</jdbc.mvn.artifactId>
         <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
-        <db.compatibility.verifier.supportedFile>src/main/resources/META-INF/rolling-upgrades-supported-changes.json</db.compatibility.verifier.supportedFile>
-        <db.compatibility.verifier.unsupportedFile>src/main/resources/META-INF/rolling-upgrades-unsupported-changes.json</db.compatibility.verifier.unsupportedFile>
+        <db.verify.supportedFile>src/main/resources/META-INF/rolling-upgrades-supported-changes.json</db.verify.supportedFile>
+        <db.verify.unsupportedFile>src/main/resources/META-INF/rolling-upgrades-unsupported-changes.json</db.verify.unsupportedFile>
     </properties>
     
     <dependencies>
@@ -186,10 +186,6 @@
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <supportedFile>${db.compatibility.verifier.supportedFile}</supportedFile>
-                    <unsupportedFile>${db.compatibility.verifier.unsupportedFile}</unsupportedFile>
-                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -210,10 +206,6 @@
                                 <goals>
                                     <goal>create-snapshot</goal>
                                 </goals>
-                                <configuration>
-                                    <supportedFile>${db.compatibility.verifier.supportedFile}</supportedFile>
-                                    <unsupportedFile>${db.compatibility.verifier.unsupportedFile}</unsupportedFile>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
