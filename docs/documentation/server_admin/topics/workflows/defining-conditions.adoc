@@ -20,7 +20,7 @@ For instance, considering a `user_created` event, you can define a condition to 
 
 ```yaml
 on: user_created
-if: has-user-attribute('plan', 'gold')
+if: has-user-attribute(plan=gold)
 ```
 
 In this example, the workflow will only be triggered when a new user is created and that user has an attribute `plan` with the value `gold`.
