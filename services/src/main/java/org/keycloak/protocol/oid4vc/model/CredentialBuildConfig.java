@@ -97,7 +97,7 @@ public class CredentialBuildConfig {
 
         return new CredentialBuildConfig().setCredentialIssuer(credentialIssuer)
                                           .setCredentialConfigId(credentialConfiguration.getId())
-                                          .setCredentialType(credentialConfiguration.getVct())
+                                          .setCredentialType(credentialModel.getVct())
                                           .setTokenJwsType(credentialModel.getTokenJwsType())
                                           .setNumberOfDecoys(credentialModel.getSdJwtNumberOfDecoys())
                                           .setSigningKeyId(credentialModel.getSigningKeyId())
