@@ -28,7 +28,7 @@ compatible it must be recorded in the supported file.
 To add an individual ChangeSet to the supported file users can execute:
 
 ```
-./mvnw -am -pl model/jpa org.keycloak:db-compatibility-verifier-maven-plugin:999.0.0-SNAPSHOT:supported \
+./mvnw -pl model/jpa org.keycloak:db-compatibility-verifier-maven-plugin:999.0.0-SNAPSHOT:supported \
   -Ddb.verify.changeset.id=<id> \
   -Ddb.verify.changeset.author=<author> \
   -Ddb.verify.changeset.filename=<filename>
@@ -37,7 +37,7 @@ To add an individual ChangeSet to the supported file users can execute:
 If multiple ChangeSets exist, and they are all compatible with rolling updates, the following can be used to add all changes:
 
 ```
-./mvnw -am -pl model/jpa org.keycloak:db-compatibility-verifier-maven-plugin:999.0.0-SNAPSHOT:supported \
+./mvnw -pl model/jpa org.keycloak:db-compatibility-verifier-maven-plugin:999.0.0-SNAPSHOT:supported \
   -Ddb.verify.changeset.addAll=true
 ```
 

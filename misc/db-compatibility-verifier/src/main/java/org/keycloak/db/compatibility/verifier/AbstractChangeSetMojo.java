@@ -35,6 +35,18 @@ abstract class AbstractChangeSetMojo extends AbstractMojo {
         }
     }
 
+    protected void checkValidChangeSetId(String id, String author, String filename) throws MojoExecutionException {
+        if (id == null || id.isBlank()) {
+            throw new MojoExecutionException("ChangeSet id not set");
+        }
+        if (author == null || author.isBlank()) {
+            throw new MojoExecutionException("ChangeSet author not set");
+        }
+        if (filename == null || filename.isBlank()) {
+            throw new MojoExecutionException("ChangeSet filename not set");
+        }
+    }
+
     void addAll(ClassLoader classLoader, File dest, File exclusions) throws IOException {
         // Discover all known ChangeSets
         ChangeLogXMLParser xmlParser = new ChangeLogXMLParser(classLoader);
