@@ -7,7 +7,6 @@ import { SearchInput, ToolbarItem } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
-import { useAdminClient } from "../admin-client";
 import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useAccess } from "../context/access/Access";
@@ -18,13 +17,14 @@ import { DeleteGroup } from "./components/DeleteGroup";
 import { GroupToolbar } from "./components/GroupToolbar";
 import { MoveDialog } from "./components/MoveDialog";
 import { getLastId } from "./groupIdUtils";
+import { useGroupResource } from "../context/group-resource/GroupResourceContext";
 
 type GroupTableProps = {
   refresh: () => void;
 };
 
 export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
-  const { adminClient } = useAdminClient();
+  const groups = useGroupResource();
   const { t } = useTranslation();
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
   const [rename, setRename] = useState<GroupRepresentation>();
@@ -50,14 +50,14 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
         max: max,
         parentId: id,
       };
-      groupsData = await adminClient.groups.listSubGroups(args);
+      groupsData = await groups.listSubGroups(args);
     } else {
       const args: GroupQuery = {
         search: search || "",
         first: first || undefined,
         max: max || undefined,
       };
-      groupsData = await adminClient.groups.find(args);
+      groupsData = await groups.find(args);
     }
 
     return groupsData;

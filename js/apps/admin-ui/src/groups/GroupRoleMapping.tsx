@@ -1,9 +1,9 @@
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { AlertVariant } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { useAdminClient } from "../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { RoleMapping, Row } from "../components/role-mapping/RoleMapping";
+import { useGroupResource } from "../context/group-resource/GroupResourceContext";
 
 type GroupRoleMappingProps = {
   id: string;
@@ -16,7 +16,7 @@ export const GroupRoleMapping = ({
   name,
   canManageGroup,
 }: GroupRoleMappingProps) => {
-  const { adminClient } = useAdminClient();
+  const groups = useGroupResource();
 
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
@@ -27,7 +27,7 @@ export const GroupRoleMapping = ({
         .filter((row) => row.client === undefined)
         .map((row) => row.role as RoleMappingPayload)
         .flat();
-      await adminClient.groups.addRealmRoleMappings({
+      await groups.addRealmRoleMappings({
         id,
         roles: realmRoles,
       });
@@ -35,7 +35,7 @@ export const GroupRoleMapping = ({
         rows
           .filter((row) => row.client !== undefined)
           .map((row) =>
-            adminClient.groups.addClientRoleMappings({
+            groups.addClientRoleMappings({
               id,
               clientUniqueId: row.client!.id!,
               roles: [row.role as RoleMappingPayload],

@@ -284,11 +284,12 @@ export class Groups extends Resource<{ realm?: string }> {
     urlParamKeys: ["id"],
   });
 
-  constructor(client: KeycloakAdminClient) {
+  constructor(client: KeycloakAdminClient, orgId?: string) {
     super(client, {
-      path: "/admin/realms/{realm}/groups",
+      path: `/admin/realms/{realm}/${orgId ? "organizations/{orgId}/" : ""}groups`,
       getUrlParams: () => ({
         realm: client.realmName,
+        orgId,
       }),
       getBaseUrl: () => client.baseUrl,
     });
