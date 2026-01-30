@@ -897,11 +897,11 @@ public class UserSessionProviderTest {
             assertSessions(readOnlySessionList, sessions);
 
             // all sessions have client sessions from test-app
-            readOnlySessionList = kcSession.sessions().readOnlyStreamUserSessions(realm, realm.getClientByClientId("test-app")).toList();
+            readOnlySessionList = kcSession.sessions().readOnlyStreamUserSessions(realm, realm.getClientByClientId("test-app"), -1, -1).toList();
             assertSessions(readOnlySessionList, sessions);
 
             // only the first one have a client session form third-party
-            readOnlySessionList = kcSession.sessions().readOnlyStreamUserSessions(realm, realm.getClientByClientId("third-party")).toList();
+            readOnlySessionList = kcSession.sessions().readOnlyStreamUserSessions(realm, realm.getClientByClientId("third-party"), -1, -1).toList();
             assertSessions(readOnlySessionList, sessions[0]);
         });
     }

@@ -47,7 +47,6 @@ import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSecretConstants;
@@ -113,10 +112,10 @@ import org.jboss.resteasy.reactive.NoCache;
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ClientResource {
     protected static final Logger logger = Logger.getLogger(ClientResource.class);
-    protected RealmModel realm;
-    private AdminPermissionEvaluator auth;
-    private AdminEventBuilder adminEvent;
-    protected ClientModel client;
+    protected final RealmModel realm;
+    private final AdminPermissionEvaluator auth;
+    private final AdminEventBuilder adminEvent;
+    protected final ClientModel client;
     protected final KeycloakSession session;
 
     protected final ClientConnection clientConnection;
@@ -363,7 +362,6 @@ public class ClientResource {
 
         logger.debug("getClientSecret");
         UserCredentialModel model = UserCredentialModel.secret(client.getSecret());
-        if (model == null) throw new NotFoundException("Client does not have a secret");
         return ModelToRepresentation.toRepresentation(model);
     }
 
@@ -578,10 +576,8 @@ public class ClientResource {
     @Operation( summary = "Get user sessions for client Returns a list of user sessions associated with this client\n")
     public Stream<UserSessionRepresentation> getUserSessions(@Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult, @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
         auth.clients().requireView(client);
-
-        firstResult = firstResult != null ? firstResult : -1;
-        maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-        return session.sessions().getUserSessionsStream(client.getRealm(), client, firstResult, maxResults)
+        return session.sessions()
+                .readOnlyStreamUserSessions(client.getRealm(), client, computeFirstResult(firstResult), computeMaxResults(maxResults))
                 .map(ModelToRepresentation::toRepresentation);
     }
 
@@ -627,11 +623,8 @@ public class ClientResource {
     @Operation( summary = "Get offline sessions for client Returns a list of offline user sessions associated with this client")
     public Stream<UserSessionRepresentation> getOfflineUserSessions(@Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult, @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
         auth.clients().requireView(client);
-
-        firstResult = firstResult != null ? firstResult : -1;
-        maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-
-        return session.sessions().getOfflineUserSessionsStream(client.getRealm(), client, firstResult, maxResults)
+        return session.sessions()
+                .readOnlyStreamOfflineUserSessions(client.getRealm(), client, computeFirstResult(firstResult), computeMaxResults(maxResults))
                 .map(this::toUserSessionRepresentation);
     }
 
@@ -901,11 +894,9 @@ public class ClientResource {
         UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
 
         // Update lastSessionRefresh with the timestamp from clientSession
-        Map.Entry<String, AuthenticatedClientSessionModel> result = userSession.getAuthenticatedClientSessions().entrySet().stream()
-                .filter(entry -> Objects.equals(client.getId(), entry.getKey()))
-                .findFirst().orElse(null);
-        if (result != null) {
-            rep.setLastAccess(Time.toMillis(result.getValue().getTimestamp()));
+        var clientSession = userSession.getAuthenticatedClientSessionByClient(client.getClientId());
+        if (clientSession != null) {
+            rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
         }
         return rep;
     }
@@ -915,5 +906,13 @@ public class ClientResource {
         rep.setId(clientScopeModel.getId());
         rep.setName(clientScopeModel.getName());
         return rep;
+    }
+
+    private static int computeFirstResult(Integer firstResult) {
+        return Objects.requireNonNullElse(firstResult, -1);
+    }
+
+    private static int computeMaxResults(Integer maxResults) {
+        return Objects.requireNonNullElse(maxResults, Constants.DEFAULT_MAX_RESULTS);
     }
 }
