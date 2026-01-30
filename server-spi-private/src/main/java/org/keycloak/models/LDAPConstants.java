@@ -147,6 +147,8 @@ public class LDAPConstants {
 
     public static final String CONNECTION_TRACE = "connectionTrace";
 
+    public static final String CASE_SENSITIVE_ORIGINAL_USERNAME_ON_IMPORT = "caseSensitiveOriginalUsernameOnImport";
+
     public static String getUuidAttributeName(String vendor) {
         if (vendor != null) {
             switch (vendor) {

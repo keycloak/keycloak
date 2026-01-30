@@ -186,7 +186,7 @@ public class LDAPUtils {
                     config.getUsernameLdapAttribute() + ", user DN: " + ldapUser.getDn() + ", attributes from LDAP: " + ldapUser.getAttributes());
         }
 
-        if (config.isImportEnabled()) {
+        if (config.isImportEnabled() && !config.isCaseSensitiveOriginalUsernameOnImport()) {
             return Optional.of(ldapUsername).map(String::toLowerCase).orElse(null);
         }
 
