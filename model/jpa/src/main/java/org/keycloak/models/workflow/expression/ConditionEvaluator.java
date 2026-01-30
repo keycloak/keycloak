@@ -1,4 +1,4 @@
-package org.keycloak.models.workflow.conditions.expression;
+package org.keycloak.models.workflow.expression;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.WorkflowConditionProvider;
@@ -19,7 +19,7 @@ public class ConditionEvaluator extends AbstractBooleanEvaluator {
     @Override
     public Boolean visitConditionCall(BooleanConditionParser.ConditionCallContext ctx) {
         String conditionName = ctx.Identifier().getText();
-        WorkflowConditionProvider conditionProvider = getConditionProvider(session, conditionName, super.extractParameter(ctx.parameter()));
+        WorkflowConditionProvider conditionProvider = getConditionProvider(session, conditionName.replace("_", "-").toLowerCase(), super.extractParameter(ctx.parameter()));
         return conditionProvider.evaluate(context);
     }
 

@@ -1,4 +1,4 @@
-package org.keycloak.models.workflow.conditions.expression;
+package org.keycloak.models.workflow.expression;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;

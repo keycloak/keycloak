@@ -13,7 +13,7 @@ public interface WorkflowConditionProviderFactory<P extends WorkflowConditionPro
 
     @Override
     default P create(KeycloakSession session) {
-        throw new IllegalStateException("Use create(KeycloakSession session, MultivaluedHashMap<String, String> config) instead.");
+        throw new IllegalStateException("Use create(KeycloakSession session, String configParameter) instead.");
     }
 
     @Override

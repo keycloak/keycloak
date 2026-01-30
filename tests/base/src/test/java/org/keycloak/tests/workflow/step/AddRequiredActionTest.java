@@ -5,6 +5,7 @@ import java.time.Duration;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.AddRequiredActionStepProvider;
 import org.keycloak.models.workflow.AddRequiredActionStepProviderFactory;
+import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -15,8 +16,6 @@ import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -31,7 +30,7 @@ public class AddRequiredActionTest extends AbstractWorkflowTest {
     @Test
     public void testStepRun() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(AddRequiredActionStepProviderFactory.ID)

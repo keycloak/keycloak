@@ -32,6 +32,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.WorkflowStepRunnerSuccessEvent;
+import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -44,8 +45,6 @@ import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsScheduledTaskServerConfig;
 
 import org.junit.jupiter.api.Test;
-
-import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -73,7 +72,7 @@ public class StepRunnerScheduledTaskTest extends AbstractWorkflowTest {
         RealmResource realm = adminClient.realm(realmName);
 
         realm.workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))

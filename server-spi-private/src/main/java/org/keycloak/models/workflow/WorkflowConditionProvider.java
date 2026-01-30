@@ -1,6 +1,5 @@
 package org.keycloak.models.workflow;
 
-import java.util.Set;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -11,7 +10,7 @@ import org.keycloak.provider.Provider;
 
 public interface WorkflowConditionProvider extends Provider {
 
-    Set<ResourceType> supportedTypes();
+    ResourceType getSupportedResourceType();
 
     boolean evaluate(WorkflowExecutionContext context);
 

@@ -1,10 +1,10 @@
-package org.keycloak.models.workflow.conditions.expression;
+package org.keycloak.models.workflow.expression;
 
 import java.util.stream.Collectors;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.workflow.WorkflowInvalidStateException;
-import org.keycloak.models.workflow.conditions.expression.BooleanConditionParser.EvaluatorContext;
+import org.keycloak.models.workflow.expression.BooleanConditionParser.EvaluatorContext;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;

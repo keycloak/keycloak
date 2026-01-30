@@ -37,7 +37,7 @@ public class DeleteUserStepProviderFactory implements WorkflowStepProviderFactor
     }
 
     @Override
-    public Set<ResourceType> getTypes() {
+    public Set<ResourceType> getSupportedResourceTypes() {
         return Set.of(ResourceType.USERS);
     }
 

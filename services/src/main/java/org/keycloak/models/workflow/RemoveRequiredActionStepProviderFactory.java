@@ -20,7 +20,7 @@ public class RemoveRequiredActionStepProviderFactory implements WorkflowStepProv
     }
 
     @Override
-    public Set<ResourceType> getTypes() {
+    public Set<ResourceType> getSupportedResourceTypes() {
         return Set.of(ResourceType.USERS);
     }
 

@@ -2,8 +2,7 @@ package org.keycloak.representations.workflows;
 
 public final class WorkflowConstants {
 
-    public static final String DEFAULT_WORKFLOW = "event-based-workflow";
-
+    public static final String AD_HOC = "adhoc";
     public static final String CONFIG_USES = "uses";
     public static final String CONFIG_WITH = "with";
     public static final String CONFIG_SUPPORTS = "supports";

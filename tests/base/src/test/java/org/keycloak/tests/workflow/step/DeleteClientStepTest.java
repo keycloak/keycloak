@@ -1,4 +1,4 @@
-package org.keycloak.tests.admin.model.workflow;
+package org.keycloak.tests.workflow.step;
 
 import java.time.Duration;
 
@@ -9,6 +9,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.workflow.RestartWorkflowStepProviderFactory;
 import org.keycloak.models.workflow.client.DeleteClientStepProviderFactory;
 import org.keycloak.models.workflow.client.DisableClientStepProviderFactory;
+import org.keycloak.models.workflow.events.ClientAuthenticatedWorkflowEventFactory;
+import org.keycloak.models.workflow.events.ClientCreatedWorkflowEventFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
@@ -20,9 +22,6 @@ import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
 import org.junit.jupiter.api.Test;
-
-import static org.keycloak.models.workflow.ResourceOperationType.CLIENT_ADDED;
-import static org.keycloak.models.workflow.ResourceOperationType.CLIENT_LOGGED_IN;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -42,7 +41,7 @@ public class DeleteClientStepTest extends AbstractWorkflowTest {
     @Test
     public void testStepRun() {
         var response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(CLIENT_ADDED.name())
+                .onEvent(ClientCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(DeleteClientStepProviderFactory.ID)
@@ -75,7 +74,7 @@ public class DeleteClientStepTest extends AbstractWorkflowTest {
     @Test
     public void testDisabledClientAfterInactivityPeriod() {
         WorkflowRepresentation workflowRepresentation = WorkflowRepresentation.withName("myworkflow")
-                .onEvent(CLIENT_ADDED.toString(), CLIENT_LOGGED_IN.toString())
+                .onEvent(ClientCreatedWorkflowEventFactory.ID, ClientAuthenticatedWorkflowEventFactory.ID)
                 .concurrency()
                 .withSteps(
                         WorkflowStepRepresentation.create().of(DisableClientStepProviderFactory.ID)

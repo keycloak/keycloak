@@ -4,8 +4,9 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.WorkflowsResource;
-import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
+import org.keycloak.models.workflow.events.UserRoleGrantedWorkflowEventFactory;
+import org.keycloak.models.workflow.events.UserRoleRevokedWorkflowEventFactory;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -45,7 +46,7 @@ public class RoleMembershipWorkflowTest extends AbstractWorkflowTest {
 
         // create the workflow that triggers on role grant
         WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ResourceOperationType.USER_ROLE_GRANTED.name() + "(" + ROLE_NAME + ")")
+                .onEvent(UserRoleGrantedWorkflowEventFactory.ID + "(" + ROLE_NAME + ")")
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(SetUserAttributeStepProviderFactory.ID)
@@ -85,7 +86,7 @@ public class RoleMembershipWorkflowTest extends AbstractWorkflowTest {
 
         // create the workflow that triggers on role revoke
         WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ResourceOperationType.USER_ROLE_REVOKED.name() + "(" + ROLE_NAME + ")")
+                .onEvent(UserRoleRevokedWorkflowEventFactory.ID + "(" + ROLE_NAME + ")")
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(SetUserAttributeStepProviderFactory.ID)

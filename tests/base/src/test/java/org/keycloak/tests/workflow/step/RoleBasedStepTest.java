@@ -13,9 +13,10 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.models.workflow.GrantRoleStepProvider;
 import org.keycloak.models.workflow.GrantRoleStepProviderFactory;
-import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.RevokeRoleStepProvider;
 import org.keycloak.models.workflow.RevokeRoleStepProviderFactory;
+import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
+import org.keycloak.models.workflow.events.UserRoleRevokedWorkflowEventFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -32,8 +33,6 @@ import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -65,7 +64,7 @@ public class RoleBasedStepTest extends AbstractWorkflowTest {
         List<String> expectedRoles = Stream.concat(expectedRealmRoles.stream(), expectedClientRoles.stream()).toList();
 
         create(WorkflowRepresentation.withName("grant-roles")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(GrantRoleStepProviderFactory.ID)
@@ -96,7 +95,7 @@ public class RoleBasedStepTest extends AbstractWorkflowTest {
         grantRole(user, "realm-role-a", "realm-role-b", "realm-role-c", "myclient/client-role-a", "myclient/client-role-c");
 
         create(WorkflowRepresentation.withName("revoke-roles")
-                .onEvent(ResourceOperationType.USER_ROLE_REVOKED.name())
+                .onEvent(UserRoleRevokedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(RevokeRoleStepProviderFactory.ID)

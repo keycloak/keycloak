@@ -20,7 +20,7 @@ public class AddRequiredActionStepProviderFactory implements WorkflowStepProvide
     }
 
     @Override
-    public Set<ResourceType> getTypes() {
+    public Set<ResourceType> getSupportedResourceTypes() {
         return Set.of(ResourceType.USERS);
     }
 

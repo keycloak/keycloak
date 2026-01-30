@@ -37,7 +37,7 @@ public class DisableUserStepProviderFactory implements WorkflowStepProviderFacto
     }
 
     @Override
-    public Set<ResourceType> getTypes() {
+    public Set<ResourceType> getSupportedResourceTypes() {
         return Set.of(ResourceType.USERS);
     }
 

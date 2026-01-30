@@ -20,7 +20,7 @@ public class RevokeRoleStepProviderFactory implements WorkflowStepProviderFactor
     }
 
     @Override
-    public Set<ResourceType> getTypes() {
+    public Set<ResourceType> getSupportedResourceTypes() {
         return Set.of(ResourceType.USERS);
     }
 

@@ -5,6 +5,7 @@ import java.time.Duration;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -17,8 +18,6 @@ import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-
-import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -34,7 +33,7 @@ public class RemoveUserAttributeStepTest extends AbstractWorkflowTest {
 
         // create workflow that removes attributes 'a' and 'b' on user creation
         create(WorkflowRepresentation.withName("remove-attrs")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(org.keycloak.models.workflow.RemoveUserAttributeStepProviderFactory.ID)

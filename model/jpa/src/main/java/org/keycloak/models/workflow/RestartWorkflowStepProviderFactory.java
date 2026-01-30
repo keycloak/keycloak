@@ -30,7 +30,7 @@ public final class RestartWorkflowStepProviderFactory implements WorkflowStepPro
     }
 
     @Override
-    public Set<ResourceType> getTypes() {
+    public Set<ResourceType> getSupportedResourceTypes() {
         // Usable for all resource types.
         return Set.of(ResourceType.values());
     }

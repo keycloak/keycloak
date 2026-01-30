@@ -7,8 +7,9 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.WorkflowsResource;
-import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
+import org.keycloak.models.workflow.events.UserGroupMembershipAddedWorkflowEventFactory;
+import org.keycloak.models.workflow.events.UserGroupMembershipRemovedWorkflowEventFactory;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
@@ -52,7 +53,7 @@ public class GroupMembershipWorkflowTest extends AbstractWorkflowTest {
         }
 
         WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ResourceOperationType.USER_GROUP_MEMBERSHIP_ADDED.name() + "(" + GROUP_NAME + ")")
+                .onEvent(UserGroupMembershipAddedWorkflowEventFactory.ID + "(" + GROUP_NAME + ")")
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(SetUserAttributeStepProviderFactory.ID)
@@ -100,7 +101,7 @@ public class GroupMembershipWorkflowTest extends AbstractWorkflowTest {
         }
 
         WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ResourceOperationType.USER_GROUP_MEMBERSHIP_REMOVED.name() + "(" + GROUP_NAME + ")")
+                .onEvent(UserGroupMembershipRemovedWorkflowEventFactory.ID + "(" + GROUP_NAME + ")")
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(SetUserAttributeStepProviderFactory.ID)
