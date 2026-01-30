@@ -13,7 +13,7 @@ summary="Get started with {project_name} on a physical or virtual server.">
 
 include::templates/hw-requirements.adoc[]
 
-Make sure you have https://openjdk.java.net/[OpenJDK 21] installed.
+Make sure you have https://openjdk.java.net/[OpenJDK 25] installed.
 
 == Download {project_name}
 

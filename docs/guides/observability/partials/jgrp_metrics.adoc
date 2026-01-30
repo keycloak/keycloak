@@ -85,7 +85,7 @@ A retransmission mechanism ensures a reliable communication with an increase of 
 
 TIP: In a healthy cluster, the thread pool should never be closer to its maximum size (by default, `200` threads).
 
-NOTE: Thread pool metrics are not available with virtual threads. Virtual threads are enabled by default when running with OpenJDK 21.
+NOTE: Thread pool metrics are not available with virtual threads. Virtual threads are enabled by default when running with OpenJDK 21 and later.
 
 IMPORTANT: The metric name depends on the JGroups transport protocol in use. The default transport protocol is TCP.
 
