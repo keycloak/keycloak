@@ -28,7 +28,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
-import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowProvider;
@@ -36,6 +35,8 @@ import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.workflow.WorkflowStep;
 import org.keycloak.models.workflow.conditions.IdentityProviderWorkflowConditionFactory;
+import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
+import org.keycloak.models.workflow.events.UserFedIdentityAddedWorkflowEventFactory;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -52,8 +53,6 @@ import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-
-import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -84,7 +83,7 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
 
         // create the workflow that triggers on IdP linking with a condition for the specific IdP
         WorkflowRepresentation workflow = WorkflowRepresentation.withName("idp-members-workflow")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .onCondition(IdentityProviderWorkflowConditionFactory.ID + "(" + IDP_OIDC_ALIAS + ")")
                 .withSteps(
                         WorkflowStepRepresentation.create()
@@ -133,7 +132,7 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
         setupIdentityProvider();
 
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ResourceOperationType.USER_FEDERATED_IDENTITY_ADDED.name())
+                .onEvent(UserFedIdentityAddedWorkflowEventFactory.ID)
                 .onCondition(IdentityProviderWorkflowConditionFactory.ID + "(" + IDP_OIDC_ALIAS + ")")
                 .schedule(WorkflowScheduleRepresentation.create().after("1s").build())
                 .withSteps(

@@ -33,8 +33,8 @@ public class RoleWorkflowConditionProvider implements WorkflowConditionProvider 
     }
 
     @Override
-    public Set<ResourceType> supportedTypes() {
-        return Set.of(ResourceType.USERS);
+    public ResourceType getSupportedResourceType() {
+        return ResourceType.USERS;
     }
 
     @Override

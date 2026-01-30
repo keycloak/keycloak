@@ -180,8 +180,8 @@ public class Workflow {
             addStep(step);
 
             // update allowed types
-            WorkflowStepProviderFactory<WorkflowStepProvider> stepProvider = getStepProviderFactory(step);
-            allowedTypes.retainAll(stepProvider.getTypes());
+            WorkflowStepProviderFactory<WorkflowStepProvider> stepProvider = Workflows.getStepProviderFactory(session, step);
+            allowedTypes.retainAll(stepProvider.getSupportedResourceTypes());
         }
 
         if (allowedTypes.isEmpty()) {
@@ -224,10 +224,5 @@ public class Workflow {
             throw new BadRequestException("Not a valid workflow resource: " + id);
         }
         return component;
-    }
-
-    private WorkflowStepProviderFactory<WorkflowStepProvider> getStepProviderFactory(WorkflowStep step) {
-        return (WorkflowStepProviderFactory<WorkflowStepProvider>) session
-            .getKeycloakSessionFactory().getProviderFactory(WorkflowStepProvider.class, step.getProviderId());
     }
 }
