@@ -90,6 +90,7 @@ type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
   helpText?: string;
   type: string;
   mapperId: string;
+  mapperOrder?: string;
 };
 
 const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
@@ -452,10 +453,20 @@ export default function DetailSettings() {
         name: loaderMapper.name!,
         type: mapperType?.name!,
         mapperId: loaderMapper.id!,
+        mapperOrder: loaderMapper.config?.mapperOrder,
       };
 
       return result;
     });
+
+    if (provider.config?.mapperOrderEnabled === "true") {
+      const parsed = (value?: string) => {
+        if (!value) return Number.POSITIVE_INFINITY;
+        const n = Number.parseInt(value, 10);
+        return Number.isFinite(n) && n > 0 ? n : Number.POSITIVE_INFINITY;
+      };
+      components.sort((a, b) => parsed(a.mapperOrder) - parsed(b.mapperOrder));
+    }
 
     return components;
   };
@@ -677,27 +688,50 @@ export default function DetailSettings() {
               ariaLabelKey="mappersList"
               searchPlaceholderKey="searchForMapper"
               toolbarItem={
-                <ToolbarItem>
-                  <Button
-                    id="add-mapper-button"
-                    component={(props) => (
-                      <Link
-                        {...props}
-                        to={toIdentityProviderAddMapper({
-                          realm,
-                          alias: alias!,
-                          providerId: provider.providerId!,
-                          tab: "mappers",
-                        })}
-                      />
-                    )}
-                    data-testid="addMapper"
-                  >
-                    {t("addMapper")}
-                  </Button>
-                </ToolbarItem>
+                <>
+                  <ToolbarItem>
+                    <DefaultSwitchControl
+                      name="config.mapperOrderEnabled"
+                      label={t("mapperOrderEnabled")}
+                      labelIcon={t("mapperOrderEnabledHelp")}
+                      stringify
+                      onChange={(_, checked) =>
+                        save({
+                          ...getValues(),
+                          config: {
+                            ...getValues().config,
+                            mapperOrderEnabled: checked.toString(),
+                          },
+                        })
+                      }
+                    />
+                  </ToolbarItem>
+                  <ToolbarItem>
+                    <Button
+                      id="add-mapper-button"
+                      component={(props) => (
+                        <Link
+                          {...props}
+                          to={toIdentityProviderAddMapper({
+                            realm,
+                            alias: alias!,
+                            providerId: provider.providerId!,
+                            tab: "mappers",
+                          })}
+                        />
+                      )}
+                      data-testid="addMapper"
+                    >
+                      {t("addMapper")}
+                    </Button>
+                  </ToolbarItem>
+                </>
               }
               columns={[
+                {
+                  name: "mapperOrder",
+                  displayKey: "mapperOrder",
+                },
                 {
                   name: "name",
                   displayKey: "name",

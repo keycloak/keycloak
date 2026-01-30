@@ -59,6 +59,7 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
+import org.keycloak.broker.provider.IdentityProviderMapperExecutionOrder;
 import org.keycloak.broker.provider.IdentityProviderMapperSyncModeDelegate;
 import org.keycloak.broker.provider.IdpLinkAction;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
@@ -575,7 +576,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
         context.getIdp().preprocessFederatedIdentity(session, realmModel, context);
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-        session.identityProviders().getMappersByAliasStream(context.getIdpConfig().getAlias()).forEach(mapper -> {
+        IdentityProviderMapperExecutionOrder.getMappersStream(session, context.getIdpConfig()).forEach(mapper -> {
             IdentityProviderMapper target = (IdentityProviderMapper) sessionFactory
                     .getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
             target.preprocessFederatedIdentity(session, realmModel, mapper, context);
@@ -766,7 +767,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                 UserAuthenticationIdentityProvider<?> idp = context.getIdp();
                 idp.importNewUser(session, realmModel, federatedUser, context);
                 KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-                session.identityProviders().getMappersByAliasStream(providerAlias).forEach(mapper -> {
+                IdentityProviderMapperExecutionOrder.getMappersStream(session, context.getIdpConfig()).forEach(mapper -> {
                     IdentityProviderMapper target = (IdentityProviderMapper) sessionFactory
                             .getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
                     target.importNewUser(session, realmModel, federatedUser, mapper, context);
@@ -1139,7 +1140,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         updateToken(context, federatedUser, federatedIdentityModel);
         context.getIdp().updateBrokeredUser(session, realmModel, federatedUser, context);
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-        session.identityProviders().getMappersByAliasStream(context.getIdpConfig().getAlias()).forEach(mapper -> {
+        IdentityProviderMapperExecutionOrder.getMappersStream(session, context.getIdpConfig()).forEach(mapper -> {
             IdentityProviderMapper target = (IdentityProviderMapper) sessionFactory
                     .getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
             IdentityProviderMapperSyncModeDelegate.delegateUpdateBrokeredUser(session, realmModel, federatedUser, mapper, context, target);
