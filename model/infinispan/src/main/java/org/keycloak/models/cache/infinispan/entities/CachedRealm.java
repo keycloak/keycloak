@@ -87,6 +87,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected int minimumQuickLoginWaitSeconds;
     protected int waitIncrementSeconds;
     protected long quickLoginCheckMilliSeconds;
+    protected String excludedAMRs;
     protected int maxDeltaTimeSeconds;
     protected int failureFactor;
     //--- end brute force settings
@@ -204,6 +205,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         minimumQuickLoginWaitSeconds = model.getMinimumQuickLoginWaitSeconds();
         waitIncrementSeconds = model.getWaitIncrementSeconds();
         quickLoginCheckMilliSeconds = model.getQuickLoginCheckMilliSeconds();
+        excludedAMRs = model.getExcludedAMRs();
         maxDeltaTimeSeconds = model.getMaxDeltaTimeSeconds();
         failureFactor = model.getFailureFactor();
         //--- end brute force settings
@@ -400,6 +402,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public long getQuickLoginCheckMilliSeconds() {
         return quickLoginCheckMilliSeconds;
+    }
+
+    public String getExcludedAMRs() {
+        return excludedAMRs;
     }
 
     public int getMaxDeltaTimeSeconds() {

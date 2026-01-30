@@ -362,6 +362,17 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
+    public String getExcludedAMRs() {
+        return getAttribute("excludedAMRs");
+    }
+
+    @Override
+    public void setExcludedAMRs(String val) {
+        setAttribute("excludedAMRs", val);
+    }
+
+
+    @Override
     public int getMinimumQuickLoginWaitSeconds() {
         return getAttribute("minimumQuickLoginWaitSeconds", 0);
     }

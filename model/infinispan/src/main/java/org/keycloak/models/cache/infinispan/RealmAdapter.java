@@ -1921,4 +1921,16 @@ public class RealmAdapter implements CachedRealmModel {
         if (!Profile.isFeatureEnabled(feature)) return false;
         return isEnabled;
     }
+
+    @Override
+    public String getExcludedAMRs() {
+        if (isUpdated()) return updated.getExcludedAMRs();
+        return cached.getExcludedAMRs();
+    }
+
+    @Override
+    public void setExcludedAMRs(String excludedAMRs) {
+        getDelegateForUpdate();
+        updated.setExcludedAMRs(excludedAMRs);
+    }
 }

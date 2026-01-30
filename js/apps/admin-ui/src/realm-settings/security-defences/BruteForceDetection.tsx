@@ -5,6 +5,7 @@ import {
   NumberControl,
   SelectVariant,
   SelectControl,
+  TextControl,
 } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
@@ -99,21 +100,25 @@ export const BruteForceDetection = ({
                   form.setValue("bruteForceProtected", false);
                   form.setValue("permanentLockout", false);
                   form.setValue("maxTemporaryLockouts", 0);
+                  form.setValue("excludedAMRs", "");
                   break;
                 case BruteForceMode.TemporaryLockout:
                   form.setValue("bruteForceProtected", true);
                   form.setValue("permanentLockout", false);
                   form.setValue("maxTemporaryLockouts", 0);
+                  form.setValue("excludedAMRs", "");
                   break;
                 case BruteForceMode.PermanentLockout:
                   form.setValue("bruteForceProtected", true);
                   form.setValue("permanentLockout", true);
                   form.setValue("maxTemporaryLockouts", 0);
+                  form.setValue("excludedAMRs", "");
                   break;
                 case BruteForceMode.PermanentAfterTemporaryLockout:
                   form.setValue("bruteForceProtected", true);
                   form.setValue("permanentLockout", true);
                   form.setValue("maxTemporaryLockouts", 1);
+                  form.setValue("excludedAMRs", "");
                   break;
               }
               setIsBruteForceModeUpdated(true);
@@ -186,6 +191,11 @@ export const BruteForceDetection = ({
               }}
             />
             <Time name="minimumQuickLoginWaitSeconds" min={0} />
+            <TextControl
+              name="excludedAMRs"
+              label={t("excludedAMRs")}
+              labelIcon={t("excludedAMRsHelp")}
+            />
           </>
         )}
 
