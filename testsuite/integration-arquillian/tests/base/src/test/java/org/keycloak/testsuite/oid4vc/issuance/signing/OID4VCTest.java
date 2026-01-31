@@ -29,7 +29,6 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -100,7 +99,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.testsuite.util.oauth.AccessTokenRequest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.AuthorizationDetailsParser;
@@ -493,11 +491,8 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
     }
 
     protected AccessTokenResponse getBearerToken(OAuthClient oauthClient, String authCode, OID4VCAuthorizationDetail... authDetail) {
-        AccessTokenRequest accessTokenRequest = oauthClient.accessTokenRequest(authCode);
-        if (authDetail != null) {
-            accessTokenRequest.authorizationDetails(Arrays.asList(authDetail));
-        }
-        AccessTokenResponse tokenResponse = accessTokenRequest.send();
+        AccessTokenResponse tokenResponse = oauthClient.accessTokenRequest(authCode)
+                .authorizationDetails(authDetail).send();
         if (!tokenResponse.isSuccess()) {
             throw new IllegalStateException(tokenResponse.getErrorDescription());
         }
@@ -507,17 +502,6 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
     protected AccessTokenResponse getBearerTokenCodeFlow(OAuthClient oauthClient, ClientRepresentation client, String username, String scope) {
         var authCode = getAuthorizationCode(oauthClient, client, username, scope);
         return oauthClient.accessTokenRequest(authCode).send();
-    }
-
-    protected AccessTokenResponse getBearerTokenDirectAccess(OAuthClient oauthClient, ClientRepresentation client, String username, String scope) {
-        if (client != null) {
-            oauthClient.client(client.getClientId(), client.getSecret());
-        }
-        if (scope != null) {
-            oauthClient.scope(scope);
-        }
-        var accessTokenResponse = oauthClient.doPasswordGrantRequest(username, "password");
-        return accessTokenResponse;
     }
 
     public static class StaticTimeProvider implements TimeProvider {

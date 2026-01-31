@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -142,7 +142,7 @@ public class AccessTokenResponse extends AbstractHttpResponse {
      * @return a list of authorization details, or an empty list if none are present.
      * @throws RuntimeException if there's an error parsing the JSON response
      */
-    public List<OID4VCAuthorizationDetailResponse> getOid4vcAuthorizationDetails() {
+    public List<OID4VCAuthorizationDetail> getOid4vcAuthorizationDetails() {
         if (responseJson == null) {
             return Collections.emptyList();
         }
@@ -153,7 +153,7 @@ public class AccessTokenResponse extends AbstractHttpResponse {
         try {
             return JsonSerialization.readValue(
                     JsonSerialization.writeValueAsString(authDetailsObj),
-                    new TypeReference<List<OID4VCAuthorizationDetailResponse>>() {
+                    new TypeReference<List<OID4VCAuthorizationDetail>>() {
                     }
             );
         } catch (IOException e) {

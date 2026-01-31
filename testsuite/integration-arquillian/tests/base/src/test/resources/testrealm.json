@@ -204,6 +204,7 @@
         "https://localhost:8543/auth/realms/test/app/auth/*"
       ],
       "adminUrl": "http://localhost:8180/auth/realms/master/app/admin",
+      "directAccessGrantsEnabled": true,
       "secret": "password"
     },
     {
@@ -405,13 +406,13 @@
       "clientId": "named-test-app",
       "name": "My Named Test App",
       "enabled": true,
-      "directAccessGrantsEnabled": true,
       "baseUrl": "http://localhost:8180/namedapp/base",
       "redirectUris": [
         "http://localhost:8180/namedapp/base/*",
         "https://localhost:8543/namedapp/base/*"
       ],
       "adminUrl": "http://localhost:8180/namedapp/base/admin",
+      "directAccessGrantsEnabled": true,
       "secret": "password"
     },
     {

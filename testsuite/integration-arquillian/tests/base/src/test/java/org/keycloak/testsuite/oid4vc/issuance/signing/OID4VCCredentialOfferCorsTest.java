@@ -44,6 +44,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
 
@@ -188,8 +189,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         String offerUrl = getCredentialOfferUrl(nonce);
 
         CredentialOfferResponse response = oauth.oid4vc()
-                .credentialOfferRequest()
-                .endpoint(offerUrl)
+                .credentialOfferRequest(offerUrl)
                 .header("Origin", VALID_CORS_URL)
                 .send();
 
@@ -223,8 +223,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         String offerUrl = getCredentialOfferUrl(nonce);
 
         CredentialOfferResponse response = oauth.oid4vc()
-                .credentialOfferRequest()
-                .endpoint(offerUrl)
+                .credentialOfferRequest(offerUrl)
                 .header("Origin", INVALID_CORS_URL)
                 .send();
 
@@ -367,9 +366,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
 
         // Try to fetch the expired credential offer
         String offerUrl = getCredentialOfferUrl(nonce);
-        CredentialOfferResponse response = oauth.oid4vc()
-                .credentialOfferRequest()
-                .endpoint(offerUrl)
+        CredentialOfferResponse response = new CredentialOfferRequest(oauth, offerUrl)
                 .header("Origin", VALID_CORS_URL)
                 .send();
 
