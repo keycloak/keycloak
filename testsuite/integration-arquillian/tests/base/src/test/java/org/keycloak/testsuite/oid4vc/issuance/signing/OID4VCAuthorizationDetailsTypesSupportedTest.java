@@ -33,7 +33,7 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
+import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

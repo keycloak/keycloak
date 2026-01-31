@@ -74,7 +74,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.JWTVCIssuerWellKnownProviderFactory;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
@@ -84,6 +83,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -523,9 +523,9 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 JsonWebToken jwt = new JWSInput(token).readJsonContent(JsonWebToken.class);
                 Object authDetails = jwt.getOtherClaims().get(OAuth2Constants.AUTHORIZATION_DETAILS);
                 if (authDetails != null) {
-                    List<OID4VCAuthorizationDetailResponse> authDetailsResponse = JsonSerialization.readValue(
+                    List<OID4VCAuthorizationDetail> authDetailsResponse = JsonSerialization.readValue(
                             JsonSerialization.writeValueAsString(authDetails),
-                            new TypeReference<List<OID4VCAuthorizationDetailResponse>>() {
+                            new TypeReference<List<OID4VCAuthorizationDetail>>() {
                             }
                     );
                     if (!authDetailsResponse.isEmpty() &&
@@ -790,14 +790,14 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         }
     }
 
-    protected List<OID4VCAuthorizationDetailResponse> parseAuthorizationDetails(String responseBody) throws IOException {
+    protected List<OID4VCAuthorizationDetail> parseAuthorizationDetails(String responseBody) throws IOException {
         Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, new TypeReference<Map<String, Object>>() {
         });
         Object authDetailsObj = responseMap.get("authorization_details");
         assertNotNull("authorization_details should be present in the response", authDetailsObj);
         return JsonSerialization.readValue(
                 JsonSerialization.writeValueAsString(authDetailsObj),
-                new TypeReference<List<OID4VCAuthorizationDetailResponse>>() {
+                new TypeReference<List<OID4VCAuthorizationDetail>>() {
                 }
         );
     }
