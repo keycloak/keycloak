@@ -120,6 +120,45 @@ public class RealmModelTest extends KeycloakModelTest {
     }
 
     @Test
+    public void testRealmLocalizationRemovals() {
+        // 1. Setup: Add two keys for 'en'
+        withRealm(realmId, (session, realm) -> {
+            session.realms().saveLocalizationText(realm, "en", "key-a", "text-a_en");
+            session.realms().saveLocalizationText(realm, "en", "key-b", "text-b_en");
+            return null;
+        });
+
+        // 2. Test: Fetch by locale and remove one key
+        withRealm(realmId, (session, realm) -> {
+            assertThat(realm.getRealmLocalizationTextsByLocale("en"), allOf(
+                    aMapWithSize(2),
+                    hasEntry(equalTo("key-a"), equalTo("text-a_en")),
+                    hasEntry(equalTo("key-b"), equalTo("text-b_en"))
+            ));
+
+            session.realms().deleteLocalizationText(realm, "en", "key-a");
+            return null;
+        });
+
+        // 3. Test: Verify removal and remove entire locale
+        withRealm(realmId, (session, realm) -> {
+            assertThat(realm.getRealmLocalizationTextsByLocale("en"), allOf(
+                    aMapWithSize(1),
+                    hasEntry(equalTo("key-b"), equalTo("text-b_en"))
+            ));
+
+            session.realms().deleteLocalizationTextsByLocale(realm, "en");
+            return null;
+        });
+
+        // 4. Test: Verify everything is gone
+        withRealm(realmId, (session, realm) -> {
+            assertThat(realm.getRealmLocalizationTextsByLocale("en"), anEmptyMap());
+            return null;
+        });
+    }
+
+    @Test
     public void testRealmPreRemoveDoesntRemoveEntitiesFromOtherRealms() {
         realm1Id = inComittedTransaction(session -> {
             RealmModel realm = session.realms().createRealm("realm1");
