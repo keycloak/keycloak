@@ -78,7 +78,6 @@ import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.SMTPUtil;
 import org.keycloak.utils.StringUtil;
 
-import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 
 /**
  * Per request object
@@ -278,16 +277,6 @@ public class RealmManager {
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
         realm.setLoginWithEmailAllowed(true);
-
-        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) {
-            // Only create the role if it doesn't exist in the realm representation (during import)
-            // or if it doesn't exist in the realm model (during fresh creation)
-            if ((realmRep == null || !hasRealmRole(realmRep, CREDENTIAL_OFFER_CREATE.getName())) 
-                    && realm.getRole(CREDENTIAL_OFFER_CREATE.getName()) == null) {
-                RoleModel roleModel = realm.addRole(CREDENTIAL_OFFER_CREATE.getName());
-                roleModel.setDescription(CREDENTIAL_OFFER_CREATE.getDescription());
-            }
-        }
 
         realm.setEventsListeners(Collections.singleton("jboss-logging"));
     }

@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -68,6 +69,7 @@ import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.JWTVCIssuerWellKnownProviderFactory;
@@ -96,6 +98,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -103,12 +107,14 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
-import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.validate.validators.PatternValidator;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.HttpStatus;
@@ -127,6 +133,8 @@ import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
 import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
 import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.namedClientId;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 import static org.keycloak.util.JsonSerialization.valueAsPrettyString;
 
 import static org.junit.Assert.assertEquals;
@@ -661,7 +669,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 getRsaEncKeyProvider(RSA_OAEP, "enc-key-oaep", 101));
 
         // Add Did attribute to the user profile
-        testRealm.getComponents().add("org.keycloak.userprofile.UserProfileProvider", getUserProfileProvider());
+        registerUserProfileProvider(testRealm);
 
         // Find existing client representation
         Map<String, ClientRepresentation> realmClients = testRealm.getClients().stream()
@@ -690,19 +698,33 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         testRealm.setUsers(realmUsers);
     }
 
-    private ComponentExportRepresentation getUserProfileProvider() {
+    private void registerUserProfileProvider(RealmRepresentation testRealm) {
 
         // Add the User DID attribute, with the same logic as in DeclarativeUserProfileProviderFactory
         //
-        UPConfig profileConfig = UPConfigUtils.parseSystemDefaultConfig();
-        DeclarativeUserProfileProviderFactory.addUserDidAttribute(profileConfig);
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
+        if (config.getAttribute(UserModel.DID) == null) {
+            UPAttribute attr = new UPAttribute(UserModel.DID);
+            attr.setDisplayName("${did}");
+            attr.setPermissions(new UPAttributePermissions(Set.of(ROLE_ADMIN, ROLE_USER), Set.of(ROLE_ADMIN, ROLE_USER)));
+            attr.setValidations(Map.of(PatternValidator.ID, Map.of(
+                    "pattern", "^did:.+:.+$",
+                    "error-message", "Value must start with 'did:scheme:'")));
+            config.addOrReplaceAttribute(attr);
+        }
 
         ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
         componentExportRepresentation.setProviderId("declarative-user-profile");
+        componentExportRepresentation.setId(UUID.randomUUID().toString());
         componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
-                Map.of(UP_COMPONENT_CONFIG_KEY, List.of(JsonSerialization.valueAsString(profileConfig)))));
+                Map.of(UP_COMPONENT_CONFIG_KEY, List.of(JsonSerialization.valueAsString(config)))));
 
-        return componentExportRepresentation;
+        testRealm.getComponents().add(UserProfileProvider.class.getName(), componentExportRepresentation);
+
+        // Remove this UserProfile definition on cleanup
+        //
+        TestCleanup cleanup = testContext.getOrCreateCleanup(testRealm.getRealm());
+        cleanup.addComponentId(componentExportRepresentation.getId());
     }
 
     protected void withCausePropagation(Runnable r) throws Throwable {

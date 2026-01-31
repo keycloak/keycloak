@@ -23,11 +23,14 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import jakarta.ws.rs.NotFoundException;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ComponentResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.testsuite.arquillian.TestContext;
 
 import com.google.common.collect.Streams;
+import org.jboss.logging.Logger;
 
 /**
  * Enlist resources to be cleaned after test method
@@ -47,6 +50,8 @@ public class TestCleanup {
     private static final String AUTH_CONFIG_IDS = "AUTH_CONFIG_IDS";
     private static final String REQUIRED_ACTION_ALIASES = "REQUIRED_ACTION_PROVIDERS";
     private static final String LOCALIZATION_LANGUAGES = "LOCALIZATION_LANGUAGES";
+
+    private final Logger log = Logger.getLogger(this.getClass());
 
     private final TestContext testContext;
     private final String realmName;
@@ -154,7 +159,10 @@ public class TestCleanup {
         if (componentIds != null) {
             for (String componentId : componentIds) {
                 try {
-                    realm.components().component(componentId).remove();
+                    ComponentResource comp = realm.components().component(componentId);
+                    ComponentRepresentation compRep = comp.toRepresentation();
+                    log.debugf("Removing component: %s", compRep.getProviderId());
+                    comp.remove();
                 } catch (NotFoundException nfe) {
                     // Idp might be already deleted in the test
                 }
