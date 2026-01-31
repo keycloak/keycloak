@@ -24,7 +24,7 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 public class GenericPolicyManagementAdminEventTest extends GenericPolicyManagementTest {
 
     @Override
-    protected void afterAbstractKeycloakTestRealmImport() {
+    protected void afterAbstractKeycloakTestRealmImport() throws Exception {
         super.afterAbstractKeycloakTestRealmImport();
         RealmEventsConfigRepresentation rep = new RealmEventsConfigRepresentation();
 

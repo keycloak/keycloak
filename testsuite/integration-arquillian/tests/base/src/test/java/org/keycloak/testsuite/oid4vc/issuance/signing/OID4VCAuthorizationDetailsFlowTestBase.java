@@ -28,10 +28,10 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
+import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
@@ -43,7 +43,6 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
-import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -105,12 +104,12 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         // Clear events before credential offer URI request
         events.clear();
 
-        CredentialOfferUriResponse credentialOfferURIResponse = oauth.oid4vc().credentialOfferUriRequest()
-                .endpoint(getCredentialOfferUriUrl(credentialConfigurationId))
+        CredentialOfferURI credOfferURI = oauth.oid4vc()
+                .credentialOfferUriRequest(credentialConfigurationId)
+                .preAuthorized(true)
                 .bearerToken(token)
-                .send();
-        assertEquals(HttpStatus.SC_OK, credentialOfferURIResponse.getStatusCode());
-        CredentialOfferURI credentialOfferURI = credentialOfferURIResponse.getCredentialOfferURI();
+                .username("john")
+                .send().getCredentialOfferURI();
 
         // Verify CREDENTIAL_OFFER_REQUEST event was fired
         events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
@@ -124,9 +123,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         // Clear events before credential offer request
         events.clear();
 
-        CredentialOfferResponse credentialOfferResponse = oauth.oid4vc().credentialOfferRequest()
-                .endpoint(credentialOfferURI.getIssuer() + "/" + credentialOfferURI.getNonce())
-                .send();
+        CredentialOfferResponse credentialOfferResponse = oauth.oid4vc().doCredentialOfferRequest(credOfferURI);
         assertEquals(HttpStatus.SC_OK, credentialOfferResponse.getStatusCode());
         ctx.credentialsOffer = credentialOfferResponse.getCredentialsOffer();
 
@@ -166,17 +163,18 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
         String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
+        String preAuthCode = ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode();
         AccessTokenResponse tokenResponse = oauth.oid4vc()
-                .preAuthorizedCodeGrantRequest(ctx.credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .preAuthorizedCodeGrantRequest(preAuthCode)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
                 .addParameter("authorization_details", authDetailsJson)
                 .send();
 
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
-        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertEquals(1, authDetailsResponse.size());
-        OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(0);
+        OID4VCAuthorizationDetail authDetailResponse = authDetailsResponse.get(0);
         assertEquals(OPENID_CREDENTIAL, authDetailResponse.getType());
         assertEquals(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID), authDetailResponse.getCredentialConfigurationId());
         assertNotNull(authDetailResponse.getCredentialIdentifiers());
@@ -227,10 +225,10 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
                 .send();
 
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
-        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertEquals(1, authDetailsResponse.size());
-        OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(0);
+        OID4VCAuthorizationDetail authDetailResponse = authDetailsResponse.get(0);
         assertEquals(OPENID_CREDENTIAL, authDetailResponse.getType());
         assertEquals(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID), authDetailResponse.getCredentialConfigurationId());
         assertNotNull(authDetailResponse.getClaims());
@@ -350,7 +348,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         } else {
             // If it succeeds, verify the response structure
             assertEquals(HttpStatus.SC_OK, statusCode);
-            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+            List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
             assertNotNull("authorization_details should be present in the response", authDetailsResponse);
             assertEquals(1, authDetailsResponse.size());
         }
@@ -448,7 +446,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
-        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertEquals("Should have authorization_details for each credential configuration in the offer",
                 ctx.credentialsOffer.getCredentialConfigurationIds().size(), authDetailsResponse.size());
@@ -456,7 +454,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         // Verify each credential configuration from the offer has corresponding authorization_details
         for (int i = 0; i < ctx.credentialsOffer.getCredentialConfigurationIds().size(); i++) {
             String expectedConfigId = ctx.credentialsOffer.getCredentialConfigurationIds().get(i);
-            OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(i);
+            OID4VCAuthorizationDetail authDetailResponse = authDetailsResponse.get(i);
 
             assertEquals(OPENID_CREDENTIAL, authDetailResponse.getType());
             assertEquals("Credential configuration ID should match the one from the offer",
@@ -490,11 +488,11 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         String credentialIdentifier;
         String credentialConfigurationId;
-        OID4VCAuthorizationDetailResponse authDetailResponse;
+        OID4VCAuthorizationDetail authDetailResponse;
 
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
-        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertEquals("Should have authorization_details for each credential configuration in the offer",
                 ctx.credentialsOffer.getCredentialConfigurationIds().size(), authDetailsResponse.size());
@@ -524,10 +522,10 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
             // Clear events before credential request
             events.clear();
 
-            Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+            CredentialRequest credRequest = new CredentialRequest().setCredentialIdentifier(credentialIdentifier);
+            Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest(credRequest)
                     .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                     .bearerToken(token)
-                    .credentialIdentifier(credentialIdentifier)
                     .send();
 
             assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusCode());
@@ -566,10 +564,10 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
             // Clear events before credential request
             events.clear();
 
-            Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+            CredentialRequest credRequest = new CredentialRequest().setCredentialConfigurationId(credentialConfigurationId);
+            Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest(credRequest)
                     .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                     .bearerToken(token)
-                    .credentialConfigurationId(credentialConfigurationId)
                     .send();
 
             assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusCode());
@@ -621,7 +619,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
-        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
 
         // Verify that we have authorization_details for each credential configuration in the offer
@@ -630,7 +628,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         // Verify each authorization detail
         for (int i = 0; i < authDetailsResponse.size(); i++) {
-            OID4VCAuthorizationDetailResponse authDetail = authDetailsResponse.get(i);
+            OID4VCAuthorizationDetail authDetail = authDetailsResponse.get(i);
             String expectedConfigId = ctx.credentialsOffer.getCredentialConfigurationIds().get(i);
 
             // Verify structure
@@ -697,10 +695,10 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         String credentialIdentifier;
         String credentialConfigurationId;
-        OID4VCAuthorizationDetailResponse authDetailResponse;
+        OID4VCAuthorizationDetail authDetailResponse;
 
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
-        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertEquals(1, authDetailsResponse.size());
 
@@ -718,10 +716,10 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         // Clear events before credential request
         events.clear();
 
-        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+        CredentialRequest credRequest = new CredentialRequest().setCredentialIdentifier(credentialIdentifier);
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest(credRequest)
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                 .bearerToken(token)
-                .credentialIdentifier(credentialIdentifier)
                 .send();
 
         assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusCode());
@@ -761,7 +759,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         events.clear();
 
         // Request credential with empty payload
-        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest(null)
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                 .bearerToken(token)
                 .emptyBody()
@@ -788,10 +786,10 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         events.clear();
 
         // Request credential with invalid credential identifier
-        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+        CredentialRequest credRequest = new CredentialRequest().setCredentialIdentifier("invalid-credential-identifier");
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest(credRequest)
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                 .bearerToken(token)
-                .credentialIdentifier("invalid-credential-identifier")
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());

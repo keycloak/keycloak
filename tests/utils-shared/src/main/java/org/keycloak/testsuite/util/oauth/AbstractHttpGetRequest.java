@@ -13,7 +13,6 @@ public abstract class AbstractHttpGetRequest<T, R> {
 
     protected final AbstractOAuthClient<?> client;
 
-    private HttpGet get;
     protected String endpointOverride;
     protected String bearerToken;
     protected Map<String, String> headers = new HashMap<>();
@@ -52,7 +51,7 @@ public abstract class AbstractHttpGetRequest<T, R> {
     }
 
     public R send() {
-        get = new HttpGet(endpointOverride != null ? endpointOverride : getEndpoint());
+        HttpGet get = new HttpGet(endpointOverride != null ? endpointOverride : getEndpoint());
 
         initRequest();
 

@@ -204,7 +204,28 @@
         "https://localhost:8543/auth/realms/test/app/auth/*"
       ],
       "adminUrl": "http://localhost:8180/auth/realms/master/app/admin",
+      "directAccessGrantsEnabled": true,
       "secret": "password"
+    },
+    {
+      "clientId": "test-app-pub",
+      "enabled": true,
+      "baseUrl": "http://localhost:8180/auth/realms/master/app/auth",
+      "adminUrl": "http://localhost:8180/auth/realms/master/app/admin",
+      "redirectUris": [
+        "http://localhost:8180/auth/realms/master/app/auth/*",
+        "http://localhost:8180/auth/realms/test/app/auth/*"
+      ],
+      "attributes": {
+        "oid4vci.enabled": "true",
+        "pkce.code.challenge.method": "S256"
+      },
+      "optionalClientScopes": [
+        "oid4vc_natural_person_sd",
+        "oid4vc_natural_person_jwt"
+      ],
+      "directAccessGrantsEnabled": false,
+      "publicClient": true
     },
     {
       "clientId": "root-url-client",
@@ -405,13 +426,13 @@
       "clientId": "named-test-app",
       "name": "My Named Test App",
       "enabled": true,
-      "directAccessGrantsEnabled": true,
       "baseUrl": "http://localhost:8180/namedapp/base",
       "redirectUris": [
         "http://localhost:8180/namedapp/base/*",
         "https://localhost:8543/namedapp/base/*"
       ],
       "adminUrl": "http://localhost:8180/namedapp/base/admin",
+      "directAccessGrantsEnabled": true,
       "secret": "password"
     },
     {

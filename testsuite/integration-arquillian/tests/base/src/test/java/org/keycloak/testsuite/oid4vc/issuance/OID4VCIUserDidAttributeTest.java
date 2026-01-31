@@ -43,7 +43,7 @@ import static org.junit.Assert.assertEquals;
 public class OID4VCIUserDidAttributeTest extends OID4VCIssuerEndpointTest {
 
     static class TestContext {
-        String usrDid;
+        String userDid;
         String username;
         KeyPair keyPair;
 
@@ -65,11 +65,11 @@ public class OID4VCIUserDidAttributeTest extends OID4VCIssuerEndpointTest {
 
         // Generate the Holder's DID
         ECPublicKey publicKey = (ECPublicKey) ctx.keyPair.getPublic();
-        ctx.usrDid = encodeDidKey(publicKey);
+        ctx.userDid = encodeDidKey(publicKey);
 
         // Update the Holder's DID attribute
         UserRepresentation userRepresentation = testRealm().users().search(ctx.username).get(0);
-        userRepresentation.getAttributes().put(UserModel.DID, List.of(ctx.usrDid));
+        userRepresentation.getAttributes().put(UserModel.DID, List.of(ctx.userDid));
         testRealm().users().get(userRepresentation.getId()).update(userRepresentation);
     }
 
@@ -78,7 +78,7 @@ public class OID4VCIUserDidAttributeTest extends OID4VCIssuerEndpointTest {
         UserRepresentation userRepresentation = testRealm().users().search(ctx.username).get(0);
         Map<String, List<String>> userAttributes = userRepresentation.getAttributes();
         var wasDid = userAttributes.get(UserModel.DID).get(0);
-        assertEquals(ctx.usrDid, wasDid);
+        assertEquals(ctx.userDid, wasDid);
 
         ECPublicKey wasPublicKey = decodeDidKey(wasDid);
         assertEquals(wasPublicKey, ctx.keyPair.getPublic());

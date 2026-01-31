@@ -30,7 +30,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * Represents a CredentialRequest according to OID4VCI
@@ -149,10 +148,6 @@ public class CredentialRequest {
 
     @Override
     public String toString() {
-        try {
-            return JsonSerialization.mapper.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        return JsonSerialization.valueAsString(this);
     }
 }

@@ -36,6 +36,7 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.protocol.oidc.utils.PkceGenerator;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -45,7 +46,6 @@ import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
 import org.junit.After;

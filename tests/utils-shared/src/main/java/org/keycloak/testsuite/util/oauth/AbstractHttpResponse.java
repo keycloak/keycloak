@@ -29,7 +29,7 @@ public abstract class AbstractHttpResponse {
 
             this.headers = new HashMap<>();
             for (Header h : response.getAllHeaders()) {
-                headers.put(h.getName(), h.getValue());
+                headers.put(h.getName().toLowerCase(), h.getValue());
             }
 
             if (isSuccess()) {
@@ -53,7 +53,7 @@ public abstract class AbstractHttpResponse {
     }
 
     public String getHeader(String name) {
-        return headers.get(name);
+        return headers.get(name.toLowerCase());
     }
 
     public Map<String, String> getHeaders() {

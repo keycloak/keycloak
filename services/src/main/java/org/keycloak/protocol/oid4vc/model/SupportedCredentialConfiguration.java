@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.keycloak.VCFormat;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.utils.StringUtil;
@@ -106,13 +107,12 @@ public class SupportedCredentialConfiguration {
 
         credentialConfiguration.setScope(credentialScope.getName());
 
-        String format = Optional.ofNullable(credentialScope.getFormat()).orElse(Format.SD_JWT_VC);
+        String format = Optional.ofNullable(credentialScope.getFormat()).orElse(VCFormat.SD_JWT_VC);
         credentialConfiguration.setFormat(format);
 
         KeyAttestationsRequired keyAttestationsRequired = KeyAttestationsRequired.parse(credentialScope);
-        ProofTypesSupported proofTypesSupported = ProofTypesSupported.parse(keycloakSession,
-                                                                            keyAttestationsRequired,
-                                                                            globalSupportedSigningAlgorithms);
+        ProofTypesSupported proofTypesSupported = ProofTypesSupported.parse(keycloakSession, keyAttestationsRequired,
+                globalSupportedSigningAlgorithms);
         credentialConfiguration.setProofTypesSupported(proofTypesSupported);
 
         // Return single configured value for the signature algorithm if any
@@ -150,7 +150,7 @@ public class SupportedCredentialConfiguration {
      * @return
      */
     public VerifiableCredentialType deriveType() {
-        if (Objects.equals(format, Format.SD_JWT_VC)) {
+        if (Objects.equals(format, VCFormat.SD_JWT_VC)) {
             return VerifiableCredentialType.from(vct);
         }
         return null;
