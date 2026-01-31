@@ -19,22 +19,27 @@ package org.keycloak.protocol.oid4vc.model;
 import java.util.List;
 
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import static org.keycloak.OAuth2Constants.CREDENTIAL_CONFIGURATION_ID;
+import static org.keycloak.OAuth2Constants.CREDENTIAL_IDENTIFIERS;
+
 /**
  * Represents an authorization_details object in the Token Request as per OID4VCI.
- * 
+ *
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
 public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresentation {
 
-    public static final String CREDENTIAL_CONFIGURATION_ID = "credential_configuration_id";
-    public static final String CREDENTIAL_IDENTIFIERS = "credential_identifiers";
     public static final String CLAIMS = "claims";
 
     @JsonProperty(CREDENTIAL_CONFIGURATION_ID)
     private String credentialConfigurationId;
+
+    @JsonProperty(CREDENTIAL_IDENTIFIERS)
+    private List<String> credentialIdentifiers;
 
     @JsonProperty(CLAIMS)
     private List<ClaimsDescription> claims;
@@ -47,6 +52,14 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
         this.credentialConfigurationId = credentialConfigurationId;
     }
 
+    public List<String> getCredentialIdentifiers() {
+        return credentialIdentifiers;
+    }
+
+    public void setCredentialIdentifiers(List<String> credentialIdentifiers) {
+        this.credentialIdentifiers = credentialIdentifiers;
+    }
+
     public List<ClaimsDescription> getClaims() {
         return claims;
     }
@@ -57,11 +70,6 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
 
     @Override
     public String toString() {
-        return "OID4VCAuthorizationDetail {" +
-                " type='" + getType() + '\'' +
-                ", locations='" + getLocations() + '\'' +
-                ", credentialConfigurationId='" + credentialConfigurationId + '\'' +
-                ", claims=" + claims +
-                '}';
+        return JsonSerialization.valueAsString(this);
     }
 }
