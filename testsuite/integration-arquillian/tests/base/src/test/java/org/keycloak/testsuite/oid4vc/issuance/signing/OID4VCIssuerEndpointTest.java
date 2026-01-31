@@ -72,7 +72,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.JWTVCIssuerWellKnownProviderFactory;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
@@ -82,6 +81,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -372,7 +372,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         }
     }
 
-    private void assignOptionalClientScopeToClient(String scopeId, String clientId) {
+    protected void assignOptionalClientScopeToClient(String scopeId, String clientId) {
         ClientResource clientResource = findClientByClientId(testRealm(), clientId);
         clientResource.addOptionalClientScope(scopeId);
     }
@@ -479,7 +479,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return out.toByteArray();
     }
 
-    void setClientOid4vciEnabled(String clientId, boolean enabled) {
+    protected void setClientOid4vciEnabled(String clientId, boolean enabled) {
         ClientRepresentation clientRepresentation = adminClient.realm(TEST_REALM_NAME).clients().findByClientId(clientId).get(0);
         ClientResource clientResource = adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId());
 
@@ -525,10 +525,9 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                     URI credentialUri = credentialUriBuilder.build();
                     WebTarget credentialTarget = clientForCredentialRequest.target(credentialUri);
 
-                    CredentialRequest request = new CredentialRequest();
-                    request.setCredentialConfigurationId(oid4vciIssuerConfig.getCredentialsSupported()
-                            .get(testCredentialConfigurationId)
-                            .getId());
+                    CredentialRequest request = new CredentialRequest()
+                            .setCredentialConfigurationId(oid4vciIssuerConfig.getCredentialsSupported()
+                                .get(testCredentialConfigurationId).getId());
 
                     assertEquals(testFormat,
                             oid4vciIssuerConfig.getCredentialsSupported()
@@ -604,11 +603,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                                      SupportedCredentialConfiguration offeredCredential,
                                      CredentialResponseHandler responseHandler,
                                      ClientScopeRepresentation expectedClientScope) throws IOException, VerificationException {
+        CredentialRequest credRequest = new CredentialRequest().setCredentialConfigurationId(offeredCredential.getId());
         Oid4vcCredentialResponse credentialRequestResponse = oauth.oid4vc()
-                .credentialRequest()
+                .credentialRequest(credRequest)
                 .endpoint(credentialEndpoint)
                 .bearerToken(token)
-                .credentialConfigurationId(offeredCredential.getId())
                 .send();
 
         assertEquals(HttpStatus.SC_OK, credentialRequestResponse.getStatusCode());
@@ -767,14 +766,14 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         }
     }
 
-    protected List<OID4VCAuthorizationDetailResponse> parseAuthorizationDetails(String responseBody) throws IOException {
-        Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, new TypeReference<Map<String, Object>>() {
+    protected List<OID4VCAuthorizationDetail> parseAuthorizationDetails(String responseBody) throws IOException {
+        Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, new TypeReference<>() {
         });
         Object authDetailsObj = responseMap.get("authorization_details");
         assertNotNull("authorization_details should be present in the response", authDetailsObj);
         return JsonSerialization.readValue(
                 JsonSerialization.writeValueAsString(authDetailsObj),
-                new TypeReference<List<OID4VCAuthorizationDetailResponse>>() {
+                new TypeReference<>() {
                 }
         );
     }
