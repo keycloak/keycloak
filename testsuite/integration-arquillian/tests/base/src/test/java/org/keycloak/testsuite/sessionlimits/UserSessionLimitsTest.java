@@ -146,7 +146,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         // Login the same user again and verify the configured error message is shown
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
-        events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
+        events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.ACCESS_DENIED).assertEvent();
         errorPage.assertCurrent();
         assertEquals(ERROR_TO_DISPLAY, errorPage.getError());
     }
@@ -211,7 +211,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             // Login the same user again and verify the configured error message is shown
             loginPage.open();
             loginPage.login("test-user@localhost", "password");
-            events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
+            events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.ACCESS_DENIED).assertEvent();
             errorPage.assertCurrent();
             assertEquals(ERROR_TO_DISPLAY, errorPage.getError());
         } finally {
@@ -440,7 +440,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
             driver.navigate().to(changePasswordUrl.trim());
 
-            events.expect(EventType.RESET_PASSWORD_ERROR).client("account").error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
+            events.expect(EventType.RESET_PASSWORD_ERROR).client("account").error(Errors.ACCESS_DENIED).assertEvent();
         } finally {
             testRealm().clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0).setDirectAccessGrantsEnabled(false);
             ApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
@@ -527,7 +527,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
             driver.navigate().to(changePasswordUrl.trim());
 
-            events.expect(EventType.RESET_PASSWORD_ERROR).client("account").error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
+            events.expect(EventType.RESET_PASSWORD_ERROR).client("account").error(Errors.ACCESS_DENIED).assertEvent();
         } finally {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
@@ -622,7 +622,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         // New login should fail due the sessions limit
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
-        events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
+        events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.ACCESS_DENIED).assertEvent();
         errorPage.assertCurrent();
         assertEquals("There are too many sessions", errorPage.getError()); // Default error message
 
