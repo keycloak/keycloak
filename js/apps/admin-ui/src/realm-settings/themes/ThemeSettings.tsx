@@ -1,6 +1,12 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { SelectControl } from "@keycloak/keycloak-ui-shared";
-import { ActionGroup, Button, PageSection } from "@patternfly/react-core";
+import {
+  ActionGroup,
+  Button,
+  EmptyStateBody,
+  FormGroup,
+  PageSection,
+} from "@patternfly/react-core";
 import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -47,6 +53,16 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
             defaultValue="true"
             stringify
           />
+          <FormGroup
+            label={t("themesDescriptionsTitle")}
+            fieldId="themes-description"
+          >
+            <EmptyStateBody className="pf-v5-u-font-size-sm pf-v5-u-color-200">
+              <p>{t("themesDescriptionKeycloak")}</p>
+              <p>{t("themesDescriptionKeycloakV2")}</p>
+              <p>{t("themesDescriptionKeycloakV3")}</p>
+            </EmptyStateBody>
+          </FormGroup>
           <SelectControl
             id="kc-login-theme"
             name="loginTheme"
