@@ -1,7 +1,6 @@
-package org.keycloak.testsuite.util.oauth;
+package org.keycloak.protocol.oidc.utils;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.protocol.oidc.utils.PkceUtils;
 
 public class PkceGenerator {
 

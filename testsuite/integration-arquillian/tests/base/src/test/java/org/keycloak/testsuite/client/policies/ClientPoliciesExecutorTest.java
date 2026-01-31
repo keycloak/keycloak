@@ -61,6 +61,7 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.protocol.oidc.utils.PkceGenerator;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
@@ -109,7 +110,6 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.oauth.ParResponse;
-import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;

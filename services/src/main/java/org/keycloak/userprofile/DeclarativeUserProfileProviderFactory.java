@@ -72,8 +72,6 @@ import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.EmailValidator;
 import org.keycloak.validate.validators.PatternValidator;
 
-import static java.util.Optional.ofNullable;
-
 import static org.keycloak.common.Profile.Feature.OID4VC_VCI;
 import static org.keycloak.common.util.ObjectUtil.isBlank;
 import static org.keycloak.userprofile.DefaultAttributes.READ_ONLY_ATTRIBUTE_KEY;
@@ -526,10 +524,12 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
     private void initDefaultConfiguration(Scope config) {
 
+        String configFile = config.get("configFile");
+
         // The user-defined configuration is always parsed during init and should be avoided as much as possible
         // If no user-defined configuration is set, the system default configuration must have been set
         // In Quarkus, the system default configuration is set at build time for optimization purposes
-        UPConfig parsedConfig = ofNullable(config.get("configFile"))
+        UPConfig parsedConfig = Optional.ofNullable(configFile)
                 .map(Paths::get)
                 .map(UPConfigUtils::parseConfig)
                 .orElse(PARSED_DEFAULT_RAW_CONFIG);
@@ -540,7 +540,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         }
 
         // Modify the user profile to use when --features=oid4vc-vci is enabled
-        if (Profile.isFeatureEnabled(OID4VC_VCI)) {
+        if (configFile == null && Profile.isFeatureEnabled(OID4VC_VCI)) {
             addUserDidAttribute(parsedConfig);
         }
 

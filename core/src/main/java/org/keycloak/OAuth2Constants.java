@@ -176,5 +176,6 @@ public interface OAuth2Constants {
 
     // OID4VCI - https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html
     String OPENID_CREDENTIAL = "openid_credential";
+    String CREDENTIAL_CONFIGURATION_ID = "credential_configuration_id";
     String CREDENTIAL_IDENTIFIERS = "credential_identifiers";
 }

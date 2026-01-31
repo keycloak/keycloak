@@ -36,6 +36,7 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.utils.PkceGenerator;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
@@ -54,7 +55,6 @@ import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.SignatureSignerUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.PkceGenerator;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
