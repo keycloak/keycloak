@@ -114,9 +114,9 @@ public class KeycloakDistConfigurator {
 
         optionMapper(keycloakCR -> keycloakCR.getSpec().getBootstrapAdminSpec())
                 .mapOption("bootstrap-admin-client-id",
-                        spec -> Optional.ofNullable(spec.getService()).map(BootstrapAdminSpec.Service::getSecret).map(s -> new SecretKeySelector("client-id", s, null)).orElse(null))
+                        spec -> Optional.ofNullable(spec.getService()).map(BootstrapAdminSpec.Service::getSecret).map(s -> new SecretKeySelector(Constants.CLIENT_ID_KEY, s, null)).orElse(null))
                 .mapOption("bootstrap-admin-client-secret",
-                        spec -> Optional.ofNullable(spec.getService()).map(BootstrapAdminSpec.Service::getSecret).map(s -> new SecretKeySelector("client-secret", s, null)).orElse(null));
+                        spec -> Optional.ofNullable(spec.getService()).map(BootstrapAdminSpec.Service::getSecret).map(s -> new SecretKeySelector(Constants.CLIENT_SECRET_KEY, s, null)).orElse(null));
     }
 
     void configureHostname() {

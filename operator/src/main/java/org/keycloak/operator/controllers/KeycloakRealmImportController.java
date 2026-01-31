@@ -17,11 +17,11 @@
 package org.keycloak.operator.controllers;
 
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import jakarta.inject.Inject;
 
 import org.keycloak.operator.Config;
+import org.keycloak.operator.Constants;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
@@ -91,7 +91,7 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
         }
 
         if (!status.isDone()) {
-            updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
+            updateControl.rescheduleAfter(Constants.RETRY_DURATION);
         }
 
         return updateControl;

@@ -66,6 +66,7 @@ import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -606,7 +607,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         return keycloak.getMetadata().getName();
     }
 
-    static Optional<String> readConfigurationValue(String key, Keycloak keycloakCR, Context<Keycloak> context) {
+    static Optional<String> readConfigurationValue(String key, Keycloak keycloakCR, KubernetesClient client) {
         return Optional.ofNullable(keycloakCR.getSpec()).map(KeycloakSpec::getAdditionalOptions)
                 .flatMap(l -> l.stream().filter(sc -> sc.getName().equals(key)).findFirst().map(serverConfigValue -> {
             if (serverConfigValue.getValue() != null) {
@@ -616,7 +617,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             if (secretSelector == null) {
                 throw new IllegalStateException("Secret " + serverConfigValue.getName() + " not defined");
             }
-            var secret = context.getClient().secrets().inNamespace(keycloakCR.getMetadata().getNamespace()).withName(secretSelector.getName()).get();
+            var secret = client.secrets().inNamespace(keycloakCR.getMetadata().getNamespace()).withName(secretSelector.getName()).get();
             if (secret == null) {
                 throw new IllegalStateException("Secret " + secretSelector.getName() + " not found in cluster");
             }
@@ -675,14 +676,14 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         int port;
         String portName;
 
-        var legacy = readConfigurationValue(LEGACY_MANAGEMENT_ENABLED, keycloakCR, context).map(Boolean::valueOf).orElse(false);
+        var legacy = readConfigurationValue(LEGACY_MANAGEMENT_ENABLED, keycloakCR, context.getClient()).map(Boolean::valueOf).orElse(false);
 
-        var healthManagementEnabled = readConfigurationValue(CRDUtils.HTTP_MANAGEMENT_HEALTH_ENABLED, keycloakCR, context).map(Boolean::valueOf).orElse(true);
+        var healthManagementEnabled = readConfigurationValue(CRDUtils.HTTP_MANAGEMENT_HEALTH_ENABLED, keycloakCR, context.getClient()).map(Boolean::valueOf).orElse(true);
 
         if (!legacy && (!health || healthManagementEnabled)) {
             port = HttpManagementSpec.managementPort(keycloakCR);
             portName = Constants.KEYCLOAK_MANAGEMENT_PORT_NAME;
-            if (readConfigurationValue(HTTP_MANAGEMENT_SCHEME, keycloakCR, context).filter("http"::equals).isPresent()) {
+            if (readConfigurationValue(HTTP_MANAGEMENT_SCHEME, keycloakCR, context.getClient()).filter("http"::equals).isPresent()) {
                 protocol = "HTTP";
             }
         } else {
@@ -690,8 +691,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             portName = tls ? Constants.KEYCLOAK_HTTPS_PORT_NAME : Constants.KEYCLOAK_HTTP_PORT_NAME;
         }
 
-        var relativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_MANAGEMENT_RELATIVE_PATH_KEY, keycloakCR, context)
-              .or(() -> readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, keycloakCR, context))
+        var relativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_MANAGEMENT_RELATIVE_PATH_KEY, keycloakCR, context.getClient())
+              .or(() -> readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, keycloakCR, context.getClient()))
               .map(path -> !path.endsWith("/") ? path + "/" : path)
               .orElse("/");
 
