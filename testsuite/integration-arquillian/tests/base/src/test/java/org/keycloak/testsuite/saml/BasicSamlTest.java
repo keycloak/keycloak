@@ -45,10 +45,13 @@ import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.SamlUtils;
 import org.keycloak.utils.StringUtil;
 
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.apache.xml.security.encryption.EncryptedData;
 import org.apache.xml.security.encryption.XMLCipher;
@@ -489,5 +492,27 @@ public class BasicSamlTest extends AbstractSamlTest {
     @Test
     public void testEncryptionRsa15() throws Exception {
         testEncryption(XMLCipher.AES_256_GCM, XMLCipher.RSA_v1dot5, "", "");
+    }
+
+    /**
+     * Tests that invalid Base64 in SAMLRequest returns 400 Bad Request instead of 500 Internal Server Error.
+     *
+     * @see <a href="https://github.com/keycloak/keycloak/issues/44803">Issue #44803</a>
+     */
+    @Test
+    public void testInvalidBase64InSamlRequestReturnsBadRequest() throws Exception {
+        // Invalid Base64 string containing '?' character (decimal 63) which is not valid Base64
+        String invalidBase64 = "SGVsbG8gV29ybGQ/InvalidBase64!@#$";
+
+        HttpPost post = new HttpPost(getAuthServerSamlEndpoint(REALM_NAME));
+        List<BasicNameValuePair> parameters = new java.util.ArrayList<>();
+        parameters.add(new BasicNameValuePair(GeneralConstants.SAML_REQUEST_KEY, invalidBase64));
+        post.setEntity(new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8));
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build();
+             CloseableHttpResponse response = client.execute(post)) {
+            assertThat(response, statusCodeIsHC(Status.BAD_REQUEST));
+            assertThat(EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8), containsString("Invalid Request"));
+        }
     }
 }
