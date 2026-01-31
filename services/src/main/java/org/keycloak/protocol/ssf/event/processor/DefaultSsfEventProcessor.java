@@ -1,9 +1,15 @@
 package org.keycloak.protocol.ssf.event.processor;
 
 import java.util.Map;
+import java.util.Set;
+
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.ssf.endpoint.SsfSetPushDeliveryFailureResponse;
 import org.keycloak.protocol.ssf.event.SecurityEventToken;
 import org.keycloak.protocol.ssf.event.SsfStandardEvents;
 import org.keycloak.protocol.ssf.event.listener.SsfEventListener;
@@ -20,6 +26,9 @@ import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStat
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStore;
 
 import org.jboss.logging.Logger;
+
+import org.keycloak.services.Urls;
+import org.keycloak.urls.UrlType;
 
 /**
  * Default implementation of a {@link SsfEventProcessor}.
@@ -43,10 +52,15 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
     @Override
     public void processEvents(SecurityEventToken securityEventToken, SsfEventContext eventContext) {
 
-        KeycloakContext keycloakContext = eventContext.getSession().getContext();
+        KeycloakSession session = eventContext.getSession();
+        SsfReceiver receiver = eventContext.getReceiver();
+
+        validateSecurityEventToken(securityEventToken, session, receiver);
+
+        KeycloakContext keycloakContext = session.getContext();
 
         Map<String, SsfEvent> events = securityEventToken.getEvents();
-        SsfReceiverRegistrationProviderConfig receiverProviderConfig = eventContext.getReceiver().getConfig();
+        SsfReceiverRegistrationProviderConfig receiverProviderConfig = receiver.getConfig();
 
         LOG.debugf("Processing SSF events for security event token. realm=%s jti=%s streamId=%s eventCount=%s", keycloakContext.getRealm().getName(), securityEventToken.getId(), receiverProviderConfig.getStreamId(), events.size());
 
@@ -95,6 +109,17 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
         }
     }
 
+    /**
+     * Validate parsed Security Event Token.
+     * @param securityEventToken
+     * @param session
+     * @param receiver
+     */
+    protected void validateSecurityEventToken(SecurityEventToken securityEventToken, KeycloakSession session, SsfReceiver receiver) {
+        checkIssuer(session, receiver, securityEventToken, securityEventToken.getIssuer());
+        checkAudience(session, receiver, securityEventToken, securityEventToken.getAudience());
+    }
+
     protected SsfEvent narrowEventPayloadToSecurityEvent(String eventType, SsfEvent rawSsfEvent, SecurityEventToken securityEventToken) {
 
         Class<? extends SsfEvent> eventClass = getEventType(eventType);
@@ -110,10 +135,9 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
                 // use subjectId from SET if none was provided for the event explicitly.
                 ssfEvent.setSubjectId(securityEventToken.getSubjectId());
             }
-
             return ssfEvent;
         } catch (Exception e) {
-            throw new SecurityEventTokenParsingException("Could not narrow security event.", e);
+            throw new SecurityEventTokenParsingException("Could not narrow security event", e);
         }
     }
 
@@ -205,5 +229,43 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
      */
     protected void handleEvent(SsfEventContext eventContext, String eventId, SsfEvent event) {
         ssfEventListener.onEvent(eventContext, eventId, event);
+    }
+
+
+    protected void checkIssuer(KeycloakSession session, SsfReceiver receiver, SecurityEventToken securityEventToken, String issuer) {
+
+        String expectedIssuer = receiver.getConfig() != null ? receiver.getConfig().getIssuer() : null;
+
+        if (!isValidIssuer(receiver, expectedIssuer, issuer)) {
+            throw SsfSetPushDeliveryFailureResponse.newFailureResponse(Response.Status.BAD_REQUEST, SsfSetPushDeliveryFailureResponse.ERROR_INVALID_ISSUER, "Invalid issuer");
+        }
+    }
+
+    protected void checkAudience(KeycloakSession session, SsfReceiver receiver, SecurityEventToken securityEventToken, String[] audience) {
+
+        Set<String> expectedAudience = receiver.getConfig() != null && receiver.getConfig().getStreamAudience() != null ? receiver.getConfig().streamAudience() : null;
+
+        if (expectedAudience == null) {
+            // No expected audience configured for receiver, fallback to realm issuer is no audience is set
+            String fallbackAudience = getFallbackAudience(session);
+            expectedAudience = Set.of(fallbackAudience);
+        }
+
+        if (!isValidAudience(receiver, expectedAudience, audience)) {
+            throw SsfSetPushDeliveryFailureResponse.newFailureResponse(Response.Status.BAD_REQUEST, SsfSetPushDeliveryFailureResponse.ERROR_INVALID_AUDIENCE, "Invalid audience");
+        }
+    }
+
+    protected String getFallbackAudience(KeycloakSession session) {
+        UriInfo frontendUriInfo = session.getContext().getUri(UrlType.FRONTEND);
+        return Urls.realmIssuer(frontendUriInfo.getBaseUri(), session.getContext().getRealm().getName());
+    }
+
+    protected boolean isValidIssuer(SsfReceiver receiver, String expectedIssuer, String issuer) {
+        return expectedIssuer.equals(issuer);
+    }
+
+    protected boolean isValidAudience(SsfReceiver receiver, Set<String> expectedAudience, String[] audience) {
+        return expectedAudience.containsAll(Set.of(audience));
     }
 }

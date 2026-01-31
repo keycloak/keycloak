@@ -19,6 +19,12 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  */
 public class SecurityEventToken extends JsonWebToken {
 
+    /**
+     * 4.1.1. Explicit Typing of SETs
+     * @see https://openid.github.io/sharedsignals/openid-sharedsignals-framework-1_0.html#section-4.1.1
+     */
+    public static final String TYPE = "secevent+jwt";
+
     @JsonProperty("sub_id")
     @JsonDeserialize(using = SubjectIdJsonDeserializer.class)
     protected SubjectId subjectId;

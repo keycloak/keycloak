@@ -64,12 +64,16 @@ public class DefaultSsfSecurityEventTokenParser implements SsfSecurityEventToken
         try {
             JWSInput jws = new JWSInput(encodedSecurityEventToken);
             JWSHeader header = jws.getHeader();
+
+            String typ = header.getType();
+            if (!SecurityEventToken.TYPE.equals(typ)) {
+                throw new SecurityEventTokenParsingException("Invalid SET typ " + typ +". Expected: " + SecurityEventToken.TYPE);
+            }
+
             String kid = header.getKeyId();
             String alg = header.getRawAlgorithm();
 
-            String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), receiver.getConfig().getInternalId());
-
-            KeyWrapper publicKey = resolveTransmitterPublicKey(receiver, modelKey, kid, alg);
+            KeyWrapper publicKey = getKeyWrapper(receiver, kid, alg);
 
             if (publicKey == null) {
                 throw new SecurityEventTokenParsingException("Could not find publicKey with kid " + kid);
@@ -91,6 +95,12 @@ public class DefaultSsfSecurityEventTokenParser implements SsfSecurityEventToken
             LOG.debug("Failed to decode token", e);
             return null;
         }
+    }
+
+    protected KeyWrapper getKeyWrapper(SsfReceiver receiver, String kid, String alg) {
+        String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), receiver.getConfig().getInternalId());
+        KeyWrapper publicKey = resolveTransmitterPublicKey(receiver, modelKey, kid, alg);
+        return publicKey;
     }
 
     /**
