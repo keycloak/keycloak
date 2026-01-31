@@ -41,7 +41,7 @@ public class AppAuthManager extends AuthenticationManager {
 
     public static final String BEARER = "Bearer";
 
-    private static final Pattern WHITESPACES = Pattern.compile("\\s+");
+    private static final Pattern BEARER_TOKEN_PATTERN = Pattern.compile("^[A-Za-z0-9\\-._~+/]+={0,}$");
 
     @Override
     public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm) {
@@ -64,26 +64,40 @@ public class AppAuthManager extends AuthenticationManager {
             return null;
         }
 
-        String[] split = WHITESPACES.split(authHeader.trim());
-        if (split.length != 2){
+        int len = authHeader.length();
+        int i = 0;
+
+        while (i < len) {
+            char c = authHeader.charAt(i);
+            if (c == ' ') {
+                break;
+            }
+            i++;
+        }
+
+        if (i == 0 || i == len) {
             return null;
         }
 
-        String typeString = split[0];
+        String typeString = authHeader.substring(0, i);
+        String tokenString = authHeader.substring(i + 1);
 
+        boolean isBearerHeader = typeString.equalsIgnoreCase(BEARER);
         if (!Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
-            if (!typeString.equalsIgnoreCase(BEARER)) {
+            if (!isBearerHeader) {
                 return null;
             }
         } else {
             // "Bearer" is case-insensitive for historical reasons. "DPoP" is case-sensitive to follow the spec.
-            if (!typeString.equalsIgnoreCase(BEARER) && !typeString.equals(TokenUtil.TOKEN_TYPE_DPOP)){
+            if (!isBearerHeader && !typeString.equals(TokenUtil.TOKEN_TYPE_DPOP)) {
                 return null;
             }
         }
 
-        String tokenString = split[1];
-        if (ObjectUtil.isBlank(tokenString)) {
+        if (ObjectUtil.isBlank(tokenString) || tokenString.contains(" ")) {
+            return null;
+        }
+        if (!BEARER_TOKEN_PATTERN.matcher(tokenString).matches()) {
             return null;
         }
 
