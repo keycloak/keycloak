@@ -74,6 +74,51 @@ public class RedirectUtilsTest {
     }
 
     @Test
+    public void testRedirectUriWildcardPartitions() {
+        // Partition 1: Exact match (no wildcard) should only accept the exact URI.
+        Set<String> exact = Stream.of(
+                "https://keycloak.org/exact"
+        ).collect(Collectors.toSet());
+
+        Assert.assertEquals("https://keycloak.org/exact", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/exact", exact, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/exact/child", exact, false));
+
+        // Partition 2: Path wildcard suffix ("/parent/*") should accept "/parent" and any sub-path under it.
+        Set<String> pathWildcard = Stream.of(
+                "https://keycloak.org/parent/*"
+        ).collect(Collectors.toSet());
+
+        Assert.assertEquals("https://keycloak.org/parent", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/parent", pathWildcard, false));
+        Assert.assertEquals("https://keycloak.org/parent/child", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/parent/child", pathWildcard, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/parent2/child", pathWildcard, false));
+
+        // Partition 3: Host wildcard suffix ("https://test*") should accept hosts starting with "test".
+        Set<String> hostWildcard = Stream.of(
+                "https://test*"
+        ).collect(Collectors.toSet());
+
+        Assert.assertEquals("https://test.com/index.html", RedirectUtils.verifyRedirectUri(session, null, "https://test.com/index.html", hostWildcard, false));
+        Assert.assertEquals("https://test123.example/path", RedirectUtils.verifyRedirectUri(session, null, "https://test123.example/path", hostWildcard, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://tes.com/index.html", hostWildcard, false));
+
+        // Partition 4: Scheme-only wildcard ("custom2:*") should accept any URI with the same scheme.
+        Set<String> schemeWildcard = Stream.of(
+                "custom2:*"
+        ).collect(Collectors.toSet());
+
+        Assert.assertEquals("custom2:/something", RedirectUtils.verifyRedirectUri(session, null, "custom2:/something", schemeWildcard, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "custom3:/something", schemeWildcard, false));
+
+        // Partition 5: Global wildcard ("*") allows relative redirect URIs when a rootUrl is provided.
+        Set<String> globalWildcard = Stream.of(
+                "*"
+        ).collect(Collectors.toSet());
+
+        Assert.assertEquals("https://keycloak.org/path", RedirectUtils.verifyRedirectUri(session, "https://keycloak.org", "/path", globalWildcard, false));
+        Assert.assertEquals("https://keycloak.org/path", RedirectUtils.verifyRedirectUri(session, "https://keycloak.org", "path", globalWildcard, false));
+    }
+
+    @Test
     public void testVerifyRedirectUriNative() {
         Set<String> set = Stream.of(
                 "http://127.0.0.1",
