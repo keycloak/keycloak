@@ -46,11 +46,16 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory implements
     public static final String REQUIRED_PROPERTIES = "cimd-required-properties";
     public static final String RESTRICT_SAME_DOMAIN = "cimd-restrict-same-domain";
 
-    // Client ID Metadata Document Provider Name
-    public static final String CIMD_PROVIDER_NAME = "cimd-provider-name";
+    // Factory Global Setting: CIMD Provider Name
+    // Name in properties: spi-client-policy-executor-client-id-metadata-document-cimd-provider-name
+    protected String cimdProviderName;
 
     @Override
     public void init(Config.Scope config) {
+        cimdProviderName = config.get("cimdProviderName");
+        if (cimdProviderName == null || cimdProviderName.isBlank()) {
+            cimdProviderName = PersistentClientIdMetadataDocumentProviderFactory.PROVIDER_ID; // default
+        }
     }
 
     @Override
@@ -124,15 +129,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory implements
                 "If client metadata does not include all the properties, the executor does not accept the client metadata.",
                 ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
                 null);
-        configProperties.add(property);
-
-        // Client ID Metadata Document Provider Name
-        property = new ProviderConfigProperty(
-                CIMD_PROVIDER_NAME,
-                "Client ID Metadata Document Provider Name",
-                "Client ID Metadata Document Provider Name. The default is Persistent Client ID Metadata Document Provider",
-                ProviderConfigProperty.STRING_TYPE,
-                PersistentClientIdMetadataDocumentProviderFactory.PROVIDER_ID);
         configProperties.add(property);
     }
 
