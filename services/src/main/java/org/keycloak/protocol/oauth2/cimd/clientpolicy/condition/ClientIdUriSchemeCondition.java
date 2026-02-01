@@ -81,6 +81,6 @@ public class ClientIdUriSchemeCondition extends AbstractClientPolicyConditionPro
             return false;
         }
 
-        return configuration.getClientIdUriSchemes().stream().anyMatch(uri.getScheme()::equals);
+        return configuration.getClientIdUriSchemes().stream().anyMatch(i->i.equals(uri.getScheme()));
     }
 }
