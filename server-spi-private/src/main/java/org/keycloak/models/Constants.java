@@ -156,6 +156,9 @@ public final class Constants {
     public static final String CLIENT_PROFILES = "client-policies.profiles";
     public static final String CLIENT_POLICIES = "client-policies.policies";
 
+    // Realm Attributes Keys
+    public static final String SAML_BROKER_BLOCK_LOCKED_USER_LOGIN = "saml.broker.block-locked-user-login";
+
 
     // Authentication session note, which contains loa of current authentication in progress
     public static final String LEVEL_OF_AUTHENTICATION = "level-of-authentication";

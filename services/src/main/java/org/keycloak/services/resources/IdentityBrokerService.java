@@ -64,6 +64,7 @@ import org.keycloak.broker.provider.IdpLinkAction;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.broker.saml.SAMLEndpoint;
+import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Base64Url;
@@ -91,6 +92,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
@@ -661,7 +663,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
         } else {
             authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, federatedUser.getUsername());
-            Response response = validateUser(authenticationSession, federatedUser, realmModel);
+            Response response = validateUser(authenticationSession, federatedUser, realmModel, context);
             if (response != null) {
                 return response;
             }
@@ -677,7 +679,11 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
     }
 
 
-    public Response validateUser(AuthenticationSessionModel authSession, UserModel user, RealmModel realm) {
+    public Response validateUser(AuthenticationSessionModel authSession, UserModel user, RealmModel realm, BrokeredIdentityContext context) {
+        if (shouldUnlockForSamlLogin(realm, context)) {
+            return unlockAndValidateUser(authSession, user, realm);
+        }
+
         if (!user.isEnabled()) {
             event.error(Errors.USER_DISABLED);
             return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.ACCOUNT_DISABLED);
@@ -688,6 +694,37 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                 return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.ACCOUNT_DISABLED);
             }
         }
+        return null;
+    }
+
+    private boolean shouldUnlockForSamlLogin(RealmModel realm, BrokeredIdentityContext context) {
+        if (context == null || context.getIdpConfig() == null) {
+            return false;
+        }
+        if (!SAMLIdentityProviderFactory.PROVIDER_ID.equals(context.getIdpConfig().getProviderId())) {
+            return false;
+        }
+        return !realm.getAttribute(Constants.SAML_BROKER_BLOCK_LOCKED_USER_LOGIN, Boolean.TRUE);
+    }
+
+    private Response unlockAndValidateUser(AuthenticationSessionModel authSession, UserModel user, RealmModel realm) {
+        BruteForceProtector bruteForceProtector = session.getProvider(BruteForceProtector.class);
+
+        if (!user.isEnabled()) {
+            if (realm.isBruteForceProtected() && bruteForceProtector.isPermanentlyLockedOut(session, realm, user)) {
+                event.error(Errors.USER_DISABLED);
+                return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.ACCOUNT_DISABLED);
+            }
+            user.setEnabled(true);
+        }
+
+        if (realm.isBruteForceProtected() && bruteForceProtector.isTemporarilyDisabled(session, realm, user)) {
+            UserLoginFailureModel failureModel = session.loginFailures().getUserLoginFailure(realm, user.getId());
+            if (failureModel != null) {
+                session.loginFailures().removeUserLoginFailure(realm, user.getId());
+            }
+        }
+
         return null;
     }
 
