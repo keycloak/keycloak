@@ -127,6 +127,11 @@ public class ServerInfoAdminResource {
             info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp(), Version.VERSION));
             info.setCpuInfo(CpuInfoRepresentation.create());
             info.setMemoryInfo(MemoryInfoRepresentation.create());
+        } else if (AdminPermissions.evaluator(session, userRealm, auth).hasOneAdminRole(AdminRoles.MANAGE_REALM)) {
+            // If the user can manage his own realm just add the version information
+            SystemInfoRepresentation systemInfo = new SystemInfoRepresentation();
+            systemInfo.setVersion(Version.VERSION);
+            info.setSystemInfo(systemInfo);
         }
         info.setProfileInfo(createProfileInfo());
         info.setFeatures(createFeatureRepresentations());
