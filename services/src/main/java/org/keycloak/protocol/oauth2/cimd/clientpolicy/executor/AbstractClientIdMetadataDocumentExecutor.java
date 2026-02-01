@@ -105,10 +105,15 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
     protected CONFIG configuration;
     protected ClientIdMetadataDocumentProvider<CONFIG> provider;
 
+    // Factory Global Setting:
+    // Client ID Metadata Document Provider Name
+    protected String cimdProviderName; // non-null
+
     protected abstract Logger getLogger();
 
-    protected AbstractClientIdMetadataDocumentExecutor(KeycloakSession session) {
+    protected AbstractClientIdMetadataDocumentExecutor(KeycloakSession session, String cimdProviderName) {
         this.session = session;
+        this.cimdProviderName = cimdProviderName;
     }
 
     protected ClientIdMetadataDocumentProvider<CONFIG> getProvider() {
@@ -137,10 +142,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         protected boolean restrictSameDomain = false;
         @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.REQUIRED_PROPERTIES)
         protected List<String> requiredProperties = null;
-
-        // Client ID Metadata Document Provider Name
-        @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.CIMD_PROVIDER_NAME)
-        protected String cimdProviderName = PersistentClientIdMetadataDocumentProviderFactory.PROVIDER_ID;
 
         public Configuration() {
         }
@@ -191,14 +192,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
         public void setRequiredProperties(List<String> requiredProperties) {
             this.requiredProperties = requiredProperties;
-        }
-
-        public String getCimdProviderName() {
-            return cimdProviderName;
-        }
-
-        public void setCimdProviderName(String cimdProviderName) {
-            this.cimdProviderName = cimdProviderName;
         }
     }
 
@@ -347,7 +340,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
     }
 
     private void process(PreAuthorizationRequestContext preAuthorizationRequestContext) throws ClientPolicyException {
-        provider = session.getProvider(ClientIdMetadataDocumentProvider.class, getConfiguration().getCimdProviderName());
+        provider = session.getProvider(ClientIdMetadataDocumentProvider.class, cimdProviderName);
         provider.setConfiguration(getConfiguration());
 
         String clientId = preAuthorizationRequestContext.getClientId();

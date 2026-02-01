@@ -29,7 +29,6 @@ public class ClientIdMetadataDocumentExecutorFactory extends AbstractClientIdMet
     public static final String ONLY_ALLOW_CONFIDENTIAL_CLIENT = "only-allow-confidential-client";
     public static final String ALL_URIS_RESTRICT_SAME_DOMAIN = "cimd-all_uris-restrict-same-domain";
 
-
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
@@ -59,7 +58,7 @@ public class ClientIdMetadataDocumentExecutorFactory extends AbstractClientIdMet
 
     @Override
     public ClientPolicyExecutorProvider<ClientIdMetadataDocumentExecutor.Configuration> create(KeycloakSession session) {
-        return new ClientIdMetadataDocumentExecutor(session);
+        return new ClientIdMetadataDocumentExecutor(session, cimdProviderName);
     }
 
     @Override
