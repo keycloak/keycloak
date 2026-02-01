@@ -11,6 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
@@ -136,10 +137,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         protected boolean restrictSameDomain = false;
         @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.REQUIRED_PROPERTIES)
         protected List<String> requiredProperties = null;
-        @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.CONSENT_REQUIRED)
-        protected boolean consentRequired = true;
-        @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.FULL_SCOPE_DISABLED)
-        protected boolean fullScopeDisabled = true;
 
         // Client ID Metadata Document Provider Name
         @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.CIMD_PROVIDER_NAME)
@@ -194,22 +191,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
         public void setRequiredProperties(List<String> requiredProperties) {
             this.requiredProperties = requiredProperties;
-        }
-
-        public boolean isConsentRequired() {
-            return consentRequired;
-        }
-
-        public void setConsentRequired(boolean consentRequired) {
-            this.consentRequired = consentRequired;
-        }
-
-        public boolean isFullScopeDisabled() {
-            return fullScopeDisabled;
-        }
-
-        public void setFullScopeDisabled(boolean fullScopeDisabled) {
-            this.fullScopeDisabled = fullScopeDisabled;
         }
 
         public String getCimdProviderName() {
@@ -517,7 +498,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         }
 
         // Client identifier URLs MUST NOT contain single-dot or double-dot path segments.
-        if (uri.getRawPath().contains("/./") || uri.getRawPath().contains("/../")) {
+        if (isUnsafeUriPath(uri)) {
             getLogger().warnv("traverse path segment: raw path = {0}", uri.getRawPath());
             throw invalidClientId(ERR_CLIENTID_PATH_TRAVERSAL);
         }
@@ -758,6 +739,14 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         }
 
         return clientIdURIfromMetadata;
+    }
+
+    // any access to parent folder /../ or current /./ is unsafe with or without encoding
+    private final static Pattern UNSAFE_PATH_PATTERN = Pattern.compile(
+            "(/|%2[fF]|%5[cC]|\\\\)(%2[eE]|\\.){1,2}(/|%2[fF]|%5[cC]|\\\\)|(/|%2[fF]|%5[cC]|\\\\)(%2[eE]|\\.){1,2}$");
+
+    private boolean isUnsafeUriPath(URI redirectUri) {
+        return UNSAFE_PATH_PATTERN.matcher(redirectUri.getRawPath()).find();
     }
 
     private void verifyUri(String uriString, ErrorHandler errorHandler) throws ClientPolicyException {

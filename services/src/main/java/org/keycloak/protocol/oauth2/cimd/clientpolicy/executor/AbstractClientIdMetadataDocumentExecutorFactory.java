@@ -28,12 +28,6 @@ import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderF
  *         <li>Restrict same domain: only allow {client_id} and {redirect_uri} parameter of an authorization request whose hostname is under the one of the permitted domain (wildcard * can be used)</li>
  *         <li>Required properties: only allow a client metadata that includes all required properties</li>
  *     </ul>
- *     <li>Client Metadata Augmentation by Client ID Metadata Document Provider</li>
- *     <ul>
- *         <li>Consent required</li>
- *         <li>Full scope disabled</li>
- *     </ul>
- *     <li>Client ID Metadata Document Provider Name: defines CIMD provider</li>
  * </ul>
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -51,8 +45,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory implements
     // Client Metadata Validation
     public static final String REQUIRED_PROPERTIES = "cimd-required-properties";
     public static final String RESTRICT_SAME_DOMAIN = "cimd-restrict-same-domain";
-    public static final String CONSENT_REQUIRED = "cimd-consent-required";
-    public static final String FULL_SCOPE_DISABLED = "cimd-full-scope-disabled";
 
     // Client ID Metadata Document Provider Name
     public static final String CIMD_PROVIDER_NAME = "cimd-provider-name";
@@ -132,23 +124,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory implements
                 "If client metadata does not include all the properties, the executor does not accept the client metadata.",
                 ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
                 null);
-        configProperties.add(property);
-
-        // Client Metadata Augmentation by Client ID Metadata Document Provider
-        property = new ProviderConfigProperty(
-                CONSENT_REQUIRED,
-                "Consent required",
-                "If ON, then an end-user is always required to grant consent to the client.",
-                ProviderConfigProperty.BOOLEAN_TYPE,
-                true);
-        configProperties.add(property);
-
-        property = new ProviderConfigProperty(
-                FULL_SCOPE_DISABLED,
-                "Full scope disabled",
-                "If ON, then client is not allowed to use all the scopes.",
-                ProviderConfigProperty.BOOLEAN_TYPE,
-                true);
         configProperties.add(property);
 
         // Client ID Metadata Document Provider Name

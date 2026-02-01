@@ -705,7 +705,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
 
         // Client ID Verification:
         // Client identifier URLs MUST have an "https" scheme.
-        assertLoginAndError("http://example.com/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_CLIENTID_INVALID_SCHEME);
+        assertLoginAndError("http://mcp.example.co.jp/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_CLIENTID_INVALID_SCHEME);
 
         // Client ID Verification:
         // Client identifier URLs MUST contain a path component.
@@ -1056,37 +1056,6 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         oidcClientEndpointsResource.registerClientIdMetadata(clientMetadata, null, null);
         assertLoginAndError(clientId, ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
 
-        // consent required
-        // default value = true -> false
-        // full scope disabled
-        // default value = true -> false
-        json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
-                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
-                        .addExecutor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID,
-                                createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->{
-                                    it.setAllowLoopbackAddress(true);
-                                    it.setConsentRequired(false);
-                                    it.setFullScopeDisabled(false);
-                                }))
-                        .toRepresentation()
-        ).toString();
-        updateProfiles(json);
-
-        clientId = TestApplicationResourceUrls.getClientIdMetadataUri(generateSuffixedName("CIMD"));
-        clientMetadata = setupOIDCClientRepresentation(clientId, i->{});
-        oidcClientEndpointsResource.registerClientIdMetadata(clientMetadata, null, null);
-
-        // send an authorization request
-        loginUserAndGetCode(clientId, false);
-
-        // check the persisted client settings
-        ClientRepresentation clientRepresentation = findByClientIdByAdmin(clientId);
-        assertFalse(clientRepresentation.isConsentRequired());
-        assertTrue(clientRepresentation.isFullScopeAllowed());
-
-        // delete the persisted client
-        deleteClientByAdmin(clientRepresentation.getId());
-        assertThrows(jakarta.ws.rs.NotFoundException.class, ()->getClientByAdmin(clientRepresentation.getId()));
     }
 
     private String loginUserAndGetCode(String clientId, boolean isGrantRequred) {

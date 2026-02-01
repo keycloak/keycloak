@@ -49,8 +49,8 @@ public class PersistentClientIdMetadataDocumentProvider extends AbstractPersiste
 
     @Override
     public void augmentClientMetadata(ClientRepresentation clientRep) {
-        clientRep.setConsentRequired(getConfiguration().isConsentRequired());
-        clientRep.setFullScopeAllowed(!getConfiguration().isFullScopeDisabled());
+        clientRep.setConsentRequired(true);
+        clientRep.setFullScopeAllowed(false);
 
         // to show information on a client on the consent screen.
         clientRep.getAttributes().put(DISPLAY_ON_CONSENT_SCREEN, "true");
