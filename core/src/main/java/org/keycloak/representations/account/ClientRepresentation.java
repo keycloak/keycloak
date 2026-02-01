@@ -17,6 +17,46 @@ public class ClientRepresentation {
     private String logoUri;
     private String policyUri;
     private String tosUri;
+    private boolean frontchannelLogoutSessionRequired;
+    private boolean backchannelLogoutSessionRequired;
+    private boolean backchannelLogoutRevokeOfflineSessions;
+    private String frontchannelLogoutUrl;
+    private String backchannelLogoutUrl;
+
+    public boolean isBackchannelLogoutSessionRequired() {
+        return backchannelLogoutSessionRequired;
+    }
+
+    public void setBackchannelLogoutSessionRequired(boolean backchannelLogoutSessionRequired) {
+        this.backchannelLogoutSessionRequired = backchannelLogoutSessionRequired;
+    }
+    public String getBackchannelLogoutUrl() {
+        return backchannelLogoutUrl;
+    }
+    public void setBackchannelLogoutUrl(String backchannelLogoutUrl) {
+        this.backchannelLogoutUrl = backchannelLogoutUrl;
+    }
+
+    public void setBackchannelLogoutRevokeOfflineSessions(boolean backchannelLogoutRevokeOfflineSessions) {
+        this.backchannelLogoutRevokeOfflineSessions = backchannelLogoutRevokeOfflineSessions;
+    }
+
+    public boolean isBackchannelLogoutRevokeOfflineSessions() {
+        return backchannelLogoutRevokeOfflineSessions;
+    }
+
+    public void setFrontchannelLogoutUrl(String frontchannelLogoutUrl) {
+        this.frontchannelLogoutUrl = frontchannelLogoutUrl;
+    }
+    public String getFrontchannelLogoutUrl() {
+        return frontchannelLogoutUrl;
+    }
+    public void setFrontchannelLogoutSessionRequired(boolean frontchannelLogoutSessionRequired) {
+        this.frontchannelLogoutSessionRequired = frontchannelLogoutSessionRequired;
+    }
+    public boolean isFrontchannelLogoutSessionRequired() {
+        return frontchannelLogoutSessionRequired;
+    }
 
 
     public String getClientId() {

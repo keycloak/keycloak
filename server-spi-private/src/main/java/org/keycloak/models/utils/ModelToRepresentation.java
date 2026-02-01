@@ -220,6 +220,12 @@ public class ModelToRepresentation {
         rep.setDescription(group.getDescription());
         rep.setPath(buildGroupPath(group));
         rep.setParentId(group.getParentId());
+        // OIDC logout settings
+        rep.setFrontchannelLogoutUrl(clientModel.getAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI));
+        rep.setFrontchannelLogoutSessionRequired(Boolean.parseBoolean(clientModel.getAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED)));
+        rep.setBackchannelLogoutUrl(clientModel.getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL));
+        rep.setBackchannelLogoutSessionRequired(Boolean.parseBoolean(clientModel.getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED)));
+        rep.setBackchannelLogoutRevokeOfflineSessions(Boolean.parseBoolean(clientModel.getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_SESSIONS)));
         if (!full) return rep;
         // Role mappings
         Set<RoleModel> roles = group.getRoleMappingsStream().collect(Collectors.toSet());

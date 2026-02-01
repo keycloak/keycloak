@@ -534,6 +534,12 @@ public class RepresentationToModel {
             // Redirect uris / Web origins
             add(updatePropertyAction(client::setRedirectUris, () -> CollectionUtil.collectionToSet(rep.getRedirectUris()), client::getRedirectUris));
             add(updatePropertyAction(client::setWebOrigins, () -> CollectionUtil.collectionToSet(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
+            // OIDC logout settings
+            add(updatePropertyAction(val -> client.setAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, val), rep::getFrontchannelLogoutUrl, () -> client.getAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI)));
+            add(updatePropertyAction(val -> client.setAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED, val), () -> rep.isFrontchannelLogoutSessionRequired() ? "true" : "false", () -> client.getAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED)));
+            add(updatePropertyAction(val -> client.setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, val), rep::getBackchannelLogoutUrl, () -> client.getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL)));
+            add(updatePropertyAction(val -> client.setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED, val), () -> rep.isBackchannelLogoutSessionRequired() ? "true" : "false", () -> client.getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED)));
+            add(updatePropertyAction(val -> client.setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_SESSIONS, val), () -> rep.isBackchannelLogoutRevokeOfflineSessions() ? "true" : "false", () -> client.getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_SESSIONS)));
         }};
 
         // Extended client attributes
