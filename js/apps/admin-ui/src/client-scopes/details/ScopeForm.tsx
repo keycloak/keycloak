@@ -32,7 +32,7 @@ import { toClientScopes } from "../routes/ClientScopes";
 import { removeEmptyOid4vcAttributes } from "./oid4vciAttributes";
 
 const OID4VC_PROTOCOL = "oid4vc";
-const VC_FORMAT_JWT_VC = "jwt_vc";
+const VC_FORMAT_JWT_VC = "jwt_vc_json";
 const VC_FORMAT_SD_JWT = "dc+sd-jwt";
 
 // Validation function for comma-separated lists
