@@ -894,12 +894,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         events.clear();
 
         // Request credential without credential_configuration_id or credential_identifier
-        // Use emptyBody() to send empty request
         Oid4vcCredentialRequest credentialRequest = oauth.oid4vc()
                 .credentialRequest()
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                 .bearerToken(tokenResponse.getAccessToken())
-                .emptyBody();
+                .customBody("{}");
 
         Oid4vcCredentialResponse credentialResponse = credentialRequest.send();
 
