@@ -445,6 +445,7 @@ public class ServerInfoAdminResource {
         featureRep.setLabel(feature.getLabel());
         featureRep.setType(FeatureType.valueOf(feature.getType().name()));
         featureRep.setEnabled(isEnabled);
+        featureRep.setDeprecated(feature.isDeprecated());
         featureRep.setDependencies(feature.getDependencies() != null ?
                 feature.getDependencies().stream().map(Enum::name).collect(Collectors.toSet()) : Collections.emptySet());
         return featureRep;

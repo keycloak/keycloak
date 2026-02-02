@@ -77,26 +77,27 @@ type FeatureItemProps = {
 
 const FeatureItem = ({ feature }: FeatureItemProps) => {
   const { t } = useTranslation();
+  const color =
+    feature.type === FeatureType.Default ||
+    feature.type === FeatureType.DisabledByDefault
+      ? "green"
+      : feature.type === FeatureType.Preview ||
+          feature.type === FeatureType.PreviewDisabledByDefault
+        ? "blue"
+        : feature.type === FeatureType.Experimental
+          ? "orange"
+          : feature.type === FeatureType.Deprecated
+            ? "grey"
+            : "red";
   return (
     <ListItem className="pf-v5-u-mb-sm">
       {feature.name}&nbsp;
-      {feature.type === FeatureType.Experimental && (
-        <Label color="orange">{t("experimental")}</Label>
-      )}
-      {feature.type === FeatureType.Preview && (
-        <Label color="blue">{t("preview")}</Label>
-      )}
-      {feature.type === FeatureType.PreviewDisabledByDefault && (
-        <Label color="blue">{t("preview")}</Label>
-      )}
-      {feature.type === FeatureType.Default && (
-        <Label color="green">{t("supported")}</Label>
-      )}
-      {feature.type === FeatureType.DisabledByDefault && (
-        <Label color="green">{t("supported")}</Label>
-      )}
-      {feature.type === FeatureType.Deprecated && (
-        <Label color="grey">{t("deprecated")}</Label>
+      <Label color={color}>{t(feature.type.toLowerCase())}</Label>
+      {feature.deprecated && feature.type !== FeatureType.Deprecated && (
+        <>
+          &nbsp;
+          <Label color="grey">{t("deprecated")}</Label>
+        </>
       )}
     </ListItem>
   );

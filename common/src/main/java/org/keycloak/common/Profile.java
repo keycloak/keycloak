@@ -76,7 +76,7 @@ public class Profile {
 
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
 
-        TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1),
+        TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1, true, null, null),
         TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
         TOKEN_EXCHANGE_EXTERNAL_INTERNAL_V2("External to Internal Token Exchange version 2", Type.EXPERIMENTAL, 2),
 
@@ -172,32 +172,34 @@ public class Profile {
         private final BooleanSupplier isAvailable;
         private final FeatureUpdatePolicy updatePolicy;
         private final Set<Feature> dependencies;
+        private final boolean deprecated;
         private final int version;
 
         Feature(String label, Type type, Feature... dependencies) {
-            this(label, type, 1, null, null, dependencies);
+            this(label, type, 1, type == Type.DEPRECATED, null, null, dependencies);
         }
 
         Feature(String label, Type type, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
-            this(label, type, 1, null, updatePolicy, dependencies);
+            this(label, type, 1, type == Type.DEPRECATED, null, updatePolicy, dependencies);
         }
 
         Feature(String label, Type type, int version, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
-            this(label, type, version, null, updatePolicy, dependencies);
+            this(label, type, version, type == Type.DEPRECATED, null, updatePolicy, dependencies);
         }
 
         Feature(String label, Type type, int version, Feature... dependencies) {
-            this(label, type, version, null, null, dependencies);
+            this(label, type, version, type == Type.DEPRECATED, null, null, dependencies);
         }
 
         Feature(String label, Type type, int version, BooleanSupplier isAvailable, Feature... dependencies) {
-            this(label, type, version, isAvailable, null, dependencies);
+            this(label, type, version, type == Type.DEPRECATED, isAvailable, null, dependencies);
         }
 
-        Feature(String label, Type type, int version, BooleanSupplier isAvailable, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
+        Feature(String label, Type type, int version, boolean deprecated, BooleanSupplier isAvailable, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
             this.label = label;
             this.type = type;
             this.version = version;
+            this.deprecated = type == Type.DEPRECATED || deprecated;
             this.isAvailable = isAvailable;
             this.updatePolicy = updatePolicy == null ? FeatureUpdatePolicy.ROLLING : updatePolicy;
             this.key = name().toLowerCase().replaceAll("_", "-");
@@ -250,6 +252,10 @@ public class Profile {
 
         public int getVersion() {
             return version;
+        }
+
+        public boolean isDeprecated() {
+            return deprecated;
         }
 
         public boolean isAvailable() {
@@ -513,7 +519,7 @@ public class Profile {
     }
 
     public Set<Feature> getDeprecatedFeatures() {
-        return getFeatures(Feature.Type.DEPRECATED);
+        return features.keySet().stream().filter(Feature::isDeprecated).collect(Collectors.toSet());
     }
 
     public Set<Feature> getFeatures(Feature.Type type) {
@@ -549,12 +555,8 @@ public class Profile {
     }
 
     private void logUnsupportedFeatures(Feature.Type type, Set<Feature> checkedFeatures, Logger.Level level) {
-        Set<Feature.Type> checkedFeatureTypes = checkedFeatures.stream()
-                .map(Feature::getType)
-                .collect(Collectors.toSet());
-
         String enabledFeaturesOfType = features.entrySet().stream()
-                .filter(e -> e.getValue() && checkedFeatureTypes.contains(e.getKey().getType()))
+                .filter(e -> e.getValue() && checkedFeatures.contains(e.getKey()))
                 .map(e -> e.getKey().getVersionedKey()).sorted().collect(Collectors.joining(", "));
 
         if (!enabledFeaturesOfType.isEmpty()) {
