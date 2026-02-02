@@ -119,9 +119,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory implements
         property = new ProviderConfigProperty(
                 RESTRICT_SAME_DOMAIN,
                 "Restrict same domain",
-                "If ON, then the executor checks Client ID URL and Redirect URI of an authorization request are under the same one of allow permitted domains." +
-                        "Moreover, the executor checks if Redirect URIs in Client Metadata has at least one entry whose domain is the same as " +
-                        "Client ID URL and Redirect URI of the authorization request. ",
+                "If ON, then the executor checks Client ID URL and Redirect URI of an authorization request " +
+                "and properties of client metadata whose value is URI are under the same one of allow permitted domains.",
                 ProviderConfigProperty.BOOLEAN_TYPE,
                 false);
         configProperties.add(property);

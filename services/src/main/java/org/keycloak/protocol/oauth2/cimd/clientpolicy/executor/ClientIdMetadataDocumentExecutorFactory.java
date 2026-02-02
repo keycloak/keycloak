@@ -45,15 +45,6 @@ public class ClientIdMetadataDocumentExecutorFactory extends AbstractClientIdMet
                 ProviderConfigProperty.BOOLEAN_TYPE,
                 false);
         configProperties.add(property);
-
-        property = new ProviderConfigProperty(
-                ALL_URIS_RESTRICT_SAME_DOMAIN,
-                "All URIs Restrict same domain",
-                "If ON, then the executor checks client_id and redirect_uris of an authorization request " +
-                        "and properties of client metadata whose value is URI is under the same domain defined by permitted domains.",
-                ProviderConfigProperty.BOOLEAN_TYPE,
-                false);
-        configProperties.add(property);
     }
 
     @Override
