@@ -32,8 +32,10 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
@@ -60,6 +62,9 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -797,9 +802,9 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         assertNull("credentialSubject.scope-name has no display", claim.getDisplay());
                     }
 
-                    assertEquals("The jwt_vc-credential should offer vct",
-                            verifiableCredentialType,
-                            jwtVcConfig.getVct());
+                    assertNotNull("The jwt_vc-credential should offer credential_definition",
+                            jwtVcConfig.getCredentialDefinition());
+                    assertNull("JWT_VC credentials should not have vct", jwtVcConfig.getVct());
 
                     // We are offering key binding only for identity credential
                     assertTrue("The jwt_vc-credential should contain a cryptographic binding method supported named jwk",
@@ -970,5 +975,133 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         error.getErrorDescription());
             }
         });
+    }
+
+    /**
+     * Test that credential requests work when the client scope is assigned as Optional.
+     */
+    @Test
+    public void testCredentialRequestWithOptionalClientScope() {
+        ClientScopeRepresentation optionalScope = registerOptionalClientScope(
+                "optional-jwt-credential",
+                TEST_DID.toString(),
+                "optional-jwt-credential-config-id",
+                null, null,
+                Format.JWT_VC,
+                null, null);
+        
+        ClientRepresentation testClient = testRealm().clients().findByClientId(client.getClientId()).get(0);
+        testRealm().clients().get(testClient.getId()).addOptionalClientScope(optionalScope.getId());
+
+        // Extract serializable data before lambda
+        final String scopeName = optionalScope.getName();
+        final String configId = optionalScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String token = getBearerToken(oauth, client, scopeName);
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+            CredentialRequest credentialRequest = new CredentialRequest()
+                    .setCredentialConfigurationId(configId);
+
+            String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+            Response credentialResponse = issuerEndpoint.requestCredential(requestPayload);
+
+            assertEquals("The credential request should succeed for Optional client scope",
+                    HttpStatus.SC_OK, credentialResponse.getStatus());
+            assertNotNull("A credential should be returned", credentialResponse.getEntity());
+
+            CredentialResponse credentialResponseVO = JsonSerialization.mapper
+                    .convertValue(credentialResponse.getEntity(), CredentialResponse.class);
+
+            assertNotNull("Credentials array should not be null", credentialResponseVO.getCredentials());
+            assertFalse("Credentials array should not be empty", credentialResponseVO.getCredentials().isEmpty());
+        });
+    }
+
+    /**
+     * Test that OID4VCI client scopes cannot be assigned as Default to a client.
+     */
+    @Test
+    public void testCannotAssignOid4vciScopeAsDefaultToClient() {
+        ClientScopeRepresentation oid4vciScope = registerOptionalClientScope(
+                "test-oid4vci-scope",
+                TEST_DID.toString(),
+                "test-oid4vci-config-id",
+                null, null,
+                Format.JWT_VC,
+                null, null);
+        
+        ClientRepresentation testClient = testRealm().clients().findByClientId(client.getClientId()).get(0);
+        ClientResource clientResource = testRealm().clients().get(testClient.getId());
+        
+        try {
+            clientResource.addDefaultClientScope(oid4vciScope.getId());
+            Assert.fail("Expected BadRequestException when trying to assign OID4VCI scope as Default");
+        } catch (BadRequestException e) {
+            OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+            assertEquals("OID4VCI client scopes cannot be assigned as Default scopes. Only Optional scope assignment is supported.",
+                    error.getErrorDescription());
+        }
+    }
+
+    @Test
+    public void testCannotAssignOid4vciScopeAsDefaultToRealm() {
+        ClientScopeRepresentation oid4vciScope = registerOptionalClientScope(
+                "test-oid4vci-realm-scope",
+                TEST_DID.toString(),
+                "test-oid4vci-realm-config-id",
+                null, null,
+                Format.JWT_VC,
+                null, null);
+        
+        try {
+            testRealm().addDefaultDefaultClientScope(oid4vciScope.getId());
+            Assert.fail("Expected BadRequestException when trying to assign OID4VCI scope as realm Default");
+        } catch (BadRequestException e) {
+            OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+            assertEquals("OID4VCI client scopes cannot be assigned as Default scopes. Only Optional scope assignment is supported.",
+                    error.getErrorDescription());
+        }
+    }
+
+    /**
+     * Test that OID4VCI client scopes cannot be assigned even as Optional when OID4VCI is disabled at realm level.
+     */
+    @Test
+    public void testCannotAssignOid4vciScopeWhenRealmDisabled() {
+        ClientScopeRepresentation oid4vciScope = registerOptionalClientScope(
+                "test-oid4vci-disabled-scope",
+                TEST_DID.toString(),
+                "test-oid4vci-disabled-config-id",
+                null, null,
+                Format.JWT_VC,
+                null, null);
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            realm.setVerifiableCredentialsEnabled(false);
+        });
+
+        try {
+            ClientRepresentation testClient = testRealm().clients().findByClientId(client.getClientId()).get(0);
+            ClientResource clientResource = testRealm().clients().get(testClient.getId());
+            
+            try {
+                clientResource.addOptionalClientScope(oid4vciScope.getId());
+                Assert.fail("Expected BadRequestException when OID4VCI is disabled at realm level");
+            } catch (BadRequestException e) {
+                OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+                assertEquals("OID4VCI client scopes cannot be assigned when Verifiable Credentials is disabled for the realm",
+                        error.getErrorDescription());
+            }
+        } finally {
+            testingClient.server(TEST_REALM_NAME).run(session -> {
+                RealmModel realm = session.getContext().getRealm();
+                realm.setVerifiableCredentialsEnabled(true);
+            });
+        }
     }
 }

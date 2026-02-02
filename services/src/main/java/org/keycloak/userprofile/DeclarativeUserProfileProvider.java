@@ -512,7 +512,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
                 String attributeName = metadata.getName();
 
-                if (isBuiltInAttribute(attributeName)) {
+                if (isBuiltInAttribute(attributeName) && parsedDefaultRawConfig != null) {
                     UPAttribute upAttribute = parsedDefaultRawConfig.getAttribute(attributeName);
                     Map<String, Map<String, Object>> validations = Optional.ofNullable(upAttribute.getValidations()).orElse(Collections.emptyMap());
 

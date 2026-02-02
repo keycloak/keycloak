@@ -1,4 +1,4 @@
-import { Locator, Page, expect } from "@playwright/test";
+import { type Locator, type Page, expect } from "@playwright/test";
 
 export async function searchItem(
   page: Page,
@@ -120,6 +120,11 @@ export async function clickSelectRow(
     row = rowIndex;
   }
   await page.getByLabel(tableName).getByLabel(`Select row ${row}`).click();
+}
+
+export async function openRowDetails(page: any, itemName: string) {
+  const row = page.getByRole("row", { name: itemName });
+  await row.getByRole("button", { name: "Details" }).click();
 }
 
 export async function expandRow(page: Page, tableName: string, row: number) {

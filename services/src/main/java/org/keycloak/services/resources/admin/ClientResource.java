@@ -62,6 +62,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.ClientInstallationProvider;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -424,6 +426,9 @@ public class ClientResource {
         if (defaultScope && clientScope.isDynamicScope()) {
             throw new ErrorResponseException("invalid_request", "Can't assign a Dynamic Scope to a Client as a Default Scope", Response.Status.BAD_REQUEST);
         }
+
+        validateClientScopeAssignment(session, clientScope, defaultScope, realm);
+        
         client.addClientScope(clientScope, defaultScope);
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLIENT_SCOPE_CLIENT_MAPPING).resourcePath(session.getContext().getUri()).success();
@@ -788,7 +793,7 @@ public class ClientResource {
 
             CredentialRepresentation rep = new CredentialRepresentation();
             rep.setType(CredentialRepresentation.SECRET);
-            rep.setValue(wrapper.getClientRotatedSecret());
+            rep.setValue(wrapper.getClientRotatedSecret(session));
 
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
@@ -820,7 +825,7 @@ public class ClientResource {
         if (!wrapper.hasRotatedSecret())
             throw new NotFoundException("Client does not have a rotated secret");
         else {
-            UserCredentialModel model = UserCredentialModel.secret(wrapper.getClientRotatedSecret());
+            UserCredentialModel model = UserCredentialModel.secret(wrapper.getClientRotatedSecret(session));
             return ModelToRepresentation.toRepresentation(model);
         }
     }
@@ -843,6 +848,23 @@ public class ClientResource {
         RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
         updateAuthorizationSettings(rep);
+    }
+
+    /**
+     * Validates client scope assignment using protocol-specific validation if available.
+     *
+     * @param session      the Keycloak session
+     * @param clientScope  the client scope to be assigned
+     * @param defaultScope true if assigning as Default scope, false if Optional
+     * @param realm        the realm where the assignment is happening
+     */
+    public static void validateClientScopeAssignment(KeycloakSession session, ClientScopeModel clientScope,
+                                                     boolean defaultScope, RealmModel realm) {
+        LoginProtocolFactory loginProtocolFactory = (LoginProtocolFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(LoginProtocol.class, clientScope.getProtocol());
+        if (loginProtocolFactory != null) {
+            loginProtocolFactory.validateClientScopeAssignment(session, clientScope, defaultScope, realm);
+        }
     }
 
     public static void updateClientServiceAccount(KeycloakSession session, ClientModel client, Boolean isServiceAccountEnabled) {

@@ -24,7 +24,7 @@ type UserWorkflowProps = {
   user?: string;
 };
 
-const WorkflowYAMLAccordion = ({ id }: { id: string }) => {
+const WorkflowYAMLAccordion = ({ id, name }: { id: string; name: string }) => {
   const [expanded, setExpanded] = useState(false);
   const [yamlContent, setYamlContent] = useState<string>("");
   const { adminClient } = useAdminClient();
@@ -55,14 +55,15 @@ const WorkflowYAMLAccordion = ({ id }: { id: string }) => {
             onToggleWorkflowYaml();
           }}
           isExpanded={expanded}
-          id={`yaml-ex-toggle1-${id}`}
+          id={`yaml-ex-toggle-${name}`}
+          data-testid={`yaml-ex-toggle-${name}`}
         >
           {t("workflowYAML")}
         </AccordionToggle>
         <AccordionContent id={`ex-expand1-content-${id}`} isHidden={!expanded}>
           <CodeEditor
-            id={`workflowYAML-${id}`}
-            data-testid={`workflowYAML-${id}`}
+            id={`workflowYAML-${name}`}
+            data-testid={`workflowYAML-${name}`}
             value={yamlContent}
             language="yaml"
             readOnly={true}
@@ -80,7 +81,7 @@ const StepsCell = (workflow: WorkflowRepresentation) => {
 
   return (
     <>
-      <Table>
+      <Table aria-label={workflow.name! + "-" + t("steps")} variant="compact">
         <Thead>
           <Tr>
             <Th>{t("step")}</Th>
@@ -108,7 +109,7 @@ const StepsCell = (workflow: WorkflowRepresentation) => {
           ))}
         </Tbody>
       </Table>
-      <WorkflowYAMLAccordion id={workflow.id!} />
+      <WorkflowYAMLAccordion id={workflow.id!} name={workflow.name!} />
     </>
   );
 };

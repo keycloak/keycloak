@@ -23,7 +23,7 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class Registry implements ExtensionContext.Store.CloseableResource {
+public class Registry implements AutoCloseable {
 
     private final RegistryLogger logger;
 

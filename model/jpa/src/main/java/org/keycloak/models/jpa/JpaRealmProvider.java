@@ -457,17 +457,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             throw new ModelException("Role not found or trying to remove role from incorrect realm");
         }
 
-        // Can't use a native query to delete the composite roles mappings because it causes TransientObjectException.
-        // At the same time, can't use the persist cascade type on the compositeRoles field because in that case
-        // we could not still use a native query as a different problem would arise - it may happen that a parent role that
-        // has this role as a composite is present in the persistence context. In that case it, the role would be re-created
-        // again after deletion through persist cascade type.
-        // So in any case, native query is not an option. This is not optimal as it executes additional queries but
-        // the alternative of clearing the persistence context is not either as we don't know if something currently present
-        // in the context is not needed later.
-
-        roleEntity.getCompositeRoles().forEach(childRole -> childRole.getParentRoles().remove(roleEntity));
-        roleEntity.getParentRoles().forEach(parentRole -> parentRole.getCompositeRoles().remove(roleEntity));
+        em.createNamedQuery("deleteRoleFromComposites").setParameter("role", roleEntity)
+                .executeUpdate();
 
         em.createNamedQuery("deleteClientScopeRoleMappingByRole").setParameter("role", roleEntity).executeUpdate();
 

@@ -96,6 +96,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.Assert;
@@ -105,6 +106,8 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
+import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
+import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -129,6 +132,7 @@ import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENT
 import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
 import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
 import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.namedClientId;
+import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
 import static org.keycloak.util.JsonSerialization.valueAsPrettyString;
 
 import static org.junit.Assert.assertEquals;
@@ -215,6 +219,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         client = testRealm().clients().findByClientId(clientId).get(0);
         namedClient = testRealm().clients().findByClientId(namedClientId).get(0);
 
+        // Enable OID4VCI at realm level (required before assigning OID4VCI scopes)
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        realmRep.setVerifiableCredentialsEnabled(true);
+        testRealm().update(realmRep);
+
         // Lookup the pre-installed oid4vc_natural_person client scope
         sdJwtTypeNaturalPersonClientScope = requireExistingClientScope(sdJwtTypeNaturalPersonScopeName);
 
@@ -272,23 +281,21 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return null;
     }
 
-    private ClientScopeRepresentation registerOptionalClientScope(String scopeName,
-                                                                  String issuerDid,
-                                                                  String credentialConfigurationId,
-                                                                  String credentialIdentifier,
-                                                                  String vct,
-                                                                  String format,
-                                                                  String protocolMapperReferenceFile,
-                                                                  List<String> acceptedKeyAttestationValues) {
-        // Check if the client scope already exists
+    protected ClientScopeRepresentation registerOptionalClientScope(String scopeName,
+                                                          String issuerDid,
+                                                          String credentialConfigurationId,
+                                                          String credentialIdentifier,
+                                                          String vct,
+                                                          String format,
+                                                          String protocolMapperReferenceFile,
+                                                          List<String> acceptedKeyAttestationValues) {
         List<ClientScopeRepresentation> existingScopes = testRealm().clientScopes().findAll();
         for (ClientScopeRepresentation existingScope : existingScopes) {
             if (existingScope.getName().equals(scopeName)) {
-                return existingScope; // Reuse existing scope
+                return existingScope;
             }
         }
 
-        // Create a new ClientScope if not found
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName(scopeName);
         clientScope.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
@@ -335,7 +342,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
         clientScope.setId(scopeId);
 
-        // Add protocol mappers to the ClientScope
         List<ProtocolMapperRepresentation> protocolMappers;
         if (protocolMapperReferenceFile == null) {
             protocolMappers = getProtocolMappers(scopeName);
@@ -679,12 +685,15 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             testRealm.setComponents(new MultivaluedHashMap<>());
         }
 
+        // Add key providers
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getKeyProvider());
-
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
                 getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100));
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
                 getRsaEncKeyProvider(RSA_OAEP, "enc-key-oaep", 101));
+
+        // Add Did attribute to the user profile
+        testRealm.getComponents().add("org.keycloak.userprofile.UserProfileProvider", getUserProfileProvider());
 
         // Find existing client representation
         Map<String, ClientRepresentation> realmClients = testRealm.getClients().stream()
@@ -708,9 +717,24 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
         Map<String, List<String>> clientRoles = Map.of(clientId, List.of("testRole"));
         List<UserRepresentation> realmUsers = Optional.ofNullable(testRealm.getUsers()).map(ArrayList::new).orElse(new ArrayList<>());
-        realmUsers.add(getUserRepresentation("John Doe", List.of(CREDENTIAL_OFFER_CREATE.getName()), clientRoles));
-        realmUsers.add(getUserRepresentation("Alice Wonderland", List.of(), Map.of()));
+        realmUsers.add(getUserRepresentation("John Doe", Map.of("did", "did:key:1234"), List.of(CREDENTIAL_OFFER_CREATE.getName()), clientRoles));
+        realmUsers.add(getUserRepresentation("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
         testRealm.setUsers(realmUsers);
+    }
+
+    private ComponentExportRepresentation getUserProfileProvider() {
+
+        // Add the User DID attribute, with the same logic as in DeclarativeUserProfileProviderFactory
+        //
+        UPConfig profileConfig = UPConfigUtils.parseSystemDefaultConfig();
+        DeclarativeUserProfileProviderFactory.addUserDidAttribute(profileConfig);
+
+        ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
+        componentExportRepresentation.setProviderId("declarative-user-profile");
+        componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
+                Map.of(UP_COMPONENT_CONFIG_KEY, List.of(JsonSerialization.valueAsString(profileConfig)))));
+
+        return componentExportRepresentation;
     }
 
     protected void withCausePropagation(Runnable r) throws Throwable {
