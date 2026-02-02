@@ -23,10 +23,8 @@ import java.util.Properties;
 import java.util.function.Function;
 
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import org.keycloak.quarkus.runtime.KeycloakMain;
 
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.ConfigValue.ConfigValueBuilder;
@@ -71,17 +69,9 @@ public abstract class AbstractConfigurationTest {
 
     @BeforeClass
     public static void resetConfiguration() {
-        System.setProperties((Properties) SYSTEM_PROPERTIES.clone());
+        KeycloakMain.reset(SYSTEM_PROPERTIES);
         Environment.setHomeDir(Paths.get("src/test/resources/"));
-
         KcEnvConfigSource.ENV_OVERRIDE.clear();
-
-        PropertyMappers.reset();
-        ConfigArgsConfigSource.setCliArgs();
-        PersistedConfigSource.getInstance().getConfigValueProperties().clear();
-        Profile.reset();
-        Configuration.resetConfig();
-        ExecutionExceptionHandler.resetExceptionTransformers();
     }
 
     @After
