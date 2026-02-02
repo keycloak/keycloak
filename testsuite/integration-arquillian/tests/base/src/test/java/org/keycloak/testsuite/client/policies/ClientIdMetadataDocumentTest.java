@@ -134,8 +134,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
                                     it.setAllowLoopbackAddress(true);
                                     it.setTrustedDomains(List.of("*.example.com","localhost"));
                                     it.setRestrictSameDomain(true);
-                                    it.setRequiredProperties(List.of("scope", "logo_uri", "client_uri", "tos_uri", "policy_uri", "jwks_uri"));
-                                    it.setAllUrisRestrictSameDomain(true);}))
+                                    it.setRequiredProperties(List.of("scope", "logo_uri", "client_uri", "tos_uri", "policy_uri", "jwks_uri"));}))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -256,8 +255,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
                                     it.setAllowLoopbackAddress(true);
                                     it.setTrustedDomains(List.of("*.example.com","localhost"));
                                     it.setRestrictSameDomain(true);
-                                    it.setRequiredProperties(List.of("scope", "logo_uri", "client_uri", "tos_uri", "policy_uri"));
-                                    it.setAllUrisRestrictSameDomain(true);}))
+                                    it.setRequiredProperties(List.of("scope", "logo_uri", "client_uri", "tos_uri", "policy_uri"));}))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -379,7 +377,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         // jwksUri = https://localhost:8543/auth/realms/master/app/oidc-client-endpoints/get-jwks
         String clientId = TestApplicationResourceUrls.getClientIdMetadataUri(generateSuffixedName("CIMD"));
         OIDCClientRepresentation clientMetadata = setupOIDCClientRepresentation(clientId, i-> {
-            i.setLogoUri("https://www.example.com");
+            i.setLogoUri("https://localhost:8443/logo");
             i.setScope("address phone");
         });
         String cacheControlHeaderValue = "must-revalidate, max-age=3600, public, s-maxage=20";
@@ -406,7 +404,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         // change the client metadata
         // however, the client returns 304 Not Modified
         clientMetadata = setupOIDCClientRepresentation(clientId, i-> {
-            i.setLogoUri("https://www.example.com/logo");
+            i.setLogoUri("https://localhost:443/logo/v3");
             i.setScope("profile");
         });
         oidcClientEndpointsResource.registerClientIdMetadata(clientMetadata, cacheControlHeaderValue, "NotModified");
@@ -422,7 +420,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         clientRepresentation = findByClientIdByAdmin(clientId);
         Map<String, String> m = clientRepresentation.getAttributes();
         List<String> optionalScopeList = clientRepresentation.getOptionalClientScopes();
-        assertEquals("https://www.example.com", m.get("logoUri"));
+        assertEquals("https://localhost:8443/logo", m.get("logoUri"));
         assertEquals(2, optionalScopeList.size());
         assertTrue(optionalScopeList.contains("phone"));
         assertTrue(optionalScopeList.contains("address"));
@@ -445,7 +443,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         clientRepresentation = findByClientIdByAdmin(clientId);
         m = clientRepresentation.getAttributes();
         optionalScopeList = clientRepresentation.getOptionalClientScopes();
-        assertEquals("https://www.example.com", m.get("logoUri"));
+        assertEquals("https://localhost:8443/logo", m.get("logoUri"));
         assertEquals(2, optionalScopeList.size());
         assertTrue(optionalScopeList.contains("phone"));
         assertTrue(optionalScopeList.contains("address"));
@@ -812,9 +810,9 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         assertLoginAndError("https://192.168.255.255:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_PRIVATE_ADDRESS);
 
         // Client ID Verification:
-        // Client identifier is not a loopback address
-        // -> java.net.URI does not follow RFC 3986 so it cannot parse the following IPv6 address, resulting getHost() == null
+        // Client identifier is not a valid IPv6 address
         assertLoginAndError("https://0:0:0:0:0:0:0:1/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_HOST_UNRESOLVED);
+        
     }
 
     @Test
@@ -1045,7 +1043,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
                         .addExecutor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID,
                                 createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->{
                                     it.setAllowLoopbackAddress(true);
-                                    it.setAllUrisRestrictSameDomain(true);
+                                    it.setRestrictSameDomain(true);
                                     it.setTrustedDomains(List.of("*.example.org", "localhost", "[::1]", "127.0.0.1"));
                                 }))
                         .toRepresentation()

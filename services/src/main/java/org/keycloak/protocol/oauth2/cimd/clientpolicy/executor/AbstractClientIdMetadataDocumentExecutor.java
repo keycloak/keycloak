@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
@@ -413,6 +414,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
     // Client Metadata Validation Errors
     public static final String ERR_METADATA_URIS_SAMEDOMAIN = "Invalid Client Metadata: client_id parameter, redirect_uri parameter and at least one of redirect_uris properties in client metadata should be under the same domain.";
     public static final String ERR_METADATA_NO_REQUIRED_PROPERTIES = "Invalid Client Metadata: it does not include all required properties.";
+    public static final String ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN = "Invalid Client Metadata: some uri property is not under the same permitted domain";
+
 
     // Implementation
     // Fetch Client Metadata
@@ -744,10 +747,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             return;
         }
 
-        // NOTE: java.net.URI does not follow RFC 3986, so it cannot parse the following IPv6 address, resulting getHost() == null
-        //       It follows RFC 2396 and RFC 2732.
-        // ex.  0:0:0:0:0:0:0:1  -> getHost() == null
-        //     [0:0:0:0:0:0:0:1] -> getHost() == [0:0:0:0:0:0:0:1]
         if (uri.getHost() == null) {
             getLogger().warnv("not trusted domain: host = {0}", uri.getHost());
             throw invalidClientIdMetadata(ERR_HOST_UNRESOLVED);
@@ -795,7 +794,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // An authorization server MAY impose restrictions or relationships
         // between the redirect_uris and the client_id or client_uri properties
 
-        // same domain policy
+        // same domain policy: client_id, redirect_uri, redirect_uris, client_uri, logo_uri, tos_uri,, policy_uri, jwks_uri
         List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
         if (getConfiguration().isRestrictSameDomain() && trustedDomains != null && !trustedDomains.isEmpty()) {
             // Client Metadata verification ensures that
@@ -805,6 +804,21 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             if (trustedDomains.stream().noneMatch(i->checkTrustedDomain(clientIdURI.getHost(), i) && checkTrustedDomain(redirectUriURI.getHost(), i))) {
                 getLogger().warnv("client_id and redirect_uri domain not match: client_id host part = {0}, redirect_uri host part = {1}", clientIdURI.getHost(), redirectUriURI.getHost());
                 throw invalidClientIdMetadata(ERR_METADATA_URIS_SAMEDOMAIN);
+            }
+
+            List<String> l = Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri())
+                    .filter(Objects::nonNull).toList();
+            try {
+                for (String s : l) {
+                    URI u = new URI(s);
+                    if (trustedDomains.stream().filter(i->!i.isBlank()).noneMatch(i -> checkTrustedDomain(u.getHost(), i) && checkTrustedDomain(redirectUriURI.getHost(), i))) {
+                        getLogger().warnv("not under the same domain = {0}", u.getHost());
+                        throw invalidClientIdMetadata(ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+                    }
+                }
+            } catch (URISyntaxException e) {
+                getLogger().warnv("URI not resolved {0}}", e);
+                throw invalidClientIdMetadata(ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
             }
         }
 
