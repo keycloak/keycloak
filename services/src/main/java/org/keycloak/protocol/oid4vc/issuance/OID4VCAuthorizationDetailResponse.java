@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oid4vc.issuance;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 
@@ -52,5 +53,19 @@ public class OID4VCAuthorizationDetailResponse extends OID4VCAuthorizationDetail
                 ", credentialIdentifiers=" + credentialIdentifiers +
                 ", claims=" + getClaims() +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        OID4VCAuthorizationDetailResponse that = (OID4VCAuthorizationDetailResponse) o;
+        return Objects.equals(credentialIdentifiers, that.credentialIdentifiers);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), credentialIdentifiers);
     }
 }
