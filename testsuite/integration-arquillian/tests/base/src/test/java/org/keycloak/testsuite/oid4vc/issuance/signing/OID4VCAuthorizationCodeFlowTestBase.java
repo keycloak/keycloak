@@ -48,8 +48,10 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.InvalidTokenRequest;
 import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.InvalidCredentialRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
@@ -609,10 +611,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Attempt token exchange without redirect_uri
         events.clear();
 
-        AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
+        AccessTokenResponse errorResponse = new InvalidTokenRequest(code, oauth)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
-                .omitRedirectUri()
+                .withClientId(client.getClientId())
+                .withClientSecret("password")
+                // redirect_uri is intentionally omitted
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
@@ -639,10 +642,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Attempt token exchange with mismatched redirect_uri
         events.clear();
 
-        AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
+        AccessTokenResponse errorResponse = new InvalidTokenRequest(code, oauth)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
-                .redirectUri("http://invalid-redirect-uri")
+                .withClientId(client.getClientId())
+                .withClientSecret("password")
+                .withRedirectUri("http://invalid-redirect-uri")
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
@@ -669,16 +673,14 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Create a malformed JSON payload (invalid JSON syntax)
         String malformedJson = "{\"credential_identifier\":\"" + credentialIdentifier + "\", invalid json}";
 
-        // Request credential with malformed JSON using Oid4vcCredentialRequest with custom body
+        // Request credential with malformed JSON using InvalidCredentialRequest
+        // This tests error handling for invalid JSON payloads
         events.clear();
 
-        Oid4vcCredentialRequest credentialRequest = oauth.oid4vc()
-                .credentialRequest()
+        Oid4vcCredentialResponse credentialResponse = new InvalidCredentialRequest(malformedJson, oauth)
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                 .bearerToken(tokenResponse.getAccessToken())
-                .customBody(malformedJson);
-
-        Oid4vcCredentialResponse credentialResponse = credentialRequest.send();
+                .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
         
@@ -744,12 +746,13 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetailsJson);
 
         // Attempt token exchange without client_id
+        // This tests error handling for missing client_id parameter
         events.clear();
 
-        AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
+        AccessTokenResponse errorResponse = new InvalidTokenRequest(code, oauth)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(null, "password")  // Set client_secret but omit client_id
-                .omitClientId()
+                .withClientSecret("password")  // Set client_secret but omit client_id
+                // client_id is intentionally omitted
                 .send();
 
         int statusCode = errorResponse.getStatusCode();
@@ -894,13 +897,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         events.clear();
 
         // Request credential without credential_configuration_id or credential_identifier
-        Oid4vcCredentialRequest credentialRequest = oauth.oid4vc()
-                .credentialRequest()
+        // This tests error handling for missing required fields
+        Oid4vcCredentialResponse credentialResponse = new InvalidCredentialRequest("{}", oauth)
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                 .bearerToken(tokenResponse.getAccessToken())
-                .customBody("{}");
-
-        Oid4vcCredentialResponse credentialResponse = credentialRequest.send();
+                .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
         assertEquals("MISSING_CREDENTIAL_IDENTIFIER_AND_CONFIGURATION_ID", credentialResponse.getError());

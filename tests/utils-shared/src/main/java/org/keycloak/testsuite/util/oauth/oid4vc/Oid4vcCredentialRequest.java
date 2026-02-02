@@ -12,7 +12,6 @@ public class Oid4vcCredentialRequest extends AbstractOid4vcRequest<Oid4vcCredent
 
     private final CredentialRequest body = new CredentialRequest();
     private boolean emptyBody = false;
-    private String customBody = null;
 
     public Oid4vcCredentialRequest(AbstractOAuthClient<?> client) {
         super(client);
@@ -39,21 +38,6 @@ public class Oid4vcCredentialRequest extends AbstractOid4vcRequest<Oid4vcCredent
      */
     public Oid4vcCredentialRequest emptyBody() {
         this.emptyBody = true;
-        this.customBody = null;
-        return this;
-    }
-
-    /**
-     * Set a custom raw body string for the request.
-     * This is useful for testing edge cases like malformed JSON.
-     * When set, this takes precedence over the structured body.
-     *
-     * @param body the custom body string to send
-     * @return this request instance for method chaining
-     */
-    public Oid4vcCredentialRequest customBody(String body) {
-        this.customBody = body;
-        this.emptyBody = false;
         return this;
     }
 
@@ -63,17 +47,14 @@ public class Oid4vcCredentialRequest extends AbstractOid4vcRequest<Oid4vcCredent
     }
 
     /**
-     * Returns the request body. If {@link #customBody(String)} was called, returns the custom string.
-     * If {@link #emptyBody()} was called, returns an empty string ("") to trigger an empty payload.
-     * Otherwise, returns the {@link CredentialRequest} object to be serialized as JSON.
+     * Returns the request body. If {@link #emptyBody()} was called, returns an empty string ("")
+     * to trigger an empty payload in {@link AbstractOid4vcRequest#send()}.
+     * If not, returns the {@link CredentialRequest} object to be serialized as JSON.
      *
-     * @return the request body object, custom string, or empty string
+     * @return the request body object or empty string
      */
     @Override
     protected Object getBody() {
-        if (customBody != null) {
-            return customBody;
-        }
         if (emptyBody) {
             return "";
         }
