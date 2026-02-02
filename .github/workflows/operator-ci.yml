@@ -62,6 +62,8 @@ jobs:
   test-local:
     name: Test local
     runs-on: ubuntu-latest
+    env:
+      DOCKER_API_VERSION: 1.43 # Workaround to have compatible Docker client with engine in GHA agents
     needs: [build]
     strategy:
       matrix:
@@ -113,6 +115,8 @@ jobs:
   test-remote:
     name: Test remote
     runs-on: ubuntu-latest
+    env:
+      DOCKER_API_VERSION: 1.43 # Workaround to have compatible Docker client with engine in GHA agents
     needs: [build]
     strategy:
           matrix:
@@ -167,6 +171,9 @@ jobs:
   test-olm:
     name: Test OLM installation
     runs-on: ubuntu-latest
+    env:
+      MINIKUBE_VERSION: v1.38.0 # Upgrade minikube to fix the issue with unstable registry
+      KUBERNETES_VERSION: v1.35.0
     needs: [build]
     steps:
       - uses: actions/checkout@v4
