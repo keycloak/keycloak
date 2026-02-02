@@ -47,6 +47,7 @@ public class WorkflowsResource {
         if (!Profile.isFeatureEnabled(Feature.WORKFLOWS)) {
             throw new NotFoundException();
         }
+        auth.requireRealmAdmin();
         this.session = session;
         this.provider = session.getProvider(WorkflowProvider.class);
         this.auth = auth;
@@ -64,8 +65,6 @@ public class WorkflowsResource {
             @APIResponse(responseCode = "400", description = "Bad Request")
     })
     public Response create(WorkflowRepresentation rep) {
-        auth.realm().requireManageRealm();
-
         try {
             Workflow workflow = provider.toModel(rep);
             return Response.created(session.getContext().getUri().getRequestUriBuilder().path(workflow.getId()).build()).build();
@@ -88,8 +87,6 @@ public class WorkflowsResource {
             @Parameter(description = "Workflow identifier")
             @PathParam("id") String id
     ) {
-        auth.realm().requireManageRealm();
-
         Workflow workflow = provider.getWorkflow(id);
 
         if (workflow == null) {
@@ -120,8 +117,6 @@ public class WorkflowsResource {
             @Parameter(description = "The maximum number of results to be returned - defaults to 10")
             @QueryParam("max") @DefaultValue("10") Integer maxResults
     ) {
-        auth.realm().requireManageRealm();
-
         int first = Optional.ofNullable(firstResult).orElse(0);
         int max = Optional.ofNullable(maxResults).orElse(10);
         return provider.getWorkflows(search, exact, first, max).map(provider::toRepresentation).toList();
@@ -143,7 +138,36 @@ public class WorkflowsResource {
             @Parameter(description = "Identifier of the resource associated with the scheduled workflows")
             @PathParam("resource-id") String resourceId
     ) {
-        auth.realm().requireManageRealm();
         return provider.getScheduledWorkflowsByResource(resourceId).toList();
+    }
+
+    @Path("migrate")
+    @POST
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.WORKFLOWS)
+    @Operation(
+            summary = "Migrate scheduled resources from one step to another",
+            description = "Migrate scheduled resources from one step to another step in the same or in a different workflow."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "400", description = "Bad Request")
+    })
+    public Response migrate(
+            @Parameter(description = "A String representing the id of the step to migrate from")
+            @QueryParam("from") String stepIdFrom,
+            @Parameter(description = "A String representing the id of the step to migrate to")
+            @QueryParam("to") String stepIdTo) {
+        auth.realm().requireManageRealm();
+
+        if (stepIdFrom == null || stepIdTo == null) {
+            throw ErrorResponse.error("Both 'from' and 'to' step ids must be provided for migration.", Response.Status.BAD_REQUEST);
+        }
+
+        try {
+            provider.migrateScheduledResources(stepIdFrom, stepIdTo);
+            return Response.noContent().build();
+        } catch (ModelException me) {
+            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+        }
     }
 }

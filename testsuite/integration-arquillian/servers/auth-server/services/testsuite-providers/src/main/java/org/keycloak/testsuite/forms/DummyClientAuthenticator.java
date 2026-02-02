@@ -30,6 +30,7 @@ import org.keycloak.authentication.authenticators.client.AbstractClientAuthentic
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 
 /**
@@ -95,7 +96,7 @@ public class DummyClientAuthenticator extends AbstractClientAuthenticator {
     }
 
     @Override
-    public Map<String, Object> getAdapterConfiguration(ClientModel client) {
+    public Map<String, Object> getAdapterConfiguration(KeycloakSession session, ClientModel client) {
         return Collections.emptyMap();
     }
 

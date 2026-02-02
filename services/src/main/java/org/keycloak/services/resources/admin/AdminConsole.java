@@ -56,7 +56,6 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.util.ViteManifest;
 import org.keycloak.theme.FreeMarkerException;
@@ -182,22 +181,6 @@ public class AdminConsole {
             isTemporary = temporary;
         }
     }
-
-    /**
-     * Adapter configuration for the admin console for this realm
-     *
-     * @return
-     */
-    @Path("config")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
-    public ClientManager.InstallationAdapterConfig config() {
-        ClientModel consoleApp = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
-        if (consoleApp == null) {
-            throw new NotFoundException("Could not find admin console client");
-        }
-        return new ClientManager(new RealmManager(session)).toInstallationRepresentation(realm, consoleApp, session.getContext().getUri().getBaseUri());    }
 
     @Path("whoami")
     @OPTIONS

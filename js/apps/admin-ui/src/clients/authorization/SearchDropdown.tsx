@@ -30,6 +30,15 @@ type SearchDropdownProps = {
   type: "resource" | "policy" | "permission";
 };
 
+const defaultValues: SearchForm = {
+  name: "",
+  type: "",
+  uri: "",
+  owner: "",
+  scope: "",
+  resource: "",
+};
+
 export const SearchDropdown = ({
   types,
   search,
@@ -37,7 +46,7 @@ export const SearchDropdown = ({
   type,
 }: SearchDropdownProps) => {
   const { t } = useTranslation();
-  const form = useForm<SearchForm>({ mode: "onChange" });
+  const form = useForm<SearchForm>({ mode: "onChange", defaultValues });
   const {
     reset,
     formState: { isDirty },
@@ -51,7 +60,7 @@ export const SearchDropdown = ({
     onSearch(form);
   };
 
-  useEffect(() => reset(search), [search]);
+  useEffect(() => reset(search), [search, reset]);
 
   return (
     <Dropdown
@@ -80,7 +89,7 @@ export const SearchDropdown = ({
           {type === "resource" && (
             <>
               <TextControl name="type" label={t("type")} />
-              <TextControl name="uris" label={t("uris")} />
+              <TextControl name="uri" label={t("uris")} />
               <TextControl name="owner" label={t("owner")} />
             </>
           )}
@@ -116,7 +125,10 @@ export const SearchDropdown = ({
             <Button
               variant="link"
               data-testid="revert-btn"
-              onClick={() => onSearch({})}
+              onClick={() => {
+                reset(defaultValues);
+                onSearch({});
+              }}
             >
               {t("clear")}
             </Button>

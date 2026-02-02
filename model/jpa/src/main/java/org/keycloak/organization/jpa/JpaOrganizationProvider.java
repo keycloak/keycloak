@@ -479,7 +479,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public GroupModel createGroup(OrganizationModel organization, String name, GroupModel toParent) {
+    public GroupModel createGroup(OrganizationModel organization, String id, String name, GroupModel toParent) {
         throwExceptionIfObjectIsNull(name, "Name");
 
         OrganizationEntity orgEntity = getEntity(organization.getId());
@@ -499,7 +499,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             parentGroup = toParent;
         }
 
-        GroupModel createdGroup = groupProvider.createGroup(getRealm(), null, Type.ORGANIZATION, name, parentGroup);
+        GroupModel createdGroup = groupProvider.createGroup(getRealm(), id, Type.ORGANIZATION, name, parentGroup);
 
         // Set organization-groups relationship
         GroupEntity groupEntity = em.find(GroupEntity.class, createdGroup.getId());

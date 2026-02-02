@@ -22,6 +22,7 @@ import java.util.Set;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ConfiguredPerClientProvider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -52,7 +53,7 @@ public interface ClientAuthenticatorFactory extends ProviderFactory<ClientAuthen
      *
      * @return
      */
-    Map<String, Object> getAdapterConfiguration(ClientModel client);
+    Map<String, Object> getAdapterConfiguration(KeycloakSession session, ClientModel client);
 
     /**
      * Get authentication methods for the specified protocol

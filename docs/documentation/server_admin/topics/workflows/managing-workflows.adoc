@@ -6,6 +6,9 @@
 
 Workflows can be managed through the Admin Console or the Admin REST API.
 
+Only realm administrators with the appropriate permissions can manage workflows as they are considered sensitive operations.
+For more details, see <<_understanding_different_types_realm_admins_,Understanding different types of Realm Admins>>.
+
 == Managing workflows through the Admin Console
 
 To manage workflows through the Admin Console, you can follow these steps:

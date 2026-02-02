@@ -94,7 +94,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
 	@Override
 	public void init(Config.Scope config) {
-		builtins.put(SUBJECT_ID_MAPPER, OID4VCSubjectIdMapper.create(SUBJECT_ID_MAPPER, CLAIM_NAME_SUBJECT_ID, UserModel.ID));
+		builtins.put(SUBJECT_ID_MAPPER, OID4VCSubjectIdMapper.create(SUBJECT_ID_MAPPER, CLAIM_NAME_SUBJECT_ID, UserModel.DID));
 		builtins.put(USERNAME_MAPPER, OID4VCUserAttributeMapper.create(USERNAME_MAPPER, "username", "username", false));
 		builtins.put(EMAIL_MAPPER, OID4VCUserAttributeMapper.create(EMAIL_MAPPER, "email", "email", false));
 		builtins.put(FIRST_NAME_MAPPER, OID4VCUserAttributeMapper.create(FIRST_NAME_MAPPER, "firstName", "firstName", false));
@@ -137,7 +137,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
             naturalPersonScope.addProtocolMapper(builtins.get(FIRST_NAME_MAPPER));
             naturalPersonScope.addProtocolMapper(builtins.get(LAST_NAME_MAPPER));
             addClientScopeDefaults(naturalPersonScope);
-            newRealm.addDefaultClientScope(naturalPersonScope, true);
+            newRealm.addDefaultClientScope(naturalPersonScope, false);
         }
     }
 
@@ -202,6 +202,25 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     @Override
     public int order() {
         return OIDCLoginProtocolFactory.UI_ORDER - 20;
+    }
+
+    @Override
+    public void validateClientScopeAssignment(KeycloakSession session, ClientScopeModel clientScope, boolean defaultScope, RealmModel realm) {
+        if (!OID4VC_PROTOCOL.equals(clientScope.getProtocol())) {
+            return;
+        }
+
+        if (!realm.isVerifiableCredentialsEnabled()) {
+            throw new ErrorResponseException("invalid_request",
+                    "OID4VCI client scopes cannot be assigned when Verifiable Credentials is disabled for the realm",
+                    Response.Status.BAD_REQUEST);
+        }
+
+        if (defaultScope) {
+            throw new ErrorResponseException("invalid_request",
+                    "OID4VCI client scopes cannot be assigned as Default scopes. Only Optional scope assignment is supported.",
+                    Response.Status.BAD_REQUEST);
+        }
     }
 
     // Private ---------------------------------------------------------------------------------------------------------

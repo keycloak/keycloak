@@ -13,6 +13,9 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenRequest, AccessTokenResponse> {
 
     private final String code;
+    private boolean omitRedirectUri = false;
+    private boolean omitClientId = false;
+    private String redirectUriOverride = null;
 
     AccessTokenRequest(String code, AbstractOAuthClient<?> client) {
         super(client);
@@ -23,7 +26,6 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
     protected String getEndpoint() {
         return client.getEndpoints().getToken();
     }
-
 
     public AccessTokenRequest signedJwt(String signedJwt) {
         parameter(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT);
@@ -58,11 +60,66 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
         return this;
     }
 
+    /**
+     * Omit the redirect_uri parameter from the token request.
+     * This is useful for testing edge cases where redirect_uri should not be included.
+     *
+     * @return this request instance for method chaining
+     */
+    public AccessTokenRequest omitRedirectUri() {
+        this.omitRedirectUri = true;
+        return this;
+    }
+
+    /**
+     * Override the redirect_uri parameter with a custom value.
+     * This is useful for testing redirect_uri mismatch scenarios.
+     *
+     * @param redirectUri the custom redirect URI to use
+     * @return this request instance for method chaining
+     */
+    public AccessTokenRequest redirectUri(String redirectUri) {
+        this.redirectUriOverride = redirectUri;
+        return this;
+    }
+
+    /**
+     * Omit the client_id parameter from the token request.
+     * This is useful for testing edge cases where client_id should not be included.
+     *
+     * @return this request instance for method chaining
+     */
+    public AccessTokenRequest omitClientId() {
+        this.omitClientId = true;
+        return this;
+    }
+
     protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE);
 
         parameter(OAuth2Constants.CODE, code);
-        parameter(OAuth2Constants.REDIRECT_URI, client.getRedirectUri());
+        
+        if (!omitRedirectUri) {
+            if (redirectUriOverride != null) {
+                parameter(OAuth2Constants.REDIRECT_URI, redirectUriOverride);
+            } else {
+                parameter(OAuth2Constants.REDIRECT_URI, client.getRedirectUri());
+            }
+        }
+    }
+
+    @Override
+    protected void authorization() {
+        if (omitClientId) {
+            // Skip client_id parameter entirely
+            // If client_secret is provided, add it as a parameter (not in Authorization header)
+            // This is an edge case for testing invalid requests
+            if (clientSecret != null) {
+                parameter(OAuth2Constants.CLIENT_SECRET, clientSecret);
+            }
+        } else {
+            super.authorization();
+        }
     }
 
     @Override

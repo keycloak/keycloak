@@ -96,13 +96,14 @@ public class WorkflowResource {
     })
     public WorkflowRepresentation toRepresentation(
             @Parameter(
-                    description = "Indicates whether the workflow id should be included in the representation or not - defaults to true"
+                    description = "Indicates whether the workflow and step ids should be included in the representation or not - defaults to true"
             )
-            @QueryParam("includeId") Boolean includeId
+            @QueryParam("includeId") Boolean includeIds
     ) {
         WorkflowRepresentation rep = provider.toRepresentation(workflow);
-        if (Boolean.FALSE.equals(includeId)) {
+        if (Boolean.FALSE.equals(includeIds)) {
             rep.setId(null);
+            rep.getSteps().forEach(step -> step.setId(null));
         }
         return rep;
     }

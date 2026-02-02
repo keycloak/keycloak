@@ -70,9 +70,11 @@ import org.keycloak.userprofile.validator.UsernameMutationValidator;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.EmailValidator;
+import org.keycloak.validate.validators.PatternValidator;
 
 import static java.util.Optional.ofNullable;
 
+import static org.keycloak.common.Profile.Feature.OID4VC_VCI;
 import static org.keycloak.common.util.ObjectUtil.isBlank;
 import static org.keycloak.userprofile.DefaultAttributes.READ_ONLY_ATTRIBUTE_KEY;
 import static org.keycloak.userprofile.UserProfileContext.ACCOUNT;
@@ -81,6 +83,8 @@ import static org.keycloak.userprofile.UserProfileContext.REGISTRATION;
 import static org.keycloak.userprofile.UserProfileContext.UPDATE_EMAIL;
 import static org.keycloak.userprofile.UserProfileContext.UPDATE_PROFILE;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
 public class DeclarativeUserProfileProviderFactory implements UserProfileProviderFactory, AmphibianProviderFactory<UserProfileProvider> {
 
@@ -324,7 +328,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         }
 
         // delete cache so new config is parsed and applied next time it is required
-        // throught #configureUserProfile(metadata, session)
+        // through #configureUserProfile(metadata, session)
         if (model != null) {
             model.removeNote(DeclarativeUserProfileProvider.PARSED_CONFIG_COMPONENT_KEY);
         }
@@ -494,7 +498,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
         metadata.addAttribute(TermsAndConditions.USER_ATTRIBUTE, -1, AttributeMetadata.ALWAYS_FALSE,
-                DeclarativeUserProfileProviderFactory::isTermAndConditionsEnabled)
+                        DeclarativeUserProfileProviderFactory::isTermAndConditionsEnabled)
                 .setAttributeDisplayName("${termsAndConditionsUserAttribute}")
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
@@ -521,21 +525,39 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     }
 
     private void initDefaultConfiguration(Scope config) {
+
         // The user-defined configuration is always parsed during init and should be avoided as much as possible
         // If no user-defined configuration is set, the system default configuration must have been set
         // In Quarkus, the system default configuration is set at build time for optimization purposes
-        UPConfig defaultConfig = ofNullable(config.get("configFile"))
+        UPConfig parsedConfig = ofNullable(config.get("configFile"))
                 .map(Paths::get)
                 .map(UPConfigUtils::parseConfig)
                 .orElse(PARSED_DEFAULT_RAW_CONFIG);
 
-        if (defaultConfig == null) {
-            // as a fallback parse the system default config
-            defaultConfig = UPConfigUtils.parseSystemDefaultConfig();
+        // As fallback parse the system default config
+        if (parsedConfig == null) {
+            parsedConfig = UPConfigUtils.parseSystemDefaultConfig();
         }
 
-        PARSED_DEFAULT_RAW_CONFIG = null;
-        setDefaultConfig(defaultConfig);
+        // Modify the user profile to use when --features=oid4vc-vci is enabled
+        if (Profile.isFeatureEnabled(OID4VC_VCI)) {
+            addUserDidAttribute(parsedConfig);
+        }
+
+        setDefaultConfig(parsedConfig);
+    }
+
+    public static void addUserDidAttribute(UPConfig config) {
+        if (config.getAttribute(UserModel.DID) == null) {
+            UPAttribute attr = new UPAttribute(UserModel.DID);
+            attr.setDisplayName("${did}");
+            attr.setPermissions(new UPAttributePermissions(Set.of(ROLE_ADMIN, ROLE_USER), Set.of(ROLE_ADMIN, ROLE_USER)));
+            attr.setValidations(Map.of(PatternValidator.ID, Map.of(
+                    "pattern", "^did:.+:.+$",
+                    "error-message", "Value must start with 'did:scheme:'")));
+            config.addOrReplaceAttribute(attr);
+            PARSED_DEFAULT_RAW_CONFIG = null;
+        }
     }
 
     private static Map<String, Object> getEmailAnnotationDecorator(AttributeContext c) {

@@ -277,10 +277,10 @@ HTTP(S):
                      Enables the HTTP listener. Enabled by default in development mode. Typically
                        not enabled in production unless the server is fronted by a TLS termination
                        proxy. Default: false.
---http-host <host>   The HTTP Host. By default, Keycloak binds to all network addresses (0.0.0.0),
-                       which means the server may be accessible from other machines on your
-                       network. For local development, you can restrict access to localhost only by
-                       setting this to 127.0.0.1. Default: 0.0.0.0.
+--http-host <host>   The HTTP Host. In prod mode or when running on Windows Subsystem For Linux the
+                       default is to bind to all network addresses (0.0.0.0), which means the
+                       server may be accessible from other machines on your network. Otherwise
+                       defaults to localhost.
 --http-max-queued-requests <requests>
                      Maximum number of queued HTTP requests. Use this to shed load in an overload
                        situation. Excess requests will return a "503 Server not Available" response.

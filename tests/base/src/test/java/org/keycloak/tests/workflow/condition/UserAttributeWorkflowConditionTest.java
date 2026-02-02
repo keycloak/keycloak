@@ -109,7 +109,7 @@ public class UserAttributeWorkflowConditionTest extends AbstractWorkflowTest {
                         Workflow workflow = registeredWorkflows.get(0);
                         // check workflow was correctly assigned to the users
                         WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-                        List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
+                        List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow.getId()).toList();
                         assertThat(scheduledSteps, hasSize(10));
                     });
                 });

@@ -17,7 +17,6 @@
 
 package org.keycloak.protocol.oidc.grants;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -218,7 +217,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, codeData.getNonce());
 
         // Process authorization_details using provider discovery (if present in request)
-        List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponse = Collections.emptyList();
+        List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponse = null;
         String providedAuthorizationDetails = formParams.getFirst(AUTHORIZATION_DETAILS);
         String storedAuthorizationDetails = clientSession.getNote(AUTHORIZATION_DETAILS);
 
