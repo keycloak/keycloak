@@ -21,7 +21,7 @@ import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderF
  *     </ul>
  *     <li>Client ID Validation</li>
  *     <ul>
- *         <li>Allow permitted domains: only allow a URI whose hostname is under the one of the permitted domain (wildcard * can be used)</li>
+ *         <li>Trusted domains: only allow a URI whose hostname is under the one of the permitted domain (wildcard * can be used)</li>
  *     </ul>
  *     <li>Client Metadata Validation</li>
  *     <ul>
@@ -40,7 +40,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory implements
     public static final String ALLOW_HTTP_SCHEME = "cimd-allow-http-scheme";
 
     // Client ID Validation
-    public static final String ALLOW_PERMITTED_DOMAINS = "cimd-allow-permitted-domains";
+    public static final String TRUSTED_DOMAINS = "cimd-allow-permitted-domains";
 
     // Client Metadata Validation
     public static final String REQUIRED_PROPERTIES = "cimd-required-properties";
@@ -102,11 +102,14 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory implements
 
         // Client ID Validation
         property = new ProviderConfigProperty(
-                ALLOW_PERMITTED_DOMAINS,
-                "Allow permitted domains",
-                "If some domains are filled, then the executor only accept a Client ID URL whose host part exactly matches one of the filled domains." +
-                        "If not filled, then all domains are possible to use. The domains are checked by using regex. " +
-                        "For example use pattern like this '(.*)\\.example\\.org' if you want to accept the Client ID URL whose domain is 'example.org'." +
+                TRUSTED_DOMAINS,
+                "Trusted domains",
+                "If some domains are filled, the executor only accepts the following URL-formatted parameters whose host part matches one of the filled domains: " +
+                        "Authorization request parameters: client_id, redirect_uri, " +
+                        "Client metadata properties: client_id, redirect_uris, jwks_uri, logo_uri, policy_uri, tos_uri, client_uri. " +
+                        "The domains are checked by using regex. " +
+                        "If the domains not filled, the executor denies all such the parameters and properties. " +
+                        "For example, use pattern like this '(.*)\\.example\\.org' if you want to accept the parameter / property whose domain is 'example.org'." +
                         "Don't forget to use escaping of special characters like dots as otherwise dot is interpreted as any character in regex!",
                 ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
                 null);

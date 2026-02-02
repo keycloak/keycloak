@@ -104,20 +104,20 @@ public class ClientIdMetadataDocumentExecutor extends AbstractClientIdMetadataDo
         if (configuration.isOnlyAllowConfidentialClient()) {
             if (clientOIDC.getTokenEndpointAuthMethod() == null || !ALLOWED_ALGORITHMS.contains(clientOIDC.getTokenEndpointAuthMethod())) {
                 getLogger().warn("not confidential client");
-                throw invalidClientId(ERR_METADATA_NO_CONFIDENTIAL_CLIENT);
+                throw invalidClientIdMetadata(ERR_METADATA_NO_CONFIDENTIAL_CLIENT);
             }
             if (clientOIDC.getJwksUri() == null && clientOIDC.getJwks() == null) {
                 getLogger().warn("confidential client but jwks or jwks_uri properties is not included");
-                throw invalidClientId(ERR_METADATA_NO_CONFIDENTIAL_CLIENT_JWKS);
+                throw invalidClientIdMetadata(ERR_METADATA_NO_CONFIDENTIAL_CLIENT_JWKS);
             }
             if (clientOIDC.getJwksUri() != null && clientOIDC.getJwks() != null) {
                 getLogger().warn("confidential client but both jwks and jwks_uri properties are included");
-                throw invalidClientId(ERR_METADATA_NO_CONFIDENTIAL_CLIENT_JWKS);
+                throw invalidClientIdMetadata(ERR_METADATA_NO_CONFIDENTIAL_CLIENT_JWKS);
             }
         }
 
         // same domain : client_id, redirect_uri, client_uri, logo_uri, tos_uri,, policy_uri, jwks_uri
-        List<String> trustedDomains = convertContentFilledList(getConfiguration().getAllowPermittedDomains());
+        List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
         if (getConfiguration().isAllUrisRestrictSameDomain() && trustedDomains != null && !trustedDomains.isEmpty()) {
             List<String> l = Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri())
                     .filter(Objects::nonNull).toList();
@@ -126,12 +126,12 @@ public class ClientIdMetadataDocumentExecutor extends AbstractClientIdMetadataDo
                     URI u = new URI(s);
                     if (trustedDomains.stream().filter(i->!i.isBlank()).noneMatch(i -> checkTrustedDomain(u.getHost(), i) && checkTrustedDomain(redirectUriURI.getHost(), i))) {
                         getLogger().warnv("not under the same domain = {0}", u.getHost());
-                        throw invalidClientId(ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+                        throw invalidClientIdMetadata(ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
                     }
                 }
             } catch (URISyntaxException e) {
                 getLogger().warnv("URI not resolved {0}}", e);
-                throw invalidClientId(ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+                throw invalidClientIdMetadata(ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
             }
         }
 
