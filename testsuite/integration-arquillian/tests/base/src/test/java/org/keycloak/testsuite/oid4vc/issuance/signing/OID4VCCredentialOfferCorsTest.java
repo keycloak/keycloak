@@ -44,6 +44,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
 
@@ -106,13 +107,11 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         events.clear();
 
         // Test credential offer URI endpoint with valid origin
-        String offerUriUrl = getCredentialOfferUriUrl();
-
         CredentialOfferUriResponse response = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .endpoint(offerUriUrl)
+                .credentialOfferUriRequest(jwtTypeCredentialConfigurationIdName)
                 .bearerToken(tokenResponse.getAccessToken())
                 .header("Origin", VALID_CORS_URL)
+                .preAuthorized(false)
                 .send();
 
         assertEquals(HttpStatus.SC_OK, response.getStatusCode());
@@ -138,13 +137,11 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         AccessTokenResponse tokenResponse = getAccessToken();
 
         // Test credential offer URI endpoint with invalid origin
-        String offerUriUrl = getCredentialOfferUriUrl();
-
         CredentialOfferUriResponse response = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .endpoint(offerUriUrl)
+                .credentialOfferUriRequest(jwtTypeCredentialConfigurationIdName)
                 .bearerToken(tokenResponse.getAccessToken())
                 .header("Origin", INVALID_CORS_URL)
+                .preAuthorized(false)
                 .send();
 
         // Should still return 200 OK but without CORS headers
@@ -188,8 +185,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         String offerUrl = getCredentialOfferUrl(nonce);
 
         CredentialOfferResponse response = oauth.oid4vc()
-                .credentialOfferRequest()
-                .endpoint(offerUrl)
+                .credentialOfferRequest(offerUrl)
                 .header("Origin", VALID_CORS_URL)
                 .send();
 
@@ -223,8 +219,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         String offerUrl = getCredentialOfferUrl(nonce);
 
         CredentialOfferResponse response = oauth.oid4vc()
-                .credentialOfferRequest()
-                .endpoint(offerUrl)
+                .credentialOfferRequest(offerUrl)
                 .header("Origin", INVALID_CORS_URL)
                 .send();
 
@@ -271,24 +266,23 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
     public void testMultipleValidOrigins() throws Exception {
         // Test that multiple valid origins work
         AccessTokenResponse tokenResponse = getAccessToken();
-        String offerUriUrl = getCredentialOfferUriUrl();
 
         // Test with first valid origin
         CredentialOfferUriResponse response1 = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .endpoint(offerUriUrl)
+                .credentialOfferUriRequest(jwtTypeCredentialConfigurationIdName)
                 .bearerToken(tokenResponse.getAccessToken())
                 .header("Origin", VALID_CORS_URL)
+                .preAuthorized(false)
                 .send();
         assertEquals(HttpStatus.SC_OK, response1.getStatusCode());
         assertCorsHeaders(response1, VALID_CORS_URL);
 
         // Test with second valid origin
         CredentialOfferUriResponse response2 = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .endpoint(offerUriUrl)
+                .credentialOfferUriRequest(jwtTypeCredentialConfigurationIdName)
                 .bearerToken(tokenResponse.getAccessToken())
                 .header("Origin", ANOTHER_VALID_CORS_URL)
+                .preAuthorized(false)
                 .send();
         assertEquals(HttpStatus.SC_OK, response2.getStatusCode());
         assertCorsHeaders(response2, ANOTHER_VALID_CORS_URL);
@@ -297,11 +291,8 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testUnauthenticatedCredentialOfferUri() throws Exception {
         // Test credential offer URI endpoint without authentication
-        String offerUriUrl = getCredentialOfferUriUrl();
-
         CredentialOfferUriResponse response = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .endpoint(offerUriUrl)
+                .credentialOfferUriRequest(jwtTypeCredentialConfigurationIdName)
                 .header("Origin", VALID_CORS_URL)
                 .send();
 
@@ -317,11 +308,8 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         events.clear();
 
         // Test credential offer URI endpoint with invalid credential configuration ID
-        String offerUriUrl = getCredentialOfferUriUrl("invalid-credential-config-id");
-
         CredentialOfferUriResponse response = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .endpoint(offerUriUrl)
+                .credentialOfferUriRequest("invalid-credential-config-id")
                 .bearerToken(tokenResponse.getAccessToken())
                 .header("Origin", VALID_CORS_URL)
                 .send();
@@ -367,9 +355,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
 
         // Try to fetch the expired credential offer
         String offerUrl = getCredentialOfferUrl(nonce);
-        CredentialOfferResponse response = oauth.oid4vc()
-                .credentialOfferRequest()
-                .endpoint(offerUrl)
+        CredentialOfferResponse response = new CredentialOfferRequest(oauth, offerUrl)
                 .header("Origin", VALID_CORS_URL)
                 .send();
 
@@ -397,15 +383,26 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
     }
 
     private String getCredentialOfferUriUrl() {
-        return getCredentialOfferUriUrl(jwtTypeCredentialConfigurationIdName);
+        String configId = jwtTypeCredentialConfigurationIdName;
+        return getCredentialOfferUriUrl(configId, true, "john", null);
+    }
+
+    private String getCredentialOfferUriUrl(String configId, Boolean preAuthorized, String username, String clientId) {
+        String res = getBasePath("test") + "credential-offer-uri?credential_configuration_id=" + configId;
+        if (preAuthorized != null)
+            res += "&pre_authorized=" + preAuthorized;
+        if (clientId != null)
+            res += "&client_id=" + clientId;
+        if (username != null)
+            res += "&username=" + username;
+        return res;
     }
 
     private String getNonceFromOfferUri(String accessToken) throws Exception {
-        String offerUriUrl = getCredentialOfferUriUrl();
-
         CredentialOfferUriResponse response = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .endpoint(offerUriUrl)
+                .credentialOfferUriRequest(jwtTypeCredentialConfigurationIdName)
+                .preAuthorized(true)
+                .username("john")
                 .bearerToken(accessToken)
                 .header("Origin", VALID_CORS_URL)
                 .send();

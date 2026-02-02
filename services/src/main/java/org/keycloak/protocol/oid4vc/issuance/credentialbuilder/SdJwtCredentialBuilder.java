@@ -26,10 +26,10 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
+import org.keycloak.VCFormat;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.sdjwt.DisclosureSpec;
@@ -55,7 +55,7 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
 
     @Override
     public String getSupportedFormat() {
-        return Format.SD_JWT_VC;
+        return VCFormat.SD_JWT_VC;
     }
 
     @Override

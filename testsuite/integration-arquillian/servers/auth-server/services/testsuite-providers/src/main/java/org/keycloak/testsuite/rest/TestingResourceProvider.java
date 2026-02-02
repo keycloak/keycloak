@@ -1130,7 +1130,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         String code = "urn:oid4vci:code:" + UUID.randomUUID();
         CredentialsOffer credOffer = new CredentialsOffer()
                 .setCredentialIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
-                .setCredentialConfigurationIds(List.of("oid4vc_natural_person"))
+                .setCredentialConfigurationIds(List.of("oid4vc_natural_person_sd"))
                 .setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(
                     new PreAuthorizedCode().setPreAuthorizedCode(code)));
 

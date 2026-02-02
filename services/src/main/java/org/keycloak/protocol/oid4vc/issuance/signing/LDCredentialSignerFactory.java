@@ -17,16 +17,16 @@
 
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
+import org.keycloak.VCFormat;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.OffsetTimeProvider;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 
 public class LDCredentialSignerFactory implements CredentialSignerFactory {
 
     @Override
     public String getSupportedFormat() {
-        return Format.LDP_VC;
+        return VCFormat.LDP_VC;
     }
 
     @Override

@@ -140,7 +140,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     /**
      * Asserts that an AuthorizationDetail has valid structure
      */
-    private void assertValidAuthorizationDetailResponse(OID4VCAuthorizationDetailResponse authDetail) {
+    private void assertValidAuthorizationDetailResponse(OID4VCAuthorizationDetail authDetail) {
         assertEquals("Type should be openid_credential", OPENID_CREDENTIAL, authDetail.getType());
         assertEquals("Credential configuration ID should be set", "test-config-id", authDetail.getCredentialConfigurationId());
         assertNotNull("Locations should not be null", authDetail.getLocations());
@@ -391,7 +391,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     }
 
     @Test
-    public void testBuildAuthorizationDetailResponseLogic() {
+    public void testBuildAuthorizationDetailLogic() {
         // Test the response structure that would be built
         String expectedCredentialConfigurationId = "test-config-id";
         List<String> expectedCredentialIdentifiers = List.of("test-identifier-123");
@@ -512,7 +512,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
                 convertToResponseType(validDetail2),
                 convertToResponseType(invalidDetail1)
         );
-        List<OID4VCAuthorizationDetailResponse> authzResponses = new OID4VCAuthorizationDetailsProcessor(null).getSupportedAuthorizationDetails(responses);
+        List<OID4VCAuthorizationDetail> authzResponses = new OID4VCAuthorizationDetailsProcessor(null).getSupportedAuthorizationDetails(responses);
 
         Assert.assertEquals(2, authzResponses.size());
         assertValidAuthorizationDetailResponse(authzResponses.get(0));

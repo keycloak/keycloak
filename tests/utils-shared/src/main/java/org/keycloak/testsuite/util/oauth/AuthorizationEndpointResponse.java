@@ -35,6 +35,10 @@ public class AuthorizationEndpointResponse {
         }
     }
 
+    public AuthorizationEndpointResponse(Map<String, String> params) {
+        this.params = params;
+    }
+
     private boolean isFragment(AbstractOAuthClient<?> client) {
         try {
             OIDCResponseType responseType = OIDCResponseType.parse(client.config().getResponseType());
