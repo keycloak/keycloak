@@ -18,6 +18,7 @@
 org.keycloak.models.workflow.NotifyUserStepProviderFactory
 org.keycloak.models.workflow.DisableUserStepProviderFactory
 org.keycloak.models.workflow.DeleteUserStepProviderFactory
+org.keycloak.models.workflow.UnlinkUserStepProviderFactory
 org.keycloak.models.workflow.SetUserAttributeStepProviderFactory
 org.keycloak.models.workflow.RemoveUserAttributeStepProviderFactory
 org.keycloak.models.workflow.AddRequiredActionStepProviderFactory
