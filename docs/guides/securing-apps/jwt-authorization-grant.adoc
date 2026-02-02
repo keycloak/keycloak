@@ -160,8 +160,6 @@ As the previous executor, for the moment this enforcer can be used for JWT Autho
 WARNING: The **jwt-authorization-grant-audience** executor changes the validation of the assertion audience out of the standard compliance. This behavior can have major security implications.
 
 
-TODO: doc for extra audience validation 45180 via client policies
-
 === JWT Authorization Grant for Google Identity Provider
 
 Google Identity Provider supports the JWT Authorization Grant, allowing the use of a Google ID Token as an assertion.
@@ -192,6 +190,12 @@ The specifications described in this guide also apply to Google, with the follow
 * **Audience Validation**: Google does not allow adding custom audiences to the ID Token. Therefore, the ID Token cannot contain the Token Endpoint URL or the {project_name} Issuer URL. The `aud` (audience) claim must simply match the Client ID configured for the Google Identity Provider. *This is the only deviation from RFC 7523.*
 * **Replay Check**: It is not possible to perform a replay check because the `jti` claim is missing from the Google ID Token. Consequently, the same Google ID Token can be used multiple times.
 * **Google ID Token Expiration**: The duration of a Google ID Token is fixed at 1 hour and cannot be modified. To limit the validity window, a dedicated property in the configuration allows you to set a maximum time limit for the token. The default value is 1 hour (matching the Google ID Token lifespan).
+
+In a scenario where a mobile application already supports login with Google without involving Keycloak, there may be an issue when integrating Keycloak later. For example, Keycloak might be configured with a Google Identity Provider that uses a different Google client than the one used by the mobile app.
+
+In this case, the Google ID token cannot be used with the JWT Authorization Grant because the `aud` claim in the ID token does not match the client id configured in the Google Identity Provider.
+
+To address this issue, you can use Client Policies with the `jwt-authorization-grant-audience` executor to allow additional audiences for the assertion.
 
 </@tmpl.guide>
 
