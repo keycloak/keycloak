@@ -25,7 +25,6 @@ import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oauth2.cimd.provider.ClientIdMetadataDocumentProvider;
-import org.keycloak.protocol.oauth2.cimd.provider.PersistentClientIdMetadataDocumentProviderFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
@@ -132,10 +131,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         protected boolean allowLoopbackAddress = false;
         @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.ALLOW_HTTP_SCHEME)
         protected boolean allowHttpScheme = false;
-
-        // Client ID Validation
-        @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.ALLOW_PERMITTED_DOMAINS)
-        protected List<String> allowPermittedDomains = null;
+        @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.TRUSTED_DOMAINS)
+        protected List<String> trustedDomains = null;
 
         // Client Metadata Validation
         @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.RESTRICT_SAME_DOMAIN)
@@ -170,12 +167,12 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             this.allowHttpScheme = allowHttpScheme;
         }
 
-        public List<String> getAllowPermittedDomains() {
-            return allowPermittedDomains;
+        public List<String> getTrustedDomains() {
+            return trustedDomains;
         }
 
-        public void setAllowPermittedDomains(List<String> permittedDomains) {
-            this.allowPermittedDomains = permittedDomains;
+        public void setTrustedDomains(List<String> permittedDomains) {
+            this.trustedDomains = permittedDomains;
         }
 
         public boolean isRestrictSameDomain() {
@@ -394,10 +391,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
     public static final String ERR_CLIENTID_FRAGMENT = "Invalid Client ID: fragment included.";
     public static final String ERR_CLIENTID_USERINFO = "Invalid Client ID: userinfo included.";
     public static final String ERR_CLIENTID_QUERY = "Invalid Client ID: query included.";
-    public static final String ERR_CLIENTID_UNRESOLVED = "Invalid Client ID: host unresolved.";
-    public static final String ERR_CLIENTID_LOOPBACK_ADDRESS = "Invalid Client ID: loopback address is not allowed.";
-    public static final String ERR_CLIENTID_PRIVATE_ADDRESS = "Invalid Client ID: private address is not allowed.";
-    //public static final String ERR_CLIENTID_LINKLOCAL_ADDRESS = "Invalid Client ID: link local address is not allowed.";
 
     // Client ID Validation Errors
     public static final String ERR_NOTALLOWED_DOMAIN = "Invalid Client ID: domain not allowed.";
@@ -410,10 +403,12 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
     public static final String ERR_METADATA_CLIENTSECRET = "Invalid Client Metadata: client_secret or client_secret_expires_at property in client metadata is must not included.";
     public static final String ERR_METADATA_REDIRECTURI = "Invalid Client Metadata: redirect_uri parameter does not exactly match the one of redirect_uris property in client metadata.";
     public static final String ERR_METADATA_MALFORMED_URL = "Invalid Client Metadata: malformed URL.";
-    public static final String ERR_METADATA_UNRESOLVED = "Invalid Client Metadata: URL unresolved.";
-    public static final String ERR_METADATA_LOOPBACK_ADDRESS = "Invalid Client Metadata: loopback address is not allowed.";
-    public static final String ERR_METADATA_PRIVATE_ADDRESS = "Invalid Client Metadata: private address is not allowed.";
-    //public static final String ERR_METADATA_LINKLOCAL_ADDRESS = "Invalid Clent Metadata: link local address is not allowed.";
+
+    // Client ID / Client Metadata Verification Errors
+    public static final String ERR_HOST_UNRESOLVED = "Invalid Client ID / Metadata: host unresolved.";
+    public static final String ERR_LOOPBACK_ADDRESS = "Invalid Client ID / Metadata: loopback address is not allowed.";
+    public static final String ERR_PRIVATE_ADDRESS = "Invalid Client ID / Metadata: private address is not allowed.";
+    //public static final String ERR_LINKLOCAL_ADDRESS = "Invalid Client ID / Metadata: link local address is not allowed.";
 
     // Client Metadata Validation Errors
     public static final String ERR_METADATA_URIS_SAMEDOMAIN = "Invalid Client Metadata: client_id parameter, redirect_uri parameter and at least one of redirect_uris properties in client metadata should be under the same domain.";
@@ -433,18 +428,18 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
     protected URI verifyAuthorizationRequest(PreAuthorizationRequestContext preAuthorizationRequestContext) throws ClientPolicyException {
         if (preAuthorizationRequestContext.getRequestParameters() == null) {
             getLogger().warn("authorization request does not include any parameter.");
-            throw invalidClientId(ERR_INVALID_PARAMETER);
+            throw invalidClientIdMetadata(ERR_INVALID_PARAMETER);
         }
 
         if (preAuthorizationRequestContext.getRequestParameters().getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM) == null) {
             getLogger().warn("authorization request does not include client_id.");
-            throw invalidClientId(ERR_INVALID_PARAMETER);
+            throw invalidClientIdMetadata(ERR_INVALID_PARAMETER);
         }
 
         String redirectUri = preAuthorizationRequestContext.getRequestParameters().getFirst(OIDCLoginProtocol.REDIRECT_URI_PARAM);
         if (redirectUri == null) {
             getLogger().warn("authorization request does not include redirect_uri parameter.");
-            throw invalidClientId(ERR_INVALID_PARAMETER);
+            throw invalidClientIdMetadata(ERR_INVALID_PARAMETER);
         }
 
         final URI uri;
@@ -452,7 +447,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             uri = new URI(redirectUri);
         } catch (URISyntaxException e) {
             getLogger().warnv("Malformed URL: redirectUri = {0}", redirectUri);
-            throw invalidClientId(ERR_INVALID_PARAMETER);
+            throw invalidClientIdMetadata(ERR_INVALID_PARAMETER);
         }
 
         return uri;
@@ -475,43 +470,43 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             uri = new URI(clientId);
         } catch (URISyntaxException e) {
             getLogger().warnv("Malformed URL: clientId = {0}", clientId);
-            throw invalidClientId(ERR_CLIENTID_MALFORMED_URL);
+            throw invalidClientIdMetadata(ERR_CLIENTID_MALFORMED_URL);
         }
 
         // Client identifier URLs MUST have an "https" scheme.
         if (!getConfiguration().isAllowHttpScheme() && !"https".equals(uri.getScheme())) {
             getLogger().warnv("Invalid URL Scheme: scheme = {0}", uri.getScheme());
-            throw invalidClientId(ERR_CLIENTID_INVALID_SCHEME);
+            throw invalidClientIdMetadata(ERR_CLIENTID_INVALID_SCHEME);
         }
 
         // Client identifier URLs MUST contain a path component.
         if (uri.getPath() == null || uri.getPath().isEmpty()) {
             getLogger().warn("Empty path:");
-            throw invalidClientId(ERR_CLIENTID_EMPTY_PATH);
+            throw invalidClientIdMetadata(ERR_CLIENTID_EMPTY_PATH);
         }
 
         // Client identifier URLs MUST NOT contain single-dot or double-dot path segments.
         if (isUnsafeUriPath(uri)) {
             getLogger().warnv("traverse path segment: raw path = {0}", uri.getRawPath());
-            throw invalidClientId(ERR_CLIENTID_PATH_TRAVERSAL);
+            throw invalidClientIdMetadata(ERR_CLIENTID_PATH_TRAVERSAL);
         }
 
         // Client identifier URLs MUST NOT contain a fragment component.
         if (uri.getFragment() != null) {
             getLogger().warnv("url fragment: fragment = {0}", uri.getFragment());
-            throw invalidClientId(ERR_CLIENTID_FRAGMENT);
+            throw invalidClientIdMetadata(ERR_CLIENTID_FRAGMENT);
         }
 
         // Client identifier URLs MUST NOT contain a username or password.
         if (uri.getUserInfo() != null) {
             getLogger().warnv("user information: userinfo = {0}", uri.getUserInfo());
-            throw invalidClientId(ERR_CLIENTID_USERINFO);
+            throw invalidClientIdMetadata(ERR_CLIENTID_USERINFO);
         }
 
         // Client identifier URLs SHOULD NOT include a query string component.
         if (uri.getQuery() != null) {
             getLogger().warnv("url query: query = {0}", uri.getQuery());
-            throw invalidClientId(ERR_CLIENTID_QUERY);
+            throw invalidClientIdMetadata(ERR_CLIENTID_QUERY);
         }
 
         // Client identifier URLs MAY contain a port.
@@ -523,29 +518,14 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // A stable URL that does not frequently change for the client is RECOMMENDED.
         // -> no check
 
-        // SSRF attack countermeasure
-        // Client identifier is not a loopback address
-        // Client identifier is not a private address
-        // TODO for integration test, loopback address should be allowed, so its configuration is needed like SecureRedirectUrisEnforcerExecutor
-        InetAddress addr;
-        try {
-            addr = InetAddress.getByName(uri.getHost());
-        } catch (UnknownHostException e) {
-            getLogger().warnv("unknown host: host = {0}", uri.getHost());
-            throw invalidClientId(ERR_CLIENTID_UNRESOLVED);
-        }
-        if (!getConfiguration().isAllowLoopbackAddress() && addr.isLoopbackAddress()) {
-            getLogger().warnv("loopback address: host = {0}", uri.getHost());
-            throw invalidClientId(ERR_CLIENTID_LOOPBACK_ADDRESS);
-        }
-        if (!getConfiguration().isAllowPrivateAddress() && addr.isSiteLocalAddress()) {
-            getLogger().warnv("private address: address = {0}", addr.toString());
-            throw invalidClientId(ERR_CLIENTID_PRIVATE_ADDRESS);
-        }
-        //if (addr.isLinkLocalAddress()) {
-        //    getLogger().warnv("link local address: address = {0}", addr.toString());
-        //    throw invalidClientId(ERR_CLIENTIDLINKLOCAL_ADDRESS);
-        //}
+        // Trusted domains and SSRF attack countermeasure:
+        //  It checks if a host part is under one of trusted domains.
+        //  It checks if an address resolved from a property whose value is URI is loopback address.
+        //  It checks if an address resolved from a property whose value is URI is private address.
+        verifyUri(clientId, (error, logMessageTemplate) -> {
+            getLogger().warnv(logMessageTemplate, "client_id", clientId);
+            throw invalidClientIdMetadata(error);
+        });
 
         return uri;
     }
@@ -559,15 +539,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
      */
     protected void validateClientId(final URI clientIdURI) throws ClientPolicyException {
         // The authorization server MAY choose to have its own heuristics and policies around the trust of domain names used as client IDs.
-
-        // allow trusted domain policy
-        List<String> allowList = convertContentFilledList(getConfiguration().getAllowPermittedDomains());
-        if (allowList != null && !allowList.isEmpty()) {
-            if (allowList.stream().noneMatch(i->checkTrustedDomain(clientIdURI.getHost(), i))) {
-                getLogger().warnv("not allowed domain: host = {0}", clientIdURI.getHost());
-                throw invalidClientId(ERR_NOTALLOWED_DOMAIN);
-            }
-        }
+        return;
     }
 
     // apply the same logic in TrustedHostClientRegistrationPolicy.
@@ -599,11 +571,11 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         try (SimpleHttpResponse response = simpleHttp.asResponse()) {
             if (!isUpdate && response.getStatus() != Response.Status.OK.getStatusCode()) {
                 getLogger().warnv("fetching client metadata for the first time failed: clientId = {0}", clientId);
-                throw invalidClientId(ERR_METADATA_FETCH_FAILED);
+                throw invalidClientIdMetadata(ERR_METADATA_FETCH_FAILED);
             }
             if (isUpdate && response.getStatus() != Response.Status.OK.getStatusCode() && response.getStatus() != Response.Status.NOT_MODIFIED.getStatusCode()) {
                 getLogger().warnv("fetching client metadata for updating failed: clientId = {0}", clientId);
-                throw invalidClientId(ERR_METADATA_FETCH_FAILED);
+                throw invalidClientIdMetadata(ERR_METADATA_FETCH_FAILED);
             }
 
             Header[] headers = response.getAllHeaders();
@@ -650,20 +622,20 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
         if (clientOIDC == null) {
             getLogger().warn("client metadata does not have its content.");
-            throw invalidClientId(ERR_METADATA_NOCONTENT);
+            throw invalidClientIdMetadata(ERR_METADATA_NOCONTENT);
         }
 
         // The client metadata document MUST contain a client_id property.
         if (clientOIDC.getClientId() == null) {
             getLogger().warn("client metadata does not include client_id property.");
-            throw invalidClientId(ERR_METADATA_NOCLIENTID);
+            throw invalidClientIdMetadata(ERR_METADATA_NOCLIENTID);
         }
 
         // The client_id property's value MUST match the URL of the document
         // using simple string comparison as defined in [RFC3986] Section 6.2.1.
         if (!clientOIDC.getClientId().equals(clientId)) {
             getLogger().warnv("client_id property in client metadata does not exactly match client_id parameter in authorization request. property = {0}, parameter = {1}", clientOIDC.getClientId(), clientId);
-            throw invalidClientId(ERR_METADATA_CLIENTID_UNMATCH);
+            throw invalidClientIdMetadata(ERR_METADATA_CLIENTID_UNMATCH);
         }
 
         // The token_endpoint_auth_method property MUST NOT include
@@ -671,54 +643,67 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // or any other method based around a shared symmetric secret.
         if (clientOIDC.getTokenEndpointAuthMethod() != null && NOTALLOWED_ALGORITHMS.contains(clientOIDC.getTokenEndpointAuthMethod())) {
             getLogger().warnv("not allowed client auth method: token_endpoint_auth_method = {0}", clientOIDC.getTokenEndpointAuthMethod());
-            throw invalidClientId(ERR_METADATA_NOTALLOWED_CLIENTAUTH);
+            throw invalidClientIdMetadata(ERR_METADATA_NOTALLOWED_CLIENTAUTH);
         }
 
         // The client_secret and client_secret_expires_at properties MUST NOT be used.
         if (clientOIDC.getClientSecret() != null || clientOIDC.getClientSecretExpiresAt() != null) {
             getLogger().warn("client metadata includes client_secret or client_secret_expires_at.");
-            throw invalidClientId(ERR_METADATA_CLIENTSECRET);
+            throw invalidClientIdMetadata(ERR_METADATA_CLIENTSECRET);
         }
 
         // An authorization server MUST validate redirect URIs presented in an authorization request
         // against those in the metadata document.
         if (clientOIDC.getRedirectUris() == null || !clientOIDC.getRedirectUris().contains(redirectUri)) {
             getLogger().warnv("redirect_uri parameter does not exactly match the one of redirect_uris property in client metadata: redirectUri = {0}", redirectUri);
-            throw invalidClientId(ERR_METADATA_REDIRECTURI);
+            throw invalidClientIdMetadata(ERR_METADATA_REDIRECTURI);
         }
 
-        // SSRF attack countermeasure
-        // It checks if an address resolved from a property whose value is URI is loopback address.
-        // It checks if an address resolved from a property whose value is URI is private address.
-        // RFC 7591: logo_uri, client_uri, tos_uri, policy_uri, jwks_uri.
+        // Trusted domains and SSRF attack countermeasure:
+        //  It checks if a host part is under one of trusted domains.
+        //  It checks if an address resolved from a property whose value is URI is loopback address.
+        //  It checks if an address resolved from a property whose value is URI is private address.
+        // CIMD (mandatory): client_id
+        // RFC 7591 (mandagory): redirect_uris
+        // RFC 7591 (optional): logo_uri, client_uri, tos_uri, policy_uri, jwks_uri
+        verifyUri(clientOIDC.getClientId(), (error, logMessageTemplate) -> {
+            getLogger().warnv(logMessageTemplate, "client_id", clientOIDC.getClientId());
+            throw invalidClientIdMetadata(error);
+        });
+        for (String redirect_uri : clientOIDC.getRedirectUris()) {
+            verifyUri(redirect_uri, (error, logMessageTemplate) -> {
+                getLogger().warnv(logMessageTemplate, "redirect_uris", redirect_uri);
+                throw invalidClientIdMetadata(error);
+            });
+        }
         if (clientOIDC.getLogoUri() != null) {
             verifyUri(clientOIDC.getLogoUri(), (error, logMessageTemplate) -> {
                 getLogger().warnv(logMessageTemplate, "logo_uri", clientOIDC.getLogoUri());
-                throw invalidClientId(error);
+                throw invalidClientIdMetadata(error);
             });
         }
         if (clientOIDC.getClientUri() != null) {
             verifyUri(clientOIDC.getClientUri(), (error, logMessageTemplate) -> {
                 getLogger().warnv(logMessageTemplate, "client_uri", clientOIDC.getClientUri());
-                throw invalidClientId(error);
+                throw invalidClientIdMetadata(error);
             });
         }
         if (clientOIDC.getTosUri() != null) {
             verifyUri(clientOIDC.getTosUri(), (error, logMessageTemplate) -> {
                 getLogger().warnv(logMessageTemplate, "tos_uri", clientOIDC.getTosUri());
-                throw invalidClientId(error);
+                throw invalidClientIdMetadata(error);
             });
         }
         if (clientOIDC.getPolicyUri() != null) {
             verifyUri(clientOIDC.getPolicyUri(), (error, logMessageTemplate) -> {
                 getLogger().warnv(logMessageTemplate, "policy_uri", clientOIDC.getPolicyUri());
-                throw invalidClientId(error);
+                throw invalidClientIdMetadata(error);
             });
         }
         if (clientOIDC.getJwksUri() != null) {
             verifyUri(clientOIDC.getJwksUri(), (error, logMessageTemplate) -> {
                 getLogger().warnv(logMessageTemplate, "jwks_uri", clientOIDC.getJwksUri());
-                throw invalidClientId(error);
+                throw invalidClientIdMetadata(error);
             });
         }
 
@@ -728,7 +713,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         } catch (URISyntaxException e) {
             // never reach here
             getLogger().warnv("Malformed URL: clientId in metadata = {0}", clientOIDC.getClientId());
-            throw invalidClientId(ERR_CLIENTID_MALFORMED_URL);
+            throw invalidClientIdMetadata(ERR_CLIENTID_MALFORMED_URL);
         }
 
         return clientIdURIfromMetadata;
@@ -742,7 +727,15 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         return UNSAFE_PATH_PATTERN.matcher(redirectUri.getRawPath()).find();
     }
 
+    // TODO?: consider relative URI to use RedirectUtils.resolveValidRedirects
     private void verifyUri(String uriString, ErrorHandler errorHandler) throws ClientPolicyException {
+        // allow trusted domain
+        List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
+        if (trustedDomains == null || trustedDomains.isEmpty()) {
+            getLogger().debug("trusted domain list is vacant.");
+            throw invalidClientIdMetadata(ERR_NOTALLOWED_DOMAIN);
+        }
+
         final URI uri;
         try {
             uri = new URI(uriString);
@@ -750,23 +743,39 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             errorHandler.onError(ERR_METADATA_MALFORMED_URL, "Malformed URL: {0} property in metadata = {1}");
             return;
         }
+
+        // NOTE: java.net.URI does not follow RFC 3986, so it cannot parse the following IPv6 address, resulting getHost() == null
+        //       It follows RFC 2396 and RFC 2732.
+        // ex.  0:0:0:0:0:0:0:1  -> getHost() == null
+        //     [0:0:0:0:0:0:0:1] -> getHost() == [0:0:0:0:0:0:0:1]
+        if (uri.getHost() == null) {
+            getLogger().warnv("not trusted domain: host = {0}", uri.getHost());
+            throw invalidClientIdMetadata(ERR_HOST_UNRESOLVED);
+        }
+
+        if (trustedDomains.stream().noneMatch(i->checkTrustedDomain(uri.getHost(), i))) {
+            getLogger().warnv("not trusted domain: host = {0}", uri.getHost());
+            throw invalidClientIdMetadata(ERR_NOTALLOWED_DOMAIN);
+        }
+
+        // SSRF attack counter measures
         InetAddress addr;
         try {
             addr = InetAddress.getByName(uri.getHost());
         } catch (UnknownHostException e) {
-            errorHandler.onError(ERR_METADATA_UNRESOLVED, "Unresolved URL: {0} property in metadata = {1}");
+            errorHandler.onError(ERR_HOST_UNRESOLVED, "Unresolved URL: {0} property in metadata = {1}");
             return;
         }
         if (!getConfiguration().isAllowLoopbackAddress() && addr.isLoopbackAddress()) {
-            errorHandler.onError(ERR_METADATA_LOOPBACK_ADDRESS, "loopback address: {0} property in metadata = {1}");
+            errorHandler.onError(ERR_LOOPBACK_ADDRESS, "loopback address: {0} property in metadata = {1}");
             return;
         }
         if (!getConfiguration().isAllowPrivateAddress() && addr.isSiteLocalAddress()) {
-            errorHandler.onError(ERR_METADATA_PRIVATE_ADDRESS, "private address: {0} property in metadata = {1}");
+            errorHandler.onError(ERR_PRIVATE_ADDRESS, "private address: {0} property in metadata = {1}");
             return;
         }
         if (addr.isLinkLocalAddress()) {
-            errorHandler.onError(ERR_METADATA_PRIVATE_ADDRESS, "link local address: {0} property in metadata = {1}");
+            errorHandler.onError(ERR_PRIVATE_ADDRESS, "link local address: {0} property in metadata = {1}");
         }
     }
 
@@ -787,7 +796,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // between the redirect_uris and the client_id or client_uri properties
 
         // same domain policy
-        List<String> trustedDomains = convertContentFilledList(getConfiguration().getAllowPermittedDomains());
+        List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
         if (getConfiguration().isRestrictSameDomain() && trustedDomains != null && !trustedDomains.isEmpty()) {
             // Client Metadata verification ensures that
             //  - client_id parameter value in an authorization request exactly matches client_id property in metadata
@@ -795,7 +804,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             // Therefore, only considering domain parts of client_id parameter value, redirect_uri parameter value matches one of permitted domains configuration.
             if (trustedDomains.stream().noneMatch(i->checkTrustedDomain(clientIdURI.getHost(), i) && checkTrustedDomain(redirectUriURI.getHost(), i))) {
                 getLogger().warnv("client_id and redirect_uri domain not match: client_id host part = {0}, redirect_uri host part = {1}", clientIdURI.getHost(), redirectUriURI.getHost());
-                throw invalidClientId(ERR_METADATA_URIS_SAMEDOMAIN);
+                throw invalidClientIdMetadata(ERR_METADATA_URIS_SAMEDOMAIN);
             }
         }
 
@@ -805,7 +814,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             JsonNode jn = JsonSerialization.writeValueAsNode(clientOIDC);
             if (requiredProperties.stream().filter(i->!i.isBlank()).anyMatch(i->jn.get(i) == null)) {
                 getLogger().warn("metadata does not include required properties");
-                throw invalidClientId(ERR_METADATA_NO_REQUIRED_PROPERTIES);
+                throw invalidClientIdMetadata(ERR_METADATA_NO_REQUIRED_PROPERTIES);
             }
         }
     }
@@ -840,7 +849,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         }
     }
 
-    protected static ClientPolicyException invalidClientId(String errorDetail) {
+    protected static ClientPolicyException invalidClientIdMetadata(String errorDetail) {
         return new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, errorDetail);
     }
 

@@ -97,7 +97,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
                         .addExecutor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID,
                                 createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->{
                                     it.setAllowLoopbackAddress(true);
-                                    it.setAllowPermittedDomains(List.of("example.com","mcp.example.com"));
+                                    it.setTrustedDomains(List.of("example.com","mcp.example.com"));
                                 }))
                         .toRepresentation()
         ).toString();
@@ -132,7 +132,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
                         .addExecutor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID,
                                 createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->{
                                     it.setAllowLoopbackAddress(true);
-                                    it.setAllowPermittedDomains(List.of("*.example.com","localhost"));
+                                    it.setTrustedDomains(List.of("*.example.com","localhost"));
                                     it.setRestrictSameDomain(true);
                                     it.setRequiredProperties(List.of("scope", "logo_uri", "client_uri", "tos_uri", "policy_uri", "jwks_uri"));
                                     it.setAllUrisRestrictSameDomain(true);}))
@@ -254,7 +254,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
                         .addExecutor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID,
                                 createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->{
                                     it.setAllowLoopbackAddress(true);
-                                    it.setAllowPermittedDomains(List.of("*.example.com","localhost"));
+                                    it.setTrustedDomains(List.of("*.example.com","localhost"));
                                     it.setRestrictSameDomain(true);
                                     it.setRequiredProperties(List.of("scope", "logo_uri", "client_uri", "tos_uri", "policy_uri"));
                                     it.setAllUrisRestrictSameDomain(true);}))
@@ -347,7 +347,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
                         .addExecutor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID,
                                 createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->{
                                     it.setAllowLoopbackAddress(true);
-                                    it.setAllowPermittedDomains(List.of("*.example.com","localhost"));
+                                    it.setTrustedDomains(List.of("*.example.com","localhost"));
                                     it.setRestrictSameDomain(true);
                                     it.setRequiredProperties(List.of("logo_uri", "scope"));}))
                         .toRepresentation()
@@ -457,12 +457,48 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testClientIdMetadataDocumentExecutorDefaultSetting() throws Exception {
+        // register profiles
+        String  json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID,
+                                createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it-> {}))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(ClientIdUriSchemeConditionFactory.PROVIDER_ID,
+                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->
+                                        it.setClientIdUriSchemes(List.of("http", "https"))))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        String clientId;
+        OIDCClientRepresentation clientMetadata;
+
+        // vacant trusted domains
+        clientId = TestApplicationResourceUrls.getClientIdMetadataUri(generateSuffixedName("CIMD"));
+        clientMetadata = setupOIDCClientRepresentation(clientId, i-> {});
+        oidcClientEndpointsResource.registerClientIdMetadata(clientMetadata, null, null);
+        assertLoginAndError(clientId, AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+    }
+
+    @Test
     public void testClientIdMetadataDocumentExecutorFetchClientMetadataFailed() throws Exception {
         // register profiles
         String  json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
                 (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
                         .addExecutor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID,
-                                createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it-> it.setAllowLoopbackAddress(true)))
+                                createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it-> {
+                                    it.setAllowLoopbackAddress(true);
+                                    it.setTrustedDomains(List.of("*.example.com","localhost"));
+                                }))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -590,7 +626,9 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         String  json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
                 (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
                         .addExecutor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID,
-                                createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it-> it.setAllowLoopbackAddress(true)))
+                                createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->{
+                                    it.setAllowLoopbackAddress(true);
+                                    it.setTrustedDomains(List.of("*.example.com","localhost"));}))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -684,7 +722,10 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         String  json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
                 (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
                         .addExecutor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID,
-                                createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->{}))
+                                createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->
+                                        it.setTrustedDomains(List.of("*.example.com", "localhost", "127.0.0.1",
+                                                "10.0.0.0", "example.co.jp", "10.255.255.255", "172.16.0.0", "[::1]", "[0:0:0:0:0:0:0:1]",
+                                                "172.31.255.255", "192.168.0.0", "192.168.255.255", "[fe12:3456:789a:1::]"))))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -729,89 +770,51 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
 
         // Client ID Verification:
         // Client identifier is not a loopback address
-        assertLoginAndError("https://localhost:8443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_CLIENTID_LOOPBACK_ADDRESS);
+        assertLoginAndError("https://localhost:8443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_LOOPBACK_ADDRESS);
 
         // Client ID Verification:
         // Client identifier is not a loopback address
-        assertLoginAndError("https://127.0.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_CLIENTID_LOOPBACK_ADDRESS);
+        assertLoginAndError("https://127.0.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_LOOPBACK_ADDRESS);
 
         // Client ID Verification:
-        assertLoginAndError("https://example.co.jp/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_CLIENTID_UNRESOLVED);
-
-        // Client ID Verification:
-        // Client identifier is not a loopback address
-        assertLoginAndError("https://::1:8443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_CLIENTID_LOOPBACK_ADDRESS);
+        assertLoginAndError("https://example.co.jp/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_HOST_UNRESOLVED);
 
         // Client ID Verification:
         // Client identifier is not a loopback address
-        assertLoginAndError("https://[::1]:8443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_CLIENTID_LOOPBACK_ADDRESS);
+        assertLoginAndError("https://[::1]:8443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_LOOPBACK_ADDRESS);
 
         // Client ID Verification:
         // Client identifier is not a loopback address
-        assertLoginAndError("https://0:0:0:0:0:0:0:1/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_CLIENTID_LOOPBACK_ADDRESS);
+        assertLoginAndError("https://[0:0:0:0:0:0:0:1]/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_LOOPBACK_ADDRESS);
 
         // Client ID Verification:
         // Client identifier is not a private address
-        assertLoginAndError("https://10.0.0.0:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_CLIENTID_PRIVATE_ADDRESS);
+        assertLoginAndError("https://10.0.0.0:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_PRIVATE_ADDRESS);
 
         // Client ID Verification:
         // Client identifier is not a private address
-        assertLoginAndError("https://10.255.255.255:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_CLIENTID_PRIVATE_ADDRESS);
+        assertLoginAndError("https://10.255.255.255:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_PRIVATE_ADDRESS);
 
         // Client ID Verification:
         // Client identifier is not a private address
-        assertLoginAndError("https://172.16.0.0:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_CLIENTID_PRIVATE_ADDRESS);
+        assertLoginAndError("https://172.16.0.0:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_PRIVATE_ADDRESS);
 
         // Client ID Verification:
         // Client identifier is not a private address
-        assertLoginAndError("https://172.31.255.255:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_CLIENTID_PRIVATE_ADDRESS);
+        assertLoginAndError("https://172.31.255.255:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_PRIVATE_ADDRESS);
 
         // Client ID Verification:
         // Client identifier is not a private address
-        assertLoginAndError("https://192.168.0.0:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_CLIENTID_PRIVATE_ADDRESS);
+        assertLoginAndError("https://192.168.0.0:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_PRIVATE_ADDRESS);
 
         // Client ID Verification:
         // Client identifier is not a private address
-        assertLoginAndError("https://192.168.255.255:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_CLIENTID_PRIVATE_ADDRESS);
+        assertLoginAndError("https://192.168.255.255:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_PRIVATE_ADDRESS);
 
         // Client ID Verification:
         // Client identifier is not a loopback address
-        assertLoginAndError("https://fe12:3456:789a:1:::443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_CLIENTID_LOOPBACK_ADDRESS);
-    }
-
-
-    @Test
-    public void testClientIdMetadataDocumentExecutorValidateClientId() throws Exception {
-        // register profiles
-        String  json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
-                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
-                        .addExecutor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID,
-                                createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->{
-                                    it.setAllowLoopbackAddress(true);
-                                    it.setAllowPermittedDomains(List.of("*.example.com","mcp.example.co.jp"));
-                                }))
-                        .toRepresentation()
-        ).toString();
-        updateProfiles(json);
-
-        // register policies
-        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
-                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
-                        .addCondition(ClientIdUriSchemeConditionFactory.PROVIDER_ID,
-                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->
-                                        it.setClientIdUriSchemes(List.of("http", "https"))))
-                        .addProfile(PROFILE_NAME)
-                        .toRepresentation()
-        ).toString();
-        updatePolicies(json);
-
-        String clientId;
-
-        // Client ID Validation:
-        // The authorization server MAY choose to have its own heuristics and policies
-        // around the trust of domain names used as client IDs.
-        clientId = TestApplicationResourceUrls.getClientIdMetadataUri(generateSuffixedName("CIMD"));
-        assertLoginAndError(clientId, AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+        // -> java.net.URI does not follow RFC 3986 so it cannot parse the following IPv6 address, resulting getHost() == null
+        assertLoginAndError("https://0:0:0:0:0:0:0:1/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_HOST_UNRESOLVED);
     }
 
     @Test
@@ -820,8 +823,11 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         String  json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
                 (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
                         .addExecutor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID,
-                                createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->
-                                        it.setAllowLoopbackAddress(true)))
+                                createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it-> {
+                                        it.setAllowLoopbackAddress(true);
+                                        it.setTrustedDomains(List.of("*.example.com", "localhost", "10.255.255.255",
+                                                "mcpclient.example.org", "www.example.org", "172.31.255.254",
+                                                "[::1]", "client.example.com", "127.0.0.1", "10.255.255.1"));}))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -900,7 +906,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         clientId = TestApplicationResourceUrls.getClientIdMetadataUri(generateSuffixedName("CIMD"));
         clientMetadata = setupOIDCClientRepresentation(clientId, i-> i.setLogoUri("https://10.255.255.255:443/mcp"));
         oidcClientEndpointsResource.registerClientIdMetadata(clientMetadata, null, null);
-        assertLoginAndError(clientId, AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_PRIVATE_ADDRESS);
+        assertLoginAndError(clientId, AbstractClientIdMetadataDocumentExecutor.ERR_PRIVATE_ADDRESS);
 
         // client_uri : unresolved address
         clientId = TestApplicationResourceUrls.getClientIdMetadataUri(generateSuffixedName("CIMD"));
@@ -909,7 +915,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
             i.setClientUri("https://mcpclient.example.org/client");
         });
         oidcClientEndpointsResource.registerClientIdMetadata(clientMetadata, null, null);
-        assertLoginAndError(clientId, AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_UNRESOLVED);
+        assertLoginAndError(clientId, AbstractClientIdMetadataDocumentExecutor.ERR_HOST_UNRESOLVED);
 
         // tos_uri : private address
         clientId = TestApplicationResourceUrls.getClientIdMetadataUri(generateSuffixedName("CIMD"));
@@ -919,7 +925,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
             i.setTosUri("https://172.31.255.254:443/mcp");
         });
         oidcClientEndpointsResource.registerClientIdMetadata(clientMetadata, null, null);
-        assertLoginAndError(clientId, AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_PRIVATE_ADDRESS);
+        assertLoginAndError(clientId, AbstractClientIdMetadataDocumentExecutor.ERR_PRIVATE_ADDRESS);
 
         // policy_uri : unresolved address
         clientId = TestApplicationResourceUrls.getClientIdMetadataUri(generateSuffixedName("CIMD"));
@@ -930,7 +936,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
             i.setPolicyUri("https://client.example.com");
         });
         oidcClientEndpointsResource.registerClientIdMetadata(clientMetadata, null, null);
-        assertLoginAndError(clientId, AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_UNRESOLVED);
+        assertLoginAndError(clientId, AbstractClientIdMetadataDocumentExecutor.ERR_HOST_UNRESOLVED);
 
         // jwks_uri : private address
         clientId = TestApplicationResourceUrls.getClientIdMetadataUri(generateSuffixedName("CIMD"));
@@ -942,8 +948,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
             i.setJwksUri("https://10.255.255.1:443/mcp");
         });
         oidcClientEndpointsResource.registerClientIdMetadata(clientMetadata, null, null);
-        assertLoginAndError(clientId, AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_PRIVATE_ADDRESS);
-
+        assertLoginAndError(clientId, AbstractClientIdMetadataDocumentExecutor.ERR_PRIVATE_ADDRESS);
     }
 
     @Test
@@ -955,6 +960,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
                                 createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->{
                                         it.setAllowLoopbackAddress(true);
                                         it.setOnlyAllowConfidentialClient(true);
+                                    it.setTrustedDomains(List.of("*.example.com", "localhost"));
                                 }))
                         .toRepresentation()
         ).toString();
@@ -1000,7 +1006,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
                                 createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->{
                                     it.setAllowLoopbackAddress(true);
                                     it.setOnlyAllowConfidentialClient(false);
-                                    it.setAllowPermittedDomains(List.of("*.example.com", "mcp.example.co.jp", "localhost"));
+                                    it.setTrustedDomains(List.of("*.example.com", "localhost", "www.example.co.jp"));
                                     it.setRestrictSameDomain(true);
                                 }))
                         .toRepresentation()
@@ -1009,8 +1015,8 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
 
         clientId = TestApplicationResourceUrls.getClientIdMetadataUri(generateSuffixedName("CIMD"));
         String originalRedirectUri = oauth.getRedirectUri();
-        oauth.redirectUri("https://mcp.example.co.jp/callback");
-        clientMetadata = setupOIDCClientRepresentation(clientId, i->i.setRedirectUris(List.of("https://mcp.example.co.jp/callback", "https://mcp.example.com/callback")));
+        oauth.redirectUri("https://www.example.com/callback");
+        clientMetadata = setupOIDCClientRepresentation(clientId, i->i.setRedirectUris(List.of("https://localhost:8443/callback", "https://www.example.com/callback")));
         oidcClientEndpointsResource.registerClientIdMetadata(clientMetadata, null, null);
         assertLoginAndError(clientId, ClientIdMetadataDocumentExecutor.ERR_METADATA_URIS_SAMEDOMAIN);
         oauth.redirectUri(originalRedirectUri);
@@ -1022,6 +1028,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
                                 createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->{
                                     it.setAllowLoopbackAddress(true);
                                     it.setRequiredProperties(List.of("client_uri", "logo_uri"));
+                                    it.setTrustedDomains(List.of("*.example.com", "[::1]", "localhost", "127.0.0.1"));
                                 }))
                         .toRepresentation()
         ).toString();
@@ -1039,7 +1046,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
                                 createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->{
                                     it.setAllowLoopbackAddress(true);
                                     it.setAllUrisRestrictSameDomain(true);
-                                    it.setAllowPermittedDomains(List.of("*.example.com", "localhost"));
+                                    it.setTrustedDomains(List.of("*.example.org", "localhost", "[::1]", "127.0.0.1"));
                                 }))
                         .toRepresentation()
         ).toString();
