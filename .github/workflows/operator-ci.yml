@@ -108,7 +108,7 @@ jobs:
               -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
               -Dkc.operator.keycloak.image=keycloak:${{ env.version_local }} \
               -Dtest.operator.custom.image=custom-keycloak:${{ env.version_local }} \
-              -Dkc.operator.keycloak.image-pull-policy=Never ${PARAMS["${{ matrix.suite }}"]}
+              -Dkc.operator.keycloak.image-pull-policy=Never ${PARAMS["${{ matrix.suite }}"]} -Dtest=KeycloakIngressTest
 
   test-remote:
     name: Test remote
@@ -162,7 +162,7 @@ jobs:
               -Dkc.operator.keycloak.image=keycloak:${{ env.version_remote }} \
               -Dquarkus.kubernetes.env.vars.kc-operator-keycloak-image-pull-policy=Never \
               -Dtest.operator.custom.image=custom-keycloak:${{ env.version_remote }} \
-              --no-transfer-progress -Dtest.operator.deployment=remote ${PARAMS["${{ matrix.suite }}"]}
+              --no-transfer-progress -Dtest.operator.deployment=remote ${PARAMS["${{ matrix.suite }}"]} -Dtest=KeycloakIngressTest
 
   test-olm:
     name: Test OLM installation
