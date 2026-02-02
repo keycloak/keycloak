@@ -47,6 +47,7 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -65,6 +66,7 @@ import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.RSAPublicJWK;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
@@ -519,6 +521,27 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             // 2. Using the code to get accesstoken
             String token = f.apply(testClientId, testScope);
 
+            // Extract credential_identifier from the token (client-side parsing)
+            String credentialIdentifier = null;
+            try {
+                JsonWebToken jwt = new JWSInput(token).readJsonContent(JsonWebToken.class);
+                Object authDetails = jwt.getOtherClaims().get(OAuth2Constants.AUTHORIZATION_DETAILS);
+                if (authDetails != null) {
+                    List<OID4VCAuthorizationDetailResponse> authDetailsResponse = JsonSerialization.readValue(
+                            JsonSerialization.writeValueAsString(authDetails),
+                            new TypeReference<List<OID4VCAuthorizationDetailResponse>>() {
+                            }
+                    );
+                    if (!authDetailsResponse.isEmpty() &&
+                            authDetailsResponse.get(0).getCredentialIdentifiers() != null &&
+                            !authDetailsResponse.get(0).getCredentialIdentifiers().isEmpty()) {
+                        credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+                    }
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to extract credential_identifier from token", e);
+            }
+
             // 3. Get the credential configuration id from issuer metadata at .wellKnown
             try (Response discoveryResponse = oid4vciDiscoveryTarget.request().get()) {
                 CredentialIssuer oid4vciIssuerConfig = JsonSerialization.readValue(discoveryResponse.readEntity(String.class),
@@ -534,9 +557,12 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                     WebTarget credentialTarget = clientForCredentialRequest.target(credentialUri);
 
                     CredentialRequest request = new CredentialRequest();
-                    request.setCredentialConfigurationId(oid4vciIssuerConfig.getCredentialsSupported()
-                            .get(testCredentialConfigurationId)
-                            .getId());
+                    // Use credential_identifier if available, otherwise use configuration_id for error testing
+                    if (credentialIdentifier != null) {
+                        request.setCredentialIdentifier(credentialIdentifier);
+                    } else {
+                        request.setCredentialConfigurationId(testCredentialConfigurationId);
+                    }
 
                     assertEquals(testFormat,
                             oid4vciIssuerConfig.getCredentialsSupported()

@@ -21,10 +21,8 @@ import java.util.regex.Pattern;
 
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
-import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.ObjectUtil;
@@ -32,7 +30,6 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.util.TokenUtil;
 
@@ -199,26 +196,11 @@ public class AppAuthManager extends AuthenticationManager {
             if (tokenString == null) tokenString = extractAuthorizationHeaderToken(headers);
             // audience can be null
 
-            AuthResult authResult = verifyIdentityToken(session, realm, uriInfo, connection, true, true, audience, false, tokenString, headers,
-                    verifier -> DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenString)));
-
-            // Check if token is restricted by grant type to specific endpoints
-            try {
-                GrantTypeEndpointRestrictionValidator.validateGrantTypeRestriction(session, authResult);
-            } catch (ErrorResponseException e) {
-                throw e;
-            } catch (Exception e) {
-                rejectToken(e.getMessage());
-            }
-
-            return authResult;
-        }
-
-        /**
-         * Reject token with a proper OAuth 2.0 error response.
-         */
-        private void rejectToken(String errorDescription) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, errorDescription, Response.Status.FORBIDDEN);
+            return verifyIdentityToken(session, realm, uriInfo, connection, true, true, audience, false, tokenString, headers,
+                    verifier -> {
+                        DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenString));
+                        verifier.withChecks(GrantTypeEndpointRestrictionValidator.check(session));
+                    });
         }
     }
 

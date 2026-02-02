@@ -308,11 +308,12 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
                 SupportedCredentialConfiguration credConfig = ctx.issuerMetadata.getCredentialsSupported().get(credConfigId);
                 String scope = credConfig.getScope();
 
-                String accessToken = getBearerToken(clientId, userId, scope);
+                AccessTokenResponse tokenResponse = getBearerTokenResponse(clientId, userId, scope);
+                String accessToken = tokenResponse.getAccessToken();
 
                 // Get the credential and verify
                 //
-                CredentialResponse credResponse = getCredentialByOffer(ctx, accessToken, credOffer);
+                CredentialResponse credResponse = getCredentialByOffer(ctx, accessToken, tokenResponse, credOffer);
                 verifyCredentialResponse(ctx, credResponse);
             }
         } finally {
@@ -324,13 +325,59 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     // Private ---------------------------------------------------------------------------------------------------------
 
-    private String getBearerToken(String clientId, String username, String scope) {
+    private AccessTokenResponse getBearerTokenResponse(String clientId, String username, String scope) {
         ClientRepresentation client = testRealm().clients().findByClientId(clientId).get(0);
-        if (client.isDirectAccessGrantsEnabled()) {
-            return getBearerTokenDirectAccess(oauth, client, username, scope).getAccessToken();
-        } else {
-            return getBearerTokenCodeFlow(oauth, client, username, scope).getAccessToken();
+
+        // For credential scopes, we need to request authorization_details to get credential_identifier
+        if (scope != null && scope.equals(credScopeName)) {
+            OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+            authDetail.setType(OPENID_CREDENTIAL);
+            authDetail.setCredentialConfigurationId(credConfigId);
+            authDetail.setLocations(List.of(getCredentialIssuerMetadata().getCredentialIssuer()));
+
+            // Set the redirect URI from the client's configuration
+            if (client.getRedirectUris() != null && !client.getRedirectUris().isEmpty()) {
+                oauth.redirectUri(client.getRedirectUris().get(0));
+            }
+
+            String authCode = getAuthorizationCode(oauth, client, username, scope);
+            return getBearerToken(oauth, authCode, authDetail);
         }
+
+        // For non-credential scopes, use the appropriate flow based on client configuration
+        if (client.isDirectAccessGrantsEnabled()) {
+            return getBearerTokenDirectAccess(oauth, client, username, scope);
+        } else {
+            return getBearerTokenCodeFlow(oauth, client, username, scope);
+        }
+    }
+
+    private List<OID4VCAuthorizationDetailResponse> extractAuthorizationDetails(AccessTokenResponse tokenResponse) {
+        // First check if already populated in token response
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
+            return authDetailsResponse;
+        }
+
+        // Otherwise, extract from JWT access token
+        try {
+            JsonWebToken jwt = new JWSInput(tokenResponse.getAccessToken()).readJsonContent(JsonWebToken.class);
+            Object authDetails = jwt.getOtherClaims().get(OAuth2Constants.AUTHORIZATION_DETAILS);
+            if (authDetails != null) {
+                return JsonSerialization.readValue(
+                        JsonSerialization.writeValueAsString(authDetails),
+                        new TypeReference<List<OID4VCAuthorizationDetailResponse>>() {
+                        }
+                );
+            }
+        } catch (Exception e) {
+            // Ignore - authorization_details not present or couldn't be parsed
+        }
+        return null;
+    }
+
+    private String getBearerToken(String clientId, String username, String scope) {
+        return getBearerTokenResponse(clientId, username, scope).getAccessToken();
     }
 
     private String getBearerToken(String clientId, String username, String scope, OID4VCAuthorizationDetail... authDetail) {
@@ -427,12 +474,29 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         return sendCredentialRequest(ctx, accessToken, credentialRequest);
     }
 
-    private CredentialResponse getCredentialByOffer(OfferTestContext ctx, String accessToken, CredentialsOffer credOffer) throws Exception {
+    private CredentialResponse getCredentialByOffer(OfferTestContext ctx, String accessToken, AccessTokenResponse tokenResponse, CredentialsOffer credOffer) throws Exception {
         List<String> credConfigIds = credOffer.getCredentialConfigurationIds();
         if (credConfigIds.size() > 1)
             throw new IllegalStateException("Multiple credential configuration ids not supported in: " + JsonSerialization.valueAsString(credOffer));
         var credentialRequest = new CredentialRequest();
-        credentialRequest.setCredentialConfigurationId(credConfigIds.get(0));
+
+        // Extract authorization_details (from token response or JWT)
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = extractAuthorizationDetails(tokenResponse);
+
+        if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
+            // If authorization_details are present, credential_identifier is required
+            if (authDetailsResponse.get(0).getCredentialIdentifiers() != null &&
+                    !authDetailsResponse.get(0).getCredentialIdentifiers().isEmpty()) {
+                String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+                credentialRequest.setCredentialIdentifier(credentialIdentifier);
+            } else {
+                throw new IllegalStateException("authorization_details present but no credential_identifier found");
+            }
+        } else {
+            // No authorization_details, use credential_configuration_id
+            credentialRequest.setCredentialConfigurationId(credConfigIds.get(0));
+        }
+        
         return sendCredentialRequest(ctx, accessToken, credentialRequest);
     }
 

@@ -3,6 +3,7 @@ package org.keycloak.services.managers;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuthErrorException;
+import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
@@ -19,29 +20,30 @@ import org.jboss.logging.Logger;
  * This ensures Pre-Authorized Code tokens are restricted to the credential endpoint,
  * and other grant types only access their intended endpoints.
  */
-public class GrantTypeEndpointRestrictionValidator {
+public class GrantTypeEndpointRestrictionValidator implements TokenVerifier.Predicate<AccessToken> {
     private static final Logger logger = Logger.getLogger(GrantTypeEndpointRestrictionValidator.class);
 
     private final KeycloakSession session;
 
-    public GrantTypeEndpointRestrictionValidator(KeycloakSession session) {
+    private GrantTypeEndpointRestrictionValidator(KeycloakSession session) {
         this.session = session;
     }
 
     /**
-     * Utility method to validate grant type endpoint restrictions for an AuthResult.
-     * Similar to DPoPUtil pattern for consistency with other verification flows.
+     * Creates a TokenVerifier.Predicate for grant type endpoint restriction validation.
+     * Can be used with TokenVerifier.withChecks() for inline verification.
      *
-     * @param session    The Keycloak session
-     * @param authResult The authentication result to validate
-     * @throws VerificationException  if token validation fails
-     * @throws ErrorResponseException if server configuration is broken
+     * @param session The Keycloak session
+     * @return A predicate that validates grant type restrictions
      */
-    public static void validateGrantTypeRestriction(KeycloakSession session, AuthenticationManager.AuthResult authResult)
-            throws VerificationException {
-        if (authResult != null && authResult.token() != null) {
-            new GrantTypeEndpointRestrictionValidator(session).validate(authResult.token());
-        }
+    public static TokenVerifier.Predicate<AccessToken> check(KeycloakSession session) {
+        return new GrantTypeEndpointRestrictionValidator(session);
+    }
+
+    @Override
+    public boolean test(AccessToken token) throws VerificationException {
+        validate(token);
+        return true;
     }
 
     /**
@@ -51,7 +53,7 @@ public class GrantTypeEndpointRestrictionValidator {
      * @throws VerificationException  if token validation fails
      * @throws ErrorResponseException if server configuration is broken
      */
-    public void validate(AccessToken token) throws VerificationException {
+    private void validate(AccessToken token) throws VerificationException {
         try {
             // Get the grant type from the token
             String grantType = recoverGrantType(token);

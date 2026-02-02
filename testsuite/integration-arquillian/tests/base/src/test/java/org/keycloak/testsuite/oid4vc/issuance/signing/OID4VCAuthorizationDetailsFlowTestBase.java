@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -50,7 +49,6 @@ import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -619,12 +617,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         try (CloseableHttpResponse accountResponse = httpClient.execute(getAccount)) {
             assertEquals("Pre-authorized code token should be rejected at account endpoint",
-                    HttpStatus.SC_FORBIDDEN, accountResponse.getStatusLine().getStatusCode());
-
-            String errorBody = IOUtils.toString(accountResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            assertTrue("Error should indicate token restriction. Actual error: " + errorBody,
-                    errorBody.contains("invalid_token") || errorBody.contains("credential endpoint") ||
-                            errorBody.contains("Forbidden") || errorBody.contains("Not authorized"));
+                    HttpStatus.SC_UNAUTHORIZED, accountResponse.getStatusLine().getStatusCode());
         }
 
         // Step 4: Verify token is rejected at Admin REST API endpoint (uses BearerTokenAuthenticator)
@@ -635,12 +628,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         try (CloseableHttpResponse adminResponse = httpClient.execute(getAdmin)) {
             assertEquals("Pre-authorized code token should be rejected at admin endpoint",
-                    HttpStatus.SC_FORBIDDEN, adminResponse.getStatusLine().getStatusCode());
-
-            String errorBody = IOUtils.toString(adminResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            assertTrue("Error should indicate token restriction. Actual error: " + errorBody,
-                    errorBody.contains("invalid_token") || errorBody.contains("not allowed") ||
-                            errorBody.contains("Forbidden") || errorBody.contains("Not authorized"));
+                    HttpStatus.SC_UNAUTHORIZED, adminResponse.getStatusLine().getStatusCode());
         }
     }
 

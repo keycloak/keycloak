@@ -30,7 +30,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.VerificationException;
@@ -54,6 +53,7 @@ import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.JwtProof;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
 import org.keycloak.protocol.oid4vc.model.Proofs;
@@ -74,6 +74,7 @@ import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
 import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
 
 import static org.junit.Assert.assertEquals;
@@ -303,7 +304,18 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
         final String scopeName = jwtTypeCredentialClientScope.getName();
-        String token = getBearerToken(oauth, client, scopeName);
+
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credentialConfigurationId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
         try {
             withCausePropagation(() -> {
@@ -316,7 +328,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
 
                     CredentialRequest credentialRequest =
-                            new CredentialRequest().setCredentialConfigurationId(credentialConfigurationId);
+                            new CredentialRequest().setCredentialIdentifier(credentialIdentifier);
 
                     String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
                     issuerEndpoint.requestCredential(requestPayload);
@@ -351,13 +363,27 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     public void testRequestCredential() {
         String scopeName = jwtTypeCredentialClientScope.getName();
         String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
-        String token = getBearerToken(oauth, client, scopeName);
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+        assertNotNull("credential_identifier should be present", credentialIdentifier);
+
         testingClient.server(TEST_REALM_NAME).run(session -> {
             BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
             authenticator.setTokenString(token);
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
             CredentialRequest credentialRequest = new CredentialRequest()
-                    .setCredentialConfigurationId(credConfigId);
+                    .setCredentialIdentifier(credentialIdentifier);
 
             String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
 
@@ -401,10 +427,10 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             try {
                 String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
                 issuerEndpoint.requestCredential(requestPayload);
-                Assert.fail("Expected BadRequestException due to unknown credential identifier");
+                Assert.fail("Expected BadRequestException due to missing credential identifier or configuration id");
             } catch (BadRequestException e) {
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                assertEquals(ErrorType.MISSING_CREDENTIAL_IDENTIFIER_AND_CONFIGURATION_ID, error.getError());
+                assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST, error.getError());
             }
         });
     }
@@ -499,66 +525,46 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     @Test
-    public void testCredentialIssuanceWithAuthZCodeWithScopeMatched() {
-        final org.keycloak.testsuite.util.oauth.AccessTokenResponse[] responseHolder = new org.keycloak.testsuite.util.oauth.AccessTokenResponse[1];
+    public void testCredentialIssuanceWithAuthZCodeWithScopeMatched() throws Exception {
+        String scopeName = jwtTypeCredentialClientScope.getName();
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
 
-        BiFunction<String, String, String> getAccessToken = (testClientId, testScope) -> {
-            // Get full token response to check for authorization_details in otherClaims
-            responseHolder[0] = getBearerTokenCodeFlow(oauth, client, "john", jwtTypeCredentialClientScope.getName());
-            return responseHolder[0].getAccessToken();
-        };
+        testCredentialIssuanceWithAuthZCodeFlow(jwtTypeCredentialClientScope,
+                (testClientId, testScope) -> {
+                    String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+                    return getBearerToken(oauth, authCode, authDetail).getAccessToken();
+                },
+                m -> {
+                    String accessToken = (String) m.get("accessToken");
+                    WebTarget credentialTarget = (WebTarget) m.get("credentialTarget");
+                    CredentialRequest credentialRequest = (CredentialRequest) m.get("credentialRequest");
 
-        Consumer<Map<String, Object>> sendCredentialRequest = m -> {
-            String accessToken = (String) m.get("accessToken");
-            WebTarget credentialTarget = (WebTarget) m.get("credentialTarget");
-            CredentialRequest credentialRequest = (CredentialRequest) m.get("credentialRequest");
+                    try (Response response = credentialTarget.request()
+                            .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken)
+                            .post(Entity.json(credentialRequest))) {
+                        assertEquals(200, response.getStatus());
+                        CredentialResponse credentialResponse = JsonSerialization.readValue(response.readEntity(String.class),
+                                CredentialResponse.class);
 
-            // Use the cached token response to check for authorization_details in otherClaims
-            // AuthorizationCodeGrantType adds authorization_details to AccessTokenResponse.otherClaims
-            org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = responseHolder[0];
-            Object responseAuthDetails = tokenResponse.getOtherClaims().get(OAuth2Constants.AUTHORIZATION_DETAILS);
+                        JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponse.getCredentials().get(0).getCredential(),
+                                JsonWebToken.class).getToken();
+                        assertEquals(TEST_DID.toString(), jsonWebToken.getIssuer());
 
-            if (responseAuthDetails instanceof List) {
-                List<OID4VCAuthorizationDetailResponse> authDetails = (List<OID4VCAuthorizationDetailResponse>) responseAuthDetails;
-                if (!authDetails.isEmpty()) {
-                    OID4VCAuthorizationDetailResponse authDetail = authDetails.get(0);
-                    if (authDetail.getCredentialIdentifiers() != null && !authDetail.getCredentialIdentifiers().isEmpty()) {
-                        String credentialIdentifier = authDetail.getCredentialIdentifiers().get(0);
-                        CredentialRequest newRequest = new CredentialRequest();
-                        newRequest.setCredentialIdentifier(credentialIdentifier);
-                        credentialRequest = newRequest;
+                        VerifiableCredential credential = JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims()
+                                        .get("vc"),
+                                VerifiableCredential.class);
+                        assertEquals(List.of(jwtTypeCredentialClientScope.getName()), credential.getType());
+                        assertEquals(TEST_DID, credential.getIssuer());
+                        assertEquals("john@email.cz", credential.getCredentialSubject().getClaims().get("email"));
+                    } catch (VerificationException | IOException e) {
+                        throw new RuntimeException(e);
                     }
-                }
-            }
-            // If no authorization_details in token response, use credential_configuration_id (already set in credentialRequest)
-
-            try (Response response = credentialTarget.request()
-                    .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken)
-                    .post(Entity.json(credentialRequest))) {
-                if (response.getStatus() != 200) {
-                    String errorBody = response.readEntity(String.class);
-                    System.out.println("Error Response: " + errorBody);
-                }
-                assertEquals(200, response.getStatus());
-                CredentialResponse credentialResponse = JsonSerialization.readValue(response.readEntity(String.class),
-                        CredentialResponse.class);
-
-                JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponse.getCredentials().get(0).getCredential(),
-                        JsonWebToken.class).getToken();
-                assertEquals(TEST_DID.toString(), jsonWebToken.getIssuer());
-
-                VerifiableCredential credential = JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims()
-                                .get("vc"),
-                        VerifiableCredential.class);
-                assertEquals(List.of(jwtTypeCredentialClientScope.getName()), credential.getType());
-                assertEquals(TEST_DID, credential.getIssuer());
-                assertEquals("john@email.cz", credential.getCredentialSubject().getClaims().get("email"));
-            } catch (VerificationException | IOException e) {
-                throw new RuntimeException(e);
-            }
-        };
-
-        testCredentialIssuanceWithAuthZCodeFlow(jwtTypeCredentialClientScope, getAccessToken, sendCredentialRequest);
+                });
     }
 
     @Test
@@ -612,8 +618,8 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 assertEquals(400, response.getStatus());
                 String errorJson = response.readEntity(String.class);
                 assertNotNull("Error response should not be null", errorJson);
-                assertTrue("Error response should mention UNKNOWN_CREDENTIAL_CONFIGURATION or scope",
-                        errorJson.contains("UNKNOWN_CREDENTIAL_CONFIGURATION") || errorJson.contains("scope"));
+                assertTrue("Error response should mention INVALID_CREDENTIAL_REQUEST or scope",
+                        errorJson.contains("INVALID_CREDENTIAL_REQUEST") || errorJson.contains("scope"));
             }
         };
 
@@ -627,7 +633,19 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     public void testRequestMultipleCredentialsWithProofs() {
         final String scopeName = jwtTypeCredentialClientScope.getName();
         String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
-        String token = getBearerToken(oauth, client, scopeName);
+
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+
         String cNonce = getCNonce();
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
@@ -642,7 +660,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
 
                 CredentialRequest request = new CredentialRequest()
-                        .setCredentialConfigurationId(credConfigId)
+                        .setCredentialIdentifier(credentialIdentifier)
                         .setProofs(proofs);
 
                 OID4VCIssuerEndpoint endpoint = prepareIssuerEndpoint(session, authenticator);
@@ -868,7 +886,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
             // Create a credential request with a non-existent configuration ID
-            // This will test the unknown_credential_configuration error
+            // This will test the invalid_credential_request error when no authorization_details present
             CredentialRequest credentialRequest = new CredentialRequest()
                     .setCredentialConfigurationId("unknown-configuration-id");
 
@@ -879,7 +897,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 Assert.fail("Expected BadRequestException due to unknown credential configuration");
             } catch (BadRequestException e) {
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                assertEquals(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, error.getError());
+                assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST, error.getError());
             }
         });
     }
@@ -890,7 +908,22 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
      */
     @Test
     public void testRequestCredentialWhenNoCredentialBuilderForFormat() {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        String scopeName = jwtTypeCredentialClientScope.getName();
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+        assertNotNull("credential_identifier should be present", credentialIdentifier);
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
             BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
@@ -898,9 +931,9 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             // Prepare endpoint with no credential builders to simulate missing builder for the configured format
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
 
-            // Use the known configuration id for the JWT VC test scope
+            // Use the credential identifier from the token
             CredentialRequest credentialRequest = new CredentialRequest()
-                    .setCredentialConfigurationId(jwtTypeCredentialConfigurationIdName);
+                    .setCredentialIdentifier(credentialIdentifier);
 
             String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
 
@@ -920,9 +953,21 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
      */
     @Test
     public void testProofToProofsConversion() throws Exception {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        final String scopeName = jwtTypeCredentialClientScope.getName();
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
+
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credentialConfigurationId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
             BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
@@ -931,7 +976,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
             // Test 1: Create a request with single proof field - should be converted to proofs array
             CredentialRequest requestWithProof = new CredentialRequest()
-                    .setCredentialConfigurationId(credentialConfigurationId);
+                    .setCredentialIdentifier(credentialIdentifier);
 
             // Create a single proof object
             JwtProof singleProof = new JwtProof()
@@ -953,7 +998,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
             // Test 2: Create a request with both proof and proofs fields - should fail validation
             CredentialRequest requestWithBoth = new CredentialRequest()
-                    .setCredentialConfigurationId(credentialConfigurationId);
+                    .setCredentialIdentifier(credentialIdentifier);
 
             requestWithBoth.setProof(singleProof);
 
@@ -996,7 +1041,18 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         // Extract serializable data before lambda
         final String scopeName = optionalScope.getName();
         final String configId = optionalScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
-        String token = getBearerToken(oauth, client, scopeName);
+
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(configId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
             BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
@@ -1004,7 +1060,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
             CredentialRequest credentialRequest = new CredentialRequest()
-                    .setCredentialConfigurationId(configId);
+                    .setCredentialIdentifier(credentialIdentifier);
 
             String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
             Response credentialResponse = issuerEndpoint.requestCredential(requestPayload);

@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oid4vc.model;
 
 import java.util.List;
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -67,5 +68,18 @@ public class ClaimsDescription {
      */
     public boolean isMandatory() {
         return mandatory != null ? mandatory : false;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ClaimsDescription that = (ClaimsDescription) o;
+        return Objects.equals(path, that.path) && Objects.equals(mandatory, that.mandatory);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(path, mandatory);
     }
 }

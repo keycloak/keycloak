@@ -17,7 +17,6 @@
 
 package org.keycloak.protocol.oidc.grants;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -234,8 +233,10 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
             return false;
         }
 
-        // Check if token has the correct audience using the native hasAnyAudience method
+        // Check if token has exactly one audience and it matches the credential endpoint
+        // Being strict about audience prevents potential security issues with multi-audience tokens
         String expectedAudience = OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
-        return token.hasAnyAudience(Collections.singletonList(expectedAudience));
+        String[] audiences = token.getAudience();
+        return audiences != null && audiences.length == 1 && expectedAudience.equals(audiences[0]);
     }
 }
