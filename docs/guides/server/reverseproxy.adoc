@@ -278,3 +278,35 @@ The default values of the options are as follows:
 
 If your certificate chain is longer than the given default, you must define the option with an appropriate number.
 Otherwise, the provider will discard the request.
+
+== Graceful HTTP shutdown
+
+When running {project_name} behind a reverse proxy or load balancer , it is important to allow in-flight requests to complete during server shutdown.
+
+{project_name} enables graceful HTTP shutdown by default using Quarkus runtime configuration.
+
+=== Default behavior
+
+By default {project_name} configures Quarkus with short pre-shutdown delay and a bounded shutdown timeout:
+
+[source,properties]
+----
+quarkus.shutdown.delay-enabled=true
+quarkus.shutdown.delay=1s
+quarkus.shutdown.timeout=1s
+----
+
+When shutdown is initiated:
+
+* A pre-shutdown is applied, allowing load balancers to detect that the server is terminating and stop routing new requests to it.
+* Existing HTTP requests continue to be processed.
+* The server waits up to the configured shutdown timeout for in-flight requests to complete before exiting.
+
+=== Overriding shutdown configuration
+
+Advanced users may override the default graceful shutdown behavior using standard Quarkus configuration mechanisms.
+
+These values can be set in application.properties file.
+
+NOTE: When Quarkus properties are defined directly in application.properties, environment variables may not override them.
+This is general Quarkus configuration behavior.
