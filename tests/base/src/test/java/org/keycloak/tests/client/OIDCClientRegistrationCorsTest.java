@@ -89,12 +89,12 @@ public class OIDCClientRegistrationCorsTest {
     public void testAnonymous() throws IOException {
         List<ComponentRepresentation> components = realm.admin().components().query(null, ClientRegistrationPolicy.class.getCanonicalName()).stream().filter(c -> c.getProviderId().equals(RegistrationWebOriginsPolicyFactory.PROVIDER_ID)).toList();
         for (ComponentRepresentation component : components) {
-            realm.updateComponentWithCleanup(component.getId(), c -> c.getConfig().put(RegistrationWebOriginsPolicyFactory.WEB_ORIGINS, List.of("https://origin3")));
+            realm.updateComponent(component.getId(), c -> c.getConfig().put(RegistrationWebOriginsPolicyFactory.WEB_ORIGINS, List.of("https://origin3")));
         }
 
         components = realm.admin().components().query(null, ClientRegistrationPolicy.class.getCanonicalName()).stream().filter(c -> c.getProviderId().equals(TrustedHostClientRegistrationPolicyFactory.PROVIDER_ID)).toList();
         for (ComponentRepresentation component : components) {
-            realm.updateComponentWithCleanup(component.getId(), c -> {
+            realm.updateComponent(component.getId(), c -> {
                 c.getConfig().put(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS, List.of("127.0.0.1"));
             });
         }
@@ -106,7 +106,7 @@ public class OIDCClientRegistrationCorsTest {
     public void testWithClientPolicy() throws IOException {
         List<ComponentRepresentation> components = realm.admin().components().query(null, ClientRegistrationPolicy.class.getCanonicalName()).stream().filter(c -> c.getProviderId().equals(RegistrationWebOriginsPolicyFactory.PROVIDER_ID)).toList();
         for (ComponentRepresentation component : components) {
-            realm.updateComponentWithCleanup(component.getId(), c -> c.getConfig().put(RegistrationWebOriginsPolicyFactory.WEB_ORIGINS, List.of("https://origin3")));
+            realm.updateComponent(component.getId(), c -> c.getConfig().put(RegistrationWebOriginsPolicyFactory.WEB_ORIGINS, List.of("https://origin3")));
         }
 
         OIDCClientRepresentation client = createClient(createInitialAccessToken(), "testWithClientPolicy1", "https://origin3", true);
