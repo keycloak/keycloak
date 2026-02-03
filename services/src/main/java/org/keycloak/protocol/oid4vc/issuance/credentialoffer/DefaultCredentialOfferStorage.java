@@ -123,25 +123,6 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
     }
 
     @Override
-    public boolean markAsConsumedIfNotConsumed(KeycloakSession session, String nonce) {
-        CredentialOfferState currentState = findOfferStateByNonce(session, nonce);
-        if (currentState == null || currentState.isConsumed()) {
-            return false;
-        }
-
-        currentState.setConsumed(true);
-        String consumedStateJson = JsonSerialization.valueAsString(currentState);
-        boolean replaced = session.singleUseObjects().replace(nonce, Map.of(ENTRY_KEY, consumedStateJson));
-
-        if (replaced) {
-            replaceOfferState(session, currentState);
-            return true;
-        }
-
-        return false;
-    }
-
-    @Override
     public void removeOfferState(KeycloakSession session, CredentialOfferState entry) {
         session.singleUseObjects().remove(entry.getNonce());
         entry.getPreAuthorizedCode().ifPresent(it -> {

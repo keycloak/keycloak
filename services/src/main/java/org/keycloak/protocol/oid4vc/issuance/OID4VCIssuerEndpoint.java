@@ -603,7 +603,7 @@ public class OID4VCIssuerEndpoint {
         CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
         CredentialOfferState offerState = offerStorage.findOfferStateByNonce(session, nonce);
         if (offerState == null) {
-            var errorMessage = "No credential offer state for nonce: " + nonce;
+            var errorMessage = "Credential offer not found or already consumed";
             eventBuilder.detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
             throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_OFFER_REQUEST, errorMessage));
         }
@@ -620,14 +620,17 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_OFFER_REQUEST, errorMessage));
         }
 
-        boolean isFirstConsumption = offerStorage.markAsConsumedIfNotConsumed(session, nonce);
-        if (!isFirstConsumption) {
-            var errorMessage = "Credential offer has already been consumed";
-            LOGGER.debugf("Credential offer with nonce %s has already been consumed", nonce);
+        // Remove the nonce entry atomically for replay protection
+        // This prevents the same offer URL from being accessed multiple times
+        // while keeping pre-authorized code and credential identifier entries available
+        Map<String, String> removed = session.singleUseObjects().remove(nonce);
+        if (removed == null) {
+            var errorMessage = "Credential offer not found or already consumed";
+            LOGGER.debugf("Credential offer with nonce %s not found or already consumed", nonce);
             eventBuilder.detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
             throw new BadRequestException(getErrorResponse(INVALID_CREDENTIAL_OFFER_REQUEST, errorMessage));
         }
-        LOGGER.debugf("Marked credential offer with nonce %s as consumed", nonce);
+        LOGGER.debugf("Removed credential offer nonce %s for replay protection", nonce);
 
         // Add event details
         if (offerState.getClientId() != null) {
@@ -794,6 +797,8 @@ public class OID4VCIssuerEndpoint {
 
         CredentialScopeModel requestedCredential;
         OID4VCAuthorizationDetailResponse authDetails;
+        CredentialOfferState offerState = null;
+        CredentialOfferStorage offerStorage = null;
 
         // When the CredentialRequest contains a credential identifier the caller must have gone through the
         // CredentialOffer process or otherwise have set up a valid CredentialOfferState
@@ -802,8 +807,8 @@ public class OID4VCIssuerEndpoint {
 
             // First check if the credential identifier exists
             // This allows proper error reporting for unknown identifiers
-            CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
-            CredentialOfferState offerState = offerStorage.findOfferStateByCredentialId(session, credentialIdentifier);
+            offerStorage = session.getProvider(CredentialOfferStorage.class);
+            offerState = offerStorage.findOfferStateByCredentialId(session, credentialIdentifier);
             if (offerState == null) {
                 var errorMessage = "No credential offer state for credential id: " + credentialIdentifier;
                 eventBuilder.detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
@@ -938,6 +943,13 @@ public class OID4VCIssuerEndpoint {
                 .detail(Details.VERIFIABLE_CREDENTIAL_FORMAT, supportedCredential.getFormat())
                 .detail(Details.VERIFIABLE_CREDENTIALS_ISSUED, String.valueOf(responseVO.getCredentials().size()));
         eventBuilder.success();
+
+        // Clean up offer state after successful credential issuance
+        // This prevents memory leaks while ensuring the state remains available during the request
+        if (offerState != null) {
+            offerStorage.removeOfferState(session, offerState);
+            LOGGER.debugf("Removed credential offer state after successful issuance for credential identifier: %s", credentialIdentifier);
+        }
 
         return response;
     }

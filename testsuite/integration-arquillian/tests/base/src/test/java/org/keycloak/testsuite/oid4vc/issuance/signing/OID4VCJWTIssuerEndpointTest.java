@@ -1123,8 +1123,8 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         assertEquals("Error type should be INVALID_CREDENTIAL_OFFER_REQUEST",
                 ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.name(),
                 response.getError());
-        assertTrue("Error description should mention that offer has been consumed",
-                response.getErrorDescription().contains("already been consumed"));
+        assertTrue("Error description should mention that offer is not found or already consumed",
+                response.getErrorDescription().contains("not found") || response.getErrorDescription().contains("already consumed"));
     }
 
     /**
@@ -1206,7 +1206,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     /**
-     * Test that consuming the credential offer (setting consumed=true) does not invalidate
+     * Test that removing the nonce entry (for replay protection) does not invalidate
      * the Pre-Authorized Code. This verifies that the replay protection mechanism doesn't
      * interfere with the normal token request flow using the pre-authorized code.
      */
@@ -1229,7 +1229,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         String nonce = credentialOfferURI.getNonce();
         assertNotNull("Nonce should not be null", nonce);
 
-        // 2. Fetch the Offer JSON (this triggers the consumed flag)
+        // 2. Fetch the Offer JSON (this removes the nonce entry for replay protection)
         CredentialsOffer credentialsOffer = oauth.oid4vc()
                 .credentialOfferRequest(nonce)
                 .bearerToken(token)
@@ -1256,7 +1256,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         AccessTokenResponse accessTokenResponse = oauth.oid4vc()
                 .preAuthorizedCodeGrantRequest(preAuthorizedCode)
                 .send();
-        assertEquals("Token request should succeed even after offer is consumed",
+        assertEquals("Token request should succeed even after nonce is removed for replay protection",
                 HttpStatus.SC_OK,
                 accessTokenResponse.getStatusCode());
         assertNotNull("Access token should be present", accessTokenResponse.getAccessToken());
