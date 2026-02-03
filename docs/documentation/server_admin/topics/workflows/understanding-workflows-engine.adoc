@@ -24,7 +24,8 @@ by the background task, using the same task thread pool as immediate steps.
 
 By default, the background task tracking due steps runs every 12 hours, but this interval can be configured by setting the following server configuration option:
 
-*   `spi-events-listener--workflow-event-listener--step-runner-task-interval`: Defines the interval, in milliseconds, at which the background task runs to check for workflow steps that are due for execution.
+*   `spi-events-listener--workflow-event-listener--step-runner-task-interval`: Defines the interval at which the background task runs to check for workflow steps that are due for execution.
+It follows the same format used in the workflow step `after` field, where you can specify the interval as a number followed by a time unit (`ms`, `s` - default, `m`, `h`, `d`) or using the ISO-8601 duration format.
 
 You can adjust this interval based on your realm's needs and the expected frequency of workflow executions.
 
@@ -33,14 +34,16 @@ You can adjust this interval based on your realm's needs and the expected freque
 Most of the time, steps are executed in a short amount of time. However, there might be cases where a step takes longer
 to execute due to various reasons, such as network latency depending on an external service delays, or complex processing logic.
 
-By default, the timeout for executing a step is set to 1 second. If a step takes longer than this timeout to execute,
+By default, the timeout for executing a step is set to *1 second*. If a step takes longer than this timeout to execute,
 it will be marked as failed, and the workflow execution will be halted. If the step is scheduled, it will run again
 in the next execution window of the background task. If the step is not scheduled, the workflow execution will be marked as failed
 and that step won't be retried.
 
 You can configure the timeout for step execution by setting the following server configuration option:
 
-*   `spi-workflow--default--executor-task-timeout`: Defines the timeout, in milliseconds, for executing a workflow step.
+*   `spi-workflow--default--executor-task-timeout`: Defines the timeout for executing a workflow step. It follows the same format used in the workflow step `after` field,
+where you can specify the interval as a number followed by a time unit (`ms`, `s` - default, `m`, `h`, `d`) or using the ISO-8601 duration format.
+
 
 == Performance considerations
 
