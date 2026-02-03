@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.broker;
 import java.io.Closeable;
 import java.util.List;
-
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import jakarta.ws.rs.core.Response;
