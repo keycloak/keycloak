@@ -948,10 +948,8 @@ public class OID4VCIssuerEndpoint {
 
         // Clean up offer state after successful credential issuance
         // This prevents memory leaks while ensuring the state remains available during the request
-        if (offerState != null) {
-            offerStorage.removeOfferState(session, offerState);
-            LOGGER.debugf("Removed credential offer state after successful issuance for credential identifier: %s", credentialIdentifier);
-        }
+        offerStorage.removeOfferState(session, offerState);
+        LOGGER.debugf("Removed credential offer state after successful issuance for credential identifier: %s", credentialIdentifier);
 
         return response;
     }
