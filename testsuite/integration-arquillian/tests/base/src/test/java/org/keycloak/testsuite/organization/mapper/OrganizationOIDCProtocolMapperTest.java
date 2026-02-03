@@ -380,6 +380,32 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.scope("organization:" + orgB.getAlias());
         oauth.openLoginForm();
         assertTrue(driver.getCurrentUrl().contains("Invalid+scopes%3A+openid+organization"));
+
+        oauth.scope("organization:" + orgA.getAlias());
+        oauth.openLoginForm();
+        loginPage.loginUsername(member.getEmail());
+        loginPage.login(memberPassword);
+        response = assertSuccessfulCodeGrant();
+        assertThat(response.getScope(), containsString("organization"));
+        accessToken = oauth.verifyToken(response.getAccessToken());
+        organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        assertThat(organizations.contains(orgA.getAlias()), is(true));
+        assertThat(organizations.contains(orgB.getAlias()), is(false));
+        oauth.openLoginForm();
+        appPage.assertCurrent();
+        orgA.setEnabled(false);
+        testRealm().organizations().get(orgA.getId()).update(orgA).close();
+        oauth.openLoginForm();
+        assertTrue(driver.getCurrentUrl().contains("Invalid+scopes%3A+openid+organization"));
+
+        oauth.scope("");
+        oauth.openLoginForm();
+        appPage.assertCurrent();
+        response = assertSuccessfulCodeGrant();
+        assertThat(response.getScope(), not(containsString("organization")));
+        accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getOtherClaims().keySet(), not(hasItem(OAuth2Constants.ORGANIZATION)));
     }
 
     @Test

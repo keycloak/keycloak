@@ -203,10 +203,6 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
         if (alias.isEmpty()) {
             organization = Organizations.resolveOrganization(session, user, domain);
-            if (organization != null && isSSOAuthentication(authSession)) {
-                // make sure the organization selected by the user is available from the client session when running mappers and issuing tokens
-                authSession.setClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
-            }
         } else {
             OrganizationProvider provider = getOrganizationProvider();
             organization = provider.getByAlias(alias.get(0));
