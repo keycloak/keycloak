@@ -78,7 +78,6 @@ public class AuthorizationDetailsProcessorManager {
                 logger.warn(errorDetails);
                 throw new InvalidAuthorizationDetailsException(errorDetails);
             }
-            function.apply(processor, authzDetail);
             AuthorizationDetailsJSONRepresentation response = function.apply(processor, authzDetail);
             if (response != null) {
                 authzResponses.add(response);

@@ -39,7 +39,9 @@ import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
@@ -47,7 +49,11 @@ import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -69,6 +75,12 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Before
+    public void enableDirectAccessGrants() {
+        // Enable direct access grants for test-app client to allow password grant
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
+    }
 
     protected static class Oid4vcTestContext {
         CredentialsOffer credentialsOffer;
@@ -379,7 +391,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         assertEquals("invalid_authorization_details", tokenResponse.getError());
         assertTrue("Error description should indicate missing credential_configuration_id. Actual: " + tokenResponse.getErrorDescription(),
                 tokenResponse.getErrorDescription() != null && tokenResponse.getErrorDescription().contains("Invalid authorization_details")
-                && tokenResponse.getErrorDescription().contains("credential_configuration_id is required"));
+                        && tokenResponse.getErrorDescription().contains("credential_configuration_id is required"));
     }
 
     @Test
@@ -411,7 +423,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         assertEquals("invalid_authorization_details", tokenResponse.getError());
         assertTrue("Error description should indicate invalid claims path. Actual: " + tokenResponse.getErrorDescription(),
                 tokenResponse.getErrorDescription() != null && tokenResponse.getErrorDescription().contains("Invalid authorization_details")
-                && tokenResponse.getErrorDescription().contains("path is required"));
+                        && tokenResponse.getErrorDescription().contains("path is required"));
     }
 
     @Test
@@ -429,7 +441,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
-        assertEquals("invalid_authorization_details", tokenResponse.getError());
+        assertEquals("invalid_request", tokenResponse.getError());
         assertNotNull("Error description should be present", tokenResponse.getErrorDescription());
     }
 
@@ -526,7 +538,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
             Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                     .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
-                    .bearerToken(token)
+                    .bearerToken(tokenResponse.getAccessToken())
                     .credentialIdentifier(credentialIdentifier)
                     .send();
 
@@ -558,48 +570,90 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
             // Verify the credential structure based on format
             verifyCredentialStructure(credentialObj);
         }
+    }
 
+    @Test
+    public void testPreAuthorizedCodeTokenEndpointRestriction() throws Exception {
+        String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
+        Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
+        PreAuthorizedCode preAuthorizedCode = ctx.credentialsOffer.getGrants().getPreAuthorizedCode();
 
-        // Step 3: Request a credential using the credentialConfigurationId
-        //
-        {
-            // Clear events before credential request
-            events.clear();
+        // Step 1: Get pre-authorized code token
+        AccessTokenResponse accessTokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(preAuthorizedCode.getPreAuthorizedCode())
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .send();
 
-            Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
-                    .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
-                    .bearerToken(token)
-                    .credentialConfigurationId(credentialConfigurationId)
-                    .send();
+        assertEquals(HttpStatus.SC_OK, accessTokenResponse.getStatusCode());
+        String preAuthorizedToken = accessTokenResponse.getAccessToken();
+        assertNotNull("Access token should be present", preAuthorizedToken);
 
-            assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusCode());
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = accessTokenResponse.getOid4vcAuthorizationDetails();
+        assertNotNull("authorization_details should be present", authDetailsResponse);
+        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
 
-            // Verify CREDENTIAL_REQUEST event was fired
-            events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST)
-                    .client(client.getClientId())
-                    .user(AssertEvents.isUUID())
-                    .session(AssertEvents.isSessionId())
-                    .detail(Details.USERNAME, "john")
-                    .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
-                    .assertEvent();
-            assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusCode());
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+        assertNotNull("Credential identifier should be present", credentialIdentifier);
 
-            // Parse the credential response
-            CredentialResponse parsedResponse = credentialResponse.getCredentialResponse();
-            assertNotNull("Credential response should not be null", parsedResponse);
-            assertNotNull("Credentials should be present", parsedResponse.getCredentials());
-            assertEquals("Should have exactly one credential", 1, parsedResponse.getCredentials().size());
+        // Step 2: Verify token works at credential endpoint (should succeed)
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc()
+                .credentialRequest()
+                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
+                .bearerToken(preAuthorizedToken)
+                .credentialIdentifier(credentialIdentifier)
+                .send();
 
-            // Step 3: Verify that the issued credential structure is valid
-            CredentialResponse.Credential credentialWrapper = parsedResponse.getCredentials().get(0);
-            assertNotNull("Credential wrapper should not be null", credentialWrapper);
+        assertEquals("Pre-authorized code token should work at credential endpoint",
+                HttpStatus.SC_OK, credentialResponse.getStatusCode());
 
-            // The credential is stored as Object, so we need to cast it
-            Object credentialObj = credentialWrapper.getCredential();
-            assertNotNull("Credential object should not be null", credentialObj);
+        // Step 3: Verify token is rejected at Account REST API endpoint (uses BearerTokenAuthenticator)
+        // Account endpoint uses BearerTokenAuthenticator which enforces the restriction
+        // Use versioned path to get REST API (not HTML UI)
+        String accountEndpoint = OAuthClient.AUTH_SERVER_ROOT + "/realms/" + oauth.getRealm() + "/account/v1";
 
-            // Verify the credential structure based on format
-            verifyCredentialStructure(credentialObj);
+        HttpGet getAccount = new HttpGet(accountEndpoint);
+        getAccount.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + preAuthorizedToken);
+        getAccount.addHeader(HttpHeaders.ACCEPT, "application/json");
+
+        try (CloseableHttpResponse accountResponse = httpClient.execute(getAccount)) {
+            assertEquals("Pre-authorized code token should be rejected at account endpoint",
+                    HttpStatus.SC_UNAUTHORIZED, accountResponse.getStatusLine().getStatusCode());
+        }
+
+        // Step 4: Verify token is rejected at Admin REST API endpoint (uses BearerTokenAuthenticator)
+        // Admin endpoint uses BearerTokenAuthenticator which enforces the restriction
+        String adminEndpoint = oauth.AUTH_SERVER_ROOT + "/admin/realms/" + oauth.getRealm();
+        HttpGet getAdmin = new HttpGet(adminEndpoint);
+        getAdmin.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + preAuthorizedToken);
+
+        try (CloseableHttpResponse adminResponse = httpClient.execute(getAdmin)) {
+            assertEquals("Pre-authorized code token should be rejected at admin endpoint",
+                    HttpStatus.SC_UNAUTHORIZED, adminResponse.getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    public void testStandardTokenAllowedAtEndpoint() throws Exception {
+        // Verify that a standard OIDC token (e.g. from password grant)
+        // which has an "UNKNOWN" grant type context, is ALLOWED (backward compatibility).
+        // This ensures the fail-closed logic doesn't accidentally block standard Keycloak flows.
+
+        // 1. Get standard token
+        oauth.realm("test");
+        oauth.client("test-app", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        String accessToken = response.getAccessToken();
+
+        // 2. Use at Account API (which would be restricted if it were a pre-authorized token)
+        String accountEndpoint = OAuthClient.AUTH_SERVER_ROOT + "/realms/test/account";
+        HttpGet getAccount = new HttpGet(accountEndpoint);
+        getAccount.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
+        getAccount.addHeader(HttpHeaders.ACCEPT, "application/json");
+
+        try (CloseableHttpResponse accountResponse = httpClient.execute(getAccount)) {
+            // Should be 200 OK because standard tokens are allowed
+            assertEquals("Standard token should be allowed at account endpoint",
+                    HttpStatus.SC_OK, accountResponse.getStatusLine().getStatusCode());
         }
     }
 

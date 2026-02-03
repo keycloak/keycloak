@@ -22,7 +22,7 @@ import org.keycloak.provider.Provider;
 public interface WorkflowStepProvider extends Provider {
 
     /**
-     * Run this workflow step.
+     * Runs this workflow step.
      *
      * @param context the workflow execution context
      */

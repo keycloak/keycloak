@@ -1,4 +1,4 @@
-package org.keycloak.models.workflow.conditions.expression;
+package org.keycloak.models.workflow.expression;
 
 public abstract class AbstractBooleanEvaluator extends BooleanConditionParserBaseVisitor<Boolean> {
 

@@ -1,7 +1,8 @@
-package org.keycloak.models.workflow.conditions.expression;
+package org.keycloak.models.workflow.expression;
 
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 import org.keycloak.models.KeycloakSession;
@@ -9,7 +10,7 @@ import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.WorkflowConditionProvider;
 
 import static org.keycloak.models.workflow.Workflows.getConditionProvider;
-import static org.keycloak.models.workflow.conditions.expression.ConditionParserUtil.extractParameter;
+import static org.keycloak.models.workflow.expression.ConditionParserUtil.extractParameter;
 
 /**
  * This visitor traverses the entire parse tree and collects the supported types of all conditionCalls.
@@ -45,7 +46,7 @@ public class ConditionTypeCollector extends BooleanConditionParserBaseVisitor<Vo
 
         String conditionName = ctx.Identifier().getText();
         WorkflowConditionProvider conditionProvider = getConditionProvider(session, conditionName, extractParameter(ctx.parameter()));
-        resourceTypes.retainAll(conditionProvider.supportedTypes());
+        resourceTypes.retainAll(List.of(conditionProvider.getSupportedResourceType()));
 
         // We don't need to visit children (like 'parameter')
         return null;

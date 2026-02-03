@@ -39,7 +39,7 @@
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>tidb</artifactId>
+            <artifactId>testcontainers-tidb</artifactId>
         </dependency>
     </dependencies>
 </project>

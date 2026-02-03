@@ -1,7 +1,5 @@
 package org.keycloak.models.workflow.conditions;
 
-import java.util.Set;
-
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
@@ -31,8 +29,8 @@ public class GroupMembershipWorkflowConditionProvider implements WorkflowConditi
     }
 
     @Override
-    public Set<ResourceType> supportedTypes() {
-        return Set.of(ResourceType.USERS);
+    public ResourceType getSupportedResourceType() {
+        return ResourceType.USERS;
     }
 
     @Override

@@ -45,8 +45,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.30.5</quarkus.version>
-        <quarkus.build.version>3.30.5</quarkus.build.version>
+        <quarkus.version>3.31.1</quarkus.version>
+        <quarkus.build.version>3.31.1</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -91,6 +91,7 @@
         <h2.version>2.4.240</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
+        <microprofile-metrics-api.version>5.1.2</microprofile-metrics-api.version>
         <hibernate-validator.version>9.0.1.Final</hibernate-validator.version>
         <infinispan.version>16.0.5</infinispan.version>
         <protostream.version>6.0.3</protostream.version> <!-- For the annotation processor: keep in sync with the version shipped with Infinispan -->
@@ -107,7 +108,7 @@
         <jboss-servlet-api_4.0_spec>2.0.0.Final</jboss-servlet-api_4.0_spec>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
-        <log4j2-api.version>2.25.2</log4j2-api.version> <!-- Odd name needs to align with Quarkus -->
+        <log4j2-api.version>2.25.3</log4j2-api.version> <!-- Odd name needs to align with Quarkus -->
         <resteasy.version>6.2.15.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20260101.1</owasp.html.sanitizer.version>
@@ -154,15 +155,15 @@
         <tidb.container>mirror.gcr.io/pingcap/tidb:${tidb.version}</tidb.container>
         <mysql.version>8.4</mysql.version>
         <mysql.container>mirror.gcr.io/mysql:${mysql.version}</mysql.container>
-        <mysql-jdbc.version>8.3.0</mysql-jdbc.version>
+        <mysql-jdbc.version>9.5.0</mysql-jdbc.version>
         <postgresql.version>18</postgresql.version>
         <postgresql.container>mirror.gcr.io/postgres:${postgresql.version}</postgresql.container>
         <aurora-postgresql.version>17.5</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.5.6</aws-jdbc-wrapper.version>
-        <postgresql-jdbc.version>42.7.8</postgresql-jdbc.version>
+        <postgresql-jdbc.version>42.7.9</postgresql-jdbc.version>
         <mariadb.version>11.8</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
-        <mariadb-jdbc.version>3.5.6</mariadb-jdbc.version>
+        <mariadb-jdbc.version>3.5.7</mariadb-jdbc.version>
         <mssql.version>2022</mssql.version>
         <mssql.container>mcr.microsoft.com/mssql/server:${mssql.version}-latest</mssql.container>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
@@ -1336,6 +1337,12 @@
                 <artifactId>infinispan-core</artifactId>
                 <type>test-jar</type>
                 <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.metrics</groupId>
+                <artifactId>microprofile-metrics-api</artifactId>
+                <scope>test</scope>
+                <version>${microprofile-metrics-api.version}</version>
             </dependency>
 
         </dependencies>

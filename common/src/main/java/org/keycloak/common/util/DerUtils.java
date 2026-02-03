@@ -29,6 +29,7 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 
@@ -53,6 +54,15 @@ public final class DerUtils {
         dis.close();
 
         return decodePrivateKey(keyBytes);
+    }
+
+    public static PublicKey decodePublicKey(String encoded) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
+        return decodePublicKey(encoded, "RSA");
+    }
+
+    public static PublicKey decodePublicKey(String encoded, String type) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
+        byte[] der = Base64.getDecoder().decode(encoded);
+        return decodePublicKey(der, type);
     }
 
     public static PublicKey decodePublicKey(byte[] der) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {

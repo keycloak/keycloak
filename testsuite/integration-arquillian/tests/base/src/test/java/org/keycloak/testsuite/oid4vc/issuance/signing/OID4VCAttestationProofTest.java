@@ -17,6 +17,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
@@ -24,19 +25,25 @@ import org.keycloak.protocol.oid4vc.issuance.keybinding.AttestationProofValidato
 import org.keycloak.protocol.oid4vc.issuance.keybinding.AttestationProofValidatorFactory;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.AttestationValidatorUtil;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
 import org.junit.Test;
 
+import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -138,7 +145,20 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
         final String scopeName = jwtTypeCredentialClientScope.getName();
         String configIdFromScope = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
         final String credConfigId = configIdFromScope != null ? configIdFromScope : scopeName;
-        String token = getBearerToken(oauth, client, scopeName);
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+        assertNotNull("credential_identifier should be present", credentialIdentifier);
         String cNonce = getCNonce();
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
@@ -160,8 +180,8 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
                 Proofs proofs = new Proofs().setAttestation(List.of(attestationJwt));
 
                 CredentialRequest request = new CredentialRequest()
-                        .setCredentialConfigurationId(credConfigId)
-                        .setProofs(proofs);
+                    .setCredentialIdentifier(credentialIdentifier)
+                    .setProofs(proofs);
 
                 OID4VCIssuerEndpoint endpoint = prepareIssuerEndpoint(session, authenticator);
 

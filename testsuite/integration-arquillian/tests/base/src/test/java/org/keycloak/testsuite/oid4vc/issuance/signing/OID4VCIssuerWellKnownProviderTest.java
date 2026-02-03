@@ -433,12 +433,9 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         assertNotNull(supportedConfig);
         assertEquals(Format.SD_JWT_VC, supportedConfig.getFormat());
         assertEquals(clientScope.getName(), supportedConfig.getScope());
-        assertEquals(1, supportedConfig.getCredentialDefinition().getType().size());
-        assertEquals(clientScope.getName(), supportedConfig.getCredentialDefinition().getType().get(0));
-        assertEquals(1, supportedConfig.getCredentialDefinition().getContext().size());
-        assertEquals(clientScope.getName(), supportedConfig.getCredentialDefinition().getContext().get(0));
+        assertEquals(clientScope.getName(), supportedConfig.getVct());
+        assertNull("SD-JWT credentials should not have credential_definition", supportedConfig.getCredentialDefinition());
         assertNotNull(supportedConfig.getCredentialMetadata());
-        assertEquals(clientScope.getName(), supportedConfig.getScope());
 
         compareClaims(supportedConfig.getFormat(), supportedConfig.getCredentialMetadata().getClaims(), clientScope.getProtocolMappers());
     }
@@ -550,31 +547,35 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
 
         compareDisplay(supportedConfig, clientScope);
 
-        String expectedVct = Optional.ofNullable(clientScope.getAttributes().get(CredentialScopeModel.VCT))
-                .orElse(clientScope.getName());
-        assertEquals(expectedVct, supportedConfig.getVct());
+        if (Format.SD_JWT_VC.equals(expectedFormat)) {
+            String expectedVct = Optional.ofNullable(clientScope.getAttributes().get(CredentialScopeModel.VCT))
+                    .orElse(clientScope.getName());
+            assertEquals(expectedVct, supportedConfig.getVct());
+            assertNull("SD-JWT credentials should not have credential_definition", supportedConfig.getCredentialDefinition());
+        } else if (Format.JWT_VC.equals(expectedFormat)) {
+            assertNull("JWT_VC credentials should not have vct", supportedConfig.getVct());
+            assertNotNull(supportedConfig.getCredentialDefinition());
+            assertNotNull(supportedConfig.getCredentialDefinition().getType());
+            List<String> credentialDefinitionTypes = Optional.ofNullable(clientScope.getAttributes()
+                            .get(CredentialScopeModel.TYPES))
+                    .map(s -> s.split(","))
+                    .map(Arrays::asList)
+                    .orElseGet(() -> List.of(clientScope.getName()));
+            assertEquals(credentialDefinitionTypes.size(),
+                    supportedConfig.getCredentialDefinition().getType().size());
 
-        assertNotNull(supportedConfig.getCredentialDefinition());
-        assertNotNull(supportedConfig.getCredentialDefinition().getType());
-        List<String> credentialDefinitionTypes = Optional.ofNullable(clientScope.getAttributes()
-                        .get(CredentialScopeModel.TYPES))
-                .map(s -> s.split(","))
-                .map(Arrays::asList)
-                .orElseGet(() -> List.of(clientScope.getName()));
-        assertEquals(credentialDefinitionTypes.size(),
-                supportedConfig.getCredentialDefinition().getType().size());
-
-        MatcherAssert.assertThat(supportedConfig.getCredentialDefinition().getContext(),
-                Matchers.containsInAnyOrder(credentialDefinitionTypes.toArray()));
-        List<String> credentialDefinitionContexts = Optional.ofNullable(clientScope.getAttributes()
-                        .get(CredentialScopeModel.CONTEXTS))
-                .map(s -> s.split(","))
-                .map(Arrays::asList)
-                .orElseGet(() -> List.of(clientScope.getName()));
-        assertEquals(credentialDefinitionContexts.size(),
-                supportedConfig.getCredentialDefinition().getContext().size());
-        MatcherAssert.assertThat(supportedConfig.getCredentialDefinition().getContext(),
-                Matchers.containsInAnyOrder(credentialDefinitionTypes.toArray()));
+            MatcherAssert.assertThat(supportedConfig.getCredentialDefinition().getContext(),
+                    Matchers.containsInAnyOrder(credentialDefinitionTypes.toArray()));
+            List<String> credentialDefinitionContexts = Optional.ofNullable(clientScope.getAttributes()
+                            .get(CredentialScopeModel.CONTEXTS))
+                    .map(s -> s.split(","))
+                    .map(Arrays::asList)
+                    .orElseGet(() -> List.of(clientScope.getName()));
+            assertEquals(credentialDefinitionContexts.size(),
+                    supportedConfig.getCredentialDefinition().getContext().size());
+            MatcherAssert.assertThat(supportedConfig.getCredentialDefinition().getContext(),
+                    Matchers.containsInAnyOrder(credentialDefinitionTypes.toArray()));
+        }
 
         List<String> signingAlgsSupported = new ArrayList<>(supportedConfig.getCredentialSigningAlgValuesSupported());
         ProofTypesSupported proofTypesSupported = supportedConfig.getProofTypesSupported();
@@ -873,6 +874,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
             throw new RuntimeException("Failed to process old well-known URL response: " + e.getMessage(), e);
         }
     }
+
 
     private void testBatchSizeValidation(KeycloakTestingClient testingClient, String batchSize, boolean shouldBePresent, Integer expectedValue) {
         testingClient

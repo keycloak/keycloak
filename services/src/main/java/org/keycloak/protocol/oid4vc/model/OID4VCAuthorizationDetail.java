@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oid4vc.model;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 
@@ -63,5 +64,20 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
                 ", credentialConfigurationId='" + credentialConfigurationId + '\'' +
                 ", claims=" + claims +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        OID4VCAuthorizationDetail that = (OID4VCAuthorizationDetail) o;
+        return Objects.equals(credentialConfigurationId, that.credentialConfigurationId)
+                && Objects.equals(claims, that.claims);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), credentialConfigurationId, claims);
     }
 }
