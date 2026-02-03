@@ -52,6 +52,14 @@ public class UserAttributeWorkflowConditionTest extends AbstractWorkflowTest {
     }
 
     @Test
+    public void testConditionForAnyValuedAttribute() {
+        createWorkflow(List.of());
+        assertUserAttribute("user-1", true, "singleValue");
+        assertUserAttribute("user-2", true, "v1", "v2", "v3");
+        assertUserAttribute("user-3", false);
+    }
+
+    @Test
     public void testConditionForSingleValuedAttribute() {
         String expected = "valid";
         createWorkflow(expected);
