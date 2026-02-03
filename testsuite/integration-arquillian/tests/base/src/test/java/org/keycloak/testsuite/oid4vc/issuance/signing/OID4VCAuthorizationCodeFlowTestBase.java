@@ -859,12 +859,13 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         // Perform successful authorization code flow to get token
         AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
-        String credentialIdentifier = assertTokenResponse(tokenResponse);
 
         // Clear events before credential request
         events.clear();
 
-        // Request credential with unknown credential_configuration_id
+        // Request credential with unknown credential_configuration_id only (no credential_identifier).
+        // Server now requires credential_identifier when authorization_details are present,
+        // so this request is treated as an invalid credential request.
         Oid4vcCredentialRequest credentialRequest = oauth.oid4vc()
                 .credentialRequest()
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
@@ -874,7 +875,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         Oid4vcCredentialResponse credentialResponse = credentialRequest.send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
-        assertEquals("UNKNOWN_CREDENTIAL_CONFIGURATION", credentialResponse.getError());
+        assertEquals("INVALID_CREDENTIAL_REQUEST", credentialResponse.getError());
 
         // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
         expectCredentialRequestError().assertEvent();
@@ -924,15 +925,16 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Clear events before credential request
         events.clear();
 
-        // Request credential without credential_configuration_id or credential_identifier
-        // This tests error handling for missing required fields
+        // Request credential without credential_configuration_id or credential_identifier.
+        // Server now requires credential_identifier when authorization_details are present,
+        // so an empty credential request results in INVALID_CREDENTIAL_REQUEST.
         Oid4vcCredentialResponse credentialResponse = new InvalidCredentialRequest("{}", oauth)
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                 .bearerToken(tokenResponse.getAccessToken())
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
-        assertEquals("MISSING_CREDENTIAL_IDENTIFIER_AND_CONFIGURATION_ID", credentialResponse.getError());
+        assertEquals("INVALID_CREDENTIAL_REQUEST", credentialResponse.getError());
 
         // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
         expectCredentialRequestError().assertEvent();
