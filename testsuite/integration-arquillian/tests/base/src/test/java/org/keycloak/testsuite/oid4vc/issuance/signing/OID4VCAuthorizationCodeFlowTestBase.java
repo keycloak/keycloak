@@ -168,16 +168,14 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         assertNull("Second token (regular SSO) should NOT have authorization_details", secondTokenResponse.getAuthorizationDetails());
 
         // ===== STEP 4: Verify second token cannot be used for credential requests =====
-        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
         CredentialRequest credentialRequest = new CredentialRequest();
         credentialRequest.setCredentialIdentifier(credentialIdentifier);
 
         // Credential request with second token should fail using OID4VCI utilities
         Oid4vcCredentialRequest credentialRequestBuilder = oauth.oid4vc()
-                .credentialRequest()
+                .credentialRequest(credentialRequest)
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
-                .bearerToken(secondTokenResponse.getAccessToken())
-                .credentialIdentifier(credentialIdentifier);
+                .bearerToken(secondTokenResponse.getAccessToken());
 
         Oid4vcCredentialResponse credentialResponse = credentialRequestBuilder.send();
 
@@ -269,18 +267,17 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
                 credentialIdentifier = credentialIdentifiers.get(0);
             }
         }
-        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+
+        CredentialRequest credRequest = new CredentialRequest()
+                .setCredentialIdentifier(credentialIdentifier);
 
         // Request the actual credential using the refreshed token
-        Oid4vcCredentialRequest credentialRequest = oauth.oid4vc()
-                .credentialRequest()
+        Oid4vcCredentialResponse credRequestResponse = oauth.oid4vc()
+                .credentialRequest(credRequest)
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
-                .bearerToken(accessToken);
-        if (credentialIdentifier != null) {
-            credentialRequest.credentialIdentifier(credentialIdentifier);
-        }
-        Oid4vcCredentialResponse credentialResponse = credentialRequest.send();
-        assertSuccessfulCredentialResponse(credentialResponse);
+                .bearerToken(accessToken)
+                .send();
+        assertSuccessfulCredentialResponse(credRequestResponse);
     }
 
     // Test for the authorization_code flow with "mandatory" claim specified in the "authorization_details" parameter
@@ -1029,19 +1026,12 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     private Oid4vcCredentialRequest getCredentialRequest(Oid4vcTestContext ctx, BiFunction<String, String, CredentialRequest> credentialRequestSupplier, AccessTokenResponse tokenResponse,
                                                          String credentialConfigurationId, String credentialIdentifier) throws Exception {
         // Request the actual credential using the identifier
-        CredentialRequest credentialRequest = credentialRequestSupplier.apply(credentialConfigurationId, credentialIdentifier);
+        CredentialRequest credRequest = credentialRequestSupplier.apply(credentialConfigurationId, credentialIdentifier);
 
         Oid4vcCredentialRequest request = oauth.oid4vc()
-                .credentialRequest()
+                .credentialRequest(credRequest)
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                 .bearerToken(tokenResponse.getAccessToken());
-
-        if (credentialRequest.getCredentialConfigurationId() != null) {
-            request.credentialConfigurationId(credentialRequest.getCredentialConfigurationId());
-        }
-        if (credentialRequest.getCredentialIdentifier() != null) {
-            request.credentialIdentifier(credentialRequest.getCredentialIdentifier());
-        }
 
         return request;
     }

@@ -48,7 +48,6 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationRequestResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
-import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -174,12 +173,11 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         List<String> credentialIdentifiers = authDetailResponse.getCredentialIdentifiers();
         assertNotNull("credential_identifiers should be present", credentialIdentifiers);
         assertFalse("credential_identifiers should not be empty", credentialIdentifiers.isEmpty());
-        String credentialIdentifier = credentialIdentifiers.get(0);
 
-        var credentialRequest = new CredentialRequest();
-        credentialRequest.setCredentialIdentifier(credentialIdentifier);
+        var credRequest = new CredentialRequest()
+                .setCredentialIdentifier(credentialIdentifiers.get(0));
 
-        CredentialResponse credResponse = sendCredentialRequest(ctx, accessToken, credentialRequest);
+        CredentialResponse credResponse = sendCredentialRequest(accessToken, credRequest);
         verifyCredentialResponse(ctx, credResponse);
     }
 
@@ -460,7 +458,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
                 throw new IllegalStateException("No credential_configuration_id in: " + JsonSerialization.valueAsString(authDetail));
             credentialRequest.setCredentialConfigurationId(authDetail.getCredentialConfigurationId());
         }
-        return sendCredentialRequest(ctx, accessToken, credentialRequest);
+        return sendCredentialRequest(accessToken, credentialRequest);
     }
 
     private CredentialResponse getCredentialByOffer(OfferTestContext ctx, AccessTokenResponse tokenResponse, CredentialsOffer credOffer) throws Exception {
@@ -487,34 +485,20 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         }
 
         String accessToken = tokenResponse.getAccessToken();
-        return sendCredentialRequest(ctx, accessToken, credentialRequest);
+        return sendCredentialRequest(accessToken, credentialRequest);
     }
 
-    private CredentialResponse sendCredentialRequest(OfferTestContext ctx, String accessToken, CredentialRequest credentialRequest) throws Exception {
-        Oid4vcCredentialRequest request = oauth.oid4vc()
-                .credentialRequest()
-                .endpoint(ctx.issuerMetadata.getCredentialEndpoint())
-                .bearerToken(accessToken);
+    private CredentialResponse sendCredentialRequest(String accessToken, CredentialRequest credRequest) {
 
-        if (credentialRequest.getCredentialConfigurationId() != null) {
-            request.credentialConfigurationId(credentialRequest.getCredentialConfigurationId());
-        }
-        if (credentialRequest.getCredentialIdentifier() != null) {
-            request.credentialIdentifier(credentialRequest.getCredentialIdentifier());
-        }
+        Oid4vcCredentialResponse credRequestResponse = oauth.oid4vc()
+                .credentialRequest(credRequest)
+                .bearerToken(accessToken)
+                .send();
 
-        Oid4vcCredentialResponse credentialRequestResponse = request.send();
-        int statusCode = credentialRequestResponse.getStatusCode();
-        if (HttpStatus.SC_OK != statusCode) {
-            throw new IllegalStateException(credentialRequestResponse.getErrorDescription() != null
-                    ? credentialRequestResponse.getErrorDescription()
-                    : "Request failed with status " + statusCode);
-        }
-
-        CredentialResponse credentialResponse = credentialRequestResponse.getCredentialResponse();
-        assertNotNull("The credentials array should be present in the response", credentialResponse.getCredentials());
-        assertFalse("The credentials array should not be empty", credentialResponse.getCredentials().isEmpty());
-        return credentialResponse;
+        CredentialResponse credResponse = credRequestResponse.getCredentialResponse();
+        assertNotNull("The credentials array should be present in the response", credResponse.getCredentials());
+        assertFalse("The credentials array should not be empty", credResponse.getCredentials().isEmpty());
+        return credResponse;
     }
 
     private void verifyCredentialResponse(OfferTestContext ctx, CredentialResponse credResponse) throws Exception {

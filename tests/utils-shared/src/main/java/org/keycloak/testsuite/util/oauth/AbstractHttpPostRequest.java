@@ -157,9 +157,7 @@ public abstract class AbstractHttpPostRequest<T, R> {
 
     protected abstract R toResponse(CloseableHttpResponse response) throws IOException;
 
-    @SuppressWarnings("unchecked")
     private T request() {
         return (T) this;
     }
-
 }

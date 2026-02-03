@@ -25,6 +25,7 @@ import java.util.UUID;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -182,13 +183,15 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
             fail("Credential identifier should be a valid UUID, but was: " + credentialIdentifier);
         }
 
+        CredentialRequest credRequest = new CredentialRequest()
+                .setCredentialIdentifier(credentialIdentifier);
+
         // Step 5: Request the actual credential using the identifier
         // When authorization_details are present in the token, credential_identifier must be used
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc()
-                .credentialRequest()
+                .credentialRequest(credRequest)
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                 .bearerToken(tokenResponse.getAccessToken())
-                .credentialIdentifier(credentialIdentifier)
                 .send();
 
         assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusCode());
