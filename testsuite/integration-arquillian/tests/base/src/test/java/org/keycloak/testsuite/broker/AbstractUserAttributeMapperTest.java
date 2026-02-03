@@ -54,7 +54,7 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractIdentityPr
         }
     }
 
-    private void assertUserAttributes(Map<String, List<String>> attrs, UserRepresentation userRep) {
+    protected void assertUserAttributes(Map<String, List<String>> attrs, UserRepresentation userRep) {
         Set<String> mappedAttrNames = attrs.entrySet().stream()
           .filter(me -> me.getValue() != null && ! me.getValue().isEmpty())
           .map(me -> me.getKey())
