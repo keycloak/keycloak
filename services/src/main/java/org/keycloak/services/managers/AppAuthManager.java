@@ -33,6 +33,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.util.TokenUtil;
 
+import org.jboss.logging.Logger;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -129,6 +131,8 @@ public class AppAuthManager extends AuthenticationManager {
     }
 
     public static class BearerTokenAuthenticator {
+        private static final Logger logger = Logger.getLogger(BearerTokenAuthenticator.class);
+        
         private KeycloakSession session;
         private RealmModel realm;
         private UriInfo uriInfo;
@@ -193,7 +197,10 @@ public class AppAuthManager extends AuthenticationManager {
             // audience can be null
 
             return verifyIdentityToken(session, realm, uriInfo, connection, true, true, audience, false, tokenString, headers,
-                    verifier -> DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenString)));
+                    verifier -> {
+                        DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenString));
+                        verifier.withChecks(GrantTypeEndpointRestrictionValidator.check(session));
+                    });
         }
     }
 

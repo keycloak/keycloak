@@ -11,7 +11,6 @@ import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.admin.client.resource.WorkflowsResource;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.RestartWorkflowStepProviderFactory;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.Workflow;
@@ -19,6 +18,7 @@ import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.workflow.conditions.UserAttributeWorkflowConditionFactory;
+import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -161,7 +161,7 @@ public class UserAttributeWorkflowConditionTest extends AbstractWorkflowTest {
                 .orElse(null);
 
         WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ResourceOperationType.USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .schedule(WorkflowScheduleRepresentation.create().after("1s").build())
                 .onCondition(attributeCondition)
                 .withSteps(

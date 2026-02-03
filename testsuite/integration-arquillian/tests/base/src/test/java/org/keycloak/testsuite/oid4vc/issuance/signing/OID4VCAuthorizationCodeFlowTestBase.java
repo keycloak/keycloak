@@ -56,7 +56,12 @@ import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
@@ -191,15 +196,38 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     }
 
     // Test for the whole authorization_code flow with the credentialRequest using credential_configuration_id
+    // Note: When authorization_details are present in the token, credential_identifier must be used instead
+    // This test verifies that using credential_configuration_id fails when authorization_details are present
     @Test
     public void testCompleteFlowWithClaimsValidationAuthorizationCode_credentialRequestWithConfigurationId() throws Exception {
-        BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
-            CredentialRequest credentialRequest = new CredentialRequest();
-            credentialRequest.setCredentialConfigurationId(credentialConfigurationId);
-            return credentialRequest;
-        };
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
-        testCompleteFlowWithClaimsValidationAuthorizationCode(credRequestSupplier);
+        // Perform authorization code flow to get authorization code (includes authorization_details)
+        AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
+        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+
+        // Clear events before credential request
+        events.clear();
+
+        // Request the credential using credential_configuration_id (should fail when authorization_details are present)
+        HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
+        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + tokenResponse.getAccessToken());
+        postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+
+        CredentialRequest credentialRequest = new CredentialRequest();
+        credentialRequest.setCredentialConfigurationId(credentialConfigurationId);
+
+        String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
+        postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));
+
+        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+            assertEquals("Using credential_configuration_id with token that has authorization_details should fail",
+                    HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusLine().getStatusCode());
+
+            String errorBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+            assertTrue("Error should indicate that credential_identifier must be used. Actual error: " + errorBody,
+                    errorBody.contains("credential_identifier") || errorBody.contains("authorization_details"));
+        }
     }
 
     // Test for the whole authorization_code flow with the credentialRequest using credential_identifier

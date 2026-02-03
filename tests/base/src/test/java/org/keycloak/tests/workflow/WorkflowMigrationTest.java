@@ -13,6 +13,8 @@ import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.client.DeleteClientStepProviderFactory;
 import org.keycloak.models.workflow.conditions.UserAttributeWorkflowConditionFactory;
+import org.keycloak.models.workflow.events.ClientCreatedWorkflowEventFactory;
+import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.workflows.StepExecutionStatus;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -24,9 +26,6 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
 import org.junit.jupiter.api.Test;
-
-import static org.keycloak.models.workflow.ResourceOperationType.CLIENT_ADDED;
-import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -42,7 +41,7 @@ public class WorkflowMigrationTest extends AbstractWorkflowTest {
     public void testMigrationFailsIfWorkflowsNotCompatible() {
         // create two incompatible workflows - one that operates on users, another on clients
         var response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("client-workflow")
-                .onEvent(CLIENT_ADDED.name())
+                .onEvent(ClientCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(DeleteClientStepProviderFactory.ID)
@@ -54,7 +53,7 @@ public class WorkflowMigrationTest extends AbstractWorkflowTest {
         response.close();
 
         response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("user-workflow")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(AddRequiredActionStepProviderFactory.ID)
@@ -93,7 +92,7 @@ public class WorkflowMigrationTest extends AbstractWorkflowTest {
     public void testMigrationFailsIfResourcesDontMeetWorkflowConditions() {
         // create two user workflows, the second having a condition that the users don't meet
         var response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("workflow-1")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(DisableUserStepProviderFactory.ID)
@@ -144,7 +143,7 @@ public class WorkflowMigrationTest extends AbstractWorkflowTest {
     public void testMigrateToScheduledStepInDifferentWorkflow() {
 
         var response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("workflow-1")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(DisableUserStepProviderFactory.ID)
@@ -210,7 +209,7 @@ public class WorkflowMigrationTest extends AbstractWorkflowTest {
     @Test
     public void testMigrateToImmediateStepInDifferentWorkflow() {
         var response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("workflow-1")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(DisableUserStepProviderFactory.ID)
@@ -275,7 +274,7 @@ public class WorkflowMigrationTest extends AbstractWorkflowTest {
     @Test
     public void testMigrateToStepInSameWorkflow() {
         var response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("workflow")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(AddRequiredActionStepProviderFactory.ID)

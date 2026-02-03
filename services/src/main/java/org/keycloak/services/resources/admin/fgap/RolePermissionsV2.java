@@ -48,6 +48,9 @@ class RolePermissionsV2 extends RolePermissions {
     @Override
     public boolean canMapRole(RoleModel role) {
         if (isRealmAdminRole(role)) {
+            if (AdminRoles.VIEW_SYSTEM.equals(role.getName()) && !root.isAdmin(root.getMasterRealm())) {
+                return false;
+            }
             if (realm.isAdminPermissionsEnabled()) {
                 // only server or realm admins can map roles if FGAP is enabled
                 return root.isRealmAdmin();
@@ -73,6 +76,9 @@ class RolePermissionsV2 extends RolePermissions {
     @Override
     public boolean canMapComposite(RoleModel role) {
         if (isRealmAdminRole(role)) {
+            if (AdminRoles.VIEW_SYSTEM.equals(role.getName()) && !root.isAdmin(root.getMasterRealm())) {
+                return false;
+            }
             if (realm.isAdminPermissionsEnabled()) {
                 // only server or realm admins can map roles if FGAP is enabled
                 return root.isRealmAdmin();
