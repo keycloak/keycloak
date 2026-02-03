@@ -68,6 +68,11 @@ on the realm resource associated with the event, so that each realm resource typ
 * `action`: The name of the required action
 | `delete-user` | Delete the user | None
 | `disable-user` | Disable the user | None
+| `unlink-user` | Unlink the user from one or more external Identity Providers a|
+* `idp`: One or more Identity Provider aliases to unlink. This can be:
+** Single value
+** List of values (i.e., `["value", "value2"]`) 
+** `*` to unlink user from all linked Identity Providers
 | `notify-user` | Notify the user by email a|
 - `subject`: The email subject
 - `message`: The email message in plain text or HTML format
