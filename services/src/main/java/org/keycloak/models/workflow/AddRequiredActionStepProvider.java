@@ -27,12 +27,24 @@ public class AddRequiredActionStepProvider implements WorkflowStepProvider {
         UserModel user = session.users().getUserById(realm, context.getResourceId());
 
         if (user != null) {
+            String configuredAction = stepModel.getConfig().getFirst(REQUIRED_ACTION_KEY);
+            if (configuredAction == null) {
+                log.warnv("Missing required configuration option '{0}' in {1}", REQUIRED_ACTION_KEY, AddRequiredActionStepProviderFactory.ID);
+                return;
+            }
             try {
-                UserModel.RequiredAction action = UserModel.RequiredAction.valueOf(stepModel.getConfig().getFirst(REQUIRED_ACTION_KEY));
+                // Convert hyphens to underscores and uppercase to match enum naming
+                configuredAction = configuredAction.replace("-", "_").toUpperCase();
+                UserModel.RequiredAction action = UserModel.RequiredAction.valueOf(configuredAction);
+                if (!realm.getRequiredActionProviderByAlias(action.name()).isEnabled()) {
+                    log.warnv("Required action {0} is not enabled in realm {1}", action, realm.getName());
+                    return;
+                }
                 log.debugv("Adding required action {0} to user {1})", action, user.getId());
                 user.addRequiredAction(action);
             } catch (IllegalArgumentException e) {
-                log.warnv("Invalid required action {0} configured in AddRequiredActionStepProvider", stepModel.getConfig().getFirst(REQUIRED_ACTION_KEY));
+                log.warnv("Invalid required action {0} configured in {1}", stepModel.getConfig().getFirst(REQUIRED_ACTION_KEY),
+                        AddRequiredActionStepProviderFactory.ID);
             }
         }
     }
