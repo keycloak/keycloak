@@ -8,7 +8,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.workflow.ResourceOperationType;
+import org.keycloak.models.workflow.events.UserAuthenticatedWorkflowEventFactory;
 import org.keycloak.models.workflow.UnlinkUserStepProvider;
 import org.keycloak.models.workflow.UnlinkUserStepProviderFactory;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -125,7 +125,7 @@ public class UnlinkUserWorkflowStepTest extends AbstractWorkflowTest {
     private void createUnlinkWorkflow(int afterDaysExecuted, String... idpAliases) {
         managedRealm.admin().workflows().create(
                 WorkflowRepresentation.withName("unlink-workflow-" + KeycloakModelUtils.generateId())
-                        .onEvent(ResourceOperationType.USER_AUTHENTICATED.toString())
+                        .onEvent(UserAuthenticatedWorkflowEventFactory.ID)
                         .withSteps(
                                 WorkflowStepRepresentation.create()
                                         .of(UnlinkUserStepProviderFactory.ID)
