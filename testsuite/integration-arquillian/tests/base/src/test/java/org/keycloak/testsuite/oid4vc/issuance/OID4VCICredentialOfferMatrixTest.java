@@ -26,6 +26,8 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.protocol.oid4vc.model.AuthorizationRequest;
+import org.keycloak.protocol.oid4vc.model.AuthorizationRequestBuilder;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
@@ -36,12 +38,14 @@ import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.protocol.oidc.utils.PkceGenerator;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationRequestResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialRequest;
@@ -123,19 +127,32 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     public void testCredentialWithoutOffer() throws Exception {
         var ctx = newTestContext(false, null, appUsername);
 
+        String redirectUri = verifiedRedirectUri(clientId, oauth.getRedirectUri());
+        PkceGenerator pkce = PkceGenerator.s256();
+
+        // Build an AuthorizationRequest with AuthorizationDetails
+        //
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(credConfigId);
         authDetail.setLocations(List.of(ctx.issuerMetadata.getCredentialIssuer()));
 
-        // [TODO #44320] Requires Credential scope in AuthorizationRequest although already given in AuthorizationDetails
-        // https://github.com/keycloak/keycloak/issues/44320
-        oauth.loginForm().scope(SCOPE_OPENID, credScopeName).open();
-        oauth.fillLoginForm(ctx.appUser,"password");
-        String authCode = oauth.parseLoginResponse().getCode();
+        AuthorizationRequest authRequest = new AuthorizationRequestBuilder()
+                // [TODO #44320] Requires Credential scope in AuthorizationRequest although already given in AuthorizationDetails
+                .withScope(SCOPE_OPENID, credScopeName)
+                .withAuthorizationDetail(authDetail)
+                .withRedirectUri(redirectUri)
+                .withCodeChallenge(pkce)
+                .build();
+
+        AuthorizationRequestResponse authResponse = oauth.oid4vc()
+                .authorizationRequest(authRequest)
+                .send(ctx.appUser, "password");
+        String authCode = authResponse.assertCode();
 
         AccessTokenResponse accessTokenResponse = oauth.accessTokenRequest(authCode)
                 .authorizationDetails(List.of(authDetail))
+                .codeVerifier(pkce)
                 .send();
         String accessToken = accessTokenResponse.getAccessToken();
 
@@ -303,31 +320,42 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
                 String credConfigId = credOffer.getCredentialConfigurationIds().get(0);
                 assertEquals(ctx.credentialConfiguration.getId(), credConfigId);
 
-                String credScope = ctx.credentialConfiguration.getScope();
+                // Reconfigure the OAuthClient
+                if (!clientId.equals(issClientId)) {
+                    ClientRepresentation client = testRealm().clients().findByClientId(clientId).get(0);
+                    oauth.redirectUri(client.getRedirectUris().get(0));
+                    oauth.client(clientId, client.getSecret());
+                }
 
+                String redirectUri = verifiedRedirectUri(clientId, oauth.getRedirectUri());
+                PkceGenerator pkce = PkceGenerator.s256();
+
+                // Authorize using Code Flow
+                //
                 OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
                 authDetail.setType(OPENID_CREDENTIAL);
                 authDetail.setCredentialConfigurationId(credConfigId);
                 authDetail.setLocations(List.of(getCredentialIssuerMetadata().getCredentialIssuer()));
 
-                // Authorize using Code Flow
-                //
-                // [TODO #44320] Requires Credential scope in AuthorizationRequest although already given in AuthorizationDetails
-                // https://github.com/keycloak/keycloak/issues/44320
+                AuthorizationRequest authRequest = new AuthorizationRequestBuilder()
+                        .withClientId(clientId)
+                        // [TODO #44320] Requires Credential scope in AuthorizationRequest although already given in AuthorizationDetails
+                        .withScope(SCOPE_OPENID, credScopeName)
+                        .withAuthorizationDetail(authDetail)
+                        .withRedirectUri(redirectUri)
+                        .withCodeChallenge(pkce)
+                        .build();
 
-                ClientRepresentation client = testRealm().clients().findByClientId(clientId).get(0);
-                oauth.client(client.getClientId(), client.getSecret());
-                oauth.redirectUri(client.getRedirectUris().get(0));
-                oauth.loginForm()
-                        .scope(SCOPE_OPENID, credScope)
-                        .open();
-                oauth.fillLoginForm(username,"password");
-                String authCode = oauth.parseLoginResponse().getCode();
+                AuthorizationRequestResponse authResponse = oauth.oid4vc()
+                        .authorizationRequest(authRequest)
+                        .send(username, "password");
+                String authCode = authResponse.assertCode();
 
                 // Redeem Authorization Code for AccessToken
                 //
                 AccessTokenResponse tokenResponse = oauth.accessTokenRequest(authCode)
                         .authorizationDetails(List.of(authDetail))
+                        .codeVerifier(pkce)
                         .send();
 
                 // Get the credential and verify
@@ -505,6 +533,18 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         assertEquals(List.of(scope), credential.getType());
         assertEquals(URI.create(issuer), credential.getIssuer());
         assertEquals(expUsername + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
+    }
+
+    private String verifiedRedirectUri(String clientId, String redirectUri) {
+        ClientRepresentation client = testRealm().clients().findByClientId(clientId).get(0);
+        String registeredUri = client.getRedirectUris().stream()
+                .filter(uri -> uri.startsWith(redirectUri))
+                .findFirst()
+                .orElse(null);
+        if (registeredUri == null) {
+            throw new IllegalArgumentException("Invalid redirect_uri: " + redirectUri);
+        }
+        return redirectUri;
     }
 
     private void verifyTokenJwt(
