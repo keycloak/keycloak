@@ -4,40 +4,35 @@ import java.io.IOException;
 
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.Proofs;
+import org.keycloak.testsuite.util.oauth.AbstractHttpPostRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
+import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 
-public class Oid4vcCredentialRequest extends AbstractOid4vcRequest<Oid4vcCredentialRequest, Oid4vcCredentialResponse> {
+public class Oid4vcCredentialRequest extends AbstractHttpPostRequest<Oid4vcCredentialRequest, Oid4vcCredentialResponse> {
 
-    private final CredentialRequest body = new CredentialRequest();
-    private boolean emptyBody = false;
+    private final CredentialRequest credRequest;
 
-    public Oid4vcCredentialRequest(AbstractOAuthClient<?> client) {
+    public Oid4vcCredentialRequest(AbstractOAuthClient<?> client, CredentialRequest credRequest) {
         super(client);
+        this.credRequest = credRequest;
     }
 
     public Oid4vcCredentialRequest credentialConfigurationId(String credentialConfigurationId) {
-        body.setCredentialConfigurationId(credentialConfigurationId);
+        credRequest.setCredentialConfigurationId(credentialConfigurationId);
         return this;
     }
 
     public Oid4vcCredentialRequest credentialIdentifier(String credentialIdentifier) {
-        body.setCredentialIdentifier(credentialIdentifier);
+        credRequest.setCredentialIdentifier(credentialIdentifier);
         return this;
     }
 
     public Oid4vcCredentialRequest proofs(Proofs proofs) {
-        body.setProofs(proofs);
-        return this;
-    }
-
-    /**
-     * Set the request to send an empty payload body.
-     * This is useful for testing edge cases where an empty body should be sent.
-     */
-    public Oid4vcCredentialRequest emptyBody() {
-        this.emptyBody = true;
+        credRequest.setProofs(proofs);
         return this;
     }
 
@@ -46,19 +41,15 @@ public class Oid4vcCredentialRequest extends AbstractOid4vcRequest<Oid4vcCredent
         return client.getEndpoints().getOid4vcCredential();
     }
 
-    /**
-     * Returns the request body. If {@link #emptyBody()} was called, returns an empty string ("")
-     * to trigger an empty payload in {@link AbstractOid4vcRequest#send()}.
-     * If not, returns the {@link CredentialRequest} object to be serialized as JSON.
-     *
-     * @return the request body object or empty string
-     */
     @Override
-    protected Object getBody() {
-        if (emptyBody) {
-            return "";
+    protected void initRequest() {
+        if (credRequest != null) {
+            String payload = JsonSerialization.valueAsString(credRequest);
+            entity = new StringEntity(payload, ContentType.APPLICATION_JSON);
+        } else {
+            // Trigger an empty payload in {@link AbstractHttpPostRequest#send()}.
+            entity = new StringEntity("", ContentType.APPLICATION_JSON);
         }
-        return body;
     }
 
     @Override

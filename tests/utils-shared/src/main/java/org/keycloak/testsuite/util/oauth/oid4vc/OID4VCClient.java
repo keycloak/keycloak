@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.util.oauth.oid4vc;
 
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
+import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -33,7 +34,11 @@ public class OID4VCClient {
     }
 
     public Oid4vcCredentialRequest credentialRequest() {
-        return new Oid4vcCredentialRequest(client);
+        return new Oid4vcCredentialRequest(client, new CredentialRequest());
+    }
+
+    public Oid4vcCredentialRequest credentialRequest(CredentialRequest credRequest) {
+        return new Oid4vcCredentialRequest(client, credRequest);
     }
 
     public PreAuthorizedCodeGrantRequest preAuthorizedCodeGrantRequest(String preAuthorizedCode) {
