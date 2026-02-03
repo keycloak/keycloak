@@ -1134,8 +1134,11 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
-      - name: Run tests
+      - name: Run tests with defaults
         run: ./mvnw package -f test-framework/pom.xml
+
+      - name: Run tests with embedded server
+        run: KC_TEST_SERVER=embedded ./mvnw package -f test-framework/examples/pom.xml -Dtest=CustomConfigTest,RunOnServerTest,TlsEnabledTest
 
   base-new-integration-tests:
     name: Base IT (new)
