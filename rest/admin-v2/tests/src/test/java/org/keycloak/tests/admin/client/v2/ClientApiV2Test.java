@@ -41,7 +41,6 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpMessage;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -52,7 +51,6 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.services.cors.Cors.ACCESS_CONTROL_ALLOW_METHODS;
@@ -65,10 +63,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @KeycloakIntegrationTest(config = ClientApiV2Test.AdminV2Config.class)
-public class ClientApiV2Test {
-
-    public static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080/admin/api/master/clients/v2";
-    private static ObjectMapper mapper;
+public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @InjectHttpClient
     CloseableHttpClient client;
@@ -81,11 +76,6 @@ public class ClientApiV2Test {
 
     @InjectAdminClient(ref = "noAccessClient", client = "myclient", mode = InjectAdminClient.Mode.MANAGED_REALM)
     Keycloak noAccessAdminClient;
-
-    @BeforeAll
-    public static void setupMapper() {
-        mapper = new ObjectMapper();
-    }
 
     @Test
     public void getClient() throws Exception {
@@ -408,7 +398,7 @@ public class ClientApiV2Test {
         HttpGet request = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/account");
         setAuthHeader(request, noAccessAdminClient);
         try (var response = client.execute(request)) {
-            assertEquals(401, response.getStatusLine().getStatusCode());
+            assertEquals(403, response.getStatusLine().getStatusCode());
         }
     }
 
@@ -646,12 +636,6 @@ public class ClientApiV2Test {
         // not implemented yet
         // rep.setAdditionalFields(Map.of("key1", "val1", "key2", "val2"));
         return rep;
-    }
-
-    // TODO Rewrite the tests to not need explicit auth. They should use the admin client directly.
-    private void setAuthHeader(HttpMessage request, Keycloak adminClient) {
-        String token = adminClient.tokenManager().getAccessTokenString();
-        request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
     }
 
     private void setAuthHeader(HttpMessage request) {
