@@ -1,8 +1,10 @@
 package org.keycloak.testsuite.util.oauth.oid4vc;
 
+import org.keycloak.protocol.oid4vc.model.AuthorizationRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationRequestRequest;
 
 public class OID4VCClient {
 
@@ -18,6 +20,10 @@ public class OID4VCClient {
 
     public CredentialIssuerMetadataResponse doIssuerMetadataRequest() {
         return issuerMetadataRequest().send();
+    }
+
+    public AuthorizationRequestRequest authorizationRequest(AuthorizationRequest authRequest) {
+        return new AuthorizationRequestRequest(client, authRequest);
     }
 
     public CredentialOfferUriRequest credentialOfferUriRequest(String credConfigId) {
