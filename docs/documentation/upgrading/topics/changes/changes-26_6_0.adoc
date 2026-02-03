@@ -119,7 +119,7 @@ You should use the new `telemetry.serviceName`, and `telemetry.resourceAttribute
 === Deprecation of tracing span attributes for HTTP requests
 
 The OpenTelemetry tracing span attributes `code.function` and `code.namespace` are deprecated for the HTTP request spans when tracing is enabled.
-These attributes will be removed after the 26.6 release, and only the fully qualified `code.function.name` span attribute will stay.
+These attributes will be removed in the next major release, and only the fully qualified `code.function.name` span attribute will stay.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features
