@@ -4,6 +4,7 @@ import type OrganizationRepresentation from "../defs/organizationRepresentation.
 import type OrganizationInvitationRepresentation from "../defs/organizationInvitationRepresentation.js";
 import UserRepresentation from "../defs/userRepresentation.js";
 import Resource from "./resource.js";
+import { Groups } from "./groups.js";
 
 interface PaginatedQuery {
   first?: number; // The position of the first result to be processed (pagination offset)
@@ -33,6 +34,7 @@ export class Organizations extends Resource<{ realm?: string }> {
   /**
    * Organizations
    */
+  #client: KeycloakAdminClient;
 
   constructor(client: KeycloakAdminClient) {
     super(client, {
@@ -42,6 +44,7 @@ export class Organizations extends Resource<{ realm?: string }> {
       }),
       getBaseUrl: () => client.baseUrl,
     });
+    this.#client = client;
   }
 
   public find = this.makeRequest<
@@ -190,4 +193,6 @@ export class Organizations extends Resource<{ realm?: string }> {
     path: "/{orgId}/invitations/{invitationId}",
     urlParamKeys: ["orgId", "invitationId"],
   });
+
+  public groups = (orgId: string) => new Groups(this.#client, orgId);
 }
