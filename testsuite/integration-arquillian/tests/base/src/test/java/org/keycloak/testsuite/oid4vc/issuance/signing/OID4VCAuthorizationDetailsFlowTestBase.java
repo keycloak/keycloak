@@ -537,9 +537,8 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
             events.clear();
 
             Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
-                    .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
-                    .bearerToken(tokenResponse.getAccessToken())
                     .credentialIdentifier(credentialIdentifier)
+                    .bearerToken(tokenResponse.getAccessToken())
                     .send();
 
             assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusCode());
@@ -596,11 +595,9 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         assertNotNull("Credential identifier should be present", credentialIdentifier);
 
         // Step 2: Verify token works at credential endpoint (should succeed)
-        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc()
-                .credentialRequest()
-                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
-                .bearerToken(preAuthorizedToken)
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
+                .bearerToken(preAuthorizedToken)
                 .send();
 
         assertEquals("Pre-authorized code token should work at credential endpoint",
@@ -773,9 +770,8 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         events.clear();
 
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
-                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
-                .bearerToken(token)
                 .credentialIdentifier(credentialIdentifier)
+                .bearerToken(token)
                 .send();
 
         assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusCode());
@@ -815,10 +811,9 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         events.clear();
 
         // Request credential with empty payload
-        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
-                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc()
+                .credentialRequest(null)
                 .bearerToken(token)
-                .emptyBody()
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
@@ -843,9 +838,8 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         // Request credential with invalid credential identifier
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
-                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
-                .bearerToken(token)
                 .credentialIdentifier("invalid-credential-identifier")
+                .bearerToken(token)
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
