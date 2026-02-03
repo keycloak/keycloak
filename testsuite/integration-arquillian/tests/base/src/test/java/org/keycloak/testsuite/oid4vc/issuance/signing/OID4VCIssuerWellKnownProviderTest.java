@@ -58,7 +58,6 @@ import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.JWTVCIssuerMetadata;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.ProofType;
@@ -85,6 +84,8 @@ import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import static org.keycloak.OID4VCConstants.SIGNED_METADATA_JWT_TYPE;
+import static org.keycloak.VCFormat.JWT_VC;
+import static org.keycloak.VCFormat.SD_JWT_VC;
 import static org.keycloak.constants.OID4VCIConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE;
 import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
@@ -431,7 +432,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                 .get(clientScope.getName());
 
         assertNotNull(supportedConfig);
-        assertEquals(Format.SD_JWT_VC, supportedConfig.getFormat());
+        assertEquals(SD_JWT_VC, supportedConfig.getFormat());
         assertEquals(clientScope.getName(), supportedConfig.getScope());
         assertEquals(clientScope.getName(), supportedConfig.getVct());
         assertNull("SD-JWT credentials should not have credential_definition", supportedConfig.getCredentialDefinition());
@@ -534,7 +535,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         assertEquals(credentialConfigurationId, supportedConfig.getId());
 
         String expectedFormat = Optional.ofNullable(clientScope.getAttributes().get(CredentialScopeModel.FORMAT))
-                .orElse(Format.SD_JWT_VC);
+                .orElse(SD_JWT_VC);
         assertEquals(expectedFormat, supportedConfig.getFormat());
 
         assertEquals(clientScope.getName(), supportedConfig.getScope());
@@ -547,12 +548,12 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
 
         compareDisplay(supportedConfig, clientScope);
 
-        if (Format.SD_JWT_VC.equals(expectedFormat)) {
+        if (SD_JWT_VC.equals(expectedFormat)) {
             String expectedVct = Optional.ofNullable(clientScope.getAttributes().get(CredentialScopeModel.VCT))
                     .orElse(clientScope.getName());
             assertEquals(expectedVct, supportedConfig.getVct());
             assertNull("SD-JWT credentials should not have credential_definition", supportedConfig.getCredentialDefinition());
-        } else if (Format.JWT_VC.equals(expectedFormat)) {
+        } else if (JWT_VC.equals(expectedFormat)) {
             assertNull("JWT_VC credentials should not have vct", supportedConfig.getVct());
             assertNotNull(supportedConfig.getCredentialDefinition());
             assertNotNull(supportedConfig.getCredentialDefinition().getType());
@@ -590,15 +591,15 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         if (Boolean.parseBoolean(clientScope.getAttributes().get(CredentialScopeModel.KEY_ATTESTATION_REQUIRED))) {
             expectedKeyAttestationsRequired = new KeyAttestationsRequired();
             expectedKeyAttestationsRequired.setKeyStorage(
-                Optional.ofNullable(clientScope.getAttributes()
-                                               .get(CredentialScopeModel.KEY_ATTESTATION_REQUIRED_KEY_STORAGE))
-                        .map(s -> Arrays.asList(s.split(",")))
-                        .orElse(null));
+                    Optional.ofNullable(clientScope.getAttributes()
+                                    .get(CredentialScopeModel.KEY_ATTESTATION_REQUIRED_KEY_STORAGE))
+                            .map(s -> Arrays.asList(s.split(",")))
+                            .orElse(null));
             expectedKeyAttestationsRequired.setUserAuthentication(
-                Optional.ofNullable(clientScope.getAttributes()
-                                               .get(CredentialScopeModel.KEY_ATTESTATION_REQUIRED_USER_AUTH))
-                        .map(s -> Arrays.asList(s.split(",")))
-                        .orElse(null));
+                    Optional.ofNullable(clientScope.getAttributes()
+                                    .get(CredentialScopeModel.KEY_ATTESTATION_REQUIRED_USER_AUTH))
+                            .map(s -> Arrays.asList(s.split(",")))
+                            .orElse(null));
         } else {
             expectedKeyAttestationsRequired = null;
         }
@@ -756,7 +757,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                     assertEquals("The expected server should have been returned.", expectedAuthorizationServer, credentialIssuer.getAuthorizationServers().get(0));
                     assertTrue("The test-credential should be supported.", credentialIssuer.getCredentialsSupported().containsKey("test-credential"));
                     assertEquals("The test-credential should offer type VerifiableCredential", "VerifiableCredential", credentialIssuer.getCredentialsSupported().get("test-credential").getScope());
-                    assertEquals("The test-credential should be offered in the jwt-vc format.", Format.JWT_VC, credentialIssuer.getCredentialsSupported().get("test-credential").getFormat());
+                    assertEquals("The test-credential should be offered in the jwt-vc format.", JWT_VC, credentialIssuer.getCredentialsSupported().get("test-credential").getFormat());
                     assertNotNull("The test-credential can optionally provide a claims claim.",
                             credentialIssuer.getCredentialsSupported().get("test-credential").getCredentialMetadata() != null ?
                                     credentialIssuer.getCredentialsSupported().get("test-credential").getCredentialMetadata().getClaims() : null);

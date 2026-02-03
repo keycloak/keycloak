@@ -49,6 +49,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OID4VCConstants;
+import org.keycloak.VCFormat;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.crypto.KeyUse;
@@ -98,7 +99,6 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
@@ -200,7 +200,7 @@ public class OID4VCIssuerEndpoint {
      * <p></p>
      * Due to technical constraints, we explicitly load credential builders into
      * this map for they are configurable components. The key of the map is the
-     * credential {@link Format} associated with the builder. The matching credential
+     * credential {@link VCFormat} associated with the builder. The matching credential
      * signer is directly loaded from the Keycloak container.
      */
     private final Map<String, CredentialBuilder> credentialBuilders;
