@@ -72,7 +72,7 @@ public class UnlinkUserWorkflowStepTest extends AbstractWorkflowTest {
         // Authenticate using federated user
         authenticate(USER_NAME, USER_PASSWORD);
 
-        // Check that user exists and has 2 IDP links
+        // Check that user exists and has 3 IDP links
         runScheduledSteps(Duration.ZERO);
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = session.getContext().getRealm();
