@@ -64,9 +64,10 @@ public final class KeycloakTracingCustomizer implements HandlerChainCustomizer {
             SpanBuilder spanBuilder = myTracer.spanBuilder(spanName);
             spanBuilder.setParent(Context.current().with(Span.current()));
             spanBuilder.setAttribute(CodeAttributes.CODE_FUNCTION_NAME, functionName);
-            // for backwards compatibility
+            // for backwards compatibility. deprecated in 26.6, to be removed in 27.0
             spanBuilder.setAttribute(CodeIncubatingAttributes.CODE_FUNCTION, methodName);
             spanBuilder.setAttribute(CodeIncubatingAttributes.CODE_NAMESPACE, className);
+            // end deprecation
 
             Span span = spanBuilder.startSpan();
             requestContext.setProperty("span", span);
