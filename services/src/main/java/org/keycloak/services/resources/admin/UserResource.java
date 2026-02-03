@@ -62,7 +62,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.credential.CredentialProvider;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
@@ -825,15 +824,11 @@ public class UserResource {
     }
 
     private CredentialModel decorateCredentialForPresentation(CredentialModel credential) {
-        CredentialProvider credentialProvider = AuthenticatorUtil.getCredentialProviders(session)
+        return AuthenticatorUtil.getCredentialProviders(session)
                 .filter(p -> p.supportsCredentialType(credential.getType()))
-                .findFirst().orElse(null);
-        if (credentialProvider == null) {
-            logger.warnf("Credential Provider not found for credential of type '%s'", credential.getType());
-            return credential;
-        }
-
-        return credentialProvider.getCredentialForPresentationFromModel(credential);
+                .findFirst()
+                .map(p -> p.getCredentialForPresentationFromModel(credential))
+                .orElse(credential);
     }
 
     /**
