@@ -54,6 +54,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 
+import static org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_FETCH_FAILED;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createExecutorConfig;
@@ -167,6 +168,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
             i.setPolicyUri("https://localhost:8543/policy");
             i.setScope("address phone");
         });
+        // CIMD executor's min cache time is 300 as default, so if s-maxage = 20 then it is replaced with 300.
         String cacheControlHeaderValue = "must-revalidate, max-age=3600, public, s-maxage=20";
         oidcClientEndpointsResource.registerClientIdMetadata(clientMetadata, cacheControlHeaderValue, null);
 
@@ -223,8 +225,10 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         logoutConfirmPage.assertCurrent();
         logoutConfirmPage.confirmLogout();
 
+        // move the time ahead so that the client metedate becomes ineffective.
+        setTimeOffset(300 + 3);
+
         // do authorization code flow again, and registered client metadata is not effective
-        Thread.sleep(1000 * 25);
         code = loginUserAndGetCode(clientId, false);
         signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.PS256);
         tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, DefaultHttpClient::new);
@@ -243,6 +247,9 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         String cid = clientRepresentation.getId();
         deleteClientByAdmin(cid);
         assertThrows(jakarta.ws.rs.NotFoundException.class, ()->getClientByAdmin(cid));
+
+        // need to reset time offset for the offset does not affect other test's execution.
+        resetTimeOffset();
     }
 
     @Test
@@ -520,13 +527,13 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         clientId = TestApplicationResourceUrls.getClientIdMetadataUri(generateSuffixedName("CIMD"));
         clientMetadata = setupOIDCClientRepresentation(clientId, i-> {});
         oidcClientEndpointsResource.registerClientIdMetadata(clientMetadata, null, "NotFound");
-        assertLoginAndError(clientId, AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_FETCH_FAILED);
+        assertLoginAndError(clientId, ERR_METADATA_FETCH_FAILED);
 
         // 200 OK but malformed client metadata
         clientId = TestApplicationResourceUrls.getClientIdMetadataUri(generateSuffixedName("CIMD"));
         clientMetadata = setupOIDCClientRepresentation(clientId, i-> {});
         oidcClientEndpointsResource.registerClientIdMetadata(clientMetadata, null, "MalformedResponse");
-        assertLoginAndError(clientId, AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_FETCH_FAILED);
+        assertLoginAndError(clientId, ERR_METADATA_FETCH_FAILED);
     }
 
     private void testClientIdMetadataDocumentExecutorCacheControl(String cacheControlHeaderValue, int expectedExpiry, TestOIDCEndpointsApplicationResource oidcClientEndpointsResource, PrivateKey privateKey, PublicKey publicKey) throws Exception {
@@ -562,7 +569,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
             i.setScope("profile");
         });
         oidcClientEndpointsResource.registerClientIdMetadata(clientMetadata, cacheControlHeaderValue, null);
-        Thread.sleep(1000 * 3);
+        Thread.sleep(1000); // wait to complete the update
 
         Map<String, String> m;
         List<String> optionalScopeList;
@@ -588,8 +595,8 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();
 
-            // wait
-            Thread.sleep(1000 * expectedExpiry);
+            // force both the client and the server time to go forward to shorten the completion time of the test
+            setTimeOffset(expectedExpiry + 3);
         }
 
         // do authorization code flow again, and registered client metadata is not effective
@@ -616,6 +623,9 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         String cid = clientRepresentation.getId();
         deleteClientByAdmin(cid);
         assertThrows(jakarta.ws.rs.NotFoundException.class, ()->getClientByAdmin(cid));
+
+        // reset time offset
+        resetTimeOffset();
     }
 
     @Test
@@ -650,6 +660,9 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         PrivateKey privateKey = keyPair.getPrivate();
         PublicKey publicKey = keyPair.getPublic();
 
+        // CIMD Executor's min cache time default value: 300 sec
+        // CIMD Executor's max cache time default value: 259200 sec
+
         // no Cache-Control header : not cached
         testClientIdMetadataDocumentExecutorCacheControl(null, -1, oidcClientEndpointsResource, privateKey, publicKey);
 
@@ -657,23 +670,68 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         testClientIdMetadataDocumentExecutorCacheControl("", -1, oidcClientEndpointsResource, privateKey, publicKey);
 
         // max-age : max-age considered
-        testClientIdMetadataDocumentExecutorCacheControl("max-age=20,    private", 20, oidcClientEndpointsResource, privateKey, publicKey);
+        testClientIdMetadataDocumentExecutorCacheControl("max-age=320,    private", 320, oidcClientEndpointsResource, privateKey, publicKey);
 
         // s-maxage : s-maxage considered
-        testClientIdMetadataDocumentExecutorCacheControl("private,S-MAXAGE=15,  no-transform", 15, oidcClientEndpointsResource, privateKey, publicKey);
+        testClientIdMetadataDocumentExecutorCacheControl("private,S-MAXAGE=315,  no-transform", 315, oidcClientEndpointsResource, privateKey, publicKey);
 
         // max-age and s-maxage : s-maxage considered
-        testClientIdMetadataDocumentExecutorCacheControl(" Max-Age=3600,public,S-MaxAge=12", 12, oidcClientEndpointsResource, privateKey, publicKey);
+        testClientIdMetadataDocumentExecutorCacheControl(" Max-Age=3600,public,S-MaxAge=312", 312, oidcClientEndpointsResource, privateKey, publicKey);
 
         // max-age and no-cache : not cached
-        testClientIdMetadataDocumentExecutorCacheControl("max-age=20, NO-CACHE  ", -1, oidcClientEndpointsResource, privateKey, publicKey);
+        testClientIdMetadataDocumentExecutorCacheControl("max-age=320, NO-CACHE  ", -1, oidcClientEndpointsResource, privateKey, publicKey);
 
         // s-maxage and no-store : not cached
-        testClientIdMetadataDocumentExecutorCacheControl("S-MAXAGE=20,no-store", -1, oidcClientEndpointsResource, privateKey, publicKey);
+        testClientIdMetadataDocumentExecutorCacheControl("S-MAXAGE=320,no-store", -1, oidcClientEndpointsResource, privateKey, publicKey);
 
         // unknown values only : not cached
         // min-age=20, CACHE
         testClientIdMetadataDocumentExecutorCacheControl("min-age=20,CACHE ", -1, oidcClientEndpointsResource, privateKey, publicKey);
+
+        // under the min cache time : 5 -> 300
+        testClientIdMetadataDocumentExecutorCacheControl("max-age=5", 300, oidcClientEndpointsResource, privateKey, publicKey);
+
+        // over the max cache time : 365000 -> 259200
+        testClientIdMetadataDocumentExecutorCacheControl("s-maxage=365000", 259200, oidcClientEndpointsResource, privateKey, publicKey);
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorClientMetadataUpperLimit() throws Exception {
+        // register profiles
+        String  json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID,
+                                createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->{
+                                    it.setAllowLoopbackAddress(true);
+                                    it.setTrustedDomains(List.of("*.example.com","localhost"));}))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(ClientIdUriSchemeConditionFactory.PROVIDER_ID,
+                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->
+                                        it.setClientIdUriSchemes(List.of("http", "https"))))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // set Client Metadata
+        // CIMD Executor's client metadata upper limit byte length default value: 5000
+        String clientId = TestApplicationResourceUrls.getClientIdMetadataUri(generateSuffixedName("CIMD"));
+        OIDCClientRepresentation clientMetadata = setupOIDCClientRepresentation(clientId, i-> {
+            i.setClientName("0123456789".repeat(465) + "0123456");
+        });
+        byte[] contentBytes = JsonSerialization.writeValueAsBytes(clientMetadata);
+        assertEquals(5001, contentBytes.length);
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        oidcClientEndpointsResource.registerClientIdMetadata(clientMetadata, null, null);
+
+        // send an authorization request - fail
+        assertLoginAndError(clientId, ERR_METADATA_FETCH_FAILED);
     }
 
     @Test

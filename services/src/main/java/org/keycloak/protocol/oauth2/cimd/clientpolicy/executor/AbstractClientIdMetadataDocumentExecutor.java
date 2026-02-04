@@ -105,15 +105,14 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
     protected CONFIG configuration;
     protected ClientIdMetadataDocumentProvider<CONFIG> provider;
 
-    // Factory Global Setting:
-    // Client ID Metadata Document Provider Name
-    protected String cimdProviderName; // non-null
+    // Factory Global Setting
+    protected ClientIdMetadataDocumentExecutorFactoryProviderConfig providerConfig;
 
     protected abstract Logger getLogger();
 
-    protected AbstractClientIdMetadataDocumentExecutor(KeycloakSession session, String cimdProviderName) {
+    protected AbstractClientIdMetadataDocumentExecutor(KeycloakSession session, ClientIdMetadataDocumentExecutorFactoryProviderConfig providerConfig) {
         this.session = session;
-        this.cimdProviderName = cimdProviderName;
+        this.providerConfig = providerConfig;
     }
 
     protected ClientIdMetadataDocumentProvider<CONFIG> getProvider() {
@@ -201,9 +200,10 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         private final OIDCClientRepresentation oidcClientRepresentation;
         private final ClientMetadataCacheControl clientMetadataCacheControl;
 
-        public OIDCClientRepresentationWithCacheControl(OIDCClientRepresentation oidcClientRepresentation, String rawCacheControlHeaderValue) {
+        public OIDCClientRepresentationWithCacheControl(OIDCClientRepresentation oidcClientRepresentation,
+                                                        String rawCacheControlHeaderValue, int minCacheTime, int maxCacheTime) {
             this.oidcClientRepresentation = oidcClientRepresentation;
-            this.clientMetadataCacheControl = new ClientMetadataCacheControl(rawCacheControlHeaderValue);
+            this.clientMetadataCacheControl = new ClientMetadataCacheControl(rawCacheControlHeaderValue, minCacheTime, maxCacheTime);
         }
 
         public OIDCClientRepresentation getOidcClientRepresentation() {
@@ -233,8 +233,12 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         private int maxAgeValue = -1;
         private int sMaxAgeValue = -1;
         private final String normalizedCacheControlHeaderValue;
+        private final int minCacheTime;
+        private final int maxCacheTime;
 
-        public ClientMetadataCacheControl(String rawCacheControlHeaderValue) {
+        public ClientMetadataCacheControl(String rawCacheControlHeaderValue, int minCacheTime, int maxCacheTime) {
+            this.minCacheTime = minCacheTime;
+            this.maxCacheTime = maxCacheTime;
             if (rawCacheControlHeaderValue == null) {
                 normalizedCacheControlHeaderValue = null;
             } else {
@@ -300,7 +304,13 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             String[] sAry = sList.stream().filter(i->i.startsWith(key + "=")).findFirst().get().split("=");
             try {
                 if (sAry.length == 2) {
-                    return Integer.parseInt(sAry[1]);
+                    int returnValue = Integer.parseInt(sAry[1]);
+                    if (returnValue < minCacheTime) {
+                        returnValue = minCacheTime;
+                    } else if (returnValue > maxCacheTime) {
+                        returnValue = maxCacheTime;
+                    }
+                    return returnValue;
                 }
             } catch (NumberFormatException e) {
                 // no-op
@@ -338,7 +348,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
     }
 
     private void process(PreAuthorizationRequestContext preAuthorizationRequestContext) throws ClientPolicyException {
-        provider = session.getProvider(ClientIdMetadataDocumentProvider.class, cimdProviderName);
+        provider = session.getProvider(ClientIdMetadataDocumentProvider.class, providerConfig.getCimdProviderName());
         provider.setConfiguration(getConfiguration());
 
         String clientId = preAuthorizationRequestContext.getClientId();
@@ -568,7 +578,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                                                                            ClientIdMetadataDocumentProvider provider) throws ClientPolicyException {
         String clientId = clientIdURI.toString();
 
-        SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doGet(clientId);
+        SimpleHttpRequest simpleHttp = SimpleHttp.create(session).withMaxConsumedResponseSize(providerConfig.getUpperLimitMetadataBytes()).doGet(clientId);
 
         OIDCClientRepresentation clientOIDC;
         try (SimpleHttpResponse response = simpleHttp.asResponse()) {
@@ -584,7 +594,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             Header[] headers = response.getAllHeaders();
             String headerKey = Arrays.stream(headers).map(NameValuePair::getName).filter(HttpHeaders.CACHE_CONTROL::equalsIgnoreCase).findFirst().orElse(null); // both header and value are case-insensitive
             String cacheControlHeaderValue = headerKey != null ? Arrays.stream(headers).filter(i->headerKey.equals(i.getName())).findFirst().get().getValue() : null;
-            ClientMetadataCacheControl clientMetadataCacheControl = new ClientMetadataCacheControl(cacheControlHeaderValue);
+            ClientMetadataCacheControl clientMetadataCacheControl = new ClientMetadataCacheControl(cacheControlHeaderValue, providerConfig.getMinCacheTime(), providerConfig.getMaxCacheTime());
 
             if (isUpdate) {
                 // it is better to compare the fetched client metadata with the existing client metadata.
@@ -603,7 +613,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             // to successfully convert it to Client Representation, intentionally augment it.
             augmentClientOIDC(clientOIDC);
 
-            return new OIDCClientRepresentationWithCacheControl(clientOIDC, cacheControlHeaderValue);
+            return new OIDCClientRepresentationWithCacheControl(clientOIDC, cacheControlHeaderValue, providerConfig.getMinCacheTime(), providerConfig.getMaxCacheTime());
         } catch (IOException e) {
             getLogger().warnv("HTTP connection failure: {0}", e);
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, ERR_METADATA_FETCH_FAILED);
