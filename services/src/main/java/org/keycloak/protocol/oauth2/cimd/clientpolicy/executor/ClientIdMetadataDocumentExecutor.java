@@ -35,8 +35,8 @@ public class ClientIdMetadataDocumentExecutor extends AbstractClientIdMetadataDo
         return logger;
     }
 
-    public ClientIdMetadataDocumentExecutor(KeycloakSession session, String cimdProviderName) {
-        super(session, cimdProviderName);
+    public ClientIdMetadataDocumentExecutor(KeycloakSession session, ClientIdMetadataDocumentExecutorFactoryProviderConfig providerConfig) {
+        super(session, providerConfig);
     }
 
     @Override

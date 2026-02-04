@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.protocol.oauth2.cimd.provider.PersistentClientIdMetadataDocumentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderFactory;
 
@@ -46,16 +45,17 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory implements
     public static final String REQUIRED_PROPERTIES = "cimd-required-properties";
     public static final String RESTRICT_SAME_DOMAIN = "cimd-restrict-same-domain";
 
-    // Factory Global Setting: CIMD Provider Name
-    // Name in properties: spi-client-policy-executor-client-id-metadata-document-cimd-provider-name
-    protected String cimdProviderName;
+    // Factory Global Settings
+    public static final String CONFIG_CIMD_PROVIDER_NAME = "cimd-provider-name";
+    public static final String CONFIG_MIN_CACHE_TIME = "min-cache-time";
+    public static final String CONFIG_MAX_CACHE_TIME = "max-cache-time";
+    public static final String CONFIG_UPPER_LIMIT_METADATA_BYTES = "upper-limit-metadata-bytes";
+
+    protected ClientIdMetadataDocumentExecutorFactoryProviderConfig providerConfig;
 
     @Override
     public void init(Config.Scope config) {
-        cimdProviderName = config.get("cimdProviderName");
-        if (cimdProviderName == null || cimdProviderName.isBlank()) {
-            cimdProviderName = PersistentClientIdMetadataDocumentProviderFactory.PROVIDER_ID; // default
-        }
+        providerConfig = new ClientIdMetadataDocumentExecutorFactoryProviderConfig(config);
     }
 
     @Override
