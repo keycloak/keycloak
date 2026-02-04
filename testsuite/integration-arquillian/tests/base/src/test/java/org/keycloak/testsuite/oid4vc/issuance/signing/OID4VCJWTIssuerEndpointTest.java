@@ -493,7 +493,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 5. Get an access token for the pre-authorized code
         AccessTokenResponse accessTokenResponse = oauth.oid4vc()
-                .preAuthorizedCodeGrantRequest(credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .preAuthAccessTokenRequest(credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
                 .endpoint(openidConfig.getTokenEndpoint())
                 .send();
 
@@ -1373,7 +1373,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         assertNotNull("Token endpoint should be present", openidConfig.getTokenEndpoint());
 
         AccessTokenResponse accessTokenResponse = oauth.oid4vc()
-                .preAuthorizedCodeGrantRequest(preAuthorizedCode)
+                .preAuthAccessTokenRequest(preAuthorizedCode)
                 .send();
         assertEquals("Token request should succeed even after nonce is removed for replay protection",
                 HttpStatus.SC_OK,
