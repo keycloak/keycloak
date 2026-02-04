@@ -62,6 +62,7 @@ import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
 import io.quarkus.dev.console.QuarkusConsole;
 import io.quarkus.runtime.LaunchMode;
 import io.smallrye.config.ConfigValue;
+import io.smallrye.config.EnvConfigSource;
 import io.smallrye.mutiny.tuples.Functions.TriConsumer;
 import picocli.CommandLine;
 import picocli.CommandLine.DuplicateOptionAnnotationsException;
@@ -537,6 +538,7 @@ public class Picocli {
 
     public static Properties getNonPersistedBuildTimeOptions() {
         Properties properties = new Properties();
+        var buildTimeOptions = QuarkusProperties.readBuildTimeConfiguration();
         // TODO: could get only non-persistent property names
         Configuration.getPropertyNames().forEach(name -> {
             boolean quarkus = false;
@@ -550,25 +552,22 @@ public class Picocli {
                     return;
                 }
             } else if (name.startsWith(MicroProfileConfigProvider.NS_QUARKUS)) {
-                // TODO: this is not correct - we are including runtime properties here, but at least they
-                // are already coming from a file
+                if (!buildTimeOptions.matches(name)) {
+                    return;
+                }
                 quarkus = true;
             } else if (!PropertyMappers.isSpiBuildTimeProperty(name)) {
                 return;
             }
             ConfigValue value = Configuration.getNonPersistedConfigValue(name);
             if (value.getValue() == null || value.getConfigSourceName() == null
-                    || (quarkus && !value.getConfigSourceName().contains(QuarkusPropertiesConfigSource.NAME))) {
+                    || (quarkus && !value.getConfigSourceName().contains(QuarkusPropertiesConfigSource.NAME)
+                            && !value.getConfigSourceName().contains(EnvConfigSource.NAME))) {
                 // only persist build options resolved from config sources and not default values
                 // instead we'll persist the profile (if set) because that may influence the defaults
                 return;
             }
-            // since we're persisting all quarkus values, this may leak some runtime information - we don't want
-            // to capture expanded expressions that may be referencing environment variables
             String stringValue = value.getValue();
-            if (quarkus && value.getRawValue() != null) {
-                stringValue = value.getRawValue();
-            }
             properties.put(name, stringValue);
         });
 
