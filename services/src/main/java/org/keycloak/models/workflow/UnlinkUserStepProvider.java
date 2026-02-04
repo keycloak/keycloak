@@ -1,14 +1,14 @@
 package org.keycloak.models.workflow;
 
+import java.util.List;
+import java.util.stream.Stream;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 import org.jboss.logging.Logger;
-
-import java.util.List;
-import java.util.stream.Stream;
 
 public class UnlinkUserStepProvider implements WorkflowStepProvider {
 
