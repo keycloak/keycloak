@@ -256,7 +256,6 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         // Retrieving the credential-offer-uri
         //
         CredentialOfferURI credOfferUri = getCredentialOfferUri(ctx, issToken);
-        String offerUri = credOfferUri.getCredentialOfferUrl();
 
         // Issuer logout in order to remove unwanted session state
         //
@@ -266,7 +265,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
             // Using the uri to get the actual credential offer
             //
-            CredentialsOffer credOffer = getCredentialsOffer(ctx, offerUri);
+            CredentialsOffer credOffer = getCredentialsOffer(ctx, credOfferUri);
 
             if (credOffer.getCredentialConfigurationIds().size() > 1)
                 throw new IllegalStateException("Multiple credential configuration ids not supported in: " + JsonSerialization.valueAsString(credOffer));
@@ -397,17 +396,10 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         return credentialOfferURI;
     }
 
-    private CredentialsOffer getCredentialsOffer(OfferTestContext ctx, String offerUri) throws Exception {
+    private CredentialsOffer getCredentialsOffer(OfferTestContext ctx, CredentialOfferURI credOfferUri) throws Exception {
         CredentialOfferResponse credentialOfferResponse = oauth.oid4vc()
-                .credentialOfferRequest()
-                .endpoint(offerUri)
+                .credentialOfferRequest(credOfferUri)
                 .send();
-        int statusCode = credentialOfferResponse.getStatusCode();
-        if (HttpStatus.SC_OK != statusCode) {
-            throw new IllegalStateException(credentialOfferResponse.getErrorDescription() != null
-                    ? credentialOfferResponse.getErrorDescription()
-                    : "Request failed with status " + statusCode);
-        }
         CredentialsOffer credOffer = credentialOfferResponse.getCredentialsOffer();
         assertEquals(List.of(ctx.credentialConfiguration.getId()), credOffer.getCredentialConfigurationIds());
         return credOffer;
