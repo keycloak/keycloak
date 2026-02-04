@@ -2,6 +2,8 @@ package org.keycloak.testsuite.util.oauth.oid4vc;
 
 import java.io.IOException;
 
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.testsuite.util.oauth.AbstractHttpGetRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 
@@ -9,18 +11,14 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class CredentialOfferUriRequest extends AbstractHttpGetRequest<CredentialOfferUriRequest, CredentialOfferUriResponse> {
 
-    private String credentialConfigurationId;
+    private final String credConfigId;
     private Boolean preAuthorized;
     private String username;
-    private String clientIdParam;
+    private String clientId;
 
-    public CredentialOfferUriRequest(AbstractOAuthClient<?> client) {
+    public CredentialOfferUriRequest(AbstractOAuthClient<?> client, String credConfigId) {
         super(client);
-    }
-
-    public CredentialOfferUriRequest credentialConfigurationId(String credentialConfigurationId) {
-        this.credentialConfigurationId = credentialConfigurationId;
-        return this;
+        this.credConfigId = credConfigId;
     }
 
     public CredentialOfferUriRequest preAuthorized(Boolean preAuthorized) {
@@ -34,13 +32,18 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
     }
 
     public CredentialOfferUriRequest clientId(String clientId) {
-        this.clientIdParam = clientId;
+        this.clientId = clientId;
         return this;
     }
 
     @Override
     protected String getEndpoint() {
-        return client.getEndpoints().getOid4vcCredentialOfferUri(credentialConfigurationId, preAuthorized, username, clientIdParam);
+        UriBuilder builder = UriBuilder.fromUri(client.getEndpoints().getOid4vcCredentialOfferUri());
+        if (credConfigId != null && !credConfigId.isBlank()) builder.queryParam("credential_configuration_id", credConfigId);
+        if (preAuthorized != null) builder.queryParam("pre_authorized", preAuthorized);
+        if (clientId != null && !clientId.isBlank()) builder.queryParam("client_id", clientId);
+        if (username != null && !username.isBlank()) builder.queryParam("username", username);
+        return builder.build().toString();
     }
 
     @Override

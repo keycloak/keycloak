@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.util.oauth.oid4vc;
 
-import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -20,28 +19,8 @@ public class OID4VCClient {
         return issuerMetadataRequest().send();
     }
 
-    public CredentialOfferUriRequest credentialOfferUriRequest() {
-        return new CredentialOfferUriRequest(client);
-    }
-
-    public Oid4vcCredentialRequest credentialRequest() {
-        return new Oid4vcCredentialRequest(client);
-    }
-
-    public Oid4vcCredentialResponse doCredentialRequest(String accessToken, String credentialConfigurationId, Proofs proofs) {
-        return credentialRequest()
-                .bearerToken(accessToken)
-                .credentialConfigurationId(credentialConfigurationId)
-                .proofs(proofs)
-                .send();
-    }
-
-    public PreAuthorizedCodeGrantRequest preAuthorizedCodeGrantRequest(String preAuthorizedCode) {
-        return new PreAuthorizedCodeGrantRequest(preAuthorizedCode, client);
-    }
-
-    public AccessTokenResponse doPreAuthorizedCodeGrant(String preAuthorizedCode) {
-        return preAuthorizedCodeGrantRequest(preAuthorizedCode).send();
+    public CredentialOfferUriRequest credentialOfferUriRequest(String credConfigId) {
+        return new CredentialOfferUriRequest(client, credConfigId);
     }
 
     public CredentialOfferRequest credentialOfferRequest() {
@@ -54,6 +33,18 @@ public class OID4VCClient {
 
     public CredentialOfferResponse doCredentialOfferRequest(String nonce) {
         return credentialOfferRequest(nonce).send();
+    }
+
+    public Oid4vcCredentialRequest credentialRequest() {
+        return new Oid4vcCredentialRequest(client);
+    }
+
+    public PreAuthorizedCodeGrantRequest preAuthorizedCodeGrantRequest(String preAuthorizedCode) {
+        return new PreAuthorizedCodeGrantRequest(preAuthorizedCode, client);
+    }
+
+    public AccessTokenResponse doPreAuthorizedCodeGrant(String preAuthorizedCode) {
+        return preAuthorizedCodeGrantRequest(preAuthorizedCode).send();
     }
 
     public Oid4vcNonceRequest nonceRequest() {
