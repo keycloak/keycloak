@@ -494,13 +494,16 @@ public class RealmCacheSession implements CacheRealmProvider {
                 return null;
             }
 
+            // to accommodate imports of new realms, check to see if the master admin role is up-to-date
             if (!model.getName().equals(Config.getAdminRealm())) {
                 RealmModel adminRealm = session.realms().getRealmByName(Config.getAdminRealm());
-                ClientModel clientModel = session.clients().getClientByClientId(adminRealm, model.getName() + "-realm");
-                if (clientModel != null) {
-                    RoleModel adminRole = adminRealm.getRole(AdminRoles.ADMIN);
-                    if (adminRole.getCompositesStream().noneMatch(r -> (r.isClientRole() && r.getContainerId().equals(clientModel.getId())))) {
-                        invalidateRole(adminRole.getId());
+                if (adminRealm != null) {
+                    ClientModel clientModel = session.clients().getClientByClientId(adminRealm, model.getName() + "-realm");
+                    if (clientModel != null) {
+                        RoleModel adminRole = adminRealm.getRole(AdminRoles.ADMIN);
+                        if (adminRole.getCompositesStream().noneMatch(r -> (r.isClientRole() && r.getContainerId().equals(clientModel.getId())))) {
+                            registerRoleInvalidation(adminRole.getId(), adminRole.getName(), adminRole.getContainerId());
+                        }
                     }
                 }
             }
