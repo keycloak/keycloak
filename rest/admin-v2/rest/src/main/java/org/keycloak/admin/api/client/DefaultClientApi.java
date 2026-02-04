@@ -3,6 +3,8 @@ package org.keycloak.admin.api.client;
 import java.io.IOException;
 import java.util.Objects;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
@@ -14,6 +16,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.api.AdminApi;
+import org.keycloak.admin.api.ApiContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
@@ -23,40 +26,39 @@ import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.DefaultClientService;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.RealmAdminResource;
-import org.keycloak.services.util.ObjectMapperResolver;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 
 public class DefaultClientApi implements ClientApi {
-
+    private final ApiContext context;
     private final KeycloakSession session;
     private final RealmModel realm;
     private final ClientService clientService;
-
-    private final ClientResource clientResource;
     private final String clientId;
-    private final ObjectMapper objectMapper;
 
-    private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
+    // v1 resources
+    @Nullable
+    private final ClientResource clientResource;
 
-    public DefaultClientApi(KeycloakSession session, RealmAdminResource realmAdminResource, ClientResource clientResource, String clientId) {
-        this.session = session;
-        this.clientResource = clientResource;
+    public DefaultClientApi(@Nonnull ApiContext context,
+                            @Nonnull String clientId,
+                            @Nonnull RealmAdminResource realmAdminResource,
+                            @Nullable ClientResource clientResource) {
+        this.context = context;
         this.clientId = clientId;
+        this.clientResource = clientResource;
 
+        this.session = context.session();
         this.realm = Objects.requireNonNull(session.getContext().getRealm());
-        this.clientService = new DefaultClientService(session, realmAdminResource, clientResource);
-
-        this.objectMapper = MAPPER;
+        this.clientService = new DefaultClientService(context, realmAdminResource, clientResource);
     }
 
     @GET
     @Override
     public BaseClientRepresentation getClient() {
-        return clientService.getClient(realm, clientId, null)
+        return clientService.getClient(realm, clientId)
                 .orElseThrow(() -> new NotFoundException("Cannot find the specified client"));
     }
 
@@ -87,7 +89,7 @@ public class DefaultClientApi implements ClientApi {
                 throw new WebApplicationException("Unsupported media type", Response.Status.UNSUPPORTED_MEDIA_TYPE);
             }
 
-            final ObjectReader objectReader = objectMapper.readerForUpdating(client);
+            final ObjectReader objectReader = context.mapper().readerForUpdating(client);
             BaseClientRepresentation updated = objectReader.readValue(patch);
 
             validateUnknownFields(updated);

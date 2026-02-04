@@ -1,44 +1,41 @@
 package org.keycloak.admin.api;
 
-import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 
-import org.keycloak.Config;
 import org.keycloak.admin.api.client.ClientsApi;
 import org.keycloak.admin.api.client.DefaultClientsApi;
-import org.keycloak.models.AdminRoles;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.RealmsAdminResource;
+import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 
 public class DefaultAdminApi implements AdminApi {
-    private final KeycloakSession session;
-    private final RealmsAdminResource realmsAdminResource;
-    private final RealmAdminResource realmAdminResource;
-    private final AdminAuth auth;
+    private final ApiContext context;
+
+    // v1 resources
+    private final RealmAdminResource realmResource;
 
     public DefaultAdminApi(KeycloakSession session, String realmName) {
-        this.session = session;
-        this.auth = AdminRoot.authenticateRealmAdminRequest(session);
+        var authInfo = AdminRoot.authenticateRealmAdminRequest(session);
+        var permissions = AdminPermissions.evaluator(session, new RealmManager(session).getRealmByName(realmName), authInfo);
+        var tokenManager = new TokenManager();
+        var authContext = new ApiContext.AuthContext(authInfo, permissions, tokenManager);
+        this.context = new ApiContext(session, new HibernateValidatorProvider(), authContext);
 
-        // TODO: refine permissions
-        if (!auth.getRealm().getName().equals(Config.getAdminRealm()) || !auth.hasRealmRole(AdminRoles.ADMIN)) {
-            throw new NotAuthorizedException("Wrong permissions");
-        }
-        this.realmsAdminResource = new RealmsAdminResource(session, auth, new TokenManager());
-        this.realmAdminResource = realmsAdminResource.getRealmAdmin(realmName);
+        this.realmResource = new RealmsAdminResource(session, authInfo, tokenManager).getRealmAdmin(realmName);
     }
 
     @Path("clients/{version:v\\d+}")
     @Override
     public ClientsApi clients(@PathParam("version") String version) {
         return switch (version) {
-            case "v2" -> new DefaultClientsApi(session, realmAdminResource);
+            case "v2" -> new DefaultClientsApi(context, realmResource);
             default -> throw new NotFoundException();
         };
     }
