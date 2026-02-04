@@ -463,7 +463,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 2. Using the uri to get the actual credential offer
         CredentialsOffer credentialsOffer = oauth.oid4vc()
-                .credentialOfferRequest(credentialOfferURI.getNonce())
+                .credentialOfferRequest(credentialOfferURI)
                 .bearerToken(token)
                 .send()
                 .getCredentialsOffer();

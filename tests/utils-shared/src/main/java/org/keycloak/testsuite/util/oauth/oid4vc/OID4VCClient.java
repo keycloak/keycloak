@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.util.oauth.oid4vc;
 
+import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -23,16 +24,12 @@ public class OID4VCClient {
         return new CredentialOfferUriRequest(client, credConfigId);
     }
 
-    public CredentialOfferRequest credentialOfferRequest() {
-        return new CredentialOfferRequest(client);
+    public CredentialOfferRequest credentialOfferRequest(CredentialOfferURI credOfferUri) {
+        return new CredentialOfferRequest(client, credOfferUri);
     }
 
     public CredentialOfferRequest credentialOfferRequest(String nonce) {
-        return new CredentialOfferRequest(nonce, client);
-    }
-
-    public CredentialOfferResponse doCredentialOfferRequest(String nonce) {
-        return credentialOfferRequest(nonce).send();
+        return new CredentialOfferRequest(client, nonce);
     }
 
     public Oid4vcCredentialRequest credentialRequest() {
@@ -49,9 +46,5 @@ public class OID4VCClient {
 
     public Oid4vcNonceRequest nonceRequest() {
         return new Oid4vcNonceRequest(client);
-    }
-
-    public String doNonceRequest() {
-        return nonceRequest().send().getNonce();
     }
 }

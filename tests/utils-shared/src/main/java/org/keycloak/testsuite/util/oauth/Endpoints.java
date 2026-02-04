@@ -90,8 +90,8 @@ public class Endpoints {
         return asString(getBase().path(RealmsResource.class).path("{realm}/protocol/oid4vc/nonce"));
     }
 
-    public String getOid4vcCredentialOffer(String nonce) {
-        return asString(getBase().path(RealmsResource.class).path("{realm}/protocol/oid4vc/credential-offer/").path(nonce));
+    public String getOid4vcCredentialOffer() {
+        return asString(getBase().path(RealmsResource.class).path("{realm}/protocol/oid4vc/credential-offer"));
     }
 
     public String getOid4vcCredentialOfferUri() {

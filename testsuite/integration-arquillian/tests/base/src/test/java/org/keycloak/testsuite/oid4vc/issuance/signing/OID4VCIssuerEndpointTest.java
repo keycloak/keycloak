@@ -107,7 +107,6 @@ import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
-import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
@@ -615,25 +614,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     protected String getCredentialOfferUrl(String nonce) {
         return getBasePath("test") + "credential-offer/" + nonce;
-    }
-
-    protected void requestCredential(String token,
-                                     String credentialEndpoint,
-                                     SupportedCredentialConfiguration offeredCredential,
-                                     CredentialResponseHandler responseHandler,
-                                     ClientScopeRepresentation expectedClientScope) throws IOException, VerificationException {
-        Oid4vcCredentialResponse credentialRequestResponse = oauth.oid4vc()
-                .credentialRequest()
-                .endpoint(credentialEndpoint)
-                .bearerToken(token)
-                .credentialConfigurationId(offeredCredential.getId())
-                .send();
-
-        assertEquals(HttpStatus.SC_OK, credentialRequestResponse.getStatusCode());
-        CredentialResponse credentialResponse = credentialRequestResponse.getCredentialResponse();
-
-        // Use response handler to customize checks based on formats.
-        responseHandler.handleCredentialResponse(credentialResponse, expectedClientScope);
     }
 
     protected void requestCredentialWithIdentifier(String token,

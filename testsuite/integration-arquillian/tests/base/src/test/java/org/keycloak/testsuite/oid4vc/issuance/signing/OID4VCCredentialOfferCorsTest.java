@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -82,7 +81,6 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
 
     @Rule
     public TokenUtil tokenUtil = new TokenUtil();
-
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -175,14 +173,14 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
     public void testCredentialOfferSessionCorsValidOrigin() throws Exception {
         // First get a credential offer URI to obtain a nonce
         AccessTokenResponse tokenResponse = getAccessToken();
-        String nonce = getNonceFromOfferUri(tokenResponse.getAccessToken());
+        CredentialOfferURI credOfferUri = getCredentialOfferUri(tokenResponse.getAccessToken());
 
         // Clear events before credential offer request
         events.clear();
 
         // Test credential offer endpoint with valid origin
         CredentialOfferResponse response = oauth.oid4vc()
-                .credentialOfferRequest(nonce)
+                .credentialOfferRequest(credOfferUri)
                 .header("Origin", VALID_CORS_URL)
                 .send();
 
@@ -210,14 +208,11 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
     public void testCredentialOfferSessionCorsInvalidOrigin() throws Exception {
         // First get a credential offer URI to obtain a nonce
         AccessTokenResponse tokenResponse = getAccessToken();
-        String nonce = getNonceFromOfferUri(tokenResponse.getAccessToken());
+        CredentialOfferURI credOfferUri = getCredentialOfferUri(tokenResponse.getAccessToken());
 
         // Test credential offer endpoint with invalid origin
-        String offerUrl = getCredentialOfferUrl(nonce);
-
         CredentialOfferResponse response = oauth.oid4vc()
-                .credentialOfferRequest()
-                .endpoint(offerUrl)
+                .credentialOfferRequest(credOfferUri)
                 .header("Origin", INVALID_CORS_URL)
                 .send();
 
@@ -230,10 +225,10 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
     public void testCredentialOfferSessionCorsPreflightRequest() throws Exception {
         // First get a credential offer URI to obtain a nonce
         AccessTokenResponse tokenResponse = getAccessToken();
-        String nonce = getNonceFromOfferUri(tokenResponse.getAccessToken());
+        CredentialOfferURI credOfferUri = getCredentialOfferUri(tokenResponse.getAccessToken());
 
         // Test preflight request for credential offer endpoint
-        String offerUrl = getCredentialOfferUrl(nonce);
+        String offerUrl = credOfferUri.getCredentialOfferUri();
 
         try (CloseableHttpResponse response = makePreflightRequest(offerUrl, VALID_CORS_URL)) {
             assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
@@ -330,9 +325,8 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
 
         // Create an expired credential offer using testing client
         // Use AtomicReference to avoid serialization issues with lambda captures
-        AtomicReference<String> nonceHolder = new AtomicReference<>();
-        final String issuerPath = getRealmPath(TEST_REALM_NAME);
-        testingClient.server(TEST_REALM_NAME).run(session -> {
+        String issuerPath = getRealmPath(TEST_REALM_NAME);
+        String nonce = testingClient.server(TEST_REALM_NAME).fetchString(session -> {
             CredentialsOffer credOffer = new CredentialsOffer()
                     .setCredentialIssuer(issuerPath)
                     .setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(new PreAuthorizedCode().setPreAuthorizedCode("test-code")))
@@ -344,18 +338,15 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
             CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, Time.currentTime() - 1);
             offerStorage.putOfferState(session, offerState);
             session.getTransactionManager().commit();
-            nonceHolder.set(offerState.getNonce());
+            return offerState.getNonce();
         });
-
-        String nonce = nonceHolder.get();
+        assertNotNull("CredentialOffer nonce not null", nonce);
 
         events.clear();
 
         // Try to fetch the expired credential offer
-        String offerUrl = getCredentialOfferUrl(nonce);
         CredentialOfferResponse response = oauth.oid4vc()
-                .credentialOfferRequest()
-                .endpoint(offerUrl)
+                .credentialOfferRequest(nonce)
                 .header("Origin", VALID_CORS_URL)
                 .send();
 
@@ -401,7 +392,8 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         return res;
     }
 
-    private String getNonceFromOfferUri(String accessToken) throws Exception {
+    private CredentialOfferURI getCredentialOfferUri(String accessToken) throws Exception {
+
         CredentialOfferUriResponse response = oauth.oid4vc()
                 .credentialOfferUriRequest(jwtTypeCredentialConfigurationIdName)
                 .preAuthorized(true)
@@ -411,8 +403,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
                 .send();
 
         assertEquals(HttpStatus.SC_OK, response.getStatusCode());
-        CredentialOfferURI offerUri = response.getCredentialOfferURI();
-        return offerUri.getNonce();
+        return response.getCredentialOfferURI();
     }
 
     private CloseableHttpResponse makeCorsRequest(String url, String origin, String accessToken) throws IOException {
