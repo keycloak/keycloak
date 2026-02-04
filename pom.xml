@@ -40,6 +40,7 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <maven.compiler.release>17</maven.compiler.release>
+        <maven.plugin-tools.version>3.15.1</maven.plugin-tools.version>
 
         <project.version.npm>999.0.0-SNAPSHOT</project.version.npm>
 
@@ -304,6 +305,7 @@
         <module>federation</module>
         <module>services</module>
         <module>themes</module>
+        <module>misc/db-compatibility-verifier</module>
         <module>misc/theme-verifier</module>
         <module>model</module>
         <module>util</module>

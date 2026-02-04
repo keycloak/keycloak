@@ -20,6 +20,10 @@ public interface JWTAuthorizationGrantValidationContext {
 
     void setRestrictedScopes(Set<String> restrictedScopes);
 
+    void setAudienceAlreadyValidated();
+
+    boolean isAudienceAlreadyValidated();
+
     default String getIssuer() {
         return getJWT().getIssuer();
     }

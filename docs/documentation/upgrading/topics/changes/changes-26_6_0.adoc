@@ -22,7 +22,8 @@ It also lists significant changes to internal APIs.
 
 === Dev Mode defaults to localhost
 
-When running the server in dev mode on a platform other than Windows Subsystem For Linux, the `http-host` setting will default to localhost. This ensures your dev instance won't be accessible from 
+When running the server in dev mode on a platform other than Windows Subsystem For Linux, the `http-host` setting will default to localhost.
+This ensures your dev instance won't be accessible from
 other machines. If you want the previous behavior of binding to all interfaces, then explicitly set `http-host` to `0.0.0.0`.
 
 === `X-Forwarded-Prefix` Header is now supported
@@ -114,6 +115,11 @@ The following sections provide details on deprecated features.
 
 The `tracing.serviceName`, and `tracing.resourceAttributes` fields of the Keycloak CR, are now deprecated.
 You should use the new `telemetry.serviceName`, and `telemetry.resourceAttributes` fields that are shared among all OpenTelemetry components - logs, metrics, and traces.
+
+=== Deprecation of tracing span attributes for HTTP requests
+
+The OpenTelemetry tracing span attributes `code.function` and `code.namespace` are deprecated for the HTTP request spans when tracing is enabled.
+These attributes will be removed in the next major release, and only the fully qualified `code.function.name` span attribute will stay.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

@@ -153,6 +153,7 @@ One of several purposes for this executor is to realize the security requirement
 * Enforce SAML Redirect binding cannot be used or SAML requests and assertions are signed
 * Enforce scopes granted in link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange] or in JWT Authorization Grant are restricted to the ones present in the initial `subject_token` or `assertion` JWT. This executor only allows downscoping of the presented assertion. An error is returned if any extra scope, not originally granted to the JWT, is requested.
 * Enforce claims for assertion grants (`subject_token` in Token Exchange and `assertion` in JWT Authorization Grant). The executor enforces the presence and specific values of a claim in a JWT. It uses a Java regex so it is quite versatile.
+* Allow different valid audiences for the JWT Authorization Grant. This executor configures one or more valid audiences for the assertion instead of the ones defined in the standard (issuer or token endpoint URL) or the client ID. This behavior is not covered by the standard and can have major security implications.
 
 Another available executor is the `auth-flow-enforce`, which can be used to enforce an authentication flow during an authentication request. For instance, it can be used to select a flow based on certain conditions, such as a specific scope or an ACR value. For more details, see the <<_client-policy-auth-flow, related documentation>>.
 

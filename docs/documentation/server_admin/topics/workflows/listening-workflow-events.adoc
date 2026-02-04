@@ -10,20 +10,20 @@ The value of the `on' setting is an expression that must evaluate to true. In it
 the name of the event.
 
 ```yaml
-on: user_created
+on: user-created
 ```
 
 As you can see, events are functions in an expression and, as such, they also support parameters to provide more specific conditions.
 For example, to trigger a workflow when a user is added to a specific group, you can use the following expression:
 
 ```yaml
-on: user_group_membership_added('/mygroup')
+on: user-group-membership-added(/mygroup)
 ```
 
 You can also combine multiple conditions using logical operators. For example, to trigger a workflow when a user is created or when they authenticate, you can use:
 
 ```yaml
-on: user_created or user_authenticated
+on: user-created or user-authenticated
 ```
 
 [NOTE]
@@ -44,13 +44,14 @@ At the moment, workflows support event functions for the following realm resourc
 |Event
 |Description
 |Parameters
-| `user_created` | User is added to the realm. | None
-| `user_removed` | User is removed from the realm. | None
-| `user_authenticated` | User authenticates to the realm. | The client id of the client acting on behalf of the user when authenticating.
-| `user_federated_identity_added` | User is federated or when the account is linked to an identity provider. | The identity provider alias.
-| `user_federated_identity_removed` | User's federated identity is removed or unlinked from an identity provider. | The identity provider alias.
-| `user_role_granted` | A role is granted to the user. | The role name.
-| `user_role_revoked` | A role is revoked from the user. | The role name.
-| `user_group_membership_added` | User joined a group. | The group name or path
-| `user_group_membership_removed` | User is removed from a group. | The group name or path
+| `user-created` | User is added to the realm. | None
+| `user-authenticated` | User authenticates to the realm. | The client id of the client acting on behalf of the user when authenticating.
+| `user-federated-identity-added` | User is federated or when the account is linked to an identity provider. | The identity provider alias.
+| `user-federated-identity-removed` | User's federated identity is removed or unlinked from an identity provider. | The identity provider alias.
+| `user-role-granted` | A role is granted to the user. | The role name.
+| `user-role-revoked` | A role is revoked from the user. | The role name.
+| `user-group-membership-added` | User joined a group. | The group name or path
+| `user-group-membership-removed` | User is removed from a group. | The group name or path
+| `client-created` | Client is added to the realm. | None
+| `client-authenticated` | Client authenticates to the realm. | None
 |===

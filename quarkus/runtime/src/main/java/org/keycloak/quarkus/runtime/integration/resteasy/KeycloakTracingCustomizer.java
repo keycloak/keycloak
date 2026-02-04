@@ -30,6 +30,7 @@ import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.semconv.CodeAttributes;
 import io.opentelemetry.semconv.incubating.CodeIncubatingAttributes;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.resteasy.reactive.common.model.ResourceClass;
@@ -44,11 +45,13 @@ public final class KeycloakTracingCustomizer implements HandlerChainCustomizer {
         private final String className;
         private final String methodName;
         private final String spanName;
+        private final String functionName;
 
         public StartHandler(String className, String methodName) {
             this.className = className;
             this.methodName = methodName;
             this.spanName = StringUtils.substringAfterLast(className, ".") + "." + methodName;
+            this.functionName = className + "." + methodName;
         }
 
         @Override
@@ -60,9 +63,12 @@ public final class KeycloakTracingCustomizer implements HandlerChainCustomizer {
             Tracer myTracer = openTelemetry.getTracer(this.getClass().getName(), Version.VERSION);
             SpanBuilder spanBuilder = myTracer.spanBuilder(spanName);
             spanBuilder.setParent(Context.current().with(Span.current()));
-            // for semconv >= 1.32 use CODE_FUNCTION_NAME instead
+            spanBuilder.setAttribute(CodeAttributes.CODE_FUNCTION_NAME, functionName);
+            // for backwards compatibility. deprecated in 26.6, to be removed in 27.0
             spanBuilder.setAttribute(CodeIncubatingAttributes.CODE_FUNCTION, methodName);
             spanBuilder.setAttribute(CodeIncubatingAttributes.CODE_NAMESPACE, className);
+            // end deprecation
+
             Span span = spanBuilder.startSpan();
             requestContext.setProperty("span", span);
             requestContext.setProperty("scope", span.makeCurrent());
