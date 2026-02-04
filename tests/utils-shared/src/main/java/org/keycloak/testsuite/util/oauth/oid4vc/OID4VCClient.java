@@ -20,8 +20,8 @@ public class OID4VCClient {
         return issuerMetadataRequest().send();
     }
 
-    public CredentialOfferUriRequest credentialOfferUriRequest() {
-        return new CredentialOfferUriRequest(client);
+    public CredentialOfferUriRequest credentialOfferUriRequest(String credConfigId) {
+        return new CredentialOfferUriRequest(client, credConfigId);
     }
 
     public Oid4vcCredentialRequest credentialRequest() {

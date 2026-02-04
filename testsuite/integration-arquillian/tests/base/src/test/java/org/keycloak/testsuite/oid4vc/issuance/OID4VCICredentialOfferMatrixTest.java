@@ -255,7 +255,8 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
         // Retrieving the credential-offer-uri
         //
-        String offerUri = getCredentialOfferUriUrl(ctx, issToken);
+        CredentialOfferURI credOfferUri = getCredentialOfferUri(ctx, issToken);
+        String offerUri = credOfferUri.getCredentialOfferUrl();
 
         // Issuer logout in order to remove unwanted session state
         //
@@ -381,32 +382,15 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         findUserByUsernameId(testRealm(), userId).logout();
     }
 
-    private String getCredentialOfferUriUrl(OfferTestContext ctx, String token) throws Exception {
-        CredentialOfferURI offerURI = getCredentialOfferUri(ctx, token);
-        return offerURI.getIssuer() + offerURI.getNonce();
-    }
-
     private CredentialOfferURI getCredentialOfferUri(OfferTestContext ctx, String token) throws Exception {
         String credConfigId = ctx.credentialConfiguration.getId();
-        String credOfferUriUrl = getCredentialOfferUriUrl(credConfigId, ctx.preAuthorized, ctx.appUser, ctx.appClient);
         CredentialOfferUriResponse credentialOfferURIResponse = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .endpoint(credOfferUriUrl)
+                .credentialOfferUriRequest(credConfigId)
+                .preAuthorized(ctx.preAuthorized)
+                .clientId(ctx.appClient)
+                .username(ctx.appUser)
                 .bearerToken(token)
                 .send();
-        int statusCode = credentialOfferURIResponse.getStatusCode();
-        if (HttpStatus.SC_OK != statusCode) {
-            String error = credentialOfferURIResponse.getError();
-            String errorDescription = credentialOfferURIResponse.getErrorDescription();
-            String errorMessage = error != null ? error : "";
-            if (errorDescription != null) {
-                errorMessage += (errorMessage.isEmpty() ? "" : " ") + errorDescription;
-            }
-            if (errorMessage.isEmpty()) {
-                errorMessage = "Request failed with status " + statusCode;
-            }
-            throw new IllegalStateException(errorMessage);
-        }
         CredentialOfferURI credentialOfferURI = credentialOfferURIResponse.getCredentialOfferURI();
         assertTrue(credentialOfferURI.getIssuer().startsWith(ctx.issuerMetadata.getCredentialIssuer()));
         assertTrue(Strings.isNotEmpty(credentialOfferURI.getNonce()));

@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
@@ -45,5 +46,10 @@ public class CredentialOfferURI {
     public CredentialOfferURI setNonce(String nonce) {
         this.nonce = nonce;
         return this;
+    }
+
+    @JsonIgnore
+    public String getCredentialOfferUrl() {
+        return issuer + nonce;
     }
 }
