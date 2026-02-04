@@ -42,7 +42,7 @@ public class UserSessionLimitsUtil {
             RealmModel realm = session.realms().getRealmByName(realmName);
             UserModel user = session.users().getUserByUsername(realm, username);
             assertEquals(count, session.sessions()
-                    .getUserSessionsStream(realm, realm.getClientByClientId(clientId))
+                    .readOnlyStreamUserSessions(realm, realm.getClientByClientId(clientId), -1, -1)
                     .filter(userSessionModel -> userSessionModel.getUser().getId().equals(user.getId()))
                     .count());
         };

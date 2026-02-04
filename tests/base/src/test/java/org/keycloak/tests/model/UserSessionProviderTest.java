@@ -636,9 +636,9 @@ public class UserSessionProviderTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
             kcSession.getContext().setRealm(realm);
-            assertSessions(kcSession.sessions().getUserSessionsStream(realm, realm.getClientByClientId("test-app"))
+            assertSessions(kcSession.sessions().readOnlyStreamUserSessions(realm, realm.getClientByClientId("test-app"), -1, -1)
                     .collect(Collectors.toList()), sessions[0], sessions[1], sessions[2]);
-            assertSessions(kcSession.sessions().getUserSessionsStream(realm, realm.getClientByClientId("third-party"))
+            assertSessions(kcSession.sessions().readOnlyStreamUserSessions(realm, realm.getClientByClientId("third-party"), -1 ,-1)
                     .collect(Collectors.toList()), sessions[0]);
         });
     }
@@ -765,7 +765,7 @@ public class UserSessionProviderTest {
     }
 
     private static void assertPaginatedSession(KeycloakSession session, RealmModel realm, ClientModel client, int start, int max, int expectedSize) {
-        assertEquals(expectedSize, session.sessions().getUserSessionsStream(realm, client, start, max).count());
+        assertEquals(expectedSize, session.sessions().readOnlyStreamUserSessions(realm, client, start, max).count());
     }
 
     @Test

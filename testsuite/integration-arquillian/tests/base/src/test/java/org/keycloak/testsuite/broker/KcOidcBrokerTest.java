@@ -321,7 +321,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         testingClient.server(bc.consumerRealmName()).run(session -> {
             RealmModel realm = session.getContext().getRealm();
             ClientModel client = session.clients().getClientByClientId(realm, "broker-app");
-            List<UserSessionModel> userSessions = session.sessions().getUserSessionsStream(realm, client).toList();
+            List<UserSessionModel> userSessions = session.sessions().readOnlyStreamUserSessions(realm, client, -1, -1).toList();
             assertThat(userSessions, hasSize(1));
             UserSessionModel userSession = userSessions.get(0);
             assertThat(AuthenticationManager.isSessionValid(realm, userSession), is(false));
@@ -334,7 +334,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         testingClient.server(bc.consumerRealmName()).run(session -> {
             RealmModel realm = session.getContext().getRealm();
             ClientModel client = session.clients().getClientByClientId(realm, "broker-app");
-            List<UserSessionModel> userSessions = session.sessions().getUserSessionsStream(realm, client).toList();
+            List<UserSessionModel> userSessions = session.sessions().readOnlyStreamUserSessions(realm, client, -1, -1).toList();
             assertThat(userSessions, hasSize(0));
         });
 
