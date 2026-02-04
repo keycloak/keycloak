@@ -138,8 +138,8 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         // Clear events before credential offer request
         events.clear();
 
-        CredentialOfferResponse credentialOfferResponse = oauth.oid4vc().credentialOfferRequest()
-                .endpoint(credentialOfferURI.getIssuer() + "/" + credentialOfferURI.getNonce())
+        CredentialOfferResponse credentialOfferResponse = oauth.oid4vc()
+                .credentialOfferRequest(credentialOfferURI)
                 .send();
         assertEquals(HttpStatus.SC_OK, credentialOfferResponse.getStatusCode());
         ctx.credentialsOffer = credentialOfferResponse.getCredentialsOffer();
