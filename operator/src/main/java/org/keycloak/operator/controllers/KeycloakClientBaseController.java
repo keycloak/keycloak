@@ -287,9 +287,8 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
 
         Client restEasyClient = null;
 
-        // create a custom client if using https
+        // create a custom client if using https/mtls
         if (adminUrl.startsWith(HTTPS)) {
-            // TODO: support for mtls
             restEasyClient = createRestEasyClient(client, keycloak, restEasyClient);
         }
 
