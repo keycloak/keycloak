@@ -426,7 +426,10 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
 
     @Override
-    public Stream<UserSessionModel> readOnlyUserSessionStream(RealmModel realm, ClientModel client, boolean offline) {
+    public Stream<UserSessionModel> readOnlyUserSessionStream(RealmModel realm, ClientModel client, boolean offline, int skip, int maxResults) {
+        if (maxResults == 0) {
+            return Stream.empty();
+        }
         var clientStorageId = new StorageId(client.getId());
         var query = clientStorageId.isLocal() ?
                 em.createNamedQuery("findUserSessionsByClientIdReadOnly", ImmutablePersistentUserSessionEntity.class)
@@ -439,6 +442,12 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                 .setParameter("lastSessionRefresh", calculateOldestSessionTime(realm, offline))
                 .setHint(HibernateHints.HINT_READ_ONLY, true)
                 .setHint(HibernateHints.HINT_FETCH_SIZE, 512);
+        if (skip > 0) {
+            query.setFirstResult(skip);
+        }
+        if (maxResults > 0) {
+            query.setMaxResults(maxResults);
+        }
         return readOnlyLoadExactUserSessionsWithClientSessions(query, realm, offlineToString(offline));
     }
 

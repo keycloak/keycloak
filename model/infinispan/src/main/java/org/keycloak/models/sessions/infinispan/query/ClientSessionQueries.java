@@ -18,6 +18,9 @@
 package org.keycloak.models.sessions.infinispan.query;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionKey;
@@ -40,7 +43,7 @@ public final class ClientSessionQueries {
     private static final String PER_CLIENT_COUNT = "SELECT e.clientId, count(e.clientId) FROM %s as e WHERE e.realmId = :realmId GROUP BY e.clientId ORDER BY e.clientId".formatted(CLIENT_SESSION);
     private static final String CLIENT_SESSION_COUNT = "SELECT count(e) FROM %s as e WHERE e.realmId = :realmId && e.clientId = :clientId".formatted(CLIENT_SESSION);
     private static final String FROM_USER_SESSION = "FROM %s as e WHERE e.userSessionId = :userSessionId ORDER BY e.clientId".formatted(CLIENT_SESSION);
-    private static final String FROM_MULTI_USER_SESSION = "FROM %s as e WHERE e.userSessionId IN (:userSessionIds) ORDER BY e.clientId".formatted(CLIENT_SESSION);
+    private static final String FROM_MULTI_USER_SESSION = "FROM %s as e WHERE e.userSessionId IN (%s) ORDER BY e.clientId";
     private static final String IDS_FROM_USER_SESSION = "SELECT e.clientId FROM %s as e WHERE e.userSessionId = :userSessionId ORDER BY e.clientId".formatted(CLIENT_SESSION);
 
     /**
@@ -91,8 +94,24 @@ public final class ClientSessionQueries {
      * Returns all the client sessions belonging to all user session IDs.
      */
     public static Query<RemoteAuthenticatedClientSessionEntity> fetchClientSessions(RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache, Collection<String> userSessionIds) {
-        return cache.<RemoteAuthenticatedClientSessionEntity>query(FROM_MULTI_USER_SESSION)
-                .setParameter("userSessionIds", userSessionIds);
+        var size = userSessionIds.size();
+        if (size == 0) {
+            throw new IllegalArgumentException("userSessionIds must not be empty");
+        }
+        if (size == 1) {
+            return fetchClientSessions(cache, userSessionIds.iterator().next());
+        }
+        var count = new AtomicInteger();
+        var params = new HashMap<String, Object>();
+        String parameterNames = userSessionIds.stream()
+                .map(sessionId -> {
+                    String paramName = "p" + count.incrementAndGet();
+                    params.put(paramName, sessionId);
+                    return ":" + paramName;
+                })
+                .collect(Collectors.joining(","));
+        return cache.<RemoteAuthenticatedClientSessionEntity>query(FROM_MULTI_USER_SESSION.formatted(CLIENT_SESSION, parameterNames))
+                .setParameters(params);
     }
 
 }
