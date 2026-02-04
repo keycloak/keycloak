@@ -428,4 +428,41 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
             assertThat(response.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
         }
     }
+
+    @Test
+    public void testSearchGroupsByNameNonExact() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        // Create multiple groups with different names
+        GroupRepresentation group1 = new GroupRepresentation();
+        group1.setName("sales");
+        try (Response response = orgResource.groups().addTopLevelGroup(group1)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+        }
+
+        GroupRepresentation group2 = new GroupRepresentation();
+        group2.setName("sales-team");
+        try (Response response = orgResource.groups().addTopLevelGroup(group2)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+        }
+
+        GroupRepresentation group3 = new GroupRepresentation();
+        group3.setName("marketing");
+        try (Response response = orgResource.groups().addTopLevelGroup(group3)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+        }
+
+        GroupRepresentation group4 = new GroupRepresentation();
+        group4.setName("engineering");
+        try (Response response = orgResource.groups().addTopLevelGroup(group4)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+        }
+
+        // Search for groups containing "sales" with exact=false
+        List<GroupRepresentation> results = orgResource.groups().getAll("sales", false, null, null);
+
+        // Should only return groups with "sales" in the name: "sales" and "sales-team"
+        assertThat(results, hasSize(2));
+    }
 }
