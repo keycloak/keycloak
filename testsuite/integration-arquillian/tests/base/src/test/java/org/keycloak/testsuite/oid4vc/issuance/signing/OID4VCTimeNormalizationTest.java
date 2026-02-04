@@ -71,7 +71,7 @@ public class OID4VCTimeNormalizationTest extends OID4VCIssuerEndpointTest {
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
         testingClient.server(TEST_REALM_NAME).run(session -> {

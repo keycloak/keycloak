@@ -258,7 +258,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         // Extract values from refreshed token for credential request
         String accessToken = tokenResponseRef.getAccessToken();
-        List<OID4VCAuthorizationDetail> authDetails = tokenResponseRef.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetails = tokenResponseRef.getOID4VCAuthorizationDetails();
 
         String credentialIdentifier = null;
         if (authDetails != null && !authDetails.isEmpty()) {
@@ -1005,7 +1005,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     // Test successful token response. Returns "Credential identifier" of the VC credential
     private String assertTokenResponse(AccessTokenResponse tokenResponse) throws Exception {
         // Extract authorization_details from token response
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertEquals(1, authDetailsResponse.size());
 

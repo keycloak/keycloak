@@ -153,7 +153,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
         // Step 4: Verify authorization_details is present in token response
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertEquals("Should have exactly one authorization detail", 1, authDetailsResponse.size());
 
@@ -292,7 +292,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
         // Step 4: Verify NO authorization_details in token response (since none was in PAR request)
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         assertTrue("authorization_details should NOT be present in the response when not used in PAR request",
                 authDetailsResponse == null || authDetailsResponse.isEmpty());
     }

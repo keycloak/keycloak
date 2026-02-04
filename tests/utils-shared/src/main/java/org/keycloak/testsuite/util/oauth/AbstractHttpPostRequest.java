@@ -155,6 +155,17 @@ public abstract class AbstractHttpPostRequest<T, R> {
         return MediaType.APPLICATION_JSON;
     }
 
+    protected String getParameter(String key) {
+        return parameters.stream()
+                .filter(vp -> vp.getName().equals(key))
+                .map(NameValuePair::getValue)
+                .findFirst().orElse(null);
+    }
+
+    protected boolean hasParameter(String key) {
+        return getParameter(key) != null;
+    }
+
     protected abstract R toResponse(CloseableHttpResponse response) throws IOException;
 
     private T request() {

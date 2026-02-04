@@ -2,17 +2,16 @@ package org.keycloak.testsuite.util.oauth;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class AccessTokenResponse extends AbstractHttpResponse {
@@ -82,6 +81,11 @@ public class AccessTokenResponse extends AbstractHttpResponse {
         }
     }
 
+    public String assertAccessToken() {
+        return Optional.ofNullable(accessToken).orElseThrow(() ->
+                new IllegalStateException(String.format("[%s] %s", getError(), getErrorDescription())));
+    }
+
     public String getIdToken() {
         return idToken;
     }
@@ -126,38 +130,22 @@ public class AccessTokenResponse extends AbstractHttpResponse {
         return authorizationDetails;
     }
 
-    public <ADR extends AuthorizationDetailsJSONRepresentation> List<ADR> getAuthorizationDetails(Class<ADR> clazz) {
+    /**
+     * Get authorization details as OID4VC-specific response objects.
+     * This is useful when you need to access OID4VC-specific fields like credential_identifiers.
+     *
+     * @return a list of authorization details, or an empty list if none are present.
+     */
+    public List<OID4VCAuthorizationDetail> getOID4VCAuthorizationDetails() {
+        return getAuthorizationDetails(OID4VCAuthorizationDetail.class);
+    }
+
+    private <ADR extends AuthorizationDetailsJSONRepresentation> List<ADR> getAuthorizationDetails(Class<ADR> clazz) {
         if (authorizationDetails == null) {
             return null;
         }
         return authorizationDetails.stream()
                 .map(authzResponse -> authzResponse.asSubtype(clazz))
                 .toList();
-    }
-
-    /**
-     * Get authorization details as OID4VC-specific response objects.
-     * This is useful when you need to access OID4VC-specific fields like credential_identifiers.
-     *
-     * @return a list of authorization details, or an empty list if none are present.
-     * @throws RuntimeException if there's an error parsing the JSON response
-     */
-    public List<OID4VCAuthorizationDetail> getOid4vcAuthorizationDetails() {
-        if (responseJson == null) {
-            return Collections.emptyList();
-        }
-        Object authDetailsObj = responseJson.get(OAuth2Constants.AUTHORIZATION_DETAILS);
-        if (authDetailsObj == null) {
-            return Collections.emptyList();
-        }
-        try {
-            return JsonSerialization.readValue(
-                    JsonSerialization.writeValueAsString(authDetailsObj),
-                    new TypeReference<List<OID4VCAuthorizationDetail>>() {
-                    }
-            );
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to parse authorization_details from token response", e);
-        }
     }
 }

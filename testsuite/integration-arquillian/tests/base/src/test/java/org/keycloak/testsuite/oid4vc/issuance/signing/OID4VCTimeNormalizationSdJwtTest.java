@@ -75,7 +75,7 @@ public class OID4VCTimeNormalizationSdJwtTest extends OID4VCIssuerEndpointTest {
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
         final String clientScopeString = toJsonString(sdJwtTypeCredentialClientScope);
