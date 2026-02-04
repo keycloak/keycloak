@@ -25,9 +25,9 @@ import jakarta.inject.Inject;
 
 import org.keycloak.operator.Config;
 import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
-import org.keycloak.operator.crds.v2alpha1.realmimport.Placeholder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2beta1.realmimport.Placeholder;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
@@ -53,9 +53,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import static org.keycloak.operator.Constants.KEYCLOAK_HTTPS_PORT;
 import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
-import static org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition.DONE;
-import static org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition.HAS_ERRORS;
-import static org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition.STARTED;
+import static org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportStatusCondition.DONE;
+import static org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportStatusCondition.HAS_ERRORS;
+import static org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportStatusCondition.STARTED;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.inClusterCurl;
@@ -134,14 +134,11 @@ public class RealmImportTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, false);
 
         // Act
-        k8sclient.getKubernetesSerialization().registerKubernetesResource(KeycloakRealmImport.class);
-        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"), obj -> {
-            KeycloakRealmImport realmImport = (KeycloakRealmImport) obj;
-            realmImport.getSpec().getRealm().setSmtpServer(Map.of("port", "${MY_SMTP_PORT}", "host", "${MY_SMTP_SERVER}", "from", "admin@keycloak.org"));
-            realmImport.getSpec().setPlaceholders(Map.of("MY_SMTP_PORT", new Placeholder(new SecretKeySelectorBuilder().withName("keycloak-smtp-secret").withKey("SMTP_PORT").build()),
-                            "MY_SMTP_SERVER", new Placeholder(new SecretKeySelectorBuilder().withName("keycloak-smtp-secret").withKey("SMTP_SERVER").build())));
-            return realmImport;
-        });
+        KeycloakRealmImport realmImport =k8sclient.getKubernetesSerialization().unmarshal(getClass().getResourceAsStream("/example-realm.yaml"), KeycloakRealmImport.class);
+        realmImport.getSpec().getRealm().setSmtpServer(Map.of("port", "${MY_SMTP_PORT}", "host", "${MY_SMTP_SERVER}", "from", "admin@keycloak.org"));
+        realmImport.getSpec().setPlaceholders(Map.of("MY_SMTP_PORT", new Placeholder(new SecretKeySelectorBuilder().withName("keycloak-smtp-secret").withKey("SMTP_PORT").build()),
+                        "MY_SMTP_SERVER", new Placeholder(new SecretKeySelectorBuilder().withName("keycloak-smtp-secret").withKey("SMTP_SERVER").build())));
+        K8sUtils.set(k8sclient, realmImport);
 
         // Assert
         var envvars = assertWorkingRealmImport(kc);

@@ -23,17 +23,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.ServiceMonitorSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.TelemetrySpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.DatabaseSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.FeatureSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HostnameSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpManagementSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.ServiceMonitorSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.TelemetrySpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.TracingSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.TransactionsSpec;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.update.UpdateStrategy;
 

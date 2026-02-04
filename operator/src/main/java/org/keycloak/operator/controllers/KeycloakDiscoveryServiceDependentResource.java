@@ -18,7 +18,7 @@ package org.keycloak.operator.controllers;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;

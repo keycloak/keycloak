@@ -4,8 +4,8 @@ import java.net.HttpURLConnection;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.ServiceMonitorSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.ServiceMonitorSpec;
 
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
@@ -21,8 +21,8 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.quarkus.logging.Log;
 
 import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResource.managementEndpoint;
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.METRICS_ENABLED;
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.configuredOptions;
+import static org.keycloak.operator.crds.v2beta1.CRDUtils.METRICS_ENABLED;
+import static org.keycloak.operator.crds.v2beta1.CRDUtils.configuredOptions;
 
 @KubernetesDependent(
       informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)

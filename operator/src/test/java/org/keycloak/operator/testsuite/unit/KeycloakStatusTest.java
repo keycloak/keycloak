@@ -17,9 +17,9 @@
 
 package org.keycloak.operator.testsuite.unit;
 
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatus;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 
 import io.fabric8.kubernetes.client.utils.Serialization;

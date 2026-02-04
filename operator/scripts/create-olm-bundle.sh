@@ -72,6 +72,10 @@ yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].env
 # Remove ServiceMonitors GVK from nativeAPIS to allow CSV installation when CRDs not present
 yq ea -i 'del(.spec.nativeAPIs[] | select(.kind == "ServiceMonitor"))' "$CSV_PATH"
 
+yq ea -i '.spec.customresourcedefinitions.owned += .spec.customresourcedefinitions.owned' "$CSV_PATH" 
+yq ea -i '.spec.customresourcedefinitions.owned[0].version = "v2alpha1"' "$CSV_PATH"
+yq ea -i '.spec.customresourcedefinitions.owned[1].version = "v2alpha1"' "$CSV_PATH"
+
 { set +x; } 2>/dev/null
 echo ""
 echo "Created OLM bundle ok!"

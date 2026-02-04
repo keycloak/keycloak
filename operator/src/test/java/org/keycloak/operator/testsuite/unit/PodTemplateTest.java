@@ -36,16 +36,16 @@ import org.keycloak.operator.controllers.KeycloakRealmImportJobDependentResource
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.controllers.WatchedResources;
 import org.keycloak.operator.controllers.WatchedResources.Watched;
-import org.keycloak.operator.crds.v2alpha1.CRDUtils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportBuilder;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.CRDUtils;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.UnsupportedSpec;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportBuilder;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportSpecBuilder;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 import io.fabric8.kubernetes.api.model.Affinity;
