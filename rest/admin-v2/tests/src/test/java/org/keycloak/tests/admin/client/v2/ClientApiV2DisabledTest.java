@@ -7,15 +7,13 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.tests.admin.client.v2.ClientApiV2Test.HOSTNAME_LOCAL_ADMIN;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 @KeycloakIntegrationTest
-public class ClientApiV2DisabledTest {
+public class ClientApiV2DisabledTest extends AbstractClientApiV2Test {
     @InjectHttpClient
     CloseableHttpClient client;
 
