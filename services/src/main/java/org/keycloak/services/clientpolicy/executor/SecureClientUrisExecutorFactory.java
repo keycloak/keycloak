@@ -32,6 +32,11 @@ public class SecureClientUrisExecutorFactory implements ClientPolicyExecutorProv
 
     public static final String PROVIDER_ID = "secure-client-uris";
 
+    public static final String SECTOR_IDENTIFIER_URI = "sectorIdentifierUri";
+    public static final String LOGO_URI = "logoUri";
+    public static final String TOS_URI = "tosUri";
+    public static final String POLICY_URI = "policyUri";
+
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
         return new SecureClientUrisExecutor(session);

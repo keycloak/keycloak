@@ -29,15 +29,13 @@ import org.keycloak.models.KeycloakSession;
  */
 public class WebOriginsUtils {
 
-    public static final String INCLUDE_REDIRECTS = "+";
-
     public static Set<String> resolveValidWebOrigins(KeycloakSession session, ClientModel client) {
         Set<String> origins = new HashSet<>();
         if (client.getWebOrigins() != null) {
             origins.addAll(client.getWebOrigins());
         }
-        if (origins.contains(INCLUDE_REDIRECTS)) {
-            origins.remove(INCLUDE_REDIRECTS);
+        if (origins.contains(RedirectUtils.INCLUDE_REDIRECTS)) {
+            origins.remove(RedirectUtils.INCLUDE_REDIRECTS);
             for (String redirectUri : RedirectUtils.resolveValidRedirects(session, client.getRootUrl(), client.getRedirectUris())) {
                 if (redirectUri.startsWith("http://") || redirectUri.startsWith("https://")) {
                     origins.add(UriUtils.getOrigin(redirectUri));
