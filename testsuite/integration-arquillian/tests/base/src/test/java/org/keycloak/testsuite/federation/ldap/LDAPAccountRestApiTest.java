@@ -258,6 +258,66 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
         Assert.assertNull(userPassword.getSecretData());
     }
 
+    @Test
+    public void testReadOnlyLdapUserCannotUpdatePassword() throws IOException {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.EDIT_MODE,
+                org.keycloak.storage.UserStorageProvider.EditMode.READ_ONLY.toString());
+            realm.updateComponent(ctx.getLdapModel());
+        });
+
+        List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
+
+        AccountCredentialResource.CredentialContainer passwordContainer = credentials.stream()
+                .filter(c -> PasswordCredentialModel.TYPE.equals(c.getType()))
+                .findFirst()
+                .orElse(null);
+
+        Assert.assertNotNull("Password credential container should exist", passwordContainer);
+
+        Assert.assertNull("Read-only LDAP users should not have updateAction",
+                passwordContainer.getUpdateAction());
+
+        Assert.assertNull("Read-only LDAP users should not have createAction",
+                passwordContainer.getCreateAction());
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.EDIT_MODE,
+                org.keycloak.storage.UserStorageProvider.EditMode.WRITABLE.toString());
+            realm.updateComponent(ctx.getLdapModel());
+        });
+    }
+
+    @Test
+    public void testWritableLdapUserCanUpdatePassword() throws IOException {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.EDIT_MODE,
+                org.keycloak.storage.UserStorageProvider.EditMode.WRITABLE.toString());
+            realm.updateComponent(ctx.getLdapModel());
+        });
+
+        List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
+
+        AccountCredentialResource.CredentialContainer passwordContainer = credentials.stream()
+                .filter(c -> PasswordCredentialModel.TYPE.equals(c.getType()))
+                .findFirst()
+                .orElse(null);
+
+        Assert.assertNotNull("Password credential container should exist", passwordContainer);
+
+        Assert.assertNotNull("Writable LDAP users should have updateAction",
+                passwordContainer.getUpdateAction());
+
+        Assert.assertEquals("UPDATE_PASSWORD", passwordContainer.getUpdateAction());
+    }
+
 
     @Test
     public void testUpdateProfileSimple() throws IOException {

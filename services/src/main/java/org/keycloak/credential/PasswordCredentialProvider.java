@@ -23,9 +23,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -35,6 +37,8 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
@@ -310,7 +314,7 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
     }
 
     private static void refreshPassword(KeycloakSession s, String hashAlgorithm, int iterations, String challenge,
-            String passwordId, Long passwordDate, String passwordLabel, String userId) {
+                                        String passwordId, Long passwordDate, String passwordLabel, String userId) {
         PasswordCredentialModel newPassword = ((hashAlgorithm != null)
                 ? s.getProvider(PasswordHashProvider.class, hashAlgorithm)
                 : s.getProvider(PasswordHashProvider.class))
@@ -340,14 +344,57 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
 
         // Check if we are creating or updating password
         UserModel user = metadataContext.getUser();
-        if (user != null && user.credentialManager().isConfiguredFor(getType())) {
-            metadataBuilder.updateAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
-        } else {
-            metadataBuilder.createAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
+        if (user != null) {
+            // Check if the user can update password
+            if (canUserUpdatePassword(user)) {
+                if (user.credentialManager().isConfiguredFor(getType())) {
+                    metadataBuilder.updateAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
+                } else {
+                    metadataBuilder.createAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
+                }
+            }
         }
 
         return metadataBuilder
                 .removeable(false)
                 .build(session);
+    }
+
+    private boolean canUserUpdatePassword(UserModel user) {
+        if (!user.isFederated()) {
+            return true;
+        }
+
+        RealmModel realm = session.getContext().getRealm();
+        ComponentModel componentModel = realm.getComponent(user.getFederationLink());
+
+        if (componentModel == null || !componentModel.get("enabled", true)) {
+            return false;
+        }
+
+        UserStorageProviderModel storageProviderModel = new UserStorageProviderModel(componentModel);
+        if (!storageProviderModel.isEnabled()) {
+            return false;
+        }
+
+        if (LDAPConstants.LDAP_PROVIDER.equals(storageProviderModel.getProviderId())) {
+            return !isReadOnlyLdapProvider(storageProviderModel);
+        }
+
+        UserStorageProvider storageProvider = (UserStorageProvider) session.getProvider(UserStorageProvider.class, storageProviderModel.getId());
+        if (storageProvider instanceof CredentialInputUpdater updater) {
+            return updater.supportsCredentialType(getType());
+        }
+
+        return false;
+    }
+
+    private boolean isReadOnlyLdapProvider(UserStorageProviderModel storageProviderModel) {
+        if (!LDAPConstants.LDAP_PROVIDER.equals(storageProviderModel.getProviderId())) {
+            return false;
+        }
+
+        String editMode = storageProviderModel.getConfig().getFirst(LDAPConstants.EDIT_MODE);
+        return UserStorageProvider.EditMode.READ_ONLY.name().equalsIgnoreCase(editMode);
     }
 }
