@@ -57,6 +57,10 @@ public class OAuthIdentityProvider {
         return new JWSBuilder().type("JWT").jsonContent(token).sign(new ECDSASignatureSignerContext(keys.getKeyWrapper()));
     }
 
+    public String encodeIDJAG(JsonWebToken token) {
+        return new JWSBuilder().type("oauth-id-jag+jwt").jsonContent(token).sign(new ECDSASignatureSignerContext(keys.getKeyWrapper()));
+    }
+
     public OAuthIdentityProviderKeys createKeys() {
         return new OAuthIdentityProviderKeys(config);
     }
