@@ -74,7 +74,7 @@ public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
 
     @Test
     public void testReusePermitted() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTION_REUSE, "true");
         });
 
@@ -87,7 +87,7 @@ public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
 
     @Test
     public void testClientAssertionsNotSupported() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().remove(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS);
         });
 
@@ -103,7 +103,7 @@ public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
         assertFailure("Invalid token audience", doClientGrant(jwt));
         assertFailure(INTERNAL_CLIENT_ID, TOKEN_ISSUER, EXTERNAL_CLIENT_ID, jwt.getId(), events.poll());
 
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.ALLOW_CLIENT_ID_AS_AUDIENCE, Boolean.TRUE.toString());
         });
 

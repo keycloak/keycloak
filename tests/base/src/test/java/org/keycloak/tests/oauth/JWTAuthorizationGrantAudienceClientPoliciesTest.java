@@ -81,7 +81,7 @@ public class JWTAuthorizationGrantAudienceClientPoliciesTest extends BaseAbstrac
     @Test
     public void testAudiencesWithClientId() {
         // update to use client-id
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.ALLOW_CLIENT_ID_AS_AUDIENCE, Boolean.TRUE.toString());
         });
 

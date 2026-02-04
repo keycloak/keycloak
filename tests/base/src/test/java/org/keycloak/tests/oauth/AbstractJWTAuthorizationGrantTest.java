@@ -76,7 +76,7 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         assertFailure("Token expiration is too far in the future and iat claim not present in token", response, events.poll());
 
         //reduce max expiration to 10 seconds
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_MAX_ALLOWED_ASSERTION_EXPIRATION, "10");
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_LIMIT_ACCESS_TOKEN_EXP, "false");
         });
@@ -175,7 +175,7 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Token reuse detected", response, events.poll());
 
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ASSERTION_REUSE_ALLOWED, "true");
         });
 
@@ -189,14 +189,14 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
 
     @Test
     public void testSignatureAlg() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG, Algorithm.ES256);
         });
         String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertSuccess("test-app", response);
 
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG, Algorithm.ES512);
         });
         jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
@@ -217,7 +217,7 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
 
     @Test
     public void testValidateSignatureFixedKey() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.FALSE.toString());
             rep.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, "");
             rep.getConfig().put(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER,
@@ -231,7 +231,7 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
 
     @Test
     public void testValidateSignatureFixedKeyAndKeyId() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.FALSE.toString());
             rep.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, "");
             rep.getConfig().put(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER,
@@ -247,7 +247,7 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
 
     @Test
     public void testValidateSignatureFixedKeyUsingJwks() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.FALSE.toString());
             rep.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, "");
             rep.getConfig().put(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER, identityProvider.getKeys().getJwksString());
@@ -278,7 +278,7 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
 
     @Test
     public void textLimitAccessTokenExpiration() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_LIMIT_ACCESS_TOKEN_EXP, "true");
         });
 
