@@ -560,6 +560,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             search = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
             search = search.replace("*", "%");
             if (search.isEmpty() || search.charAt(search.length() - 1) != '%') search += "%";
+            predicates.add(builder.like(builder.lower(root.get("name")), search.toLowerCase()));
         }
 
         queryBuilder.where(predicates.toArray(new Predicate[0]));
