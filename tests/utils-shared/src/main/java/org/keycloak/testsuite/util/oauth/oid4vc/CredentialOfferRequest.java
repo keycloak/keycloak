@@ -13,12 +13,12 @@ public class CredentialOfferRequest extends AbstractHttpGetRequest<CredentialOff
 
     private final CredentialOfferURI credOfferURI;
 
-    public CredentialOfferRequest(AbstractOAuthClient<?> client, CredentialOfferURI credOfferUri) {
+    CredentialOfferRequest(AbstractOAuthClient<?> client, CredentialOfferURI credOfferUri) {
         super(client);
         this.credOfferURI = credOfferUri;
     }
 
-    public CredentialOfferRequest(AbstractOAuthClient<?> client, String nonce) {
+    CredentialOfferRequest(AbstractOAuthClient<?> client, String nonce) {
         super(client);
         credOfferURI = new CredentialOfferURI();
         credOfferURI.setIssuer(client.getEndpoints().getOid4vcCredentialOffer());
