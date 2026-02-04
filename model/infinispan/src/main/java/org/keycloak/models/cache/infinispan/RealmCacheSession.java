@@ -26,10 +26,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.keycloak.Config;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
@@ -491,6 +493,15 @@ public class RealmCacheSession implements CacheRealmProvider {
             if (model == null) {
                 return null;
             }
+
+            if (!model.getName().equals(Config.getAdminRealm())) {
+                RealmModel adminRealm = session.realms().getRealmByName(Config.getAdminRealm());
+                RoleModel adminRole = adminRealm.getRole(AdminRoles.ADMIN);
+                if (!invalidations.contains(adminRole.getId())) {
+                    invalidateRole(adminRole.getId());
+                }
+            }
+
             cached = new CachedRealm(loaded, model);
             cache.addRevisioned(cached, startupRevision);
             adapter = new RealmAdapter(session, cached, this);
@@ -1060,6 +1071,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         return list.stream().sorted(GroupModel.COMPARE_BY_NAME);
     }
 
+    @Override
     public Stream<GroupModel> getGroupsStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
         return getGroupDelegate().getGroupsStream(realm, ids, search, first, max);
     }
