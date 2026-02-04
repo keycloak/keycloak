@@ -47,7 +47,9 @@ import org.keycloak.services.clientpolicy.context.TokenResponseContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
@@ -216,12 +218,26 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
 
         // Process authorization_details using provider discovery (if present in request)
         List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponse = null;
-        if (formParams.getFirst(AUTHORIZATION_DETAILS) != null) {
+        String providedAuthorizationDetails = formParams.getFirst(AUTHORIZATION_DETAILS);
+        String storedAuthorizationDetails = clientSession.getNote(AUTHORIZATION_DETAILS);
+
+        if (providedAuthorizationDetails != null) {
             authorizationDetailsResponse = processAuthorizationDetails(userSession, clientSessionCtx);
+
             if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
+                if (storedAuthorizationDetails != null &&
+                        !authorizationDetailsJsonEquals(storedAuthorizationDetails, providedAuthorizationDetails)) {
+
+                    logger.debugf("Stored details: %s, Provided details: %s", storedAuthorizationDetails, providedAuthorizationDetails);
+                    event.detail(Details.REASON, "authorization_details differ from authorization request");
+                    event.error(Errors.INVALID_REQUEST);
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                            "authorization_details differ from authorization request", Response.Status.BAD_REQUEST);
+                }
+
                 clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
             } else {
-                logger.debugf("No available AuthorizationDetailsProcessor being able to process authorization_details '%s'", formParams.getFirst(AUTHORIZATION_DETAILS));
+                logger.debugf("No AuthorizationDetailsProcessor could process '%s'", providedAuthorizationDetails);
             }
         }
 
@@ -269,4 +285,14 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         return EventType.CODE_TO_TOKEN;
     }
 
+    private boolean authorizationDetailsJsonEquals(String first, String second) {
+        try {
+            JsonNode firstNode = JsonSerialization.mapper.readTree(first);
+            JsonNode secondNode = JsonSerialization.mapper.readTree(second);
+            return firstNode != null && firstNode.equals(secondNode);
+        } catch (Exception e) {
+            logger.debugf(e, "Failed to parse authorization_details for comparison");
+            return false;
+        }
+    }
 }

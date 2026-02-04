@@ -420,6 +420,7 @@ class KeycloakProcessor {
     }
 
     @BuildStep
+    @Consume(ProfileBuildItem.class)
     @Produce(ValidatePersistenceUnitsBuildItem.class)
     void checkPersistenceUnits(List<PersistenceXmlDescriptorBuildItem> descriptors) {
         if (Database.Vendor.TIDB.isOfKind(Configuration.getConfigValue(DB).getValue())) {
@@ -863,6 +864,7 @@ class KeycloakProcessor {
     }
 
     @BuildStep(onlyIfNot = IsTest.class) // needed for embedded Keycloak
+    @Consume(ProfileBuildItem.class)
     void disableHibernateValidatorCustomizer(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
         if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_ADMIN_API_V2)) {
             // disables the filter
@@ -894,6 +896,7 @@ class KeycloakProcessor {
     }
 
     @BuildStep
+    @Consume(ProfileBuildItem.class)
     void configureResteasy(CombinedIndexBuildItem index,
             BuildProducer<BuildTimeConditionBuildItem> buildTimeConditionBuildItemBuildProducer,
             BuildProducer<MethodScannerBuildItem> scanner,

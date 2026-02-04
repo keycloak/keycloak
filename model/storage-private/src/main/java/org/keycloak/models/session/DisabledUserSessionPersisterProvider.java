@@ -157,7 +157,7 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     }
 
     @Override
-    public Stream<UserSessionModel> readOnlyUserSessionStream(RealmModel realm, ClientModel client, boolean offline) {
+    public Stream<UserSessionModel> readOnlyUserSessionStream(RealmModel realm, ClientModel client, boolean offline, int skip, int maxResults) {
         return Stream.empty();
     }
 }

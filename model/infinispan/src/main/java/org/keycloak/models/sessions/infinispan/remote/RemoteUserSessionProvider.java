@@ -293,13 +293,13 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm, ClientModel client) {
-        return readOnlyStream(realm, client, true);
+    public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm, ClientModel client, int skip, int maxResults) {
+        return readOnlyStream(realm, client, true, skip, maxResults);
     }
 
     @Override
-    public Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm, ClientModel client) {
-        return readOnlyStream(realm, client, false);
+    public Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm, ClientModel client, int skip, int maxResults) {
+        return readOnlyStream(realm, client, false, skip, maxResults);
     }
 
     private Stream<UserSessionModel> readOnlyStream(RealmModel realm, boolean offline) {
@@ -308,21 +308,31 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         var clientSessionCache = getClientSessionTransaction(offline).getCache();
         //not very efficient at all.
         return Flowable.fromStream(QueryHelper.streamAll(query, batchSize, Function.identity()))
+                .buffer(128)
                 .blockingStream()
-                .map(us -> ImmutableSession.copyOf(session, us, expiration, clientSessionCache, batchSize))
-                .filter(Objects::nonNull);
+                .flatMap(us -> ImmutableSession.copyOf(session, us, expiration, clientSessionCache, batchSize)).filter(Objects::nonNull);
     }
 
-    private Stream<UserSessionModel> readOnlyStream(RealmModel realm, ClientModel client, boolean offline) {
+    private Stream<UserSessionModel> readOnlyStream(RealmModel realm, ClientModel client, boolean offline, int skip, int maxResults) {
+        if (maxResults == 0) {
+            return Stream.empty();
+        }
         var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTime());
-        var userSessionIdQuery = ClientSessionQueries.fetchUserSessionIdForClientId(getClientSessionTransaction(offline).getCache(), realm.getId(), client.getId());
-        var userSessionCache = getUserSessionTransaction(offline).getCache();
         var clientSessionCache = getClientSessionTransaction(offline).getCache();
+        var userSessionIdQuery = ClientSessionQueries.fetchUserSessionIdForClientId(clientSessionCache, realm.getId(), client.getId());
+        if (skip > 0) {
+            userSessionIdQuery.startOffset(skip);
+        }
+        if (maxResults > 0) {
+            userSessionIdQuery.maxResults(maxResults);
+        }
+        var userSessionCache = getUserSessionTransaction(offline).getCache();
         return Flowable.fromIterable(QueryHelper.toCollection(userSessionIdQuery, QueryHelper.SINGLE_PROJECTION_TO_STRING))
-                .flatMapMaybe(sessionId -> Maybe.fromCompletionStage(userSessionCache.getAsync(sessionId)), false, MAX_CONCURRENT_REQUESTS)
-                .blockingStream(batchSize)
-                .map(entity -> ImmutableSession.copyOf(session, entity, expiration, clientSessionCache, batchSize))
-                .filter(Objects::nonNull);
+                .buffer(128)
+                .flatMapMaybe(sessionId -> Maybe.fromCompletionStage(userSessionCache.getAllAsync(Set.copyOf(sessionId))), false, MAX_CONCURRENT_REQUESTS)
+                .map(Map::values)
+                .blockingStream()
+                .flatMap(entity -> ImmutableSession.copyOf(session, entity, expiration, clientSessionCache, batchSize));
     }
 
     private void migrateUserSessions(boolean offline) {
