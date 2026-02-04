@@ -50,7 +50,6 @@ import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.directory.api.util.Strings;
-import org.apache.http.HttpStatus;
 import org.junit.Test;
 
 import static org.keycloak.OAuth2Constants.SCOPE_OPENID;
@@ -271,7 +270,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
                 //  3. does not derive scopes from the client configuration
                 //  4. does not reflect anything from the credential offer
                 //
-                AccessTokenResponse accessToken = getPreAuthorizedAccessTokenResponse(ctx, credOffer);
+                AccessTokenResponse accessToken = getPreAuthorizedAccessTokenResponse(credOffer);
                 List<OID4VCAuthorizationDetail> authDetailsResponse = accessToken.getOid4vcAuthorizationDetails();
                 if (authDetailsResponse == null || authDetailsResponse.isEmpty()) {
                     throw new IllegalStateException("No authorization_details in token response");
@@ -406,19 +405,9 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         return credOffer;
     }
 
-    private AccessTokenResponse getPreAuthorizedAccessTokenResponse(TestContext ctx, CredentialsOffer credOffer) throws Exception {
+    private AccessTokenResponse getPreAuthorizedAccessTokenResponse(CredentialsOffer credOffer) throws Exception {
         PreAuthorizedCode preAuthorizedCode = credOffer.getGrants().getPreAuthorizedCode();
-        AccessTokenResponse accessTokenResponse = oauth.oid4vc()
-                .preAuthorizedCodeGrantRequest(preAuthorizedCode.getPreAuthorizedCode())
-                .endpoint(ctx.authorizationMetadata.getTokenEndpoint())
-                .send();
-        int statusCode = accessTokenResponse.getStatusCode();
-        if (HttpStatus.SC_OK != statusCode) {
-            throw new IllegalStateException(accessTokenResponse.getErrorDescription() != null
-                    ? accessTokenResponse.getErrorDescription()
-                    : "Request failed with status " + statusCode);
-        }
-        return accessTokenResponse;
+        return oauth.oid4vc().doPreAuthorizedCodeGrantRequest(preAuthorizedCode.getPreAuthorizedCode());
     }
 
     private CredentialResponse getCredentialByAuthDetail(String accessToken, OID4VCAuthorizationDetail authDetail) throws Exception {
