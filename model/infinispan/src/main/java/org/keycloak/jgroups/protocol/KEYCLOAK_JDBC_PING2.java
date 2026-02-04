@@ -239,8 +239,18 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     }
 
     @Override
-    protected Connection getConnection() {
-        return factory.getConnection();
+    protected Connection getConnection() throws SQLException {
+        try {
+            return factory.getConnection();
+        } catch (Exception e) {
+            var cause = e.getCause();
+            if (cause instanceof SQLException sql) {
+                // it should hit this branch 100% of the time
+                throw sql;
+            }
+            //... but to be future proof ...
+            throw new SQLException(e);
+        }
     }
 
     public void setJpaConnectionProviderFactory(JpaConnectionProviderFactory factory) {
