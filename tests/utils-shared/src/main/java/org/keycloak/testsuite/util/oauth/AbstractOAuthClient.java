@@ -120,7 +120,7 @@ public abstract class AbstractOAuthClient<T> {
     }
 
     public AccessTokenRequest accessTokenRequest(String code) {
-        return new AccessTokenRequest(code, this);
+        return new AccessTokenRequest(this, code);
     }
 
     public AccessTokenResponse doAccessTokenRequest(String code) {

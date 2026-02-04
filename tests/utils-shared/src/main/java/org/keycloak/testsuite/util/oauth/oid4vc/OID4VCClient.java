@@ -3,7 +3,9 @@ package org.keycloak.testsuite.util.oauth.oid4vc;
 import org.keycloak.protocol.oid4vc.model.AuthorizationRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenRequest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationRequestRequest;
 
@@ -47,12 +49,12 @@ public class OID4VCClient {
         return new Oid4vcCredentialRequest(client, credRequest);
     }
 
-    public PreAuthorizedCodeGrantRequest preAuthorizedCodeGrantRequest(String preAuthorizedCode) {
-        return new PreAuthorizedCodeGrantRequest(preAuthorizedCode, client);
+    public AccessTokenRequest preAuthAccessTokenRequest(String preAuthorizedCode) {
+        return new AccessTokenRequest(client, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE, preAuthorizedCode);
     }
 
-    public AccessTokenResponse doPreAuthorizedCodeGrant(String preAuthorizedCode) {
-        return preAuthorizedCodeGrantRequest(preAuthorizedCode).send();
+    public AccessTokenResponse doPreAuthAccessTokenRequest(String preAuthorizedCode) {
+        return preAuthAccessTokenRequest(preAuthorizedCode).send();
     }
 
     public Oid4vcNonceRequest nonceRequest() {
