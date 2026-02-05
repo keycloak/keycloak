@@ -1061,15 +1061,16 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
      */
     @Test
     public void testCredentialRequestWithOptionalClientScope() {
-        ClientScopeRepresentation optionalScope = registerOptionalClientScope(
+        ClientScopeRepresentation optionalScope = createOptionalClientScope(
                 "optional-jwt-credential",
                 TEST_DID.toString(),
                 "optional-jwt-credential-config-id",
                 null, null,
                 Format.JWT_VC,
                 null, null);
-        
-        ClientRepresentation testClient = testRealm().clients().findByClientId(client.getClientId()).get(0);
+
+        optionalScope = registerOptionalClientScope(optionalScope);
+        ClientRepresentation testClient = testRealm().clients().findByClientId(clientId).get(0);
         testRealm().clients().get(testClient.getId()).addOptionalClientScope(optionalScope.getId());
 
         // Extract serializable data before lambda
@@ -1116,15 +1117,16 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
      */
     @Test
     public void testCannotAssignOid4vciScopeAsDefaultToClient() {
-        ClientScopeRepresentation oid4vciScope = registerOptionalClientScope(
+        ClientScopeRepresentation oid4vciScope = createOptionalClientScope(
                 "test-oid4vci-scope",
                 TEST_DID.toString(),
                 "test-oid4vci-config-id",
                 null, null,
                 Format.JWT_VC,
                 null, null);
-        
-        ClientRepresentation testClient = testRealm().clients().findByClientId(client.getClientId()).get(0);
+
+        oid4vciScope = registerOptionalClientScope(oid4vciScope);
+        ClientRepresentation testClient = testRealm().clients().findByClientId(clientId).get(0);
         ClientResource clientResource = testRealm().clients().get(testClient.getId());
         
         try {
@@ -1139,14 +1141,14 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testCannotAssignOid4vciScopeAsDefaultToRealm() {
-        ClientScopeRepresentation oid4vciScope = registerOptionalClientScope(
+        ClientScopeRepresentation oid4vciScope = createOptionalClientScope(
                 "test-oid4vci-realm-scope",
                 TEST_DID.toString(),
                 "test-oid4vci-realm-config-id",
                 null, null,
                 Format.JWT_VC,
                 null, null);
-        
+        oid4vciScope = registerOptionalClientScope(oid4vciScope);
         try {
             testRealm().addDefaultDefaultClientScope(oid4vciScope.getId());
             Assert.fail("Expected BadRequestException when trying to assign OID4VCI scope as realm Default");
@@ -1162,13 +1164,14 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
      */
     @Test
     public void testCannotAssignOid4vciScopeWhenRealmDisabled() {
-        ClientScopeRepresentation oid4vciScope = registerOptionalClientScope(
+        ClientScopeRepresentation oid4vciScope = createOptionalClientScope(
                 "test-oid4vci-disabled-scope",
                 TEST_DID.toString(),
                 "test-oid4vci-disabled-config-id",
                 null, null,
                 Format.JWT_VC,
                 null, null);
+        oid4vciScope = registerOptionalClientScope(oid4vciScope);
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
             RealmModel realm = session.getContext().getRealm();
@@ -1176,7 +1179,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         });
 
         try {
-            ClientRepresentation testClient = testRealm().clients().findByClientId(client.getClientId()).get(0);
+            ClientRepresentation testClient = testRealm().clients().findByClientId(clientId).get(0);
             ClientResource clientResource = testRealm().clients().get(testClient.getId());
 
             try {

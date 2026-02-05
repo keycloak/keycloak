@@ -137,6 +137,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
+import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST;
@@ -189,9 +190,6 @@ public class OID4VCIssuerEndpoint {
 
     // lifespan of the preAuthorizedCodes in seconds
     private final int preAuthorizedCodeLifeSpan;
-
-    // constant for the OID4VCI enabled attribute key
-    public static final String OID4VCI_ENABLED_ATTRIBUTE_KEY = "oid4vci.enabled";
 
     /**
      * Credential builders are responsible for initiating the production of

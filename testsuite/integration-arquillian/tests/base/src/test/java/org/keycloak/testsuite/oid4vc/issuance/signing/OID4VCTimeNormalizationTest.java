@@ -51,7 +51,7 @@ import static org.junit.Assert.assertNotNull;
  * @author <a href="mailto:Rodrick.Awambeng@adorsys.com">Rodrick Awambeng</a>
  *
  */
-public class OID4VCTimeNormalizationTest extends OID4VCJWTIssuerEndpointTest {
+public class OID4VCTimeNormalizationTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testJwtVcNbfRoundedToStartOfDayUtc() {

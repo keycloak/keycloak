@@ -56,8 +56,6 @@ import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 
-import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -393,9 +391,6 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
     // Helper methods
 
     private AccessTokenResponse getAccessToken() throws Exception {
-        oauth.realm("test");
-        oauth.client(client.getClientId(), client.getSecret());
-
         return oauth.doPasswordGrantRequest("john", "password");
     }
 

@@ -37,7 +37,9 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -126,7 +128,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         // Verify CREDENTIAL_OFFER_REQUEST event was fired
         events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
-                .client(client.getClientId())
+                .client(clientId)
                 .user(AssertEvents.isUUID())
                 .session(AssertEvents.isSessionId())
                 .detail(Details.USERNAME, "john")
@@ -144,7 +146,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         // Verify CREDENTIAL_OFFER_REQUEST event was fired (unauthenticated endpoint)
         events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
-                .client(client.getClientId())
+                .client(clientId)
                 .user(AssertEvents.isUUID())
                 .session((String) null)
                 .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
@@ -546,7 +548,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
             // Verify CREDENTIAL_REQUEST event was fired
             events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST)
-                    .client(client.getClientId())
+                    .client(clientId)
                     .user(AssertEvents.isUUID())
                     .session(AssertEvents.isSessionId())
                     .detail(Details.USERNAME, "john")
@@ -638,10 +640,20 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         // which has an "UNKNOWN" grant type context, is ALLOWED (backward compatibility).
         // This ensures the fail-closed logic doesn't accidentally block standard Keycloak flows.
 
+        ClientRepresentation accountClient = testRealm().clients().findByClientId("account").stream().findFirst().orElse(null);
+        assertNotNull("Has account client", accountClient);
+
+        ClientRepresentation testClient = testRealm().clients().findByClientId("test-app").stream().findFirst().orElse(null);
+        assertNotNull("Has test-app", testClient);
+        assertEquals(testClient.getClientId(), oauth.getClientId());
+
+        UserRepresentation testUser = testRealm().users().search("test-user@localhost").stream().findFirst().orElse(null);
+        assertNotNull("Has test-user", testUser);
+
+        log.debugf(JsonSerialization.valueAsPrettyString(testClient));
+
         // 1. Get standard token
-        oauth.realm("test");
-        oauth.client("test-app", "password");
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         String accessToken = response.getAccessToken();
 
         // 2. Use at Account API (which would be restricted if it were a pre-authorized token)
@@ -782,7 +794,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         // Verify CREDENTIAL_REQUEST event was fired
         events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST)
-                .client(client.getClientId())
+                .client(clientId)
                 .user(AssertEvents.isUUID())
                 .session(AssertEvents.isSessionId())
                 .detail(Details.USERNAME, "john")
@@ -852,7 +864,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
         events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
-                .client(client.getClientId())
+                .client(clientId)
                 .user(AssertEvents.isUUID())
                 .session(AssertEvents.isSessionId())
                 .error(Errors.INVALID_REQUEST)
