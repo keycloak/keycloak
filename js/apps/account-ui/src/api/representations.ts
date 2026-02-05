@@ -67,6 +67,7 @@ export interface LinkedAccountRepresentation {
   displayName: string;
   linkedUsername: string;
   social: boolean;
+  guiOrder: string;
 }
 
 export interface SessionRepresentation {
