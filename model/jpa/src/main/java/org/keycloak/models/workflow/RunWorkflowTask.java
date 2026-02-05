@@ -33,7 +33,12 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
                 log.debugf("Scheduling step %s to run in %s for resource %s (execution id: %s)",
                         nextStep.getProviderId(), nextStep.getAfter(), resourceId, executionId);
                 // If a step has a time defined, schedule it and stop processing the other steps of workflow
+                long scheduledTime = System.currentTimeMillis() + DurationConverter.parseDuration(nextStep.getAfter()).toMillis();
                 stateProvider.scheduleStep(workflow, nextStep, resourceId, executionId);
+
+                // Fire workflow step scheduled event
+                WorkflowProviderEvents.fireWorkflowStepScheduledEvent(session, workflow, nextStep, resourceId, executionId,
+                        scheduledTime, nextStep.getAfter());
                 return;
             }
 
@@ -48,6 +53,10 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
 
         // not recurring, remove the state record
         log.debugf("Workflow '%s' completed for resource %s (execution id: %s)", workflow.getName(), resourceId, executionId);
+
+        // Fire workflow completed event
+        WorkflowProviderEvents.fireWorkflowCompletedEvent(session, workflow, resourceId, executionId);
+
         stateProvider.remove(executionId);
     }
 
@@ -62,10 +71,16 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
         WorkflowStep step = context.getStep();
         String executionId = context.getExecutionId();
         String resourceId = context.getResourceId();
+        Workflow workflow = context.getWorkflow();
+        KeycloakSession session = context.getSession();
+
         log.debugf("Running step %s on resource %s (execution id: %s)", step.getProviderId(), resourceId, executionId);
         try {
-            getStepProvider(context.getSession(), step).run(context);
+            getStepProvider(session, step).run(context);
             log.debugf("Step %s completed successfully (execution id: %s)", step.getProviderId(), executionId);
+
+            // Fire workflow step executed event
+            WorkflowProviderEvents.fireWorkflowStepExecutedEvent(session, workflow, step, resourceId, executionId);
         } catch (WorkflowExecutionException e) {
             StringBuilder sb = new StringBuilder();
             sb.append("Step %s failed (execution id: %s)");
@@ -77,6 +92,10 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
             else {
                 log.debugf(sb.toString(), step.getProviderId(), executionId);
             }
+
+            // Fire workflow step failed event
+            WorkflowProviderEvents.fireWorkflowStepFailedEvent(session, workflow, step, resourceId, executionId, errorMessage);
+
             throw e;
         }
 

@@ -185,12 +185,16 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                 if (!provider.validateResourceConditions(context)) {
                     log.debugf("Resource %s is no longer eligible for workflow %s. Cancelling execution of the workflow.",
                             scheduled.resourceId(), scheduled.workflowId());
+                    WorkflowProviderEvents.fireWorkflowDeactivatedEvent(session, workflow, scheduled.resourceId(),
+                            scheduled.executionId(), "Resource no longer meets workflow conditions");
                     stateProvider.remove(scheduled.executionId());
                 } else {
                     WorkflowStep step = context.getStep();
                     if (step == null) {
                         log.warnf("Could not find step %s in workflow %s for resource %s. Cancelling execution of the workflow.",
                                 scheduled.stepId(), scheduled.workflowId(), scheduled.resourceId());
+                        WorkflowProviderEvents.fireWorkflowDeactivatedEvent(session, workflow, scheduled.resourceId(),
+                                scheduled.executionId(), "Step not found in workflow");
                         stateProvider.remove(scheduled.executionId());
                     } else {
                         runWorkflow(context);
@@ -236,9 +240,14 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
 
         // perform the migration - for each scheduled step in the source, we remove it and activate the destination workflow from the specified step
         int stepPosition = workflowTo.getStepById(stepIdTo).getPriority() - 1;
+        WorkflowStep stepFrom = workflowFrom.getStepById(stepIdFrom);
+        WorkflowStep stepTo = workflowTo.getStepById(stepIdTo);
+
         for (ScheduledStep scheduledStep : scheduledStepsFrom) {
+            String oldExecutionId = scheduledStep.executionId();
+
             // remove the scheduled step from the source workflow
-            stateProvider.remove(scheduledStep.executionId());
+            stateProvider.remove(oldExecutionId);
 
             // activate the destination workflow for the resource, starting from the specified step
             DefaultWorkflowExecutionContext context;
@@ -252,12 +261,16 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
             }
             context.restart(stepPosition);
 
+            String newExecutionId = context.getExecutionId();
+
+            // Fire workflow resource migrated event
+            WorkflowProviderEvents.fireWorkflowResourceMigratedEvent(session, workflowFrom, workflowTo, stepFrom, stepTo,
+                    scheduledStep.resourceId(), oldExecutionId, newExecutionId);
+
             if (log.isDebugEnabled()) {
-                WorkflowStep stepFrom = workflowFrom.getStepById(stepIdFrom);
-                WorkflowStep stepTo = workflowTo.getStepById(stepIdTo);
-                log.debugf("Migrated resource %s from workflow %s (step %s) to workflow %s (step %s). New execution id: %s",
+                log.debugf("Migrated resource %s from workflow %s (step %s) to workflow %s (step %s). Old execution id: %s, new execution id: %s",
                         scheduledStep.resourceId(), workflowFrom.getName(), stepFrom.getProviderId(), workflowTo.getName(),
-                        stepTo.getProviderId(), context.getExecutionId());
+                        stepTo.getProviderId(), oldExecutionId, newExecutionId);
             }
         }
     }
@@ -273,7 +286,12 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
 
     @Override
     public void deactivate(Workflow workflow, String resourceId) {
-        stateProvider.removeByWorkflowAndResource(workflow.getId(),  resourceId);
+        WorkflowStateProvider.ScheduledStep step = stateProvider.getScheduledStep(workflow.getId(), resourceId);
+        if (step != null) {
+            stateProvider.removeByWorkflowAndResource(workflow.getId(),  resourceId);
+            log.debugf("Deactivating workflow %s for resource %s (execution id: %s)", workflow.getName(), resourceId, step.executionId());
+            WorkflowProviderEvents.fireWorkflowDeactivatedEvent(session, workflow, resourceId, step.executionId(), "manual deactivation");
+        }
     }
 
     @Override
@@ -372,6 +390,10 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                         if (isAlreadyScheduledInSession(event, workflow)) {
                             return;
                         }
+                        // Fire workflow activated event
+                        WorkflowProviderEvents.fireWorkflowActivatedEvent(session, workflow, event.getResourceId(),
+                                context.getExecutionId(), event.getEventProviderId());
+
                         // If the workflow has a positive notBefore set, schedule the first step with it
                         if (DurationConverter.isPositiveDuration(workflow.getNotBefore())) {
                             scheduleWorkflow(context);
@@ -385,9 +407,12 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                     String executionId = scheduledStep.executionId();
                     String resourceId = scheduledStep.resourceId();
                     if (provider.restart(context)) {
-                        new DefaultWorkflowExecutionContext(session, workflow, event, scheduledStep).restart(0);
+                        DefaultWorkflowExecutionContext restartContext = new DefaultWorkflowExecutionContext(session, workflow, event, scheduledStep);
+                        WorkflowProviderEvents.fireWorkflowRestartedEvent(session, workflow, resourceId, executionId);
+                        restartContext.restart(0);
                     } else if (provider.deactivate(context)) {
                         log.debugf("Workflow '%s' cancelled for resource %s (execution id: %s)", workflow.getName(), resourceId, executionId);
+                        WorkflowProviderEvents.fireWorkflowDeactivatedEvent(session, workflow, resourceId, executionId, "event-based deactivation");
                         stateProvider.remove(executionId);
                     }
                 }
