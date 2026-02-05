@@ -33,6 +33,10 @@ public class OID4VCClient {
         return new CredentialOfferRequest(client, nonce);
     }
 
+    public CredentialOfferResponse doCredentialOfferRequest(CredentialOfferURI credOfferUri) {
+        return credentialOfferRequest(credOfferUri).send();
+    }
+
     public Oid4vcCredentialRequest credentialRequest() {
         return credentialRequest(new CredentialRequest());
     }

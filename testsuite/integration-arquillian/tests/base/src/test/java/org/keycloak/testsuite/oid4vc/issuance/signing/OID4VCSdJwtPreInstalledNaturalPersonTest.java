@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import org.keycloak.VCFormat;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.model.Claim;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
@@ -43,8 +44,9 @@ public class OID4VCSdJwtPreInstalledNaturalPersonTest extends OID4VCIssuerEndpoi
      */
     @Test
     public void testGetSdJwtConfigFromMetadata() {
-        final String scopeName = sdJwtTypeNaturalPersonClientScope.getName();
-        final String credentialConfigurationId = sdJwtTypeNaturalPersonClientScope.getAttributes().get(CONFIGURATION_ID);
+        String scopeName = sdJwtTypeNaturalPersonScopeName;
+        ClientScopeRepresentation clientScope = requireExistingClientScope(scopeName);
+        String credentialConfigurationId = clientScope.getAttributes().get(CONFIGURATION_ID);
         String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/" + TEST_REALM_NAME;
         testingClient
                 .server(TEST_REALM_NAME)
