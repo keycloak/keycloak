@@ -68,6 +68,7 @@ import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.HttpStatus;
@@ -79,6 +80,7 @@ import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -964,7 +966,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
 
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
         List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
@@ -1144,7 +1146,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         try {
             ClientRepresentation testClient = testRealm().clients().findByClientId(client.getClientId()).get(0);
             ClientResource clientResource = testRealm().clients().get(testClient.getId());
-            
+
             try {
                 clientResource.addOptionalClientScope(oid4vciScope.getId());
                 Assert.fail("Expected BadRequestException when OID4VCI is disabled at realm level");
@@ -1159,5 +1161,192 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 realm.setVerifiableCredentialsEnabled(true);
             });
         }
+    }
+
+    /**
+     * Test that credential offer by reference can only be accessed once (replay protection).
+     * This ensures that the credential offer URL with a nonce can only be triggered once,
+     * preventing multiple retrievals of the same pre-authorized code.
+     */
+    @Test
+    public void testCredentialOfferReplayProtection() {
+        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
+                .get(CredentialScopeModel.CONFIGURATION_ID);
+
+        // 1. Retrieving the credential-offer-uri
+        CredentialOfferURI credentialOfferURI = oauth.oid4vc()
+                .credentialOfferUriRequest()
+                .credentialConfigurationId(credentialConfigurationId)
+                .preAuthorized(true)
+                .username("john")
+                .bearerToken(token)
+                .send()
+                .getCredentialOfferURI();
+        assertNotNull("Credential offer URI should not be null", credentialOfferURI);
+
+        String nonce = credentialOfferURI.getNonce();
+        assertNotNull("Nonce should not be null", nonce);
+
+        // 2. First access to the credential offer URL - should succeed
+        CredentialsOffer credentialsOffer = oauth.oid4vc()
+                .credentialOfferRequest(nonce)
+                .bearerToken(token)
+                .send()
+                .getCredentialsOffer();
+        assertNotNull("Credential offer should not be null", credentialsOffer);
+        assertNotNull("Pre-authorized grant should be present", credentialsOffer.getGrants());
+        String preAuthorizedCode = credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode();
+        assertNotNull("Pre-authorized code value should not be null", preAuthorizedCode);
+
+        // 3. Second access to the same credential offer URL - should fail with replay protection error
+        CredentialOfferResponse response = oauth.oid4vc()
+                .credentialOfferRequest(nonce)
+                .bearerToken(token)
+                .send();
+
+        assertEquals("Second access to credential offer should fail with 400 Bad Request",
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals("Error type should be INVALID_CREDENTIAL_OFFER_REQUEST",
+                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.name(),
+                response.getError());
+        assertTrue("Error description should mention that offer is not found or already consumed",
+                response.getErrorDescription().contains("not found") || response.getErrorDescription().contains("already consumed"));
+    }
+
+    /**
+     * Test that different nonces work independently (each offer has its own state).
+     * This verifies that replay protection is per-nonce and doesn't affect other offers.
+     */
+    @Test
+    public void testCredentialOfferDifferentNoncesIndependent() {
+        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
+                .get(CredentialScopeModel.CONFIGURATION_ID);
+
+        // 1. Create first credential offer
+        CredentialOfferURI credentialOfferURI1 = oauth.oid4vc()
+                .credentialOfferUriRequest()
+                .credentialConfigurationId(credentialConfigurationId)
+                .preAuthorized(true)
+                .username("john")
+                .bearerToken(token)
+                .send()
+                .getCredentialOfferURI();
+        assertNotNull("First credential offer URI should not be null", credentialOfferURI1);
+        String nonce1 = credentialOfferURI1.getNonce();
+        assertNotNull("First nonce should not be null", nonce1);
+
+        // 2. Create second credential offer (should have different nonce)
+        CredentialOfferURI credentialOfferURI2 = oauth.oid4vc()
+                .credentialOfferUriRequest()
+                .credentialConfigurationId(credentialConfigurationId)
+                .preAuthorized(true)
+                .username("john")
+                .bearerToken(token)
+                .send()
+                .getCredentialOfferURI();
+        assertNotNull("Second credential offer URI should not be null", credentialOfferURI2);
+        String nonce2 = credentialOfferURI2.getNonce();
+        assertNotNull("Second nonce should not be null", nonce2);
+        assertNotEquals("Nonces should be different for different offers", nonce1, nonce2);
+
+        // 3. Access first offer - should succeed
+        CredentialsOffer credentialsOffer1 = oauth.oid4vc()
+                .credentialOfferRequest(nonce1)
+                .bearerToken(token)
+                .send()
+                .getCredentialsOffer();
+        assertNotNull("First credential offer should not be null", credentialsOffer1);
+
+        // 4. Access second offer - should also succeed (different nonce, independent state)
+        CredentialsOffer credentialsOffer2 = oauth.oid4vc()
+                .credentialOfferRequest(nonce2)
+                .bearerToken(token)
+                .send()
+                .getCredentialsOffer();
+        assertNotNull("Second credential offer should not be null", credentialsOffer2);
+
+        // 5. Verify that accessing first offer again fails (replay protection per-nonce)
+        CredentialOfferResponse response1 = oauth.oid4vc()
+                .credentialOfferRequest(nonce1)
+                .bearerToken(token)
+                .send();
+
+        assertEquals("First offer should fail on second access (replay protection)",
+                Response.Status.BAD_REQUEST.getStatusCode(), response1.getStatusCode());
+        assertEquals("Error type should be INVALID_CREDENTIAL_OFFER_REQUEST",
+                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.name(),
+                response1.getError());
+
+        // 6. Verify that accessing second offer again also fails (replay protection per-nonce)
+        CredentialOfferResponse response2 = oauth.oid4vc()
+                .credentialOfferRequest(nonce2)
+                .bearerToken(token)
+                .send();
+
+        assertEquals("Second offer should fail on second access (replay protection)",
+                Response.Status.BAD_REQUEST.getStatusCode(), response2.getStatusCode());
+        assertEquals("Error type should be INVALID_CREDENTIAL_OFFER_REQUEST",
+                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.name(),
+                response2.getError());
+    }
+
+    /**
+     * Test that removing the nonce entry (for replay protection) does not invalidate
+     * the Pre-Authorized Code. This verifies that the replay protection mechanism doesn't
+     * interfere with the normal token request flow using the pre-authorized code.
+     */
+    @Test
+    public void testPreAuthorizedCodeValidAfterOfferConsumed() {
+        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
+                .get(CredentialScopeModel.CONFIGURATION_ID);
+
+        // 1. Fetch the Offer URI
+        CredentialOfferURI credentialOfferURI = oauth.oid4vc()
+                .credentialOfferUriRequest()
+                .credentialConfigurationId(credentialConfigurationId)
+                .preAuthorized(true)
+                .username("john")
+                .bearerToken(token)
+                .send()
+                .getCredentialOfferURI();
+        assertNotNull("Credential offer URI should not be null", credentialOfferURI);
+        String nonce = credentialOfferURI.getNonce();
+        assertNotNull("Nonce should not be null", nonce);
+
+        // 2. Fetch the Offer JSON (this removes the nonce entry for replay protection)
+        CredentialsOffer credentialsOffer = oauth.oid4vc()
+                .credentialOfferRequest(nonce)
+                .bearerToken(token)
+                .send()
+                .getCredentialsOffer();
+        assertNotNull("Credential offer should not be null", credentialsOffer);
+        assertNotNull("Pre-authorized grant should be present", credentialsOffer.getGrants());
+        String preAuthorizedCode = credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode();
+        assertNotNull("Pre-authorized code value should not be null", preAuthorizedCode);
+
+        // 3. Immediately perform the Token Request (Pre-Authorized Code Grant) using the valid code
+        CredentialIssuer credentialIssuer = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .endpoint(credentialsOffer.getIssuerMetadataUrl())
+                .send()
+                .getMetadata();
+        OIDCConfigurationRepresentation openidConfig = oauth
+                .wellknownRequest()
+                .url(credentialIssuer.getAuthorizationServers().get(0))
+                .send()
+                .getOidcConfiguration();
+        assertNotNull("Token endpoint should be present", openidConfig.getTokenEndpoint());
+
+        AccessTokenResponse accessTokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(preAuthorizedCode)
+                .send();
+        assertEquals("Token request should succeed even after nonce is removed for replay protection",
+                HttpStatus.SC_OK,
+                accessTokenResponse.getStatusCode());
+        assertNotNull("Access token should be present", accessTokenResponse.getAccessToken());
+        assertFalse("Access token should not be empty", accessTokenResponse.getAccessToken().isEmpty());
     }
 }

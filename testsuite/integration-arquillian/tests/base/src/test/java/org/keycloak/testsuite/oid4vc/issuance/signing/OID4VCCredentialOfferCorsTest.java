@@ -382,8 +382,11 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
                 .user((String) null)
                 .session((String) null)
                 // Storage prunes expired single-use entries before lookup; lookup failure yields INVALID_REQUEST
+                // The error message indicates the offer was not found (pruned due to expiration) or already consumed
                 .error(Errors.INVALID_REQUEST)
-                .detail(Details.REASON, Matchers.containsString("No credential offer state"))
+                .detail(Details.REASON, Matchers.anyOf(
+                        Matchers.containsString("not found"),
+                        Matchers.containsString("already consumed")))
                 .assertEvent();
     }
 
