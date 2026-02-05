@@ -544,7 +544,7 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
                 .error(Errors.IDENTITY_PROVIDER_LOGIN_FAILURE);
 
         //test correct issuer
-        managedRealm.updateIdentityProviderWithCleanup("external-idp", rep -> {
+        managedRealm.updateIdentityProvider("external-idp", rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.ISSUER, "http://localhost:8080/realms/external-realm");
         });
 
