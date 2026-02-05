@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AbstractKeycloakTransaction;
@@ -1915,6 +1916,18 @@ public class RealmAdapter implements CachedRealmModel {
     public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
         getDelegateForUpdate();
         updated.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
+    }
+
+    @Override
+    public boolean isScimEnabled() {
+        if (isUpdated()) return featureAwareIsEnabled(Feature.SCIM_API, updated.isScimEnabled());
+        return featureAwareIsEnabled(Feature.SCIM_API, cached.isScimEnabled());
+    }
+
+    @Override
+    public void setScimEnabled(boolean enabled) {
+        getDelegateForUpdate();
+        updated.setScimEnabled(enabled);
     }
 
     private boolean featureAwareIsEnabled(Profile.Feature feature, boolean isEnabled) {

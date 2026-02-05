@@ -326,7 +326,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
             Predicate<AttributeContext> selector = AttributeMetadata.ALWAYS_TRUE;
             UPAttributeSelector sc = attrConfig.getSelector();
-            if (sc != null && !isBuiltInAttribute(attributeName) && context.canBeAuthFlowContext() && sc.getScopes() != null && !sc.getScopes().isEmpty()) {
+            if (sc != null && !isBuiltInAttribute(context, attributeName) && context.canBeAuthFlowContext() && sc.getScopes() != null && !sc.getScopes().isEmpty()) {
                 // for contexts executed from auth flow and with configured scopes selector
                 // we have to create correct predicate
                 selector = (c) -> requestedScopePredicate(c, sc.getScopes());
@@ -347,7 +347,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                         .build()));
             }
 
-            if (isBuiltInAttribute(attributeName)) {
+            if (isBuiltInAttribute(context, attributeName)) {
                 // make sure username and email are writable if permissions are not set
                 if (permissions == null || permissions.isEmpty()) {
                     writeAllowed = AttributeMetadata.ALWAYS_TRUE;
@@ -405,7 +405,12 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
         return new AttributeGroupMetadata(group.getName(), group.getDisplayHeader(), group.getDisplayDescription(), group.getAnnotations());
     }
 
-    private boolean isBuiltInAttribute(String attributeName) {
+    private boolean isBuiltInAttribute(UserProfileContext context, String attributeName) {
+        if (UserProfileContext.SCIM.equals(context)) {
+            if (UserModel.FIRST_NAME.equals(attributeName) || UserModel.LAST_NAME.equals(attributeName)) {
+                return true;
+            }
+        }
         return UserModel.USERNAME.equals(attributeName) || UserModel.EMAIL.equals(attributeName);
     }
 
@@ -512,7 +517,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
                 String attributeName = metadata.getName();
 
-                if (isBuiltInAttribute(attributeName) && parsedDefaultRawConfig != null) {
+                if (isBuiltInAttribute(decoratedMetadata.getContext(), attributeName) && parsedDefaultRawConfig != null) {
                     UPAttribute upAttribute = parsedDefaultRawConfig.getAttribute(attributeName);
                     Map<String, Map<String, Object>> validations = Optional.ofNullable(upAttribute.getValidations()).orElse(Collections.emptyMap());
 

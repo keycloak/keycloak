@@ -165,7 +165,9 @@ public class Profile {
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
          */
         @Deprecated
-        INSTAGRAM_BROKER("Instagram Identity Broker", Type.DEPRECATED, 1);
+        INSTAGRAM_BROKER("Instagram Identity Broker", Type.DEPRECATED, 1),
+
+        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.EXPERIMENTAL);
 
         private final Type type;
         private final String label;

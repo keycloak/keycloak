@@ -33,7 +33,7 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class UmaRepresentationTest extends AbstractResourceServerTest {
+public class UmaResourceTypeRepresentationTest extends AbstractResourceServerTest {
     private ResourceRepresentation resource;
     private PermissionResource permission;
 
