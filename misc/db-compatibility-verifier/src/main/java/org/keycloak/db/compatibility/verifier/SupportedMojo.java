@@ -6,7 +6,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 
 @Mojo(name = "supported")
-public class ChangeSetSupportedMojo extends AbstractChangeSetMojo {
+public class SupportedMojo extends AbstractNewEntryMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -22,16 +22,9 @@ public class ChangeSetSupportedMojo extends AbstractChangeSetMojo {
         checkFileExist("unsupported", uFile);
 
         try {
-            if (addAll) {
-                addAll(classLoader(), sFile, uFile);
-            } else {
-                checkValidChangeSetId(id, author, filename);
-                ChangeSet changeSet = new ChangeSet(id, author, filename);
-                addIndividual(classLoader(), changeSet, sFile, uFile);
-            }
+            execute(sFile, uFile);
         } catch (Exception e) {
-            throw new MojoExecutionException("Error adding ChangeSet to supported file", e);
+            throw new MojoExecutionException("Error adding entry to supported file", e);
         }
     }
-
 }
