@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.AdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
@@ -169,6 +170,10 @@ public class KeycloakSpec {
     @JsonProperty("automountServiceAccountToken")
     @JsonPropertyDescription("Set this to to false to disable automounting the default ServiceAccount Token and Service CA. This is enabled by default.")
     private Boolean automountServiceAccountToken;
+
+    @JsonProperty("admin")
+    @JsonPropertyDescription("In this section you can find all properties related to making admin connections from the operator to the server. These settings are not used by the server.")
+    private AdminSpec adminSpec;
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -409,5 +414,13 @@ public class KeycloakSpec {
 
     public void setAutomountServiceAccountToken(Boolean automountServiceAccountToken) {
         this.automountServiceAccountToken = automountServiceAccountToken;
+    }
+
+    public AdminSpec getAdminSpec() {
+        return adminSpec;
+    }
+
+    public void setAdminSpec(AdminSpec adminSpec) {
+        this.adminSpec = adminSpec;
     }
 }

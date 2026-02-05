@@ -40,6 +40,18 @@ public class StatusCondition {
     private String lastTransitionTime;
     private Long observedGeneration;
 
+    public StatusCondition() {
+    }
+
+    public StatusCondition(String type, Boolean status, String message, String lastTransitionTime,
+            Long observedGeneration) {
+        this.type = type;
+        this.message = message;
+        this.lastTransitionTime = lastTransitionTime;
+        this.observedGeneration = observedGeneration;
+        this.setStatus(status);
+    }
+
     public String getType() {
         return type;
     }
@@ -103,8 +115,12 @@ public class StatusCondition {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         StatusCondition that = (StatusCondition) o;
         return Objects.equals(getType(), that.getType()) && Objects.equals(getStatus(), that.getStatus()) && Objects.equals(getMessage(), that.getMessage())
                 && Objects.equals(getLastTransitionTime(), that.getLastTransitionTime())

@@ -45,7 +45,6 @@ public class KeycloakAdminSecretDependentResource extends KubernetesDependentRes
                 .addToLabels(Utils.allInstanceLabels(primary))
                 .withNamespace(primary.getMetadata().getNamespace())
                 .endMetadata()
-                .withType("Opaque")
                 .withType("kubernetes.io/basic-auth")
                 .addToData("username", Utils.asBase64("temp-admin"))
                 .addToData("password", Utils.asBase64(UUID.randomUUID().toString().replace("-", "")))

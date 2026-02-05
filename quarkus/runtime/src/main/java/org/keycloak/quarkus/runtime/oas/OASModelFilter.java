@@ -192,13 +192,13 @@ public class OASModelFilter implements OASFilter {
         // Validations
 
         AnnotationValue useValue = typeInfoAnnotation.value("use");
-        if (useValue == null || !JsonTypeInfo.Id.SIMPLE_NAME.name().equals(useValue.asEnum())) {
-            throw new IllegalArgumentException(parentClassInfo.simpleName() + ": JsonTypeInfo annotation must have use=SIMPLE_NAME.");
+        if (useValue == null || !JsonTypeInfo.Id.NAME.name().equals(useValue.asEnum())) {
+            throw new IllegalArgumentException(parentClassInfo.simpleName() + ": JsonTypeInfo annotation must have use=NAME.");
         }
 
         AnnotationValue includeValue = typeInfoAnnotation.value("include");
-        if (includeValue != null && !JsonTypeInfo.As.PROPERTY.name().equals(includeValue.asEnum())) {
-            throw new IllegalArgumentException(parentClassInfo.simpleName() + ": JsonTypeInfo annotation must have include=PROPERTY, or include must not be set.");
+        if (includeValue != null && !JsonTypeInfo.As.EXISTING_PROPERTY.name().equals(includeValue.asEnum())) {
+            throw new IllegalArgumentException(parentClassInfo.simpleName() + ": JsonTypeInfo annotation must have include=EXISTING_PROPERTY, or include must not be set.");
         }
 
         String discriminatorPropertyName = Optional.of(typeInfoAnnotation.value("property")).map(AnnotationValue::asString).orElse("");

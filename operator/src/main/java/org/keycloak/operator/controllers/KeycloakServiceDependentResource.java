@@ -51,8 +51,7 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
         var builder = new ServiceSpecBuilder().withSelector(Utils.allInstanceLabels(keycloak));
 
         boolean tlsConfigured = isTlsConfigured(keycloak);
-        Optional<HttpSpec> httpSpec = Optional.ofNullable(keycloak.getSpec().getHttpSpec());
-        boolean httpEnabled = httpSpec.map(HttpSpec::getHttpEnabled).orElse(false);
+        boolean httpEnabled = isHttpEnabled(keycloak);
         if (!tlsConfigured || httpEnabled) {
             builder.addNewPort()
                     .withPort(HttpSpec.httpPort(keycloak))
@@ -75,6 +74,12 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
                 .endPort();
 
         return builder.build();
+    }
+
+    static boolean isHttpEnabled(Keycloak keycloak) {
+        Optional<HttpSpec> httpSpec = Optional.ofNullable(keycloak.getSpec().getHttpSpec());
+        boolean httpEnabled = httpSpec.map(HttpSpec::getHttpEnabled).orElse(false);
+        return httpEnabled;
     }
 
     @Override
