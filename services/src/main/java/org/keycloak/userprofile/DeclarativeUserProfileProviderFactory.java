@@ -72,6 +72,8 @@ import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.EmailValidator;
 import org.keycloak.validate.validators.PatternValidator;
 
+import org.jspecify.annotations.NonNull;
+
 import static java.util.Optional.ofNullable;
 
 import static org.keycloak.common.Profile.Feature.OID4VC_VCI;
@@ -80,6 +82,7 @@ import static org.keycloak.userprofile.DefaultAttributes.READ_ONLY_ATTRIBUTE_KEY
 import static org.keycloak.userprofile.UserProfileContext.ACCOUNT;
 import static org.keycloak.userprofile.UserProfileContext.IDP_REVIEW;
 import static org.keycloak.userprofile.UserProfileContext.REGISTRATION;
+import static org.keycloak.userprofile.UserProfileContext.SCIM;
 import static org.keycloak.userprofile.UserProfileContext.UPDATE_EMAIL;
 import static org.keycloak.userprofile.UserProfileContext.UPDATE_PROFILE;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
@@ -275,6 +278,29 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         }
         addContextualProfileMetadata(configureUserProfile(createRegistrationUserCreationProfile(readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createUserResourceValidation(config)));
+        addContextualProfileMetadata(configureUserProfile(createScimProfile(readOnlyValidator)));
+    }
+
+    private @NonNull UserProfileMetadata createScimProfile(AttributeValidatorMetadata readOnlyValidator) {
+        UserProfileMetadata metadata = createDefaultProfile(SCIM, readOnlyValidator);
+
+        metadata.getAttribute(UserModel.USERNAME).get(0)
+                .addAnnotations(Map.of("scim.schema", "urn:ietf:params:scim:schemas:core:2.0:User",
+                        "scim.schema.attribute", "userName"));
+        metadata.getAttribute(UserModel.EMAIL).get(0)
+                .addAnnotations(Map.of("scim.schema", "urn:ietf:params:scim:schemas:core:2.0:User",
+                        "scim.schema.attribute", "emails[0].value"));
+        metadata.addAttribute(UserModel.FIRST_NAME, -1, AttributeMetadata.ALWAYS_TRUE, AttributeMetadata.ALWAYS_TRUE)
+                .addAnnotations(Map.of("scim.schema", "urn:ietf:params:scim:schemas:core:2.0:User",
+                        "scim.schema.attribute", "name.givenName"));
+        metadata.addAttribute(UserModel.LAST_NAME, -1, AttributeMetadata.ALWAYS_TRUE, AttributeMetadata.ALWAYS_TRUE)
+                .addAnnotations(Map.of("scim.schema", "urn:ietf:params:scim:schemas:core:2.0:User",
+                        "scim.schema.attribute", "name.familyName"));
+        metadata.addAttribute(UserModel.ENABLED, -1, AttributeMetadata.ALWAYS_TRUE, AttributeMetadata.ALWAYS_TRUE)
+                .addAnnotations(Map.of("scim.schema", "urn:ietf:params:scim:schemas:core:2.0:User",
+                        "scim.schema.attribute", "active"));
+
+        return metadata;
     }
 
     @Override
