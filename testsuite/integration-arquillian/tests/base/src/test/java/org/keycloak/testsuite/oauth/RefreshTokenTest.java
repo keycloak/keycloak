@@ -18,9 +18,11 @@ package org.keycloak.testsuite.oauth;
 
 import java.io.Closeable;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
@@ -714,6 +716,54 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             AccessTokenResponse response4 = oauth.doRefreshTokenRequest(response2.getRefreshToken());
             assertEquals(400, response4.getStatusCode());
             events.expectRefresh(refreshToken2.getId(), sessionId).user((String) null).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
+        } finally {
+            RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(false);
+        }
+    }
+
+    // GH issue 45647
+    @Test
+    public void refreshTokenReuseTokenWithConcurrentRefreshTokenRequests() {
+        try {
+            RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(true);
+
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.parseLoginResponse().getCode();
+
+            AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
+
+            // Try concurrent requests for refresh-token requests
+            AtomicInteger successCounts = new AtomicInteger(0);
+            AtomicInteger errorCounts = new AtomicInteger(0);
+            Runnable runnable = () -> {
+                AccessTokenResponse response2 = oauth.doRefreshTokenRequest(response1.getRefreshToken());
+                if (response2.getStatusCode() == 200) {
+                    successCounts.incrementAndGet();
+                } else {
+                    assertEquals(400, response2.getStatusCode());
+                    errorCounts.incrementAndGet();
+                }
+            };
+
+            List<Thread> threads = new ArrayList<>();
+            for (int i = 0 ; i < 5 ; i++) {
+                threads.add(new Thread(runnable));
+            }
+            for (Thread t : threads) {
+                t.start();
+            }
+            for (Thread t : threads) {
+                try {
+                    t.join();
+                } catch(InterruptedException ie) {
+                    Assert.fail("Interrupted exception thrown in one of the threads during token refresh");
+                }
+            }
+
+            // Only one refresh should success
+            assertEquals("Expected only single success, but was refresh succeeded " + successCounts.get() + " times", 1, successCounts.get());
+            assertEquals(4, errorCounts.get());
         } finally {
             RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(false);
         }
