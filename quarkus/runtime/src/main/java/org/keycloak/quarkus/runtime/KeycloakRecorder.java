@@ -71,6 +71,15 @@ public class KeycloakRecorder {
         Config.init(new MicroProfileConfigProvider());
     }
 
+    public void createHttpAccessLogDirectory() {
+        Environment.getHomeDir().ifPresent(homeDir -> {
+            File logDir = new File(homeDir, "data" + File.separator + "log");
+            if (!logDir.exists()) {
+                logDir.mkdirs();
+            }
+        });
+    }
+
     public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features) {
         Profile.init(profileName, features);
     }
