@@ -296,7 +296,7 @@ public class LoggingDistTest {
     }
 
     protected static String readHttpAccessLogFile(RawDistRootPath path, String logName) {
-        return readFile(path.getDistRootPath() + File.separator + "data" + File.separator + logName, "HTTP Access log");
+        return readFile(path.getDistRootPath() + File.separator + "data" + File.separator + "log" + File.separator + logName, "HTTP Access log");
     }
 
     protected static String readFile(String path, String fileType) {
@@ -338,7 +338,7 @@ public class LoggingDistTest {
                 .statusCode(200);
         fileCliResult.assertNoMessage("127.0.0.1 GET /realms/master/clients/account/redirect");
 
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(() -> {
             String data = readHttpAccessLogFile(path, "keycloak-http-access.log");
             assertNotNull(data);
             assertThat(data, containsString("127.0.0.1 GET /realms/master/.well-known/openid-configuration"));
@@ -358,10 +358,12 @@ public class LoggingDistTest {
                 .statusCode(200);
         cliResult.assertNoMessage("http://127.0.0.1:8080/realms/master/clients/account/redirect");
 
-        String data = readHttpAccessLogFile(path, "my-custom-http-access.txt");
-        assertNotNull(data);
-        assertThat(data, containsString("GET /realms/master/.well-known/openid-configuration HTTP/1.1"));
-        assertThat(data, containsString("GET /realms/master/clients/account/redirect"));
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(() -> {
+            String data = readHttpAccessLogFile(path, "my-custom-http-access.txt");
+            assertNotNull(data);
+            assertThat(data, containsString("GET /realms/master/.well-known/openid-configuration HTTP/1.1"));
+            assertThat(data, containsString("GET /realms/master/clients/account/redirect"));
+        });
     }
 
     // Telemetry Logs

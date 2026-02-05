@@ -250,11 +250,15 @@ class KeycloakProcessor {
     @BuildStep
     @Produce(ConfigBuildItem.class)
     void initConfig(KeycloakRecorder recorder) {
-        // other buildsteps directly use the Config
-        // so directly init it
         Config.init(new MicroProfileConfigProvider());
-        // also init in byte code for the actual server start
         recorder.initConfig();
+    }
+
+    @Record(ExecutionTime.RUNTIME_INIT)
+    @BuildStep
+    @Consume(ConfigBuildItem.class)
+    void createHttpAccessLogDirectory(KeycloakRecorder recorder) {
+        recorder.createHttpAccessLogDirectory();
     }
 
     @Record(ExecutionTime.STATIC_INIT)
