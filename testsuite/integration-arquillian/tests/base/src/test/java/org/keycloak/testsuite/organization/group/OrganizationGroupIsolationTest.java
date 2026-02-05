@@ -22,10 +22,14 @@ import java.util.List;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 
@@ -273,5 +277,47 @@ public class OrganizationGroupIsolationTest extends AbstractOrganizationTest {
         // Should only find org group, not realm group
         assertThat(results, hasSize(1));
         assertThat(results.get(0).getName(), is("Engineering"));
+    }
+
+    @Test
+    public void testCannotUseOrgGroupInAuthorizationPolicy() {
+        // Organization groups cannot be used in authorization policies - only realm groups are allowed
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        // Create organization group
+        GroupRepresentation orgGroupRep = new GroupRepresentation();
+        orgGroupRep.setName("Engineering");
+        String orgGroupId;
+        try (Response response = orgResource.groups().addTopLevelGroup(orgGroupRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            orgGroupId = ApiUtil.getCreatedId(response);
+        }
+
+        // Create a client with authorization services enabled
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId("test-authz-client");
+        clientRep.setSecret("secret");
+        clientRep.setServiceAccountsEnabled(true);
+        clientRep.setAuthorizationServicesEnabled(true);
+        clientRep.setPublicClient(false);
+
+        String clientId;
+        try (Response response = testRealm().clients().create(clientRep)) {
+            clientId = ApiUtil.getCreatedId(response);
+        }
+        getCleanup().addCleanup(() -> testRealm().clients().get(clientId).remove());
+
+        ClientResource clientResource = testRealm().clients().get(clientId);
+
+        // Try to create a group policy using the organization group - should fail
+        GroupPolicyRepresentation policy = new GroupPolicyRepresentation();
+        policy.setName("org-group-policy");
+        policy.addGroup(orgGroupId);
+        policy.setLogic(Logic.POSITIVE);
+
+        try (Response response = clientResource.authorization().policies().group().create(policy)) {
+            assertThat(response.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
+        }
     }
 }
