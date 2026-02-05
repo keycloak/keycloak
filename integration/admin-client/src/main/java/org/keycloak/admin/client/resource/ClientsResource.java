@@ -55,10 +55,10 @@ public interface ClientsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<ClientRepresentation> findAll(@QueryParam("clientId") String clientId,
-                                                 @QueryParam("viewableOnly") Boolean viewableOnly,
-                                                 @QueryParam("search") Boolean search,
-                                                 @QueryParam("first") Integer firstResult,
-                                                 @QueryParam("max") Integer maxResults);
+                                       @QueryParam("viewableOnly") Boolean viewableOnly,
+                                       @QueryParam("search") Boolean search,
+                                       @QueryParam("first") Integer firstResult,
+                                       @QueryParam("max") Integer maxResults);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -71,5 +71,14 @@ public interface ClientsResource {
     @Path("{id}")
     @DELETE
     Response delete(@PathParam("id") String id);
+
+    /**
+     * Entry point for the Client V2 API.
+     * Acts as a JAX-RS sub-resource locator for the new V2 implementation.
+     * <p>
+     * Usage: {@code adminClient.realm("myRealm").clients().v2()...}
+     */
+    @Path("v2")
+    Object v2(); // TODO: Replace 'Object' with the generated 'ClientsV2Api' interface once the module dependency is circular-free.
 
 }
