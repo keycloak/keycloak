@@ -40,7 +40,9 @@ public class UIRealmsResource {
     @Operation(
             summary = "Lists only the names and display names of the realms",
             description = "Returns a list of realms containing only their name and displayName" +
-                    " based on what the caller is allowed to view"
+                    " based on what the caller is allowed to view. Looks for name and displayName by default. " +
+                          "To search only by name use the prefix 'name:'." +
+                          "To search only by display name use the prefix 'displayName:'."
     )
     @APIResponse(
             responseCode = "200",
