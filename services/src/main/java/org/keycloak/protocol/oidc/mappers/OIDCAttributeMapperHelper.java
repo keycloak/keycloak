@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapper;
@@ -39,6 +40,7 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.JsonUtils.splitClaimPath;
@@ -273,6 +275,39 @@ public class OIDCAttributeMapperHelper {
             }
         }
         return null;
+    }
+
+    /**
+     * Get or initialize the organization claim as a mutable Map for composition between organization mappers.
+     * Handles conversion from OrganizationMembershipMapper output to Map structure that
+     * OrganizationGroupMembershipMapper can add to. Supports ObjectNode (JSON type), Collection or String
+     * (String type), existing Map, or creates empty Map if null.
+     *
+     * @param token the token
+     * @param claimName the name of the organization claim
+     * @return a mutable Map that can be manipulated; changes will be reflected in the token
+     */
+    public static Map<String, Object> getOrInitializeOrganizationClaimAsMap(IDToken token, String claimName) {
+        Object existingClaim = token.getOtherClaims().get(claimName);
+        Map<String, Object> result;
+
+        if (existingClaim instanceof ObjectNode) {
+            // OrganizationMembershipMapper with JSON_TYPE="JSON"
+            result = JsonSerialization.mapper.convertValue(existingClaim, Map.class);
+        } else if (existingClaim instanceof Collection || existingClaim instanceof String) {
+            // OrganizationMembershipMapper with String type - single alias or Collection of aliases
+            result = new HashMap<>();
+            Stream<?> items = existingClaim instanceof Collection ? ((Collection<?>) existingClaim).stream() : Stream.of(existingClaim);
+            items.filter(Objects::nonNull).forEach(item -> result.put(item.toString(), new HashMap<>()));
+        } else if (existingClaim instanceof Map) {
+            // Already a Map, use as-is
+            result = (Map<String, Object>) existingClaim;
+        } else {
+            result = new HashMap<>();
+        }
+
+        token.setOtherClaims(claimName, result);
+        return result;
     }
 
     public static void mapClaim(IDToken token, ProtocolMapperModel mappingModel, Object attributeValue) {
