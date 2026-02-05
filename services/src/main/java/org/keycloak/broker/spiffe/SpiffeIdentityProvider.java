@@ -52,6 +52,10 @@ public class SpiffeIdentityProvider implements ClientAssertionIdentityProvider<S
                     null, config.getAllowedClockSkew(), true);
         validator.setExpectedClientAssertionType(SpiffeConstants.CLIENT_ASSERTION_TYPE);
 
+        if (config.getFederatedClientAssertionMaxExpiration() != 0) {
+            validator.setMaximumExpirationTime(config.getFederatedClientAssertionMaxExpiration());
+        }
+
         String trustedDomain = config.getTrustDomain();
 
         JsonWebToken token = validator.getState().getToken();

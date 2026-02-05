@@ -6,6 +6,7 @@ import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthe
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -115,6 +116,48 @@ public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
         jwt = createDefaultToken();
         assertFailure("Invalid token audience", doClientGrant(jwt));
         assertFailure(INTERNAL_CLIENT_ID, TOKEN_ISSUER, EXTERNAL_CLIENT_ID, jwt.getId(), events.poll());
+    }
+
+    @Test
+    public void testFederatedClientAssertionMaxExpiration() {
+        // Set max expiration to 60 seconds
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.getConfig().put(IdentityProviderModel.FEDERATED_CLIENT_ASSERTION_MAX_EXPIRATION, "60");
+        });
+
+        // Token with exp within the limit should succeed
+        JsonWebToken jwt = createDefaultToken();
+        jwt.exp((long) (Time.currentTime() + 30));
+        assertSuccess(INTERNAL_CLIENT_ID, doClientGrant(jwt));
+        assertSuccess(INTERNAL_CLIENT_ID, jwt.getId(), TOKEN_ISSUER, EXTERNAL_CLIENT_ID, events.poll());
+
+        // Token with exp exceeding the limit should fail
+        jwt = createDefaultToken();
+        jwt.exp((long) (Time.currentTime() + 120));
+        assertFailure("Token was issued too far in the past to be used now", doClientGrant(jwt));
+        assertFailure(INTERNAL_CLIENT_ID, TOKEN_ISSUER, EXTERNAL_CLIENT_ID, jwt.getId(), events.poll());
+    }
+
+    @Test
+    public void testFederatedClientAssertionMaxExpirationWithoutIat() {
+        // Set max expiration to 60 seconds
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.getConfig().put(IdentityProviderModel.FEDERATED_CLIENT_ASSERTION_MAX_EXPIRATION, "60");
+        });
+
+        // Token without iat and exp too far in the future should fail
+        JsonWebToken jwt = createDefaultToken();
+        jwt.iat(null);
+        jwt.exp((long) (Time.currentTime() + 120));
+        assertFailure("Token expiration is too far in the future and iat claim not present in token", doClientGrant(jwt));
+        assertFailure(INTERNAL_CLIENT_ID, TOKEN_ISSUER, EXTERNAL_CLIENT_ID, jwt.getId(), events.poll());
+
+        // Token without iat but exp within the limit should succeed
+        jwt = createDefaultToken();
+        jwt.iat(null);
+        jwt.exp((long) (Time.currentTime() + 30));
+        assertSuccess(INTERNAL_CLIENT_ID, doClientGrant(jwt));
+        assertSuccess(INTERNAL_CLIENT_ID, jwt.getId(), TOKEN_ISSUER, EXTERNAL_CLIENT_ID, events.poll());
     }
 
     @Test

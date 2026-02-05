@@ -31,7 +31,11 @@ public class KubernetesIdentityProvider implements ClientAssertionIdentityProvid
     @Override
     public boolean verifyClientAssertion(ClientAuthenticationFlowContext context) throws Exception {
         FederatedJWTClientValidator validator = new FederatedJWTClientValidator(context, this::verifySignature, config.getIssuer(), config.getAllowedClockSkew(), true);
-        validator.setMaximumExpirationTime(3600); // Kubernetes defaults to 1 hour (https://kubernetes.io/docs/concepts/storage/projected-volumes/#serviceaccounttoken)
+        if (config.getFederatedClientAssertionMaxExpiration() != 0) {
+            validator.setMaximumExpirationTime(config.getFederatedClientAssertionMaxExpiration());
+        } else {
+            validator.setMaximumExpirationTime(3600); // Kubernetes defaults to 1 hour (https://kubernetes.io/docs/concepts/storage/projected-volumes/#serviceaccounttoken)
+        }
         return validator.validate();
     }
 

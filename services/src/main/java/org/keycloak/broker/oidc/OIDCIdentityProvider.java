@@ -1076,6 +1076,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             throw new RuntimeException("Issuer does not support client assertions");
         }
 
+        if (config.getFederatedClientAssertionMaxExpiration() != 0) {
+            validator.setMaximumExpirationTime(config.getFederatedClientAssertionMaxExpiration());
+        }
+
         return validator.validate();
     }
 
