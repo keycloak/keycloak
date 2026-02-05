@@ -408,7 +408,7 @@ public class ClientApiV2Test {
         HttpGet request = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/account");
         setAuthHeader(request, noAccessAdminClient);
         try (var response = client.execute(request)) {
-            assertEquals(401, response.getStatusLine().getStatusCode());
+            assertEquals(403, response.getStatusLine().getStatusCode());
         }
     }
 
