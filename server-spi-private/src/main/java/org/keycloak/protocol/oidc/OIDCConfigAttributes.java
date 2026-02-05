@@ -98,6 +98,8 @@ public final class OIDCConfigAttributes {
     public static final String JWT_AUTHORIZATION_GRANT_ENABLED = "oauth2.jwt.authorization.grant.enabled";
     public static final String JWT_AUTHORIZATION_GRANT_IDP = "oauth2.jwt.authorization.grant.idp";
 
+    public static final String ALLOW_USER_DESELECT_OPTIONAL_SCOPES = "allow.user.deselect.optional.scopes";
+
 
     private OIDCConfigAttributes() {
     }

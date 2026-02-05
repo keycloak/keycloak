@@ -19,12 +19,22 @@
                 <#if oauth.clientScopesRequested??>
                     <#list oauth.clientScopesRequested as clientScope>
                         <li>
+                            <#if oauth.allowUserDeselectOptionalScopes && !clientScope.required>
+                                <input type="checkbox" id="scope_${clientScope.id}" name="scope_${clientScope.id}" checked />
+                                <label for="scope_${clientScope.id}">
+                            </#if>
                             <span><#if !clientScope.dynamicScopeParameter??>
                                         ${advancedMsg(clientScope.consentScreenText)}
                                     <#else>
                                         ${advancedMsg(clientScope.consentScreenText)}: <b>${clientScope.dynamicScopeParameter}</b>
                                 </#if>
                             </span>
+                            <#if oauth.allowUserDeselectOptionalScopes && !clientScope.required>
+                                </label>
+                            </#if>
+                            <#if oauth.allowUserDeselectOptionalScopes && clientScope.required>
+                                <span style="color: #888; font-size: 0.9em;"> (${msg("required")})</span>
+                            </#if>
                         </li>
                     </#list>
                 </#if>
