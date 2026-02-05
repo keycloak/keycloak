@@ -10,7 +10,7 @@ import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvide
 
 /**
  * The class is the factory class of {@link ClientIdUriSchemeCondition}.
- * It provides one configuration: Scheme part of the URI.
+ * It provides two configuration: Scheme part and host part of the URI.
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
@@ -19,6 +19,7 @@ public class ClientIdUriSchemeConditionFactory extends AbstractClientPolicyCondi
     public static final String PROVIDER_ID = "client-id-uri";
 
     public static final String CLIENT_ID_URI_SCHEME = "client-id-uri-scheme";
+    public static final String TRUSTED_DOMAINS = "client-id-uri-allow-permitted-domains";
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
@@ -31,6 +32,20 @@ public class ClientIdUriSchemeConditionFactory extends AbstractClientPolicyCondi
                 "URI scheme",
                 "Scheme part of the URI",
                 ProviderConfigProperty.MULTIVALUED_STRING_TYPE, null);
+        configProperties.add(property);
+
+        property = new ProviderConfigProperty(
+                TRUSTED_DOMAINS,
+                "Trusted domains",
+                "If some domains are filled, The condition evaluates to true " +
+                        "if the host part of client_id parameter in an authorization request matches one of the filled domains. " +
+                        "Otherwise, the condition evaluates to false " +
+                        "The domains are checked by using regex. " +
+                        "If the domains not filled, the condition evaluate to false regardless of the client_id parameter value. " +
+                        "For example, use pattern like this '(.*)\\.example\\.org' if you want to accept the parameter / property whose domain is 'example.org'." +
+                        "Don't forget to use escaping of special characters like dots as otherwise dot is interpreted as any character in regex!",
+                ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
+                null);
         configProperties.add(property);
     }
 
@@ -46,7 +61,8 @@ public class ClientIdUriSchemeConditionFactory extends AbstractClientPolicyCondi
 
     @Override
     public String getHelpText() {
-        return "The condition checks whether client_id is URI and its scheme.).";
+        return "The condition checks that the scheme part of client_id parameter matches one of the filled ones " +
+               "and the host part of the client_id matches one of the filled domains.";
     }
 
     @Override

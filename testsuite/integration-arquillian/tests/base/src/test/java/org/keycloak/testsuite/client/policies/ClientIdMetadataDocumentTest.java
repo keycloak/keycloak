@@ -104,12 +104,13 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         ).toString();
         updateProfiles(json);
 
-        // register policies
+        // register policies : no trusted domain
         json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
                 (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
                         .addCondition(ClientIdUriSchemeConditionFactory.PROVIDER_ID,
-                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->
-                                        it.setClientIdUriSchemes(List.of("spiffe"))))
+                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->{
+                                        it.setClientIdUriSchemes(List.of("spiffe"));
+                                }))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -117,7 +118,52 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
 
         String clientId;
 
-        // CIMD executor is not executed, so we expect the error showing that client is not found.
+        // allowed scheme: spiffe
+        // actual scheme: https
+        // -> CIMD executor is not executed, so we expect the error showing that client is not found.
+        clientId = TestApplicationResourceUrls.getClientIdMetadataUri(generateSuffixedName("CIMD"));
+        oauth.client(clientId);
+        oauth.openLoginForm();
+        assertTrue(errorPage.isCurrent());
+        assertEquals("Client not found.", errorPage.getError());
+
+        // update policies: trusted domain vacant
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(ClientIdUriSchemeConditionFactory.PROVIDER_ID,
+                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->{
+                                    it.setClientIdUriSchemes(List.of("http", "https"));
+                                }))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // trusted domains: vacant
+        // host: localhost
+        // -> CIMD executor is not executed, so we expect the error showing that client is not found.
+        clientId = TestApplicationResourceUrls.getClientIdMetadataUri(generateSuffixedName("CIMD"));
+        oauth.client(clientId);
+        oauth.openLoginForm();
+        assertTrue(errorPage.isCurrent());
+        assertEquals("Client not found.", errorPage.getError());
+
+        // update policies: trusted domain filled
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(ClientIdUriSchemeConditionFactory.PROVIDER_ID,
+                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->{
+                                    it.setClientIdUriSchemes(List.of("http", "https"));
+                                    it.setTrustedDomains(List.of("example.com","mcp.example.com"));
+                                }))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // trusted domains: example.com, mcp.example.com
+        // host: localhost
+        // -> CIMD executor is not executed, so we expect the error showing that client is not found.
         clientId = TestApplicationResourceUrls.getClientIdMetadataUri(generateSuffixedName("CIMD"));
         oauth.client(clientId);
         oauth.openLoginForm();
@@ -144,8 +190,10 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
                 (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
                         .addCondition(ClientIdUriSchemeConditionFactory.PROVIDER_ID,
-                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->
-                                        it.setClientIdUriSchemes(List.of("http", "https"))))
+                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->{
+                                        it.setClientIdUriSchemes(List.of("http", "https"));
+                                        it.setTrustedDomains(List.of("*.example.com","localhost"));
+                                }))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -271,8 +319,10 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
                 (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
                         .addCondition(ClientIdUriSchemeConditionFactory.PROVIDER_ID,
-                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->
-                                        it.setClientIdUriSchemes(List.of("http", "https"))))
+                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->{
+                                        it.setClientIdUriSchemes(List.of("http", "https"));
+                                        it.setTrustedDomains(List.of("*.example.com","localhost"));
+                                }))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -363,8 +413,10 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
                 (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
                         .addCondition(ClientIdUriSchemeConditionFactory.PROVIDER_ID,
-                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->
-                                        it.setClientIdUriSchemes(List.of("http", "https"))))
+                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->{
+                                        it.setClientIdUriSchemes(List.of("http", "https"));
+                                        it.setTrustedDomains(List.of("*.example.com","localhost"));
+                                }))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -476,8 +528,10 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
                 (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
                         .addCondition(ClientIdUriSchemeConditionFactory.PROVIDER_ID,
-                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->
-                                        it.setClientIdUriSchemes(List.of("http", "https"))))
+                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->{
+                                        it.setClientIdUriSchemes(List.of("http", "https"));
+                                        it.setTrustedDomains(List.of("*.example.com","localhost"));
+                                }))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -512,8 +566,10 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
                 (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
                         .addCondition(ClientIdUriSchemeConditionFactory.PROVIDER_ID,
-                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->
-                                        it.setClientIdUriSchemes(List.of("http", "https"))))
+                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->{
+                                        it.setClientIdUriSchemes(List.of("http", "https"));
+                                        it.setTrustedDomains(List.of("*.example.com","localhost"));
+                                }))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -645,8 +701,10 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
                 (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
                         .addCondition(ClientIdUriSchemeConditionFactory.PROVIDER_ID,
-                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->
-                                        it.setClientIdUriSchemes(List.of("http", "https"))))
+                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->{
+                                        it.setClientIdUriSchemes(List.of("http", "https"));
+                                        it.setTrustedDomains(List.of("*.example.com","localhost"));
+                                }))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -712,8 +770,10 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
                 (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
                         .addCondition(ClientIdUriSchemeConditionFactory.PROVIDER_ID,
-                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->
-                                        it.setClientIdUriSchemes(List.of("http", "https"))))
+                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->{
+                                        it.setClientIdUriSchemes(List.of("http", "https"));
+                                        it.setTrustedDomains(List.of("*.example.com","localhost"));
+                                }))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -750,8 +810,10 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
                 (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
                         .addCondition(ClientIdUriSchemeConditionFactory.PROVIDER_ID,
-                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->
-                                        it.setClientIdUriSchemes(List.of("http", "https"))))
+                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->{
+                                        it.setClientIdUriSchemes(List.of("http", "https"));
+                                        it.setTrustedDomains(List.of("localhost"));
+                                }))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -892,8 +954,12 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
                 (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
                         .addCondition(ClientIdUriSchemeConditionFactory.PROVIDER_ID,
-                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->
-                                        it.setClientIdUriSchemes(List.of("http", "https"))))
+                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->{
+                                        it.setClientIdUriSchemes(List.of("http", "https"));
+                                        it.setTrustedDomains(List.of("*.example.com", "localhost", "10.255.255.255",
+                                            "mcpclient.example.org", "www.example.org", "172.31.255.254",
+                                            "[::1]", "client.example.com", "127.0.0.1", "10.255.255.1"));
+                                }))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -1016,7 +1082,7 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
                                 createExecutorConfig(new ClientIdMetadataDocumentExecutor.Configuration(), it->{
                                         it.setAllowLoopbackAddress(true);
                                         it.setOnlyAllowConfidentialClient(true);
-                                    it.setTrustedDomains(List.of("*.example.com", "localhost"));
+                                        it.setTrustedDomains(List.of("*.example.com", "localhost"));
                                 }))
                         .toRepresentation()
         ).toString();
@@ -1026,8 +1092,10 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
                 (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
                         .addCondition(ClientIdUriSchemeConditionFactory.PROVIDER_ID,
-                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->
-                                        it.setClientIdUriSchemes(List.of("http", "https"))))
+                                createConditionConfig(new ClientIdUriSchemeCondition.Configuration(), it->{
+                                        it.setClientIdUriSchemes(List.of("http", "https"));
+                                        it.setTrustedDomains(List.of("*.example.com", "localhost"));
+                                }))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
