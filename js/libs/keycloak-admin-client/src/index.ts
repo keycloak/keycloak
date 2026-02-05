@@ -8,3 +8,5 @@ export type { NetworkErrorOptions } from "./utils/fetchWithError.js";
 
 export type { default as OrganizationInvitationRepresentation } from "./defs/organizationInvitationRepresentation.js";
 export { OrganizationInvitationStatus } from "./defs/organizationInvitationRepresentation.js";
+
+export { Groups } from "./resources/groups.js";

@@ -18,52 +18,52 @@
 package org.keycloak.models.workflow;
 
 
-import java.util.List;
 import java.util.function.BiFunction;
 
-import org.keycloak.events.EventType;
-import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.Event;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 
 public enum ResourceType {
 
     USERS(
-            org.keycloak.events.admin.ResourceType.USER,
-            List.of(OperationType.CREATE),
-            List.of(EventType.LOGIN, EventType.REGISTER),
-            (session, id) -> session.users().getUserById(session.getContext().getRealm(), id)
+            (session, id) -> session.users().getUserById(session.getContext().getRealm(), id),
+            (session, event) -> event.getUserId()
     ),
     CLIENTS(
-            org.keycloak.events.admin.ResourceType.CLIENT,
-            List.of(OperationType.CREATE),
-            List.of(EventType.CLIENT_LOGIN, EventType.CLIENT_REGISTER),
-            (session, id) -> session.clients().getClientById(session.getContext().getRealm(), id)
+            (session, id) -> session.clients().getClientById(session.getContext().getRealm(), id),
+            (session, event) -> findClientResourceId(session, event.getClientId())
     );
 
-    private final org.keycloak.events.admin.ResourceType supportedAdminResourceType;
-    private final List<OperationType> supportedAdminOperationTypes;
-    private final List<EventType> supportedEventTypes;
     private final BiFunction<KeycloakSession, String, ?> resourceResolver;
+    private final BiFunction<KeycloakSession, Event, String> resourceIdResolver;
 
-    ResourceType(org.keycloak.events.admin.ResourceType supportedAdminResourceType,
-                 List<OperationType> supportedAdminOperationTypes,
-                 List<EventType> supportedEventTypes,
-                 BiFunction<KeycloakSession, String, ?> resourceResolver) {
-        this.supportedAdminResourceType = supportedAdminResourceType;
-        this.supportedAdminOperationTypes = supportedAdminOperationTypes;
-        this.supportedEventTypes = supportedEventTypes;
+    ResourceType(BiFunction<KeycloakSession, String, ?> resourceResolver,
+                 BiFunction<KeycloakSession, Event, String> resourceIdResolver) {
         this.resourceResolver = resourceResolver;
-    }
-
-    public boolean supportsEvent(EventType eventType) {
-        return supportedEventTypes.contains(eventType);
-    }
-
-    public boolean supportsAdminEvent(org.keycloak.events.admin.ResourceType resourceType, OperationType operationType) {
-        return supportedAdminResourceType.equals(resourceType) && supportedAdminOperationTypes.contains(operationType);
+        this.resourceIdResolver = resourceIdResolver;
     }
 
     public Object resolveResource(KeycloakSession session, String id) {
         return resourceResolver.apply(session, id);
+    }
+
+    public String resolveResourceId(KeycloakSession session, Event event) {
+        return resourceIdResolver.apply(session, event);
+    }
+
+    private static String findClientResourceId(KeycloakSession session, String clientClientId) {
+        RealmModel realm = session.getContext().getRealm();
+        if (realm == null) {
+            return null;
+        }
+
+        ClientModel client = realm.getClientByClientId(clientClientId);
+        if (client == null) {
+            return null;
+        }
+
+        return client.getId();
     }
 }

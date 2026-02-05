@@ -311,8 +311,8 @@ spec:
   expose:
     type: Route
   configMapName: "cluster-config"
-  image: quay.io/infinispan/server:15.0.19.Final
-  version: 15.0.19
+  image: quay.io/infinispan/server:16.0.5
+  version: 16.0.5
   configListener:
     enabled: false
   container:
@@ -331,4 +331,6 @@ spec:
     type: DataGrid
     # end::infinispan-single[]
     
+  upgrades:
+    type: InPlaceRolling
     # end::infinispan-crossdc[]

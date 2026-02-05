@@ -24,11 +24,14 @@ import java.util.function.UnaryOperator;
 
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.TimeClaimNormalizer;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
+import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 
@@ -103,5 +106,11 @@ public class JwtCredentialBuilder implements CredentialBuilder {
                 .jsonContent(jsonWebToken);
 
         return new JwtCredentialBody(jwsBuilder);
+    }
+
+    @Override
+    public void contributeToMetadata(SupportedCredentialConfiguration credentialConfig, CredentialScopeModel credentialScope) {
+        CredentialDefinition credentialDefinition = CredentialDefinition.parse(credentialScope);
+        credentialConfig.setCredentialDefinition(credentialDefinition);
     }
 }

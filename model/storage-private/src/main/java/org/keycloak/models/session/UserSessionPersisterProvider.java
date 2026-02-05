@@ -155,4 +155,34 @@ public interface UserSessionPersisterProvider extends Provider {
         removeUserSessions(realm, false);
     }
 
+    /**
+     * Stream all the sessions belonging to the realm.
+     * <p>
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the JPA and any
+     * modification may throw an {@link UnsupportedOperationException}.
+     *
+     * @param realm   The {@link RealmModel} instance.
+     * @param offline If {@code true}, it streams the offline sessions, otherwise the regular sessions.
+     * @return A {@link Stream} for all the sessions in the realm.
+     */
+    Stream<UserSessionModel> readOnlyUserSessionStream(RealmModel realm, boolean offline);
+
+    /**
+     * Stream all the sessions belonging to the realm and having a client session from the client.
+     * <p>
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the
+     * JPA and any modification may throw an {@link UnsupportedOperationException}.
+     * <p>
+     * The {@code skip} and {@code maxResults} parameters control how many sessions should be streamed. A negative value
+     * for either parameter is ignored (no skip/limit applied). If {@code maxResults} is zero, an empty stream is
+     * returned.
+     *
+     * @param realm      The {@link RealmModel} instance.
+     * @param client     The {@link ClientModel} instance.
+     * @param offline    If {@code true}, it streams the offline sessions, otherwise the regular sessions.
+     * @param skip       The number of leading elements to skip.
+     * @param maxResults The number of elements the stream should be limited to.
+     * @return A {@link Stream} for all the sessions matching the parameters.
+     */
+    Stream<UserSessionModel> readOnlyUserSessionStream(RealmModel realm, ClientModel client, boolean offline, int skip, int maxResults);
 }

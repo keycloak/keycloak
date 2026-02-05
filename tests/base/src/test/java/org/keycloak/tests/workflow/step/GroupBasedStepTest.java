@@ -15,7 +15,8 @@ import org.keycloak.models.workflow.JoinGroupStepProvider;
 import org.keycloak.models.workflow.JoinGroupStepProviderFactory;
 import org.keycloak.models.workflow.LeaveGroupStepProvider;
 import org.keycloak.models.workflow.LeaveGroupStepProviderFactory;
-import org.keycloak.models.workflow.ResourceOperationType;
+import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
+import org.keycloak.models.workflow.events.UserGroupMembershipRemovedWorkflowEventFactory;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -30,8 +31,6 @@ import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -62,7 +61,7 @@ public class GroupBasedStepTest extends AbstractWorkflowTest {
         List<String> expectedGroups = List.of("/a", "/b/b1", "c");
 
         create(WorkflowRepresentation.withName("join-group")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(JoinGroupStepProviderFactory.ID)
@@ -95,7 +94,7 @@ public class GroupBasedStepTest extends AbstractWorkflowTest {
         joinGroup(user, "a", "/a/a1", "b/b1", "b/b2", "/c");
 
         create(WorkflowRepresentation.withName("leave-group")
-                .onEvent(ResourceOperationType.USER_GROUP_MEMBERSHIP_REMOVED.name())
+                .onEvent(UserGroupMembershipRemovedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(LeaveGroupStepProviderFactory.ID)

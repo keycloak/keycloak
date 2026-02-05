@@ -19,8 +19,8 @@ Just like the `on` setting, the condition is written using an expression that su
 For instance, considering a `user_created` event, you can define a condition to trigger the workflow only if the user has a specific attribute:
 
 ```yaml
-on: user_created
-if: has-user-attribute('plan', 'gold')
+on: user-created
+if: has-user-attribute(plan=gold)
 ```
 
 In this example, the workflow will only be triggered when a new user is created and that user has an attribute `plan` with the value `gold`.

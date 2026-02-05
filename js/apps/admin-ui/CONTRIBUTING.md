@@ -76,3 +76,36 @@ pnpm test:integration -- <path-to-the-test-or-name>
 ```
 
 You can specify the full path or just the test file name.
+
+### Running Playwright UI
+
+The Playwright UI provides an interactive environment for developing and debugging UI tests.
+Before proceeding, ensure the following prerequisites are met:
+
+- The Keycloak server is running on `http://localhost:8080`.
+- An admin user with login `admin` and password `admin` exists in the master realm.
+
+Execute the following steps from the repository root.
+
+1. Navigate to the Admin UI directory:
+
+   ```bash
+   cd apps/admin-ui
+   ```
+
+2. Install the Playwright browser binaries. This step is required once per local development environment:
+
+   ```bash
+   pnpm exec playwright install
+   ```
+
+3. Launch the Playwright interactive UI and run tests (Chromium):
+
+   ```bash
+   pnpm run test:integration -- --project=chromium --ui
+   ```
+
+After executing these steps, the Playwright Test Runner UI will open in a new window. You can select and run individual
+tests or test suites interactively. The test runner provides features such as viewing test results, debugging failed
+tests, and inspecting the browser state during test execution.
+

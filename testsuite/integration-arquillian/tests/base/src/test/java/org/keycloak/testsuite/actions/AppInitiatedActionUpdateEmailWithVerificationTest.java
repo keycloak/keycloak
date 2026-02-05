@@ -17,6 +17,8 @@
 package org.keycloak.testsuite.actions;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.mail.Address;
 import jakarta.mail.Message;
@@ -28,12 +30,16 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
@@ -42,6 +48,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -182,5 +192,59 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 				.detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
 				.detail(Details.UPDATED_EMAIL, "new@localhost");
 		Assert.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
+	}
+
+	@Test
+	@IgnoreBrowserDriver(value={ChromeDriver.class, FirefoxDriver.class}, negate=true)
+	public void updateEmailWithVerificationBackToApplicationInCleanBrowserShouldTriggerAuth() throws Exception {
+		ClientRepresentation client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
+		String originalBaseUrl = client.getBaseUrl();
+		List<String> originalRedirectUris = new ArrayList<>(client.getRedirectUris());
+		
+		// Set base URL to admin console - a working endpoint different from redirect URI
+		String authServerBaseUrl = getAuthServerContextRoot() + "/auth";
+		client.setBaseUrl(authServerBaseUrl + "/admin/master/console/");
+		client.setRedirectUris(List.of(authServerBaseUrl + "/realms/master/app/auth/*", authServerBaseUrl + "/realms/test/app/auth/*"));
+		testRealm().clients().get(client.getId()).update(client);
+		
+		try {
+			doAIA();
+			loginPage.login("test-user@localhost", "password");
+
+            emailUpdatePage.assertCurrent();
+            emailUpdatePage.changeEmail("new@localhost");
+
+            events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, "new@localhost").assertEvent();
+            String link = fetchEmailConfirmationLink("new@localhost");
+
+            // Simulate opening the verification link in a clean browser (no session cookies)
+            driver.manage().deleteAllCookies();
+
+            // Navigate to verification link in "clean" browser
+            driver.navigate().to(link);
+
+            infoPage.assertCurrent();
+            assertEquals(String.format("The account email has been successfully updated to %s.", "new@localhost"), infoPage.getInfo());
+            infoPage.clickBackToApplicationLink();
+
+            WaitUtils.waitForPageToLoad();
+
+            String finalUrl = driver.getCurrentUrl();
+
+            // admin console should redirect to OIDC login
+            assertThat("Expected OIDC authentication URL", finalUrl, Matchers.containsString("/protocol/openid-connect/auth"));
+            assertThat("Expected response_type=code for OIDC authorization code flow", finalUrl, Matchers.containsString("response_type=code"));
+
+            events.expect(EventType.UPDATE_EMAIL)
+                    .detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                    .detail(Details.UPDATED_EMAIL, "new@localhost");
+            Assert.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
+		
+		} finally {
+			// Restore original client configuration
+			client.setBaseUrl(originalBaseUrl);
+			client.setRedirectUris(originalRedirectUris);
+			testRealm().clients().get(client.getId()).update(client);
+		}
 	}
 }

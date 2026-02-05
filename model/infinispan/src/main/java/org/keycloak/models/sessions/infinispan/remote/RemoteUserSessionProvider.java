@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -44,6 +45,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.ImmutableSession;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.BaseUpdater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.client.AuthenticatedClientSessionUpdater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.AuthenticatedClientSessionMapping;
@@ -57,10 +59,12 @@ import org.keycloak.models.sessions.infinispan.query.UserSessionQueries;
 import org.keycloak.models.sessions.infinispan.remote.transaction.ClientSessionChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.remote.transaction.UserSessionChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.remote.transaction.UserSessionTransaction;
+import org.keycloak.models.sessions.infinispan.util.SessionExpirationPredicates;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.utils.StreamsUtil;
 
 import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Maybe;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.jboss.logging.Logger;
@@ -276,6 +280,59 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
             migrateUserSessions(false);
         }
 
+    }
+
+    @Override
+    public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm) {
+        return readOnlyStream(realm, true);
+    }
+
+    @Override
+    public Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm) {
+        return readOnlyStream(realm, false);
+    }
+
+    @Override
+    public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm, ClientModel client, int skip, int maxResults) {
+        return readOnlyStream(realm, client, true, skip, maxResults);
+    }
+
+    @Override
+    public Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm, ClientModel client, int skip, int maxResults) {
+        return readOnlyStream(realm, client, false, skip, maxResults);
+    }
+
+    private Stream<UserSessionModel> readOnlyStream(RealmModel realm, boolean offline) {
+        var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTime());
+        var query = UserSessionQueries.searchByRealm(getUserSessionTransaction(offline).getCache(), realm.getId());
+        var clientSessionCache = getClientSessionTransaction(offline).getCache();
+        //not very efficient at all.
+        return Flowable.fromStream(QueryHelper.streamAll(query, batchSize, Function.identity()))
+                .buffer(128)
+                .blockingStream()
+                .flatMap(us -> ImmutableSession.copyOf(session, us, expiration, clientSessionCache, batchSize)).filter(Objects::nonNull);
+    }
+
+    private Stream<UserSessionModel> readOnlyStream(RealmModel realm, ClientModel client, boolean offline, int skip, int maxResults) {
+        if (maxResults == 0) {
+            return Stream.empty();
+        }
+        var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTime());
+        var clientSessionCache = getClientSessionTransaction(offline).getCache();
+        var userSessionIdQuery = ClientSessionQueries.fetchUserSessionIdForClientId(clientSessionCache, realm.getId(), client.getId());
+        if (skip > 0) {
+            userSessionIdQuery.startOffset(skip);
+        }
+        if (maxResults > 0) {
+            userSessionIdQuery.maxResults(maxResults);
+        }
+        var userSessionCache = getUserSessionTransaction(offline).getCache();
+        return Flowable.fromIterable(QueryHelper.toCollection(userSessionIdQuery, QueryHelper.SINGLE_PROJECTION_TO_STRING))
+                .buffer(128)
+                .flatMapMaybe(sessionId -> Maybe.fromCompletionStage(userSessionCache.getAllAsync(Set.copyOf(sessionId))), false, MAX_CONCURRENT_REQUESTS)
+                .map(Map::values)
+                .blockingStream()
+                .flatMap(entity -> ImmutableSession.copyOf(session, entity, expiration, clientSessionCache, batchSize));
     }
 
     private void migrateUserSessions(boolean offline) {

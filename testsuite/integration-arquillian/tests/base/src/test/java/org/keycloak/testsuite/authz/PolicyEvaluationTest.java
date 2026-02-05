@@ -48,6 +48,7 @@ import org.keycloak.authorization.permission.evaluator.PermissionEvaluator;
 import org.keycloak.authorization.policy.evaluation.DefaultEvaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -62,15 +63,16 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
-import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -88,6 +90,7 @@ import static org.junit.Assert.assertNotNull;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(Feature.SCRIPTS)
 public class PolicyEvaluationTest extends AbstractAuthzTest {
 
     @Override
@@ -617,11 +620,10 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         Scope readScope = storeFactory.getScopeStore().create(resourceServer, "read");
         Scope writeScope = storeFactory.getScopeStore().create(resourceServer, "write");
 
-        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+        PolicyRepresentation policy = new PolicyRepresentation();
 
         policy.setName(KeycloakModelUtils.generateId());
-        policy.setType("script-scripts/default-policy.js");
-        policy.setLogic(Logic.NEGATIVE);
+        policy.setType("always-deny");
 
         storeFactory.getPolicyStore().create(resourceServer, policy);
 

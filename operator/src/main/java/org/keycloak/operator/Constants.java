@@ -16,6 +16,7 @@
  */
 package org.keycloak.operator;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -41,8 +42,12 @@ public final class Constants {
     public static final String KEYCLOAK_UPDATE_REVISION_ANNOTATION = "operator.keycloak.org/update-revision";
     public static final String KEYCLOAK_UPDATE_HASH_ANNOTATION = "operator.keycloak.org/update-hash";
     public static final String APP_LABEL = "app";
+    public static final String CLIENT_ID_KEY = "client-id";
+    public static final String CLIENT_SECRET_KEY = "client-secret";
 
     public static final String DEFAULT_LABELS_AS_STRING = "app=keycloak,app.kubernetes.io/managed-by=keycloak-operator";
+
+    public static final String AUTHORIZATION_HEADER = "Authorization";
 
     public static final Map<String, String> DEFAULT_LABELS = Collections
             .unmodifiableMap(Stream.of(DEFAULT_LABELS_AS_STRING.split(",")).map(s -> s.split("="))
@@ -83,4 +88,6 @@ public final class Constants {
     public static final String KEYCLOAK_HTTP_MANAGEMENT_RELATIVE_PATH_KEY = "http-management-relative-path";
 
     public static final String KEYCLOAK_NETWORK_POLICY_SUFFIX = "-network-policy";
+
+    public static final Duration RETRY_DURATION = Duration.ofSeconds(10);
 }

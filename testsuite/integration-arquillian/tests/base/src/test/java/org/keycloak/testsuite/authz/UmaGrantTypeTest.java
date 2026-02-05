@@ -46,9 +46,9 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
-import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
@@ -84,34 +84,25 @@ import static org.junit.Assert.fail;
 public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
     private ResourceRepresentation resourceA;
+    private PolicyRepresentation grantPolicy;
+    private PolicyRepresentation denyPolicy;
 
     @Before
     public void configureAuthorization() throws Exception {
         ClientResource client = getClient(getRealm());
         AuthorizationResource authorization = client.authorization();
-
-        JSPolicyRepresentation policy = new JSPolicyRepresentation();
-
-        policy.setName("Default Policy");
-        policy.setType("script-scripts/default-policy.js");
-
-        authorization.policies().js().create(policy).close();
+        grantPolicy = createAlwaysGrantPolicy(authorization);
 
         ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
         resourceA = addResource("Resource A", null, Collections.singleton("/resource"), false, "ScopeA", "ScopeB", "ScopeC");
 
         permission.setName(resourceA.getName() + " Permission");
         permission.addResource(resourceA.getName());
-        permission.addPolicy(policy.getName());
+        permission.addPolicy(grantPolicy.getName());
 
         authorization.permissions().resource().create(permission).close();
 
-        policy = new JSPolicyRepresentation();
-
-        policy.setName("Deny Policy");
-        policy.setType("script-scripts/always-deny-policy.js");
-
-        authorization.policies().js().create(policy).close();
+        denyPolicy = createAlwaysDenyPolicy(authorization);
     }
 
     @Test
@@ -188,7 +179,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         permission.setName(resourceB.getName() + " Permission");
         permission.addResource(resourceB.getName());
-        permission.addPolicy("Deny Policy");
+        permission.addPolicy(denyPolicy.getName());
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
 
@@ -207,7 +198,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         permissionA.setName(resourceA.getName() + " Permission");
         permissionA.addResource(resourceA.getName());
-        permissionA.addPolicy("Default Policy");
+        permissionA.addPolicy(grantPolicy.getName());
 
         AuthorizationResource authzResource = getClient(getRealm()).authorization();
 
@@ -227,7 +218,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         permissionB.setName(resourceB.getName() + " Permission");
         permissionB.addResource(resourceB.getName());
-        permissionB.addPolicy("Default Policy");
+        permissionB.addPolicy(grantPolicy.getName());
 
         authzResource.permissions().resource().create(permissionB).close();
         response = authorize("marta", "password", resourceB.getId(), new String[] {"ScopeC"}, rpt);
@@ -242,8 +233,8 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         assertTrue(permissions.isEmpty());
 
         permissionB = authzResource.permissions().resource().findByName(permissionB.getName());
-        permissionB.removePolicy("Default Policy");
-        permissionB.addPolicy("Deny Policy");
+        permissionB.removePolicy(grantPolicy.getName());
+        permissionB.addPolicy(denyPolicy.getName());
 
         authzResource.permissions().resource().findById(permissionB.getId()).update(permissionB);
 
@@ -265,7 +256,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         permissionA.setName(KeycloakModelUtils.generateId());
         permissionA.addScope("READ");
-        permissionA.addPolicy("Default Policy");
+        permissionA.addPolicy(grantPolicy.getName());
 
         AuthorizationResource authzResource = getClient(getRealm()).authorization();
 
@@ -275,7 +266,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         permissionB.setName(KeycloakModelUtils.generateId());
         permissionB.addScope("WRITE");
-        permissionB.addPolicy("Deny Policy");
+        permissionB.addPolicy(denyPolicy.getName());
 
         authzResource.permissions().scope().create(permissionB).close();
 
@@ -307,7 +298,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         permission.setName(resourceA.getName() + " Permission");
         permission.addResource(resourceA.getId());
-        permission.addPolicy("Default Policy");
+        permission.addPolicy(grantPolicy.getName());
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
 
@@ -315,7 +306,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         permission.setName(resourceB.getName() + " Permission");
         permission.addResource(resourceB.getId());
-        permission.addPolicy("Default Policy");
+        permission.addPolicy(grantPolicy.getName());
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
 
@@ -402,7 +393,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         permission.setName(resourceB.getName() + " Permission");
         permission.addResource(resourceB.getName());
-        permission.addPolicy("Default Policy");
+        permission.addPolicy(grantPolicy.getName());
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
 

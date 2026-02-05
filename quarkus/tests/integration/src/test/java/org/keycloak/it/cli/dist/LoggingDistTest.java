@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.keycloak.config.HttpAccessLogOptions;
 import org.keycloak.config.LoggingOptions;
@@ -44,6 +45,7 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.util.EntityUtils;
+import org.awaitility.Awaitility;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -284,7 +286,8 @@ public class LoggingDistTest {
 
         when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
                 .statusCode(200);
-        assertThat(cliResult.getOutput(), containsString("{kc.realmName=master} DEBUG [org.keycloak."));
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(
+                () -> assertThat(cliResult.getOutput(), containsString("{kc.realmName=master} DEBUG [org.keycloak.")));
         cliResult.assertStartedDevMode();
     }
 
@@ -314,29 +317,33 @@ public class LoggingDistTest {
     void httpAccessLogNotNamedPattern(CLIResult cliResult, KeycloakDistribution dist, RawDistRootPath path) {
         when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
                 .statusCode(200);
-        cliResult.assertMessage("[org.keycloak.http.access-log]");
-        cliResult.assertMessage("127.0.0.1 GET /realms/master/.well-known/openid-configuration");
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(
+                () -> cliResult.assertMessage("[org.keycloak.http.access-log]"));
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(
+                () -> cliResult.assertMessage("127.0.0.1 GET /realms/master/.well-known/openid-configuration"));
 
         when().get("http://127.0.0.1:8080/realms/master/clients/account/redirect").then()
                 .statusCode(200);
         cliResult.assertNoMessage("127.0.0.1 GET /realms/master/clients/account/redirect");
 
         // file
-        cliResult = dist.run("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-enabled=true", "--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'", "--http-access-log-exclude=/realms/master/clients/.*");
-        cliResult.assertStartedDevMode();
+        CLIResult fileCliResult = dist.run("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-enabled=true", "--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'", "--http-access-log-exclude=/realms/master/clients/.*");
+        fileCliResult.assertStartedDevMode();
         when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
                 .statusCode(200);
-        cliResult.assertNoMessage("[org.keycloak.http.access-log]");
-        cliResult.assertNoMessage("127.0.0.1 GET /realms/master/.well-known/openid-configuration");
+        fileCliResult.assertNoMessage("[org.keycloak.http.access-log]");
+        fileCliResult.assertNoMessage("127.0.0.1 GET /realms/master/.well-known/openid-configuration");
 
         when().get("http://127.0.0.1:8080/realms/master/clients/account/redirect").then()
                 .statusCode(200);
-        cliResult.assertNoMessage("127.0.0.1 GET /realms/master/clients/account/redirect");
+        fileCliResult.assertNoMessage("127.0.0.1 GET /realms/master/clients/account/redirect");
 
-        String data = readHttpAccessLogFile(path, "keycloak-http-access.log");
-        assertNotNull(data);
-        assertThat(data, containsString("127.0.0.1 GET /realms/master/.well-known/openid-configuration"));
-        assertThat(data, not(containsString("127.0.0.1 GET /realms/master/clients/account/redirect")));
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+            String data = readHttpAccessLogFile(path, "keycloak-http-access.log");
+            assertNotNull(data);
+            assertThat(data, containsString("127.0.0.1 GET /realms/master/.well-known/openid-configuration"));
+            assertThat(data, not(containsString("127.0.0.1 GET /realms/master/clients/account/redirect")));
+        });
     }
 
     @Test

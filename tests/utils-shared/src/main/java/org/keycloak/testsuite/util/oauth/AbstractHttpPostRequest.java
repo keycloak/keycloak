@@ -34,16 +34,30 @@ public abstract class AbstractHttpPostRequest<T, R> {
     protected Map<String, String> headers = new HashMap<>();
     protected List<NameValuePair> parameters = new LinkedList<>();
 
+    protected String endpoint;
+
     public AbstractHttpPostRequest(AbstractOAuthClient<?> client) {
         this.client = client;
     }
 
     protected abstract String getEndpoint();
 
+    /**
+     * Override the endpoint URL for this request.
+     * When specified, this takes precedence over {@link #getEndpoint()}.
+     *
+     * @param endpoint the endpoint URL to use
+     * @return this request instance for method chaining
+     */
+    public T endpoint(String endpoint) {
+        this.endpoint = endpoint;
+        return request();
+    }
+
     protected abstract void initRequest();
 
     public R send() {
-        post = new HttpPost(getEndpoint());
+        post = new HttpPost(endpoint != null ? endpoint : getEndpoint());
         post.addHeader("Accept", getAccept());
         post.addHeader("Origin", client.config().getOrigin());
 

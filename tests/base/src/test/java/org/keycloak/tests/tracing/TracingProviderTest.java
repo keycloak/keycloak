@@ -17,6 +17,7 @@ import io.opentelemetry.api.trace.TraceFlags;
 import io.opentelemetry.sdk.trace.ReadableSpan;
 import io.opentelemetry.sdk.trace.data.ExceptionEventData;
 import io.opentelemetry.sdk.trace.data.StatusData;
+import io.opentelemetry.semconv.CodeAttributes;
 import io.opentelemetry.semconv.ExceptionAttributes;
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +43,7 @@ public class TracingProviderTest {
             ReadableSpan readableSpan = (ReadableSpan) current;
             assertThat(readableSpan.getAttribute(AttributeKey.stringKey("code.function")), is("runOnServer"));
             assertThat(readableSpan.getAttribute(AttributeKey.stringKey("code.namespace")), is("org.keycloak.testframework.remote.providers.runonserver.RunOnServerRealmResourceProvider"));
+            assertThat(readableSpan.getAttribute(CodeAttributes.CODE_FUNCTION_NAME), is("org.keycloak.testframework.remote.providers.runonserver.RunOnServerRealmResourceProvider.runOnServer"));
             assertThat(readableSpan.getName(), is("RunOnServerRealmResourceProvider.runOnServer"));
         });
     }

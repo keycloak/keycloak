@@ -21,6 +21,7 @@ import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useAccess } from "../context/access/Access";
+import { GroupResourceContext } from "../context/group-resource/GroupResourceContext";
 
 type UserGroupsProps = {
   user: UserRepresentation;
@@ -152,20 +153,22 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
     <>
       <DeleteConfirm />
       {open && (
-        <GroupPickerDialog
-          id={user.id}
-          type="selectMany"
-          text={{
-            title: t("joinGroupsFor", { username: user.username }),
-            ok: "join",
-          }}
-          canBrowse={isManager}
-          onClose={() => setOpen(false)}
-          onConfirm={async (groups = []) => {
-            await addGroups(groups);
-            setOpen(false);
-          }}
-        />
+        <GroupResourceContext value={adminClient.groups}>
+          <GroupPickerDialog
+            id={user.id}
+            type="selectMany"
+            text={{
+              title: t("joinGroupsFor", { username: user.username }),
+              ok: "join",
+            }}
+            canBrowse={isManager}
+            onClose={() => setOpen(false)}
+            onConfirm={async (groups = []) => {
+              await addGroups(groups);
+              setOpen(false);
+            }}
+          />
+        </GroupResourceContext>
       )}
       <KeycloakDataTable
         key={key}

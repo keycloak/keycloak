@@ -31,9 +31,11 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
@@ -138,12 +140,24 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         event.client(clientModel)
                 .user(userModel);
 
+        // Check if authorization_details parameter was explicitly provided
+        String authorizationDetailsParam = formParams.getFirst(OAuth2Constants.AUTHORIZATION_DETAILS);
+
+        // Validate empty authorization_details - if parameter is provided but empty, reject it
+        if (authorizationDetailsParam != null && (authorizationDetailsParam.trim().isEmpty() || "[]".equals(authorizationDetailsParam.trim()))) {
+            var errorMessage = "Invalid authorization_details: parameter cannot be empty";
+            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+
         // Process authorization_details using provider discovery
         List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponses = processAuthorizationDetails(userSession, sessionContext);
         LOGGER.debugf("Initial authorization_details processing result: %s", authorizationDetailsResponses);
 
         // If no authorization_details were processed from the request, try to generate them from credential offer
-        if (authorizationDetailsResponses == null || authorizationDetailsResponses.isEmpty()) {
+        // (only if authorization_details parameter was not explicitly provided)
+        if ((authorizationDetailsResponses == null || authorizationDetailsResponses.isEmpty()) && authorizationDetailsParam == null) {
             authorizationDetailsResponses = handleMissingAuthorizationDetails(userSession, sessionContext);
         }
 
@@ -169,6 +183,10 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                 sessionContext);
 
         accessToken.setAuthorizationDetails(authorizationDetailsResponses);
+
+        // Set audience to credential endpoint for pre-authorized tokens
+        String credentialEndpoint = OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
+        accessToken.audience(credentialEndpoint);
 
         AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(
                 clientSession.getRealm(),
@@ -198,5 +216,27 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
     @Override
     public EventType getEventType() {
         return EventType.CODE_TO_TOKEN;
+    }
+
+    /**
+     * Restrict pre-authorized tokens to the VC credential endpoint.
+     */
+    @Override
+    public boolean isTokenAllowed(KeycloakSession session, AccessToken token) {
+        // Check if the request path ends with the credential endpoint path
+        boolean isCredentialEndpoint = Optional.ofNullable(session.getContext().getUri())
+                .map(uri -> uri.getPath())
+                .map(path -> path.endsWith("/" + OID4VCIssuerEndpoint.CREDENTIAL_PATH))
+                .orElse(false);
+
+        if (!isCredentialEndpoint) {
+            return false;
+        }
+
+        // Check if token has exactly one audience and it matches the credential endpoint
+        // Being strict about audience prevents potential security issues with multi-audience tokens
+        String expectedAudience = OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
+        String[] audiences = token.getAudience();
+        return audiences != null && audiences.length == 1 && expectedAudience.equals(audiences[0]);
     }
 }

@@ -61,6 +61,10 @@ public class AuthorizationDetailsProcessorManager {
 
         List<AuthorizationDetailsJSONRepresentation> authzDetails = parseAuthorizationDetails(authorizationDetailsParam);
 
+        if (authzDetails.isEmpty()) {
+            throw new InvalidAuthorizationDetailsException("Authorization_Details parameter cannot be empty");
+        }
+
         Map<String, AuthorizationDetailsProcessor<?>> processors = getProcessors(session);
 
         for (AuthorizationDetailsJSONRepresentation authzDetail : authzDetails) {
@@ -74,7 +78,6 @@ public class AuthorizationDetailsProcessorManager {
                 logger.warn(errorDetails);
                 throw new InvalidAuthorizationDetailsException(errorDetails);
             }
-            function.apply(processor, authzDetail);
             AuthorizationDetailsJSONRepresentation response = function.apply(processor, authzDetail);
             if (response != null) {
                 authzResponses.add(response);

@@ -44,10 +44,10 @@ import java.util.zip.DeflaterOutputStream;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -66,6 +66,7 @@ import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.RSAPublicJWK;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
@@ -97,19 +98,25 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
+import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
+import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -127,6 +134,7 @@ import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENT
 import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
 import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
 import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.namedClientId;
+import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
 import static org.keycloak.util.JsonSerialization.valueAsPrettyString;
 
 import static org.junit.Assert.assertEquals;
@@ -213,6 +221,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         client = testRealm().clients().findByClientId(clientId).get(0);
         namedClient = testRealm().clients().findByClientId(namedClientId).get(0);
 
+        // Enable OID4VCI at realm level (required before assigning OID4VCI scopes)
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        realmRep.setVerifiableCredentialsEnabled(true);
+        testRealm().update(realmRep);
+
         // Lookup the pre-installed oid4vc_natural_person client scope
         sdJwtTypeNaturalPersonClientScope = requireExistingClientScope(sdJwtTypeNaturalPersonScopeName);
 
@@ -270,23 +283,21 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return null;
     }
 
-    private ClientScopeRepresentation registerOptionalClientScope(String scopeName,
-                                                                  String issuerDid,
-                                                                  String credentialConfigurationId,
-                                                                  String credentialIdentifier,
-                                                                  String vct,
-                                                                  String format,
-                                                                  String protocolMapperReferenceFile,
-                                                                  List<String> acceptedKeyAttestationValues) {
-        // Check if the client scope already exists
+    protected ClientScopeRepresentation registerOptionalClientScope(String scopeName,
+                                                          String issuerDid,
+                                                          String credentialConfigurationId,
+                                                          String credentialIdentifier,
+                                                          String vct,
+                                                          String format,
+                                                          String protocolMapperReferenceFile,
+                                                          List<String> acceptedKeyAttestationValues) {
         List<ClientScopeRepresentation> existingScopes = testRealm().clientScopes().findAll();
         for (ClientScopeRepresentation existingScope : existingScopes) {
             if (existingScope.getName().equals(scopeName)) {
-                return existingScope; // Reuse existing scope
+                return existingScope;
             }
         }
 
-        // Create a new ClientScope if not found
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName(scopeName);
         clientScope.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
@@ -333,7 +344,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
         clientScope.setId(scopeId);
 
-        // Add protocol mappers to the ClientScope
         List<ProtocolMapperRepresentation> protocolMappers;
         if (protocolMapperReferenceFile == null) {
             protocolMappers = getProtocolMappers(scopeName);
@@ -511,6 +521,27 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             // 2. Using the code to get accesstoken
             String token = f.apply(testClientId, testScope);
 
+            // Extract credential_identifier from the token (client-side parsing)
+            String credentialIdentifier = null;
+            try {
+                JsonWebToken jwt = new JWSInput(token).readJsonContent(JsonWebToken.class);
+                Object authDetails = jwt.getOtherClaims().get(OAuth2Constants.AUTHORIZATION_DETAILS);
+                if (authDetails != null) {
+                    List<OID4VCAuthorizationDetailResponse> authDetailsResponse = JsonSerialization.readValue(
+                            JsonSerialization.writeValueAsString(authDetails),
+                            new TypeReference<List<OID4VCAuthorizationDetailResponse>>() {
+                            }
+                    );
+                    if (!authDetailsResponse.isEmpty() &&
+                            authDetailsResponse.get(0).getCredentialIdentifiers() != null &&
+                            !authDetailsResponse.get(0).getCredentialIdentifiers().isEmpty()) {
+                        credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+                    }
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to extract credential_identifier from token", e);
+            }
+
             // 3. Get the credential configuration id from issuer metadata at .wellKnown
             try (Response discoveryResponse = oid4vciDiscoveryTarget.request().get()) {
                 CredentialIssuer oid4vciIssuerConfig = JsonSerialization.readValue(discoveryResponse.readEntity(String.class),
@@ -526,9 +557,12 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                     WebTarget credentialTarget = clientForCredentialRequest.target(credentialUri);
 
                     CredentialRequest request = new CredentialRequest();
-                    request.setCredentialConfigurationId(oid4vciIssuerConfig.getCredentialsSupported()
-                            .get(testCredentialConfigurationId)
-                            .getId());
+                    // Use credential_identifier if available, otherwise use configuration_id for error testing
+                    if (credentialIdentifier != null) {
+                        request.setCredentialIdentifier(credentialIdentifier);
+                    } else {
+                        request.setCredentialConfigurationId(testCredentialConfigurationId);
+                    }
 
                     assertEquals(testFormat,
                             oid4vciIssuerConfig.getCredentialsSupported()
@@ -604,9 +638,27 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                                      SupportedCredentialConfiguration offeredCredential,
                                      CredentialResponseHandler responseHandler,
                                      ClientScopeRepresentation expectedClientScope) throws IOException, VerificationException {
+        Oid4vcCredentialResponse credentialRequestResponse = oauth.oid4vc()
+                .credentialRequest()
+                .endpoint(credentialEndpoint)
+                .bearerToken(token)
+                .credentialConfigurationId(offeredCredential.getId())
+                .send();
 
+        assertEquals(HttpStatus.SC_OK, credentialRequestResponse.getStatusCode());
+        CredentialResponse credentialResponse = credentialRequestResponse.getCredentialResponse();
+
+        // Use response handler to customize checks based on formats.
+        responseHandler.handleCredentialResponse(credentialResponse, expectedClientScope);
+    }
+
+    protected void requestCredentialWithIdentifier(String token,
+                                                   String credentialEndpoint,
+                                                   String credentialIdentifier,
+                                                   CredentialResponseHandler responseHandler,
+                                                   ClientScopeRepresentation expectedClientScope) throws IOException, VerificationException {
         CredentialRequest request = new CredentialRequest();
-        request.setCredentialConfigurationId(offeredCredential.getId());
+        request.setCredentialIdentifier(credentialIdentifier);
 
         StringEntity stringEntity = new StringEntity(JsonSerialization.writeValueAsString(request),
                 ContentType.APPLICATION_JSON);
@@ -628,25 +680,20 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     public CredentialIssuer getCredentialIssuerMetadata() {
         final String endpoint = getRealmMetadataPath(TEST_REALM_NAME);
-        HttpGet getMetadataRequest = new HttpGet(endpoint);
-        try (CloseableHttpResponse metadataResponse = httpClient.execute(getMetadataRequest)) {
-            assertEquals(HttpStatus.SC_OK, metadataResponse.getStatusLine().getStatusCode());
-            String s = IOUtils.toString(metadataResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            return JsonSerialization.readValue(s, CredentialIssuer.class);
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        CredentialIssuerMetadataResponse metadataResponse = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .endpoint(endpoint)
+                .send();
+        assertEquals(HttpStatus.SC_OK, metadataResponse.getStatusCode());
+        return metadataResponse.getMetadata();
     }
 
     public OIDCConfigurationRepresentation getAuthorizationMetadata(String authServerUrl) {
-        HttpGet getOpenidConfiguration = new HttpGet(authServerUrl + "/.well-known/openid-configuration");
-        try (CloseableHttpResponse response = httpClient.execute(getOpenidConfiguration)) {
-            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
-            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
-            return JsonSerialization.readValue(s, OIDCConfigurationRepresentation.class);
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        OpenIDProviderConfigurationResponse response = oauth.wellknownRequest()
+                .url(authServerUrl)
+                .send();
+        assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+        return response.getOidcConfiguration();
     }
 
     public SupportedCredentialConfiguration getSupportedCredentialConfigurationByScope(CredentialIssuer metadata, String scope) {
@@ -664,12 +711,15 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             testRealm.setComponents(new MultivaluedHashMap<>());
         }
 
+        // Add key providers
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getKeyProvider());
-
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
                 getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100));
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
                 getRsaEncKeyProvider(RSA_OAEP, "enc-key-oaep", 101));
+
+        // Add Did attribute to the user profile
+        testRealm.getComponents().add("org.keycloak.userprofile.UserProfileProvider", getUserProfileProvider());
 
         // Find existing client representation
         Map<String, ClientRepresentation> realmClients = testRealm.getClients().stream()
@@ -693,9 +743,24 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
         Map<String, List<String>> clientRoles = Map.of(clientId, List.of("testRole"));
         List<UserRepresentation> realmUsers = Optional.ofNullable(testRealm.getUsers()).map(ArrayList::new).orElse(new ArrayList<>());
-        realmUsers.add(getUserRepresentation("John Doe", List.of(CREDENTIAL_OFFER_CREATE.getName()), clientRoles));
-        realmUsers.add(getUserRepresentation("Alice Wonderland", List.of(), Map.of()));
+        realmUsers.add(getUserRepresentation("John Doe", Map.of("did", "did:key:1234"), List.of(CREDENTIAL_OFFER_CREATE.getName()), clientRoles));
+        realmUsers.add(getUserRepresentation("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
         testRealm.setUsers(realmUsers);
+    }
+
+    private ComponentExportRepresentation getUserProfileProvider() {
+
+        // Add the User DID attribute, with the same logic as in DeclarativeUserProfileProviderFactory
+        //
+        UPConfig profileConfig = UPConfigUtils.parseSystemDefaultConfig();
+        DeclarativeUserProfileProviderFactory.addUserDidAttribute(profileConfig);
+
+        ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
+        componentExportRepresentation.setProviderId("declarative-user-profile");
+        componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
+                Map.of(UP_COMPONENT_CONFIG_KEY, List.of(JsonSerialization.valueAsString(profileConfig)))));
+
+        return componentExportRepresentation;
     }
 
     protected void withCausePropagation(Runnable r) throws Throwable {

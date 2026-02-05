@@ -11,8 +11,10 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { GroupPickerDialog } from "../group/GroupPickerDialog";
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
+import { GroupResourceContext } from "../../context/group-resource/GroupResourceContext";
+import { GroupPickerDialog } from "../group/GroupPickerDialog";
 import type { ComponentProps } from "./components";
 
 export const GroupComponent = ({
@@ -26,6 +28,7 @@ export const GroupComponent = ({
   const [open, setOpen] = useState(false);
   const [groups, setGroups] = useState<GroupRepresentation[]>();
   const { control } = useFormContext();
+  const { adminClient } = useAdminClient();
 
   return (
     <Controller
@@ -35,20 +38,22 @@ export const GroupComponent = ({
       render={({ field }) => (
         <>
           {open && (
-            <GroupPickerDialog
-              type="selectOne"
-              text={{
-                title: "selectGroup",
-                ok: "select",
-              }}
-              onConfirm={(groups) => {
-                field.onChange(groups?.[0].path);
-                setGroups(groups);
-                setOpen(false);
-              }}
-              onClose={() => setOpen(false)}
-              filterGroups={groups}
-            />
+            <GroupResourceContext value={adminClient.groups}>
+              <GroupPickerDialog
+                type="selectOne"
+                text={{
+                  title: "selectGroup",
+                  ok: "select",
+                }}
+                onConfirm={(groups) => {
+                  field.onChange(groups?.[0].path);
+                  setGroups(groups);
+                  setOpen(false);
+                }}
+                onClose={() => setOpen(false)}
+                filterGroups={groups}
+              />
+            </GroupResourceContext>
           )}
 
           <FormGroup

@@ -39,7 +39,43 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 
 /**
  * Sets an ID for the credential subject, either from User ID or by attribute mapping
- *
+ * <p/>
+ * A Verifiable Credential (VC) is often bound to a Holder's Digital Identity (DID).
+ * The Holder's DID is in turn bound to Key Material that the Issuer + Verifier can discover from the DID Document.
+ * In case of "did:key:..." the Public Key is already encoded in the DID.
+ * <p/>
+ * Here, we make sure that the default UserProfile has a 'did' attribute when --feature=oid4vc-vci is enabled.
+ * Conceptually, it is however debatable whether the Issuer should know even one of the Holder's DIDs
+ * <p/>
+ * In future, it may be possible that ...
+ * <p/>
+ *  * The Holder communicates the DID at the time of Authorization
+ *  * The Issuer then verifies Holder possession of the associated Key Material
+ *  * The Issuer then somehow associates the AuthorizationRequest with a registered User
+ *  * The VC is then issued to the Holder without the Issuer needing to remember that Holder DID
+ * <p/>
+ * This kind of Authorization protocol is for example required by EBSI, which we aim to become compatible with.
+ * https:*hub.ebsi.eu/conformance/build-solutions/issue-to-holder-functional-flows
+ * <p/>
+ * Note, that current EBSI Compatibility Tests use the Holder's DID as OIDC client_id in the AuthorizationRequest.
+ * That is something we need to work with, but I don't think we should model it like that in our realm config.
+ * <p/>
+ * Here the attribute definition that we add by default (when not defined already)
+ * <p/>
+ *   {
+ *     "name": "did",
+ *     "displayName": "DID",
+ *     "permissions": {
+ *       "view": ["admin", "user"],
+ *       "edit": ["admin", "user"]
+ *     },
+ *     "validations": {
+ *       "pattern": {
+ *         "pattern": "^did:.+:.+$",
+ *         "error-message": "Value must start with 'did:scheme:'"
+ *       }
+ *     }
+ *   }
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 public class OID4VCSubjectIdMapper extends OID4VCMapper {
@@ -62,8 +98,8 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         userAttributeConfig.setLabel("User attribute");
         userAttributeConfig.setHelpText("The name of the user attribute that maps to the subject id.");
         userAttributeConfig.setType(ProviderConfigProperty.LIST_TYPE);
-        userAttributeConfig.setOptions(List.of(UserModel.USERNAME, UserModel.EMAIL, UserModel.ID));
-        userAttributeConfig.setDefaultValue(UserModel.ID);
+        userAttributeConfig.setOptions(List.of(UserModel.DID, UserModel.USERNAME, UserModel.EMAIL, UserModel.ID));
+        userAttributeConfig.setDefaultValue(UserModel.DID);
         CONFIG_PROPERTIES.add(userAttributeConfig);
     }
 

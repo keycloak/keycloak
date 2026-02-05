@@ -278,4 +278,78 @@ public interface UserSessionProvider extends Provider {
     default UserSessionModel getUserSessionIfClientExists(RealmModel realm, String userSessionId, boolean offline, String clientUUID) {
         return getUserSessionWithPredicate(realm, userSessionId, offline, userSession -> userSession.getAuthenticatedClientSessionByClient(clientUUID) != null);
     }
+
+    /**
+     * Stream all the regular sessions in the realm.
+     * <p>
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the transaction and any
+     * modification may throw an {@link UnsupportedOperationException}.
+     *
+     * @param realm The {@link RealmModel} instance.
+     * @return A {@link Stream} for all the sessions in the realm.
+     */
+    default Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm) {
+        return getActiveClientSessionStats(realm, false)
+                .keySet()
+                .stream()
+                .map(realm::getClientById)
+                .flatMap((client) -> getUserSessionsStream(realm, client));
+    }
+
+    /**
+     * Stream all the offline sessions in the realm.
+     * <p>
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the transaction and any
+     * modification may throw an {@link UnsupportedOperationException}.
+     *
+     * @param realm The {@link RealmModel} instance.
+     * @return A {@link Stream} for all the sessions in the realm.
+     */
+    default Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm) {
+        return getActiveClientSessionStats(realm, true)
+                .keySet()
+                .stream()
+                .map(realm::getClientById)
+                .flatMap((client) -> getOfflineUserSessionsStream(realm, client, null, null));
+    }
+
+    /**
+     * Stream all the regular sessions belonging to the realm and having a client session from the client.
+     * <p>
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the
+     * transaction and any modification may throw an {@link UnsupportedOperationException}.
+     * <p>
+     * The {@code skip} and {@code maxResults} parameters control how many sessions should be streamed. A negative value
+     * for either parameter is ignored (no skip/limit applied). If {@code maxResults} is zero, an empty stream is
+     * returned.
+     *
+     * @param realm      The {@link RealmModel} instance.
+     * @param client     The {@link ClientModel} instance.
+     * @param skip       The number of leading elements to skip.
+     * @param maxResults The number of elements the stream should be limited to.
+     * @return A {@link Stream} for all the sessions matching the parameters.
+     */
+    default Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm, ClientModel client, int skip, int maxResults) {
+        return getUserSessionsStream(realm, client, skip, maxResults);
+    }
+
+    /**
+     * Stream all the offline sessions belonging to the realm and having a client session from the client.
+     * <p>
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the
+     * transaction and any modification may throw an {@link UnsupportedOperationException}.
+     * <p>
+     * The {@code skip} and {@code maxResults} parameters control how many sessions should be streamed. A negative value
+     * for either parameter is ignored (no skip/limit applied). If {@code maxResults} is zero, an empty stream is
+     * returned.
+     *
+     * @param realm      The {@link RealmModel} instance.
+     * @param client     The {@link ClientModel} instance.
+     * @param skip       The number of leading elements to skip.
+     * @param maxResults The number of elements the stream should be limited to.
+     * @return A {@link Stream} for all the sessions matching the parameters.
+     */
+    default Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm, ClientModel client, int skip, int maxResults) {
+        return getOfflineUserSessionsStream(realm, client, skip, maxResults);
+    }
 }

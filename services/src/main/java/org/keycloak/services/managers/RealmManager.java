@@ -42,6 +42,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
@@ -310,11 +311,12 @@ public class RealmManager {
                 authSessions.onRealmRemoved(realm);
             }
 
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
             session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
                 @Override
                 protected void commitImpl() {
                     // Refresh periodic sync tasks for configured storageProviders
-                    StoreSyncEvent.fire(session, realm, true);
+                    sessionFactory.publish(new StoreSyncEvent(session, realm, true));
                 }
 
                 @Override
@@ -683,12 +685,13 @@ public class RealmManager {
                 KeycloakModelUtils.setupDeleteAccount(realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID));
             }
 
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
             // enlistAfterCompletion(..) as we need to ensure that the realm is committed to the database before we can update the sync tasks
             session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
                 @Override
                 protected void commitImpl() {
                     // Refresh periodic sync tasks for configured storageProviders
-                    StoreSyncEvent.fire(session, realm, false);
+                    sessionFactory.publish(new StoreSyncEvent(session, realm, false));
                 }
 
                 @Override

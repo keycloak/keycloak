@@ -13,7 +13,7 @@ When a new user is created, a workflow can automatically send a welcome email, a
 ```yaml
 name: Onboarding gold members
 on: user-created
-if: has-user-attribute('membership','gold')
+if: has-user-attribute(membership=gold)
 steps:
   - uses: notify-user
     with:
@@ -29,7 +29,7 @@ When a user is removed from a specific group, a workflow can automatically revok
 
 ```yaml
 name: Offboarding sales members
-on: user_group_membership_removed('/Sales')
+on: user-group-membership-removed(/Sales)
 steps:
   - uses: revoke-role
     with:
