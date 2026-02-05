@@ -12,6 +12,7 @@ env:
   MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
   SUREFIRE_RERUN_FAILING_COUNT: 2
   SUREFIRE_RETRY: "-Dsurefire.rerunFailingTestsCount=2"
+  KC_TEST_GITHUB_SLOW: "10"
 
 concurrency:
   # Only cancel jobs for PR updates
