@@ -31,3 +31,22 @@ To enable start the server with <#if profileFeature.type != "PREVIEW_DISABLED_BY
 
 ====
 </#macro>
+
+<#macro techpreviewdeprecated feature>
+<#assign profileFeature = ctx.features.getFeature(feature)>
+
+[WARNING]
+====
+${profileFeature.description} is
+ifeval::[{project_product}==true]
+*Technology Preview*
+endif::[]
+ifeval::[{project_community}==true]
+*Preview*
+endif::[]
+and *Deprecated*. This feature is not fully supported, disabled by default, and will be removed in future versions.
+
+To enable start the server with <#if profileFeature.type != "PREVIEW_DISABLED_BY_DEFAULT">`--features=preview` or </#if>`--features=${profileFeature.name}`
+
+====
+</#macro>
