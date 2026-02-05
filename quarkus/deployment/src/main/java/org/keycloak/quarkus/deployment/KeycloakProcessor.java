@@ -831,6 +831,7 @@ class KeycloakProcessor {
     }
 
     @BuildStep
+    @Consume(ProfileBuildItem.class)
     void disableHealthCheckBean(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
         if (isHealthDisabled()) {
             disableReadyHealthCheck(removeBeans, index);
