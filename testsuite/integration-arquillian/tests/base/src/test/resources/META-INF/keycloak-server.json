@@ -203,6 +203,15 @@
         }
     },
 
+    "keystore": {
+        "default": {
+            "ldapKeystoreFile": "${keycloak.truststore.file:target/dependency/keystore/keycloak.jks}",
+            "ldapKeystorePassword": "${keycloak.keystore.password:secret}"
+
+        }
+    },
+
+
     "jta-lookup": {
         "provider": "${keycloak.jta.lookup.provider:jboss}",
         "jboss" : {
