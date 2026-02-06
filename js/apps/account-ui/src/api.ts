@@ -73,21 +73,19 @@ function checkResponse<T>(response: T) {
   return response;
 }
 
-export async function getIssuer(context: KeycloakContext<BaseEnvironment>) {
+export async function getVCIssuer(context: KeycloakContext<BaseEnvironment>) {
   const response = await request(
     joinPath(
-      "/realms/",
+      "/.well-known/openid-credential-issuer/realms/",
       context.environment.realm,
-      "/.well-known/openid-credential-issuer",
     ),
     context,
     {},
     new URL(
       joinPath(
         context.environment.serverBaseUrl,
-        "/realms/",
+        "/.well-known/openid-credential-issuer/realms/",
         context.environment.realm,
-        "/.well-known/openid-credential-issuer",
       ),
     ),
   );
@@ -105,9 +103,11 @@ export async function requestVCOffer(
     {
       searchParams: {
         credential_configuration_id: supportedCredentialConfiguration.id,
+        client_id: context.environment.clientId,
+        username: context.keycloak.tokenParsed?.preferred_username,
         type: "qr-code",
-        width: "500",
-        height: "500",
+        width: "300",
+        height: "300",
       },
     },
     new URL(
