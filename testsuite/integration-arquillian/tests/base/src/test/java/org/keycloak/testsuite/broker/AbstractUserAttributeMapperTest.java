@@ -3,6 +3,7 @@ package org.keycloak.testsuite.broker;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 import org.keycloak.admin.client.resource.IdentityProviderResource;
@@ -42,13 +43,13 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractIdentityPr
       .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, MAPPED_ATTRIBUTE_NAME)
       .build();
 
-    protected abstract Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers(IdentityProviderMapperSyncMode syncMode);
+    protected abstract Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers(IdentityProviderMapperSyncMode syncMode, boolean nullable);
 
-    public void addIdentityProviderToConsumerRealm(IdentityProviderMapperSyncMode syncMode) {
+    public void addIdentityProviderToConsumerRealm(IdentityProviderMapperSyncMode syncMode, boolean nullable) {
         IdentityProviderRepresentation idp = setupIdentityProvider();
 
         IdentityProviderResource idpResource = realm.identityProviders().get(idp.getAlias());
-        for (IdentityProviderMapperRepresentation mapper : createIdentityProviderMappers(syncMode)) {
+        for (IdentityProviderMapperRepresentation mapper : createIdentityProviderMappers(syncMode, nullable)) {
             mapper.setIdentityProviderAlias(bc.getIDPAlias());
             idpResource.addMapper(mapper).close();
         }
@@ -87,17 +88,17 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractIdentityPr
     }
 
     private void testValueMappingForImportSyncMode(Map<String, List<String>> initialUserAttributes, Map<String, List<String>> modifiedUserAttributes) {
-        addIdentityProviderToConsumerRealm(IdentityProviderMapperSyncMode.IMPORT);
+        addIdentityProviderToConsumerRealm(IdentityProviderMapperSyncMode.IMPORT, false);
         testValueMapping(initialUserAttributes, modifiedUserAttributes, initialUserAttributes);
     }
 
     private void testValueMappingForForceSyncMode(Map<String, List<String>> initialUserAttributes, Map<String, List<String>> modifiedUserAttributes) {
-        addIdentityProviderToConsumerRealm(IdentityProviderMapperSyncMode.FORCE);
+        addIdentityProviderToConsumerRealm(IdentityProviderMapperSyncMode.FORCE, false);
         testValueMapping(initialUserAttributes, modifiedUserAttributes, modifiedUserAttributes);
     }
 
     private void testValueMappingForLegacySyncMode(Map<String, List<String>> initialUserAttributes, Map<String, List<String>> modifiedUserAttributes) {
-        addIdentityProviderToConsumerRealm(IdentityProviderMapperSyncMode.LEGACY);
+        addIdentityProviderToConsumerRealm(IdentityProviderMapperSyncMode.LEGACY, false);
         testValueMapping(initialUserAttributes, modifiedUserAttributes, modifiedUserAttributes);
     }
 
@@ -145,6 +146,36 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractIdentityPr
           .build(),
           ImmutableMap.<String, List<String>>builder()
           .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("second value").build())
+          .build()
+        );
+    }
+
+    @Test
+    public void testProtectedAttributesAreSetNullInLegacySyncModeWhenNullable() {
+        addIdentityProviderToConsumerRealm(IdentityProviderMapperSyncMode.LEGACY, true);
+        testValueMapping(ImmutableMap.<String, List<String>>builder()
+          .put("email",  ImmutableList.<String>builder().add(bc.getUserEmail()).build())
+          .build(),
+          ImmutableMap.<String, List<String>>builder()
+          .put("email", Collections.singletonList((String) null))
+          .build(),
+          ImmutableMap.<String, List<String>>builder()
+          .put("email", Collections.singletonList((String) null))
+          .build()
+        );
+    }
+
+    @Test
+    public void testProtectedAttributesAreSetNullInForceSyncModeWhenNullable() {
+        addIdentityProviderToConsumerRealm(IdentityProviderMapperSyncMode.FORCE, true);
+        testValueMapping(ImmutableMap.<String, List<String>>builder()
+          .put("email",  ImmutableList.<String>builder().add(bc.getUserEmail()).build())
+          .build(),
+          ImmutableMap.<String, List<String>>builder()
+          .put("email", Collections.singletonList((String) null))
+          .build(),
+          ImmutableMap.<String, List<String>>builder()
+          .put("email", Collections.singletonList((String) null))
           .build()
         );
     }
