@@ -193,9 +193,21 @@ The specifications described in this guide also apply to Google, with the follow
 
 In a scenario where a mobile application already supports login with Google without involving Keycloak, there may be an issue when integrating Keycloak later. For example, Keycloak might be configured with a Google Identity Provider that uses a different Google client than the one used by the mobile app.
 
-In this case, the Google ID token cannot be used with the JWT Authorization Grant because the `aud` claim in the ID token does not match the client id configured in the Google Identity Provider.
+In this case, the Google ID token cannot be used with the JWT Authorization Grant because the `aud` claim in the ID Token does not match the client id configured in the Google Identity Provider.
 
-To address this issue, you can use Client Policies with the `jwt-authorization-grant-audience` executor to allow additional audiences for the assertion.
+To address this issue, you can use Client Policies with the `jwt-authorization-grant-audience` executor to explicitly set the Google ID Token audience as the trusted audience, replacing the default audience validation configured for the Identity Provider.
+
+**Example setup:**
+
+Assume you have an OIDC client named `foo`, which is a mobile application receiving a Google ID token with the audience `my-mobile-app.apps.googleusercontent.com`, and you have an already configured Google Identity Provider with a different client-id.
+
+Follow these steps to configure the validation of the audience:
+
+. **Create a Client Policy Profile:** Create a profile and add the `jwt-authorization-grant-audience` executor. Configure the allowed audience in the executor to `my-mobile-app.apps.googleusercontent.com`.
+. **Create a Client Policy:** Create a policy that uses this profile. For the condition, you can use the **client-role** condition and specify a role, for example, `foo-role`.
+. **Configure the Client:** Navigate to the client `foo` settings. Open the **Roles** tab and create a new role named `foo-role`. This role acts effectively as a "marker" to ensure the client policy is triggered. You should create this same role in any other client that requires this specific audience validation.
+. **Validate:** When you send the JWT authorization grant request with your Google ID token from client `foo`, the request will now be accepted, provided that `my-mobile-app.apps.googleusercontent.com` is present as a valid audience in the token.
+
 
 </@tmpl.guide>
 
