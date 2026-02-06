@@ -112,8 +112,10 @@ else
 fi
 
 # See also https://github.com/wildfly/wildfly-core/blob/7e5624cf92ebe4b64a4793a8c0b2a340c0d6d363/core-feature-pack/common/src/main/resources/content/bin/common.sh#L57-L60
+# java.base/java.lang=ALL-UNNAMED is required for JBoss Threads, see e.g. https://github.com/quarkusio/quarkus/pull/47637 and relevant https://github.com/quarkusio/quarkus/discussions/51041
+# --enable-native-access=ALL-UNNAMED is required for Infinispan: https://github.com/infinispan/infinispan/issues/15765#issuecomment-3839985807
 if [ -z "$JAVA_ADD_OPENS" ]; then
-   JAVA_ADD_OPENS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED"
+   JAVA_ADD_OPENS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --enable-native-access=ALL-UNNAMED"
 else
    echo "JAVA_ADD_OPENS already set in environment; overriding default settings"
 fi
