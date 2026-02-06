@@ -2,7 +2,7 @@ package org.keycloak.testframework.injection.mocks;
 
 public class MockParentValue {
 
-    private final String stringOption;
+    private String stringOption;
     private final boolean booleanOption;
     private boolean closed = false;
 
@@ -14,6 +14,10 @@ public class MockParentValue {
 
     public String getStringOption() {
         return stringOption;
+    }
+
+    public void setStringOption(String stringOption) {
+        this.stringOption = stringOption;
     }
 
     public boolean isBooleanOption() {

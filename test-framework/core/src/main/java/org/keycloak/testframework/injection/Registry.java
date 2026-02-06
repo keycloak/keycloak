@@ -2,6 +2,7 @@ package org.keycloak.testframework.injection;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -11,6 +12,8 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.testframework.TestFrameworkExecutor;
+import org.keycloak.testframework.annotations.TestCleanup;
+import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.injection.predicates.DependencyPredicates;
 import org.keycloak.testframework.injection.predicates.InstanceContextPredicates;
 import org.keycloak.testframework.injection.predicates.RequestedInstancePredicates;
@@ -31,6 +34,8 @@ public class Registry implements AutoCloseable {
     private final Extensions extensions;
     private final List<InstanceContext<?, ?>> deployedInstances = new LinkedList<>();
     private final List<RequestedInstance<?, ?>> requestedInstances = new LinkedList<>();
+
+    private Object currentTestInstance;
 
     public Registry() {
         extensions = Extensions.getInstance();
@@ -117,8 +122,14 @@ public class Registry implements AutoCloseable {
         destroyIncompatibleInstances();
         matchDeployedInstancesWithRequestedInstances();
         deployRequestedInstances();
-        injectFields(testInstance);
         invokeBeforeEachOnSuppliers();
+        injectFields(testInstance);
+
+        if (currentTestInstance == null || testInstance.getClass() != currentTestInstance.getClass()) {
+            executeSetup(testInstance, TestSetup.class);
+        }
+
+        currentTestInstance = testInstance;
     }
 
     public void intercept(InvocationInterceptor.Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext) throws Throwable {
@@ -235,7 +246,24 @@ public class Registry implements AutoCloseable {
         }
     }
 
+    private void executeSetup(Object testInstance, Class<? extends Annotation> annotation) {
+        for (Method m : ReflectionUtils.listMethods(testInstance.getClass(), annotation)) {
+            if (m.getParameterCount() != 0) {
+                throw new RuntimeException("Method with " + annotation.getName() + " has required parameters: " + m); // Update when https://github.com/keycloak/keycloak/pull/45869 is merged
+            }
+            try {
+                m.invoke(testInstance);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("Method with " + annotation.getName() + " not accessible: " + m); // Update when https://github.com/keycloak/keycloak/pull/45869 is merged
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     public void afterAll() {
+        executeSetup(currentTestInstance, TestCleanup.class);
+
         logger.logAfterAll();
         List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(InstanceContextPredicates.hasLifeCycle(LifeCycle.CLASS)).toList();
         destroy.forEach(this::destroy);
