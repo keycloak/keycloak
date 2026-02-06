@@ -1,4 +1,4 @@
-import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
+import { KeycloakDataTable, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   Modal,
@@ -9,10 +9,13 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 import { CheckCircleIcon } from "@patternfly/react-icons";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import { useAdminClient } from "../../admin-client";
 import { fetchUsedBy } from "../../components/role-mapping/resource";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { toClient } from "../../clients/routes/Client";
 import useToggle from "../../utils/useToggle";
 import { AuthenticationType, REALM_FLOWS } from "../constants";
 
@@ -34,16 +37,21 @@ type UsedByModalProps = {
   isSpecificClient: boolean;
 };
 
+type ClientInfo = {
+  name: string;
+  id?: string;
+};
+
 const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
   const { adminClient } = useAdminClient();
-
+  const { realm } = useRealm();
   const { t } = useTranslation();
 
   const loader = async (
     first?: number,
     max?: number,
     search?: string,
-  ): Promise<{ name: string }[]> => {
+  ): Promise<ClientInfo[]> => {
     const result = await fetchUsedBy(adminClient, {
       id,
       type: isSpecificClient ? "clients" : "idp",
@@ -51,6 +59,22 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
       max: max || 10,
       search,
     });
+    if (isSpecificClient) {
+      return await Promise.all(
+          result.map(async (clientName) => {
+            try {
+              const clients = await adminClient.clients.find({
+                clientId: clientName,
+                realm: realm,
+              });
+              const client = clients[0];
+              return {name: clientName, id: client?.id};
+            } catch {
+              return {name: clientName};
+            }
+          }),
+      );
+    }
     return result.map((p) => ({ name: p }));
   };
 
@@ -88,6 +112,23 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
         columns={[
           {
             name: "name",
+            displayKey: "name",
+            cellRenderer: (client: ClientInfo) => {
+              if (isSpecificClient && client.id) {
+                return (
+                  <Link
+                    to={toClient({
+                      realm,
+                      clientId: client.id,
+                      tab: "settings",
+                    })}
+                  >
+                    {client.name}
+                  </Link>
+                );
+              }
+              return client.name;
+            },
           },
         ]}
       />
@@ -97,12 +138,40 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
 
 export const UsedBy = ({ authType: { id, usedBy } }: UsedByProps) => {
   const { t } = useTranslation();
-  const { realmRepresentation: realm } = useRealm();
+  const { realmRepresentation: realm, realm: realmName } = useRealm();
+  const { adminClient } = useAdminClient();
   const [open, toggle] = useToggle();
+  const [clientDetails, setClientDetails] = useState<
+    { clientId: string; id: string | undefined }[]
+  >([]);
 
   const key = Object.entries(realm!).find(
     (e) => e[1] === usedBy?.values[0],
   )?.[0];
+
+  useFetch(
+    async () => {
+      if (usedBy?.type === "SPECIFIC_CLIENTS" && usedBy.values.length > 0) {
+        return await Promise.all(
+            usedBy.values.map(async (clientId) => {
+              try {
+                const clients = await adminClient.clients.find({
+                  clientId: clientId,
+                  realm: realmName,
+                });
+                const client = clients[0];
+                return {clientId, id: client?.id};
+              } catch {
+                return {clientId, id: undefined};
+              }
+            }),
+        );
+      }
+      return [];
+    },
+    (details) => setClientDetails(details),
+    [usedBy?.type, usedBy?.values, realmName],
+  );
 
   return (
     <>
@@ -127,12 +196,39 @@ export const UsedBy = ({ authType: { id, usedBy } }: UsedByProps) => {
                       ? "Clients"
                       : "Providers"),
                 )}{" "}
-                {usedBy.values.map((used, index) => (
-                  <>
-                    <strong>{used}</strong>
-                    {index < usedBy.values.length - 1 ? ", " : ""}
-                  </>
-                ))}
+                {usedBy.values.map((used, index) => {
+                  if (usedBy.type === "SPECIFIC_CLIENTS") {
+                    const clientDetail = clientDetails?.find(
+                      (c: { clientId: string; id: string | undefined }) =>
+                        c.clientId === used,
+                    );
+                    return (
+                      <span key={`${used}-${index}`}>
+                        {clientDetail?.id ? (
+                          <Link
+                            to={toClient({
+                              realm: realmName,
+                              clientId: clientDetail.id,
+                              tab: "settings",
+                            })}
+                          >
+                            {used}
+                          </Link>
+                        ) : (
+                          <strong>{used}</strong>
+                        )}
+                        {index < usedBy.values.length - 1 ? ", " : ""}
+                      </span>
+                    );
+                  } else {
+                    return (
+                      <span key={`${used}-${index}`}>
+                        <strong>{used}</strong>
+                        {index < usedBy.values.length - 1 ? ", " : ""}
+                      </span>
+                    );
+                  }
+                })}
               </div>
             }
           >
