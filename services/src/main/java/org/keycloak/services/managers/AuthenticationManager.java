@@ -223,13 +223,9 @@ public class AuthenticationManager {
         long lifespan = SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(userSession.isOffline(),
                 userSession.isRememberMe(), TimeUnit.SECONDS.toMillis(clientSession.getStarted()),
                 TimeUnit.SECONDS.toMillis(userSession.getStarted()), realm, client);
-        long idle = SessionExpirationUtils.calculateClientSessionIdleTimestamp(userSession.isOffline(),
-                userSession.isRememberMe(), TimeUnit.SECONDS.toMillis(clientSession.getTimestamp()), realm, client);
 
-        boolean sessionIdleOk = idle > currentTime -
-                                       ((Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) || Profile.isFeatureEnabled(Profile.Feature.CLUSTERLESS)) ? 0 : TimeUnit.SECONDS.toMillis(SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS));
         boolean sessionMaxOk = lifespan == -1L || lifespan > currentTime;
-        return sessionIdleOk && sessionMaxOk;
+        return sessionMaxOk;
     }
 
 
