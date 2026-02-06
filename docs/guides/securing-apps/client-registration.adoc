@@ -99,7 +99,7 @@ You should save the registration access token somewhere if you want to retrieve 
 
 To retrieve the Client Representation perform an HTTP GET request to `/realms/<realm>/clients-registrations/default/<client id>`.
 
-It will also return a new registration access token.
+The GET request will not update the registration access token, so it will remain the same.
 
 To update the Client Representation perform an HTTP PUT request with the updated Client Representation to:
 `/realms/<realm>/clients-registrations/default/<client id>`.
