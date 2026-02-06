@@ -891,6 +891,7 @@ class KeycloakProcessor {
     }
 
     @BuildStep
+    @Consume(ConfigBuildItem.class)
     @Consume(ProfileBuildItem.class)
     void configureResteasy(CombinedIndexBuildItem index,
             BuildProducer<BuildTimeConditionBuildItem> buildTimeConditionBuildItemBuildProducer,
