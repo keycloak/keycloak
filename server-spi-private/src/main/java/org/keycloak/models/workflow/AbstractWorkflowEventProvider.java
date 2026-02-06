@@ -7,6 +7,13 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderEvent;
 
+/**
+ * Utility class to simplify implementation of WorkflowEventProvider interface, providing default implementations for most methods.
+ * </p>
+ * Subclasses need to implement only the {@link #getSupportedResourceType()} method and the relevant {@code supports} methods. If
+ * the provider supports {@link ProviderEvent}s, they also need to implement the {@link  #resolveResourceId} method because there is no
+ * common way to resolve resource IDs from provider events, so that logic is provider-specific.
+ */
 public abstract class AbstractWorkflowEventProvider implements WorkflowEventProvider {
 
     protected final String providerId;
@@ -67,6 +74,12 @@ public abstract class AbstractWorkflowEventProvider implements WorkflowEventProv
         return false;
     }
 
+    /**
+     * Resolves the resource ID from the given {@link ProviderEvent}.
+     *
+     * @param providerEvent the provider event
+     * @return the resolved resource ID, or {@code null} if it cannot be resolved
+     */
     protected String resolveResourceId(ProviderEvent providerEvent) {
         return null;
     }
