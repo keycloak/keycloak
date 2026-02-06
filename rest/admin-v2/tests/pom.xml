@@ -41,6 +41,10 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-v2-rest</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi-private</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
