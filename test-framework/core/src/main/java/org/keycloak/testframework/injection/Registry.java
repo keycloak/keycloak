@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.keycloak.testframework.FatalTestClassException;
 import org.keycloak.testframework.TestFrameworkExecutor;
 import org.keycloak.testframework.annotations.TestCleanup;
 import org.keycloak.testframework.annotations.TestSetup;
@@ -20,6 +21,7 @@ import org.keycloak.testframework.injection.predicates.RequestedInstancePredicat
 import org.keycloak.testframework.injection.predicates.TestFrameworkExecutorPredicates;
 import org.keycloak.testframework.server.KeycloakServer;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -34,6 +36,7 @@ public class Registry implements AutoCloseable {
     private final Extensions extensions;
     private final List<InstanceContext<?, ?>> deployedInstances = new LinkedList<>();
     private final List<RequestedInstance<?, ?>> requestedInstances = new LinkedList<>();
+    private FatalTestClassException fatalTestClassException;
 
     private Object currentTestInstance;
 
@@ -118,18 +121,32 @@ public class Registry implements AutoCloseable {
     }
 
     public void beforeEach(Object testInstance, Method testMethod) {
-        findRequestedInstances(testInstance, testMethod);
-        destroyIncompatibleInstances();
-        matchDeployedInstancesWithRequestedInstances();
-        deployRequestedInstances();
-        invokeBeforeEachOnSuppliers();
-        injectFields(testInstance);
-
-        if (currentTestInstance == null || testInstance.getClass() != currentTestInstance.getClass()) {
-            executeSetup(testInstance, TestSetup.class);
+        if (fatalTestClassException != null) {
+            skipTestMethod();
         }
 
-        currentTestInstance = testInstance;
+        try {
+            findRequestedInstances(testInstance, testMethod);
+            destroyIncompatibleInstances();
+            matchDeployedInstancesWithRequestedInstances();
+            deployRequestedInstances();
+            invokeBeforeEachOnSuppliers();
+            injectFields(testInstance);
+
+            if (currentTestInstance == null || testInstance.getClass() != currentTestInstance.getClass()) {
+                executeSetup(testInstance, TestSetup.class);
+            }
+
+            currentTestInstance = testInstance;
+        } catch (FatalTestClassException e) {
+            requestedInstances.clear();
+            fatalTestClassException = e;
+            skipTestMethod();
+        }
+    }
+
+    private void skipTestMethod() {
+        Assumptions.abort("Skipping test method due to fatal test class error");
     }
 
     public void intercept(InvocationInterceptor.Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext) throws Throwable {
@@ -262,11 +279,20 @@ public class Registry implements AutoCloseable {
     }
 
     public void afterAll() {
-        executeSetup(currentTestInstance, TestCleanup.class);
+        FatalTestClassException exception = fatalTestClassException;
+        fatalTestClassException = null;
+
+        if (exception == null) {
+            executeSetup(currentTestInstance, TestCleanup.class);
+        }
 
         logger.logAfterAll();
         List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(InstanceContextPredicates.hasLifeCycle(LifeCycle.CLASS)).toList();
         destroy.forEach(this::destroy);
+
+        if (exception != null) {
+            throw exception;
+        }
     }
 
     public void afterEach() {
@@ -302,6 +328,9 @@ public class Registry implements AutoCloseable {
             for (Annotation annotation : annotations) {
                 Supplier<?, ?> supplier = extensions.findSupplierByAnnotation(annotation);
                 if (supplier != null) {
+                    if (!supplier.getValueType().isAssignableFrom(valueType)) {
+                        throw typeMismatch(annotation.annotationType(), supplier.getValueType(), valueType);
+                    }
                     return new RequestedInstance(supplier, annotation, valueType);
                 }
             }
@@ -379,6 +408,18 @@ public class Registry implements AutoCloseable {
 
     private TestFrameworkExecutor getExecutor(Method testMethod) {
         return extensions.getTestFrameworkExecutors().stream().filter(TestFrameworkExecutorPredicates.shouldExecute(testMethod)).findFirst().orElse(null);
+    }
+
+    private FatalTestClassException typeMismatch(
+            Class<? extends Annotation> annotation,
+            Class<?> expectedType,
+            Class<?> providedType) {
+        return new FatalTestClassException(
+                String.format("@%s requires %s (or its subclass) but field has type %s",
+                        annotation.getSimpleName(),
+                        expectedType.getName(),
+                        providedType.getName())
+        );
     }
 
     private static class RequestedInstanceComparator implements Comparator<RequestedInstance> {
