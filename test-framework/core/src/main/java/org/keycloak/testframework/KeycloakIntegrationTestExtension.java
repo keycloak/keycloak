@@ -19,51 +19,49 @@ import org.junit.jupiter.api.extension.TestWatcher;
 
 public class KeycloakIntegrationTestExtension implements BeforeAllCallback, BeforeEachCallback, AfterEachCallback, AfterAllCallback, TestWatcher, InvocationInterceptor, ParameterResolver {
 
-    private static final LogHandler logHandler = new LogHandler();
-
     @Override
     public void beforeAll(ExtensionContext context) {
-        logHandler.beforeAll(context);
+        getLogHandler(context).beforeAll(context);
     }
 
     @Override
     public void beforeEach(ExtensionContext context) {
-        logHandler.beforeEachStarting(context);
+        getLogHandler(context).beforeEachStarting(context);
         getRegistry(context).beforeEach(context.getRequiredTestInstance(), context.getRequiredTestMethod());
-        logHandler.beforeEachCompleted(context);
+        getLogHandler(context).beforeEachCompleted(context);
     }
 
     @Override
     public void afterEach(ExtensionContext context) {
-        logHandler.afterEachStarting(context);
+        getLogHandler(context).afterEachStarting(context);
         getRegistry(context).afterEach();
-        logHandler.afterEachCompleted(context);
+        getLogHandler(context).afterEachCompleted(context);
     }
 
     @Override
     public void afterAll(ExtensionContext context) {
-        logHandler.afterAll(context);
+        getLogHandler(context).afterAll(context);
         getRegistry(context).afterAll();
     }
 
     @Override
     public void testFailed(ExtensionContext context, Throwable cause) {
-        logHandler.testFailed(context);
+        getLogHandler(context).testFailed(context);
     }
 
     @Override
     public void testDisabled(ExtensionContext context, Optional<String> reason) {
-        logHandler.testDisabled(context);
+        getLogHandler(context).testDisabled(context);
     }
 
     @Override
     public void testSuccessful(ExtensionContext context) {
-        logHandler.testSuccessful(context);
+        getLogHandler(context).testSuccessful(context);
     }
 
     @Override
     public void testAborted(ExtensionContext context, Throwable cause) {
-        logHandler.testAborted(context);
+        getLogHandler(context).testAborted(context);
     }
 
     @Override
@@ -76,6 +74,12 @@ public class KeycloakIntegrationTestExtension implements BeforeAllCallback, Befo
         Registry registry = (Registry) store.getOrComputeIfAbsent(Registry.class, r -> new Registry());
         registry.setCurrentContext(context);
         return registry;
+    }
+
+    public static LogHandler getLogHandler(ExtensionContext context) {
+        ExtensionContext.Store store = context.getRoot().getStore(ExtensionContext.Namespace.GLOBAL);
+        LogHandler logHandler = (LogHandler) store.computeIfAbsent(LogHandler.class, l -> new LogHandler());
+        return logHandler;
     }
 
     @Override

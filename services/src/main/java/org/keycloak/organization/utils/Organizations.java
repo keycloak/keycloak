@@ -55,7 +55,7 @@ import static java.util.Optional.ofNullable;
 public class Organizations {
 
     public static boolean isOrganizationGroup(GroupModel group) {
-        return Type.ORGANIZATION.equals(group.getType());
+        return Type.ORGANIZATION.equals(group.getType()) && group.getOrganization() != null;
     }
 
     public static boolean canManageOrganizationGroup(KeycloakSession session, GroupModel group) {

@@ -354,6 +354,8 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 				getUserAttributeMapper("email", "email"),
 				getUserAttributeMapper("firstName", "firstName"),
 				getUserAttributeMapper("lastName", "lastName"),
+				getUserAttributeMapper("address.street_address", "address_street_address"),
+				getUserAttributeMapper("address.locality", "address_locality"),
 				getJtiGeneratedIdMapper(),
 				getStaticClaimMapper(scopeName),
 				getIssuedAtTimeMapper("iat", ChronoUnit.HOURS.name(), "COMPUTE"),
@@ -441,6 +443,8 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
                 .firstName(firstName)
                 .lastName(lastName)
                 .password("password")
+                .addAttribute("address_street_address", "221B Baker Street")
+                .addAttribute("address_locality", "London")
                 .role("account", "manage-account")
                 .role("account", "view-profile");
 

@@ -38,6 +38,10 @@ public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
             userRepresentation.setUsername(username);
         }
 
+        if (userRepresentation.getRealmRoles() != null  || userRepresentation.getClientRoles() != null) {
+            throw new UnsupportedOperationException("Creating user with roles or client roles is not supported!");
+        }
+
         try (Response response = realm.admin().users().create(userRepresentation)) {
             if (Status.CONFLICT.equals(Status.fromStatusCode(response.getStatus()))) {
                 throw new IllegalStateException("User already exist with username: " + userRepresentation.getUsername());

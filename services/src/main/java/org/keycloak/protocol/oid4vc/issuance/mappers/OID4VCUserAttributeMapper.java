@@ -35,6 +35,9 @@ import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.utils.JsonUtils;
+
+import org.apache.commons.collections4.ListUtils;
 
 /**
  * Allows adding user properties to the credential subject
@@ -83,8 +86,7 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
 
     @Override
     public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
-        List<String> attributePath = getMetadataAttributePath();
-        String propertyName = attributePath.get(attributePath.size() - 1);
+        String claimName = mapperModel.getConfig().get(CLAIM_NAME);
         String userAttribute = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
         boolean aggregateAttributes = Optional.ofNullable(mapperModel.getConfig().get(AGGREGATE_ATTRIBUTES_KEY))
                 .map(Boolean::parseBoolean).orElse(false);
@@ -93,7 +95,12 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
                         aggregateAttributes);
         attributes.removeAll(Collections.singleton(null));
         if (!attributes.isEmpty()) {
-            claims.put(propertyName, String.join(",", attributes));
+            JsonUtils.mapClaim(
+                    JsonUtils.splitClaimPath(claimName),
+                    String.join(",", attributes),
+                    claims,
+                    false
+            );
         }
     }
 
@@ -129,5 +136,14 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
     @Override
     public String getId() {
         return MAPPER_ID;
+    }
+
+    @Override
+    public List<String> getMetadataAttributePath() {
+        String claimName = mapperModel.getConfig().get(CLAIM_NAME);
+        final String userAttributeName = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
+        // Split claim name into path segments for metadata endpoint.
+        final List<String> claimPath = Optional.ofNullable(claimName).map(JsonUtils::splitClaimPath).orElse(List.of(userAttributeName));
+        return ListUtils.union(getAttributePrefix(), claimPath);
     }
 }

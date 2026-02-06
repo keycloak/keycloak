@@ -758,7 +758,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     assertNotNull("The jwt_vc-credential can optionally provide a claims claim.",
                             jwtVcClaims);
 
-                    assertEquals(6, jwtVcClaims.size());
+                    assertEquals(8, jwtVcClaims.size());
                     {
                         Claim claim = jwtVcClaims.get(0);
                         assertEquals("Has credentialSubject.id", CREDENTIAL_SUBJECT, claim.getPath().get(0));
@@ -816,6 +816,38 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     }
                     {
                         Claim claim = jwtVcClaims.get(5);
+                        assertEquals("Has credentialSubject.address_locality", CREDENTIAL_SUBJECT, claim.getPath().get(0));
+                        assertEquals(
+                                "credentialSubject.address.locality mapped correctly (parent claim in path)",
+                                "address",
+                                claim.getPath().get(1)
+                        );
+                        assertEquals(
+                                "credentialSubject.address.locality mapped correctly (nested claim in path)",
+                                "locality",
+                                claim.getPath().get(2)
+                        );
+                        assertFalse("credentialSubject.address.locality is not mandatory", claim.isMandatory());
+                        assertNull("credentialSubject.address.locality has no display", claim.getDisplay());
+                    }
+                    {
+                        Claim claim = jwtVcClaims.get(6);
+                        assertEquals("Has credentialSubject.address.street_address", CREDENTIAL_SUBJECT, claim.getPath().get(0));
+                        assertEquals(
+                                "credentialSubject.address.street_address mapped correctly (parent claim in path)",
+                                "address",
+                                claim.getPath().get(1)
+                        );
+                        assertEquals(
+                                "credentialSubject.address.street_address mapped correctly (nested claim in path)",
+                                "street_address",
+                                claim.getPath().get(2)
+                        );
+                        assertFalse("credentialSubject.address.street_address is not mandatory", claim.isMandatory());
+                        assertNull("credentialSubject.address.street_address has no display", claim.getDisplay());
+                    }
+                    {
+                        Claim claim = jwtVcClaims.get(7);
                         assertEquals("Has credentialSubject.scope-name", CREDENTIAL_SUBJECT, claim.getPath().get(0));
                         assertEquals("credentialSubject.scope-name mapped correctly","scope-name", claim.getPath().get(1));
                         assertFalse("credentialSubject.scope-name is not mandatory", claim.isMandatory());

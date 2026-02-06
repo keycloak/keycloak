@@ -50,6 +50,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
@@ -108,7 +109,6 @@ public class OrganizationGroupResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public void deleteGroup() {
-        // todo org cache - listen to removal event and invalidate corresponding org in the cache?
         session.groups().removeGroup(session.getContext().getRealm(), group);
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
     }
@@ -231,8 +231,8 @@ public class OrganizationGroupResource {
                 }
 
                 // Validate it belongs to the same organization
-                OrganizationModel childOrg = child.getOrganization();
-                if (childOrg == null || !childOrg.getId().equals(organization.getId())) {
+                if (!Organizations.isOrganizationGroup(child) ||
+                        !child.getOrganization().getId().equals(organization.getId())) {
                     throw ErrorResponse.error("Group does not belong to this organization", Response.Status.BAD_REQUEST);
                 }
 

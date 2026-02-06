@@ -330,7 +330,6 @@ public class AdminConsoleWhoAmILocaleTest {
             user.username("master-admin");
             user.password(PASSWORD);
             user.name("My", "Admin");
-            user.roles("admin");
             user.email("master-admin@email.org");
             user.emailVerified(true);
             user.attribute("locale", DEFAULT_LOCALE);
