@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
   FormPanel,
+  HelpItem,
   PasswordControl,
   SwitchControl,
   TextControl,
@@ -312,7 +313,16 @@ export const RealmSettingsEmailTab = ({
               labelOff={t("disabled")}
               stringify
             />
-            <FormGroup label={t("emailContentType")} fieldId="emailContentType" labelIcon={t("emailContentTypeHelp")}>
+            <FormGroup
+              label={t("emailContentType")}
+              fieldId="emailContentType"
+              labelIcon={
+                <HelpItem
+                  helpText={t("emailContentTypeHelp")}
+                  fieldLabelId="emailContentType"
+                />
+              }
+            >
               <Controller
                 name="smtpServer.emailContentType"
                 control={control}
