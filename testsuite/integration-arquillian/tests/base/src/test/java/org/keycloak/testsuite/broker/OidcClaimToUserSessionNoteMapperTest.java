@@ -36,7 +36,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProviderMapperTest {
 
     private static final String CLAIM_NAME = "sessionNoteTest";
-    private static final String CLAIM_VALUE = "foo";
+    private static final String STRING_CLAIM_VALUE = "foo";
+    private static final String[] ARRAY_CLAIM_VALUE = {"foo-1", "foo-2"};
     private static final String CONFIG_PROPERTY_CLAIMS = "claims";
 
     private static final String HARD_CODED_CLAIM_CONFIG_PROPERTY_CLAIM_VALUE = "claim.value";
@@ -80,7 +81,7 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
         providerHardcodedClaimMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         providerHardcodedClaimMapper.setProtocolMapper(HardcodedClaim.PROVIDER_ID);
         providerHardcodedClaimMapper.setConfig(Map.of("claim.name", CLAIM_NAME,
-                HARD_CODED_CLAIM_CONFIG_PROPERTY_CLAIM_VALUE, CLAIM_VALUE, "access.token.claim", "true"));
+                HARD_CODED_CLAIM_CONFIG_PROPERTY_CLAIM_VALUE, STRING_CLAIM_VALUE, "access.token.claim", "true"));
         providerHardcodedClaimMapperId = CreatedResponseUtil
                 .getCreatedId(providerRealm.clients().get(providerClientRep.getId()).getProtocolMappers()
                         .createMapper(providerHardcodedClaimMapper));
@@ -88,11 +89,11 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
 
     @Test
     public void claimIsPropagatedOnFirstLoginOnlyWhenNameMatchesAndSyncModeIsImport() {
-        createUserSessionNoteIdpMapper(IdentityProviderMapperSyncMode.IMPORT, CLAIM_VALUE);
+        createUserSessionNoteIdpMapper(IdentityProviderMapperSyncMode.IMPORT, STRING_CLAIM_VALUE);
 
         AccessToken accessToken = login();
 
-        assertThat(accessToken.getOtherClaims().get(CLAIM_NAME), equalTo(CLAIM_VALUE));
+        assertThat(accessToken.getOtherClaims().get(CLAIM_NAME), equalTo(STRING_CLAIM_VALUE));
 
         logout();
 
@@ -105,11 +106,11 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
     @Test
     public void claimIsPropagatedOnAllLoginsWhenNameMatchesAndSyncModeIsForce() {
         IdentityProviderMapperRepresentation userSessionNoteIdpMapper =
-                createUserSessionNoteIdpMapper(IdentityProviderMapperSyncMode.FORCE, CLAIM_VALUE);
+                createUserSessionNoteIdpMapper(IdentityProviderMapperSyncMode.FORCE, STRING_CLAIM_VALUE);
 
         AccessToken accessTokenFirstLogin = login();
 
-        assertThat(accessTokenFirstLogin.getOtherClaims().get(CLAIM_NAME), equalTo(CLAIM_VALUE));
+        assertThat(accessTokenFirstLogin.getOtherClaims().get(CLAIM_NAME), equalTo(STRING_CLAIM_VALUE));
 
         logout();
 
@@ -120,6 +121,16 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
         AccessToken accessTokenSecondLogin = login();
 
         assertThat(accessTokenSecondLogin.getOtherClaims().get(CLAIM_NAME), equalTo(updatedClaimValue));
+    }
+
+    @Test
+    public void claimWithArrayValueIsMappedAsExpected() {
+        createUserSessionNoteIdpMapper(IdentityProviderMapperSyncMode.FORCE, ARRAY_CLAIM_VALUE);
+
+        AccessToken accessTokenFirstLogin = login();
+
+        final var expectedStringValue = "foo-1,foo-2";
+        assertThat(accessTokenFirstLogin.getOtherClaims().get(CLAIM_NAME), equalTo(expectedStringValue));
     }
 
     @Test
@@ -197,7 +208,6 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
 
         clientProtocolMappersResource.update(mapper.getId(), mapper);
     }
-
 
     private void updateUserSessionNoteIdpMapper(IdentityProviderMapperRepresentation mapper, String matchingValue) {
         Map<String, String> existingConfig = mapper.getConfig();

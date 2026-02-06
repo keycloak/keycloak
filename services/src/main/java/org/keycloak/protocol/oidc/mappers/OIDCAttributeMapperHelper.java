@@ -221,6 +221,13 @@ public class OIDCAttributeMapperHelper {
                     return transform((List<?>) attributeValue, OIDCAttributeMapperHelper::getInteger);
                 }
                 throw new RuntimeException("cannot map type for token claim");
+            case "Array":
+                if (attributeValue instanceof List) return attributeValue;
+                if (attributeValue instanceof String attributeValueString) {
+                    final var entries = attributeValueString.split(",");
+                    return List.of(entries);
+                }
+                return List.of(attributeValue);
             case "JSON":
                 JsonNode jsonNodeObject = getJsonNode(attributeValue);
                 if (jsonNodeObject != null) return jsonNodeObject;
@@ -407,7 +414,7 @@ public class OIDCAttributeMapperHelper {
     }
 
     public static void addJsonTypeConfig(List<ProviderConfigProperty> configProperties) {
-        addJsonTypeConfig(configProperties, List.of("String", "long", "int", "boolean", "JSON"), null);
+        addJsonTypeConfig(configProperties, List.of("Array", "String", "long", "int", "boolean", "JSON"), null);
     }
 
     public static void addJsonTypeConfig(List<ProviderConfigProperty> configProperties, List<String> supportedTypes, String defaultValue) {
