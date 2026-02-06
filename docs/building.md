@@ -1,5 +1,7 @@
 ## Building from source
 
+Note that the shell commands below are written for Linux.  If running in Windows, use a linux-like shell such as Git Bash.
+
 Ensure you have **JDK 17** or **JDK 21** and Git installed
 
     java -version
