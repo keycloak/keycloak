@@ -1,0 +1,35 @@
+package org.keycloak.protocol.ssf.keys;
+
+import org.keycloak.crypto.PublicKeysWrapper;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.keys.PublicKeyLoader;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
+import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
+import org.keycloak.util.JWKSUtils;
+
+/**
+ * {@link PublicKeyLoader} to fetch the public Keycloak from the SSF Transmitter metadata.
+ */
+public class SsfTransmitterPublicKeyLoader implements PublicKeyLoader {
+
+    protected final KeycloakSession session;
+
+    protected String jwksUri;
+
+    public SsfTransmitterPublicKeyLoader(KeycloakSession session, String jwksUri) {
+        this.session = session;
+        this.jwksUri = jwksUri;
+    }
+
+    public SsfTransmitterPublicKeyLoader(KeycloakSession session, SsfTransmitterMetadata transmitterMetadata) {
+        this(session, transmitterMetadata.getJwksUri());
+    }
+
+    @Override
+    public PublicKeysWrapper loadKeys() throws Exception {
+        JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, jwksUri);
+        return JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG, true);
+    }
+}
