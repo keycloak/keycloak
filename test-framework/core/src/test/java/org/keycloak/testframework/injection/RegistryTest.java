@@ -3,6 +3,8 @@ package org.keycloak.testframework.injection;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import org.keycloak.testframework.annotations.TestCleanup;
+import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.injection.mocks.MockChildAnnotation;
 import org.keycloak.testframework.injection.mocks.MockChildSupplier;
@@ -82,6 +84,30 @@ public class RegistryTest {
         MockParentValue value3 = test2.parent;
 
         Assertions.assertNotSame(value1, value3);
+    }
+
+    @Test
+    public void testTestSetup() {
+        SetupTest setupTest = new SetupTest();
+        runBeforeEach(setupTest);
+        Assertions.assertEquals("anothervalue", setupTest.parent.getStringOption());
+        setupTest.test();
+
+        registry.afterEach();
+
+        Assertions.assertEquals("anothervalue", setupTest.parent.getStringOption());
+
+        // JUnit creates new instances for each test method
+        setupTest = new SetupTest();
+        runBeforeEach(setupTest);
+        Assertions.assertEquals("anothervalue", setupTest.parent.getStringOption());
+        setupTest.test();
+
+        registry.afterEach();
+
+        registry.afterAll();
+
+        Assertions.assertEquals("myvalue", setupTest.parent.getStringOption());
     }
 
     @Test
@@ -384,6 +410,33 @@ public class RegistryTest {
 
         @MockParentAnnotation
         MockParentValue parent;
+
+    }
+
+    public static final class SetupTest extends AbstractTest {
+
+        @MockParentAnnotation(stringOption = "myvalue")
+        MockParentValue parent;
+
+        @MockChildAnnotation
+        MockParentValue child;
+
+        @TestSetup
+        public void setup() {
+            Assertions.assertEquals("myvalue", parent.getStringOption());
+            parent.setStringOption("anothervalue");
+        }
+
+        @Test
+        public void test() {
+            Assertions.assertEquals("anothervalue", parent.getStringOption());
+        }
+
+        @TestCleanup
+        public void cleanup() {
+            Assertions.assertEquals("anothervalue", parent.getStringOption());
+            parent.setStringOption("myvalue");
+        }
 
     }
 
