@@ -451,6 +451,15 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Maximum allowed refresh token reuse exceeded",
                 "Maximum allowed refresh token reuse exceeded");
         }
+
+        // Attempt to add item into "single-use" cache to prevent possible concurrent requests with same refresh token
+        if (refreshFlag) {
+            String singleUseCacheKey = "rt:" + refreshToken.getId() + ":" + currentCount;
+            if (!session.singleUseObjects().putIfAbsent(singleUseCacheKey, 60)) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Maximum allowed refresh token reuse exceeded",
+                        "Maximum allowed refresh token reuse exceeded");
+            }
+        }
     }
 
     public RefreshToken verifyRefreshToken(KeycloakSession session, RealmModel realm, ClientModel client, HttpRequest request, String encodedRefreshToken, boolean checkExpiration) throws OAuthErrorException {
