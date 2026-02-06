@@ -187,7 +187,8 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             RealmModel realm = session.realms().getRealm(realmId);
             session.getContext().setRealm(realm);
             ClientModel testApp = realm.getClientByClientId("test-app");
-            session.sessions().getUserSessionsStream(realm, testApp).toList()
+            session.sessions().readOnlyStreamUserSessions(realm, testApp, -1, -1)
+                    .toList()
                     .forEach(userSessionLooper -> persistUserSession(session, userSessionLooper, true));
         });
 
