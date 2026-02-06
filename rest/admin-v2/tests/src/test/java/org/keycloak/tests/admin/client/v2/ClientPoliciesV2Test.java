@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -418,82 +419,44 @@ public class ClientPoliciesV2Test {
      * Only JWT-based authenticators are allowed.
      */
     private void setupPolicyClientIdAndSecretNotAcceptable() throws Exception {
-        // Create profile
-        ClientProfileRepresentation profileRep = new ClientProfileRepresentation();
-        profileRep.setName(PROFILE_NAME);
-        profileRep.setDescription("Test Profile that restricts client authenticators");
-        profileRep.setExecutors(new ArrayList<>());
-
-        // Add SecureClientAuthenticator executor
-        ClientPolicyExecutorRepresentation executorRep = new ClientPolicyExecutorRepresentation();
-        executorRep.setExecutorProviderId(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID);
-        
-        SecureClientAuthenticatorExecutor.Configuration config = new SecureClientAuthenticatorExecutor.Configuration();
-        config.setAllowedClientAuthenticators(Arrays.asList(
-                JWTClientAuthenticator.PROVIDER_ID,
-                JWTClientSecretAuthenticator.PROVIDER_ID,
-                X509ClientAuthenticator.PROVIDER_ID
-        ));
-        // Use JsonSerialization mapper to properly serialize with @JsonProperty annotations
-        JsonNode configNode = JsonSerialization.mapper.readValue(
-                JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class);
-        executorRep.setConfiguration(configNode);
-        profileRep.getExecutors().add(executorRep);
-
-        ClientProfilesRepresentation profilesRep = new ClientProfilesRepresentation();
-        profilesRep.setProfiles(List.of(profileRep));
-
-        adminClient.realm("master").clientPoliciesProfilesResource().updateProfiles(profilesRep);
-
-        // Create policy
-        ClientPolicyRepresentation policyRep = new ClientPolicyRepresentation();
-        policyRep.setName(POLICY_NAME);
-        policyRep.setDescription("Test Policy");
-        policyRep.setEnabled(true);
-        policyRep.setProfiles(List.of(PROFILE_NAME));
-        policyRep.setConditions(new ArrayList<>());
-
-        // Add condition for authenticated user context (covers admin API calls)
-        ClientPolicyConditionRepresentation conditionRep = new ClientPolicyConditionRepresentation();
-        conditionRep.setConditionProviderId(ClientUpdaterContextConditionFactory.PROVIDER_ID);
-        
-        ClientPolicyConditionConfigurationRepresentation conditionConfig = new ClientPolicyConditionConfigurationRepresentation();
-        conditionConfig.setConfigAsMap(
-                ClientUpdaterContextConditionFactory.UPDATE_CLIENT_SOURCE, 
-                List.of(ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER)
-        );
-        JsonNode conditionConfigNode = JsonSerialization.mapper.readValue(
-                JsonSerialization.mapper.writeValueAsBytes(conditionConfig), JsonNode.class);
-        conditionRep.setConfiguration(conditionConfigNode);
-        policyRep.getConditions().add(conditionRep);
-
-        ClientPoliciesRepresentation policiesRep = new ClientPoliciesRepresentation();
-        policiesRep.setPolicies(List.of(policyRep));
-
-        adminClient.realm("master").clientPoliciesPoliciesResource().updatePolicies(policiesRep);
+        setupPolicy("Test Profile/Policy that restricts client authenticators");
     }
 
     /**
      * Sets up a policy with auto-configuration that defaults to X509 authenticator.
      */
     private void setupPolicyWithAutoConfiguration() throws Exception {
+        setupPolicy("Test Profile/Policy with auto-configuration - defaults to X509",
+                config -> config.setDefaultClientAuthenticator(X509ClientAuthenticator.PROVIDER_ID));
+    }
+
+    private void setupPolicy(String description) throws Exception {
+        setupPolicy(description, PROFILE_NAME, POLICY_NAME, (config) -> {
+        });
+    }
+
+    private void setupPolicy(String description, Consumer<SecureClientAuthenticatorExecutor.Configuration> configuration) throws Exception {
+        setupPolicy(description, PROFILE_NAME, POLICY_NAME, configuration);
+    }
+
+    private void setupPolicy(String description, String profileName, String policyName, Consumer<SecureClientAuthenticatorExecutor.Configuration> configuration) throws Exception {
         // Create profile
         ClientProfileRepresentation profileRep = new ClientProfileRepresentation();
-        profileRep.setName(PROFILE_NAME);
-        profileRep.setDescription("Test Profile with auto-configuration");
+        profileRep.setName(profileName);
+        profileRep.setDescription(description);
         profileRep.setExecutors(new ArrayList<>());
 
-        // Add SecureClientAuthenticator executor with default authenticator
         ClientPolicyExecutorRepresentation executorRep = new ClientPolicyExecutorRepresentation();
         executorRep.setExecutorProviderId(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID);
-        
+
         SecureClientAuthenticatorExecutor.Configuration config = new SecureClientAuthenticatorExecutor.Configuration();
         config.setAllowedClientAuthenticators(Arrays.asList(
                 JWTClientAuthenticator.PROVIDER_ID,
                 JWTClientSecretAuthenticator.PROVIDER_ID,
                 X509ClientAuthenticator.PROVIDER_ID
         ));
-        config.setDefaultClientAuthenticator(X509ClientAuthenticator.PROVIDER_ID);
+        configuration.accept(config);
+
         // Use JsonSerialization mapper to properly serialize with @JsonProperty annotations
         JsonNode configNode = JsonSerialization.mapper.readValue(
                 JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class);
@@ -507,19 +470,19 @@ public class ClientPoliciesV2Test {
 
         // Create policy
         ClientPolicyRepresentation policyRep = new ClientPolicyRepresentation();
-        policyRep.setName(POLICY_NAME);
-        policyRep.setDescription("Test Policy with auto-configuration");
+        policyRep.setName(policyName);
+        policyRep.setDescription(description);
         policyRep.setEnabled(true);
-        policyRep.setProfiles(List.of(PROFILE_NAME));
+        policyRep.setProfiles(List.of(profileName));
         policyRep.setConditions(new ArrayList<>());
 
         // Add condition for authenticated user context
         ClientPolicyConditionRepresentation conditionRep = new ClientPolicyConditionRepresentation();
         conditionRep.setConditionProviderId(ClientUpdaterContextConditionFactory.PROVIDER_ID);
-        
+
         ClientPolicyConditionConfigurationRepresentation conditionConfig = new ClientPolicyConditionConfigurationRepresentation();
         conditionConfig.setConfigAsMap(
-                ClientUpdaterContextConditionFactory.UPDATE_CLIENT_SOURCE, 
+                ClientUpdaterContextConditionFactory.UPDATE_CLIENT_SOURCE,
                 List.of(ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER)
         );
         JsonNode conditionConfigNode = JsonSerialization.mapper.readValue(
