@@ -18,10 +18,15 @@
 package org.keycloak.utils;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -55,6 +60,74 @@ public class JsonUtils {
             claimComponents.add(BACKSLASHED_CHARACTER.matcher(claim.substring(start)).replaceAll("$1"));
         }
         return claimComponents;
+    }
+
+    /**
+     * Maps the Claim with the value {@code attributeValue} into the {@code jsonObject} under the path {@code split}.
+     * <br />
+     * <b>Input</b>
+     * <ul>
+     * <li>split = ["user", "profile", "email"]</li>
+     * <li>attributeValue = "alice@example.com"</li>
+     * <li>isMultivalued = false</li>
+     * <li>jsonObject = {"foo": "bar"}</li>
+     * </ul>
+     * <br />
+     * <b>Output</b>
+     * <pre>
+     * {@code
+     * {
+     *   "user": {
+     *     "profile": {
+     *       "email": "alice@example.com"
+     *     }
+     *   },
+     *   "foo": "bar"
+     * }
+     * }
+     * </pre>
+     *
+     * @param split The claim path (as created by {@link #splitClaimPath(String)}) of the (sub-)claim to map into.
+     * @param attributeValue the value to map into the claim.
+     * @param jsonObject the object that contains the claims (e.g., the value that will be used as the claim container)
+     * @param isMultivalued whether the claim should be treated as multivalued (i.e., multiple values for the same
+     *                      claim should be built into a JSON array).
+     */
+    public static void mapClaim(List<String> split, Object attributeValue, Map<String, Object> jsonObject, boolean isMultivalued) {
+        final int length = split.size();
+        int i = 0;
+        for (String component : split) {
+            i++;
+            if (i == length && !isMultivalued) {
+                jsonObject.put(component, attributeValue);
+            } else if (i == length) {
+                Object values = jsonObject.get(component);
+                if (values == null) {
+                    jsonObject.put(component, attributeValue);
+                } else {
+                    Collection collectionValues = values instanceof Collection ? (Collection) values : Stream.of(values).collect(Collectors.toSet());
+                    if (attributeValue instanceof Collection) {
+                        ((Collection) attributeValue).stream().forEach(val -> {
+                            if (!collectionValues.contains(val))
+                                collectionValues.add(val);
+                        });
+                    } else if (!collectionValues.contains(attributeValue)) {
+                        collectionValues.add(attributeValue);
+                    }
+                    jsonObject.put(component, collectionValues);
+                }
+            } else {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> nested = (Map<String, Object>) jsonObject.get(component);
+
+                if (nested == null) {
+                    nested = new HashMap<>();
+                    jsonObject.put(component, nested);
+                }
+
+                jsonObject = nested;
+            }
+        }
     }
 
     /**

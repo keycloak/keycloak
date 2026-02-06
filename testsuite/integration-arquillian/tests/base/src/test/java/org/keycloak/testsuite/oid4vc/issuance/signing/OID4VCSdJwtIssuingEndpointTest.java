@@ -64,6 +64,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
@@ -72,6 +73,8 @@ import org.junit.Test;
 import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -497,7 +500,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                     assertNotNull("The sd-jwt-credential can optionally provide a claims claim.",
                             jwtVcClaims);
 
-                    assertEquals(5,  jwtVcClaims.size());
+                    assertEquals(7,  jwtVcClaims.size());
                     {
                         Claim claim = jwtVcClaims.get(0);
                         assertEquals("id claim is present", CLAIM_NAME_SUBJECT_ID, claim.getPath().get(0));
@@ -524,6 +527,38 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                     }
                     {
                         Claim claim = jwtVcClaims.get(4);
+                        assertEquals("address.street_address claim is nested.",
+                                2,
+                                claim.getPath().size());
+                        assertEquals("address.street_address claim has correct parent claim name.",
+                                "address",
+                                claim.getPath().get(0));
+                        assertEquals("address.street_address claim has correct nested claim name.",
+                                "street_address",
+                                claim.getPath().get(1));
+                        assertFalse("address.street_address claim is not mandatory.",
+                                claim.isMandatory());
+                        assertNull("address.street_address claim has no display value",
+                                claim.getDisplay());
+                    }
+                    {
+                        Claim claim = jwtVcClaims.get(5);
+                        assertEquals("address.locality claim is nested.",
+                                2,
+                                claim.getPath().size());
+                        assertEquals("address.locality claim has correct parent claim name.",
+                                "address",
+                                claim.getPath().get(0));
+                        assertEquals("address.locality claim has correct nested claim name.",
+                                "locality",
+                                claim.getPath().get(1));
+                        assertFalse("address.locality claim is not mandatory.",
+                                claim.isMandatory());
+                        assertNull("address.locality claim has no display value",
+                                claim.getDisplay());
+                    }
+                    {
+                        Claim claim = jwtVcClaims.get(6);
                         assertEquals("scope-name claim is present", "scope-name", claim.getPath().get(0));
                         assertFalse("scope-name claim not mandatory.", claim.isMandatory());
                         assertNull("scope-name has no display value", claim.getDisplay());
@@ -638,6 +673,13 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
             assertEquals("firstName claim incorrectly mapped.", "John", disclosureMap.get("firstName").get(2).asText());
             assertTrue("The credentials should include the lastName claim.", disclosureMap.containsKey("lastName"));
             assertEquals("lastName claim incorrectly mapped.", "Doe", disclosureMap.get("lastName").get(2).asText());
+
+            assertThat("address is parent claim for nested claims", disclosureMap.get("address").get(2), instanceOf(ObjectNode.class));
+            ObjectNode nestedAddressClaim = (ObjectNode) disclosureMap.get("address").get(2);
+            assertEquals("address contains two nested claims", 2, nestedAddressClaim.size());
+            assertEquals("street_address mapped correctly", "221B Baker Street", nestedAddressClaim.get("street_address").asText());
+            assertEquals("locality mapped correctly", "London", nestedAddressClaim.get("locality").asText());
+
             assertTrue("The credentials should include the scope-name claim.",
                     disclosureMap.containsKey("scope-name"));
             assertEquals("The credentials should include the scope-name claims correct value.",
@@ -648,6 +690,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
             assertNotNull("Test credential shall include an iat claim.", jsonWebToken.getIat());
             assertNotNull("Test credential shall include an nbf claim.", jsonWebToken.getNbf());
+
         }
     }
 }

@@ -137,6 +137,9 @@ import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.namedC
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
 import static org.keycloak.util.JsonSerialization.valueAsPrettyString;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.aMapWithSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -822,6 +825,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             assertEquals("vc.credentialSubject.given_name mapped correctly", "John", subClaims.get("given_name"));
             assertEquals("vc.credentialSubject.email mapped correctly", "john@email.cz", subClaims.get("email"));
             assertEquals("vc.credentialSubject.scope-name mapped correctly", clientScope.getName(), subClaims.get("scope-name"));
+            assertThat("vc.credentialSubject.address is parent claim for nested claims", subClaims.get("address"), instanceOf(Map.class));
+            Map<String, ?> nestedAddressClaim = (Map<String, ?>) subClaims.get("address");
+            assertThat("vc.credentialSubject.address contains two nested claims", nestedAddressClaim, aMapWithSize(2));
+            assertEquals("vc.credentialSubject.address.street_address mapped correctly", "221B Baker Street", nestedAddressClaim.get("street_address"));
+            assertEquals("vc.credentialSubject.address.locality mapped correctly", "London", nestedAddressClaim.get("locality"));
 
             assertFalse("Unexpected other claim", subClaims.containsKey("AnotherCredentialType"));
         }
