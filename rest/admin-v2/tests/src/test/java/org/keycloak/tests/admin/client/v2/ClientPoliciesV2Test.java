@@ -41,20 +41,27 @@ import org.keycloak.representations.idm.ClientPolicyExecutorRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
+import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.admin.client.policies.TestClientPolicyExecutor;
+import org.keycloak.tests.admin.client.policies.YesClientPolicyCondition;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpMessage;
 import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
@@ -69,7 +76,10 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Tests that client policies are properly executed when creating/updating clients via the Admin API v2.
@@ -101,6 +111,9 @@ public class ClientPoliciesV2Test {
 
     @InjectAdminClient
     Keycloak adminClient;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @BeforeAll
     public static void setupMapper() {
@@ -224,6 +237,17 @@ public class ClientPoliciesV2Test {
         }
     }
 
+    private OIDCClientRepresentation getPutUpdateClientRep() {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setClientId("test-put-update-client");
+        rep.setEnabled(true);
+        var auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod(JWTClientSecretAuthenticator.PROVIDER_ID);
+        auth.setSecret("secret");
+        rep.setAuth(auth);
+        return rep;
+    }
+
     /**
      * Test that updating a client via PUT with an unacceptable client authenticator fails.
      */
@@ -234,14 +258,7 @@ public class ClientPoliciesV2Test {
         setAuthHeader(createRequest);
         createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
-        OIDCClientRepresentation rep = new OIDCClientRepresentation();
-        rep.setClientId("test-put-update-client");
-        rep.setEnabled(true);
-        var auth = new OIDCClientRepresentation.Auth();
-        auth.setMethod(JWTClientSecretAuthenticator.PROVIDER_ID);
-        auth.setSecret("secret");
-        rep.setAuth(auth);
-
+        OIDCClientRepresentation rep = getPutUpdateClientRep();
         createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
         try (var response = client.execute(createRequest)) {
@@ -282,13 +299,7 @@ public class ClientPoliciesV2Test {
         setAuthHeader(createRequest);
         createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
-        OIDCClientRepresentation rep = new OIDCClientRepresentation();
-        rep.setClientId("test-put-update-client");
-        rep.setEnabled(true);
-        var auth = new OIDCClientRepresentation.Auth();
-        auth.setMethod(JWTClientSecretAuthenticator.PROVIDER_ID);
-        auth.setSecret("secret");
-        rep.setAuth(auth);
+        OIDCClientRepresentation rep = getPutUpdateClientRep();
 
         createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
@@ -377,13 +388,7 @@ public class ClientPoliciesV2Test {
         setAuthHeader(createRequest);
         createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
-        OIDCClientRepresentation rep = new OIDCClientRepresentation();
-        rep.setClientId("test-put-update-client");
-        rep.setEnabled(true);
-        var auth = new OIDCClientRepresentation.Auth();
-        auth.setMethod(JWTClientSecretAuthenticator.PROVIDER_ID);
-        auth.setSecret("secret");
-        rep.setAuth(auth);
+        OIDCClientRepresentation rep = getPutUpdateClientRep();
 
         createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
@@ -414,38 +419,160 @@ public class ClientPoliciesV2Test {
         }
     }
 
+    @Test
+    public void getClientViewEvent() throws Exception {
+        setupAlwaysAppliedTestPolicy();
+
+        HttpGet getClient = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/account");
+        setAuthHeader(getClient);
+        try (var response = client.execute(getClient)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(200));
+        }
+
+        assertClientPolicyEventIsEmitted(ClientPolicyEvent.VIEW);
+    }
+
+    @Test
+    public void createClientRegisterEvent() throws Exception {
+        setupAlwaysAppliedTestPolicy();
+
+        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setClientId("client-123");
+        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(201));
+            EntityUtils.consumeQuietly(response.getEntity());
+        }
+
+        // TODO not sure yet, why the ClientPolicyEvent.UNREGISTER is there - so this should fail
+        assertClientPolicyEventIsEmitted(ClientPolicyEvent.REGISTER, ClientPolicyEvent.REGISTERED);
+    }
+
+    @Test
+    public void updateClientUpdateEvent() throws Exception {
+        setupAlwaysAppliedTestPolicy();
+
+        HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-put-update-client");
+        setAuthHeader(createRequest);
+        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        OIDCClientRepresentation rep = getPutUpdateClientRep();
+        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(createRequest)) {
+            assertEquals(201, response.getStatusLine().getStatusCode());
+            EntityUtils.consumeQuietly(response.getEntity());
+        }
+
+        assertClientPolicyEventIsEmitted(ClientPolicyEvent.REGISTER, ClientPolicyEvent.REGISTERED);
+
+        HttpPut updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-put-update-client");
+        setAuthHeader(updateRequest);
+        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        rep = getPutUpdateClientRep();
+        rep.setDescription("Updated");
+        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(updateRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            EntityUtils.consumeQuietly(response.getEntity());
+        }
+
+        // for now, the VIEW is also present, but it should not probably
+        assertClientPolicyEventIsEmitted(ClientPolicyEvent.VIEW, ClientPolicyEvent.UPDATE, ClientPolicyEvent.UPDATED);
+    }
+
+    @Test
+    public void deleteClientUnregisterEvent() throws Exception {
+        HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-put-update-client");
+        setAuthHeader(createRequest);
+        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        OIDCClientRepresentation rep = getPutUpdateClientRep();
+
+        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(createRequest)) {
+            assertEquals(201, response.getStatusLine().getStatusCode());
+            EntityUtils.consumeQuietly(response.getEntity());
+        }
+
+        setupAlwaysAppliedTestPolicy();
+        cleanupClient(rep.getClientId());
+
+        assertClientPolicyEventIsEmitted(ClientPolicyEvent.UNREGISTER);
+    }
+
+    private void assertClientPolicyEventIsEmitted(ClientPolicyEvent... events) {
+        runOnServer.run(session -> {
+            TestClientPolicyExecutor executor = (TestClientPolicyExecutor) session.getProvider(ClientPolicyExecutorProvider.class, TestClientPolicyExecutor.PROVIDER_ID);
+            assertNotNull(executor);
+            try {
+                var foundEvents = executor.getEvents();
+                assertNotNull(foundEvents);
+                assertThat(foundEvents, contains(events));
+                assertThat(foundEvents, hasSize(events.length));
+            } finally {
+                executor.clearEventResult();
+            }
+        });
+    }
+
     /**
      * Sets up a policy that does NOT allow client_id and secret authenticator.
      * Only JWT-based authenticators are allowed.
      */
     private void setupPolicyClientIdAndSecretNotAcceptable() throws Exception {
-        setupPolicy("Test Profile/Policy that restricts client authenticators");
+        setupSecureClientAuthenticatorPolicy("Test Profile/Policy that restricts client authenticators");
     }
 
     /**
      * Sets up a policy with auto-configuration that defaults to X509 authenticator.
      */
     private void setupPolicyWithAutoConfiguration() throws Exception {
-        setupPolicy("Test Profile/Policy with auto-configuration - defaults to X509",
+        setupSecureClientAuthenticatorPolicy("Test Profile/Policy with auto-configuration - defaults to X509",
                 config -> config.setDefaultClientAuthenticator(X509ClientAuthenticator.PROVIDER_ID));
     }
 
-    private void setupPolicy(String description) throws Exception {
-        setupPolicy(description, PROFILE_NAME, POLICY_NAME, (config) -> {
+    private void setupAlwaysAppliedTestPolicy() throws Exception {
+        ClientPolicyExecutorRepresentation executorRep = new ClientPolicyExecutorRepresentation();
+        executorRep.setExecutorProviderId(TestClientPolicyExecutor.PROVIDER_ID);
+
+        TestClientPolicyExecutor.Configuration config = new TestClientPolicyExecutor.Configuration();
+        JsonNode configNode = JsonSerialization.mapper.readValue(
+                JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class);
+        executorRep.setConfiguration(configNode);
+
+        ClientPolicyConditionRepresentation conditionRep = new ClientPolicyConditionRepresentation();
+        conditionRep.setConditionProviderId(YesClientPolicyCondition.PROVIDER_ID);
+
+        YesClientPolicyCondition.Configuration conditionConfig = new YesClientPolicyCondition.Configuration();
+        JsonNode conditionConfigNode = JsonSerialization.mapper.readValue(
+                JsonSerialization.mapper.writeValueAsBytes(conditionConfig), JsonNode.class);
+        conditionRep.setConfiguration(conditionConfigNode);
+
+        setupPolicy("Test Profile/Policy that handles the TestClientPolicyExecutor and verifies types", PROFILE_NAME, POLICY_NAME, executorRep, conditionRep);
+    }
+
+    private void setupSecureClientAuthenticatorPolicy(String description) throws Exception {
+        setupSecureClientAuthenticatorPolicy(description, PROFILE_NAME, POLICY_NAME, (config) -> {
         });
     }
 
-    private void setupPolicy(String description, Consumer<SecureClientAuthenticatorExecutor.Configuration> configuration) throws Exception {
-        setupPolicy(description, PROFILE_NAME, POLICY_NAME, configuration);
+    private void setupSecureClientAuthenticatorPolicy(String description, Consumer<SecureClientAuthenticatorExecutor.Configuration> configuration) throws Exception {
+        setupSecureClientAuthenticatorPolicy(description, PROFILE_NAME, POLICY_NAME, configuration);
     }
 
-    private void setupPolicy(String description, String profileName, String policyName, Consumer<SecureClientAuthenticatorExecutor.Configuration> configuration) throws Exception {
-        // Create profile
-        ClientProfileRepresentation profileRep = new ClientProfileRepresentation();
-        profileRep.setName(profileName);
-        profileRep.setDescription(description);
-        profileRep.setExecutors(new ArrayList<>());
-
+    /**
+     * Setup secure client authenticator executor
+     */
+    private void setupSecureClientAuthenticatorPolicy(String description, String profileName, String policyName, Consumer<SecureClientAuthenticatorExecutor.Configuration> configuration) throws Exception {
         ClientPolicyExecutorRepresentation executorRep = new ClientPolicyExecutorRepresentation();
         executorRep.setExecutorProviderId(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID);
 
@@ -461,7 +588,31 @@ public class ClientPoliciesV2Test {
         JsonNode configNode = JsonSerialization.mapper.readValue(
                 JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class);
         executorRep.setConfiguration(configNode);
-        profileRep.getExecutors().add(executorRep);
+
+        // Add condition for authenticated user context
+        ClientPolicyConditionRepresentation conditionRep = new ClientPolicyConditionRepresentation();
+        conditionRep.setConditionProviderId(ClientUpdaterContextConditionFactory.PROVIDER_ID);
+
+        ClientPolicyConditionConfigurationRepresentation conditionConfig = new ClientPolicyConditionConfigurationRepresentation();
+        conditionConfig.setConfigAsMap(
+                ClientUpdaterContextConditionFactory.UPDATE_CLIENT_SOURCE,
+                List.of(ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER)
+        );
+        JsonNode conditionConfigNode = JsonSerialization.mapper.readValue(
+                JsonSerialization.mapper.writeValueAsBytes(conditionConfig), JsonNode.class);
+        conditionRep.setConfiguration(conditionConfigNode);
+
+        setupPolicy(description, profileName, policyName, executorRep, conditionRep);
+    }
+
+    private void setupPolicy(String description, String profileName, String policyName, ClientPolicyExecutorRepresentation executor, ClientPolicyConditionRepresentation condition) throws Exception {
+        // Create profile
+        ClientProfileRepresentation profileRep = new ClientProfileRepresentation();
+        profileRep.setName(profileName);
+        profileRep.setDescription(description);
+        profileRep.setExecutors(new ArrayList<>());
+
+        profileRep.getExecutors().add(executor);
 
         ClientProfilesRepresentation profilesRep = new ClientProfilesRepresentation();
         profilesRep.setProfiles(List.of(profileRep));
@@ -476,19 +627,7 @@ public class ClientPoliciesV2Test {
         policyRep.setProfiles(List.of(profileName));
         policyRep.setConditions(new ArrayList<>());
 
-        // Add condition for authenticated user context
-        ClientPolicyConditionRepresentation conditionRep = new ClientPolicyConditionRepresentation();
-        conditionRep.setConditionProviderId(ClientUpdaterContextConditionFactory.PROVIDER_ID);
-
-        ClientPolicyConditionConfigurationRepresentation conditionConfig = new ClientPolicyConditionConfigurationRepresentation();
-        conditionConfig.setConfigAsMap(
-                ClientUpdaterContextConditionFactory.UPDATE_CLIENT_SOURCE,
-                List.of(ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER)
-        );
-        JsonNode conditionConfigNode = JsonSerialization.mapper.readValue(
-                JsonSerialization.mapper.writeValueAsBytes(conditionConfig), JsonNode.class);
-        conditionRep.setConfiguration(conditionConfigNode);
-        policyRep.getConditions().add(conditionRep);
+        policyRep.getConditions().add(condition);
 
         ClientPoliciesRepresentation policiesRep = new ClientPoliciesRepresentation();
         policiesRep.setPolicies(List.of(policyRep));
@@ -536,7 +675,8 @@ public class ClientPoliciesV2Test {
     public static class AdminV2Config implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.CLIENT_ADMIN_API_V2);
+            return config.features(Profile.Feature.CLIENT_ADMIN_API_V2)
+                    .dependency("org.keycloak", "keycloak-admin-v2-tests");
         }
     }
 }
