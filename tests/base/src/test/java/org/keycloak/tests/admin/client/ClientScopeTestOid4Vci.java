@@ -92,7 +92,7 @@ public class ClientScopeTestOid4Vci extends AbstractClientScopeTest {
             Assertions.assertEquals(clientScope.getName(),
                                     createdClientScope.getAttributes().get(CredentialScopeModel.CONTEXTS));
             Assertions.assertEquals(clientScope.getName(),
-                    createdClientScope.getAttributes().get(CredentialScopeModel.VCT));
+                                    createdClientScope.getAttributes().get(CredentialScopeModel.VCT));
             // Note: ISSUER_DID is intentionally not set by default, as there's no sensible default
             // The implementation leaves it undefined so the realm's URL will be used as the Issuer's ID
 
