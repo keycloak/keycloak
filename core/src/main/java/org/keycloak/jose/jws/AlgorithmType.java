@@ -27,6 +27,7 @@ public enum AlgorithmType {
     HMAC,
     AES,
     ECDSA,
-    EDDSA
+    EDDSA,
+    ML_DSA
 
 }

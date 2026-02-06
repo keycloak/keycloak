@@ -33,6 +33,7 @@ import java.util.Date;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -59,6 +60,7 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.KeyUtils;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.saml.SamlConstants;
 
 import org.hamcrest.MatcherAssert;
@@ -166,6 +168,24 @@ public class JavaKeystoreKeyProviderTest {
         createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.EDDSA, Algorithm.EdDSA, true);
     }
 
+    @Test
+    @EnableFeature(Profile.Feature.PQC_ML_DSA)
+    public void createJksMLDSA65() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.JKS, AlgorithmType.ML_DSA, Algorithm.ML_DSA_65, true);
+    }
+
+    @Test
+    @EnableFeature(Profile.Feature.PQC_ML_DSA)
+    public void createPkcs12MLDSA65() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.ML_DSA, Algorithm.ML_DSA_65, true);
+    }
+
+    @Test
+    @EnableFeature(Profile.Feature.PQC_ML_DSA)
+    public void createBcfksMLDSA65() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.ML_DSA, Algorithm.ML_DSA_65, true);
+    }
+
     private void createSuccess(KeystoreUtil.KeystoreFormat keystoreType, AlgorithmType algorithmType, String keyAlgorithm, boolean vault) throws Exception {
         cryptoHelper.keystore().assumeKeystoreTypeSupported(keystoreType);
         generateKeystore(keystoreType, algorithmType, keyAlgorithm);
@@ -210,6 +230,10 @@ public class JavaKeystoreKeyProviderTest {
             }
             case EDDSA -> {
                 assertEquals(KeyType.OKP, key.getType());
+                assertEquals(keyAlgorithm, key.getAlgorithm());
+            }
+            case ML_DSA -> {
+                assertEquals(KeyType.AKP, key.getType());
                 assertEquals(keyAlgorithm, key.getAlgorithm());
             }
         }
@@ -374,6 +398,10 @@ public class JavaKeystoreKeyProviderTest {
             case EDDSA -> {
                 this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password",
                         KeyUtils.generateEdDSAKey(Algorithm.Ed25519));
+            }
+            case ML_DSA -> {
+                this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password",
+                        KeyUtils.generateMLDSAKey(keyAlgorithm));
             }
         }
     }
