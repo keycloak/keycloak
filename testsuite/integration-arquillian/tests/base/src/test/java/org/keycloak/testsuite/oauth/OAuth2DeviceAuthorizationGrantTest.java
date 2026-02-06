@@ -32,6 +32,7 @@ import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
+import org.keycloak.protocol.oidc.grants.device.endpoints.UserCodeLocation;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.UserInfo;
@@ -69,6 +70,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.openqa.selenium.Cookie;
+
+import static org.junit.Assert.assertTrue;
 
 import static org.keycloak.models.OAuth2DeviceConfig.DEFAULT_OAUTH2_DEVICE_CODE_LIFESPAN;
 import static org.keycloak.models.OAuth2DeviceConfig.DEFAULT_OAUTH2_DEVICE_POLLING_INTERVAL;
@@ -261,6 +264,34 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             RealmResource testRealm = adminClient.realm(REALM_NAME);
             RealmRepresentation realmRep = testRealm.toRepresentation();
             realmRep.getAttributes().remove("shortVerificationUri");
+            testRealm.update(realmRep);
+        }
+    }
+
+    @Test
+    public void testUserCodeInPath() {
+        try {
+            RealmResource testRealm = adminClient.realm(REALM_NAME);
+            RealmRepresentation realmRep = testRealm.toRepresentation();
+            realmRep.getAttributes().put(DeviceEndpoint.USER_CODE_LOCATION, UserCodeLocation.PATH_PARAM.toString());
+            testRealm.update(realmRep);
+            oauth.realm(REALM_NAME);
+            oauth.client(DEVICE_APP_PUBLIC);
+            DeviceAuthorizationResponse response = oauth.device().doDeviceAuthorizationRequest();
+
+            Assert.assertEquals(200, response.getStatusCode());
+            assertNotNull(response.getDeviceCode());
+            assertNotNull(response.getUserCode());
+            assertNotNull(response.getVerificationUri());
+
+            assertTrue(response.getVerificationUriComplete().endsWith("/" + response.getUserCode()));
+
+            openVerificationPage(response.getVerificationUriComplete());
+            loginPage.assertCurrent();
+        } finally {
+            RealmResource testRealm = adminClient.realm(REALM_NAME);
+            RealmRepresentation realmRep = testRealm.toRepresentation();
+            realmRep.getAttributes().remove(DeviceEndpoint.USER_CODE_LOCATION);
             testRealm.update(realmRep);
         }
     }
