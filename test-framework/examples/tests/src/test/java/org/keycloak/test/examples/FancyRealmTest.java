@@ -75,7 +75,6 @@ public class FancyRealmTest {
                     .name("Bob", "Mob")
                     .email("bob@mob")
                     .password("password")
-                    .roles("role-1", "role-2") // TODO Adding role mappings when creating user is not supported!
                     .groups("/group-1");
         }
     }
