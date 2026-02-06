@@ -31,6 +31,11 @@ import org.keycloak.models.utils.MapperTypeSerializer;
  */
 public class IdentityProviderMapperModel implements Serializable {
     public static final String SYNC_MODE = "syncMode";
+    /**
+     * Optional numeric execution order for identity provider mappers.
+     * Interpreted only when {@link IdentityProviderModel#MAPPER_ORDER_ENABLED} is enabled for the IdP.
+     */
+    public static final String MAPPER_ORDER = "mapperOrder";
 
     protected String id;
     protected String name;

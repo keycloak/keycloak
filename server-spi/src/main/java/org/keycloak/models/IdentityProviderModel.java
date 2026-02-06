@@ -59,6 +59,12 @@ public class IdentityProviderModel implements Serializable {
     public static final String SYNC_MODE = "syncMode";
     public static final String MIN_VALIDITY_TOKEN = "minValidityToken";
 	public static final String SHOW_IN_ACCOUNT_CONSOLE = "showInAccountConsole";
+    /**
+     * If enabled, identity provider mappers will be executed in ascending order according to the per-mapper
+     * {@link org.keycloak.models.IdentityProviderMapperModel#MAPPER_ORDER} value.
+     * If disabled (default), mappers are executed in the legacy order.
+     */
+    public static final String MAPPER_ORDER_ENABLED = "mapperOrderEnabled";
     public static final int DEFAULT_MIN_VALIDITY_TOKEN = 5;
 
     private String internalId;
@@ -356,6 +362,14 @@ public class IdentityProviderModel implements Serializable {
 	public IdentityProviderShowInAccountConsole getShowInAccountConsole() {
 		return IdentityProviderShowInAccountConsole.valueOf(getConfig().getOrDefault(SHOW_IN_ACCOUNT_CONSOLE, IdentityProviderShowInAccountConsole.ALWAYS.name()));
 	}
+
+    public boolean isMapperOrderEnabled() {
+        return getBooleanConfig(MAPPER_ORDER_ENABLED);
+    }
+
+    public void setMapperOrderEnabled(Boolean enabled) {
+        setBooleanConfig(MAPPER_ORDER_ENABLED, enabled);
+    }
 
     public int getMinValidityToken() {
         String minValidityTokenString = getConfig().get(MIN_VALIDITY_TOKEN);
