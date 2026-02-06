@@ -175,6 +175,14 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         />
 
         <DefaultSwitchControl
+          name="config.createdUsersEditable"
+          label={t("samlCreatedUsersEditable")}
+          labelIcon={t("samlCreatedUsersEditableHelp")}
+          isDisabled={readOnly}
+          stringify
+        />
+
+        <DefaultSwitchControl
           name="config.postBindingResponse"
           label={t("httpPostBindingResponse")}
           isDisabled={readOnly}

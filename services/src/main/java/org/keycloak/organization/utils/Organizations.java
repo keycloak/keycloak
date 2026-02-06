@@ -268,6 +268,11 @@ public class Organizations {
             return false;
         }
 
+        // Allow specific users to remain editable even if they would otherwise be treated as read-only.
+        if (Boolean.parseBoolean(delegate.getFirstAttribute(OrganizationModel.ORGANIZATION_MANAGED_MEMBER_EDITABLE_ATTRIBUTE))) {
+            return false;
+        }
+
         if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
             return false;
         }
