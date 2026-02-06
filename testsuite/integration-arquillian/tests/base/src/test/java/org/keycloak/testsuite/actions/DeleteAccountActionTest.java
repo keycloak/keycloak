@@ -4,11 +4,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -20,6 +23,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.login.DeleteAccountActionConfirmPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -124,6 +128,52 @@ public class DeleteAccountActionTest extends AbstractTestRealmKeycloakTest {
     Assert.assertTrue(errorPage.isCurrent());
 
     Assert.assertEquals(errorPage.getError(), "You do not have enough permissions to delete your own account, contact admin.");
+  }
+
+  @Test
+  public void deleteAccountTriggersBackchannelLogout() {
+    String username = "backchannel-delete-user";
+    UserRepresentation userRep = UserBuilder.create()
+            .username(username)
+            .password("password")
+            .enabled(true)
+            .build();
+    testRealm().users().create(userRep).close();
+    addDeleteAccountRoleToUserClientRoles(username);
+
+    ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
+
+    ClientsResource clients = testRealm().clients();
+    ClientRepresentation clientRep = clients.findByClientId("test-app").get(0);
+    clientRep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL,
+            oauth.APP_ROOT + "/admin/backchannelLogout");
+    ClientResource clientResource = clients.get(clientRep.getId());
+    clientResource.update(clientRep);
+
+    try {
+      oauth.doPasswordGrantRequest(username, "password");
+
+      UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, username);
+      UserBuilder.edit(user).requiredAction(DeleteAccount.PROVIDER_ID);
+      testRealm().users().get(user.getId()).update(user);
+
+      loginPage.open();
+      loginPage.login(username, "password");
+
+      Assert.assertTrue(deleteAccountPage.isCurrent());
+      deleteAccountPage.clickConfirmAction();
+
+      events.expect(EventType.DELETE_ACCOUNT);
+
+      String rawLogoutToken = testingClient.testApp().getBackChannelRawLogoutToken();
+      Assert.assertNotNull("Backchannel logout token should be received when user deletes account", rawLogoutToken);
+
+      List<UserRepresentation> users = testRealm().users().search(username);
+      Assert.assertEquals(0, users.size());
+    } finally {
+      clientRep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
+      clientResource.update(clientRep);
+    }
   }
 
 
