@@ -43,8 +43,6 @@ public class AppAuthManager extends AuthenticationManager {
 
     public static final String BEARER = "Bearer";
 
-    private static final Pattern BEARER_TOKEN_PATTERN = Pattern.compile("^[A-Za-z0-9\\-._~+/]+={0,}$");
-
     @Override
     public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm) {
         AuthResult authResult = super.authenticateIdentityCookie(session, realm);
@@ -66,23 +64,14 @@ public class AppAuthManager extends AuthenticationManager {
             return null;
         }
 
-        int len = authHeader.length();
-        int i = 0;
+        int indexOfSpace = authHeader.indexOf(' ');
 
-        while (i < len) {
-            char c = authHeader.charAt(i);
-            if (c == ' ') {
-                break;
-            }
-            i++;
-        }
-
-        if (i == 0 || i == len) {
+        if (indexOfSpace <= 0) {
             return null;
         }
 
-        String typeString = authHeader.substring(0, i);
-        String tokenString = authHeader.substring(i + 1);
+        String typeString = authHeader.substring(0, indexOfSpace);
+        String tokenString = authHeader.substring(indexOfSpace + 1);
 
         boolean isBearerHeader = typeString.equalsIgnoreCase(BEARER);
         if (!Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
@@ -97,9 +86,6 @@ public class AppAuthManager extends AuthenticationManager {
         }
 
         if (ObjectUtil.isBlank(tokenString) || tokenString.contains(" ")) {
-            return null;
-        }
-        if (!BEARER_TOKEN_PATTERN.matcher(tokenString).matches()) {
             return null;
         }
 
