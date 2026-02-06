@@ -125,7 +125,7 @@ public class ClientPoliciesV2Test {
      * when a policy requires specific authenticators.
      */
     @Test
-    public void testCreateClientWithUnacceptableAuthType() throws Exception {
+    public void createClientWithUnacceptableAuthType() throws Exception {
         // Setup policy that only allows JWT-based authenticators
         setupPolicyClientIdAndSecretNotAcceptable();
 
@@ -160,7 +160,7 @@ public class ClientPoliciesV2Test {
      * the policy must have a default authenticator configured for creation to succeed.
      */
     @Test
-    public void testCreateClientWithAcceptableAuthType() throws Exception {
+    public void createClientWithAcceptableAuthType() throws Exception {
         // Setup policy that allows JWT-based authenticators AND sets a default
         setupPolicyWithAutoConfiguration();
 
@@ -200,7 +200,7 @@ public class ClientPoliciesV2Test {
      * and public clients don't have auth information returned.
      */
     @Test
-    public void testPublicClientWithoutAuth() throws Exception {
+    public void publicClientWithoutAuth() throws Exception {
         // Create a client without specifying auth - should be created as public client
         HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
         setAuthHeader(request);
@@ -228,7 +228,7 @@ public class ClientPoliciesV2Test {
      * Test that updating a client via PUT with an unacceptable client authenticator fails.
      */
     @Test
-    public void testUpdateClientViaPutWithUnacceptableAuthType() throws Exception {
+    public void updateClientViaPutWithUnacceptableAuthType() throws Exception {
         // First create a client with acceptable auth type before policy is set
         HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-put-update-client");
         setAuthHeader(createRequest);
@@ -276,7 +276,7 @@ public class ClientPoliciesV2Test {
      * Creates the client before setting up the policy to avoid the initial creation issue.
      */
     @Test
-    public void testUpdateClientViaPutWithAcceptableAuthType() throws Exception {
+    public void updateClientViaPutWithAcceptableAuthType() throws Exception {
         // First create a client BEFORE the policy is set
         HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-put-update-client");
         setAuthHeader(createRequest);
@@ -321,7 +321,7 @@ public class ClientPoliciesV2Test {
      * Test that updating a client via PATCH (merge patch) with an unacceptable client authenticator fails.
      */
     @Test
-    public void testUpdateClientViaPatchWithUnacceptableAuthType() throws Exception {
+    public void updateClientViaPatchWithUnacceptableAuthType() throws Exception {
         // First create a client with acceptable auth type
         HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-patch-update-client");
         setAuthHeader(createRequest);
@@ -371,7 +371,7 @@ public class ClientPoliciesV2Test {
      * Creates the client before setting up the policy to avoid the initial creation issue.
      */
     @Test
-    public void testPolicyAppliedOnUpdateWithoutAuthTypeChange() throws Exception {
+    public void policyAppliedOnUpdateWithoutAuthTypeChange() throws Exception {
         // Create a client BEFORE the policy is set
         HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-put-update-client");
         setAuthHeader(createRequest);
