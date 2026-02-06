@@ -68,12 +68,22 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String ATTRIBUTE_CONSUMING_SERVICE_NAME = "attributeConsumingServiceName";
     public static final String USE_METADATA_DESCRIPTOR_URL = "useMetadataDescriptorUrl";
     public static final String DESCRIPTOR_CACHE_SECONDS = "descriptorCacheSeconds";
+    public static final String LOGIN_QUERY_HINT = "loginQueryHint";
+
 
     public SAMLIdentityProviderConfig() {
     }
 
     public SAMLIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
         super(identityProviderModel);
+    }
+
+    public boolean isLoginQueryHint() {
+        return Boolean.valueOf(getConfig().get(LOGIN_QUERY_HINT));
+    }
+
+    public void setLoginQueryHint(boolean loginQueryHint) {
+        getConfig().put(LOGIN_QUERY_HINT, String.valueOf(loginQueryHint));
     }
 
     public String getEntityId() {

@@ -31,6 +31,7 @@ import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.ARTIFACT_BINDI
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.FORCE_AUTHN;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.LOGIN_QUERY_HINT;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.POST_BINDING_RESPONSE;
@@ -57,13 +58,15 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
     public static final String ATTRIBUTE_TO_MAP_FRIENDLY_NAME = "user-attribute-friendly";
 
     private final boolean loginHint;
+    private final boolean loginQueryHint;
 
     public KcSamlBrokerConfiguration() {
-        this(false);
+        this(false, false);
     }
 
-    public KcSamlBrokerConfiguration(boolean loginHint) {
+    public KcSamlBrokerConfiguration(boolean loginHint, boolean loginQueryHint) {
         this.loginHint = loginHint;
+        this.loginQueryHint = loginQueryHint;
     }
 
     @Override
@@ -119,6 +122,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         attributes.put(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false");
         attributes.put(SamlConfigAttributes.SAML_ENCRYPT, "false");
         attributes.put(IdentityProviderModel.LOGIN_HINT, String.valueOf(loginHint));
+        attributes.put(LOGIN_QUERY_HINT, String.valueOf(loginQueryHint));
 
         client.setAttributes(attributes);
 
@@ -245,8 +249,12 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         config.put(NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress");
         config.put(FORCE_AUTHN, "false");
         config.put(IdentityProviderModel.LOGIN_HINT, String.valueOf(loginHint));
+        config.put(LOGIN_QUERY_HINT, String.valueOf(loginQueryHint));
         config.put(POST_BINDING_RESPONSE, "true");
-        config.put(POST_BINDING_AUTHN_REQUEST, "true");
+        // Use REDIRECT binding for AuthnRequest when login hint feature is enabled in tests so that
+        // the destination URL (including query params) is visible in the browser URL for assertions
+        // Required for testing AbstractSamlLoginHintTest#testLoginHintForwardedAsQueryParam
+        config.put(POST_BINDING_AUTHN_REQUEST, String.valueOf(!loginHint));
         config.put(VALIDATE_SIGNATURE, "false");
         config.put(WANT_AUTHN_REQUESTS_SIGNED, "false");
         config.put(BACKCHANNEL_SUPPORTED, "false");
