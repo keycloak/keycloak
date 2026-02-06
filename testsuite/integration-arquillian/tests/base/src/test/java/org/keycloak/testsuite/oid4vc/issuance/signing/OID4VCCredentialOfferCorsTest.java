@@ -30,8 +30,8 @@ import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
-import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
@@ -62,7 +62,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Test class for CORS functionality on OID4VCI credential offer endpoints.
- * Tests both the authenticated credential-offer-uri endpoint and the
+ * Tests both the authenticated create-credential-offer endpoint and the
  * session-based credential-offer/{nonce} endpoint.
  *
  * @author <a href="https://github.com/forkimenjeckayang">Forkim Akwichek</a>
@@ -122,7 +122,6 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
                 .client(clientId)
                 .user(AssertEvents.isUUID())
                 .session(AssertEvents.isSessionId())
-                .detail(Details.USERNAME, "john")
                 .assertEvent();
     }
 
@@ -240,7 +239,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         AccessTokenResponse tokenResponse = getAccessToken();
 
         // Test credential offer URI QR code endpoint with valid origin
-        String offerUriUrl = getCredentialOfferUriUrl() + "&type=qr-code";
+        String offerUriUrl = getCredentialOfferUriUrl() + "&type=qr";
 
         // QR code endpoint returns binary data, so we need to use direct HTTP for this test
         try (CloseableHttpResponse response = makeCorsRequest(offerUriUrl, VALID_CORS_URL, tokenResponse.getAccessToken())) {
@@ -377,7 +376,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
     }
 
     private String getCredentialOfferUriUrl(String configId, Boolean preAuthorized, String username, String clientId) {
-        String res = getBasePath("test") + "credential-offer-uri?credential_configuration_id=" + configId;
+        String res = getBasePath("test") + "create-credential-offer?credential_configuration_id=" + configId;
         if (preAuthorized != null)
             res += "&pre_authorized=" + preAuthorized;
         if (clientId != null)
@@ -392,7 +391,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         CredentialOfferUriResponse response = oauth.oid4vc()
                 .credentialOfferUriRequest(jwtTypeCredentialConfigurationIdName)
                 .preAuthorized(true)
-                .username("john")
+                .targetUser("john")
                 .bearerToken(accessToken)
                 .header("Origin", VALID_CORS_URL)
                 .send();

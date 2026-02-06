@@ -127,7 +127,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
                 .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
                 .bearerToken(token)
-                .username("john")
+                .targetUser("john")
                 .send();
         assertEquals(HttpStatus.SC_OK, credentialOfferURIResponse.getStatusCode());
         CredentialOfferURI credOfferUri = credentialOfferURIResponse.getCredentialOfferURI();

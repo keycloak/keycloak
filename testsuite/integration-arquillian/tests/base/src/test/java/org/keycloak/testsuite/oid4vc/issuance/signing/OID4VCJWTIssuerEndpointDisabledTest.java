@@ -60,7 +60,7 @@ public class OID4VCJWTIssuerEndpointDisabledTest extends OID4VCIssuerEndpointTes
 
             // Test getCredentialOfferURI
             CorsErrorResponseException offerUriException = Assert.assertThrows(CorsErrorResponseException.class, () ->
-                    issuerEndpoint.getCredentialOfferURI("test-credential")
+                    issuerEndpoint.createCredentialOffer("test-credential")
             );
             assertEquals("Should fail with 403 Forbidden when client is not OID4VCI-enabled",
                     Response.Status.FORBIDDEN.getStatusCode(), offerUriException.getResponse().getStatus());

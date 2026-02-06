@@ -26,15 +26,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public enum OfferUriType {
+public enum OfferResponseType {
 
+    QR("qr"),
     URI("uri"),
-
-    QR_CODE("qr-code");
+    URI_AND_QR("uri+qr");
 
     private final String value;
 
-    OfferUriType(String value) {
+    OfferResponseType(String value) {
         this.value = value;
     }
 
@@ -43,13 +43,15 @@ public enum OfferUriType {
     }
 
     @JsonCreator
-    public static OfferUriType fromString(String value) {
+    public static OfferResponseType fromString(String value) {
         return Optional.ofNullable(value)
                 .map(v -> {
-                    if (v.equals(URI.getValue())) {
+                    if (v.equals(QR.getValue())) {
+                        return QR;
+                    } else if (v.equals(URI.getValue())) {
                         return URI;
-                    } else if (v.equals(QR_CODE.getValue())) {
-                        return QR_CODE;
+                    } else if (v.equals(URI_AND_QR.getValue())) {
+                        return URI_AND_QR;
                     } else return null;
                 })
                 .orElseThrow(() -> new IllegalArgumentException(String.format("%s is not a supported OfferUriType.", value)));

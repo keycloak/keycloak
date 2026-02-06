@@ -39,8 +39,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
-import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.ClaimDisplay;
 import org.keycloak.protocol.oid4vc.model.Claims;
@@ -102,7 +102,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
             CorsErrorResponseException exception = Assert.assertThrows(CorsErrorResponseException.class, () ->
-                    oid4VCIssuerEndpoint.getCredentialOfferURI("inexistent-id")
+                    oid4VCIssuerEndpoint.createCredentialOffer("inexistent-id")
             );
             assertEquals("Should return BAD_REQUEST", Response.Status.BAD_REQUEST.getStatusCode(),
                     exception.getResponse().getStatus());
@@ -117,7 +117,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
             CorsErrorResponseException exception = Assert.assertThrows(CorsErrorResponseException.class, () ->
-                    oid4VCIssuerEndpoint.getCredentialOfferURI("test-credential", true, "john")
+                    oid4VCIssuerEndpoint.createCredentialOffer("test-credential", true, "john")
             );
             assertEquals("Should return BAD_REQUEST", Response.Status.BAD_REQUEST.getStatusCode(),
                     exception.getResponse().getStatus());
@@ -132,7 +132,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
             CorsErrorResponseException exception = Assert.assertThrows(CorsErrorResponseException.class, () ->
-                    oid4VCIssuerEndpoint.getCredentialOfferURI("test-credential", true, "john")
+                    oid4VCIssuerEndpoint.createCredentialOffer("test-credential", true, "john")
             );
             assertEquals("Should return BAD_REQUEST", Response.Status.BAD_REQUEST.getStatusCode(),
                     exception.getResponse().getStatus());
@@ -152,7 +152,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 authenticator.setTokenString(token);
                 OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
-                Response response = oid4VCIssuerEndpoint.getCredentialOfferURI(credentialConfigurationId);
+                Response response = oid4VCIssuerEndpoint.createCredentialOffer(credentialConfigurationId);
 
                 assertEquals("An offer uri should have been returned.", HttpStatus.SC_OK, response.getStatus());
                 CredentialOfferURI credentialOfferURI = JsonSerialization.mapper.convertValue(response.getEntity(),
@@ -437,7 +437,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     // Tests the complete flow from
-    // 1. Retrieving the credential-offer-uri
+    // 1. Retrieving the create-credential-offer
     // 2. Using the uri to get the actual credential offer
     // 3. Get the issuer metadata
     // 4. Get the openid-configuration
@@ -453,7 +453,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         CredentialOfferURI credOfferUri = oauth.oid4vc()
                 .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
-                .username("john")
+                .targetUser("john")
                 .bearerToken(token)
                 .send()
                 .getCredentialOfferURI();
@@ -1204,11 +1204,11 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
 
-        // 1. Retrieving the credential-offer-uri
+        // 1. Retrieving the create-credential-offer
         CredentialOfferURI credentialOfferURI = oauth.oid4vc()
                 .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
-                .username("john")
+                .targetUser("john")
                 .bearerToken(token)
                 .send()
                 .getCredentialOfferURI();
@@ -1257,7 +1257,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         CredentialOfferURI credentialOfferURI1 = oauth.oid4vc()
                 .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
-                .username("john")
+                .targetUser("john")
                 .bearerToken(token)
                 .send()
                 .getCredentialOfferURI();
@@ -1269,7 +1269,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         CredentialOfferURI credentialOfferURI2 = oauth.oid4vc()
                 .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
-                .username("john")
+                .targetUser("john")
                 .bearerToken(token)
                 .send()
                 .getCredentialOfferURI();
@@ -1334,7 +1334,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         CredentialOfferURI credentialOfferURI = oauth.oid4vc()
                 .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
-                .username("john")
+                .targetUser("john")
                 .bearerToken(token)
                 .send()
                 .getCredentialOfferURI();

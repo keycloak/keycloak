@@ -21,6 +21,7 @@ import org.keycloak.common.util.KeycloakUriBuilder;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 /**
@@ -30,8 +31,15 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CredentialOfferURI {
+
     private String issuer;
     private String nonce;
+
+    @JsonProperty("tx_code")
+    private String txCode;
+
+    @JsonProperty("qr_code")
+    private String qrCode;
 
     public String getIssuer() {
         return issuer;
@@ -48,6 +56,28 @@ public class CredentialOfferURI {
 
     public CredentialOfferURI setNonce(String nonce) {
         this.nonce = nonce;
+        return this;
+    }
+
+    public String getTxCode() {
+        return txCode;
+    }
+
+    public CredentialOfferURI setTxCode(String txCode) {
+        this.txCode = txCode;
+        return this;
+    }
+
+    public String getQrCode() {
+        return qrCode;
+    }
+
+    /**
+     * Encoded QR-Code such that it can be used directly in a web page
+     * {@code <img src="data:image/png;base64,AAAA..." />}
+     */
+    public CredentialOfferURI setQrCode(String qrCode) {
+        this.qrCode = qrCode;
         return this;
     }
 
