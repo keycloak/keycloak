@@ -8,7 +8,7 @@
   },
   "wireit": {
     "build": {
-      "command": "rollup --config && node scripts/rewrite-imports.js",
+      "command": "rollup --config && pnpm build:rewrite-import",
       "files": [
         "rollup.config.js",
         "src"
