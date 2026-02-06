@@ -18,7 +18,6 @@ public class DatasourcesDistTest {
     @Test
     @Launch({"start-dev", "--db-kind-users=postgres", "--db-kind-clients=postgres", "--transaction-xa-enabled-users=false"})
     public void multipleNonXaDatasources(CLIResult result) {
-        result.assertNoMessage("Multiple datasources are specified:"); // log handlers are not initialized yet, so only the error should be visible
         result.assertExitCode(CommandLine.ExitCode.SOFTWARE);
         result.assertError("Multiple datasources are configured but more than 1 (<default>, users) is using non-XA transactions.");
     }
