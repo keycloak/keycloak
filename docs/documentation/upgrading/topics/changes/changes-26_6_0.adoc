@@ -121,6 +121,10 @@ You should use the new `telemetry.serviceName`, and `telemetry.resourceAttribute
 The OpenTelemetry tracing span attributes `code.function` and `code.namespace` are deprecated for the HTTP request spans when tracing is enabled.
 These attributes will be removed in the next major release, and only the fully qualified `code.function.name` span attribute will stay.
 
+=== Deprecation of legacy Token Exchange
+
+The feature link:{securing_apps_token_exchange_link}#_legacy-token-exchange[Legacy token exchange version 1 (V1)], although in preview for a very long time, is now marked as deprecated. It will never reach the supported status. Legacy Token Exchange will be removed in a future version, when its functionality can be totally or partially replaced by the supported version 2 and other features.
+
 // ------------------------ Removed features ------------------------ //
 == Removed features
 
