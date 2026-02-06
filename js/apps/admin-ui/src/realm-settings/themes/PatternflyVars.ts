@@ -56,14 +56,16 @@ const variables: VariableDefinition[] = [
         },
         variable: "active-color--100",
       },
-      {
-        name: "secondaryColor",
-        defaultValue: {
-          light: "{{color}}",
-          dark: "color-mix(in srgb, {{color}} 78%, white)",
-        },
-        variable: "primary-color--100",
-      },
+      // TODO in patternfly atm secondary buttons don't have a secondaryColor
+      // see: https://github.com/patternfly/patternfly-react/issues/12238
+      // {
+      //   name: "secondaryColor",
+      //   defaultValue: {
+      //     light: "{{color}}",
+      //     dark: "color-mix(in srgb, {{color}} 78%, white)",
+      //   },
+      //   variable: "primary-color--100",
+      // },
     ],
   },
   {
