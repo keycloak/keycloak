@@ -4,6 +4,7 @@ import { ActionGroup, Button, PageSection } from "@patternfly/react-core";
 import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { FormAccess } from "../../components/form/FormAccess";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -13,6 +14,22 @@ type ThemeSettingsTabProps = {
   realm: RealmRepresentation;
   save: (realm: RealmRepresentation) => void;
 };
+
+function getThemeDescription(
+  themeName: string,
+  t: TFunction,
+): string | undefined {
+  switch (themeName) {
+    case "keycloak":
+      return t("themesDescriptionKeycloak");
+    case "keycloak.v2":
+      return t("themesDescriptionKeycloakV2");
+    case "keycloak.v3":
+      return t("themesDescriptionKeycloakV3");
+    default:
+      return undefined;
+  }
+}
 
 export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
   const { t } = useTranslation();
@@ -57,6 +74,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
               themeTypes.login.map((theme) => ({
                 key: theme.name,
                 value: theme.name,
+                description: getThemeDescription(theme.name, t),
               })),
             )}
           />
@@ -71,6 +89,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
               themeTypes.account.map((theme) => ({
                 key: theme.name,
                 value: theme.name,
+                description: getThemeDescription(theme.name, t),
               })),
             )}
           />
@@ -85,6 +104,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
               themeTypes.admin.map((theme) => ({
                 key: theme.name,
                 value: theme.name,
+                description: getThemeDescription(theme.name, t),
               })),
             )}
           />
@@ -99,6 +119,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
               themeTypes.email.map((theme) => ({
                 key: theme.name,
                 value: theme.name,
+                description: getThemeDescription(theme.name, t),
               })),
             )}
           />
