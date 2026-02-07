@@ -1189,28 +1189,6 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(refreshToken.getScope(), containsString(orgScope));
     }
 
-    private void setMapperConfig(String key, String value) {
-        ClientScopeRepresentation orgScope = testRealm().clientScopes().findAll().stream()
-                .filter(s -> OIDCLoginProtocolFactory.ORGANIZATION.equals(s.getName()))
-                .findAny()
-                .orElseThrow();
-        ClientScopeResource orgScopeResource = testRealm().clientScopes().get(orgScope.getId());
-        ProtocolMapperRepresentation orgMapper = orgScopeResource.getProtocolMappers().getMappers().stream()
-                .filter(m -> OIDCLoginProtocolFactory.ORGANIZATION.equals(m.getName()))
-                .findAny()
-                .orElseThrow();
-
-        Map<String, String> config = orgMapper.getConfig();
-
-        if (value == null) {
-            config.remove(key);
-        } else {
-            config.put(key, value);
-        }
-
-        orgScopeResource.getProtocolMappers().update(orgMapper.getId(), orgMapper);
-    }
-
     private void assertClaimNotMapped(String orgScope, OrganizationRepresentation orgARep, boolean grantScope) {
         OrganizationResource orgA = testRealm().organizations().get(orgARep.getId());
         MemberRepresentation member = addMember(orgA, "member@" + orgARep.getDomains().iterator().next().getName());
