@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.protocol.oidc.grants;
+package org.keycloak.protocol.oidc.grants.jwtauthorization;
 
 
 import org.keycloak.Config;
@@ -23,6 +23,8 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
+import org.keycloak.protocol.oidc.grants.OAuth2GrantTypeFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 public class JWTAuthorizationGrantTypeFactory implements OAuth2GrantTypeFactory, EnvironmentDependentProviderFactory {
