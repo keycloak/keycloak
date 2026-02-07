@@ -43,6 +43,13 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
     }
 
     public AccessTokenRequest authorizationDetails(List<OID4VCAuthorizationDetail> authDetails) {
+        if (authDetails != null) {
+            for (OID4VCAuthorizationDetail authDetail : authDetails) {
+                if (authDetail.getCredentialIdentifiers() != null) {
+                    throw new IllegalArgumentException("credential_identifiers not supported on AccessToken request");
+                }
+            }
+        }
         parameter(OAuth2Constants.AUTHORIZATION_DETAILS, JsonSerialization.valueAsString(authDetails));
         return this;
     }

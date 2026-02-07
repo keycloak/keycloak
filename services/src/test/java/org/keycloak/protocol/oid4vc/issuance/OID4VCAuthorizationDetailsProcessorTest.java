@@ -130,24 +130,22 @@ public class OID4VCAuthorizationDetailsProcessorTest {
      * Asserts that an AuthorizationDetail has valid structure
      */
     private void assertValidAuthorizationDetail(OID4VCAuthorizationDetail authDetail) {
-        assertEquals("Type should be openid_credential", OPENID_CREDENTIAL, authDetail.getType());
-        assertEquals("Credential configuration ID should be set", "test-config-id", authDetail.getCredentialConfigurationId());
-        assertNotNull("Locations should not be null", authDetail.getLocations());
-        assertEquals("Should have exactly one location", 1, authDetail.getLocations().size());
-        assertEquals("Location should match issuer", "https://test-issuer.com", authDetail.getLocations().get(0));
+        assertValidAuthorizationDetail(authDetail, false);
     }
 
     /**
      * Asserts that an AuthorizationDetail has valid structure
      */
-    private void assertValidAuthorizationDetailResponse(OID4VCAuthorizationDetailResponse authDetail) {
+    private void assertValidAuthorizationDetail(OID4VCAuthorizationDetail authDetail, boolean tokenResponse) {
         assertEquals("Type should be openid_credential", OPENID_CREDENTIAL, authDetail.getType());
         assertEquals("Credential configuration ID should be set", "test-config-id", authDetail.getCredentialConfigurationId());
         assertNotNull("Locations should not be null", authDetail.getLocations());
         assertEquals("Should have exactly one location", 1, authDetail.getLocations().size());
         assertEquals("Location should match issuer", "https://test-issuer.com", authDetail.getLocations().get(0));
-        assertEquals(1, authDetail.getCredentialIdentifiers().size());
-        assertEquals("test-identifier-123", authDetail.getCredentialIdentifiers().get(0));
+        if (tokenResponse) {
+            assertEquals(1, authDetail.getCredentialIdentifiers().size());
+            assertEquals("test-identifier-123", authDetail.getCredentialIdentifiers().get(0));
+        }
     }
 
     /**
@@ -391,7 +389,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     }
 
     @Test
-    public void testBuildAuthorizationDetailResponseLogic() {
+    public void testBuildAuthorizationDetailLogic() {
         // Test the response structure that would be built
         String expectedCredentialConfigurationId = "test-config-id";
         List<String> expectedCredentialIdentifiers = List.of("test-identifier-123");
@@ -403,7 +401,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
         authDetail.setCustomData(CREDENTIAL_IDENTIFIERS, expectedCredentialIdentifiers);
         authDetail.setClaims(expectedClaims);
 
-        // Verify the data structure that buildAuthorizationDetailResponse() would process
+        // Verify the data structure that buildAuthorizationDetail() would process
         assertValidAuthorizationDetail(authDetail);
         assertNotNull("Claims should not be null", authDetail.getClaims());
         assertEquals("Should have exactly one claim", 1, authDetail.getClaims().size());
@@ -512,12 +510,12 @@ public class OID4VCAuthorizationDetailsProcessorTest {
                 convertToResponseType(validDetail2),
                 convertToResponseType(invalidDetail1)
         );
-        List<OID4VCAuthorizationDetailResponse> authzResponses = new OID4VCAuthorizationDetailsProcessor(null).getSupportedAuthorizationDetails(responses);
+        List<OID4VCAuthorizationDetail> authzResponses = new OID4VCAuthorizationDetailsProcessor(null).getSupportedAuthorizationDetails(responses);
 
         Assert.assertEquals(2, authzResponses.size());
-        assertValidAuthorizationDetailResponse(authzResponses.get(0));
+        assertValidAuthorizationDetail(authzResponses.get(0), true);
         Assert.assertNull(authzResponses.get(0).getClaims());
-        assertValidAuthorizationDetailResponse(authzResponses.get(1));
+        assertValidAuthorizationDetail(authzResponses.get(1), true);
         assertValidClaims(authzResponses.get(1).getClaims());
     }
 
