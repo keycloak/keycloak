@@ -24,6 +24,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
@@ -32,6 +33,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 
@@ -178,4 +180,21 @@ public interface TestOIDCEndpointsApplicationResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     IntentClientBindCheckExecutor.IntentBindCheckResponse checkIntentClientBound(IntentClientBindCheckExecutor.IntentBindCheckRequest request);
+
+    @GET
+    @Path("/set-client-id-metadata")
+    @NoCache
+    void setClientIdMetadata(@QueryParam("path") String path, @QueryParam("encodedClientMetadata") String encodedClientMetadata, @QueryParam("cacheControlHeaderValue") String cacheControlHeaderValue);
+
+    @POST
+    @Path("/register-client-id-metadata")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    OIDCClientRepresentation registerClientIdMetadata(OIDCClientRepresentation oidcClientRepresentation, @QueryParam("cacheControlHeaderValue") String cacheControlHeaderValue, @QueryParam("command") String command);
+
+    @GET
+    @Path("/get-client-id-metadata/{path}")
+    @Produces(MediaType.APPLICATION_JSON)
+    Response getClientIdMetadata(@PathParam("path") String path);
 }
