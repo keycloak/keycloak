@@ -93,8 +93,8 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     String appUsername = "alice";
 
-    String credScopeName = jwtTypeCredentialScopeName;
-    String credConfigId = jwtTypeCredentialConfigurationIdName;
+    String credScopeName = jwtTypeNaturalPersonScopeName;
+    String credConfigId = jwtTypeNaturalPersonScopeName;
 
     static class OfferTestContext {
         boolean preAuthorized;
@@ -104,7 +104,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         String appClient;
         CredentialIssuer issuerMetadata;
         OIDCConfigurationRepresentation authorizationMetadata;
-        SupportedCredentialConfiguration supportedCredentialConfiguration;
+        SupportedCredentialConfiguration credentialConfiguration;
     }
 
     OfferTestContext newTestContext(boolean preAuth, String appClient, String appUser) {
@@ -116,7 +116,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         ctx.appClient = appClient;
         ctx.issuerMetadata = getCredentialIssuerMetadata();
         ctx.authorizationMetadata = getAuthorizationMetadata(ctx.issuerMetadata.getAuthorizationServers().get(0));
-        ctx.supportedCredentialConfiguration = ctx.issuerMetadata.getCredentialsSupported().get(credConfigId);
+        ctx.credentialConfiguration = ctx.issuerMetadata.getCredentialsSupported().get(credConfigId);
         return ctx;
     }
 
@@ -253,7 +253,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         // Exclude scope: <credScope>
         // Require role: credential-offer-create
         verifyTokenJwt(ctx, issToken,
-                List.of(), List.of(ctx.supportedCredentialConfiguration.getScope()),
+                List.of(), List.of(ctx.credentialConfiguration.getScope()),
                 List.of(CREDENTIAL_OFFER_CREATE.getName()), List.of());
 
         // Retrieving the credential-offer-uri
@@ -402,7 +402,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     }
 
     private CredentialOfferURI getCredentialOfferUri(OfferTestContext ctx, String token) throws Exception {
-        String credConfigId = ctx.supportedCredentialConfiguration.getId();
+        String credConfigId = ctx.credentialConfiguration.getId();
         String credOfferUriUrl = getCredentialOfferUriUrl(credConfigId, ctx.preAuthorized, ctx.appUser, ctx.appClient);
         CredentialOfferUriResponse credentialOfferURIResponse = oauth.oid4vc()
                 .credentialOfferUriRequest()
@@ -440,7 +440,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
                     : "Request failed with status " + statusCode);
         }
         CredentialsOffer credOffer = credentialOfferResponse.getCredentialsOffer();
-        assertEquals(List.of(ctx.supportedCredentialConfiguration.getId()), credOffer.getCredentialConfigurationIds());
+        assertEquals(List.of(ctx.credentialConfiguration.getId()), credOffer.getCredentialConfigurationIds());
         return credOffer;
     }
 
@@ -529,18 +529,19 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     private void verifyCredentialResponse(OfferTestContext ctx, CredentialResponse credResponse) throws Exception {
 
-        String scope = ctx.supportedCredentialConfiguration.getScope();
+        String issuer = ctx.issuerMetadata.getCredentialIssuer();
+        String scope = ctx.credentialConfiguration.getScope();
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull("The first credential in the array should not be null", credentialObj);
 
         String expUsername = ctx.appUser != null ? ctx.appUser : appUsername;
 
         JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialObj.getCredential(), JsonWebToken.class).getToken();
-        assertEquals("did:web:test.org", jsonWebToken.getIssuer());
+        assertEquals(issuer, jsonWebToken.getIssuer());
         Object vc = jsonWebToken.getOtherClaims().get("vc");
         VerifiableCredential credential = JsonSerialization.mapper.convertValue(vc, VerifiableCredential.class);
         assertEquals(List.of(scope), credential.getType());
-        assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
+        assertEquals(URI.create(issuer), credential.getIssuer());
         assertEquals(expUsername + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
     }
 

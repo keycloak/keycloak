@@ -47,8 +47,7 @@ public class OID4VCIWellKnownProviderTest extends OID4VCTest {
         getTestingClient()
                 .server(TEST_REALM_NAME)
                 .run(session -> {
-                    OID4VCIssuerWellKnownProvider oid4VCIssuerWellKnownProvider = new OID4VCIssuerWellKnownProvider(session);
-                    CredentialIssuer credentialIssuer = oid4VCIssuerWellKnownProvider.getIssuerMetadata();
+                    CredentialIssuer credentialIssuer = new OID4VCIssuerWellKnownProvider(session).getIssuerMetadata();
                     assertEquals("Only one asymmetric encryption key is present in the realm.",
                             1,
                             credentialIssuer.getCredentialResponseEncryption()

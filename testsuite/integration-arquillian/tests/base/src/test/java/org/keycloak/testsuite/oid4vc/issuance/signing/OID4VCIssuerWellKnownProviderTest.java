@@ -875,6 +875,24 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         }
     }
 
+    @Test
+    public void verifyDefaultCredentialConfigurations() throws IOException {
+
+        getTestingClient()
+                .server(TEST_REALM_NAME)
+                .run(session -> {
+                    CredentialIssuer issuerMetadata = new OID4VCIssuerWellKnownProvider(session).getIssuerMetadata();
+                    Map<String, SupportedCredentialConfiguration> supported = issuerMetadata.getCredentialsSupported();
+                    String credType = "oid4vc_natural_person";
+                    for (String format : Format.SUPPORTED_FORMATS) {
+                        String key = credType + Format.getScopeSuffix(format);
+                        SupportedCredentialConfiguration credConfig = supported.get(key);
+                        assertNotNull("No " + key, credConfig);
+                        assertEquals(credConfig.getId(), credConfig.getScope());
+                        assertEquals(format, credConfig.getFormat());
+                    }
+                });
+    }
 
     private void testBatchSizeValidation(KeycloakTestingClient testingClient, String batchSize, boolean shouldBePresent, Integer expectedValue) {
         testingClient
