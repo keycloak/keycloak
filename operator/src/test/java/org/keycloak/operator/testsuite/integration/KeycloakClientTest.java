@@ -29,10 +29,13 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakClientBaseController;
 import org.keycloak.operator.controllers.KeycloakOIDCClientController;
+import org.keycloak.operator.controllers.KeycloakSAMLClientController;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientBuilder;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientRepresentation.AuthWithSecretRef;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakSAMLClient;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakSAMLClientBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.AdminSpec;
@@ -62,7 +65,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 public class KeycloakClientTest extends BaseOperatorTest {
 
     private static final String CLIENT_SECRET = "client-secret";
-    private static final String CLIENT_TRUSTSTORE_SECRET = "client-truststore-secret";
+    private static final String CLIENT_TRUSTSTORE_SECRET = "example-mtls-truststore-secret";
+    private static final String CLIENT_TLS_SECRET = "example-mtls-secret";
 
     private static final String NODEPORT_SERVICE = "nodeport-service";
 
@@ -85,69 +89,70 @@ public class KeycloakClientTest extends BaseOperatorTest {
     public void afterEach() {
         k8sclient.services().withName(NODEPORT_SERVICE).delete();
         k8sclient.secrets().withName(CLIENT_SECRET).delete();
+        k8sclient.secrets().withName(CLIENT_TRUSTSTORE_SECRET).delete();
+        k8sclient.secrets().withName(CLIENT_TLS_SECRET).delete();
     }
 
     @Test
-    public void testBasicClientCreationAndDeletionHttp() throws InterruptedException {
-        helpTestBasicClientCreationAndDeletion(false);
-    }
-
-    @Test
-    public void testBasicClientCreationAndDeletionHttps() throws InterruptedException {
-        helpTestBasicClientCreationAndDeletion(true);
-    }
-
-    public void helpTestBasicClientCreationAndDeletion(boolean https) throws InterruptedException {
+    public void testBasicSamlClientCreationAndDeletionHttp() throws InterruptedException {
         var kc = getTestKeycloakDeployment(false);
-        kc.getSpec().setStartOptimized(false);
-        kc.getSpec().getHostnameSpec().setHostname("example.com");
-        // TODO will need validation that this is enabled
-        kc.getSpec().setFeatureSpec(new FeatureSpecBuilder().withEnabledFeatures("client-admin-api:v2").build());
-        if (!https) {
-            kc.getSpec().getHttpSpec().setTlsSecret(null);
-            kc.getSpec().getHttpSpec().setHttpEnabled(true);
-        } else {
-            AdminSpec adminSpec = new AdminSpec();
-            K8sUtils.set(k8sclient, K8sUtils.getResourceFromFile("/example-mtls-secret.yaml", Secret.class));
-            adminSpec.setTlsSecret("example-mtls-secret");
-            kc.getSpec().setAdminSpec(adminSpec);
-            K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-mtls-truststore-secret.yaml"));
-            kc.getSpec().getTruststores().put("example", new TruststoreBuilder().withNewSecret().withName("example-mtls-truststore-secret").endSecret().build());
-            kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("https-client-auth", "required"));
-            kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("https-management-client-auth", "none"));
-        }
-
-        // TODO: for the sake of testing, this uses the built-in bootstrap admin
-        // we don't expect users to do this
-        initCustomBootstrapAdminServiceAccount(kc);
+        deployKeycloakWithAdminApiV2(false, kc);
+        String addressOverride = createNodePort(false, kc);
         var deploymentName = kc.getMetadata().getName();
-        deployKeycloak(k8sclient, kc, true);
 
-        Map<String, String> labels = Utils.allInstanceLabels(kc);
-        labels.put("app.kubernetes.io/component", "server");
+        String clientName = "saml-client";
+        KeycloakSAMLClient client = new KeycloakSAMLClientBuilder().withNewMetadata().withName(clientName)
+                .endMetadata().withNewSpec().withRealm("master").withKeycloakCRName(deploymentName).withNewClient()
+                .withEnabled(true).endClient().endSpec().build();
 
-        var nodeport = new ServiceBuilder().withNewMetadata().withName(NODEPORT_SERVICE).endMetadata().withNewSpec()
-                .withType("NodePort").addToSelector(labels).addNewPort().withPort(https?Constants.KEYCLOAK_HTTPS_PORT:Constants.KEYCLOAK_HTTP_PORT)
-                .endPort().endSpec().build();
-        nodeport = k8sclient.resource(nodeport).serverSideApply();
-        int port = nodeport.getSpec().getPorts().get(0).getNodePort();
+        K8sUtils.set(k8sclient, client);
 
-        String addressOverride = kubernetesIp + ":" + port;
-        if (operatorDeployment == OperatorDeployment.local) {
-            CDI.current().select(KeycloakOIDCClientController.class).get().setAddressOverride(addressOverride);
+        Awaitility.await().ignoreExceptions()
+                .until(() -> k8sclient.resource(client).get().getStatus().getConditions().stream()
+                        .noneMatch(c -> Boolean.TRUE.equals(c.getStatus())
+                                && KeycloakClientStatusCondition.HAS_ERRORS.equals(c.getType())));
+
+        // TODO: a success or ready status?
+
+        try (var adminClient = KeycloakClientBaseController.getAdminClient(k8sclient, kc, addressOverride)) {
+            Awaitility.await().until(() -> adminClient.realm("master").clients().findAll().stream().anyMatch(cr -> cr.getClientId().equals(clientName)));
+
+            k8sclient.resource(client).withTimeout(10, TimeUnit.SECONDS).delete();
+
+            Awaitility.await().until(() -> adminClient.realm("master").clients().findAll().stream().noneMatch(cr -> cr.getClientId().equals(clientName)));
         }
+
+        assertNull(k8sclient.resource(client).get());
+    }
+
+    @Test
+    public void testBasicOIDCClientCreationAndDeletionHttp() throws InterruptedException {
+        helpTestBasicOIDCClientCreationAndDeletion(false);
+    }
+
+    @Test
+    public void testBasicOIDCClientCreationAndDeletionHttps() throws InterruptedException {
+        helpTestBasicOIDCClientCreationAndDeletion(true);
+    }
+
+    public void helpTestBasicOIDCClientCreationAndDeletion(boolean https) throws InterruptedException {
+        var kc = getTestKeycloakDeployment(false);
+        deployKeycloakWithAdminApiV2(https, kc);
+        String addressOverride = createNodePort(https, kc);
+        var deploymentName = kc.getMetadata().getName();
 
         AuthWithSecretRef auth = new AuthWithSecretRef();
         auth.setMethod("client-jwt");
         auth.setSecretRef(new SecretKeySelector("secret", CLIENT_SECRET, null));
-        KeycloakOIDCClient client = new KeycloakOIDCClientBuilder().withNewMetadata().withName("test-client")
+        String clientName = "test-client";
+        KeycloakOIDCClient client = new KeycloakOIDCClientBuilder().withNewMetadata().withName(clientName)
                 .endMetadata().withNewSpec().withRealm("master").withKeycloakCRName(deploymentName).withNewClient()
                 .withAuth(auth)
                 .withEnabled(true).endClient().endSpec().build();
 
         K8sUtils.set(k8sclient, client);
 
-        Awaitility.await()
+        Awaitility.await().ignoreExceptions()
                 .until(() -> Optional.ofNullable(k8sclient.resource(client).get().getStatus()).filter(s -> s.getConditions().stream()
                         .anyMatch(c -> Boolean.TRUE.equals(c.getStatus())
                                 && KeycloakClientStatusCondition.HAS_ERRORS.equals(c.getType())
@@ -164,14 +169,56 @@ public class KeycloakClientTest extends BaseOperatorTest {
         // TODO: a success or ready status?
 
         try (var adminClient = KeycloakClientBaseController.getAdminClient(k8sclient, kc, addressOverride)) {
-            Awaitility.await().until(() -> adminClient.realm("master").clients().findAll().stream().anyMatch(cr -> cr.getClientId().equals("test-client")));
+            Awaitility.await().until(() -> adminClient.realm("master").clients().findAll().stream().anyMatch(cr -> cr.getClientId().equals(clientName)));
 
             k8sclient.resource(client).withTimeout(10, TimeUnit.SECONDS).delete();
 
-            Awaitility.await().until(() -> adminClient.realm("master").clients().findAll().stream().noneMatch(cr -> cr.getClientId().equals("test-client")));
+            Awaitility.await().until(() -> adminClient.realm("master").clients().findAll().stream().noneMatch(cr -> cr.getClientId().equals(clientName)));
         }
 
         assertNull(k8sclient.resource(client).get());
+    }
+
+    private String createNodePort(boolean https, Keycloak kc) {
+        Map<String, String> labels = Utils.allInstanceLabels(kc);
+        labels.put("app.kubernetes.io/component", "server");
+
+        var nodeport = new ServiceBuilder().withNewMetadata().withName(NODEPORT_SERVICE).endMetadata().withNewSpec()
+                .withType("NodePort").addToSelector(labels).addNewPort().withPort(https?Constants.KEYCLOAK_HTTPS_PORT:Constants.KEYCLOAK_HTTP_PORT)
+                .endPort().endSpec().build();
+        nodeport = k8sclient.resource(nodeport).serverSideApply();
+        int port = nodeport.getSpec().getPorts().get(0).getNodePort();
+
+        String addressOverride = kubernetesIp + ":" + port;
+        if (operatorDeployment == OperatorDeployment.local) {
+            CDI.current().select(KeycloakOIDCClientController.class).get().setAddressOverride(addressOverride);
+            CDI.current().select(KeycloakSAMLClientController.class).get().setAddressOverride(addressOverride);
+        }
+        return addressOverride;
+    }
+
+    private void deployKeycloakWithAdminApiV2(boolean https, Keycloak kc) {
+        kc.getSpec().setStartOptimized(false);
+        // TODO will need validation that this is enabled
+        kc.getSpec().setFeatureSpec(new FeatureSpecBuilder().withEnabledFeatures("client-admin-api:v2").build());
+        if (!https) {
+            kc.getSpec().getHttpSpec().setTlsSecret(null);
+            kc.getSpec().getHttpSpec().setHttpEnabled(true);
+        } else {
+            AdminSpec adminSpec = new AdminSpec();
+            K8sUtils.set(k8sclient, K8sUtils.getResourceFromFile("/example-mtls-secret.yaml", Secret.class));
+            adminSpec.setTlsSecret(CLIENT_TLS_SECRET);
+            kc.getSpec().setAdminSpec(adminSpec);
+            K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-mtls-truststore-secret.yaml"));
+            kc.getSpec().getTruststores().put("example", new TruststoreBuilder().withNewSecret().withName(CLIENT_TRUSTSTORE_SECRET).endSecret().build());
+            kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("https-client-auth", "required"));
+            kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("https-management-client-auth", "none"));
+        }
+
+        // TODO: for the sake of testing, this uses the built-in bootstrap admin
+        // we don't expect users to do this
+        initCustomBootstrapAdminServiceAccount(kc);
+        deployKeycloak(k8sclient, kc, true);
     }
 
 }
