@@ -20,6 +20,11 @@ public class ServiceException extends RuntimeException {
         this.suggestedHttpResponseStatus = suggestedStatus;
     }
 
+    public ServiceException(Response.Status suggestedStatus) {
+        super();
+        this.suggestedHttpResponseStatus = suggestedStatus;
+    }
+
     public Optional<Response.Status> getSuggestedResponseStatus() {
         return Optional.ofNullable(suggestedHttpResponseStatus);
     }

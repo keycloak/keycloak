@@ -3,6 +3,8 @@ package org.keycloak.admin.api.client;
 import java.io.IOException;
 import java.util.Objects;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
@@ -23,6 +25,7 @@ import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.DefaultClientService;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.RealmAdminResource;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.util.ObjectMapperResolver;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -31,32 +34,37 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 
 public class DefaultClientApi implements ClientApi {
-
     private final KeycloakSession session;
+    private final String clientId;
+    private final AdminPermissionEvaluator permissions;
     private final RealmModel realm;
     private final ClientService clientService;
 
     private final ClientResource clientResource;
-    private final String clientId;
     private final ObjectMapper objectMapper;
 
     private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
 
-    public DefaultClientApi(KeycloakSession session, RealmAdminResource realmAdminResource, ClientResource clientResource, String clientId) {
+    public DefaultClientApi(@Nonnull KeycloakSession session,
+                            @Nonnull String clientId,
+                            @Nonnull AdminPermissionEvaluator permissions,
+                            @Nonnull RealmAdminResource realmAdminResource,
+                            @Nullable ClientResource clientResource) {
         this.session = session;
-        this.clientResource = clientResource;
         this.clientId = clientId;
+        this.permissions = permissions;
+
+        this.clientResource = clientResource;
+        this.clientService = new DefaultClientService(session, permissions, realmAdminResource, clientResource);
 
         this.realm = Objects.requireNonNull(session.getContext().getRealm());
-        this.clientService = new DefaultClientService(session, realmAdminResource, clientResource);
-
         this.objectMapper = MAPPER;
     }
 
     @GET
     @Override
     public BaseClientRepresentation getClient() {
-        return clientService.getClient(realm, clientId, null)
+        return clientService.getClient(realm, clientId)
                 .orElseThrow(() -> new NotFoundException("Cannot find the specified client"));
     }
 
