@@ -124,6 +124,8 @@ The default value of `hostname-backchannel-dynamic` option is `false`, which mea
 
 Note that `hostname` option must be set to a URL. For more information, refer to the <<Validations>> section below.
 
+NOTE: if the server is configured for TLS passthrough, the usage of dynamic backchannel HTTPS requests will not pass hostname validation as the server certificate presented will be for the public hostname.    
+
 === Administration
 
 Similarly to the base frontend URL, you can also set the base URL for resources and endpoints of the administration console. The server exposes the administration console and static resources using a specific URL. This URL is used for redirect URLs, loading resources (CSS, JS), Administration REST API etc. It can be done by setting the `hostname-admin` option:
