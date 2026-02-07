@@ -102,6 +102,9 @@ public abstract class AuthzEndpointRequestParser {
         KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_ASSERTION_TYPE);
         KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_ASSERTION);
         KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_SECRET);
+
+        // https://datatracker.ietf.org/doc/html/rfc8707
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.RESOURCE_PARAM);
     }
 
     protected AuthzEndpointRequestParser(KeycloakSession keycloakSession) {
@@ -148,6 +151,8 @@ public abstract class AuthzEndpointRequestParser {
         request.codeChallengeMethod = replaceIfNotNull(request.codeChallengeMethod, getAndValidateParameter(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM));
 
         request.dpopJkt = replaceIfNotNull(request.dpopJkt, getAndValidateParameter(OIDCLoginProtocol.DPOP_JKT));
+
+        request.resource = replaceIfNotNull(request.resource, getAndValidateParameter(OIDCLoginProtocol.RESOURCE_PARAM));
 
         extractAdditionalReqParams(request.additionalReqParams);
     }

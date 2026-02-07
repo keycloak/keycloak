@@ -586,6 +586,9 @@ public class TokenManager {
         for (Map.Entry<String, String> entry : transferredNotes.entrySet()) {
             clientSession.setNote(entry.getKey(), entry.getValue());
         }
+        if (authSession.getClientNote(OAuth2Constants.RESOURCE) == null && clientSession.getNote(OAuth2Constants.RESOURCE) != null) {
+            clientSession.removeNote(OAuth2Constants.RESOURCE);
+        }
 
         Map<String, String> transferredUserSessionNotes = authSession.getUserSessionNotes();
         for (Map.Entry<String, String> entry : transferredUserSessionNotes.entrySet()) {

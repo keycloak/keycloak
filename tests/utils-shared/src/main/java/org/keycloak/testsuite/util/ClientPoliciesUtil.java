@@ -1,20 +1,3 @@
-/*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.keycloak.testsuite.util;
 
 import java.io.IOException;
@@ -47,7 +30,6 @@ import org.keycloak.representations.idm.ClientPolicyExecutorRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
-import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition;
 import org.keycloak.services.clientpolicy.condition.ClientAttributesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientRolesCondition;
@@ -72,8 +54,6 @@ import org.keycloak.services.clientpolicy.executor.SecureResourceIndicatorExecut
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutor;
-import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExceptionCondition;
-import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutor;
 import org.keycloak.util.DPoPGenerator;
 import org.keycloak.util.JsonSerialization;
 
@@ -82,8 +62,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
-
-import static org.junit.Assert.fail;
 
 public final class ClientPoliciesUtil {
 
@@ -119,7 +97,6 @@ public final class ClientPoliciesUtil {
                 profilesJson = objectMapper.writeValueAsString(profilesRep);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
-                fail();
             }
             return profilesJson;
         }
@@ -166,7 +143,6 @@ public final class ClientPoliciesUtil {
                 profileJson = objectMapper.writeValueAsString(profileRep);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
-                fail();
             }
             return profileJson;
         }
@@ -312,7 +288,6 @@ public final class ClientPoliciesUtil {
                 policiesJson = objectMapper.writeValueAsString(policiesRep);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
-                fail();
             }
             return policiesJson;
         }
@@ -368,23 +343,13 @@ public final class ClientPoliciesUtil {
             try {
                 policyJson = objectMapper.writeValueAsString(policyRep);
             } catch (JsonProcessingException e) {
-                fail();
+                e.printStackTrace();
             }
             return policyJson;
         }
     }
 
     // Client Policies - Condition CRUD Operations
-
-    public static TestRaiseExceptionCondition.Configuration createTestRaiseExeptionConditionConfig() {
-        return new TestRaiseExceptionCondition.Configuration();
-    }
-
-    public static TestRaiseExceptionExecutor.Configuration createTestRaiseExeptionExecutorConfig(List<ClientPolicyEvent> events) {
-        TestRaiseExceptionExecutor.Configuration conf = new TestRaiseExceptionExecutor.Configuration();
-        conf.setEvents(events);
-        return conf;
-    }
 
     public static ClientPolicyConditionConfigurationRepresentation createAnyClientConditionConfig() {
         return new ClientPolicyConditionConfigurationRepresentation();
@@ -453,7 +418,7 @@ public final class ClientPoliciesUtil {
     }
 
     // DPoP
-    public static  JWK createRsaJwk(Key publicKey) {
+    public static JWK createRsaJwk(Key publicKey) {
         return JWKBuilder.create()
                 .rsa(publicKey, KeyUse.SIG);
     }
