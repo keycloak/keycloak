@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.util.oauth.oid4vc;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
@@ -21,7 +22,7 @@ public class Oid4vcNonceResponse extends AbstractHttpResponse {
     }
 
     public String getNonce() {
-        return nonceResponse != null ? nonceResponse.getNonce() : null;
+        return Optional.ofNullable(nonceResponse).map(NonceResponse::getNonce).orElseThrow(() ->
+                new IllegalStateException(String.format("[%s] %s", getError(), getErrorDescription())));
     }
-
 }

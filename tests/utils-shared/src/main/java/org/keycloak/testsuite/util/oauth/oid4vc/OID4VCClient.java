@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.util.oauth.oid4vc;
 
-import org.keycloak.protocol.oid4vc.model.Proofs;
+import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -24,16 +24,20 @@ public class OID4VCClient {
         return new CredentialOfferUriRequest(client);
     }
 
-    public Oid4vcCredentialRequest credentialRequest() {
-        return new Oid4vcCredentialRequest(client);
+    public CredentialOfferRequest credentialOfferRequest() {
+        return new CredentialOfferRequest(client);
     }
 
-    public Oid4vcCredentialResponse doCredentialRequest(String accessToken, String credentialConfigurationId, Proofs proofs) {
-        return credentialRequest()
-                .bearerToken(accessToken)
-                .credentialConfigurationId(credentialConfigurationId)
-                .proofs(proofs)
-                .send();
+    public CredentialOfferRequest credentialOfferRequest(String nonce) {
+        return new CredentialOfferRequest(nonce, client);
+    }
+
+    public Oid4vcCredentialRequest credentialRequest() {
+        return new Oid4vcCredentialRequest(client, new CredentialRequest());
+    }
+
+    public Oid4vcCredentialRequest credentialRequest(CredentialRequest credRequest) {
+        return new Oid4vcCredentialRequest(client, credRequest);
     }
 
     public PreAuthorizedCodeGrantRequest preAuthorizedCodeGrantRequest(String preAuthorizedCode) {
@@ -44,23 +48,7 @@ public class OID4VCClient {
         return preAuthorizedCodeGrantRequest(preAuthorizedCode).send();
     }
 
-    public CredentialOfferRequest credentialOfferRequest() {
-        return new CredentialOfferRequest(client);
-    }
-
-    public CredentialOfferRequest credentialOfferRequest(String nonce) {
-        return new CredentialOfferRequest(nonce, client);
-    }
-
-    public CredentialOfferResponse doCredentialOfferRequest(String nonce) {
-        return credentialOfferRequest(nonce).send();
-    }
-
     public Oid4vcNonceRequest nonceRequest() {
         return new Oid4vcNonceRequest(client);
-    }
-
-    public String doNonceRequest() {
-        return nonceRequest().send().getNonce();
     }
 }

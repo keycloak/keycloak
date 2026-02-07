@@ -46,7 +46,6 @@ import org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
-import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -96,7 +95,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     String credScopeName = jwtTypeCredentialScopeName;
     String credConfigId = jwtTypeCredentialConfigurationIdName;
 
-    static class OfferTestContext {
+    class TestContext {
         boolean preAuthorized;
         String issUser;
         String issClient;
@@ -104,33 +103,23 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         String appClient;
         CredentialIssuer issuerMetadata;
         OIDCConfigurationRepresentation authorizationMetadata;
-        SupportedCredentialConfiguration supportedCredentialConfiguration;
-    }
+        SupportedCredentialConfiguration credentialConfiguration;
 
-    OfferTestContext newTestContext(boolean preAuth, String appClient, String appUser) {
-        var ctx = new OfferTestContext();
-        ctx.preAuthorized = preAuth;
-        ctx.issUser = issUsername;
-        ctx.issClient = issClientId;
-        ctx.appUser = appUser;
-        ctx.appClient = appClient;
-        ctx.issuerMetadata = getCredentialIssuerMetadata();
-        ctx.authorizationMetadata = getAuthorizationMetadata(ctx.issuerMetadata.getAuthorizationServers().get(0));
-        ctx.supportedCredentialConfiguration = ctx.issuerMetadata.getCredentialsSupported().get(credConfigId);
-        return ctx;
-    }
-
-    @Test
-    public void testVariousLogins() {
-        assertNotNull(getBearerTokenAndLogout(issClientId, issUsername, "openid"));
-        assertNotNull(getBearerTokenAndLogout(issClientId, appUsername, "openid"));
-        assertNotNull(getBearerTokenAndLogout(namedClientId, issUsername, "openid"));
-        assertNotNull(getBearerTokenAndLogout(namedClientId, appUsername, "openid"));
+        TestContext(boolean preAuth, String appClient, String appUser) {
+            this.preAuthorized = preAuth;
+            this.issUser = issUsername;
+            this.issClient = issClientId;
+            this.appUser = appUser;
+            this.appClient = appClient;
+            this.issuerMetadata = getCredentialIssuerMetadata();
+            this.authorizationMetadata = getAuthorizationMetadata(this.issuerMetadata.getAuthorizationServers().get(0));
+            this.credentialConfiguration = this.issuerMetadata.getCredentialsSupported().get(credConfigId);
+        }
     }
 
     @Test
     public void testCredentialWithoutOffer() throws Exception {
-        var ctx = newTestContext(false, null, appUsername);
+        var ctx = new TestContext(false, null, appUsername);
 
         OID4VCAuthorizationDetailResponse authDetail = new OID4VCAuthorizationDetailResponse();
         authDetail.setType(OPENID_CREDENTIAL);
@@ -150,8 +139,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         // The credential request MUST use credential_identifier (not credential_configuration_id)
         List<OID4VCAuthorizationDetailResponse> authDetailsResponse = JsonSerialization.readValue(
                 JsonSerialization.writeValueAsString(tokenAuthDetails),
-                new TypeReference<List<OID4VCAuthorizationDetailResponse>>() {
-                }
+                new TypeReference<>() {}
         );
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
@@ -160,33 +148,32 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         List<String> credentialIdentifiers = authDetailResponse.getCredentialIdentifiers();
         assertNotNull("credential_identifiers should be present", credentialIdentifiers);
         assertFalse("credential_identifiers should not be empty", credentialIdentifiers.isEmpty());
-        String credentialIdentifier = credentialIdentifiers.get(0);
 
-        var credentialRequest = new CredentialRequest();
-        credentialRequest.setCredentialIdentifier(credentialIdentifier);
+        var credRequest = new CredentialRequest()
+                .setCredentialIdentifier(credentialIdentifiers.get(0));
 
-        CredentialResponse credResponse = sendCredentialRequest(ctx, accessToken, credentialRequest);
+        CredentialResponse credResponse = sendCredentialRequest(accessToken, credRequest);
         verifyCredentialResponse(ctx, credResponse);
     }
 
     @Test
     public void testCredentialOffer_noPreAuth_noClientId_noUserId() throws Exception {
-        runCredentialOfferTest(newTestContext(false, null, null));
+        runCredentialOfferTest(new TestContext(false, null, null));
     }
 
     @Test
     public void testCredentialOffer_noPreAuth_noClientId_UserId() throws Exception {
-        runCredentialOfferTest(newTestContext(false, null, appUsername));
+        runCredentialOfferTest(new TestContext(false, null, appUsername));
     }
 
     @Test
     public void testCredentialOffer_noPreAuth_ClientId_noUserId() throws Exception {
-        runCredentialOfferTest(newTestContext(false, namedClientId, null));
+        runCredentialOfferTest(new TestContext(false, namedClientId, null));
     }
 
     @Test
     public void testCredentialOffer_noPreAuth_ClientId_UserId() throws Exception {
-        runCredentialOfferTest(newTestContext(false, namedClientId, appUsername));
+        runCredentialOfferTest(new TestContext(false, namedClientId, appUsername));
     }
 
     // Pre Authorized --------------------------------------------------------------------------------------------------
@@ -194,7 +181,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testCredentialOffer_PreAuth_noClientId_noUserId() throws Exception {
         try {
-            runCredentialOfferTest(newTestContext(true, null, null));
+            runCredentialOfferTest(new TestContext(true, null, null));
             fail("Expected " + INVALID_CREDENTIAL_OFFER_REQUEST.name());
         } catch (RuntimeException ex) {
             List.of(INVALID_CREDENTIAL_OFFER_REQUEST.name(), "Pre-Authorized credential offer requires a target user")
@@ -204,13 +191,13 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testCredentialOffer_PreAuth_noClientId_UserId() throws Exception {
-        runCredentialOfferTest(newTestContext(true, null, appUsername));
+        runCredentialOfferTest(new TestContext(true, null, appUsername));
     }
 
     @Test
     public void testCredentialOffer_PreAuth_ClientId_noUserId() throws Exception {
         try {
-            runCredentialOfferTest(newTestContext(true, namedClientId, null));
+            runCredentialOfferTest(new TestContext(true, namedClientId, null));
             fail("Expected " + INVALID_CREDENTIAL_OFFER_REQUEST.name());
         } catch (RuntimeException ex) {
             List.of(INVALID_CREDENTIAL_OFFER_REQUEST.name(), "Pre-Authorized credential offer requires a target user")
@@ -220,7 +207,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testCredentialOffer_PreAuth_ClientId_Username() throws Exception {
-        runCredentialOfferTest(newTestContext(true, namedClientId, appUsername));
+        runCredentialOfferTest(new TestContext(true, namedClientId, appUsername));
     }
 
     @Test
@@ -232,7 +219,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         user.update(userRep);
 
         try {
-            runCredentialOfferTest(newTestContext(true, namedClientId, appUsername));
+            runCredentialOfferTest(new TestContext(true, namedClientId, appUsername));
             fail("Expected " + INVALID_CREDENTIAL_OFFER_REQUEST.name());
         } catch (RuntimeException ex) {
             List.of(INVALID_CREDENTIAL_OFFER_REQUEST.name(), "User '" + appUsername + "' disabled")
@@ -244,7 +231,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         }
     }
 
-    void runCredentialOfferTest(OfferTestContext ctx) throws Exception {
+    void runCredentialOfferTest(TestContext ctx) throws Exception {
 
         // Issuer login
         //
@@ -253,7 +240,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         // Exclude scope: <credScope>
         // Require role: credential-offer-create
         verifyTokenJwt(ctx, issToken,
-                List.of(), List.of(ctx.supportedCredentialConfiguration.getScope()),
+                List.of(), List.of(ctx.credentialConfiguration.getScope()),
                 List.of(CREDENTIAL_OFFER_CREATE.getName()), List.of());
 
         // Retrieving the credential-offer-uri
@@ -296,7 +283,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
                 // Get the credential and verify
                 //
-                CredentialResponse credResponse = getCredentialByAuthDetail(ctx, accessToken.getAccessToken(), authDetailResponse);
+                CredentialResponse credResponse = getCredentialByAuthDetail(accessToken.getAccessToken(), authDetailResponse);
                 verifyCredentialResponse(ctx, credResponse);
 
             } else {
@@ -313,7 +300,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
                 // Get the credential and verify
                 //
-                CredentialResponse credResponse = getCredentialByOffer(ctx, accessToken, tokenResponse, credOffer);
+                CredentialResponse credResponse = getCredentialByOffer(accessToken, tokenResponse, credOffer);
                 verifyCredentialResponse(ctx, credResponse);
             }
         } finally {
@@ -366,8 +353,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
             if (authDetails != null) {
                 return JsonSerialization.readValue(
                         JsonSerialization.writeValueAsString(authDetails),
-                        new TypeReference<List<OID4VCAuthorizationDetailResponse>>() {
-                        }
+                        new TypeReference<>() {}
                 );
             }
         } catch (Exception e) {
@@ -396,13 +382,13 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         findUserByUsernameId(testRealm(), userId).logout();
     }
 
-    private String getCredentialOfferUriUrl(OfferTestContext ctx, String token) throws Exception {
+    private String getCredentialOfferUriUrl(TestContext ctx, String token) throws Exception {
         CredentialOfferURI offerURI = getCredentialOfferUri(ctx, token);
         return offerURI.getIssuer() + offerURI.getNonce();
     }
 
-    private CredentialOfferURI getCredentialOfferUri(OfferTestContext ctx, String token) throws Exception {
-        String credConfigId = ctx.supportedCredentialConfiguration.getId();
+    private CredentialOfferURI getCredentialOfferUri(TestContext ctx, String token) throws Exception {
+        String credConfigId = ctx.credentialConfiguration.getId();
         String credOfferUriUrl = getCredentialOfferUriUrl(credConfigId, ctx.preAuthorized, ctx.appUser, ctx.appClient);
         CredentialOfferUriResponse credentialOfferURIResponse = oauth.oid4vc()
                 .credentialOfferUriRequest()
@@ -428,7 +414,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         return credentialOfferURI;
     }
 
-    private CredentialsOffer getCredentialsOffer(OfferTestContext ctx, String offerUri) throws Exception {
+    private CredentialsOffer getCredentialsOffer(TestContext ctx, String offerUri) throws Exception {
         CredentialOfferResponse credentialOfferResponse = oauth.oid4vc()
                 .credentialOfferRequest()
                 .endpoint(offerUri)
@@ -440,11 +426,11 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
                     : "Request failed with status " + statusCode);
         }
         CredentialsOffer credOffer = credentialOfferResponse.getCredentialsOffer();
-        assertEquals(List.of(ctx.supportedCredentialConfiguration.getId()), credOffer.getCredentialConfigurationIds());
+        assertEquals(List.of(ctx.credentialConfiguration.getId()), credOffer.getCredentialConfigurationIds());
         return credOffer;
     }
 
-    private AccessTokenResponse getPreAuthorizedAccessTokenResponse(OID4VCICredentialOfferMatrixTest.OfferTestContext ctx, CredentialsOffer credOffer) throws Exception {
+    private AccessTokenResponse getPreAuthorizedAccessTokenResponse(TestContext ctx, CredentialsOffer credOffer) throws Exception {
         PreAuthorizedCode preAuthorizedCode = credOffer.getGrants().getPreAuthorizedCode();
         AccessTokenResponse accessTokenResponse = oauth.oid4vc()
                 .preAuthorizedCodeGrantRequest(preAuthorizedCode.getPreAuthorizedCode())
@@ -459,22 +445,17 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         return accessTokenResponse;
     }
 
-    private CredentialResponse getCredentialByAuthDetail(OfferTestContext ctx, String accessToken, OID4VCAuthorizationDetailResponse authDetail) throws Exception {
-        List<String> credIdentifiers = authDetail.getCredentialIdentifiers();
+    private CredentialResponse getCredentialByAuthDetail(String accessToken, OID4VCAuthorizationDetailResponse authDetail) throws Exception {
         var credentialRequest = new CredentialRequest();
-        if (credIdentifiers != null) {
-            if (credIdentifiers.size() > 1)
-                throw new IllegalStateException("Multiple credential ids not supported");
-            credentialRequest.setCredentialIdentifier(credIdentifiers.get(0));
-        } else {
-            if (authDetail.getCredentialConfigurationId() == null)
-                throw new IllegalStateException("No credential_configuration_id in: " + JsonSerialization.valueAsString(authDetail));
+        if (authDetail.getCredentialIdentifiers() != null) {
+            credentialRequest.setCredentialIdentifier(authDetail.getCredentialIdentifiers().get(0));
+        } else if (authDetail.getCredentialConfigurationId() == null) {
             credentialRequest.setCredentialConfigurationId(authDetail.getCredentialConfigurationId());
         }
-        return sendCredentialRequest(ctx, accessToken, credentialRequest);
+        return sendCredentialRequest(accessToken, credentialRequest);
     }
 
-    private CredentialResponse getCredentialByOffer(OfferTestContext ctx, String accessToken, AccessTokenResponse tokenResponse, CredentialsOffer credOffer) throws Exception {
+    private CredentialResponse getCredentialByOffer(String accessToken, AccessTokenResponse tokenResponse, CredentialsOffer credOffer) throws Exception {
         List<String> credConfigIds = credOffer.getCredentialConfigurationIds();
         if (credConfigIds.size() > 1)
             throw new IllegalStateException("Multiple credential configuration ids not supported in: " + JsonSerialization.valueAsString(credOffer));
@@ -496,40 +477,26 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
             // No authorization_details, use credential_configuration_id
             credentialRequest.setCredentialConfigurationId(credConfigIds.get(0));
         }
-        
-        return sendCredentialRequest(ctx, accessToken, credentialRequest);
+
+        return sendCredentialRequest(accessToken, credentialRequest);
     }
 
-    private CredentialResponse sendCredentialRequest(OfferTestContext ctx, String accessToken, CredentialRequest credentialRequest) throws Exception {
-        Oid4vcCredentialRequest request = oauth.oid4vc()
-                .credentialRequest()
-                .endpoint(ctx.issuerMetadata.getCredentialEndpoint())
-                .bearerToken(accessToken);
+    private CredentialResponse sendCredentialRequest(String accessToken, CredentialRequest credRequest) {
 
-        if (credentialRequest.getCredentialConfigurationId() != null) {
-            request.credentialConfigurationId(credentialRequest.getCredentialConfigurationId());
-        }
-        if (credentialRequest.getCredentialIdentifier() != null) {
-            request.credentialIdentifier(credentialRequest.getCredentialIdentifier());
-        }
+        Oid4vcCredentialResponse credRequestResponse = oauth.oid4vc()
+                .credentialRequest(credRequest)
+                .bearerToken(accessToken)
+                .send();
 
-        Oid4vcCredentialResponse credentialRequestResponse = request.send();
-        int statusCode = credentialRequestResponse.getStatusCode();
-        if (HttpStatus.SC_OK != statusCode) {
-            throw new IllegalStateException(credentialRequestResponse.getErrorDescription() != null
-                    ? credentialRequestResponse.getErrorDescription()
-                    : "Request failed with status " + statusCode);
-        }
-
-        CredentialResponse credentialResponse = credentialRequestResponse.getCredentialResponse();
-        assertNotNull("The credentials array should be present in the response", credentialResponse.getCredentials());
-        assertFalse("The credentials array should not be empty", credentialResponse.getCredentials().isEmpty());
-        return credentialResponse;
+        CredentialResponse credResponse = credRequestResponse.getCredentialResponse();
+        assertNotNull("The credentials array should be present in the response", credResponse.getCredentials());
+        assertFalse("The credentials array should not be empty", credResponse.getCredentials().isEmpty());
+        return credResponse;
     }
 
-    private void verifyCredentialResponse(OfferTestContext ctx, CredentialResponse credResponse) throws Exception {
+    private void verifyCredentialResponse(TestContext ctx, CredentialResponse credResponse) throws Exception {
 
-        String scope = ctx.supportedCredentialConfiguration.getScope();
+        String scope = ctx.credentialConfiguration.getScope();
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull("The first credential in the array should not be null", credentialObj);
 
@@ -545,7 +512,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     }
 
     private void verifyTokenJwt(
-            OfferTestContext ctx,
+            TestContext ctx,
             String token,
             List<String> includeScopes,
             List<String> excludeScopes,
@@ -560,13 +527,11 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         List<String> allRoles = new ArrayList<>();
         Object realmAccess = jwt.getOtherClaims().get("realm_access");
         if (realmAccess != null) {
-            @SuppressWarnings("unchecked")
             var realmRoles = ((Map<String, List<String>>) realmAccess).get("roles");
             allRoles.addAll(realmRoles);
         }
         Object resourceAccess = jwt.getOtherClaims().get("resource_access");
         if (resourceAccess != null) {
-            @SuppressWarnings("unchecked")
             var resourceAccessMapping = (Map<String, Map<String, List<String>>>) resourceAccess;
             resourceAccessMapping.forEach((k, v) -> {
                 allRoles.addAll(v.get("roles"));
