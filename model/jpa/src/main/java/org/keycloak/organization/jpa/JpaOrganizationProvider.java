@@ -102,7 +102,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             try {
                 ReservedCharValidator.validateNoSpace(name);
             } catch (ReservedCharValidator.ReservedCharException e) {
-                throw new ModelValidationException("Name contains a reserved character and cannot be used as alias");
+                throw new ModelValidationException("Name cannot be used as alias: " + e.getMessage());
             }
             alias = name;
         }
