@@ -296,7 +296,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 public String getUsername() {
                     if (UserModel.USERNAME.equals(userModelAttrName)) {
                         return ofNullable(ldapUser.getAttributeAsString(ldapAttrName))
-                                .map(this::toLowerCaseIfImportEnabled)
+                                .map(this::toLowerCaseIfImportEnabledAndNotOriginalUsername)
                                 .orElse(null);
                     }
                     return super.getUsername();
@@ -306,7 +306,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 public String getEmail() {
                     if (UserModel.EMAIL.equals(userModelAttrName)) {
                         return ofNullable(ldapUser.getAttributeAsString(ldapAttrName))
-                                .map(this::toLowerCaseIfImportEnabled)
+                                .map(this::toLowerCaseIfImportEnabledAndNotOriginalUsername)
                                 .orElse(null);
                     }
                     return super.getEmail();
@@ -348,8 +348,9 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     return true;
                 }
 
-                private String toLowerCaseIfImportEnabled(String value) {
-                    if (getLdapProvider().getModel().isImportEnabled()) {
+                private String toLowerCaseIfImportEnabledAndNotOriginalUsername(String value) {
+                    if (getLdapProvider().getModel().isImportEnabled() &&
+                            !getLdapProvider().getLdapIdentityStore().getConfig().isCaseSensitiveOriginalUsernameOnImport()) {
                         return value.toLowerCase();
                     }
                     return value;
