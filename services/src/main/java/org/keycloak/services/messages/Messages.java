@@ -140,6 +140,8 @@ public class Messages {
 
     public static final String ACCOUNT_UPDATED = "accountUpdatedMessage";
 
+    public static final String ACCOUNT_UPDATED_TITLE = "accountUpdatedTitle";
+
     public static final String ACCOUNT_PASSWORD_UPDATED = "accountPasswordUpdatedMessage";
 
     public static final String NO_ACCESS = "noAccessMessage";
