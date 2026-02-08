@@ -14,6 +14,8 @@ type MemberModalProps = {
   membersQuery: (first?: number, max?: number) => Promise<UserRepresentation[]>;
   onAdd: (users: UserRepresentation[]) => Promise<void>;
   onClose: () => void;
+  titleKey?: string;
+  confirmLabelKey?: string;
 };
 
 const UserDetail = (user: UserRepresentation) => {
@@ -34,6 +36,8 @@ export const MemberModal = ({
   membersQuery,
   onAdd,
   onClose,
+  titleKey = "addMember",
+  confirmLabelKey = "add",
 }: MemberModalProps) => {
   const { adminClient } = useAdminClient();
 
@@ -61,7 +65,7 @@ export const MemberModal = ({
   return (
     <Modal
       variant={ModalVariant.large}
-      title={t("addMember")}
+      title={t(titleKey)}
       isOpen
       onClose={onClose}
       actions={[
@@ -74,7 +78,7 @@ export const MemberModal = ({
             onClose();
           }}
         >
-          {t("add")}
+          {t(confirmLabelKey)}
         </Button>,
         <Button
           data-testid="cancel"
