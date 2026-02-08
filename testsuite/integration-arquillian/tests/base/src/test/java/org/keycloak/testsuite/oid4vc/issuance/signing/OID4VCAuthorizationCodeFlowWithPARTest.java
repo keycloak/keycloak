@@ -137,7 +137,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         assertNotNull("Request URI should not be null", requestUri);
 
         // Step 2: Perform authorization with PAR
-        oauth.client(client.getClientId());
+        oauth.client(clientId);
         oauth.scope(getCredentialClientScope().getName());
         oauth.loginForm().requestUri(requestUri).doLogin("john", "password");
 
@@ -238,7 +238,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         assertNotNull("Request URI should not be null", requestUri);
 
         // Step 2: Perform authorization with PAR
-        oauth.client(client.getClientId());
+        oauth.client(clientId);
         oauth.scope(getCredentialClientScope().getName());
         oauth.loginForm().requestUri(requestUri).doLogin("john", "password");
 
@@ -275,7 +275,6 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         assertNotNull("Request URI should not be null", requestUri);
 
         // Step 2: Perform authorization with PAR
-        oauth.client(client.getClientId());
         oauth.scope(getCredentialClientScope().getName());
         oauth.loginForm().requestUri(requestUri).doLogin("john", "password");
 
@@ -285,7 +284,6 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         // Step 3: Exchange authorization code for tokens
         AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(oauth.getClientId(), "password")
                 .send();
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 

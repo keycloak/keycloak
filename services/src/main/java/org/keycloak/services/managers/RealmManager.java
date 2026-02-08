@@ -19,6 +19,7 @@ package org.keycloak.services.managers;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import jakarta.ws.rs.BadRequestException;
@@ -647,8 +648,7 @@ public class RealmManager {
                 setupOfflineTokens(realm, rep);
             }
 
-
-            if (rep.getClientScopes() == null) {
+            if (isCreateDefaultClientScopes(rep)) {
                 createDefaultClientScopes(realm);
             }
 
@@ -717,6 +717,11 @@ public class RealmManager {
         }
 
         return realm;
+    }
+
+    private boolean isCreateDefaultClientScopes(RealmRepresentation rep) {
+        Map<String, String> repAttributes = rep.getAttributesOrEmpty();
+        return rep.getClientScopes() == null || Boolean.parseBoolean(repAttributes.get("CreateDefaultClientScopes"));
     }
 
     private String determineDefaultRoleName(RealmRepresentation rep) {

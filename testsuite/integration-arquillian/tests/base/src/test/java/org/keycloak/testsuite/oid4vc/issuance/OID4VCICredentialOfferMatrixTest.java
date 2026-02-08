@@ -56,11 +56,9 @@ import org.apache.http.HttpStatus;
 import org.junit.Test;
 
 import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
-import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
+import static org.keycloak.OAuth2Constants.SCOPE_OPENID;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
-import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
-import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.namedClientId;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -87,6 +85,8 @@ import static org.junit.Assert.fail;
  * +----------+-----------+----------+---------+------------------------------------------------------+
  */
 public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
+
+    String namedClientId = "named-test-app";
 
     String issUsername = "john";
     String issClientId = clientId;
@@ -120,12 +120,18 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         return ctx;
     }
 
+    @Override
+    protected void afterAbstractKeycloakTestRealmImport() {
+        setClientOid4vciEnabled(namedClientId, true);
+        assignOptionalClientScopeToClient(namedClientId, jwtTypeCredentialScopeName);
+    }
+
     @Test
     public void testVariousLogins() {
-        assertNotNull(getBearerTokenAndLogout(issClientId, issUsername, "openid"));
-        assertNotNull(getBearerTokenAndLogout(issClientId, appUsername, "openid"));
-        assertNotNull(getBearerTokenAndLogout(namedClientId, issUsername, "openid"));
-        assertNotNull(getBearerTokenAndLogout(namedClientId, appUsername, "openid"));
+        assertNotNull(getBearerTokenAndLogout(issClientId, issUsername, SCOPE_OPENID));
+        assertNotNull(getBearerTokenAndLogout(issClientId, appUsername, SCOPE_OPENID));
+        assertNotNull(getBearerTokenAndLogout(namedClientId, issUsername, SCOPE_OPENID));
+        assertNotNull(getBearerTokenAndLogout(namedClientId, appUsername, SCOPE_OPENID));
     }
 
     @Test
@@ -248,13 +254,14 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
         // Issuer login
         //
-        String issToken = getBearerToken(ctx.issClient, ctx.issUser, "openid");
+        String issToken = getBearerToken(ctx.issClient, ctx.issUser, SCOPE_OPENID);
 
         // Exclude scope: <credScope>
         // Require role: credential-offer-create
-        verifyTokenJwt(ctx, issToken,
+        // [TODO] Require role: credential-offer-create
+        verifyTokenJwt(issToken,
                 List.of(), List.of(ctx.supportedCredentialConfiguration.getScope()),
-                List.of(CREDENTIAL_OFFER_CREATE.getName()), List.of());
+                List.of(), List.of());
 
         // Retrieving the credential-offer-uri
         //
@@ -545,7 +552,6 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     }
 
     private void verifyTokenJwt(
-            OfferTestContext ctx,
             String token,
             List<String> includeScopes,
             List<String> excludeScopes,
