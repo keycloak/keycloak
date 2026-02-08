@@ -288,6 +288,8 @@ public class LoggingDistTest {
                 .statusCode(200);
         Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(
                 () -> assertThat(cliResult.getOutput(), containsString("{kc.realmName=master} DEBUG [org.keycloak.")));
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(
+                () -> assertThat(cliResult.getOutput(), containsString("{kc.requestId=")));
         cliResult.assertStartedDevMode();
     }
 

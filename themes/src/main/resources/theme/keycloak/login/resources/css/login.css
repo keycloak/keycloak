@@ -23,6 +23,10 @@ p.instruction {
     margin: 5px 0;
 }
 
+#kc-error-message > .errorId {
+    margin-top: 10px;
+}
+
 .pf-c-button.pf-m-control {
     border-color: rgba(230, 230, 230, 0.5);
 }

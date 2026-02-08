@@ -68,6 +68,11 @@ div.kc-logo-text span {
     transition:opacity 0.5s;
 }
 
+#kc-error-message > .errorId {
+    margin-top: 10px;
+    font-size: 14px;
+}
+
 /* Show tooltip */
 .kc-login-tooltip:hover .kc-tooltip-text {
     visibility: visible;

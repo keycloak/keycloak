@@ -33,6 +33,7 @@ import static jakarta.ws.rs.HttpMethod.PUT;
 
 public final class KeycloakHandlerChainCustomizer implements HandlerChainCustomizer {
 
+    private final RequestIdHandler REQUEST_ID_HANDLER = new RequestIdHandler();
     private final TransactionalSessionHandler TRANSACTIONAL_SESSION_HANDLER = new TransactionalSessionHandler();
 
     private final FormBodyHandler formBodyHandler = new FormBodyHandler(true, () -> Runnable::run, Set.of());
@@ -44,6 +45,8 @@ public final class KeycloakHandlerChainCustomizer implements HandlerChainCustomi
 
         switch (phase) {
             case BEFORE_METHOD_INVOKE:
+                // Add RequestId handler first to ensure RequestId is available throughout request lifecycle
+                handlers.add(REQUEST_ID_HANDLER);
                 if (!resourceMethod.isFormParamRequired() &&
                     (PATCH.equalsIgnoreCase(resourceMethod.getHttpMethod()) ||
                      POST.equalsIgnoreCase(resourceMethod.getHttpMethod()) ||
