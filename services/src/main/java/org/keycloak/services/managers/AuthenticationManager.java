@@ -1088,6 +1088,7 @@ public class AuthenticationManager {
 
         if (authSession.getAuthNote(END_AFTER_REQUIRED_ACTIONS) != null) {
             LoginFormsProvider infoPage = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", Messages.ACCOUNT_UPDATED_TITLE)
                     .setSuccess(Messages.ACCOUNT_UPDATED);
             if (authSession.getAuthNote(SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS) != null) {
                 if (authSession.getRedirectUri() != null) {
