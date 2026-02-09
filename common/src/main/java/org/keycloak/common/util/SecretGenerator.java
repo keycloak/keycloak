@@ -14,7 +14,7 @@ public class SecretGenerator {
      * Session ID length in bytes.
      * <p />
      * Both NIST and ANSSI ask for at least 128 bits of entropy, see <a href="https://github.com/keycloak/keycloak/issues/38663">#38663</a>.
-     * As we are about to filter those session IDs on each node to find a key of the local segment using Infinispan's org.infinispan.affinity.KeyAffinityServiceFactory,
+     * As we are about to filter those session IDs on each node to find a key of the local segment using org.keycloak.models.sessions.infinispan.SessionAffinityService,
      * we add some more entropy so that the filtering then leaves enough entropy for those IDs.
      * Usually there are 256 segments in a cache. Just in case someone increases it, we add 16 bits.
      * This should handle the case when a caller connects to one node and generates codes (as it is the case with a keep-alive HTTP connection),
