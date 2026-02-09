@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.ProfileConfigResolver;
+import org.keycloak.common.profile.ProfileException;
 
 import org.junit.Test;
 
@@ -46,27 +47,6 @@ public class KeycloakCompatibilityMetadataProviderTest extends AbstractCompatibi
     }
 
     @Test
-    public void testRollingUpgradesV1() {
-        Profile.configure();
-
-        // Make compatibility provider return hardcoded version so we can subtract and add to any of major.minor.micro number
-        KeycloakCompatibilityMetadataProvider compatibilityProvider = new KeycloakCompatibilityMetadataProvider("999.999.999-Final") ;
-
-        // Test compatible
-        assertCompatibility(CompatibilityResult.ExitCode.ROLLING, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "999.999.999-Final")));
-
-        // Test incompatible
-        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "999.999.998-Final")));
-        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "999.999.999-Final1")));
-        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "999.999.997-Final")));
-        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "999.999.1000-Final")));
-        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "999.998.999-Final")));
-        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "998.999.999-Final")));
-        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "999.998.998-Final")));
-        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "998.999.998-Final")));
-    }
-
-    @Test
     public void testRollingUpgradeRefusedWithOtherMetadataNotEquals() {
         // Enable V2 feature
         Profile.configure(new ProfileConfigResolver() {
@@ -96,5 +76,20 @@ public class KeycloakCompatibilityMetadataProviderTest extends AbstractCompatibi
         // Test incompatible
         assertCompatibility(CompatibilityResult.ExitCode.RECREATE, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "999.999.998-Final", "key2", "different-value")));
         assertCompatibility(CompatibilityResult.ExitCode.RECREATE, compatibilityProvider.isCompatible(Map.of(VERSION_KEY, "999.999.998-Final")));
+    }
+
+    @Test(expected = ProfileException.class)
+    public void testDisablingRollingUpdatesV2ThrowsException() {
+        Profile.configure(new ProfileConfigResolver() {
+            @Override
+            public Profile.ProfileName getProfileName() {
+                return null;
+            }
+
+            @Override
+            public FeatureConfig getFeatureConfig(String feature) {
+                return "rolling-updates".equals(feature) ? FeatureConfig.DISABLED : FeatureConfig.UNCONFIGURED;
+            }
+        });
     }
 }

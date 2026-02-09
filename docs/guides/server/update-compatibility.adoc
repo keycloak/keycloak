@@ -17,7 +17,7 @@ Future versions of {project_name} might change that behavior to use additional i
 
 [NOTE]
 ====
-In the next iteration of this feature, it is possible to use rolling update strategy also when updating to the following patch release of {project_name}.
+Rolling updates for patch releases are now fully supported and enabled by default in {project_name}.
 Refer to <<rolling-updates-for-patch-releases>> section for more details.
 ====
 
@@ -106,12 +106,6 @@ If no rolling update is possible, the command provides details about the incompa
 ----
 <1> In this example, the Keycloak version `26.2.0` is not compatible with version `26.2.1` and a rolling update is not possible.
 
-[NOTE]
-====
-In the next iteration of this feature, it is possible to use rolling update strategy also when updating to the following patch release of {project_name}.
-Refer to <<rolling-updates-for-patch-releases>> section for more details.
-====
-
 *Command exit code*
 
 Use the command's exit code to determine the update type in your automation pipeline:
@@ -192,22 +186,19 @@ If a cluster cannot be formed, you should shut down {project_name} running the o
 | `--db-url-port`     | All cluster members should be connecting to the same database to ensure data consistency.
 |===
 
-[WARNING]
-====
-{project_name} allows changes to the `--db-url` option to be rolled out in order to facilitate changes to JDBC properties.
-Great care should be taken when updating this value as changes to the host, port or database name could lead to distinct
-cluster members connecting to a different database, resulting in data consistency issues.
-====
-
 [[rolling-updates-for-patch-releases]]
 == Rolling updates for patch releases
 
-WARNING: This behavior is currently in preview mode, and it is not recommended for use in production.
+Rolling updates for patch releases are now fully supported and enabled by default.
+When upgrading to a newer patch version in the same `+major.minor+` release stream, {project_name} can perform zero-downtime rolling updates.
 
-It is possible to configure the {project_name} compatibility command to allow rolling updates when upgrading to a newer patch version in the same `+major.minor+` release stream.
+To check compatibility for patch version upgrades, use the standard check command:
+<@kc.updatecompatibility parameters="check --file=/path/to/file.json"/>
 
-To enable this behavior for compatibility check command enable feature `rolling-updates:v2` as shown in the following example.
-<@kc.updatecompatibility parameters="check --file=/path/to/file.json --features=rolling-updates:v2"/>
+[NOTE]
+====
+The feature flag `--features=rolling-updates:v2` is no longer required as the functionality is enabled by default and is an essential feature.
+====
 
 Note there is no change needed when generating metadata using `metadata` command.
 

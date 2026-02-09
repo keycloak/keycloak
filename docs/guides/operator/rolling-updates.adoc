@@ -56,8 +56,8 @@ When the image field changes, the Operator scales down the StatefulSet before ap
 |On incompatible changes
 |The {project_name} Operator detects if a rolling or recreate update is possible.
 
-In the current version, {project_name} performs a rolling update if the {project_name} version is the same for the old and the new image.
-Future versions of {project_name} will change that behavior and use additional information from the configuration, the image and the version to determine if a rolling update is possible to reduce downtimes.
+{project_name} now supports rolling updates for patch releases by default and the feature is essential. It performs a rolling update if the {project_name} version is the same or when upgrading to a newer patch version in the same `+major.minor+` release stream.
+Future versions of {project_name} will use additional information from the configuration, the image and the version to determine if a rolling update is possible to reduce downtimes.
 
 |`Explicit`
 |Only the `revision` field changes
@@ -116,27 +116,15 @@ The `message` field explains why this strategy was chosen.
 [[operator-rolling-updates-for-patch-releases]]
 == Rolling updates for patch releases
 
-WARNING: This behavior is currently in an experimental mode, and it is not recommended for use in production.
+Rolling updates for patch releases are now fully supported and enabled by default.
 
-It is possible to enable automatic rolling updates when upgrading to a newer patch version in the same `+major.minor+` release stream.
+When upgrading to a newer patch version in the same `+major.minor+` release stream using the `Auto` update strategy, the Operator will automatically perform a rolling update without downtime.
 
-To enable this behavior, enable feature `rolling-updates:v2` as shown in the following example:
-
-[source,yaml]
-----
-apiVersion: k8s.keycloak.org/v2alpha1
-kind: Keycloak
-metadata:
-  name: example-kc
-spec:
-  features:
-    enabled:
-      - rolling-updates:v2
-  update:
-    strategy: Auto
-----
+[NOTE]
+====
+The feature flag `rolling-updates:v2` is no longer required as the functionality is enabled by default and is an essential feature.
+====
 
 Read more about rolling updates for patch releases in the <@links.server id="update-compatibility" anchor="rolling-updates-for-patch-releases" /> {section}.
 
 </@tmpl.guide>
-
