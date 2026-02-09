@@ -39,6 +39,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -80,7 +81,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
 
     /**
      * GET /clients
-     * Permissions: auth.clients().requireList() + auth.clients().canView() + auth.roles().requireList() + auth.roles().requireView()
+     * Permissions: auth.clients().requireList() || auth.clients().requireView()
      */
     @Test
     public void listClients() throws Exception {
@@ -109,6 +110,13 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
             assertEquals(200, response.getStatusLine().getStatusCode());
         }
 
+        // manage-clients: should be able to list clients (has requireList via MANAGE_CLIENTS role)
+        setAuthHeader(request, adminClients.get("manage-clients"));
+        try (var response = client.execute(request)) {
+            EntityUtils.consumeQuietly(response.getEntity());
+            assertEquals(200, response.getStatusLine().getStatusCode());
+        }
+
         // no-access: should get 403 (lacks requireList)
         setAuthHeader(request, adminClients.get("no-access"));
         try (var response = client.execute(request)) {
@@ -126,7 +134,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         HttpPost request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request, adminClients.get("realm-admin"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-create-realm-admin"))));
+        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-create-realm-admin", "new-role1", "new-role2"))));
         try (var response = client.execute(request)) {
             EntityUtils.consumeQuietly(response.getEntity());
             assertEquals(201, response.getStatusLine().getStatusCode());
@@ -136,7 +144,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request, adminClients.get("manage-clients"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-create-manage"))));
+        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-create-manage", "new-role1", "new-role2"))));
         try (var response = client.execute(request)) {
             EntityUtils.consumeQuietly(response.getEntity());
             assertEquals(201, response.getStatusLine().getStatusCode());
@@ -146,25 +154,19 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request, adminClients.get("view-clients"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-create-view"))));
+        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-create-view", "new-role1", "new-role2"))));
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
         }
 
         // query-clients: should get 403 (lacks requireManage)
-        request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request, adminClients.get("query-clients"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-create-query"))));
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
         }
 
         // no-access: should get 403 (lacks requireManage)
-        request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request, adminClients.get("no-access"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-create-noaccess"))));
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
         }
@@ -172,7 +174,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
 
     /**
      * GET /clients/{client}
-     * Permissions: auth.clients().requireView(client) + auth.roles().requireView(client) + ClientPolicyEvent.VIEW
+     * Permissions: auth.clients().requireView(client) + ClientPolicyEvent.VIEW
      */
     @Test
     public void getClient() throws Exception {
@@ -180,6 +182,15 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
 
         // view-clients: should be able to get individual client (has requireView)
         setAuthHeader(request, adminClients.get("view-clients"));
+        try (var response = client.execute(request)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent())
+                    .readValueAs(OIDCClientRepresentation.class);
+            assertThat(client.getClientId(), is("test-client"));
+        }
+
+        // manage-clients: should be able to get individual client (has requireView)
+        setAuthHeader(request, adminClients.get("manage-clients"));
         try (var response = client.execute(request)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
             OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent())
@@ -214,6 +225,18 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
             assertEquals(404, response.getStatusLine().getStatusCode());
         }
 
+        // manage-clients: should get 404 (has canList, client doesn't exist)
+        setAuthHeader(request, adminClients.get("manage-clients"));
+        try (var response = client.execute(request)) {
+            assertEquals(404, response.getStatusLine().getStatusCode());
+        }
+
+        // query-clients: should get 404 (has canList, client doesn't exist)
+        setAuthHeader(request, adminClients.get("query-clients"));
+        try (var response = client.execute(request)) {
+            assertEquals(404, response.getStatusLine().getStatusCode());
+        }
+
         // TODO - our V2 logic does not handle the anti-ID phishing yet
         // TODO - issue https://github.com/keycloak/keycloak/issues/46010
         // no-access: should get 403 (lacks canList, prevents ID phishing)
@@ -234,10 +257,13 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         HttpPut request = new HttpPut(getClientsApiUrl() + "/test-update-admin");
         setAuthHeader(request, adminClients.get("realm-admin"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-update-admin", "Updated"))));
+        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-update-admin", "role123", "my-role"))));
         try (var response = client.execute(request)) {
-            EntityUtils.consumeQuietly(response.getEntity());
             assertEquals(200, response.getStatusLine().getStatusCode());
+            OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent())
+                    .readValueAs(OIDCClientRepresentation.class);
+            assertThat(client.getClientId(), is("test-update-admin"));
+            assertThat(client.getRoles(), containsInAnyOrder("role123", "my-role"));
         }
 
         // manage-clients: should be able to update clients (has requireConfigure)
@@ -245,10 +271,13 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         request = new HttpPut(getClientsApiUrl() + "/test-update-manage");
         setAuthHeader(request, adminClients.get("manage-clients"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-update-manage", "Updated"))));
+        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-update-manage", "role123", "my-role"))));
         try (var response = client.execute(request)) {
-            EntityUtils.consumeQuietly(response.getEntity());
             assertEquals(200, response.getStatusLine().getStatusCode());
+            OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent())
+                    .readValueAs(OIDCClientRepresentation.class);
+            assertThat(client.getClientId(), is("test-update-manage"));
+            assertThat(client.getRoles(), containsInAnyOrder("role123", "my-role"));
         }
 
         // view-clients: should get 403 (lacks requireConfigure)
@@ -256,7 +285,13 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         request = new HttpPut(getClientsApiUrl() + "/test-update-view");
         setAuthHeader(request, adminClients.get("view-clients"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-update-view", "Updated"))));
+        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-update-view", "role123", "my-role"))));
+        try (var response = client.execute(request)) {
+            assertEquals(403, response.getStatusLine().getStatusCode());
+        }
+
+        // query-clients: should get 403 (lacks requireConfigure)
+        setAuthHeader(request, adminClients.get("query-clients"));
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
         }
@@ -289,6 +324,18 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         request.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
+        }
+
+        // query-clients: should get 403 (lacks requireConfigure)
+        setAuthHeader(request, adminClients.get("query-clients"));
+        try (var response = client.execute(request)) {
+            assertEquals(403, response.getStatusLine().getStatusCode());
+        }
+
+        // manage-clients: should be able to patch clients (has manage-clients)
+        setAuthHeader(request, adminClients.get("manage-clients"));
+        try (var response = client.execute(request)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
         }
     }
 
@@ -323,16 +370,12 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         }
 
         // query-clients: should get 403 (lacks requireManage)
-        createTestClient("test-delete-query");
-        request = new HttpDelete(getClientsApiUrl() + "/test-delete-query");
         setAuthHeader(request, adminClients.get("query-clients"));
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
         }
 
         // no-access: should get 403 (lacks requireManage)
-        createTestClient("test-delete-noaccess");
-        request = new HttpDelete(getClientsApiUrl() + "/test-delete-noaccess");
         setAuthHeader(request, adminClients.get("no-access"));
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
@@ -346,7 +389,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
     @Test
     public void getRealmAdmin() throws Exception {
         // Users authenticated to 'authztest' should be able to access 'authztest' realm admin resources
-        String ownRealmUrl = "http://localhost:8080/admin/realms/authztest";
+        String ownRealmUrl = "http://localhost:8080/admin/realms/%s".formatted(getRealmName());
         HttpGet request = new HttpGet(ownRealmUrl);
 
         // should successfully access own realm (200 OK)
@@ -375,95 +418,11 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         }
     }
 
-    /**
-     * POST /clients (with client roles)
-     * Permissions: auth.clients().requireManage() + auth.roles().requireManage() + auth.roles().requireMapComposite()
-     */
-    @Test
-    public void createClientWithRoles() throws Exception {
-        // manage-clients: should be able to create clients with roles
-        HttpPost request = new HttpPost(getClientsApiUrl());
-        setAuthHeader(request, adminClients.get("manage-clients"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        OIDCClientRepresentation rep = createClientRep("test-create-roles");
-        rep.setRoles(Set.of("role1", "role2"));
-        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-        try (var response = client.execute(request)) {
-            assertEquals(201, response.getStatusLine().getStatusCode());
-            OIDCClientRepresentation created = mapper.createParser(response.getEntity().getContent())
-                    .readValueAs(OIDCClientRepresentation.class);
-            assertThat(created.getRoles(), is(Set.of("role1", "role2")));
-        }
-
-        // view-clients: should get 403 (lacks requireManage for clients)
-        request = new HttpPost(getClientsApiUrl());
-        setAuthHeader(request, adminClients.get("view-clients"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        rep = createClientRep("test-create-roles-view");
-        rep.setRoles(Set.of("role1"));
-        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-        try (var response = client.execute(request)) {
-            assertEquals(403, response.getStatusLine().getStatusCode());
-        }
-    }
-
-    /**
-     * PUT /clients/{client} (updating client roles)
-     * Permissions: auth.clients().requireConfigure(client) + auth.roles().requireManage() + auth.roles().requireMapComposite()
-     */
-    @Test
-    public void updateClientRoles() throws Exception {
-        // manage-clients: should be able to update client roles
-        createTestClient("test-update-roles-manage");
-        HttpPut request = new HttpPut(getClientsApiUrl() + "/test-update-roles-manage");
-        setAuthHeader(request, adminClients.get("manage-clients"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        OIDCClientRepresentation rep = createClientRep("test-update-roles-manage");
-        rep.setRoles(Set.of("new-role1", "new-role2"));
-        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-        try (var response = client.execute(request)) {
-            assertEquals(200, response.getStatusLine().getStatusCode());
-            OIDCClientRepresentation updated = mapper.createParser(response.getEntity().getContent())
-                    .readValueAs(OIDCClientRepresentation.class);
-            assertThat(updated.getRoles(), is(Set.of("new-role1", "new-role2")));
-        }
-
-        // view-clients: should get 403 (lacks requireConfigure)
-        createTestClient("test-update-roles-view");
-        request = new HttpPut(getClientsApiUrl() + "/test-update-roles-view");
-        setAuthHeader(request, adminClients.get("view-clients"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        rep = createClientRep("test-update-roles-view");
-        rep.setRoles(Set.of("new-role"));
-        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-        try (var response = client.execute(request)) {
-            assertEquals(403, response.getStatusLine().getStatusCode());
-        }
-
-        // manage-realm-admin: should get 403 (has MANAGE_REALM but lacks auth.roles().requireManage() for client-specific roles)
-        createTestClient("test-update-roles-realm");
-        request = new HttpPut(getClientsApiUrl() + "/test-update-roles-realm");
-        setAuthHeader(request, adminClients.get("manage-realm"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        rep = createClientRep("test-update-roles-realm");
-        rep.setRoles(Set.of("forbidden-role"));
-        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-        try (var response = client.execute(request)) {
-            assertEquals(403, response.getStatusLine().getStatusCode());
-        }
-    }
-
-    private OIDCClientRepresentation createClientRep(String clientId) {
-        return createClientRep(clientId, null);
-    }
-
-    private OIDCClientRepresentation createClientRep(String clientId, String description) {
+    private OIDCClientRepresentation createClientRep(String clientId, String... roles) {
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setClientId(clientId);
         rep.setEnabled(true);
-        if (description != null) {
-            rep.setDescription(description);
-        }
+        rep.setRoles(new HashSet<>(List.of(roles)));
         return rep;
     }
 
@@ -471,7 +430,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         HttpPost request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request, adminClients.get("realm-admin"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep(clientId))));
+        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep(clientId, "test-role1", "test-role2"))));
         try (var response = client.execute(request)) {
             EntityUtils.consumeQuietly(response.getEntity());
             assertEquals(201, response.getStatusLine().getStatusCode());
@@ -491,7 +450,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
     public static class AdminV2WithAuthzConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.CLIENT_ADMIN_API_V2, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
+            return config.features(Profile.Feature.CLIENT_ADMIN_API_V2);
         }
     }
 
