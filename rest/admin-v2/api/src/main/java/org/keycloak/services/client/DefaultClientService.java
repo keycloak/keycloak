@@ -14,6 +14,9 @@ import jakarta.annotation.Nullable;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.events.admin.v2.AdminEventV2Builder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -27,6 +30,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.ServiceException;
+import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.ClientsResource;
 import org.keycloak.services.resources.admin.RealmAdminResource;
@@ -43,7 +47,9 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.http.HttpEntity;
 import org.apache.http.util.EntityUtils;
 
-// TODO
+/**
+ * Default implementation of ClientService for Admin API v2.
+ */
 public class DefaultClientService implements ClientService {
     private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
 
@@ -54,12 +60,14 @@ public class DefaultClientService implements ClientService {
     // v1 resources
     private final RealmAdminResource realmResource;
     private final ClientsResource clientsResource;
+    private final AdminEventV2Builder adminEventBuilder;
     private ClientResource clientResource;
 
     public DefaultClientService(@Nonnull KeycloakSession session,
                                 @Nonnull AdminPermissionEvaluator permissions,
                                 @Nonnull RealmAdminResource realmResource,
-                                @Nullable ClientResource clientResource) {
+                                @Nullable ClientResource clientResource,
+                                @Nullable AdminAuth adminAuth) {
         this.session = session;
         this.permissions = permissions;
         this.validator = new HibernateValidatorProvider();
@@ -67,12 +75,16 @@ public class DefaultClientService implements ClientService {
         this.realmResource = realmResource;
         this.clientsResource = realmResource.getClients();
         this.clientResource = clientResource;
+        RealmModel realm = session.getContext().getRealm();
+        this.adminEventBuilder = new AdminEventV2Builder(realm, adminAuth, session, session.getContext().getConnection())
+                .resource(ResourceType.CLIENT);
     }
 
     public DefaultClientService(@Nonnull KeycloakSession session,
                                 @Nonnull AdminPermissionEvaluator permissions,
-                                @Nonnull RealmAdminResource realmResource) {
-        this(session, permissions, realmResource, null);
+                                @Nonnull RealmAdminResource realmResource,
+                                @Nonnull AdminAuth auth) {
+        this(session, permissions, realmResource, null, auth);
     }
 
     protected void avoidClientIdPhishing() throws ServiceException {
@@ -152,7 +164,25 @@ public class DefaultClientService implements ClientService {
         }
         var updated = mapper.fromModel(model);
 
+        // Fire v2 admin event (in parallel to v1 events fired by clientsResource/clientResource)
+        fireAdminEvent(created ? OperationType.CREATE : OperationType.UPDATE, model.getId(), updated);
+
         return new CreateOrUpdateResult(updated, created);
+    }
+
+    /**
+     * Fires a v2 admin event for client operations.
+     *
+     * @param operationType the type of operation (CREATE, UPDATE, DELETE)
+     * @param clientUuid the UUID of the client
+     * @param representation the v2 representation of the client
+     */
+    private void fireAdminEvent(OperationType operationType, String clientUuid, BaseClientRepresentation representation) {
+        adminEventBuilder
+                .operation(operationType)
+                .resourcePath("clients", clientUuid)
+                .representation(representation)
+                .success();
     }
 
     @Override
