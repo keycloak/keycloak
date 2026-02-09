@@ -221,10 +221,10 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             cached = null;
         }
 
-        UserModel adapter = null;
+        UserModel adapter;
         if (cached == null) {
             logger.trace("not cached");
-            Long loaded = cache.getCurrentRevision(id);
+            long loaded = cache.getCurrentRevision(id);
             UserModel delegate = getDelegate().getUserById(realm, id);
             if (delegate == null) {
                 logger.trace("delegate returning null");
@@ -278,7 +278,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
         if (query == null) {
             logger.tracev("query null");
-            Long loaded = cache.getCurrentRevision(cacheKey);
+            long loaded = cache.getCurrentRevision(cacheKey);
             UserModel model = getDelegate().getUserByUsername(realm, username);
             if (model == null) {
                 logger.tracev("model from delegate null");
@@ -388,7 +388,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         return userAdapter;
     }
 
-    protected UserModel cacheUser(RealmModel realm, UserModel delegate, Long revision) {
+    protected UserModel cacheUser(RealmModel realm, UserModel delegate, long revision) {
         int notBefore = getDelegate().getNotBeforeOfUser(realm, delegate);
 
         if (isReadOnlyOrganizationMember(session, delegate)) {
@@ -443,7 +443,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         UserListQuery query = cache.get(cacheKey, UserListQuery.class);
 
         if (query == null) {
-            Long loaded = cache.getCurrentRevision(cacheKey);
+            long loaded = cache.getCurrentRevision(cacheKey);
             UserModel model = getDelegate().getUserByEmail(realm, email);
             if (model == null) return null;
             String userId = model.getId();
@@ -494,9 +494,9 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         }
         UserListQuery query = cache.get(cacheKey, UserListQuery.class);
 
-        String userId = null;
+        String userId;
         if (query == null) {
-            Long loaded = cache.getCurrentRevision(cacheKey);
+            long loaded = cache.getCurrentRevision(cacheKey);
             UserModel model = getDelegate().getUserByFederatedIdentity(realm, socialLink);
             if (model == null) return null;
             userId = model.getId();
@@ -574,10 +574,10 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         }
         UserListQuery query = cache.get(cacheKey, UserListQuery.class);
 
-        String userId = null;
+        String userId;
         if (query == null) {
             logger.tracev("query null");
-            Long loaded = cache.getCurrentRevision(cacheKey);
+            long loaded = cache.getCurrentRevision(cacheKey);
             UserModel model = getDelegate().getServiceAccount(client);
             if (model == null) {
                 logger.tracev("model from delegate null");
@@ -699,7 +699,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         CachedFederatedIdentityLinks cachedLinks = cache.get(cacheKey, CachedFederatedIdentityLinks.class);
 
         if (cachedLinks == null) {
-            Long loaded = cache.getCurrentRevision(cacheKey);
+            long loaded = cache.getCurrentRevision(cacheKey);
             Set<FederatedIdentityModel> federatedIdentities = getDelegate().getFederatedIdentitiesStream(realm, user)
                     .collect(Collectors.toSet());
             cachedLinks = new CachedFederatedIdentityLinks(loaded, cacheKey, realm, federatedIdentities);
@@ -773,7 +773,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
                 consents = Collections.singletonList(new CachedUserConsent(consent));
             }
 
-            Long loaded = cache.getCurrentRevision(cacheKey);
+            long loaded = cache.getCurrentRevision(cacheKey);
             cached = new CachedUserConsents(loaded, cacheKey, realm, consents, false);
             cache.addRevisioned(cached, startupRevision); // this is from Keycloak's internal store, cache indefinitely
         }
@@ -813,8 +813,8 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         }
 
         if (cached == null) {
-            Long loaded = cache.getCurrentRevision(cacheKey);
-            List<UserConsentModel> consents = getDelegate().getConsentsStream(realm, userId).collect(Collectors.toList());
+            long loaded = cache.getCurrentRevision(cacheKey);
+            List<UserConsentModel> consents = getDelegate().getConsentsStream(realm, userId).toList();
             cached = new CachedUserConsents(loaded, cacheKey, realm, consents.stream().map(CachedUserConsent::new).collect(Collectors.toList()));
             cache.addRevisioned(cached, startupRevision); // this is from Keycloak's internal store, cache indefinitely
             return consents.stream();

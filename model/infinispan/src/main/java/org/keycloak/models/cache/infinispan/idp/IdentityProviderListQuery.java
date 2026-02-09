@@ -29,14 +29,14 @@ public class IdentityProviderListQuery extends AbstractRevisioned implements InR
     private final String realmId;
     private final Map<String, Set<String>> searchKeys;
 
-    public IdentityProviderListQuery(Long revision, String id, RealmModel realm, String searchKey, Set<String> result) {
+    public IdentityProviderListQuery(long revision, String id, RealmModel realm, String searchKey, Set<String> result) {
         super(revision, id);
         this.realmId = realm.getId();
         this.searchKeys = new HashMap<>();
         this.searchKeys.put(searchKey, result);
     }
 
-    public IdentityProviderListQuery(Long revision, String id, RealmModel realm, String searchKey, Set<String> result, IdentityProviderListQuery previous) {
+    public IdentityProviderListQuery(long revision, String id, RealmModel realm, String searchKey, Set<String> result, IdentityProviderListQuery previous) {
         super(revision, id);
         this.realmId = realm.getId();
         this.searchKeys = new HashMap<>();
