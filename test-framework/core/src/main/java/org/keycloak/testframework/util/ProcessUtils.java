@@ -1,29 +1,12 @@
 package org.keycloak.testframework.util;
 
 import java.util.Iterator;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.quarkus.runtime.Environment;
 
 public class ProcessUtils {
-
-    public static ProcessHandle waitForDescendent(Process process) {
-        long timeout = System.currentTimeMillis() + 5000;
-        while (System.currentTimeMillis() < timeout) {
-            Optional<ProcessHandle> descendent = process.descendants().findFirst();
-            if (descendent.isPresent()) {
-                return descendent.get();
-            }
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        throw new RuntimeException("Descendent process not started within timeout");
-    }
 
     public static boolean killProcess(String pid) {
         try {

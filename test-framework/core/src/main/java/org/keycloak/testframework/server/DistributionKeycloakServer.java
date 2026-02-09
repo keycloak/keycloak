@@ -108,6 +108,12 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
             waitForStart(outputHandler);
 
+            List<ProcessHandle> descendants = keycloakProcess.descendants().toList();
+            if (descendants.size() != 1) {
+                throw new RuntimeException("Started process does not have a single descendant, unable to identify running process");
+            }
+
+            FileUtils.writeToFile(getPidFile(), descendants.get(0).pid());
             FileUtils.writeToFile(getServerArgsFile(), String.join(" ", args));
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -164,9 +170,6 @@ public class DistributionKeycloakServer implements KeycloakServer {
             keycloakProcess = pb.start();
             outputHandler = new OutputHandler(keycloakProcess);
             new Thread(outputHandler).start();
-
-            ProcessHandle descendent = ProcessUtils.waitForDescendent(keycloakProcess);
-            FileUtils.writeToFile(getPidFile(), descendent.pid());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
