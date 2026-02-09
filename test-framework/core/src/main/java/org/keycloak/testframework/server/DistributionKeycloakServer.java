@@ -108,6 +108,9 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
             waitForStart(outputHandler);
 
+            if (!Environment.isWindows()) {
+                FileUtils.writeToFile(getPidFile(), ProcessUtils.getKeycloakPid(keycloakProcess));
+            }
             FileUtils.writeToFile(getServerArgsFile(), String.join(" ", args));
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -164,9 +167,6 @@ public class DistributionKeycloakServer implements KeycloakServer {
             keycloakProcess = pb.start();
             outputHandler = new OutputHandler(keycloakProcess);
             new Thread(outputHandler).start();
-
-            ProcessHandle descendent = ProcessUtils.waitForDescendent(keycloakProcess);
-            FileUtils.writeToFile(getPidFile(), descendent.pid());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
