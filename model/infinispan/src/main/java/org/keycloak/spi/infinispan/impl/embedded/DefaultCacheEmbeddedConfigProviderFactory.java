@@ -68,7 +68,7 @@ import static org.keycloak.spi.infinispan.impl.embedded.JGroupsConfigurator.crea
  * They have access to the {@link ConfigurationBuilderHolder}, and they can modify it as needed for their custom
  * providers.
  */
-public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedConfigProviderFactory, CacheEmbeddedConfigProvider {
+public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedConfigProviderFactory {
 
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -85,13 +85,17 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
     public static final String MACHINE_NAME = "machineName";
     public static final String RACK_NAME = "rackName";
 
-    private volatile ConfigurationBuilderHolder builderHolder;
     private volatile Config.Scope keycloakConfig;
 
     @Override
     public CacheEmbeddedConfigProvider create(KeycloakSession session) {
-        lazyInit(session.getKeycloakSessionFactory());
-        return this;
+        return () -> {
+            try {
+                return createConfiguration(session.getKeycloakSessionFactory());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 
     @Override
@@ -101,12 +105,6 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        lazyInit(factory);
-    }
-
-    @Override
-    public ConfigurationBuilderHolder configuration() {
-        return builderHolder;
     }
 
     @Override
@@ -141,22 +139,6 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
         return Set.of(JGroupsCertificateProvider.class);
-    }
-
-    private void lazyInit(KeycloakSessionFactory factory) {
-        if (builderHolder != null) {
-            return;
-        }
-        synchronized (this) {
-            if (builderHolder != null) {
-                return;
-            }
-            try {
-                builderHolder = createConfiguration(factory);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     protected ConfigurationBuilderHolder createConfiguration(KeycloakSessionFactory factory) throws IOException {
