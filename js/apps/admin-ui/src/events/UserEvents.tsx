@@ -99,22 +99,22 @@ const UserDetailLink = (event: EventRepresentation) => {
   const userName = event.details ? event.details["username"] : null;
   const userId = event.userId;
 
-    return userId ? (
-        <div>
-            <Link
-                key={`link-${event.time}-${event.type}`}
-                to={toUser({
-                    realm,
-                    id: userId,
-                    tab: "settings",
-                })}
-            >
-                {userName || userId}
-            </Link>
-            { userName && (` ( ${userId} )`) }
-        </div>
-    ) : (
-        t("noUserDetails")
+  return userId ? (
+    <div>
+      <Link
+        key={`link-${event.time}-${event.type}`}
+        to={toUser({
+          realm,
+          id: userId,
+          tab: "settings",
+        })}
+      >
+        {userName || userId}
+      </Link>
+      {userName && ` ( ${userId} )`}
+    </div>
+  ) : (
+    t("noUserDetails")
   );
 };
 
