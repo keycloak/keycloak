@@ -22,7 +22,7 @@ https://localhost:8080{kc_base_path}
   Used for the User Info service described in the OIDC specification.
 
 /realms/{realm-name}/protocol/openid-connect/revoke::
-  Used for OAuth 2.0 Token Revocation described in https://datatracker.ietf.org/doc/html/rfc7009[RFC7009].
+  Used for OAuth 2.0 Token Revocation described in https://datatracker.ietf.org/doc/html/rfc7009[RFC 7009].
 
 /realms/{realm-name}/protocol/openid-connect/certs::
   Used for the JSON Web Key Set (JWKS) containing the public keys used to verify any JSON Web Token (jwks_uri)

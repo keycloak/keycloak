@@ -19,12 +19,6 @@ package org.keycloak.operator.testsuite.unit;
 
 import java.util.List;
 
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakNetworkPolicyDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -33,6 +27,13 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.testsuite.utils.MockController;
+
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -144,7 +145,8 @@ public class NetworkPolicyLogicTest {
                 namespaceSelectorWithMatchLabel("kubernetes.io/name", "keycloak")
         ));
         var networkPolicy = assertEnabledAndGet(kc);
-        CRAssert.assertIngressRules(networkPolicy, kc, -1, Constants.KEYCLOAK_HTTPS_PORT, -1);
+        var mgmtPort = legacyOption ? -1 : Constants.KEYCLOAK_MANAGEMENT_PORT;
+        CRAssert.assertIngressRules(networkPolicy, kc, -1, Constants.KEYCLOAK_HTTPS_PORT, mgmtPort);
     }
 
     @Test

@@ -19,8 +19,11 @@
 
 package org.keycloak.testsuite.oauth.tokenexchange;
 
-import org.junit.Rule;
-import org.junit.Test;
+import java.util.Arrays;
+import java.util.List;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
@@ -35,21 +38,21 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import jakarta.ws.rs.core.Response;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * Tests for standard token exchange (internal-internal) and token-exchange-v1
@@ -58,6 +61,7 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  */
 @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
 @EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
+@DisableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2, skipRestart = true)
 public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
 
     @Rule

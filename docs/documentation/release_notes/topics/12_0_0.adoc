@@ -39,7 +39,7 @@ The old PatternFly 3 runs simultaneously with the new one, so it's possible to h
 
 There are also design changes in the login theme for better user experience.
 You can even define an icon for your custom Identity providers.
-For details, please refer to the link:{developerguide_link}#custom-identity-providers-icons[docs].
+For details, please refer to the link:https://www.keycloak.org/ui-customization/themes#custom-identity-providers-icons[themes guide].
 
 == Gatekeeper EOL
 Gatekeeper reached end of life, in November 21. This means that we no longer support, or update it. The announcement is available https://www.keycloak.org/2020/08/sunsetting-louketo-project.adoc[here].

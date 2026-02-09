@@ -17,23 +17,27 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.enterprise.inject.spi.CDI;
+
+import org.keycloak.common.Version;
+
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
-import jakarta.enterprise.inject.spi.CDI;
+import io.opentelemetry.semconv.CodeAttributes;
+import io.opentelemetry.semconv.incubating.CodeIncubatingAttributes;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.resteasy.reactive.common.model.ResourceClass;
 import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
 import org.jboss.resteasy.reactive.server.model.HandlerChainCustomizer;
 import org.jboss.resteasy.reactive.server.model.ServerResourceMethod;
 import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
-import org.keycloak.common.Version;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public final class KeycloakTracingCustomizer implements HandlerChainCustomizer {
 
@@ -41,11 +45,13 @@ public final class KeycloakTracingCustomizer implements HandlerChainCustomizer {
         private final String className;
         private final String methodName;
         private final String spanName;
+        private final String functionName;
 
         public StartHandler(String className, String methodName) {
             this.className = className;
             this.methodName = methodName;
             this.spanName = StringUtils.substringAfterLast(className, ".") + "." + methodName;
+            this.functionName = className + "." + methodName;
         }
 
         @Override
@@ -57,15 +63,19 @@ public final class KeycloakTracingCustomizer implements HandlerChainCustomizer {
             Tracer myTracer = openTelemetry.getTracer(this.getClass().getName(), Version.VERSION);
             SpanBuilder spanBuilder = myTracer.spanBuilder(spanName);
             spanBuilder.setParent(Context.current().with(Span.current()));
-            spanBuilder.setAttribute("code.function", methodName);
-            spanBuilder.setAttribute("code.namespace", className);
+            spanBuilder.setAttribute(CodeAttributes.CODE_FUNCTION_NAME, functionName);
+            // for backwards compatibility. deprecated in 26.6, to be removed in 27.0
+            spanBuilder.setAttribute(CodeIncubatingAttributes.CODE_FUNCTION, methodName);
+            spanBuilder.setAttribute(CodeIncubatingAttributes.CODE_NAMESPACE, className);
+            // end deprecation
+
             Span span = spanBuilder.startSpan();
             requestContext.setProperty("span", span);
             requestContext.setProperty("scope", span.makeCurrent());
         }
     }
 
-    private static class EndHandler implements ServerRestHandler {
+    public static class EndHandler implements ServerRestHandler {
         @Override
         public void handle(ResteasyReactiveRequestContext requestContext) {
             Scope scope = (Scope) requestContext.getProperty("scope");

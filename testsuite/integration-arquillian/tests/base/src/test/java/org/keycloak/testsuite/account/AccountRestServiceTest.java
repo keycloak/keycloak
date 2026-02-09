@@ -16,16 +16,22 @@
  */
 package org.keycloak.testsuite.account;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
-import org.apache.http.Header;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -34,26 +40,30 @@ import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAu
 import org.keycloak.authentication.requiredactions.DeleteCredentialAction;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
-import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialTypeMetadata;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
+import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
-import org.keycloak.representations.idm.UserProfileAttributeMetadata;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
@@ -66,32 +76,32 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
+import org.keycloak.representations.idm.UserProfileAttributeMetadata;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.UserProfileContext;
 
-import jakarta.ws.rs.ClientErrorException;
-import jakarta.ws.rs.core.Response;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.http.Header;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.hamcrest.Matchers;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ALL;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -103,7 +113,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ALL;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -306,7 +315,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             user.setFirstName(originalFirstName);
             user.setLastName(originalLastName);
             user.setEmail(originalEmail);
-            SimpleHttp.Response response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+            SimpleHttpResponse response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
             System.out.println(response.asString());
             assertEquals(204, response.getStatus());
         }
@@ -354,7 +363,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             adminClient.realm("test").update(realmRep);
 
             user.setEmail(originalEmail);
-            SimpleHttp.Response response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+            SimpleHttpResponse response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
             System.out.println(response.asString());
             assertEquals(204, response.getStatus());
         }
@@ -414,7 +423,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             user.setFirstName(originalFirstName);
             user.setLastName(originalLastName);
             user.setEmail(originalEmail);
-            SimpleHttp.Response response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+            SimpleHttpResponse response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
             System.out.println(response.asString());
             assertEquals(204, response.getStatus());
         }
@@ -521,7 +530,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             user.setFirstName(originalFirstName);
             user.setLastName(originalLastName);
             user.setEmail(originalEmail);
-            SimpleHttp.Response response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+            SimpleHttpResponse response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
             System.out.println(response.asString());
             assertEquals(204, response.getStatus());
         }
@@ -571,7 +580,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
             user.setUsername(originalUsername);
             user.setAttributes(originalAttributes);
-            SimpleHttp.Response response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+            SimpleHttpResponse response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
             System.out.println(response.asString());
             assertEquals(204, response.getStatus());
         }
@@ -603,11 +612,11 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void testCors() throws IOException {
         String accountUrl = getAccountUrl(null);
-        SimpleHttp a = SimpleHttpDefault.doGet(accountUrl + "/linked-accounts", httpClient).auth(tokenUtil.getToken())
+        SimpleHttpRequest a = SimpleHttpDefault.doGet(accountUrl + "/linked-accounts", httpClient).auth(tokenUtil.getToken())
                 .header("Origin", "http://localtest.me:8180")
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
-        try (SimpleHttp.Response response = a.asResponse()) {
+        try (SimpleHttpResponse response = a.asResponse()) {
             Set<String> expected = new HashSet<>();
             Header[] actual = response.getAllHeaders();
 
@@ -630,7 +639,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     protected static UserRepresentation getUser(String accountUrl, CloseableHttpClient httpClient, TokenUtil tokenUtil) throws IOException {
-        SimpleHttp a = SimpleHttpDefault.doGet(accountUrl, httpClient).auth(tokenUtil.getToken());
+        SimpleHttpRequest a = SimpleHttpDefault.doGet(accountUrl, httpClient).auth(tokenUtil.getToken());
 
         try {
             return a.asJson(UserRepresentation.class);
@@ -641,7 +650,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     protected UserRepresentation updateAndGet(UserRepresentation user) throws IOException {
-        SimpleHttp a = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user);
+        SimpleHttpRequest a = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user);
         try {
             assertEquals(204, a.asStatus());
         } catch (AssertionError e) {
@@ -653,7 +662,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
 
     protected void updateError(UserRepresentation user, int expectedStatus, String expectedMessage) throws IOException {
-        SimpleHttp.Response response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+        SimpleHttpResponse response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
         assertEquals(expectedStatus, response.getStatus());
         ErrorRepresentation errorRep = response.asJson(ErrorRepresentation.class);
         List<ErrorRepresentation> errors = errorRep.getErrors();
@@ -796,20 +805,22 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .get();
 
         // Test that current user can't update the credential, which belongs to the different user
-        SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doPut(getAccountUrl("credentials/" + otpCredential.getId() + "/label"), httpClient)
                 .auth(tokenUtil.getToken())
                 .json("new-label")
-                .asResponse();
-        assertEquals(404, response.getStatus());
+                .asResponse()) {
+            assertEquals(404, response.getStatus());
+        }
 
         // Test that current user can't delete the credential, which belongs to the different user
-        response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doDelete(getAccountUrl("credentials/" + otpCredential.getId()), httpClient)
                 .acceptJson()
                 .auth(tokenUtil.getToken())
-                .asResponse();
-        assertEquals(404, response.getStatus());
+                .asResponse()) {
+            assertEquals(404, response.getStatus());
+        }
 
         // Assert credential was not updated or removed
         CredentialRepresentation otpCredentialLoaded = user.credentials().stream()
@@ -875,12 +886,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
                 .findFirst()
                 .get();
-        SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doDelete(getAccountUrl("credentials/" + otpCredential.getId()), httpClient)
                 .acceptJson()
                 .auth(tokenUtil.getToken())
-                .asResponse();
-        assertEquals(204, response.getStatus());
+                .asResponse()) {
+            assertEquals(204, response.getStatus());
+        }
 
         events.poll();
         events.expect(EventType.REMOVE_TOTP)
@@ -981,7 +993,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         String otpCredentialId = otpCredential.getUserCredentialMetadatas().get(0).getCredential().getId();
 
         // remove credential using account console as otp is removable
-        try (SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doDelete(getAccountUrl("credentials/" + otpCredentialId), httpClient)
                 .acceptJson()
                 .auth(tokenUtil.getToken())
@@ -1042,7 +1054,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.BASIC_AUTHENTICATION.toString(),
                 "password-display-name", "password-help-text", "kcAuthenticatorPasswordClass",
                 null, UserModel.RequiredAction.UPDATE_PASSWORD.toString(), false, 1);
-        try (SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doDelete(getAccountUrl("credentials/" + password.getUserCredentialMetadatas().get(0).getCredential().getId()), httpClient)
                 .acceptJson()
                 .auth(tokenUtil.getToken())
@@ -1137,6 +1149,197 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         sessions = SimpleHttpDefault.doGet(getAccountUrl("sessions"), httpClient).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
         assertEquals(1, sessions.size());
     }
+
+
+    @Test
+    public void testDeletionOfAllUserSessionsWillFireLogoutEvents() throws IOException {
+        String username = "manage-account-access";
+        String password = "password";
+        String firstToken = new TokenUtil(username, password).getToken();
+        String secondToken = new TokenUtil(username, password).getToken();
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        List<UserSessionRepresentation> userSessions = user.getUserSessions();
+        assertEquals(2, userSessions.size());
+
+        // skip the two direct access grant logins
+        events.poll();
+        events.poll();
+
+        int status = SimpleHttpDefault.doDelete(getAccountUrl("sessions?current=true"), httpClient).acceptJson().auth(firstToken).asStatus();
+        assertEquals(204, status);
+        assertEquals(0, user.getUserSessions().size());
+
+        userSessions.forEach(session -> {
+            events.expectAccount(EventType.LOGOUT)
+                .user(user.toRepresentation().getId())
+                .session(session.getId())
+                .assertEvent();
+        });
+
+        events.assertEmpty();
+    }
+
+    @Test
+    public void testDeletionOfAllUserSessionsExceptTheCurrentWillFireLogoutEvents() throws IOException, JWSInputException {
+        String username = "manage-account-access";
+        String password = "password";
+        String firstToken = new TokenUtil(username, password).getToken();
+        String secondToken = new TokenUtil(username, password).getToken();
+        String thirdToken = new TokenUtil(username, password).getToken();
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        List<UserSessionRepresentation> userSessions = user.getUserSessions();
+        assertEquals(3, userSessions.size());
+
+        // skip the three direct access grant logins
+        events.poll();
+        events.poll();
+        events.poll();
+
+        int status = SimpleHttpDefault.doDelete(getAccountUrl("sessions?current=false"), httpClient).acceptJson().auth(firstToken).asStatus();
+        assertEquals(204, status);
+        assertEquals(1, user.getUserSessions().size());
+
+        JWSInput input = new JWSInput(firstToken);
+        AccessToken token = input.readJsonContent(AccessToken.class);
+
+        userSessions = userSessions.stream().filter(session -> !session.getId().equals(token.getSessionId())).toList();
+
+        userSessions.forEach(session -> {
+            events.expectAccount(EventType.LOGOUT)
+                .user(user.toRepresentation().getId())
+                .session(session.getId())
+                .assertEvent();
+        });
+
+        events.assertEmpty();
+    }
+
+
+    @Test
+    public void testDeletionOfSpecificSessionWillFireLogoutEvent() throws IOException, JWSInputException {
+        String username = "manage-account-access";
+        String password = "password";
+        String firstToken = new TokenUtil(username, password).getToken();
+        String secondToken = new TokenUtil(username, password).getToken();
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        List<UserSessionRepresentation> userSessions = user.getUserSessions();
+        assertEquals(2, userSessions.size());
+
+        // skip the two direct access grant logins
+        events.poll();
+        events.poll();
+
+        JWSInput input = new JWSInput(firstToken);
+        AccessToken token = input.readJsonContent(AccessToken.class);
+
+        int status = SimpleHttpDefault.doDelete(getAccountUrl(String.format("sessions/%s", token.getSessionId())), httpClient)
+            .acceptJson().auth(firstToken).asStatus();
+        assertEquals(204, status);
+        assertEquals(1, user.getUserSessions().size());
+
+        events.expectAccount(EventType.LOGOUT)
+            .user(user.toRepresentation().getId())
+            .session(token.getSessionId())
+            .assertEvent();
+
+        events.assertEmpty();
+    }
+
+    @Test
+    public void testListingAllSignedInDevicesEvenOfflineSessionsThenTerminatingAllSessions() throws IOException, JWSInputException {
+        String username = "manage-account-access";
+        String password = "password";
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        // first direct access grant login
+        String firstToken = new TokenUtil(username, password).getToken();
+        events.expect(EventType.LOGIN)
+            .client("direct-grant")
+            .user(user.toRepresentation().getId())
+            .session(new JWSInput(firstToken).readJsonContent(AccessToken.class).getSessionId())
+            .detail(Details.SCOPE, "openid profile email")
+            .assertEvent();
+
+        // second direct access grant login
+        String secondToken = new TokenUtil(username, password).getToken();
+        events.expect(EventType.LOGIN)
+            .client("direct-grant")
+            .user(user.toRepresentation().getId())
+            .session(new JWSInput(secondToken).readJsonContent(AccessToken.class).getSessionId())
+            .detail(Details.SCOPE, "openid profile email")
+            .assertEvent();
+
+        // Login with scope 'offline_access'
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest(username, password);
+        assertNull(offlineTokenResponse.getErrorDescription());
+        events.expect(EventType.LOGIN)
+            .client("offline-client")
+            .user(user.toRepresentation().getId())
+            .session(offlineTokenResponse.getSessionState())
+            .detail(Details.SCOPE, "openid email profile offline_access")
+            .assertEvent();
+
+        // Get all logged in 'devices'
+        Collection<DeviceRepresentation> devices = SimpleHttpDefault
+            .doGet(getAccountUrl("sessions/devices"), httpClient)
+            .header("Accept", "application/json")
+            .auth(firstToken)
+            .asJson(new TypeReference<Collection<DeviceRepresentation>>() {
+            });
+        assertFalse(devices.isEmpty());
+        List<SessionRepresentation> allSessions = devices.stream().flatMap(device -> device.getSessions().stream()).toList();
+        assertEquals(3, allSessions.size());
+
+        // User deletes all of his sessions
+        int status = SimpleHttpDefault.doDelete(getAccountUrl("sessions?current=true"), httpClient)
+            .acceptJson().auth(firstToken).asStatus();
+        assertEquals(204, status);
+
+        allSessions.forEach(session -> {
+            events.expectAccount(EventType.LOGOUT)
+                .user(user.toRepresentation().getId())
+                .session(session.getId())
+                .assertEvent();
+        });
+    }
+
+    @Test
+    public void testDeletionOfOfflineSessionWillFireLogoutEvent() throws IOException, JWSInputException {
+        String username = "manage-account-access";
+        String password = "password";
+        String firstToken = new TokenUtil(username, password).getToken();
+
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest(username, password);
+        assertNull(offlineTokenResponse.getErrorDescription());
+
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        Collection<DeviceRepresentation> devices = SimpleHttpDefault
+            .doGet(getAccountUrl("sessions/devices"), httpClient)
+            .header("Accept", "application/json")
+            .auth(firstToken)
+            .asJson(new TypeReference<Collection<DeviceRepresentation>>() {
+            });
+        assertEquals(2, devices.stream().flatMap(device -> device.getSessions().stream()).toList().size());
+
+        // skip direct access login and offline_access scoped login
+        events.poll();
+        events.poll();
+
+        int status = SimpleHttpDefault.doDelete(getAccountUrl(String.format("sessions/%s", offlineTokenResponse.getSessionState())), httpClient)
+            .acceptJson().auth(firstToken).asStatus();
+        assertEquals(204, status);
+
+        events.expectAccount(EventType.LOGOUT)
+            .user(user.toRepresentation().getId())
+            .session(offlineTokenResponse.getSessionState())
+            .assertEvent();
+
+        events.assertEmpty();
+    }
+
 
     @Test
     public void listApplications() throws Exception {
@@ -1251,7 +1454,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .auth(token.getToken())
-                .asResponse();
+                .asResponse().close();
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
         assertThat(apps.keySet(), containsInAnyOrder(appId, "always-display-client", "direct-grant"));
@@ -1306,24 +1509,26 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void listApplicationsWithoutPermission() throws IOException {
         TokenUtil token = new TokenUtil("no-account-access", "password");
-        SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doGet(getAccountUrl("applications"), httpClient)
                 .header("Accept", "application/json")
                 .auth(token.getToken())
-                .asResponse();
-        assertEquals(403, response.getStatus());
+                .asResponse()) {
+            assertEquals(403, response.getStatus());
+        }
     }
 
     @Test
     public void getNotExistingApplication() throws IOException {
         TokenUtil token = new TokenUtil("view-applications-access", "password");
         String appId = "not-existing";
-        SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doGet(getAccountUrl("applications/" + appId), httpClient)
                 .header("Accept", "application/json")
                 .auth(token.getToken())
-                .asResponse();
-        assertEquals(404, response.getStatus());
+                .asResponse()) {
+            assertEquals(404, response.getStatus());
+        }
     }
 
     private ConsentRepresentation createRequestedConsent(List<ClientScopeRepresentation> scopes) {
@@ -1367,7 +1572,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         SimpleHttpDefault.doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .auth(tokenUtil.getToken())
-                .asResponse();
+                .asResponse().close();
     }
 
     @Test
@@ -1417,7 +1622,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         SimpleHttpDefault.doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .auth(tokenUtil.getToken())
-                .asResponse();
+                .asResponse().close();
     }
 
     @Test
@@ -1428,14 +1633,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         List<ClientScopeRepresentation> requestedScopes = testRealm().clientScopes().findAll().subList(0,1);
         ConsentRepresentation requestedConsent = createRequestedConsent(requestedScopes);
 
-        SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doPost(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .json(requestedConsent)
                 .auth(tokenUtil.getToken())
-                .asResponse();
-
-        assertEquals(404, response.getStatus());
+                .asResponse()) {
+            assertEquals(404, response.getStatus());
+        }
     }
 
     @Test
@@ -1446,14 +1651,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         List<ClientScopeRepresentation> requestedScopes = testRealm().clientScopes().findAll().subList(0,1);
         ConsentRepresentation requestedConsent = createRequestedConsent(requestedScopes);
 
-        SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doPost(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .json(requestedConsent)
                 .auth(tokenUtil.getToken())
-                .asResponse();
-
-        assertEquals(403, response.getStatus());
+                .asResponse()) {
+            assertEquals(403, response.getStatus());
+        }
     }
 
     @Test
@@ -1487,7 +1692,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         SimpleHttpDefault.doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .auth(tokenUtil.getToken())
-                .asResponse();
+                .asResponse().close();
     }
 
     @Test
@@ -1538,7 +1743,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         SimpleHttpDefault.doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .auth(tokenUtil.getToken())
-                .asResponse();
+                .asResponse().close();
     }
 
     @Test
@@ -1549,14 +1754,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         List<ClientScopeRepresentation> requestedScopes = testRealm().clientScopes().findAll().subList(0,1);
         ConsentRepresentation requestedConsent = createRequestedConsent(requestedScopes);
 
-        SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doPut(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .json(requestedConsent)
                 .auth(tokenUtil.getToken())
-                .asResponse();
-
-        assertEquals(404, response.getStatus());
+                .asResponse()) {
+            assertEquals(404, response.getStatus());
+        }
     }
 
     @Test
@@ -1567,14 +1772,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         List<ClientScopeRepresentation> requestedScopes = testRealm().clientScopes().findAll().subList(0,1);
         ConsentRepresentation requestedConsent = createRequestedConsent(requestedScopes);
 
-        SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doPut(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .json(requestedConsent)
                 .auth(tokenUtil.getToken())
-                .asResponse();
-
-        assertEquals(403, response.getStatus());
+                .asResponse()) {
+            assertEquals(403, response.getStatus());
+        }
     }
 
     @Test
@@ -1610,36 +1815,39 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     public void getConsentForNotExistingClient() throws IOException {
         tokenUtil = new TokenUtil("view-consent-access", "password");
         String appId = "not-existing";
-        SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doGet(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .auth(tokenUtil.getToken())
-                .asResponse();
-        assertEquals(404, response.getStatus());
+                .asResponse()) {
+            assertEquals(404, response.getStatus());
+        }
     }
 
     @Test
     public void getNotExistingConsentForClient() throws IOException {
         tokenUtil = new TokenUtil("view-consent-access", "password");
         String appId = "security-admin-console";
-        SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doGet(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .auth(tokenUtil.getToken())
-                .asResponse();
-        assertEquals(204, response.getStatus());
+                .asResponse()) {
+            assertEquals(204, response.getStatus());
+        }
     }
 
     @Test
     public void getConsentWithoutPermission() throws IOException {
         tokenUtil = new TokenUtil("no-account-access", "password");
         String appId = "security-admin-console";
-        SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doGet(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .auth(tokenUtil.getToken())
-                .asResponse();
-        assertEquals(403, response.getStatus());
+                .asResponse()) {
+            assertEquals(403, response.getStatus());
+        }
     }
 
     @Test
@@ -1661,12 +1869,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertEquals(1, consentRepresentation.getGrantedScopes().size());
         assertEquals(requestedScopes.get(0).getId(), consentRepresentation.getGrantedScopes().get(0).getId());
 
-        SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .auth(tokenUtil.getToken())
-                .asResponse();
-        assertEquals(204, response.getStatus());
+                .asResponse()) {
+            assertEquals(204, response.getStatus());
+        }
 
         events.poll();
         events.poll();
@@ -1676,36 +1885,39 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .assertEvent();
         events.assertEmpty();
 
-        response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .auth(tokenUtil.getToken())
-                .asResponse();
-        assertEquals(204, response.getStatus());
+                .asResponse()) {
+            assertEquals(204, response.getStatus());
+        }
     }
 
     @Test
     public void deleteConsentForNotExistingClient() throws IOException {
         tokenUtil = new TokenUtil("manage-consent-access", "password");
         String appId = "not-existing";
-        SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .auth(tokenUtil.getToken())
-                .asResponse();
-        assertEquals(404, response.getStatus());
+                .asResponse()) {
+            assertEquals(404, response.getStatus());
+        }
     }
 
     @Test
     public void deleteConsentWithoutPermission() throws IOException {
         tokenUtil = new TokenUtil("view-consent-access", "password");
         String appId = "security-admin-console";
-        SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .auth(tokenUtil.getToken())
-                .asResponse();
-        assertEquals(403, response.getStatus());
+                .asResponse()) {
+            assertEquals(403, response.getStatus());
+        }
     }
 
     //KEYCLOAK-14344
@@ -1718,12 +1930,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         tokenUtil = new TokenUtil("view-applications-access", "password");
 
-        SimpleHttp.Response response = SimpleHttpDefault
+        try (SimpleHttpResponse response = SimpleHttpDefault
                 .doDelete(getAccountUrl("applications/offline-client/consent"), httpClient)
                 .header("Accept", "application/json")
                 .auth(tokenUtil.getToken())
-                .asResponse();
-        assertEquals(204, response.getStatus());
+                .asResponse()) {
+            assertEquals(204, response.getStatus());
+        }
 
         List<ClientRepresentation> applications = SimpleHttpDefault
                 .doGet(getAccountUrl("applications"), httpClient)
@@ -1752,9 +1965,10 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     public void testInvalidApiVersion() throws IOException {
         apiVersion = "v2-foo";
 
-        SimpleHttp.Response response = SimpleHttpDefault.doGet(getAccountUrl("credentials"), httpClient).auth(tokenUtil.getToken()).asResponse();
-        assertEquals("API version not found", response.asJson().get("error").textValue());
-        assertEquals(404, response.getStatus());
+        try (SimpleHttpResponse response = SimpleHttpDefault.doGet(getAccountUrl("credentials"), httpClient).auth(tokenUtil.getToken()).asResponse()) {
+            assertEquals("API version not found", response.asJson().get("error").textValue());
+            assertEquals(404, response.getStatus());
+        }
     }
 
     @Test
@@ -1763,11 +1977,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertNull(tokenResponse.getErrorDescription());
 
-        SimpleHttp.Response response = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
+        try (SimpleHttpResponse response = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
                 .auth(tokenResponse.getAccessToken())
                 .header("Accept", "application/json")
-                .asResponse();
-        assertEquals(401, response.getStatus());
+                .asResponse()) {
+            assertEquals(401, response.getStatus());
+        }
 
         // update to correct audience
         org.keycloak.representations.idm.ClientRepresentation clientRep = testRealm().clients().findByClientId("custom-audience").get(0);
@@ -1779,11 +1994,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertNull(tokenResponse.getErrorDescription());
 
-        response = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
+        try (SimpleHttpResponse response = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
                 .auth(tokenResponse.getAccessToken())
                 .header("Accept", "application/json")
-                .asResponse();
-        assertEquals(200, response.getStatus());
+                .asResponse()) {
+            assertEquals(200, response.getStatus());
+        }
 
         // remove audience completely
         testRealm().clients().get(clientRep.getId()).getProtocolMappers().delete(mapperRep.getId());
@@ -1791,11 +2007,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertNull(tokenResponse.getErrorDescription());
 
-        response = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
+        try (SimpleHttpResponse response = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
                 .auth(tokenResponse.getAccessToken())
                 .header("Accept", "application/json")
-                .asResponse();
-        assertEquals(401, response.getStatus());
+                .asResponse()) {
+            assertEquals(401, response.getStatus());
+        }
 
         // custom-audience client is used only in this test so no need to revert the changes
     }
@@ -1809,13 +2026,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             realmRep.setAccountTheme("custom-account-provider");
             adminClient.realm("test").update(realmRep);
 
-            SimpleHttp.Response response = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
+            try (SimpleHttpResponse response = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
                        .header("Accept", "text/html")
-                       .asResponse();
-            assertEquals(200, response.getStatus());
+                       .asResponse()) {
+                assertEquals(200, response.getStatus());
 
-            String html = response.asString();
-            assertTrue(html.contains("Custom Account Console"));
+                String html = response.asString();
+                assertTrue(html.contains("Custom Account Console"));
+            }
         } finally {
             RealmRepresentation realmRep = testRealm().toRepresentation();
             realmRep.setAccountTheme(accountTheme);
@@ -1827,21 +2045,23 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     public void testUpdateProfileUnrecognizedPropertyInRepresentation() throws IOException {
         final UserRepresentation user = getUser();
         final Map<String,String> invalidRep = Map.of("id", user.getId(), "username", user.getUsername(), "invalid", "something");
-        SimpleHttp.Response response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient)
+        try (SimpleHttpResponse response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient)
                 .auth(tokenUtil.getToken())
                 .json(invalidRep)
-                .asResponse();
-       assertEquals(400, response.getStatus());
-       final OAuth2ErrorRepresentation error = response.asJson(OAuth2ErrorRepresentation.class);
-       assertThat(error.getError(), containsString("Invalid json representation for UserRepresentation. Unrecognized field \"invalid\" at line"));
+                .asResponse()) {
+            assertEquals(400, response.getStatus());
+            final OAuth2ErrorRepresentation error = response.asJson(OAuth2ErrorRepresentation.class);
+            assertThat(error.getError(), containsString("Invalid json representation for UserRepresentation. Unrecognized field \"invalid\" at line"));
+        }
     }
 
-    @EnableFeature(Profile.Feature.UPDATE_EMAIL)
+    @Test
     public void testEmailWhenUpdateEmailEnabled() throws Exception {
         reconnectAdminClient();
         RealmRepresentation realm = testRealm().toRepresentation();
         Boolean registrationEmailAsUsername = realm.isRegistrationEmailAsUsername();
         Boolean editUsernameAllowed = realm.isEditUsernameAllowed();
+        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
 
         try {
             realm.setRegistrationEmailAsUsername(true);
@@ -1858,6 +2078,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertNotNull(user.getEmail());
             assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
         } finally {
+            ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
             realm.setRegistrationEmailAsUsername(registrationEmailAsUsername);
             realm.setEditUsernameAllowed(editUsernameAllowed);
             testRealm().update(realm);

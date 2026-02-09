@@ -23,10 +23,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import org.keycloak.marshalling.Marshalling;
+
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.keycloak.marshalling.Marshalling;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

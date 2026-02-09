@@ -17,15 +17,22 @@
 
 package org.keycloak.broker.oidc;
 
+import java.io.IOException;
+
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.headers.SecurityHeadersProvider;
+import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
@@ -36,12 +43,6 @@ import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.util.JsonSerialization;
-
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import java.io.IOException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -129,7 +130,7 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
         }
 
         @Override
-        public SimpleHttp generateTokenRequest(String authorizationCode) {
+        public SimpleHttpRequest generateTokenRequest(String authorizationCode) {
             return super.generateTokenRequest(authorizationCode)
                     .param(AdapterConstants.CLIENT_SESSION_STATE, "n/a");  // hack to get backchannel logout to work
 

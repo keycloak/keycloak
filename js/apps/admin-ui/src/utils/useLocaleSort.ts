@@ -6,8 +6,6 @@ export default function useLocaleSort() {
   const { whoAmI } = useWhoAmI();
 
   return function localeSort<T>(items: T[], mapperFn: ValueMapperFn<T>): T[] {
-    const locale = whoAmI.getLocale();
-
     return [...items].sort((a, b) => {
       const valA = mapperFn(a);
       const valB = mapperFn(b);
@@ -16,7 +14,7 @@ export default function useLocaleSort() {
         return 0;
       }
 
-      return valA.localeCompare(valB, locale);
+      return valA.localeCompare(valB, whoAmI.locale);
     });
   };
 }

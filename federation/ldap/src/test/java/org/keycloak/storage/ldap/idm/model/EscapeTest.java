@@ -17,9 +17,10 @@
 
 package org.keycloak.storage.ldap.idm.model;
 
+import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
+
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

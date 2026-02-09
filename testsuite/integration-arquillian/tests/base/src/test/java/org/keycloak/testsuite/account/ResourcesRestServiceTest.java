@@ -16,17 +16,29 @@
  */
 package org.keycloak.testsuite.account;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.representations.AccessToken;
@@ -47,18 +59,11 @@ import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
-import jakarta.ws.rs.core.Response;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static org.keycloak.common.util.Encode.encodePathAsIs;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -67,7 +72,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.common.util.Encode.encodePathAsIs;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -387,7 +391,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         permissions.add(new Permission(users.get(users.size() - 1), "Scope A", "Scope B", "Scope C", "Scope D"));
 
         String resourceId = sharedResource.getId();
-        SimpleHttp.Response response = SimpleHttpDefault.doPut(getAccountUrl("resources/" + encodePathAsIs(resourceId) + "/permissions"), httpClient)
+        SimpleHttpResponse response = SimpleHttpDefault.doPut(getAccountUrl("resources/" + encodePathAsIs(resourceId) + "/permissions"), httpClient)
                 .auth(tokenUtil.getToken())
                 .json(permissions).asResponse();
 
@@ -411,7 +415,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     public void failShareResourceInvalidPermissions() throws Exception {
         List<Permission> permissions = new ArrayList<>();
 
-        SimpleHttp.Response response = SimpleHttpDefault.doPut(getAccountUrl("resources/" + encodePathAsIs(getMyResources().get(0).getId()) + "/permissions"), httpClient)
+        SimpleHttpResponse response = SimpleHttpDefault.doPut(getAccountUrl("resources/" + encodePathAsIs(getMyResources().get(0).getId()) + "/permissions"), httpClient)
                 .auth(tokenUtil.getToken())
                 .json(permissions).asResponse();
 
@@ -476,7 +480,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         permissions.add(new Permission(users.get(users.size() - 1), "Scope B", "Scope D"));
 
         String resourceId = sharedResource.getId();
-        SimpleHttp.Response response = SimpleHttpDefault.doPut(getAccountUrl("resources/" + encodePathAsIs(resourceId) + "/permissions"), httpClient)
+        SimpleHttpResponse response = SimpleHttpDefault.doPut(getAccountUrl("resources/" + encodePathAsIs(resourceId) + "/permissions"), httpClient)
                 .auth(tokenUtil.getToken())
                 .json(permissions).asResponse();
 
@@ -643,7 +647,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         return getSharedWithMe(userName, null, -1, -1, null);
     }
 
-    private List<AbstractResourceService.ResourcePermission> getSharedWithMe(String userName, String name, int first, int max, Consumer<SimpleHttp.Response> responseHandler) {
+    private List<AbstractResourceService.ResourcePermission> getSharedWithMe(String userName, String name, int first, int max, Consumer<SimpleHttpResponse> responseHandler) {
         KeycloakUriBuilder uri = KeycloakUriBuilder.fromUri("/shared-with-me");
 
         if (name != null) {
@@ -663,7 +667,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         return doGet(resource, tokenUtil.getToken(), typeReference);
     }
 
-    private <R> R doGet(String resource, TypeReference<R> typeReference, Consumer<SimpleHttp.Response> response) {
+    private <R> R doGet(String resource, TypeReference<R> typeReference, Consumer<SimpleHttpResponse> response) {
         return doGet(resource, tokenUtil.getToken(), typeReference, response);
     }
 
@@ -679,12 +683,12 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         }
     }
 
-    private <R> R doGet(String resource, String token, TypeReference<R> typeReference, Consumer<SimpleHttp.Response> responseHandler) {
+    private <R> R doGet(String resource, String token, TypeReference<R> typeReference, Consumer<SimpleHttpResponse> responseHandler) {
         try {
-            SimpleHttp http = get(resource, token);
+            SimpleHttpRequest http = get(resource, token);
 
             http.header("Accept", "application/json");
-            SimpleHttp.Response response = http.asResponse();
+            SimpleHttpResponse response = http.asResponse();
 
             if (responseHandler != null) {
                 responseHandler.accept(response);
@@ -706,7 +710,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         }
     }
 
-    private SimpleHttp get(String resource, String token) {
+    private SimpleHttpRequest get(String resource, String token) {
         return SimpleHttpDefault.doGet(getAccountUrl("resources" + resource), httpClient).auth(token);
     }
 
@@ -757,7 +761,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         return doGet(uri.build().toString(), new TypeReference<List<Resource>>() {});
     }
 
-    private List<Resource> getMyResources(int first, int max, Consumer<SimpleHttp.Response> response) {
+    private List<Resource> getMyResources(int first, int max, Consumer<SimpleHttpResponse> response) {
         String query = "";
         if (first > -1 && max > -1) {
             query = "?first=" + first + "&max=" + max;
@@ -815,7 +819,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         }
     }
 
-    private void assertNextPageLink(SimpleHttp.Response response, String uri, int nextPage, int previousPage, int max) {
+    private void assertNextPageLink(SimpleHttpResponse response, String uri, int nextPage, int previousPage, int max) {
         try {
             List<String> links = response.getHeader("Link");
 

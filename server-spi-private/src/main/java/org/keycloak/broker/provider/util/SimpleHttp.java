@@ -17,6 +17,29 @@
 
 package org.keycloak.broker.provider.util;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
+
+import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.connections.httpclient.SafeInputStream;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.util.JsonSerialization;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,33 +64,16 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
-import org.keycloak.common.util.Base64;
-import org.keycloak.connections.httpclient.HttpClientProvider;
-import org.keycloak.connections.httpclient.SafeInputStream;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.GZIPInputStream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Vlastimil Elias (velias at redhat dot com)
  * @author David Klassen (daviddd.kl@gmail.com)
+ *
+ * @deprecated An updated version of SimpleHttp is available in {@link org.keycloak.http.simple.SimpleHttp}. This
+ * version will be deleted in Keycloak 27.0
  */
+@Deprecated
 public class SimpleHttp {
 
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -167,6 +173,31 @@ public class SimpleHttp {
         return null;
     }
 
+    public Map<String, String> getHeaders() {
+        if (headers == null) {
+            return null;
+        }
+        return Collections.unmodifiableMap(headers);
+    }
+
+    public String getParam(String name) {
+        if (params == null) {
+            return null;
+        }
+        return params.get(name);
+    }
+
+    public Map<String, String> getParams() {
+        if (params == null) {
+            return null;
+        }
+        return Collections.unmodifiableMap(params);
+    }
+
+    public Object getEntity() {
+        return entity;
+    }
+
     public SimpleHttp json(Object entity) {
         this.entity = entity;
         return this;
@@ -174,6 +205,11 @@ public class SimpleHttp {
 
     public SimpleHttp entity(HttpEntity entity) {
         this.entity = entity;
+        return this;
+    }
+
+    public SimpleHttp params(Map<String, String> params) {
+        this.params = params;
         return this;
     }
 
@@ -212,7 +248,7 @@ public class SimpleHttp {
 
     public SimpleHttp authBasic(final String username, final String password) {
         final String basicCredentials = String.format("%s:%s", username, password);
-        header("Authorization", "Basic " + Base64.encodeBytes(basicCredentials.getBytes()));
+        header("Authorization", "Basic " + Base64.getEncoder().encodeToString(basicCredentials.getBytes()));
         return this;
     }
 

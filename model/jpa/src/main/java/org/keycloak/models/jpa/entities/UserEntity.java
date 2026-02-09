@@ -17,11 +17,8 @@
 
 package org.keycloak.models.jpa.entities;
 
-import org.hibernate.annotations.BatchSize;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
-import org.hibernate.annotations.Nationalized;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import java.util.Collection;
+import java.util.LinkedList;
 
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
@@ -34,8 +31,13 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.util.Collection;
-import java.util.LinkedList;
+
+import org.keycloak.models.utils.KeycloakModelUtils;
+
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.Nationalized;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

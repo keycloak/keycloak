@@ -16,20 +16,11 @@
  */
 package org.keycloak.testsuite.authz;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
@@ -40,15 +31,25 @@ import org.keycloak.events.EventType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
-import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.AssertEvents;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -59,18 +60,13 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+    private PolicyRepresentation onlyOwnerPolicy;
 
     @Before
     public void configureAuthorization() throws Exception {
         ClientResource client = getClient(getRealm());
         AuthorizationResource authorization = client.authorization();
-
-        JSPolicyRepresentation policy = new JSPolicyRepresentation();
-
-        policy.setName("Only Owner Policy");
-        policy.setType("script-scripts/only-owner-policy.js");
-
-        authorization.policies().js().create(policy).close();
+        onlyOwnerPolicy = createOnlyOwnerPolicy(authorization);
     }
 
     @Test
@@ -80,7 +76,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         permission.setName(resource.getName() + " Permission");
         permission.addResource(resource.getId());
-        permission.addPolicy("Only Owner Policy");
+        permission.addPolicy(onlyOwnerPolicy.getName());
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
 
@@ -116,7 +112,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         permission.setName(resource.getName() + " Scope A Permission");
         permission.addScope("ScopeA");
-        permission.addPolicy("Only Owner Policy");
+        permission.addPolicy(onlyOwnerPolicy.getName());
 
         getClient(getRealm()).authorization().permissions().scope().create(permission).close();
 
@@ -124,7 +120,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         permission.setName(resource.getName() + " Scope B Permission");
         permission.addScope("ScopeB");
-        permission.addPolicy("Only Owner Policy");
+        permission.addPolicy(onlyOwnerPolicy.getName());
 
         getClient(getRealm()).authorization().permissions().scope().create(permission).close();
 
@@ -214,7 +210,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         permission.setName(resource.getType() + " Permission");
         permission.setResourceType(resource.getType());
-        permission.addPolicy("Only Owner Policy");
+        permission.addPolicy(onlyOwnerPolicy.getName());
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
 
@@ -284,7 +280,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         permission.setName(resource.getName() + " Permission");
         permission.addResource(resource.getId());
-        permission.addPolicy("Only Owner Policy");
+        permission.addPolicy(onlyOwnerPolicy.getName());
 
         ClientResource client = getClient(getRealm());
 
@@ -396,7 +392,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         permission.setName(resource.getName() + " Permission");
         permission.addResource(resource.getId());
-        permission.addPolicy("Only Owner Policy");
+        permission.addPolicy(onlyOwnerPolicy.getName());
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
 
@@ -476,7 +472,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         permission.setName(resource.getName() + " Permission");
         permission.addResource(resource.getId());
-        permission.addPolicy("Only Owner Policy");
+        permission.addPolicy(onlyOwnerPolicy.getName());
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
 
@@ -586,7 +582,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         permission.setName(resource.getName() + " Permission");
         permission.addResource(resource.getId());
-        permission.addPolicy("Only Owner Policy");
+        permission.addPolicy(onlyOwnerPolicy.getName());
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
 

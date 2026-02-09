@@ -1,4 +1,4 @@
-import { Locator, Page, expect } from "@playwright/test";
+import { type Locator, type Page, expect } from "@playwright/test";
 
 export async function searchItem(
   page: Page,
@@ -67,12 +67,8 @@ export async function clickTableToolbarItem(
 }
 
 export async function getTableData(page: Page, name: string) {
-  const table = page
-    .getByRole("grid")
-    .and(page.getByLabel(name, { exact: true }));
-  await table.locator("tbody").waitFor();
-  const rows = await table.locator("tbody tr").elementHandles();
-
+  const rowsLocator = await getTableRows(page, name);
+  const rows = await rowsLocator.elementHandles();
   const tableData = await Promise.all(
     rows.map(async (row) => {
       const cells = await row.$$("td");
@@ -80,6 +76,23 @@ export async function getTableData(page: Page, name: string) {
     }),
   );
   return tableData;
+}
+
+export async function assertTableRowsLength(
+  page: Page,
+  name: string,
+  length: number,
+): Promise<void> {
+  const rows = await getTableRows(page, name);
+  await expect(rows).toHaveCount(length);
+}
+
+async function getTableRows(page: Page, name: string): Promise<Locator> {
+  const table = page
+    .getByRole("grid")
+    .and(page.getByLabel(name, { exact: true }));
+  await table.locator("tbody").waitFor();
+  return table.locator("tbody tr");
 }
 
 export async function clickNextPageButton(page: Page) {
@@ -107,6 +120,11 @@ export async function clickSelectRow(
     row = rowIndex;
   }
   await page.getByLabel(tableName).getByLabel(`Select row ${row}`).click();
+}
+
+export async function openRowDetails(page: any, itemName: string) {
+  const row = page.getByRole("row", { name: itemName });
+  await row.getByRole("button", { name: "Details" }).click();
 }
 
 export async function expandRow(page: Page, tableName: string, row: number) {

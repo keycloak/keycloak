@@ -213,7 +213,7 @@ For example, by running the server with the following argument:
 
 [source,bash]
 ----
-kc.[sh|bat] start --spi-storage-readonly-property-file-path=/other-users.properties
+kc.[sh|bat] start --spi-storage--readonly-property-file--path=/other-users.properties
 ----
 
 We can specify the classpath of the user property file instead of hardcoding it. Then you can retrieve the configuration in the `PropertyFileUserStorageProviderFactory.init()`:

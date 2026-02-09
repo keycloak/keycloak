@@ -1,12 +1,12 @@
 package org.freedesktop.dbus.messages;
 
-import org.freedesktop.dbus.connections.impl.DBusConnection;
-import org.freedesktop.dbus.exceptions.DBusException;
-import org.freedesktop.dbus.exceptions.MessageFormatException;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.freedesktop.dbus.connections.impl.DBusConnection;
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.MessageFormatException;
 
 public class MethodCall extends MethodBase {
     private static long replyWaitTimeout = Duration.ofSeconds(20).toMillis();

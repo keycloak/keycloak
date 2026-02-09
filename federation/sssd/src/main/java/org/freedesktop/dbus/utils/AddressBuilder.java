@@ -1,13 +1,13 @@
 package org.freedesktop.dbus.utils;
 
-import org.freedesktop.dbus.config.DBusSysProps;
-import org.freedesktop.dbus.connections.BusAddress;
-import org.freedesktop.dbus.exceptions.AddressResolvingException;
-
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+
+import org.freedesktop.dbus.config.DBusSysProps;
+import org.freedesktop.dbus.connections.BusAddress;
+import org.freedesktop.dbus.exceptions.AddressResolvingException;
 
 public final class AddressBuilder {
     /**

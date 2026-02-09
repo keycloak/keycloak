@@ -27,18 +27,19 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import org.hibernate.exception.ConstraintViolationException;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.FlushModeType;
+import jakarta.persistence.OptimisticLockException;
+import jakarta.persistence.Query;
+
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
 
-import jakarta.persistence.EntityExistsException;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.FlushModeType;
-import jakarta.persistence.OptimisticLockException;
-import jakarta.persistence.Query;
+import org.hibernate.exception.ConstraintViolationException;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -47,28 +48,42 @@ public class EntityManagerProxy {
 
     private static final Pattern WRITE_METHOD_NAMES = Pattern.compile("persist|merge");
 
+    private Set<EntityManagerProxy> entityManagerProxies;
     private EntityManager em;
     private final boolean batchEnabled;
     private final int batchSize;
     private int changeCount = 0;
 
-    public static EntityManager create(KeycloakSession session, EntityManager em) {
-        // the alternative to this tracking is to have a method on the session for
-        // getting the in use providers - not something that will create all providers
-        EntityManagerProxy converter = new EntityManagerProxy(session, em);
-        Set<EntityManagerProxy> entityManagerProxies = session.getAttribute(EntityManagers.ENTITY_MANAGER_PROXIES, Set.class);
-        if (entityManagerProxies == null) {
-            entityManagerProxies = new HashSet<>();
-            session.setAttribute(EntityManagers.ENTITY_MANAGER_PROXIES, entityManagerProxies);
+    public static EntityManager create(KeycloakSession session, EntityManager em, boolean sessionManaged) {
+        Set<EntityManagerProxy> entityManagerProxies = null;
+        if (sessionManaged) {
+            // the alternative to this tracking is to have a method on the session for
+            // getting the in use providers - not something that will create all providers
+            entityManagerProxies = session.getAttribute(EntityManagers.ENTITY_MANAGER_PROXIES, Set.class);
+            if (entityManagerProxies == null) {
+                entityManagerProxies = new HashSet<>();
+                session.setAttribute(EntityManagers.ENTITY_MANAGER_PROXIES, entityManagerProxies);
+            }
         }
-        entityManagerProxies.add(converter);
+        boolean batchEnabled = session.getAttributeOrDefault(Constants.STORAGE_BATCH_ENABLED, false);
+        int batchSize = session.getAttributeOrDefault(Constants.STORAGE_BATCH_SIZE, 100);
+        return create(em, entityManagerProxies, batchEnabled, batchSize);
+    }
+
+    static EntityManager create(EntityManager em, Set<EntityManagerProxy> entityManagerProxies,
+            boolean batchEnabled, int batchSize) {
+        EntityManagerProxy converter = new EntityManagerProxy(em, entityManagerProxies, batchEnabled, batchSize);
+        if (entityManagerProxies != null) {
+            entityManagerProxies.add(converter);
+        }
         return (EntityManager) Proxy.newProxyInstance(EntityManager.class.getClassLoader(), new Class[]{EntityManager.class}, converter::invoke);
     }
 
-    private EntityManagerProxy(KeycloakSession session, EntityManager em) {
-        batchEnabled = session.getAttributeOrDefault(Constants.STORAGE_BATCH_ENABLED, false);
-        batchSize = session.getAttributeOrDefault(Constants.STORAGE_BATCH_SIZE, 100);
+    private EntityManagerProxy(EntityManager em, Set<EntityManagerProxy> entityManagerProxies, boolean batchEnabled, int batchSize) {
+        this.batchEnabled = batchEnabled;
+        this.batchSize = batchSize;
         this.em = em;
+        this.entityManagerProxies = entityManagerProxies;
     }
 
     void setEntityManager(EntityManager manager) {
@@ -89,6 +104,9 @@ public class EntityManagerProxy {
                 // if this or disabling persist/detach where correct for a given batch
                 // and types were correct
                 query.setFlushMode(FlushModeType.COMMIT);
+            }
+            if (entityManagerProxies != null && args == null && method.getName().equals("close")) {
+                entityManagerProxies.remove(this);
             }
             return result;
         } catch (InvocationTargetException e) {

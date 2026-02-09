@@ -16,6 +16,18 @@
  */
 package org.keycloak.operator.controllers;
 
+import java.util.Optional;
+
+import jakarta.inject.Inject;
+
+import org.keycloak.operator.Config;
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.ContextUtils;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusBuilder;
+
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
@@ -27,16 +39,6 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.quarkus.logging.Log;
-import jakarta.inject.Inject;
-import org.keycloak.operator.Config;
-import org.keycloak.operator.ContextUtils;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusBuilder;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition;
-
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 @Workflow(
 explicitInvocation = true,
@@ -58,13 +60,17 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
 
         var statusBuilder = new KeycloakRealmImportStatusBuilder();
 
-        Job existingJob = context.getSecondaryResource(Job.class).orElse(null);
+        Job existingJob = context.getSecondaryResource(Job.class).filter(job -> job.hasOwnerReferenceFor(realm)).orElse(null);
         StatefulSet existingDeployment = context.getClient().resources(StatefulSet.class).inNamespace(realm.getMetadata().getNamespace())
                 .withName(realm.getSpec().getKeycloakCRName()).get();
+
+        Keycloak existingKeycloak = context.getClient().resources(Keycloak.class).inNamespace(realm.getMetadata().getNamespace())
+                .withName(realm.getSpec().getKeycloakCRName()).require();
 
         if (existingDeployment != null) {
             ContextUtils.storeOperatorConfig(context, config);
             ContextUtils.storeCurrentStatefulSet(context, existingDeployment);
+            ContextUtils.storeKeycloak(context, existingKeycloak);
             if (getReadyReplicas(existingDeployment) > 0) {
                 context.managedWorkflowAndDependentResourceContext().reconcileManagedWorkflow();
             }
@@ -84,11 +90,8 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
             updateControl = UpdateControl.patchStatus(realm);
         }
 
-        if (status
-                .getConditions()
-                .stream()
-                .anyMatch(c -> c.getType().equals(KeycloakRealmImportStatusCondition.DONE) && !Boolean.TRUE.equals(c.getStatus()))) {
-            updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
+        if (!status.isDone()) {
+            updateControl.rescheduleAfter(Constants.RETRY_DURATION);
         }
 
         return updateControl;
@@ -111,47 +114,39 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
             return;
         }
 
-        if (getReadyReplicas(existingDeployment) < 1) {
-            status.addErrorMessage("Deployment not yet ready, waiting for it to be ready");
-            return;
-        }
-
         if (existingJob == null) {
             Log.info("Job about to start");
             status.addStartedMessage("Import Job will start soon");
-        } else {
-            Log.info("Job already executed - not recreating");
-            var oldStatus = existingJob.getStatus();
-            var lastReportedStatus = realmCR.getStatus();
-
-            if (oldStatus == null) {
-                Log.info("Job started");
-                status.addStartedMessage("Import Job started");
-            } else if (oldStatus.getSucceeded() != null && oldStatus.getSucceeded() > 0) {
-                if (!lastReportedStatus.isDone()) {
-                    Log.info("Job finished performing a rolling restart of the deployment");
-                    rollingRestart(realmCR, client); // could be based upon a hash annotation on the deployment instead
-                }
-                status.addDone();
-            } else if (oldStatus.getFailed() != null && oldStatus.getFailed() > 0) {
-                Log.info("Job Failed");
-                status.addErrorMessage("Import Job failed");
-            } else {
-                Log.info("Job running");
-                status.addStartedMessage("Import Job running");
+            if (getReadyReplicas(existingDeployment) < 1) {
+                status.addErrorMessage("Deployment not yet ready");
             }
+            return;
+        }
+
+        Log.info("Job already executed - not recreating");
+        var oldStatus = existingJob.getStatus();
+        var lastReportedStatus = realmCR.getStatus();
+
+        if (oldStatus == null) {
+            Log.info("Job started");
+            status.addStartedMessage("Import Job started");
+        } else if (oldStatus.getSucceeded() != null && oldStatus.getSucceeded() > 0) {
+            if (!lastReportedStatus.isDone()) {
+                // no need to restart Keycloak as we're only importing new realms and are not overwriting existing realms
+                Log.info("Job finished");
+            }
+            status.addDone();
+        } else if (oldStatus.getFailed() != null && oldStatus.getFailed() > 0) {
+            Log.info("Job Failed");
+            status.addErrorMessage("Import Job failed");
+        } else {
+            Log.info("Job running");
+            status.addStartedMessage("Import Job running");
         }
     }
 
     private Integer getReadyReplicas(StatefulSet existingDeployment) {
         return Optional.ofNullable(existingDeployment.getStatus()).map(StatefulSetStatus::getReadyReplicas).orElse(0);
-    }
-
-    private void rollingRestart(KeycloakRealmImport realmCR, KubernetesClient client) {
-        client.apps().statefulSets()
-                .inNamespace(realmCR.getMetadata().getNamespace())
-                .withName(realmCR.getSpec().getKeycloakCRName())
-                .rolling().restart();
     }
 
 }

@@ -16,14 +16,14 @@
  */
 package org.keycloak.connections.jpa.updater.liquibase.custom;
 
-import liquibase.exception.CustomChangeException;
-import liquibase.statement.core.InsertStatement;
-import liquibase.structure.core.Table;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
+
+import liquibase.exception.CustomChangeException;
+import liquibase.statement.core.InsertStatement;
+import liquibase.structure.core.Table;
 
 import static org.keycloak.protocol.saml.util.ArtifactBindingUtils.computeArtifactBindingIdentifierString;
 

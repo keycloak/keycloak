@@ -17,7 +17,20 @@
 
 package org.keycloak.storage.ldap.mappers.membership.group;
 
-import org.jboss.logging.Logger;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelException;
@@ -43,19 +56,7 @@ import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.UserRolesRetrieveStrategy;
 import org.keycloak.storage.user.SynchronizationResult;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -374,7 +375,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
                     .filter(group -> Objects.equals(group.getName(), groupName)).findFirst().orElse(null);
         } else {
             // Without preserved inheritance, it's always at groups path
-            return session.groups().getGroupByName(realm, parent, groupName);
+            return getSession().groups().getGroupByName(realm, parent, groupName);
         }
     }
 
@@ -767,13 +768,19 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
         @Override
         public boolean isMemberOf(GroupModel group) {
-            return isGroupInGroupPath(realm, group) && RoleUtils.isDirectMember(getGroupsStream(),group);
+            if (!isGroupInGroupPath(realm, group)) {
+                // this mapper doesn't manage the group - delegate to the next mapper or the JPA store.
+                return super.isMemberOf(group);
+            }
+            return RoleUtils.isDirectMember(getGroupsStream(),group);
         }
 
         protected Stream<GroupModel> getLDAPGroupMappingsConverted() {
             if (cachedLDAPGroupMappings != null) {
                 return cachedLDAPGroupMappings.stream();
             }
+
+            cachedLDAPGroupMappings = Set.of();
 
             List<LDAPObject> ldapGroups = getLDAPGroupMappings(ldapUser);
             if (!ldapGroups.isEmpty()) {
@@ -803,7 +810,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
      * Provides KC group defined as groups path or null (top-level group) if corresponding group is not available.
      */
     protected GroupModel getKcGroupsPathGroup(RealmModel realm) {
-        return config.isTopLevelGroupsPath() ? null : KeycloakModelUtils.findGroupByPath(session, realm, config.getGroupsPath());
+        return config.isTopLevelGroupsPath() ? null : KeycloakModelUtils.findGroupByPath(getSession(), realm, config.getGroupsPath());
     }
 
     protected boolean isGroupInGroupPath(RealmModel realm, GroupModel group) {
@@ -813,7 +820,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         if (config.isTopLevelGroupsPath()) {
             return true; // any group is in the path of the top level path.
         }
-        GroupModel groupPathGroup = KeycloakModelUtils.findGroupByPath(session, realm, config.getGroupsPath());
+        GroupModel groupPathGroup = KeycloakModelUtils.findGroupByPath(getSession(), realm, config.getGroupsPath());
         if (groupPathGroup != null) {
             while(!groupPathGroup.getId().equals(group.getId())) {
                 group = group.getParent();
@@ -847,7 +854,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         if (parentGroup == null) {
             parentGroup = getKcGroupsPathGroup(realm);
         }
-        return parentGroup == null ? session.groups().getTopLevelGroupsStream(realm) :
+        return parentGroup == null ? getSession().groups().getTopLevelGroupsStream(realm) :
             parentGroup.getSubGroupsStream();
     }
 

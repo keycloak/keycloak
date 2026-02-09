@@ -17,7 +17,34 @@
 
 package org.keycloak.models.utils;
 
-import org.jboss.logging.Logger;
+import java.math.BigInteger;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.crypto.spec.SecretKeySpec;
+
+import jakarta.transaction.InvalidTransactionException;
+import jakarta.transaction.SystemException;
+import jakarta.transaction.Transaction;
+
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.broker.social.SocialIdentityProvider;
@@ -28,6 +55,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.models.AccountRoles;
@@ -61,30 +89,7 @@ import org.keycloak.transaction.JtaTransactionManagerLookup;
 import org.keycloak.transaction.RequestContextHelper;
 import org.keycloak.utils.KeycloakSessionUtil;
 
-import jakarta.transaction.InvalidTransactionException;
-import jakarta.transaction.SystemException;
-import jakarta.transaction.Transaction;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.Key;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -106,6 +111,9 @@ public final class KeycloakModelUtils {
     private static final char CLIENT_ROLE_SEPARATOR = '.';
 
     public static final int MAX_CLIENT_LOOKUPS_DURING_ROLE_RESOLVE = 25;
+
+    public static final int DEFAULT_RSA_KEY_SIZE = 4096;
+    public static final int DEFAULT_CERTIFICATE_VALIDITY_YEARS = 3;
 
     private KeycloakModelUtils() {
     }
@@ -218,8 +226,14 @@ public final class KeycloakModelUtils {
     }
 
     public static CertificateRepresentation generateKeyPairCertificate(String subject) {
-        KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
-        X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject);
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.YEAR, DEFAULT_CERTIFICATE_VALIDITY_YEARS);
+        return generateKeyPairCertificate(subject, DEFAULT_RSA_KEY_SIZE, calendar);
+    }
+
+    public static CertificateRepresentation generateKeyPairCertificate(String subject, int keysize, Calendar endDate) {
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(keysize);
+        X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject, BigInteger.valueOf(System.currentTimeMillis()), endDate.getTime());
 
         String privateKeyPem = PemUtils.encodeKey(keyPair.getPrivate());
         String certPem = PemUtils.encodeCertificate(certificate);
@@ -450,9 +464,9 @@ public final class KeycloakModelUtils {
             } catch (Throwable t) {
                 session.getTransactionManager().setRollbackOnly();
                 throw t;
-            } finally {
-                KeycloakSessionUtil.setKeycloakSession(existing);
             }
+        } finally {
+            KeycloakSessionUtil.setKeycloakSession(existing);
         }
         return result;
     }
@@ -1219,5 +1233,18 @@ public final class KeycloakModelUtils {
         } finally {
             context.setRealm(currentRealm);
         }
+    }
+
+    /**
+     * @return the list of protocols accepted for the given client.
+     */
+    public static List<String> getAcceptedClientScopeProtocols(ClientModel client) {
+        List<String> acceptedClientProtocols;
+        if (client.getProtocol() == null || "openid-connect".equals(client.getProtocol())) {
+            acceptedClientProtocols = List.of("openid-connect", OID4VCIConstants.OID4VC_PROTOCOL);
+        }else {
+            acceptedClientProtocols = List.of(client.getProtocol());
+        }
+        return acceptedClientProtocols;
     }
 }

@@ -1,9 +1,9 @@
 package org.keycloak.testsuite.broker;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-
 import org.junit.After;
 import org.junit.Before;
+
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 public abstract class AbstractNestedBrokerTest extends AbstractBaseBrokerTest {
 

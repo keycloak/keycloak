@@ -17,13 +17,13 @@
 
 package org.keycloak.models;
 
-import org.keycloak.models.credential.OTPCredentialModel;
-import org.keycloak.models.credential.PasswordCredentialModel;
-
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

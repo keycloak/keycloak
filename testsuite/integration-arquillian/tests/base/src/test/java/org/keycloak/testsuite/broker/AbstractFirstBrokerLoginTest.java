@@ -5,21 +5,19 @@ import java.util.List;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 
-import com.google.common.collect.ImmutableMap;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.authenticators.broker.IdpReviewProfileAuthenticatorFactory;
 import org.keycloak.broker.provider.HardcodedUserSessionAttributeMapper;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -39,17 +37,19 @@ import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailServerConfiguration;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.userprofile.UserProfileContext;
+
+import com.google.common.collect.ImmutableMap;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.junit.Rule;
+import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.PageFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.assertHardCodedSessionNote;
@@ -60,6 +60,12 @@ import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test of various scenarios related to first broker login.
@@ -400,6 +406,54 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertNumFederatedIdentities(userId, 1);
     }
 
+    @Test
+    public void testUpdateEmailReviewProfileLinkingAccount() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        RealmResource realmApi = adminClient.realm(bc.consumerRealmName());
+        IdentityProviderResource idpApi = realmApi.identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation idp = idpApi.toRepresentation();
+        idp.getConfig().put(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.FORCE.name());
+        idpApi.update(idp);
+        String userId = createUser(bc.getUserLogin());
+        UserResource providerUser = realmApi.users().get(userId);
+        UserRepresentation userResource = providerUser.toRepresentation();
+
+        userResource.setEmail(USER_EMAIL);
+        userResource.setFirstName("FirstName");
+        userResource.setLastName("LastName");
+
+        providerUser.update(userResource);
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        log.debug("Clicking social " + bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "sign in to", true);
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        log.debug("Logging in");
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+        waitForPage(driver, "account already exists", false);
+        idpConfirmLinkPage.assertCurrent();
+
+        // Click browser 'back' on review profile page
+        idpConfirmLinkPage.clickReviewProfile();
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.updateAccountInformation("changed@kc.org", "f", "l");
+
+        idpConfirmLinkPage.assertCurrent();
+        idpConfirmLinkPage.clickLinkAccount();
+
+        // Use correct password now
+        loginPage.login(bc.getUserLogin(), "password");
+        appPage.assertCurrent();
+        assertNumFederatedIdentities(userId, 1);
+        userResource = providerUser.toRepresentation();
+        assertEquals("changed@kc.org", userResource.getEmail());
+        assertFalse(userResource.isEmailVerified());
+    }
 
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testLinkAccountByReauthentication_forgetPassword
@@ -824,6 +878,85 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertTrue(realm.users().get(linkedUserId).toRepresentation().isEmailVerified());
     }
 
+    @Test
+    public void testLinkAccountModifyingEmailLinkingByEmailNotAllowed() {
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+
+        configureSMTPServer();
+
+        // change provider user email to changed@localhost.com
+        UserRepresentation userProvider = ApiUtil.findUserByUsername(providerRealm, bc.getUserLogin());
+        userProvider.setEmail("changed@localhost.com");
+        providerRealm.users().get(userProvider.getId()).update(userProvider);
+
+        //create user on consumer's site with the correct email
+        final String linkedUserId = createUser(bc.getUserLogin());
+
+        //test
+        oauth.config().clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        logInWithBroker(bc);
+
+        waitForPage(driver, "update account information", false);
+        Assert.assertTrue(updateAccountInformationPage.isCurrent());
+        Assert.assertTrue("We must be on correct realm right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+
+        // update the email to the correct one
+        log.debug("Updating info on updateAccount page");
+        updateAccountInformationPage.updateAccountInformation(USER_EMAIL, "Firstname", "Lastname");
+
+        //link account
+        waitForPage(driver, "account already exists", false);
+        idpConfirmLinkPage.clickLinkAccount();
+
+        //it should start the link using username and password as email has been changed
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+        loginPage.login("password");
+        Assert.assertTrue(appPage.isCurrent());
+
+        assertNumFederatedIdentities(linkedUserId, 1);
+    }
+
+    @Test
+    public void testLinkAccountReviewDisabled() throws Exception {
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+
+        // disable the idp review step
+        AuthenticationExecutionInfoRepresentation idpReviewProfileExec = consumerRealm.flows().getExecutions("first broker login").stream()
+                .filter(execution -> IdpReviewProfileAuthenticatorFactory.PROVIDER_ID.equals(execution.getProviderId()))
+                .findAny()
+                .orElse(null);
+        Assert.assertNotNull("IdpReviewProfileAuthenticator execution not found", idpReviewProfileExec);
+        idpReviewProfileExec.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED.name());
+        consumerRealm.flows().updateExecutions("first broker login", idpReviewProfileExec);
+
+        //create user on consumer's site with the correct email
+        final String linkedUserId = createUser(bc.getUserLogin());
+
+        //test
+        oauth.config().clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        logInWithBroker(bc);
+
+        // no review displayed and button in link not available
+        waitForPage(driver, "account already exists", false);
+        Assert.assertTrue("We must be on correct realm right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        Assert.assertFalse("Review Profile button is displayed", idpConfirmLinkPage.isReviewProfileDisplayed());
+        idpConfirmLinkPage.clickLinkAccount();
+
+        //linking the account using password as email not configured
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+        loginPage.login("password");
+        Assert.assertTrue(appPage.isCurrent());
+
+        assertNumFederatedIdentities(linkedUserId, 1);
+    }
 
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest#testSuccessfulAuthenticationWithoutUpdateProfile_emailProvided_emailVerifyEnabled
@@ -1051,7 +1184,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         // in the second browser confirm the mail
         driver2.navigate().to(url);
-        assertThat(driver2.findElement(By.className("instruction")).getText(), startsWith("Confirm linking the account"));
+        assertThat(driver2.findElement(By.id("kc-page-title")).getText(), startsWith("Confirm linking the account"));
+        assertThat(driver2.findElement(By.className("instruction")).getText(), startsWith("If you link the account, you will also be able to login using account"));
         driver2.findElement(By.linkText("» Click here to proceed")).click();
         assertThat(driver2.findElement(By.className("instruction")).getText(), startsWith("You successfully verified your email."));
 
@@ -1280,11 +1414,6 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
                 .assertEvent(getFirstConsumerEvent());
 
-        events.expectAccount(EventType.UPDATE_PROFILE).client("broker-app")
-                .realm(consumerRealmRep).user((String)null)
-                .detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
-                .assertEvent(getFirstConsumerEvent());
-
         events.expectAccount(EventType.UPDATE_EMAIL).client("broker-app")
                 .realm(consumerRealmRep).user((String)null).session((String) null)
             .detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
@@ -1292,6 +1421,11 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
             .detail(Details.PREVIOUS_EMAIL, "no-first-name@localhost.com")
             .detail(Details.UPDATED_EMAIL, "new-email@localhost.com")
             .assertEvent(getFirstConsumerEvent());
+
+        events.expectAccount(EventType.UPDATE_PROFILE).client("broker-app")
+                .realm(consumerRealmRep).user((String)null)
+                .detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
+                .assertEvent(getFirstConsumerEvent());
 
         events.expectAccount(EventType.REGISTER).client("broker-app")
                 .realm(consumerRealmRep).user(Matchers.any(String.class)).session((String) null)

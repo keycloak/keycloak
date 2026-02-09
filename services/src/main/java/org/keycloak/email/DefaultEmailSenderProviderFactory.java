@@ -17,12 +17,12 @@
 
 package org.keycloak.email;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

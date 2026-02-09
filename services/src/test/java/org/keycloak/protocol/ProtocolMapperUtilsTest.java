@@ -17,10 +17,11 @@
 
 package org.keycloak.protocol;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author Alexander Schwartz

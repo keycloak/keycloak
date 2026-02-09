@@ -16,18 +16,20 @@
  */
 package org.keycloak.testsuite.actions;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticatorFactory;
+import org.keycloak.authentication.requiredactions.UpdateTotp;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -41,8 +43,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -51,21 +53,25 @@ import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.pages.SetupRecoveryAuthnCodesPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -85,8 +91,15 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         requiredAction.setEnabled(true);
         requiredAction.setDefaultAction(true);
 
+        RequiredActionProviderRepresentation recoveryCodesAction = new RequiredActionProviderRepresentation();
+        recoveryCodesAction.setAlias(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
+        recoveryCodesAction.setProviderId(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
+        recoveryCodesAction.setName("Recovery codes");
+        recoveryCodesAction.setEnabled(true);
+
         List<RequiredActionProviderRepresentation> requiredActions = new LinkedList<>();
         requiredActions.add(requiredAction);
+        requiredActions.add(recoveryCodesAction);
         testRealm.setRequiredActions(requiredActions);
         testRealm.setResetPasswordAllowed(Boolean.TRUE);
     }
@@ -144,6 +157,9 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected RegisterPage registerPage;
+
+    @Page
+    protected SetupRecoveryAuthnCodesPage setupRecoveryAuthnCodesPage;
 
     @Drone
     @SecondBrowser
@@ -659,7 +675,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
-        events.expectLogout(null).session(AssertEvents.isUUID()).assertEvent();
+        events.expectLogout(null).session(AssertEvents.isSessionId()).assertEvent();
 
         // test lookAheadWindow
         realmRep = adminClient.realm("test").toRepresentation();
@@ -755,5 +771,48 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             MatcherAssert.assertThat(sessions.stream().map(UserSessionRepresentation::getId).collect(Collectors.toList()),
                     Matchers.containsInAnyOrder(event1.getSessionId(), event2.getSessionId()));
         }
+    }
+
+    @Test(expected = AssertionError.class)
+    public void setupTotpRegisterVerifyRecoveryCodesSetupDisabled() {
+        setupTotpRegisterVerifyRecoveryCodesSetup(false);
+    }
+
+    @Test
+    public void setupTotpRegisterVerifyRecoveryCodesSetupEnabled() {
+        setupTotpRegisterVerifyRecoveryCodesSetup(true);
+    }
+
+    private void setupTotpRegisterVerifyRecoveryCodesSetup(boolean enforceRecoveryCodesSetup) {
+        configureTotpActionToEnforceRecoveryCodes(enforceRecoveryCodesSetup);
+
+        try {
+            // Login
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+
+            // Configure OTP
+            totpPage.assertCurrent();
+            totpPage.configure(this.totp.generateTOTP(totpPage.getTotpSecret()));
+
+            // The next page should be the setup page for recovery codes
+            setupRecoveryAuthnCodesPage.assertCurrent();
+        } finally {
+            // finally, reset totp action config
+            configureTotpActionToEnforceRecoveryCodes(false);
+        }
+    }
+
+    private void configureTotpActionToEnforceRecoveryCodes(boolean enforceRecoveryCodes) {
+        List<RequiredActionProviderRepresentation> requiredActions = testRealm().flows().getRequiredActions();
+        RequiredActionProviderRepresentation totpAction = requiredActions.stream().filter(ra -> ra.getProviderId().equals(UserModel.RequiredAction.CONFIGURE_TOTP.name())).findFirst().orElseThrow();
+        totpAction.setConfig(Map.of(UpdateTotp.ADD_RECOVERY_CODES, Boolean.toString(enforceRecoveryCodes)));
+        testRealm().flows().updateRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name(), totpAction);
+        testRealm().flows().getExecutions("browser").forEach(exe -> {
+            if (Objects.equals(exe.getProviderId(), RecoveryAuthnCodesFormAuthenticatorFactory.PROVIDER_ID)) {
+              exe.setRequirement(enforceRecoveryCodes ? "ALTERNATIVE" : "DISABLED");
+              testRealm().flows().updateExecutions("browser", exe);
+            }
+        });
     }
 }

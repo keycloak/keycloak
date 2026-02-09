@@ -29,7 +29,6 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <meta name="robots" content="noindex, nofollow">
     <meta name="color-scheme" content="light${darkMode?then(' dark', '')}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -88,11 +87,13 @@
     </#if>
     <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
     <script type="module">
+        <#outputformat "JavaScript">
         import { startSessionPolling } from "${url.resourcesPath}/js/authChecker.js";
 
         startSessionPolling(
-            "${url.ssoLoginInOtherTabsUrl?no_esc}"
+            ${url.ssoLoginInOtherTabsUrl?c}
         );
+        </#outputformat>
     </script>
     <script type="module">
         document.addEventListener("click", (event) => {
@@ -119,11 +120,13 @@
     </script>
     <#if authenticationSession??>
         <script type="module">
+             <#outputformat "JavaScript">
             import { checkAuthSession } from "${url.resourcesPath}/js/authChecker.js";
 
             checkAuthSession(
-                "${authenticationSession.authSessionIdHash}"
+                ${authenticationSession.authSessionIdHash?c}
             );
+            </#outputformat>
         </script>
     </#if>
     <script>
@@ -223,7 +226,7 @@
                     <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon!}"></span></#if>
                     <#if message.type = 'info'><span class="${properties.kcFeedbackInfoIcon!}"></span></#if>
                 </div>
-                <span class="${properties.kcAlertTitleClass!} kc-feedback-text">${kcSanitize(message.summary)?no_esc}</span>
+                <span class="${properties.kcAlertTitleClass!} kc-feedback-text">${message.summary}</span>
             </div>
         </#if>
 
@@ -234,7 +237,7 @@
               <input type="hidden" name="tryAnotherWay" value="on"/>
               <a id="try-another-way" href="javascript:document.forms['kc-select-try-another-way-form'].requestSubmit()"
                   class="${properties.kcButtonSecondaryClass} ${properties.kcButtonBlockClass} ${properties.kcMarginTopClass}">
-                    ${kcSanitize(msg("doTryAnotherWay"))?no_esc}
+                    ${msg("doTryAnotherWay")}
               </a>
           </form>
         </#if>

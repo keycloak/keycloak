@@ -19,10 +19,11 @@
 
 package org.keycloak.crypto.fips.test;
 
-import org.junit.Assume;
-import org.junit.Before;
 import org.keycloak.authentication.x509.CertificateIdentityExtractorTest;
 import org.keycloak.common.util.Environment;
+
+import org.junit.Assume;
+import org.junit.Before;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -16,11 +16,11 @@
  */
 package org.keycloak.dom.saml.v1.assertion;
 
-import javax.xml.datatype.XMLGregorianCalendar;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 /**
  * <complexType name="AuthenticationStatementType"> <complexContent> <extension base="saml:SubjectStatementAbstractType">

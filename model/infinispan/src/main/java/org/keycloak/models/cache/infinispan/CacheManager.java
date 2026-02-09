@@ -1,12 +1,5 @@
 package org.keycloak.models.cache.infinispan;
 
-import org.infinispan.Cache;
-import org.jboss.logging.Logger;
-import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.cache.infinispan.entities.Revisioned;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -14,6 +7,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+
+import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.cache.infinispan.entities.Revisioned;
+import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
+
+import org.infinispan.Cache;
+import org.jboss.logging.Logger;
 
 /**
  *
@@ -200,7 +201,7 @@ public abstract class CacheManager {
     private void put(String id, Revisioned object, long lifespan) {
         if (lifespan < 0) {
             cache.putForExternalRead(id, object);
-        } else {
+        } else if (lifespan > 0) {
             cache.putForExternalRead(id, object, lifespan, TimeUnit.MILLISECONDS);
         }
     }

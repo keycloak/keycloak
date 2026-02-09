@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.pages.social;
 
 import org.keycloak.testsuite.util.WaitUtils;
+
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;

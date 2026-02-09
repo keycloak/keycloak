@@ -17,12 +17,13 @@
 
 package org.keycloak.storage.ldap.idm.model;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.keycloak.storage.ldap.mappers.membership.group.GroupTreeResolver;
-
 import java.util.Arrays;
 import java.util.List;
+
+import org.keycloak.storage.ldap.mappers.membership.group.GroupTreeResolver;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

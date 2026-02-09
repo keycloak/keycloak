@@ -17,7 +17,11 @@
 
 package org.keycloak.authentication.forms;
 
+import java.util.List;
+
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.FormAuthenticator;
 import org.keycloak.authentication.FormAuthenticatorFactory;
@@ -34,11 +38,7 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import jakarta.ws.rs.core.Response;
 import org.keycloak.services.messages.Messages;
-
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

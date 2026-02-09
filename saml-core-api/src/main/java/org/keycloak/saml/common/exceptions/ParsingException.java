@@ -16,9 +16,9 @@
  */
 package org.keycloak.saml.common.exceptions;
 
+import java.security.GeneralSecurityException;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
-import java.security.GeneralSecurityException;
 
 /**
  * General Exception indicating parsing exception

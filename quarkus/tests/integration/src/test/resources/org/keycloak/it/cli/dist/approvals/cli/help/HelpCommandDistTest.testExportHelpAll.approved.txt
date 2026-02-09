@@ -27,8 +27,8 @@ Database:
 
 --db <vendor>        The database vendor. In production mode the default value of 'dev-file' is
                        deprecated, you should explicitly specify the db instead. Possible values
-                       are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. Default:
-                       dev-file.
+                       are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres, tidb.
+                       Default: dev-file.
 --db-debug-jpql <true|false>
                      Add JPQL information as comments to SQL statements to debug JPA SQL statement
                        generation. Default: false.
@@ -41,6 +41,11 @@ Database:
                      The password of the database user.
 --db-pool-initial-size <size>
                      The initial size of the connection pool.
+--db-pool-max-lifetime <duration>
+                     The maximum time a connection remains in the pool, after which it will be
+                       closed upon return and replaced as necessary. May be an ISO 8601 duration
+                       value, an integer number of seconds, or an integer followed by one of [ms,
+                       h, m, s, d].
 --db-pool-max-size <size>
                      The maximum size of the connection pool. Default: 100.
 --db-pool-min-size <size>
@@ -67,17 +72,25 @@ Database:
 
 Database - additional datasources:
 
---db-active-<datasource> <true|false>
-                     Deactivate specific named datasource <datasource>. Default: true.
+--db-debug-jpql-<datasource> <true|false>
+                     Used for named <datasource>. Add JPQL information as comments to SQL
+                       statements to debug JPA SQL statement generation. Default: false.
 --db-driver-<datasource> <driver>
                      Used for named <datasource>. The fully qualified class name of the JDBC
                        driver. If not set, a default driver is set accordingly to the chosen
                        database.
+--db-enabled-<datasource> <true|false>
+                     If the named datasource <datasource> should be enabled at runtime. Default:
+                       true.
 --db-kind-<datasource> <vendor>
                      Used for named <datasource>. The database vendor. In production mode the
                        default value of 'dev-file' is deprecated, you should explicitly specify the
                        db instead. Possible values are: dev-file, dev-mem, mariadb, mssql, mysql,
-                       oracle, postgres. Default: dev-file.
+                       oracle, postgres, tidb.
+--db-log-slow-queries-threshold-<datasource> <milliseconds>
+                     Used for named <datasource>. Log SQL statements slower than the configured
+                       threshold with logger org.hibernate.SQL_SLOW and log-level info. Default:
+                       10000.
 --db-password-<datasource> <password>
                      Used for named <datasource>. The password of the database user.
 --db-pool-initial-size-<datasource> <size>
@@ -121,56 +134,13 @@ Transaction:
 
 Feature:
 
+--feature-<name> <enabled|disabled|vX(X is version)>
+                     Enable/Disable specific feature <feature>. It takes precedence over the
+                       'features', and 'features-disabled' options. Possible values are: 'enabled',
+                       'disabled', or specific version (lowercase) that will be enabled (f.e. 'v2')
 --features <feature> Enables a set of one or more features. Possible values are: <...>.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: <...>.
-
-Management:
-
---http-management-port <port>
-                     Port of the management interface. Relevant only when something is exposed on
-                       the management interface - see the guide for details. Default: 9000.
---http-management-relative-path <path>
-                     Set the path relative to '/' for serving resources from management interface.
-                       The path must start with a '/'. If not given, the value is inherited from
-                       HTTP options. Relevant only when something is exposed on the management
-                       interface - see the guide for details. Default: /.
---https-management-certificate-file <file>
-                     The file path to a server certificate or certificate chain in PEM format for
-                       the management server. If not given, the value is inherited from HTTP
-                       options. Relevant only when something is exposed on the management interface
-                       - see the guide for details.
---https-management-certificate-key-file <file>
-                     The file path to a private key in PEM format for the management server. If not
-                       given, the value is inherited from HTTP options. Relevant only when
-                       something is exposed on the management interface - see the guide for details.
---https-management-certificates-reload-period <reload period>
-                     Interval on which to reload key store, trust store, and certificate files
-                       referenced by https-management-* options for the management server. May be a
-                       java.time.Duration value, an integer number of seconds, or an integer
-                       followed by one of [ms, h, m, s, d]. Must be greater than 30 seconds. Use -1
-                       to disable. If not given, the value is inherited from HTTP options. Relevant
-                       only when something is exposed on the management interface - see the guide
-                       for details. Default: 1h.
---https-management-client-auth <auth>
-                     Configures the management interface to require/request client authentication.
-                       If not given, the value is inherited from HTTP options. Relevant only when
-                       something is exposed on the management interface - see the guide for
-                       details. Possible values are: none, request, required. Default: none.
---https-management-key-store-file <file>
-                     The key store which holds the certificate information instead of specifying
-                       separate files for the management server. If not given, the value is
-                       inherited from HTTP options. Relevant only when something is exposed on the
-                       management interface - see the guide for details.
---https-management-key-store-password <password>
-                     The password of the key store file for the management server. If not given,
-                       the value is inherited from HTTP options. Relevant only when something is
-                       exposed on the management interface - see the guide for details. Default:
-                       password.
---legacy-observability-interface <true|false>
-                     DEPRECATED. If metrics/health endpoints should be exposed on the main HTTP
-                       server (not recommended). If set to true, the management interface is
-                       disabled. Default: false.
 
 Vault:
 
@@ -196,12 +166,17 @@ Logging:
                        Default: 512. Available only when Console log handler is activated and
                        asynchronous logging is enabled.
 --log-console-color <true|false>
-                     Enable or disable colors when logging to console. Default: false. Available
+                     Enable or disable colors when logging to console. If this is not present then
+                       an attempt will be made to guess if the terminal supports color. Available
                        only when Console log handler is activated.
 --log-console-format <format>
                      The format of unstructured console log entries. If the format has spaces in
                        it, escape the value using "<format>". Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
                        -5p [%c] (%t) %s%e%n. Available only when Console log handler is activated.
+--log-console-include-mdc <true|false>
+                     Include mdc information in the console log. If the 'log-console-format' option
+                       is specified, this option has no effect. Default: true. Available only when
+                       Console log handler and MDC logging are activated.
 --log-console-include-trace <true|false>
                      Include tracing information in the console log. If the 'log-console-format'
                        option is specified, this option has no effect. Default: true. Available
@@ -235,6 +210,10 @@ Logging:
                      Set a format specific to file log entries. Default: %d{yyyy-MM-dd HH:mm:ss,
                        SSS} %-5p [%c] (%t) %s%e%n. Available only when File log handler is
                        activated.
+--log-file-include-mdc <true|false>
+                     Include MDC information in the file log. If the 'log-file-format' option is
+                       specified, this option has no effect. Default: true. Available only when
+                       File log handler and MDC logging are activated.
 --log-file-include-trace <true|false>
                      Include tracing information in the file log. If the 'log-file-format' option
                        is specified, this option has no effect. Default: true. Available only when
@@ -262,6 +241,16 @@ Logging:
                      The log level of a category. Takes precedence over the 'log-level' option.
                        Possible values are (case insensitive): off, fatal, error, warn, info,
                        debug, trace, all.
+--log-mdc-enabled <true|false>
+                     Indicates whether to add information about the realm and other information to
+                       the mapped diagnostic context. All elements will be prefixed with 'kc.'
+                       Default: false. Available only when log-mdc preview feature is enabled.
+--log-mdc-keys <keys>
+                     Defines which information should be added to the mapped diagnostic context as
+                       a comma-separated list. Possible values are: realmName, clientId, userId,
+                       ipAddress, org, sessionId, authenticationSessionId, authenticationTabId.
+                       Default: realmName,clientId,org,sessionId,authenticationSessionId,
+                       authenticationTabId. Available only when MDC logging is enabled.
 --log-syslog-app-name <name>
                      Set the app name used when formatting the message in RFC5424 format. Default:
                        keycloak. Available only when Syslog is activated.
@@ -273,12 +262,22 @@ Logging:
                      The queue length to use before flushing writing when logging to Syslog.
                        Default: 512. Available only when Syslog is activated and asynchronous
                        logging is enabled.
+--log-syslog-counting-framing <strategy>
+                     If 'true', the message being sent is prefixed with the size of the message. If
+                       'protocol-dependent', the default value is 'true' when 'log-syslog-protocol'
+                       is 'tcp' or 'ssl-tcp', otherwise 'false'. Possible values are: true, false,
+                       protocol-dependent. Default: protocol-dependent. Available only when Syslog
+                       is activated.
 --log-syslog-endpoint <host:port>
                      Set the IP address and port of the Syslog server. Default: localhost:514.
                        Available only when Syslog is activated.
 --log-syslog-format <format>
                      Set a format specific to Syslog entries. Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
                        -5p [%c] (%t) %s%e%n. Available only when Syslog is activated.
+--log-syslog-include-mdc <true|false>
+                     Include MDC information in the Syslog. If the 'log-syslog-format' option is
+                       specified, this option has no effect. Default: true. Available only when
+                       Syslog handler and MDC logging are activated.
 --log-syslog-include-trace <true|false>
                      Include tracing information in the Syslog. If the 'log-syslog-format' option
                        is specified, this option has no effect. Default: true. Available only when
@@ -310,6 +309,86 @@ Logging:
                      Set the Syslog type used to format the sent message. Possible values are:
                        rfc5424, rfc3164. Default: rfc5424. Available only when Syslog is activated.
 
+Telemetry (OpenTelemetry):
+
+--telemetry-endpoint <url>
+                     OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
+                       Available only when any of available OpenTelemetry components (Logs,
+                       Metrics, Traces) is turned on.
+--telemetry-header-<header> <value>
+                     General OpenTelemetry header that will be part of the exporter request (mainly
+                       useful for providing Authorization header). Check the documentation on how
+                       to set environment variables for headers containing special characters or
+                       custom case-sensitive headers. Available only when any of available
+                       OpenTelemetry components (Logs, Metrics, Traces) is turned on.
+--telemetry-logs-enabled <true|false>
+                     Enables exporting logs to a destination handling OpenTelemetry logs. Default:
+                       false. Available only when feature 'opentelemetry-logs:v1' is enabled.
+--telemetry-logs-endpoint <url>
+                     OpenTelemetry endpoint to export logs to. If not given, the value is inherited
+                       from the 'telemetry-endpoint' option. Available only when Telemetry Logs
+                       functionality ('telemetry-logs-enabled') is enabled.
+--telemetry-logs-header-<header> <value>
+                     OpenTelemetry header that will be part of the log exporter request (mainly
+                       useful for providing Authorization header). Check the documentation on how
+                       to set environment variables for headers containing special characters or
+                       custom case-sensitive headers. Available only when Telemetry Logs
+                       functionality ('telemetry-logs-enabled') is enabled.
+--telemetry-logs-level <level>
+                     The most verbose log level exported to the telemetry endpoint. For more
+                       information, check the Telemetry guide. Possible values are (case
+                       insensitive): off, fatal, error, warn, info, debug, trace, all. Default:
+                       all. Available only when Telemetry Logs functionality
+                       ('telemetry-logs-enabled') is enabled.
+--telemetry-logs-protocol <protocol>
+                     OpenTelemetry protocol used for exporting logs. If not given, the value is
+                       inherited from the 'telemetry-protocol' option. Possible values are: grpc,
+                       http/protobuf. Available only when Telemetry Logs functionality
+                       ('telemetry-logs-enabled') is enabled.
+--telemetry-metrics-enabled <true|false>
+                     Enables exporting metrics to a destination handling OpenTelemetry metrics.
+                       Default: false. Available only when metrics and feature
+                       'opentelemetry-metrics:v1' are enabled.
+--telemetry-metrics-endpoint <url>
+                     OpenTelemetry endpoint to connect to for Metrics. If not given, the value is
+                       inherited from the 'telemetry-endpoint' option. Available only when metrics
+                       ('metrics-enabled') and Telemetry Metrics functionality
+                       ('telemetry-metrics-enabled') are enabled.
+--telemetry-metrics-header-<header> <value>
+                     OpenTelemetry header that will be part of the metrics exporter request (mainly
+                       useful for providing Authorization header). Check the documentation on how
+                       to set environment variables for headers containing special characters or
+                       custom case-sensitive headers. Available only when metrics
+                       ('metrics-enabled') and Telemetry Metrics functionality
+                       ('telemetry-metrics-enabled') are enabled.
+--telemetry-metrics-interval <duration>
+                     The interval between the start of two metric export attempts to the
+                       destination handling OpenTelemetry metrics data. It accepts simplified
+                       format for time units as java.time.Duration (like 5000ms, 30s, 5m, 1h). If
+                       the value is only a number, it represents time in seconds. Default: 60s.
+                       Available only when metrics ('metrics-enabled') and Telemetry Metrics
+                       functionality ('telemetry-metrics-enabled') are enabled.
+--telemetry-metrics-protocol <protocol>
+                     OpenTelemetry protocol used for the metrics telemetry data. If not given, the
+                       value is inherited from the 'telemetry-protocol' option. Possible values
+                       are: grpc, http/protobuf. Available only when metrics ('metrics-enabled')
+                       and Telemetry Metrics functionality ('telemetry-metrics-enabled') are
+                       enabled.
+--telemetry-protocol <protocol>
+                     OpenTelemetry protocol used for the communication between server and
+                       OpenTelemetry collector. Possible values are: grpc, http/protobuf. Default:
+                       grpc. Available only when any of available OpenTelemetry components (Logs,
+                       Metrics, Traces) is turned on.
+--telemetry-resource-attributes <attributes>
+                     OpenTelemetry resource attributes characterize the telemetry producer. Values
+                       in format 'key1=val1,key2=val2'. Available only when any of available
+                       OpenTelemetry components (Logs, Metrics, Traces) is turned on.
+--telemetry-service-name <name>
+                     OpenTelemetry service name. Takes precedence over 'service.name' defined in
+                       the 'telemetry-resource-attributes' property. Default: keycloak. Available
+                       only when any of available OpenTelemetry components (Logs, Metrics, Traces)
+                       is turned on.
+
 Tracing:
 
 --tracing-compression <method>
@@ -320,19 +399,33 @@ Tracing:
                      Enables the OpenTelemetry tracing. Default: false. Available only when
                        'opentelemetry' feature is enabled.
 --tracing-endpoint <url>
-                     OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
-                       Available only when Tracing is enabled.
+                     OpenTelemetry endpoint to connect to for traces. If not given, the value is
+                       inherited from the 'telemetry-endpoint' option. Default: http://localhost:
+                       4317. Available only when Tracing is enabled.
+--tracing-header-<header> <value>
+                     OpenTelemetry header that will be part of the exporter request (mainly useful
+                       for providing Authorization header). Check the documentation on how to set
+                       environment variables for headers containing special characters or custom
+                       case-sensitive headers. Available only when Tracing is enabled.
+--tracing-infinispan-enabled <true|false>
+                     Enables the OpenTelemetry tracing for embedded Infinispan. Default: true.
+                       Available only when tracing and embedded Infinispan is enabled.
 --tracing-jdbc-enabled <true|false>
                      Enables the OpenTelemetry JDBC tracing. Default: true. Available only when
                        Tracing is enabled.
 --tracing-protocol <protocol>
-                     OpenTelemetry protocol used for the telemetry data. Possible values are: grpc,
+                     OpenTelemetry protocol used for the telemetry data. If not given, the value is
+                       inherited from the 'telemetry-protocol' option. Possible values are: grpc,
                        http/protobuf. Default: grpc. Available only when Tracing is enabled.
 --tracing-resource-attributes <attributes>
-                     OpenTelemetry resource attributes present in the exported trace to
+                     DEPRECATED. OpenTelemetry resource attributes present in the exported trace to
                        characterize the telemetry producer. Values in format 'key1=val1,key2=val2'.
-                       For more information, check the Tracing guide. Available only when Tracing
-                       is enabled.
+                       If not given, the value is inherited from the
+                       'telemetry-resource-attributes' option. For more information, check the
+                       Tracing guide. Available only when Tracing is enabled. Resource attributes
+                       are not directly related to Tracing and you should use the Telemetry option
+                       which takes precedence. Use the following option instead:
+                       telemetry-resource-attributes.
 --tracing-sampler-ratio <ratio>
                      OpenTelemetry sampler ratio. Probability that a span will be sampled. Expected
                        double value in interval [0,1]. Default: 1.0. Available only when Tracing is
@@ -343,9 +436,12 @@ Tracing:
                        parentbased_traceidratio. Default: traceidratio. Available only when Tracing
                        is enabled.
 --tracing-service-name <name>
-                     OpenTelemetry service name. Takes precedence over 'service.name' defined in
-                       the 'tracing-resource-attributes' property. Default: keycloak. Available
-                       only when Tracing is enabled.
+                     DEPRECATED. OpenTelemetry service name. Takes precedence over 'service.name'
+                       defined in the 'tracing-resource-attributes' property. If not given, the
+                       value is inherited from the 'telemetry-service-name' option. Default:
+                       keycloak. Available only when Tracing is enabled. Service name is not
+                       directly related to Tracing and you should use the Telemetry option which
+                       takes precedence. Use the following option instead: telemetry-service-name.
 
 Events:
 
@@ -376,15 +472,25 @@ Export:
 
 --dir <dir>          Set the path to a directory where files will be created with the exported data.
 --file <file>        Set the path to a file that will be created with the exported data. To export
-                       more than 500 users, export to a directory with different files instead.
+                       more than 50000 users, export to a directory with different files instead.
 --realm <realm>      Set the name of the realm to export. If not set, all realms are going to be
                        exported.
 --users <strategy>   Set how users should be exported. Possible values are: skip, realm_file,
                        same_file, different_files. Default: different_files.
 --users-per-file <number>
                      Set the number of users per file. It is used only if 'users' is set to
-                       'different_files'. Increasing this number leads to exponentially increasing
-                       export times. Default: 50.
+                       'different_files'. Default: 50.
+
+OpenAPI configuration:
+
+--openapi-enabled <true|false>
+                     If the server should expose OpenAPI Endpoint. If enabled, OpenAPI is available
+                       at '/openapi'. Default: false. Available only when OpenAPI feature is
+                       enabled.
+--openapi-ui-enabled <true|false>
+                     If the server should expose OpenApi-UI Endpoint. If enabled, OpenAPI UI is
+                       available at '/openapi/ui'. Default: false. Available only when OpenAPI
+                       Endpoint is enabled.
 
 Bootstrap Admin:
 

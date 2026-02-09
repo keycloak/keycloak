@@ -17,8 +17,9 @@
 
 package org.keycloak.quarkus.deployment;
 
-import io.quarkus.builder.item.SimpleBuildItem;
 import org.keycloak.representations.userprofile.config.UPConfig;
+
+import io.quarkus.builder.item.SimpleBuildItem;
 
 /**
  * Build item that store default configuration for a User Profile provider

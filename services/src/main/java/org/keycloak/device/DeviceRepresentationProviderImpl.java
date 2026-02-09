@@ -1,34 +1,29 @@
 package org.keycloak.device;
 
-import org.jboss.logging.Logger;
+import jakarta.ws.rs.core.HttpHeaders;
+
+import org.keycloak.cache.LocalCache;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.account.DeviceRepresentation;
-import ua_parser.Client;
-import ua_parser.Parser;
 
-import jakarta.ws.rs.core.HttpHeaders;
+import org.jboss.logging.Logger;
+import ua_parser.Client;
 
 public class DeviceRepresentationProviderImpl implements DeviceRepresentationProvider {
     private static final Logger logger = Logger.getLogger(DeviceActivityManager.class);
     private static final int USER_AGENT_MAX_LENGTH = 512;
-    private final Parser parser;
 
+    private final LocalCache<String, Client> cache;
     private final KeycloakSession session;
 
-    private DeviceRepresentation deviceRepresentation;
-
-    DeviceRepresentationProviderImpl(KeycloakSession session, Parser parser) {
+    DeviceRepresentationProviderImpl(KeycloakSession session, LocalCache<String, Client> cache) {
         this.session = session;
-        this.parser = parser;
+        this.cache = cache;
     }
 
     @Override
     public DeviceRepresentation deviceRepresentation() {
-        if (deviceRepresentation != null) {
-            return deviceRepresentation;
-        }
-
         KeycloakContext context = session.getContext();
 
         if (context.getRequestHeaders() == null) {
@@ -48,7 +43,10 @@ public class DeviceRepresentationProviderImpl implements DeviceRepresentationPro
 
         DeviceRepresentation current;
         try {
-            Client client = parser.parse(userAgent);
+            Client client = cache.get(userAgent);
+            // To avoid IDEA warning about NullPointerException
+            // It should never be null as the parser never returns a null client.
+            assert client != null;
             current = new DeviceRepresentation();
 
             current.setDevice(client.device.family);
@@ -87,12 +85,10 @@ public class DeviceRepresentationProviderImpl implements DeviceRepresentationPro
             current.setOsVersion(osVersion);
             current.setIpAddress(context.getConnection().getRemoteHost());
             current.setMobile(userAgent.toLowerCase().contains("mobile"));
-
-            deviceRepresentation = current;
+            return current;
         } catch (Exception cause) {
             logger.error("Failed to create device info from user agent header", cause);
             return null;
         }
-        return current;
     }
 }

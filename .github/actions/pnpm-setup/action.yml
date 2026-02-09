@@ -5,7 +5,7 @@ inputs:
   node-version:
     description: Node.js version
     required: false
-    default: "22"
+    default: "24"
 
 runs:
   using: composite
@@ -16,9 +16,8 @@ runs:
         node-version: ${{ inputs.node-version }}
         check-latest: true
 
-    - name: Enable Corepack
-      shell: bash
-      run: corepack enable
+    - name: Setup Corepack
+      uses: ./.github/actions/corepack-setup
 
     - name: PNPM store cache
       uses: ./.github/actions/pnpm-store-cache

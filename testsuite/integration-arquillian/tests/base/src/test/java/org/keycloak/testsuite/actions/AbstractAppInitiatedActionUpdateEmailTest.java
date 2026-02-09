@@ -16,21 +16,20 @@
  */
 package org.keycloak.testsuite.actions;
 
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.pages.EmailUpdatePage;
+import org.keycloak.testsuite.util.UserBuilder;
+
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile;
-import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.pages.EmailUpdatePage;
-import org.keycloak.testsuite.util.UserBuilder;
 
-@EnableFeature(Profile.Feature.UPDATE_EMAIL)
 public abstract class AbstractAppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActionTest {
 
 	@Page
@@ -58,6 +57,7 @@ public abstract class AbstractAppInitiatedActionUpdateEmailTest extends Abstract
 				.lastName("Doh").build();
 		prepareUser(user);
 		ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
 	}
 
 	private void setRegistrationEmailAsUsername(RealmResource realmResource, boolean enabled) {

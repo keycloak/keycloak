@@ -1,3 +1,5 @@
+<#import "/templates/profile.adoc" as profile>
+
 == Start {project_name}
 
 From a terminal, enter the following command to start {project_name}:
@@ -9,3 +11,7 @@ From a terminal, enter the following command to start {project_name}:
 
 This command starts {project_name} exposed on the local port 8080 and creates an initial admin user with the username `admin`
 and password `admin`.
+
+<@profile.ifCommunity>
+Container images are published at https://quay.io/repository/keycloak/keycloak?tab=tags[Keycloak's Quay.io organization].
+</@profile.ifCommunity>

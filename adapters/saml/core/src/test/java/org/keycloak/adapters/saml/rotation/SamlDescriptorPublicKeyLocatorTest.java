@@ -16,9 +16,6 @@
  */
 package org.keycloak.adapters.saml.rotation;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
@@ -34,18 +31,23 @@ import java.util.stream.StreamSupport;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import org.apache.http.impl.client.HttpClients;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.SPMetadataDescriptor;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import org.apache.http.impl.client.HttpClients;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.w3c.dom.Element;
 
 /**

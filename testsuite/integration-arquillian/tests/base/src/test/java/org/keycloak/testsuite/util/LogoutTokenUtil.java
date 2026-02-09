@@ -1,15 +1,5 @@
 package org.keycloak.testsuite.util;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.Time;
-import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.jose.jws.Algorithm;
-import org.keycloak.jose.jws.JWSHeader;
-import org.keycloak.representations.LogoutToken;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.TokenUtil;
-
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -19,6 +9,16 @@ import java.security.SignatureException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.UUID;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Time;
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.representations.LogoutToken;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 public class LogoutTokenUtil {
 

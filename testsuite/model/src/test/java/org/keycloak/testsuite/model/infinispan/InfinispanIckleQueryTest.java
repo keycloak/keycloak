@@ -29,14 +29,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.api.query.Query;
-import org.infinispan.commons.util.concurrent.CompletionStages;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TestRule;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
@@ -59,6 +51,15 @@ import org.keycloak.models.sessions.infinispan.query.UserSessionQueries;
 import org.keycloak.models.sessions.infinispan.remote.RemoteUserLoginFailureProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
+
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.api.query.Query;
+import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
 
 @RequireProvider(UserLoginFailureProvider.class)
 @RequireProvider(UserSessionProvider.class)
@@ -458,9 +459,9 @@ public class InfinispanIckleQueryTest extends KeycloakModelTest {
         expectedResults = CLIENTS.stream().map(s -> new ClientSessionKey(userSession, s)).map(Objects::toString).collect(Collectors.toSet());
         assertQuery(query2, objects -> objects.createCacheKey().toString(), expectedResults);
 
-        // each client has user-session * realms active client sessions
-        query = ClientSessionQueries.activeClientCount(cache);
-        expectedResults = CLIENTS.stream().map(s -> String.format("%s-%s", s, USER_SESSIONS.size() * REALMS.size())).collect(Collectors.toSet());
+        // each client has user-session active client sessions
+        query = ClientSessionQueries.activeClientCount(cache, realm);
+        expectedResults = CLIENTS.stream().map(s -> String.format("%s-%s", s, USER_SESSIONS.size())).collect(Collectors.toSet());
         assertQuery(query, objects -> String.format("%s-%s", objects[0], objects[1]), expectedResults);
     }
 

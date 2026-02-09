@@ -18,12 +18,13 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
-import jakarta.annotation.Nullable;
-import org.keycloak.common.VerificationException;
-import org.keycloak.provider.Provider;
-
 import java.util.List;
 import java.util.Map;
+
+import jakarta.annotation.Nullable;
+
+import org.keycloak.common.VerificationException;
+import org.keycloak.provider.Provider;
 
 /**
  * @author Pascal Knüppel

@@ -17,8 +17,10 @@
 
 package org.keycloak.testsuite.client.policies;
 
-import org.junit.After;
-import org.junit.Test;
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
@@ -28,11 +30,10 @@ import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.Assert;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
+import org.junit.After;
+import org.junit.Test;
 
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
  * This test class is for testing client policies that are applied when importing and exporting a realm setting file.

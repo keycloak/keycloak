@@ -16,18 +16,18 @@
  */
 package org.keycloak.protocol.oidc.utils;
 
+import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
 import org.keycloak.crypto.KeyType;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-
-import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 /**
  *

@@ -16,16 +16,16 @@
  */
 package org.keycloak.component;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

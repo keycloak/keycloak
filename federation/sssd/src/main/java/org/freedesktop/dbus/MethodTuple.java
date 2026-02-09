@@ -1,9 +1,9 @@
 package org.freedesktop.dbus;
 
+import java.util.Objects;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Objects;
 
 public class MethodTuple {
     private final Logger logger = LoggerFactory.getLogger(getClass());

@@ -17,14 +17,14 @@
 
 package org.keycloak.authentication;
 
+import java.net.URI;
+import java.util.List;
+
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.sessions.AuthenticationSessionModel;
-
-import java.net.URI;
-import java.util.List;
 
 /**
  * This interface encapsulates information about an execution in an AuthenticationFlow.  It is also used to set

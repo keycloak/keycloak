@@ -17,7 +17,12 @@
 
 package org.keycloak.testsuite;
 
-import org.hamcrest.MatcherAssert;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -32,11 +37,7 @@ import org.keycloak.representations.idm.UserProfileAttributeMetadata;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.info.ThemeInfoRepresentation;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import org.hamcrest.MatcherAssert;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -167,9 +168,10 @@ public class Assert extends org.junit.Assert {
 
     public static void assertRoleAttributes(Map<String, List<String>> expected, Map<String, List<String>> actual) {
         MatcherAssert.assertThat(actual.keySet(), equalTo(expected.keySet()));
-        for (String expectedKey : expected.keySet()) {
-            MatcherAssert.assertThat(actual.get(expectedKey).size(), is(equalTo(expected.get(expectedKey).size())));
-            MatcherAssert.assertThat(actual.get(expectedKey), containsInAnyOrder(expected.get(expectedKey).toArray()));
+        for (var entry : expected.entrySet()) {
+            String expectedKey = entry.getKey();
+            MatcherAssert.assertThat(actual.get(expectedKey).size(), is(equalTo(entry.getValue().size())));
+            MatcherAssert.assertThat(actual.get(expectedKey), containsInAnyOrder(entry.getValue().toArray()));
         }
     }
 }

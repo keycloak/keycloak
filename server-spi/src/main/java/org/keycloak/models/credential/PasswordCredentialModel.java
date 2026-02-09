@@ -1,15 +1,15 @@
 package org.keycloak.models.credential;
 
-import static org.keycloak.utils.StringUtil.isBlank;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.credential.dto.PasswordCredentialData;
 import org.keycloak.models.credential.dto.PasswordSecretData;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 public class PasswordCredentialModel extends CredentialModel {
 

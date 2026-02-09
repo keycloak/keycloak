@@ -28,7 +28,7 @@
 
     <artifactId>keycloak-server-spi</artifactId>
     <name>Keycloak Server SPI</name>
-    <description/>
+    <description>Keycloak Server SPI</description>
 
     <dependencies>
         <dependency>

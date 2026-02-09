@@ -1,7 +1,7 @@
 package org.keycloak.test.examples;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.util.List;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.jose.jws.JWSInput;
@@ -19,7 +19,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 
-import java.util.List;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 @KeycloakIntegrationTest
 public class RealmSpecificAdminClientTest {
@@ -74,12 +75,12 @@ public class RealmSpecificAdminClientTest {
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
             realm.addClient("myclient")
                     .secret("mysecret")
-                    .directAccessGrants();
+                    .directAccessGrantsEnabled(true);
 
             realm.addUser("myadmin")
                     .name("My", "Admin")
                     .email("myadmin@localhost")
-                    .emailVerified()
+                    .emailVerified(true)
                     .password("mypassword")
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
 

@@ -17,11 +17,11 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.UserConsentModel;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.UserConsentModel;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

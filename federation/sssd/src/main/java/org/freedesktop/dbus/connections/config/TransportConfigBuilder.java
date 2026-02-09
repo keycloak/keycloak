@@ -1,13 +1,13 @@
 package org.freedesktop.dbus.connections.config;
 
-import org.freedesktop.dbus.connections.BusAddress;
-import org.freedesktop.dbus.connections.transports.AbstractTransport;
-import org.freedesktop.dbus.connections.transports.TransportBuilder.SaslAuthMode;
-
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import org.freedesktop.dbus.connections.BusAddress;
+import org.freedesktop.dbus.connections.transports.AbstractTransport;
+import org.freedesktop.dbus.connections.transports.TransportBuilder.SaslAuthMode;
 
 public class TransportConfigBuilder<X extends TransportConfigBuilder<?, R>, R> {
     private final Supplier<R> connectionBuilder;

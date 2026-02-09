@@ -1,14 +1,6 @@
 package org.keycloak.testsuite.util.saml;
 
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-import org.apache.commons.io.IOUtils;
-import org.keycloak.saml.SAMLRequestParser;
-import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
@@ -16,6 +8,15 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.keycloak.saml.SAMLRequestParser;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import org.apache.commons.io.IOUtils;
 
 public class SamlMessageReceiver implements AutoCloseable {
 
@@ -80,5 +81,3 @@ public class SamlMessageReceiver implements AutoCloseable {
         }
     }
 }
-
-

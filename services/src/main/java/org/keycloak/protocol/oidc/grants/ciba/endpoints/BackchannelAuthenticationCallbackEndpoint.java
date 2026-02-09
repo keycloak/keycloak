@@ -16,15 +16,25 @@
  */
 package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.http.HttpRequest;
+import java.io.IOException;
+import java.util.Map;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -38,16 +48,8 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-
-import java.io.IOException;
-import java.util.Map;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
 
 import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.CANCELLED;
 
@@ -204,7 +206,8 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
      * @return The raw bearer token.
      */
     protected String getRawBearerToken(HttpHeaders httpHeaders, AuthenticationChannelResponse response) {
-        return AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(httpHeaders);
+        AppAuthManager.AuthHeader authHeader = AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(httpHeaders);
+        return authHeader == null ? null : authHeader.getToken();
     }
 
     protected void sendClientNotificationRequest(ClientModel client, CibaConfig cibaConfig, OAuth2DeviceCodeModel deviceModel) {
@@ -220,7 +223,7 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
         ClientNotificationEndpointRequest clientNotificationRequest = new ClientNotificationEndpointRequest();
         clientNotificationRequest.setAuthReqId(deviceModel.getAuthReqId());
 
-        SimpleHttp simpleHttp = SimpleHttp.doPost(clientNotificationEndpoint, session)
+        SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(clientNotificationEndpoint)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                 .json(clientNotificationRequest)
                 .auth(deviceModel.getClientNotificationToken());

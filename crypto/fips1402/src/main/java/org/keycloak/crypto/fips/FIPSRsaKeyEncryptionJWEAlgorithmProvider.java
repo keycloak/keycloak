@@ -3,16 +3,17 @@ package org.keycloak.crypto.fips;
 import java.security.Key;
 import java.security.SecureRandom;
 
+import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwe.JWEHeader.JWEHeaderBuilder;
+import org.keycloak.jose.jwe.JWEKeyStorage;
+import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
+import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
+
 import org.bouncycastle.crypto.KeyUnwrapperUsingSecureRandom;
 import org.bouncycastle.crypto.KeyWrapperUsingSecureRandom;
 import org.bouncycastle.crypto.asymmetric.AsymmetricRSAPrivateKey;
 import org.bouncycastle.crypto.asymmetric.AsymmetricRSAPublicKey;
 import org.bouncycastle.crypto.fips.FipsRSA;
-import org.keycloak.jose.jwe.JWEHeader;
-import org.keycloak.jose.jwe.JWEKeyStorage;
-import org.keycloak.jose.jwe.JWEHeader.JWEHeaderBuilder;
-import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
-import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 
 /**
  * Fips note: Based on https://downloads.bouncycastle.org/fips-java/BC-FJA-UserGuide-1.0.2.pdf, Section 4

@@ -16,6 +16,30 @@
  */
 package org.keycloak.testsuite.oauth;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.URL;
+import java.util.List;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Encode;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
+import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -31,34 +55,12 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.util.Encode;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.models.Constants;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
-import org.keycloak.testsuite.util.RealmBuilder;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.net.URL;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.APP_ROOT;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
@@ -307,7 +309,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
             String loginPage = SimpleHttpDefault.doGet(loginUrl, client).asString();
 
             String formAction = loginPage.split("action=\"")[1].split("\"")[0].replaceAll("&amp;", "&");
-            SimpleHttp.Response response = SimpleHttpDefault.doPost(formAction, client).param("username", "test-user@localhost").param("password", "password").asResponse();
+            SimpleHttpResponse response = SimpleHttpDefault.doPost(formAction, client).param("username", "test-user@localhost").param("password", "password").asResponse();
 
             response.getStatus();
             assertThat(response.getFirstHeader("Location"), Matchers.startsWith("android-app://org.keycloak.examples.cordova/https/keycloak-cordova-example.github.io/login"));

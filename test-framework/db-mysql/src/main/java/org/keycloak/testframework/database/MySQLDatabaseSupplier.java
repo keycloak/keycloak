@@ -4,7 +4,7 @@ public class MySQLDatabaseSupplier extends AbstractDatabaseSupplier {
 
     @Override
     public String getAlias() {
-        return "mysql";
+        return MySQLTestDatabase.NAME;
     }
 
     @Override

@@ -18,21 +18,25 @@ package org.keycloak.services.resources.admin.fgap;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.ResourceWrapper;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.policy.evaluation.DecisionPermissionCollector;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.representations.idm.authorization.Permission;
 
 class FineGrainedAdminPermissionEvaluator {
@@ -52,8 +56,41 @@ class FineGrainedAdminPermissionEvaluator {
         return hasPermission(model.getId(), model.getResourceType(), context, scope);
     }
 
+    /**
+     * Checks if there are permissions granted for the given {@code model} and {@code scope}. If
+     * the given {@code scope} is not associated with any permission, the value returned by {@code defaultValue} will
+     * be returned.
+     *
+     * @param model the model
+     * @param context the context
+     * @param scope the scope
+     * @param defaultValue the default value
+     * @return
+     */
+    boolean hasPermission(ModelRecord model, EvaluationContext context, String scope, Supplier<Boolean> defaultValue) {
+        return hasPermission(model.getId(), model.getResourceType(), context, scope, defaultValue);
+    }
+
     boolean hasPermission(String modelId, String resourceType, EvaluationContext context, String scope) {
+        return hasPermission(modelId, resourceType, context, scope, null);
+    }
+
+    /**
+     * Checks if there are permissions granted for the given {@code modelId} and {@code scope}. If
+     * the given {@code scope} is not associated with any permission, the value returned by {@code defaultValue} will
+     * be returned.
+     *
+     * @param modelId the model id
+     * @param context the context
+     * @param scopeName the scope
+     * @param defaultValue the default value
+     * @return
+     */
+    boolean hasPermission(String modelId, String resourceType, EvaluationContext context, String scopeName, Supplier<Boolean> defaultValue) {
         if (!root.isAdminSameRealm()) {
+            return false;
+        }
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(root.realm)) {
             return false;
         }
 
@@ -66,19 +103,31 @@ class FineGrainedAdminPermissionEvaluator {
         Resource resourceTypeResource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, resourceType);
         Resource resource = modelId == null ? resourceTypeResource : resourceStore.findByName(server, modelId);
 
+        Scope scope = resourceTypeResource.getScopes()
+                .stream()
+                .filter(s -> s.getName().equals(scopeName)).findAny()
+                .orElseThrow(() -> new ModelIllegalStateException("Scope '%s' is not defined for resource type '%s'".formatted(scopeName, resourceType)));
+
         if (modelId != null && resource == null) {
-            resource = new ResourceWrapper(modelId, modelId, new HashSet<>(resourceTypeResource.getScopes()), server);
+            resource = new ResourceWrapper(modelId, modelId, Set.of(scope), server);
         }
 
-        Collection<Permission> permissions = (context == null) ?
-                root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server) :
-                root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server, context);
+        DecisionPermissionCollector decision = (context == null) ?
+                root.getDecision(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server) :
+                root.getDecision(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server, context);
+        Collection<Permission> permissions = decision.results();
 
         for (Permission permission : permissions) {
             if (permission.getResourceId().equals(resource.getId())) {
-                if (permission.getScopes().contains(scope)) {
+                if (permission.getScopes().contains(scopeName)) {
                     return true;
                 }
+            }
+        }
+
+        if (defaultValue != null) {
+            if (!decision.isEvaluated(scopeName)) {
+                return defaultValue.get();
             }
         }
 

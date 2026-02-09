@@ -16,13 +16,28 @@
  */
 package org.keycloak.services.resources.admin;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.jboss.logging.Logger;
-import org.keycloak.http.HttpRequest;
-import jakarta.ws.rs.NotFoundException;
+import java.io.IOException;
+import java.util.Locale;
+import java.util.Properties;
+
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.ext.Provider;
+
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Encode;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
@@ -35,27 +50,13 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.WelcomeResource;
-import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
 import org.keycloak.theme.Theme;
 import org.keycloak.urls.UrlType;
 
-import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.HttpMethod;
-import jakarta.ws.rs.OPTIONS;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
-import jakarta.ws.rs.ext.Provider;
-
-import java.io.IOException;
-import java.util.Locale;
-import java.util.Properties;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.jboss.logging.Logger;
 
 /**
  * Root resource for admin console and admin REST API
@@ -96,7 +97,7 @@ public class AdminRoot {
     public Response masterRealmAdminConsoleRedirect() {
         KeycloakUriInfo adminUriInfo = session.getContext().getUri(UrlType.ADMIN);
         if (shouldRedirect(adminUriInfo)) {
-            RealmModel master = new RealmManager(session).getKeycloakAdminstrationRealm();
+            RealmModel master = new RealmManager(session).getKeycloakAdministrationRealm();
             return Response.status(302).location(
                     adminUriInfo.getBaseUriBuilder().path(AdminRoot.class).path(AdminRoot.class, "getAdminConsole").path("/").build(master.getName())
             ).build();
@@ -178,7 +179,9 @@ public class AdminRoot {
     }
 
 
-    protected AdminAuth authenticateRealmAdminRequest(HttpHeaders headers) {
+    public static AdminAuth authenticateRealmAdminRequest(KeycloakSession session) {
+        HttpHeaders headers = session.getContext().getRequestHeaders();
+
         String tokenString = AppAuthManager.extractAuthorizationHeaderToken(headers);
         if (tokenString == null) throw new NotAuthorizedException("Bearer");
         AccessToken token;
@@ -207,9 +210,9 @@ public class AdminRoot {
             throw new NotAuthorizedException("Bearer");
         }
 
-        session.getContext().setBearerToken(authResult.getToken());
+        session.getContext().setBearerToken(authResult.token());
 
-        return new AdminAuth(realm, authResult.getToken(), authResult.getUser(), authResult.getClient());
+        return new AdminAuth(realm, authResult.token(), authResult.user(), authResult.client());
     }
 
     public static UriBuilder realmsUrl(UriInfo uriInfo) {
@@ -238,7 +241,7 @@ public class AdminRoot {
             return new RealmsAdminResourcePreflight(session, null, tokenManager, request);
         }
 
-        AdminAuth auth = authenticateRealmAdminRequest(session.getContext().getRequestHeaders());
+        AdminAuth auth = authenticateRealmAdminRequest(session);
         if (auth != null) {
             if (logger.isDebugEnabled()) {
                 logger.debugf("authenticated admin access for: %s", auth.getUser().getUsername());
@@ -280,7 +283,7 @@ public class AdminRoot {
             return new AdminCorsPreflightService();
         }
 
-        AdminAuth auth = authenticateRealmAdminRequest(session.getContext().getRequestHeaders());
+        AdminAuth auth = authenticateRealmAdminRequest(session);
         if (!AdminPermissions.realms(session, auth).isAdmin()) {
             throw new ForbiddenException();
         }
@@ -291,7 +294,7 @@ public class AdminRoot {
 
         Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
 
-        return new ServerInfoAdminResource(session);
+        return new ServerInfoAdminResource(session, auth);
     }
 
     private HttpRequest getHttpRequest() {

@@ -16,8 +16,15 @@
  */
 package org.keycloak.services.resources;
 
-import org.jboss.logging.Logger;
+import java.util.NoSuchElementException;
+import java.util.ServiceLoader;
+
+import jakarta.transaction.SystemException;
+import jakarta.transaction.Transaction;
+import jakarta.ws.rs.core.Application;
+
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.exportimport.ExportImportConfig;
@@ -34,12 +41,7 @@ import org.keycloak.platform.PlatformProvider;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
-import java.util.NoSuchElementException;
-import java.util.ServiceLoader;
-
-import jakarta.transaction.SystemException;
-import jakarta.transaction.Transaction;
-import jakarta.ws.rs.core.Application;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -58,7 +60,6 @@ public abstract class KeycloakApplication extends Application {
         try {
 
             logger.debugv("PlatformProvider: {0}", platform.getClass().getName());
-
             loadConfig();
 
             platform.onStartup(this::startup);
@@ -70,6 +71,7 @@ public abstract class KeycloakApplication extends Application {
     }
 
     protected void startup() {
+        Profile.getInstance().logUnsupportedFeatures();
         CryptoIntegration.init(KeycloakApplication.class.getClassLoader());
         KeycloakApplication.sessionFactory = createSessionFactory();
 

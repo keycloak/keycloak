@@ -22,12 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
-import org.infinispan.Cache;
-import org.infinispan.client.hotrod.RemoteCache;
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -46,11 +41,17 @@ import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
+import org.infinispan.Cache;
+import org.infinispan.client.hotrod.RemoteCache;
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Every.everyItem;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assume.assumeFalse;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -117,8 +118,8 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
             assertThat("Count of offline sesions for client 'test-app'", session.sessions().getOfflineSessionsCount(realm, testApp), is((long) 3));
             assertThat("Count of offline sesions for client 'third-party'", session.sessions().getOfflineSessionsCount(realm, thirdparty), is((long) 1));
 
-            List<UserSessionModel> loadedSessions = session.sessions().getOfflineUserSessionsStream(realm, testApp, 0, 10)
-                    .collect(Collectors.toList());
+            List<UserSessionModel> loadedSessions = session.sessions().readOnlyStreamOfflineUserSessions(realm, testApp, 0, 10)
+                    .toList();
 
             assertSessionLoaded(loadedSessions, origSessionIds[0].getId(), session.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "test-app", "third-party");
             assertSessionLoaded(loadedSessions, origSessionIds[1].getId(), session.users().getUserByUsername(realm, "user1"), "127.0.0.2", started, started, "test-app");
@@ -148,8 +149,8 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
             ClientModel thirdparty = realm.getClientByClientId("third-party");
 
             assertThat("Count of offline sesions for client 'third-party'", session.sessions().getOfflineSessionsCount(realm, thirdparty), is((long) 1));
-            List<UserSessionModel> loadedSessions = session.sessions().getOfflineUserSessionsStream(realm, thirdparty, 0, 10)
-                    .collect(Collectors.toList());
+            List<UserSessionModel> loadedSessions = session.sessions().readOnlyStreamOfflineUserSessions(realm, thirdparty, 0, 10)
+                    .toList();
 
             assertThat("Size of loaded Sessions", loadedSessions.size(), is(1));
             assertSessionLoaded(loadedSessions, origSessionIds[0].getId(), session.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "third-party");
@@ -238,4 +239,3 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
         Assert.fail("Session with ID " + id + " not found in the list");
     }
 }
-

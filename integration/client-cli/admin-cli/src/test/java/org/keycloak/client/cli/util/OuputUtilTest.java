@@ -17,16 +17,13 @@
 
 package org.keycloak.client.cli.util;
 
-import org.junit.Test;
-import org.keycloak.client.cli.util.OutputUtil;
-import org.keycloak.client.cli.util.ReturnFields;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 

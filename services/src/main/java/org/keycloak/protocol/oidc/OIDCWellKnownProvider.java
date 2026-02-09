@@ -17,6 +17,19 @@
 
 package org.keycloak.protocol.oidc;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
@@ -25,6 +38,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.crypto.CekManagementProvider;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.crypto.ContentEncryptionProvider;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.CibaConfig;
@@ -37,6 +51,7 @@ import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.representations.MTLSEndpointAliases;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
@@ -53,20 +68,6 @@ import org.keycloak.urls.UrlType;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.wellknown.WellKnownProvider;
 
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
-
-import java.net.URI;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -81,7 +82,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     public static final List<String> DEFAULT_CLIENT_AUTH_SIGNING_ALG_VALUES_SUPPORTED = list(Algorithm.RS256.toString());
 
     // The exact list depends on protocolMappers
-    public static final List<String> DEFAULT_CLAIMS_SUPPORTED = list("aud", "sub", "iss", IDToken.AUTH_TIME, IDToken.NAME, IDToken.GIVEN_NAME, IDToken.FAMILY_NAME, IDToken.PREFERRED_USERNAME, IDToken.EMAIL, IDToken.ACR);
+    public static final List<String> DEFAULT_CLAIMS_SUPPORTED = list( "iss", IDToken.SUBJECT, IDToken.AUD, "exp", "iat", IDToken.AUTH_TIME, IDToken.NAME, IDToken.GIVEN_NAME, IDToken.FAMILY_NAME, IDToken.PREFERRED_USERNAME, IDToken.EMAIL, IDToken.ACR, IDToken.AZP, "nonce");
 
     public static final List<String> DEFAULT_CLAIM_TYPES_SUPPORTED = list("normal");
 
@@ -167,7 +168,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         // Include client scopes can be disabled in the environments with thousands of client scopes to avoid potentially expensive iteration over client scopes
         if (includeClientScopes) {
             List<String> scopeNames = realm.getClientScopesStream()
-                    .filter(clientScope -> Objects.equals(OIDCLoginProtocol.LOGIN_PROTOCOL, clientScope.getProtocol()))
+                    .filter(clientScope -> Objects.equals(OIDCLoginProtocol.LOGIN_PROTOCOL, clientScope.getProtocol()) && clientScope.isIncludeInOpenIDProviderMetadata())
                     .map(ClientScopeModel::getName)
                     .collect(Collectors.toList());
             if (!scopeNames.contains(OAuth2Constants.SCOPE_OPENID)) {
@@ -188,7 +189,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setTlsClientCertificateBoundAccessTokens(true);
 
         if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
-            config.setDpopSigningAlgValuesSupported(new ArrayList<>(DPoPUtil.DPOP_SUPPORTED_ALGS));
+            config.setDpopSigningAlgValuesSupported(new ArrayList<>(DPoPUtil.getDPoPSupportedAlgorithms(session)));
         }
 
         URI revocationEndpoint = frontendUriBuilder.clone().path(OIDCLoginProtocolService.class, "revoke")
@@ -214,6 +215,11 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setMtlsEndpointAliases(mtlsEndpointAliases);
 
         config.setAuthorizationResponseIssParameterSupported(true);
+
+        List<String> authorizationDetailsTypesSupported = getAuthorizationDetailsTypesSupported();
+        if (!authorizationDetailsTypesSupported.isEmpty()) {
+            config.setAuthorizationDetailsTypesSupported(authorizationDetailsTypesSupported);
+        }
 
         config = checkConfigOverride(config);
         return config;
@@ -254,12 +260,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     }
 
     private List<String> getSupportedAsymmetricAlgorithms() {
-        return getSupportedAlgorithms(SignatureProvider.class, false).stream()
-                .map(algorithm -> new AbstractMap.SimpleEntry<>(algorithm, session.getProvider(SignatureProvider.class, algorithm)))
-                .filter(entry -> entry.getValue() != null)
-                .filter(entry -> entry.getValue().isAsymmetricAlgorithm())
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+        return CryptoUtils.getSupportedAsymmetricSignatureAlgorithms(session);
     }
 
     private List<String> getSupportedSigningAlgorithms(boolean includeNone) {
@@ -326,6 +327,13 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         mtls_endpoints.setBackchannelAuthenticationEndpoint(config.getBackchannelAuthenticationEndpoint());
         mtls_endpoints.setPushedAuthorizationRequestEndpoint(config.getPushedAuthorizationRequestEndpoint());
         return mtls_endpoints;
+    }
+
+    private List<String> getAuthorizationDetailsTypesSupported() {
+        return session.getAllProviders(AuthorizationDetailsProcessor.class).stream()
+                .filter(AuthorizationDetailsProcessor::isSupported)
+                .map(AuthorizationDetailsProcessor::getSupportedType)
+                .toList();
     }
 
     private OIDCConfigurationRepresentation checkConfigOverride(OIDCConfigurationRepresentation config) {

@@ -17,16 +17,14 @@
 
 package org.keycloak.storage.group;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
-import org.keycloak.storage.role.RoleStorageProvider;
-import org.keycloak.storage.role.RoleStorageProviderFactory;
-
-import java.util.Collections;
-import java.util.List;
 
 public class GroupStorageProviderSpi implements Spi {
 

@@ -19,10 +19,12 @@ package org.keycloak.testsuite.pages;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import org.junit.Assert;
+
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
+
+import org.junit.Assert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
@@ -120,6 +122,8 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
         try {
             driver.findElement(By.id("kc-attempted-username"));
             Assert.assertTrue(expectedAvailability);
+            // make sure the username field is not shown if the attempted username field is present
+            Assert.assertTrue(driver.findElements(By.id("username")).isEmpty());
         } catch (NoSuchElementException nse) {
             Assert.assertFalse(expectedAvailability);
         }

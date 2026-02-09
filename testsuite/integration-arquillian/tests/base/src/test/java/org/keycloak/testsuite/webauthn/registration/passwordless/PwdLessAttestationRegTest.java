@@ -19,6 +19,7 @@ package org.keycloak.testsuite.webauthn.registration.passwordless;
 
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.webauthn.registration.AttestationConveyanceRegisterTest;
+
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 /**

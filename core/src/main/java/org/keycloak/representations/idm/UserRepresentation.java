@@ -30,7 +30,6 @@ public class UserRepresentation extends AbstractUserRepresentation{
     protected String self; // link
     protected String origin;
     protected Long createdTimestamp;
-    protected Boolean enabled;
     protected Boolean totp;
     protected String federationLink;
     protected String serviceAccountClientId; // For rep, it points to clientId (not DB ID)
@@ -102,14 +101,6 @@ public class UserRepresentation extends AbstractUserRepresentation{
 
     public void setCreatedTimestamp(Long createdTimestamp) {
         this.createdTimestamp = createdTimestamp;
-    }
-
-    public Boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(Boolean enabled) {
-        this.enabled = enabled;
     }
 
     @Deprecated

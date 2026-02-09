@@ -32,7 +32,7 @@ public class Tokens {
         AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(keycloakSession).authenticate();
 
         if (authResult != null) {
-            return authResult.getToken();
+            return authResult.token();
         }
 
         return null;
@@ -44,7 +44,7 @@ public class Tokens {
                 .authenticate();
 
         if (authResult != null) {
-            return authResult.getToken();
+            return authResult.token();
         }
 
         return null;

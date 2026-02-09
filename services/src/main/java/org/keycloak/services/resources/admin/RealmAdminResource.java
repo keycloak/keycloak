@@ -16,7 +16,17 @@
  */
 package org.keycloak.services.resources.admin;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import java.io.InputStream;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -35,17 +45,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.StreamingOutput;
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.NoCache;
+
 import org.keycloak.Config;
 import org.keycloak.KeyPairVerifier;
 import org.keycloak.authentication.CredentialRegistrator;
@@ -56,6 +56,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.email.EmailAuthenticator;
+import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
@@ -111,16 +112,21 @@ import org.keycloak.storage.StoreSyncEvent;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
+import org.keycloak.utils.SMTPUtil;
+import org.keycloak.workflow.admin.resource.WorkflowsResource;
 
-import java.io.InputStream;
-import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
 
 import static org.keycloak.util.JsonSerialization.readValue;
 
@@ -286,6 +292,9 @@ public class RealmAdminResource {
         if (clientScope == null) {
             throw new NotFoundException("Client scope not found");
         }
+        
+        ClientResource.validateClientScopeAssignment(session, clientScope, defaultScope, realm);
+        
         realm.addDefaultClientScope(clientScope, defaultScope);
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLIENT_SCOPE).resourcePath(session.getContext().getUri()).success();
@@ -474,6 +483,13 @@ public class RealmAdminResource {
         }
 
         try {
+            SMTPUtil.checkSMTPConfiguration(session, rep.getSmtpServer());
+        } catch (EmailException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
+        }
+
+        try {
             if (!Constants.GENERATE.equals(rep.getPublicKey()) && (rep.getPrivateKey() != null && rep.getPublicKey() != null)) {
                 try {
                     KeyPairVerifier.verify(rep.getPrivateKey(), rep.getPublicKey());
@@ -624,6 +640,11 @@ public class RealmAdminResource {
     @Path("organizations")
     public OrganizationsResource organizations() {
         return new OrganizationsResource(session, auth, adminEvent);
+    }
+
+    @Path("workflows")
+    public WorkflowsResource workflows() {
+        return new WorkflowsResource(session, auth);
     }
 
     @Path("{extension}")
@@ -1162,11 +1183,11 @@ public class RealmAdminResource {
     private boolean reuseConfiguredAuthenticationForSmtp(Map<String, String> settings, EmailAuthenticator.AuthenticatorType type) {
         // just reuse the configured authentication if the same authenticator, host, port and user are passed
         return Boolean.parseBoolean(settings.get("auth")) && Boolean.parseBoolean(realm.getSmtpConfig().get("auth"))
-                && settings.getOrDefault("authType", EmailAuthenticator.AuthenticatorType.BASIC.name()).equalsIgnoreCase(type.name())
+                && Optional.ofNullable(settings.get("authType")).orElse(EmailAuthenticator.AuthenticatorType.BASIC.name()).equalsIgnoreCase(type.name())
                 && realm.getSmtpConfig().getOrDefault("authType", EmailAuthenticator.AuthenticatorType.BASIC.name()).equalsIgnoreCase(type.name())
-                && Objects.equals(settings.getOrDefault("host", ""), realm.getSmtpConfig().getOrDefault("host", ""))
-                && Objects.equals(settings.getOrDefault("port", "25"), realm.getSmtpConfig().getOrDefault("port", "25"))
-                && Objects.equals(settings.getOrDefault("user", ""), realm.getSmtpConfig().getOrDefault("user", ""));
+                && Objects.equals(Optional.ofNullable(settings.get("host")).orElse(""), realm.getSmtpConfig().getOrDefault("host", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("port")).orElse("25"), realm.getSmtpConfig().getOrDefault("port", "25"))
+                && Objects.equals(Optional.ofNullable(settings.get("user")).orElse(""), realm.getSmtpConfig().getOrDefault("user", ""));
     }
 
     @Path("identity-provider")

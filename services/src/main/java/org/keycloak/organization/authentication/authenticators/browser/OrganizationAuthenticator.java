@@ -17,27 +17,23 @@
 
 package org.keycloak.organization.authentication.authenticators.browser;
 
-import static org.keycloak.authentication.AuthenticatorUtil.isSSOAuthentication;
-import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
-import static org.keycloak.models.utils.KeycloakModelUtils.findUserByNameOrEmail;
-import static org.keycloak.organization.utils.Organizations.getEmailDomain;
-import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
-import static org.keycloak.organization.utils.Organizations.resolveHomeBroker;
-import static org.keycloak.utils.StringUtil.isNotBlank;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.FlowStatus;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticator;
+import org.keycloak.authentication.authenticators.browser.WebAuthnConditionalUIAuthenticator;
 import org.keycloak.email.freemarker.beans.ProfileBean;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
@@ -53,7 +49,6 @@ import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareAuthenticationContextBean;
 import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareIdentityProviderBean;
@@ -61,16 +56,26 @@ import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareR
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.Booleans;
+
+import static org.keycloak.authentication.AuthenticatorUtil.isSSOAuthentication;
+import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
+import static org.keycloak.models.utils.KeycloakModelUtils.findUserByNameOrEmail;
+import static org.keycloak.organization.utils.Organizations.getEmailDomain;
+import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
+import static org.keycloak.organization.utils.Organizations.resolveHomeBroker;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
-    private static final String LOGIN_HINT_ALREADY_HANDLED = "loginHintAlreadyHandled";
-
     private final KeycloakSession session;
+    private final WebAuthnConditionalUIAuthenticator webauthnAuth;
 
     public OrganizationAuthenticator(KeycloakSession session) {
         this.session = session;
+        this.webauthnAuth = new WebAuthnConditionalUIAuthenticator(session, (context) -> createLoginForm(context));
     }
 
     @Override
@@ -78,30 +83,25 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         OrganizationProvider provider = getOrganizationProvider();
 
         if (!isEnabledAndOrganizationsPresent(provider)) {
-            context.attempted();
+            attempted(context);
             return;
         }
 
-        String loginHint = session.getContext().getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
-
-        if (isNotBlank(loginHint) && !"true".equals(context.getAuthenticationSession().getClientNote(LOGIN_HINT_ALREADY_HANDLED))) {
-            UserModel user = resolveUser(context, loginHint);
-            context.setUser(user);
-
-            // set auth note to true to handle login_hint only once, we don't want to handle it again after a flow restart
-            context.getAuthenticationSession().setClientNote(LOGIN_HINT_ALREADY_HANDLED, "true");
-        }
-
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        String loginHint = authSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
         OrganizationModel organization = Organizations.resolveOrganization(session);
 
-        if (organization == null) {
+        if (loginHint == null && organization == null) {
             initialChallenge(context);
-        } else {
-            // make sure the organization is set to the auth session to remember it when processing subsequent requests
-            AuthenticationSessionModel authSession = context.getAuthenticationSession();
-            authSession.setAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
-            action(context);
+            return;
         }
+
+        if (organization != null) {
+            // make sure the organization is set to the auth session to remember it when processing subsequent requests
+            authSession.setAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
+        }
+
+        action(context, loginHint);
     }
 
     @Override
@@ -109,8 +109,33 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         HttpRequest request = context.getHttpRequest();
         MultivaluedMap<String, String> parameters = request.getDecodedFormParameters();
         String username = parameters.getFirst(UserModel.USERNAME);
-        RealmModel realm = context.getRealm();
+
+        // check if it's a webauthn submission and perform the webauth login
+        if (webauthnAuth.isPasskeysEnabled() && (parameters.containsKey(WebAuthnConstants.AUTHENTICATOR_DATA)
+                || parameters.containsKey(WebAuthnConstants.ERROR))) {
+            webauthnAuth.action(context);
+            if (FlowStatus.SUCCESS != context.getStatus()) {
+                // if failure doing webauthn authentication return error; continue if success checking organizations
+                return;
+            }
+        }
+
+        UserModel user = context.getUser();
+
+        if (user == null && isBlank(username)) {
+            initialChallenge(context, form -> {
+                form.addError(new FormMessage(UserModel.USERNAME, Messages.INVALID_USERNAME));
+                return form.createLoginUsername();
+            });
+            return;
+        }
+
+        action(context, username);
+    }
+
+    private void action(AuthenticationFlowContext context, String username) {
         UserModel user = resolveUser(context, username);
+        RealmModel realm = context.getRealm();
         String domain = getEmailDomain(username);
         OrganizationModel organization = resolveOrganization(user, domain);
 
@@ -125,13 +150,13 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
             clearAuthenticationSession(context);
             // request does not map to any organization, go to the next step/sub-flow
-            context.attempted();
+            attempted(context, username);
             return;
         }
 
         // remember the organization during the lifetime of the authentication session
-        AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
-        authenticationSession.setAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        authSession.setAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
         // make sure the organization is set to the session to make it available to templates
         session.getContext().setOrganization(organization);
 
@@ -154,11 +179,11 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return;
         }
 
-        if (isSSOAuthentication(authenticationSession)) {
+        if (isSSOAuthentication(authSession)) {
             // if re-authenticating in the scope of an organization
             context.success();
         } else {
-            context.attempted();
+            attempted(context, username);
         }
     }
 
@@ -174,46 +199,41 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         MultivaluedMap<String, String> parameters = request.getDecodedFormParameters();
         // parameter from the organization selection page
         List<String> alias = parameters.getOrDefault(OrganizationModel.ORGANIZATION_ATTRIBUTE, List.of());
+        OrganizationModel organization;
 
         if (alias.isEmpty()) {
-            OrganizationModel organization = Organizations.resolveOrganization(session, user, domain);
-
-            if (isSSOAuthentication(authSession) && organization != null) {
-                // make sure the organization selected by the user is available from the client session when running mappers and issuing tokens
-                authSession.setClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
-            }
-
-            return organization;
+            organization = Organizations.resolveOrganization(session, user, domain);
+        } else {
+            OrganizationProvider provider = getOrganizationProvider();
+            organization = provider.getByAlias(alias.get(0));
         }
 
-        OrganizationProvider provider = getOrganizationProvider();
-        OrganizationModel organization = provider.getByAlias(alias.get(0));
-
-        if (organization == null) {
+        if (organization == null || !organization.isEnabled()) {
             return null;
         }
 
-        // make sure the organization selected by the user is available from the client session when running mappers and issuing tokens
-        authSession.setClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
+        if (!alias.isEmpty() || isSSOAuthentication(authSession)) {
+            // make sure the organization selected by the user is available from the client session when running mappers and issuing tokens
+            authSession.setClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
+        }
 
         return organization;
     }
 
     private boolean shouldUserSelectOrganization(AuthenticationFlowContext context, UserModel user) {
-        OrganizationProvider provider = getOrganizationProvider();
-        AuthenticationSessionModel authSession = context.getAuthenticationSession();
-        OrganizationScope scope = OrganizationScope.valueOfScope(session);
-
-        if (!OrganizationScope.ANY.equals(scope) || user == null) {
+        if (user == null || !OrganizationScope.ANY.equals(OrganizationScope.valueOfScope(session))) {
             return false;
         }
+
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
         if (authSession.getClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE) != null) {
             // organization already selected
             return false;
         }
 
-        Stream<OrganizationModel> organizations = provider.getByMember(user);
+        OrganizationProvider provider = getOrganizationProvider();
+        Stream<OrganizationModel> organizations = provider.getByMember(user).filter(OrganizationModel::isEnabled);
 
         if (organizations.count() > 1) {
             LoginFormsProvider form = context.form();
@@ -237,7 +257,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
     private boolean tryRedirectBroker(AuthenticationFlowContext context, OrganizationModel organization, UserModel user, String username, String domain) {
         // the user has credentials set; do not redirect to allow the user to pick how to authenticate
-        if (user != null && user.credentialManager().getStoredCredentialsStream().findAny().isPresent()) {
+        if (user != null && user.credentialManager().getFirstFactorCredentialsStream().findAny().isPresent()) {
             return false;
         }
 
@@ -333,33 +353,28 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             form.addError(new FormMessage("Your email domain matches the " + organization.getName() + " organization but you don't have an account yet."));
         }
 
+        // user is null, setup webauthn data if enabled
+        if (webauthnAuth.isPasskeysEnabled()) {
+            webauthnAuth.fillContextForm(context);
+        }
         context.challenge(form.createLoginUsername());
     }
 
     private void initialChallenge(AuthenticationFlowContext context) {
+        initialChallenge(context, null);
+    }
+
+    private void initialChallenge(AuthenticationFlowContext context, Function<LoginFormsProvider, Response> formCreator) {
         AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
         UserModel user = context.getUser();
 
         if (user == null) {
-            // the default challenge won't show any broker but just the identity-first login page and the option to try a different authentication mechanism
-            LoginFormsProvider form = context.form()
-                    .setAttributeMapper(attributes -> {
-                        attributes.computeIfPresent("social",
-                                (key, bean) -> new OrganizationAwareIdentityProviderBean((IdentityProviderBean) bean, false, true)
-                        );
-                        attributes.computeIfPresent("auth",
-                                (key, bean) -> new OrganizationAwareAuthenticationContextBean((AuthenticationContextBean) bean, false)
-                        );
-                        return attributes;
-                    });
-
-            String loginHint = authenticationSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
-
-            if (loginHint != null) {
-                form.setFormData(new MultivaluedHashMap<>(Map.of(UserModel.USERNAME, loginHint)));
+            // setup webauthn data when the user is not already selected
+            if (webauthnAuth.isPasskeysEnabled()) {
+                webauthnAuth.fillContextForm(context);
             }
 
-            context.challenge(form.createLoginUsername());
+            context.challenge(createLoginForm(context, formCreator));
         } else if (isSSOAuthentication(authenticationSession)) {
             if (shouldUserSelectOrganization(context, user)) {
                 return;
@@ -369,12 +384,53 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             context.success();
         } else {
             // user is re-authenticating, there is no organization to process
-            context.attempted();
+            attempted(context, user.getUsername());
         }
     }
 
+    private Response createLoginForm(AuthenticationFlowContext context) {
+        return createLoginForm(context, null);
+    }
+
+    private Response createLoginForm(AuthenticationFlowContext context, Function<LoginFormsProvider, Response> formCreator) {
+        // the default challenge won't show any broker but just the identity-first login page and the option to try a different authentication mechanism
+        LoginFormsProvider form = context.form()
+                .setAttributeMapper(attributes -> {
+                    attributes.computeIfPresent("social",
+                            (key, bean) -> new OrganizationAwareIdentityProviderBean((IdentityProviderBean) bean, false, true)
+                    );
+                    attributes.computeIfPresent("auth",
+                            (key, bean) -> new OrganizationAwareAuthenticationContextBean((AuthenticationContextBean) bean, false)
+                    );
+                    return attributes;
+                });
+
+        String loginHint = context.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+
+        if (loginHint != null) {
+            form.setFormData(new MultivaluedHashMap<>(Map.of(UserModel.USERNAME, loginHint)));
+        }
+
+        return formCreator == null ? form.createLoginUsername() : formCreator.apply(form);
+    }
+
+    private void attempted(AuthenticationFlowContext context) {
+        attempted(context, null);
+    }
+
+    private void attempted(AuthenticationFlowContext context, String username) {
+        AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
+
+        if (username != null) {
+            authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
+            authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.USERNAME_HIDDEN, Boolean.TRUE.toString());
+        }
+
+        context.attempted();
+    }
+
     private boolean hasPublicBrokers(OrganizationModel organization) {
-        return organization.getIdentityProviders().anyMatch(Predicate.not(IdentityProviderModel::isHideOnLogin));
+        return organization.getIdentityProviders().anyMatch(i -> Booleans.isFalse(i.isHideOnLogin()));
     }
 
     private OrganizationProvider getOrganizationProvider() {

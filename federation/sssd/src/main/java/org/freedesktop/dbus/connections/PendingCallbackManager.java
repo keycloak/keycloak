@@ -1,12 +1,12 @@
 package org.freedesktop.dbus.connections;
 
-import org.freedesktop.dbus.DBusAsyncReply;
-import org.freedesktop.dbus.interfaces.CallbackHandler;
-import org.freedesktop.dbus.messages.MethodCall;
-
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.freedesktop.dbus.DBusAsyncReply;
+import org.freedesktop.dbus.interfaces.CallbackHandler;
+import org.freedesktop.dbus.messages.MethodCall;
 
 public class PendingCallbackManager {
     private final Map<MethodCall, CallbackHandler<? extends Object>> pendingCallbacks;

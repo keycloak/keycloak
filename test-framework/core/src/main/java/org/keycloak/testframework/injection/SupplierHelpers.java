@@ -16,6 +16,18 @@ public class SupplierHelpers {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> T getInstance(String clazzName) {
+        try {
+            Class<T> clazz = (Class<T>) SupplierHelpers.class.getClassLoader().loadClass(clazzName);
+            Constructor<T> declaredConstructor = clazz.getDeclaredConstructor();
+            declaredConstructor.setAccessible(true);
+            return declaredConstructor.newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static <T> T getAnnotationField(Annotation annotation, String name, T defaultValue) {
         T value = getAnnotationField(annotation, name);
         return value != null ? value : defaultValue;

@@ -1,16 +1,18 @@
 package org.keycloak.testsuite.broker;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -18,8 +20,8 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper;
 import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
@@ -48,18 +50,24 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-import jakarta.ws.rs.core.Response;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.hamcrest.Matchers;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
@@ -68,12 +76,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 
 /**
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
@@ -319,7 +321,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         testingClient.server(bc.consumerRealmName()).run(session -> {
             RealmModel realm = session.getContext().getRealm();
             ClientModel client = session.clients().getClientByClientId(realm, "broker-app");
-            List<UserSessionModel> userSessions = session.sessions().getUserSessionsStream(realm, client).toList();
+            List<UserSessionModel> userSessions = session.sessions().readOnlyStreamUserSessions(realm, client, -1, -1).toList();
             assertThat(userSessions, hasSize(1));
             UserSessionModel userSession = userSessions.get(0);
             assertThat(AuthenticationManager.isSessionValid(realm, userSession), is(false));
@@ -332,7 +334,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         testingClient.server(bc.consumerRealmName()).run(session -> {
             RealmModel realm = session.getContext().getRealm();
             ClientModel client = session.clients().getClientByClientId(realm, "broker-app");
-            List<UserSessionModel> userSessions = session.sessions().getUserSessionsStream(realm, client).toList();
+            List<UserSessionModel> userSessions = session.sessions().readOnlyStreamUserSessions(realm, client, -1, -1).toList();
             assertThat(userSessions, hasSize(0));
         });
 
@@ -377,7 +379,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(errorPage.getError(), is("Page not found"));
 
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            SimpleHttp.Response simple = SimpleHttpDefault.doGet(LINK, client).asResponse();
+            SimpleHttpResponse simple = SimpleHttpDefault.doGet(LINK, client).asResponse();
             assertThat(simple, notNullValue());
             assertThat(simple.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
 
@@ -858,13 +860,13 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     }
 
     private void updateIdPSyncMode(IdentityProviderRepresentation idProvider, IdentityProviderResource idProviderResource,
-                                   IdentityProviderSyncMode syncMode, boolean trustEmail) {
+                                   IdentityProviderSyncMode syncMode, Boolean trustEmail) {
         assertThat(idProvider, Matchers.notNullValue());
         assertThat(idProviderResource, Matchers.notNullValue());
         assertThat(syncMode, Matchers.notNullValue());
 
         if (idProvider.getConfig().get(IdentityProviderModel.SYNC_MODE).equals(syncMode.name())
-                && idProvider.isTrustEmail() == trustEmail) {
+                && trustEmail.equals(idProvider.isTrustEmail())) {
             return;
         }
 

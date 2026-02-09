@@ -1,10 +1,21 @@
 package org.keycloak.testsuite.saml;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.util.EntityUtils;
-import org.hamcrest.Matchers;
-import org.junit.Rule;
-import org.junit.Test;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.xml.transform.dom.DOMSource;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
@@ -40,22 +51,23 @@ import org.keycloak.testsuite.util.saml.HandleArtifactStepBuilder;
 import org.keycloak.testsuite.util.saml.SamlMessageReceiver;
 import org.keycloak.testsuite.util.saml.SessionStateChecker;
 import org.keycloak.testsuite.utils.io.IOUtil;
+
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.util.EntityUtils;
+import org.hamcrest.Matchers;
+import org.junit.Rule;
+import org.junit.Test;
 import org.w3c.dom.Document;
 
-import jakarta.ws.rs.core.Response;
-import javax.xml.transform.dom.DOMSource;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import static org.keycloak.testsuite.util.Matchers.bodyHC;
+import static org.keycloak.testsuite.util.Matchers.isSamlLogoutRequest;
+import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
+import static org.keycloak.testsuite.util.Matchers.isSamlStatusResponse;
+import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
+import static org.keycloak.testsuite.util.SamlClient.Binding.ARTIFACT_RESPONSE;
+import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
+import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
+import static org.keycloak.testsuite.util.SamlUtils.getSPInstallationDescriptor;
 
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -67,15 +79,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.keycloak.testsuite.util.Matchers.bodyHC;
-import static org.keycloak.testsuite.util.Matchers.isSamlLogoutRequest;
-import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
-import static org.keycloak.testsuite.util.Matchers.isSamlStatusResponse;
-import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
-import static org.keycloak.testsuite.util.SamlClient.Binding.ARTIFACT_RESPONSE;
-import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
-import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
-import static org.keycloak.testsuite.util.SamlUtils.getSPInstallationDescriptor;
 
 public class ArtifactBindingTest extends AbstractSamlTest {
 

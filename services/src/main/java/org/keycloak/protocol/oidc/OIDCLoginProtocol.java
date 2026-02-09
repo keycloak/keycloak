@@ -16,16 +16,21 @@
  */
 package org.keycloak.protocol.oidc;
 
+import java.io.IOException;
+import java.net.URI;
+import java.util.Optional;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
-import org.jboss.logging.Logger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.constants.AdapterConstants;
@@ -62,10 +67,7 @@ import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.Optional;
-import java.util.UUID;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.approveOAuth2DeviceAuthorization;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.denyOAuth2DeviceAuthorization;
@@ -77,10 +79,9 @@ import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2D
  */
 public class OIDCLoginProtocol implements LoginProtocol {
 
-    public static final String LOGIN_PROTOCOL = "openid-connect";
+    public static final String LOGIN_PROTOCOL = Constants.OIDC_PROTOCOL;
     public static final String STATE_PARAM = "state";
     public static final String SCOPE_PARAM = "scope";
-    public static final String AUTHORIZATION_DETAILS_PARAM = "authorization_details";
     public static final String CODE_PARAM = "code";
     public static final String RESPONSE_TYPE_PARAM = "response_type";
     public static final String GRANT_TYPE_PARAM = "grant_type";
@@ -119,6 +120,12 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String CLIENT_SECRET_JWT = "client_secret_jwt";
     public static final String PRIVATE_KEY_JWT = "private_key_jwt";
     public static final String TLS_CLIENT_AUTH = "tls_client_auth";
+
+    /**
+     * This is just for legacy setups which expect an unencoded, non-RFC6749 compliant client secret send from Keycloak to an IdP.
+     */
+    @Deprecated(since = "26.5", forRemoval = true)
+    public static final String CLIENT_SECRET_BASIC_UNENCODED = "client_secret_basic_unencoded";
 
     // https://tools.ietf.org/html/rfc7636#section-4.3
     public static final String CODE_CHALLENGE_PARAM = "code_challenge";
@@ -251,7 +258,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         // Standard or hybrid flow
         String code = null;
         if (responseType.hasResponseType(OIDCResponseType.CODE)) {
-            OAuth2Code codeData = new OAuth2Code(UUID.randomUUID().toString(),
+            OAuth2Code codeData = new OAuth2Code(SecretGenerator.getInstance().generateSecureID(),
                 Time.currentTime() + userSession.getRealm().getAccessCodeLifespan(),
                 nonce,
                 authSession.getClientNote(OAuth2Constants.SCOPE),

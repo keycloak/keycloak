@@ -35,11 +35,12 @@ import java.util.function.Supplier;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.Picocli;
+
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.ConfigValue.ConfigValueBuilder;
 import io.smallrye.config.PropertiesConfigSource;
-import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.cli.Picocli;
 
 /**
  * A {@link org.eclipse.microprofile.config.spi.ConfigSource} based on the configuration properties persisted into the server
@@ -86,7 +87,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     private static Map<String, String> readProperties() {
-        if (Environment.isRuntimeMode()) {
+        if (!Environment.isRebuild()) {
             InputStream fileStream = loadPersistedConfig();
 
             if (fileStream == null) {
@@ -114,7 +115,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     private static InputStream loadPersistedConfig() {
-        Path homePath = Environment.getHomePath();
+        Path homePath = Environment.getHomePath().orElse(null);
 
         if (homePath == null) {
             return null;
@@ -126,6 +127,12 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
             return null;
         }
 
+        if (!Environment.isWindows()) {
+            return PersistedConfigSource.class.getClassLoader().getResourceAsStream(PERSISTED_PROPERTIES);
+        }
+
+        // https://bugs.openjdk.org/browse/JDK-8338445 - prevents us from picking the properties directly up from the classloader
+        // instead we'll manually open the jar
         try (ZipInputStream is = new ZipInputStream(new FileInputStream(configFile))) {
             ZipEntry entry;
 
@@ -166,7 +173,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     public void saveDryRunProperties() throws FileNotFoundException, IOException {
-        Path path = Environment.getHomePath().resolve("lib").resolve("dryRun.properties");
+        Path path = Environment.getHomePath().orElseThrow().resolve("lib").resolve("dryRun.properties");
         var properties = Picocli.getNonPersistedBuildTimeOptions();
         try (FileOutputStream fos = new FileOutputStream(path.toFile())) {
             properties.store(fos, null);
@@ -174,7 +181,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     public void useDryRunProperties() {
-        Path path = Environment.getHomePath().resolve("lib").resolve("dryRun.properties");
+        Path path = Environment.getHomePath().orElseThrow().resolve("lib").resolve("dryRun.properties");
         if (Files.exists(path)) {
             Properties properties = new Properties();
             try (FileInputStream fis = new FileInputStream(path.toFile())) {

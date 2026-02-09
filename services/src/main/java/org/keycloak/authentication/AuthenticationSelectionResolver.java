@@ -25,11 +25,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.jboss.logging.Logger;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.RealmModel;
+
+import org.jboss.logging.Logger;
 
 /**
  * Resolves set of AuthenticationSelectionOptions

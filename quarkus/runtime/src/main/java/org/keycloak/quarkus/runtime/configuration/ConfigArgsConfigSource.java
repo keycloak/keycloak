@@ -17,8 +17,6 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SHORT_PREFIX;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,11 +29,13 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.keycloak.quarkus.runtime.cli.command.Main;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+
 import io.smallrye.config.PropertiesConfigSource;
 
-import org.keycloak.quarkus.runtime.cli.command.Main;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
+import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SHORT_PREFIX;
 
 /**
  * <p>A configuration source for mapping configuration arguments to their corresponding properties so that they can be recognized
@@ -57,6 +57,9 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
         super(parseArguments(), NAME, 600);
     }
 
+    /**
+     * Should only be called with sanitized args --property=value
+     */
     public static void setCliArgs(String... args) {
         System.setProperty(CLI_ARGS,
                 Stream.of(args).map(arg -> arg.replaceAll(",", ",,")).collect(Collectors.joining(", ")));
@@ -103,15 +106,10 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     }
 
     private static Map<String, String> parseArguments() {
-        Map<String, String> properties = new HashMap<>();
+        final Map<String, String> properties = new HashMap<>();
 
-        parseConfigArgs(getAllCliArgs(), new BiConsumer<String, String>() {
-            @Override
-            public void accept(String key, String value) {
-                PropertyMappers.getKcKeyFromCliKey(key).ifPresent(s -> {
-                    properties.put(s, value);
-                });
-            }
+        parseConfigArgs(getAllCliArgs(), (key, value) -> {
+            PropertyMappers.getKcKeyFromCliKey(key).ifPresent(s -> properties.put(s, value));
         }, ignored -> {});
 
         return properties;
@@ -136,11 +134,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                     unaryConsumer.accept(arg);
                     continue;
                 }
-                PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(key);
-                // the weaknesses here:
-                // - needs to know all of the short name options that accept a value
-                // - Even though We've explicitly disabled PosixClusteredShortOptionsAllowed, it may not know all of the picocli parsing rules.
-                if (mapper != null || SHORT_OPTIONS_ACCEPTING_VALUE.contains(key) || arg.startsWith(SPI_OPTION_PREFIX)) {
+                if (arg.startsWith(ARG_PREFIX)) {
                     i++; // consume next as a value to the key
                     value = args.get(i);
                 } else {

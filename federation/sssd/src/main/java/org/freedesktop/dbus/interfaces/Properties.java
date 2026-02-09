@@ -1,12 +1,12 @@
 package org.freedesktop.dbus.interfaces;
 
+import java.util.List;
+import java.util.Map;
+
 import org.freedesktop.dbus.annotations.DBusInterfaceName;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.messages.DBusSignal;
 import org.freedesktop.dbus.types.Variant;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * A standard properties interface.

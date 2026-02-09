@@ -16,9 +16,10 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml.protocol;
 
+import javax.xml.namespace.QName;
+
 import org.keycloak.saml.common.parsers.AbstractStaxParser;
 import org.keycloak.saml.processing.core.parsers.util.QNameEnumLookup;
-import javax.xml.namespace.QName;
 
 /**
  *

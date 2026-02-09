@@ -72,6 +72,8 @@ public final class OIDCConfigAttributes {
     
     public static final String BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS = "backchannel.logout.revoke.offline.tokens";
 
+    public static final String LOGOUT_CONFIRMATION_ENABLED = "logout.confirmation.enabled";
+
     public static final String USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT = "client_credentials.use_refresh_token";
 
     public static final String USE_REFRESH_TOKEN = "use.refresh.tokens";
@@ -92,6 +94,10 @@ public final class OIDCConfigAttributes {
     
     public static final String STANDARD_TOKEN_EXCHANGE_ENABLED = "standard.token.exchange.enabled";
     public static final String STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED = "standard.token.exchange.enableRefreshRequestedTokenType";
+
+    public static final String JWT_AUTHORIZATION_GRANT_ENABLED = "oauth2.jwt.authorization.grant.enabled";
+    public static final String JWT_AUTHORIZATION_GRANT_IDP = "oauth2.jwt.authorization.grant.idp";
+
 
     private OIDCConfigAttributes() {
     }

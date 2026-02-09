@@ -12,7 +12,7 @@ tileVisible="false"
 == Database connection pool metrics
 
 Configure {project_name} to use a fixed size database connection pool.
-See the <@links.ha id="concepts-database-connections"/> {section} for more information.
+See the <@links.ha id="single-cluster-concepts-database-connections"/> {section} for more information.
 
 [TIP]
 ====

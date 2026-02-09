@@ -16,13 +16,16 @@
  */
 package org.keycloak.testsuite.util;
 
-import jakarta.ws.rs.core.Response;
 import java.util.List;
-import org.junit.Assert;
-import org.junit.Test;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author Réda Housni Alaoui

@@ -1,16 +1,19 @@
 import { test } from "@playwright/test";
-import adminClient from "../utils/AdminClient";
-import { clickSaveButton } from "../utils/form";
-import { login } from "../utils/login";
+import adminClient from "../utils/AdminClient.ts";
+import { clickSaveButton } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
 import {
   assertAxeViolations,
   assertNotificationMessage,
-} from "../utils/masthead";
-import { goToClients, goToRealm } from "../utils/sidebar";
-import { assertRowExists, clickTableRowItem, searchItem } from "../utils/table";
+} from "../utils/masthead.ts";
+import { goToClients, goToRealm } from "../utils/sidebar.ts";
+import {
+  assertRowExists,
+  clickTableRowItem,
+  searchItem,
+} from "../utils/table.ts";
 import {
   assertClipboardHasText,
-  assertDefaultResource,
   assertDownload,
   clickAuthenticationSaveButton,
   clickCopyButton,
@@ -29,9 +32,9 @@ import {
   inputClient,
   selectResource,
   setPolicy,
-} from "./authorization";
+} from "./authorization.ts";
 
-test.describe("Client authentication subtab", () => {
+test.describe.serial("Client authentication subtab", () => {
   const clientId = `client-authentication-${crypto.randomUUID()}`;
 
   test.beforeAll(async () => {
@@ -65,9 +68,8 @@ test.describe("Client authentication subtab", () => {
 
   test("Should create a resource", async ({ page }) => {
     await goToResourcesSubTab(page);
-    await assertDefaultResource(page);
     await createResource(page, {
-      name: "Resource",
+      name: "Test Resource",
       displayName: "The display name",
       type: "type",
       uris: ["one", "two"],
@@ -79,7 +81,7 @@ test.describe("Client authentication subtab", () => {
 
   test("Edit a resource", async ({ page }) => {
     await goToResourcesSubTab(page);
-    await clickTableRowItem(page, "Default Resource");
+    await clickTableRowItem(page, "Test Resource");
 
     await fillForm(page, { displayName: "updated" });
     await clickSaveButton(page);
@@ -111,7 +113,7 @@ test.describe("Client authentication subtab", () => {
       name: "Permission name",
       description: "Something describing this permission",
     });
-    await selectResource(page, "Default Resource");
+    await selectResource(page, "Test Resource");
 
     await clickSaveButton(page);
     await assertNotificationMessage(
@@ -135,7 +137,7 @@ test.describe("Client authentication subtab", () => {
 
   test("Should delete a policy", async ({ page }) => {
     await goToPoliciesSubTab(page);
-    await deletePolicy(page, "Default Policy");
+    await deletePolicy(page, "Regex Policy");
 
     await assertNotificationMessage(page, "The Policy successfully deleted");
   });
@@ -168,8 +170,10 @@ test.describe("Client authentication subtab", () => {
   });
 });
 
-test.describe("Client authorization tab access for view-realm-authorization", () => {
+test.describe
+  .serial("Client authorization tab access for view-realm-authorization", () => {
   const clientId = `realm-view-authz-client-${crypto.randomUUID()}`;
+  const resourceName = `test-resource-${crypto.randomUUID()}`;
 
   test.beforeAll(async () => {
     await adminClient.createRealm("realm-view-authz");
@@ -192,6 +196,10 @@ test.describe("Client authorization tab access for view-realm-authorization", ()
       serviceAccountsEnabled: true,
       standardFlowEnabled: true,
     });
+    await adminClient.createResource(clientId, {
+      realm: "realm-view-authz",
+      name: resourceName,
+    });
   });
 
   test.afterAll(async () => {
@@ -200,7 +208,10 @@ test.describe("Client authorization tab access for view-realm-authorization", ()
   });
 
   test("Should view authorization tab", async ({ page }) => {
-    await login(page, "test-view-authz-user", "password");
+    await login(page, {
+      username: "test-view-authz-user",
+      password: "password",
+    });
 
     await goToRealm(page, "realm-view-authz");
     await page.reload();
@@ -211,7 +222,7 @@ test.describe("Client authorization tab access for view-realm-authorization", ()
     await goToAuthorizationTab(page);
 
     await goToResourcesSubTab(page);
-    await clickTableRowItem(page, "Default Resource");
+    await clickTableRowItem(page, resourceName);
     await page.goBack();
 
     await goToScopesSubTab(page);
@@ -220,7 +231,7 @@ test.describe("Client authorization tab access for view-realm-authorization", ()
   });
 });
 
-test.describe("Accessibility tests for client authorization", () => {
+test.describe.serial("Accessibility tests for client authorization", () => {
   const clientId = `realm-view-authz-client-${crypto.randomUUID()}`;
   test.beforeAll(() =>
     adminClient.createClient({

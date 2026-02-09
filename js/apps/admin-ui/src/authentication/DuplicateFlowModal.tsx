@@ -7,7 +7,6 @@ import {
   Modal,
   ModalVariant,
 } from "@patternfly/react-core";
-import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -33,16 +32,17 @@ export const DuplicateFlowModal = ({
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
-  const form = useForm<AuthenticationFlowRepresentation>({ mode: "onChange" });
-  const { setValue, getValues, handleSubmit } = form;
+  const form = useForm<AuthenticationFlowRepresentation>({
+    mode: "onChange",
+    defaultValues: {
+      alias: t("copyOf", { name }),
+      description: description,
+    },
+  });
+  const { getValues, handleSubmit } = form;
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { realm } = useRealm();
-
-  useEffect(() => {
-    setValue("alias", t("copyOf", { name }));
-    setValue("description", description);
-  }, [name, description]);
 
   const onSubmit = async () => {
     const form = getValues();

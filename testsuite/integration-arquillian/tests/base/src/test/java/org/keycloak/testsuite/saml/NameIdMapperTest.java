@@ -1,8 +1,7 @@
 package org.keycloak.testsuite.saml;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import java.io.IOException;
+
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -13,16 +12,19 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.ProtocolMappersUpdater;
-import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.SamlClient.Binding;
+import org.keycloak.testsuite.util.SamlClientBuilder;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import static org.keycloak.testsuite.saml.RoleMapperTest.createSamlProtocolMapper;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 
-import java.io.IOException;
+import static org.junit.Assert.assertEquals;
 
 public class NameIdMapperTest extends AbstractSamlTest {
 

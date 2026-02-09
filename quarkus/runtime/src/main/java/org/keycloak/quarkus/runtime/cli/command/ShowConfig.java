@@ -17,10 +17,6 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -38,10 +34,14 @@ import io.smallrye.config.ConfigValue;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
+
 @Command(name = "show-config",
         header = "Print out the current configuration.",
         description = "%nPrint out the current configuration.")
-public final class ShowConfig extends AbstractCommand implements Runnable {
+public final class ShowConfig extends AbstractCommand {
 
     public static final String NAME = "show-config";
     private static final List<String> allowedSystemPropertyKeys = List.of(
@@ -54,8 +54,13 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
     String filter;
 
     @Override
-    public void run() {
-        String profile = Environment.updateProfile(true);
+    public String getDefaultProfile() {
+        return null;
+    }
+
+    @Override
+    protected void runCommand() {
+        String profile = org.keycloak.common.util.Environment.getProfile();
 
         spec.commandLine().getOut().printf("Current Mode: %s%n", Environment.getKeycloakModeFromProfile(profile));
 
@@ -81,7 +86,17 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
             }
 
             if (mapper != null) {
-                property = mapper.forKey(property).getFrom();
+                String from = mapper.forKey(property).getFrom();
+
+                // only report from when it exists
+                if (!property.equals(from)) {
+                    ConfigValue value = getConfigValue(from);
+                    if (value.getValue() != null) {
+                        return;
+                    }
+                    configValue = value;
+                    property = from;
+                }
             }
 
             if (!uniqueNames.add(property)) {
@@ -110,11 +125,7 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
 
     private void printProperty(String property, PropertyMapper<?> mapper, ConfigValue configValue) {
         String sourceName = configValue.getConfigSourceName();
-        String value = configValue.getRawValue();
-
-        if (value == null) {
-            value = configValue.getValue();
-        }
+        String value = configValue.getValue();
 
         value = maskValue(value, sourceName, mapper);
 
@@ -125,4 +136,10 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
     public String getName() {
         return NAME;
     }
+
+    @Override
+    public boolean isHelpAll() {
+        return false;
+    }
+
 }

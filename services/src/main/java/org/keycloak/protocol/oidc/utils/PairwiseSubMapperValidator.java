@@ -1,13 +1,5 @@
 package org.keycloak.protocol.oidc.utils;
 
-import org.keycloak.connections.httpclient.HttpClientProvider;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.protocol.ProtocolMapperConfigException;
-import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
-import org.keycloak.util.JsonSerialization;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -15,6 +7,14 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.protocol.ProtocolMapperConfigException;
+import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:martin.hardselius@gmail.com">Martin Hardselius</a>

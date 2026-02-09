@@ -17,9 +17,10 @@
 
 package org.keycloak.test;
 
+import org.keycloak.services.validation.Validation;
+
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.services.validation.Validation;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

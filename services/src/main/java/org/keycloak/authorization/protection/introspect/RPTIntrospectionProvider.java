@@ -25,9 +25,6 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.jboss.logging.Logger;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -37,6 +34,10 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Authorization;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.jboss.logging.Logger;
 
 /**
  * Introspects token accordingly with UMA Bearer Token Profile.

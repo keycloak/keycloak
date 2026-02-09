@@ -17,6 +17,11 @@
 
 package org.keycloak.models;
 
+import java.net.URI;
+import java.util.Locale;
+
+import jakarta.ws.rs.core.HttpHeaders;
+
 import org.keycloak.Token;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.http.HttpRequest;
@@ -24,10 +29,6 @@ import org.keycloak.http.HttpResponse;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.Theme;
 import org.keycloak.urls.UrlType;
-
-import jakarta.ws.rs.core.HttpHeaders;
-import java.net.URI;
-import java.util.Locale;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

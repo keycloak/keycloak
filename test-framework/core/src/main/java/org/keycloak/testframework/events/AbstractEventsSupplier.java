@@ -1,5 +1,10 @@
 package org.keycloak.testframework.events;
 
+import java.lang.annotation.Annotation;
+import java.util.List;
+
+import org.keycloak.testframework.injection.DependenciesBuilder;
+import org.keycloak.testframework.injection.Dependency;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
@@ -8,10 +13,13 @@ import org.keycloak.testframework.injection.SupplierHelpers;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfigInterceptor;
 
-import java.lang.annotation.Annotation;
-
 @SuppressWarnings("rawtypes")
 public abstract class AbstractEventsSupplier<E extends AbstractEvents, A extends Annotation> implements Supplier<E, A>, RealmConfigInterceptor<E, A> {
+
+    @Override
+    public List<Dependency> getDependencies(RequestedInstance<E, A> instanceContext) {
+        return DependenciesBuilder.create(ManagedRealm.class, SupplierHelpers.getAnnotationField(instanceContext.getAnnotation(), "realmRef")).build();
+    }
 
     @Override
     public E getValue(InstanceContext<E, A> instanceContext) {

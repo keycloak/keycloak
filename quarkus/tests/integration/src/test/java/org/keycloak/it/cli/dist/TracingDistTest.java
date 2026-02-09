@@ -17,33 +17,34 @@
 
 package org.keycloak.it.cli.dist;
 
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.RawDistOnly;
+
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.RawDistOnly;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
 public class TracingDistTest {
 
-    private void assertTracingEnabled(CLIResult result) {
+    static void assertTracingEnabled(CLIResult result) {
         result.assertMessage("opentelemetry");
         result.assertMessage("service.name=\"keycloak\"");
     }
 
-    private void assertTracingDisabled(CLIResult result) {
+    static void assertTracingDisabled(CLIResult result) {
         result.assertMessage("opentelemetry");
         result.assertNoMessage("service.name=\"keycloak\"");
         assertSamplingDisabled(result);
     }
 
-    private void assertSamplingDisabled(CLIResult result) {
+    private static void assertSamplingDisabled(CLIResult result) {
         result.assertNoMessage("Failed to export spans.");
         result.assertNoMessage("Connection refused: localhost/127.0.0.1:4317");
     }
@@ -129,7 +130,7 @@ public class TracingDistTest {
     void emptyEndpoint(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
-        cliResult.assertError("URL specified in 'tracing-endpoint' option must not be empty.");
+        cliResult.assertError("Specified Endpoint URL must not be empty.");
     }
 
     @Test
@@ -137,7 +138,7 @@ public class TracingDistTest {
     void invalidUrl(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
-        cliResult.assertError("URL specified in 'tracing-endpoint' option is invalid.");
+        cliResult.assertError("Specified Endpoint URL is invalid.");
     }
 
     @Test
@@ -187,6 +188,7 @@ public class TracingDistTest {
     void differentServiceName(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
+        cliResult.assertMessage("- tracing-service-name: Service name is not directly related to Tracing and you should use the Telemetry option which takes precedence. Use telemetry-service-name.");
         cliResult.assertMessage("opentelemetry");
         cliResult.assertMessage("service.name=\"my-service\"");
 
@@ -210,10 +212,19 @@ public class TracingDistTest {
         CLIResult cliResult = (CLIResult) result;
 
         assertTracingEnabled(cliResult);
-
+        cliResult.assertMessage("- tracing-resource-attributes: Resource attributes are not directly related to Tracing and you should use the Telemetry option which takes precedence. Use telemetry-resource-attributes.");
         cliResult.assertMessage("some.key1=\"some.val1\"");
         cliResult.assertMessage("some.key2=\"some.val2\"");
 
+        cliResult.assertStarted();
+    }
+
+    @Test
+    @Launch({"start", "--hostname-strict=false", "--http-enabled=true", "--optimized", "--log-level=io.opentelemetry:fine", "--tracing-header-Authorization=\"Bearer asdlkfjadsflkj\"", "--tracing-header-Host=localhost:8080"})
+    void headers(CLIResult cliResult) {
+        assertTracingEnabled(cliResult);
+
+        // There is no message in the attributes about headers
         cliResult.assertStarted();
     }
 }

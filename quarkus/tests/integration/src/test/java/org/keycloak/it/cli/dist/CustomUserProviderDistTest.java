@@ -17,14 +17,14 @@
 
 package org.keycloak.it.cli.dist;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.TestProvider;
-import com.acme.provider.legacy.jpa.user.CustomUserProvider;
 
+import com.acme.provider.legacy.jpa.user.CustomUserProvider;
 import io.quarkus.test.junit.main.Launch;
+import org.junit.jupiter.api.Test;
 
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")

@@ -16,7 +16,6 @@
  */
 package org.keycloak.models.cache.infinispan.idp;
 
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -24,10 +23,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.keycloak.common.Profile;
+import org.keycloak.models.IdentityProviderCapability;
 import org.keycloak.models.IdentityProviderMapperModel;
-import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderQuery;
+import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
@@ -182,7 +184,7 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
 
         if (cached == null) {
             Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
-            long count = idpDelegate.getAllStream(Map.of(), 0, 1).count();
+            long count = idpDelegate.getAllStream(IdentityProviderQuery.capability(IdentityProviderCapability.USER_LINKING), 0, 1).count();
             cached = new CachedCount(loaded, getRealm(), cacheKey, count);
             realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
         }
@@ -288,8 +290,8 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
     }
 
     @Override
-    public Stream<IdentityProviderModel> getAllStream(Map<String, String> attrs, Integer first, Integer max) {
-        return idpDelegate.getAllStream(attrs, first, max).map(this::createOrganizationAwareIdentityProviderModel);
+    public Stream<IdentityProviderModel> getAllStream(IdentityProviderQuery query, Integer first, Integer max) {
+        return idpDelegate.getAllStream(query, first, max).map(this::createOrganizationAwareIdentityProviderModel);
     }
 
     @Override

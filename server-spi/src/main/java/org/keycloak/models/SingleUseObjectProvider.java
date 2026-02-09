@@ -17,9 +17,9 @@
 
 package org.keycloak.models;
 
-import org.keycloak.provider.Provider;
-
 import java.util.Map;
+
+import org.keycloak.provider.Provider;
 
 /**
  * Provides a cache to store data for single-use use case or the details about used action tokens.

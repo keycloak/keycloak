@@ -16,28 +16,29 @@
  */
 package org.keycloak.testsuite.util.saml;
 
-import org.keycloak.common.util.Base64;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.Users;
-import org.keycloak.testsuite.util.SamlClientBuilder;
+import java.net.URI;
+import java.util.Base64;
+import java.util.UUID;
+import java.util.function.Supplier;
+
+import jakarta.ws.rs.core.HttpHeaders;
+
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
+import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.util.SamlClient.Binding;
-import java.net.URI;
-import java.util.UUID;
-import java.util.function.Supplier;
+import org.keycloak.testsuite.util.SamlClientBuilder;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.w3c.dom.Document;
-
-import jakarta.ws.rs.core.HttpHeaders;
 
 
 public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<AuthnRequestType, CreateAuthnRequestStepBuilder> {
@@ -111,7 +112,7 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
         String username = user.getUsername();
         String password = Users.getPasswordOf(user);
         String pair = username + ":" + password;
-        this.authorizationHeader = "Basic " + Base64.encodeBytes(pair.getBytes());
+        this.authorizationHeader = "Basic " + Base64.getEncoder().encodeToString(pair.getBytes());
         return this;
     }
 

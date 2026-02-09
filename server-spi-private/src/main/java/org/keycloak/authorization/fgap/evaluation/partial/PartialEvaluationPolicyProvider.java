@@ -37,12 +37,13 @@ public interface PartialEvaluationPolicyProvider {
      * Returns a list of {@link Policy} instances representing the permissions that apply to a given {@code subject} when
      * partially evaluating the realm resources that can be accessed.
      *
-     * @param session the session
-     * @param resourceType the type of the resource
-     * @param subject the subject
+     * @param session           the session
+     * @param resourceType      the type of the resource
+     * @param groupResourceType
+     * @param subject           the subject
      * @return the permissions that apply to the given {@code subject}
      */
-    Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, UserModel subject);
+    Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, ResourceType groupResourceType, UserModel subject);
 
     /**
      * If partial evaluation is supported for the given {@code policy}.

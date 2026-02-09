@@ -17,11 +17,18 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import javax.naming.AuthenticationException;
+import javax.naming.directory.SearchControls;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
@@ -72,18 +79,13 @@ import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import javax.naming.AuthenticationException;
-import jakarta.ws.rs.core.Response;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import javax.naming.directory.SearchControls;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 import static org.junit.Assert.assertEquals;
 
@@ -123,6 +125,11 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             appRealm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
 
         });
+    }
+
+    @Override
+    protected boolean isImportAfterEachMethod() {
+        return true;
     }
 
     /**
@@ -455,6 +462,40 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         UserRepresentation user5 = users.get(0);
         Assert.assertEquals("jbrown5", user5.getUsername());
         Assert.assertEquals("jbrown5@email.org", user5.getEmail());
+    }
+
+    @Test
+    public void testUsernameAndEmailCaseSensitiveIfImportDisabled() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            UserStorageProviderModel ldapModel = ctx.getLdapProvider().getModel();
+            ldapModel.setImportEnabled(false);
+            ctx.getRealm().updateComponent(ldapModel);
+            LDAPObject ldapObject = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), "JBrown8", "John", "Brown8", "JBrown8@Email.org", null, "1234");
+            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), ldapObject, "Password1");
+            UserModel model = session.users().searchForUserStream(ctx.getRealm(), Map.of(UserModel.USERNAME, "JBrown8")).findAny().orElse(null);
+            Assert.assertNotNull(model);
+            assertEquals("JBrown8", model.getUsername());
+            assertEquals("JBrown8@Email.org", model.getEmail());
+            ldapModel.setImportEnabled(true);
+            ctx.getRealm().updateComponent(ldapModel);
+        });
+    }
+
+    @Test
+    public void testUsernameAndEmailCaseInSensitiveIfImportEnabled() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            UserStorageProviderModel ldapModel = ctx.getLdapProvider().getModel();
+            ldapModel.setImportEnabled(true);
+            ctx.getRealm().updateComponent(ldapModel);
+            LDAPObject ldapObject = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), "JBrown9", "John", "Brown9", "JBrown9@Email.org", null, "1234");
+            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), ldapObject, "Password1");
+            UserModel model = session.users().searchForUserStream(ctx.getRealm(), Map.of(UserModel.USERNAME, "JBrown9")).findAny().orElse(null);
+            Assert.assertNotNull(model);
+            assertEquals("jbrown9", model.getUsername());
+            assertEquals("jbrown9@email.org", model.getEmail());
+        });
     }
 
     @Test
@@ -1341,48 +1382,52 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testLDAPUserRefreshCache() {
-        testingClient.server().run(session -> {
-            UserStorageUtil.userCache(session).clear();
-        });
+        try {
+            testingClient.testing().setTestingInfinispanTimeService();
+            testingClient.server().run(session -> {
+                UserStorageUtil.userCache(session).clear();
+            });
 
-        testingClient.server().run(session -> {
-            LDAPTestContext ctx = LDAPTestContext.init(session);
-            RealmModel appRealm = ctx.getRealm();
-            session.getContext().setRealm(appRealm);
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel appRealm = ctx.getRealm();
+                session.getContext().setRealm(appRealm);
 
-            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
-            LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "johndirect", "John", "Direct", "johndirect@email.org", null, "1234");
+                LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+                LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "johndirect", "John", "Direct", "johndirect@email.org", null, "1234");
 
-            // Fetch user from LDAP and check that postalCode is filled
-            UserModel user = session.users().getUserByUsername(appRealm, "johndirect");
-            String postalCode = user.getFirstAttribute("postal_code");
-            Assert.assertEquals("1234", postalCode);
+                // Fetch user from LDAP and check that postalCode is filled
+                UserModel user = session.users().getUserByUsername(appRealm, "johndirect");
+                String postalCode = user.getFirstAttribute("postal_code");
+                Assert.assertEquals("1234", postalCode);
 
-            LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, appRealm, ldapProvider.getLdapIdentityStore().getConfig(), "johndirect");
-        });
+                LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, appRealm, ldapProvider.getLdapIdentityStore().getConfig(), "johndirect");
+            });
 
-        setTimeOffset(60 * 5); // 5 minutes in future, user should be cached still
+            setTimeOffset(60 * 5); // 5 minutes in future, user should be cached still
 
-        testingClient.server().run(session -> {
-            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
-            session.getContext().setRealm(appRealm);
-            CachedUserModel user = (CachedUserModel) session.users().getUserByUsername(appRealm, "johndirect");
-            String postalCode = user.getFirstAttribute("postal_code");
-            String email = user.getEmail();
-            Assert.assertEquals("1234", postalCode);
-            Assert.assertEquals("johndirect@email.org", email);
-        });
+            testingClient.server().run(session -> {
+                RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+                session.getContext().setRealm(appRealm);
+                CachedUserModel user = (CachedUserModel) session.users().getUserByUsername(appRealm, "johndirect");
+                String postalCode = user.getFirstAttribute("postal_code");
+                String email = user.getEmail();
+                Assert.assertEquals("1234", postalCode);
+                Assert.assertEquals("johndirect@email.org", email);
+            });
 
-        setTimeOffset(60 * 20); // 20 minutes into future, cache will be invalidated
+            setTimeOffset(60 * 20); // 20 minutes into future, cache will be invalidated
 
-        testingClient.server().run(session -> {
-            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
-            session.getContext().setRealm(appRealm);
-            UserModel user = session.users().getUserByUsername(appRealm, "johndirect");
-            Assert.assertNull(user);
-        });
-
-        setTimeOffset(0);
+            testingClient.server().run(session -> {
+                RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+                session.getContext().setRealm(appRealm);
+                UserModel user = session.users().getUserByUsername(appRealm, "johndirect");
+                Assert.assertNull(user);
+            });
+        } finally {
+            resetTimeOffset();
+            testingClient.testing().revertTestingInfinispanTimeService();
+        }
     }
 
     @Test
@@ -1447,6 +1492,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     @Test
     public void testAlwaysReadValueFromLdapCached() throws Exception {
         try {
+            testingClient.testing().setTestingInfinispanTimeService();
             // import user from the ldap johnkeycloak and cache it reading it by id
             List<UserRepresentation> users = testRealm().users().search("johnkeycloak", true);
             Assert.assertEquals(1, users.size());
@@ -1489,6 +1535,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
                 johnLdapObject.setSingleAttribute(LDAPConstants.SN, "Doe");
                 ctx.getLdapProvider().getLdapIdentityStore().update(johnLdapObject);
             });
+            resetTimeOffset();
+            testingClient.testing().revertTestingInfinispanTimeService();
         }
     }
 
@@ -1617,6 +1665,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             RealmModel testRealm = ctx.getRealm();
 
             UserModel importedUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(testRealm, "beckybecks");
+            Assert.assertNotNull(importedUser);
 
             // Update user 'beckybecks' in LDAP
             LDAPObject becky = ctx.getLdapProvider().loadLDAPUserByUsername(testRealm, importedUser.getUsername());

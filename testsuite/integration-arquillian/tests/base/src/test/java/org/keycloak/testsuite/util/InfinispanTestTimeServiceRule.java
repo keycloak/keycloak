@@ -18,9 +18,10 @@
 
 package org.keycloak.testsuite.util;
 
+import org.keycloak.testsuite.AbstractKeycloakTest;
+
 import org.jboss.logging.Logger;
 import org.junit.rules.ExternalResource;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

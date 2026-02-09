@@ -17,6 +17,11 @@
 
 package org.keycloak.models.session;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.stream.Stream;
+
 import org.keycloak.Config;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -25,11 +30,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * Persistence of userSessions is disabled . Useful just if you never need survive of userSessions/clientSessions
@@ -149,5 +149,15 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     @Override
     public Map<String, Long> getUserSessionsCountsByClients(RealmModel realm, boolean offline) {
         return Collections.emptyMap();
+    }
+
+    @Override
+    public Stream<UserSessionModel> readOnlyUserSessionStream(RealmModel realm, boolean offline) {
+        return Stream.empty();
+    }
+
+    @Override
+    public Stream<UserSessionModel> readOnlyUserSessionStream(RealmModel realm, ClientModel client, boolean offline, int skip, int maxResults) {
+        return Stream.empty();
     }
 }

@@ -1,6 +1,8 @@
 import camelize from "camelize-ts";
+import { parseTemplate } from "url-template";
 import { defaultBaseUrl, defaultRealm } from "./constants.js";
 import { fetchWithError } from "./fetchWithError.js";
+import { joinPath } from "./joinPath.js";
 import { stringifyQueryParams } from "./stringifyQueryParams.js";
 
 export type GrantTypes = "client_credentials" | "password" | "refresh_token";
@@ -68,10 +70,17 @@ const encodeFormURIComponent = (data: string) =>
   encodeRFC3986URIComponent(data).replaceAll("%20", "+");
 
 export const getToken = async (settings: Settings): Promise<TokenResponse> => {
-  // Construct URL
-  const baseUrl = settings.baseUrl || defaultBaseUrl;
-  const realmName = settings.realmName || defaultRealm;
-  const url = `${baseUrl}/realms/${realmName}/protocol/openid-connect/token`;
+  const url = new URL(settings.baseUrl ?? defaultBaseUrl);
+  const pathTemplate = parseTemplate(
+    "/realms/{realmName}/protocol/openid-connect/token",
+  );
+
+  url.pathname = joinPath(
+    url.pathname,
+    pathTemplate.expand({
+      realmName: settings.realmName ?? defaultRealm,
+    }),
+  );
 
   // Prepare credentials for openid-connect token request
   // ref: http://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint

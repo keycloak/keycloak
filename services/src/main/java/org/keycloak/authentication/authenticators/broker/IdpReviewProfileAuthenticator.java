@@ -17,7 +17,15 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
-import org.jboss.logging.Logger;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
@@ -35,19 +43,12 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.userprofile.UserProfileContext;
-import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.ValidationException;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -194,6 +195,11 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             public String getFederationLink() {
                 return null;
             }
+
+            @Override
+            public Stream<String> getRequiredActionsStream() {
+                return Stream.empty();
+            }
         };
 
         UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class);
@@ -202,12 +208,21 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
         UserProfile profile = profileProvider.create(UserProfileContext.IDP_REVIEW, attributes, updatedProfile);
 
         try {
-            String oldEmail = userCtx.getEmail();
-
             profile.update((attributeName, userModel, oldValue) -> {
-                if (attributeName.equals(UserModel.EMAIL)) {
+                if (attributeName.equals(UserModel.USERNAME)) {
+                    context.getAuthenticationSession().setAuthNote(AbstractIdentityProvider.UPDATE_PROFILE_USERNAME_CHANGED, "true");
+                    event.clone().event(EventType.UPDATE_PROFILE)
+                            .detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
+                            .detail(Details.PREF_PREVIOUS + UserModel.USERNAME, oldValue)
+                            .detail(Details.PREF_UPDATED + UserModel.USERNAME, profile.getAttributes().getFirst(UserModel.USERNAME))
+                            .success();
+                } else if (attributeName.equals(UserModel.EMAIL)) {
                     context.getAuthenticationSession().setAuthNote(AbstractIdentityProvider.UPDATE_PROFILE_EMAIL_CHANGED, "true");
-                    event.clone().event(EventType.UPDATE_EMAIL).detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name()).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, profile.getAttributes().getFirst(UserModel.EMAIL)).success();
+                    event.clone().event(EventType.UPDATE_EMAIL)
+                            .detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
+                            .detail(Details.PREVIOUS_EMAIL, oldValue)
+                            .detail(Details.UPDATED_EMAIL, profile.getAttributes().getFirst(UserModel.EMAIL))
+                            .success();
                 }
             });
         } catch (ValidationException pve) {

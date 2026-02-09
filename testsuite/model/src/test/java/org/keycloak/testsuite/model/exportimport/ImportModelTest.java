@@ -17,8 +17,9 @@
 
 package org.keycloak.testsuite.model.exportimport;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.exportimport.ExportProvider;
@@ -32,8 +33,8 @@ import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import org.junit.Assert;
+import org.junit.Test;
 
 @RequireProvider(value = ImportProvider.class)
 public class ImportModelTest extends KeycloakModelTest {

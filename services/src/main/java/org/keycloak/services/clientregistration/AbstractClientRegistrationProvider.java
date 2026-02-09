@@ -21,11 +21,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
@@ -40,6 +44,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
@@ -50,10 +55,8 @@ import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyM
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.validation.ValidationUtil;
-
-import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -104,7 +107,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
             client.setSecret(clientModel.getSecret());
 
-            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, clientModel, registrationAuth);
+            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, clientModel, registrationAuth, getAllowedOrigins());
             client.setRegistrationAccessToken(registrationAccessToken);
 
             if (auth.isInitialAccessToken()) {
@@ -169,6 +172,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier modified", Response.Status.BAD_REQUEST);
         }
 
+        ClientResource.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());
         RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
         RepresentationToModel.updateClientScopes(rep, client);
@@ -189,7 +193,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         if (auth.isRegistrationAccessToken()) {
             String registrationAccessToken;
             if ((boolean) session.getAttribute(ClientRegistrationAccessTokenConstants.ROTATION_ENABLED)) {
-                registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth());
+                registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth(), getAllowedOrigins());
             } else {
                 registrationAccessToken = ClientRegistrationTokenUtils.updateTokenSignature(session, auth);
             }
@@ -308,5 +312,14 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         for (String defaultRole : defaultRoles) {
             client.getRealm().getDefaultRole().removeCompositeRole(client.getRole(defaultRole));
         }
+    }
+
+    protected List<String> getAllowedOrigins() {
+        List<String> allowedOrigins = new LinkedList<>();
+        AccessToken jwt = auth.getJwt();
+        if (jwt != null && jwt.getAllowedOrigins() != null) {
+            allowedOrigins.addAll(jwt.getAllowedOrigins());
+        }
+        return allowedOrigins;
     }
 }

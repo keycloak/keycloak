@@ -17,17 +17,21 @@
 
 package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import io.fabric8.generator.annotation.Default;
-import io.fabric8.generator.annotation.ValidationRule;
-import io.sundr.builder.annotations.Buildable;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.update.UpdateStrategy;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import io.fabric8.generator.annotation.Default;
+import io.fabric8.generator.annotation.ValidationRule;
+import io.sundr.builder.annotations.Buildable;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
@@ -41,12 +45,20 @@ public class UpdateSpec {
     private static final UpdateStrategy DEFAULT = UpdateStrategy.RECREATE_ON_IMAGE_CHANGE;
     private static final String DEFAULT_JSON = "RecreateOnImageChange";
 
+    @JsonProperty("scheduling")
+    @JsonPropertyDescription("In this section you can configure the update job's scheduling")
+    private SchedulingSpec schedulingSpec;
+
     @JsonPropertyDescription("Sets the update strategy to use.")
     @Default(DEFAULT_JSON)
     private UpdateStrategy strategy;
 
     @JsonPropertyDescription("When use the Explicit strategy, the revision signals if a rolling update can be used or not.")
     private String revision;
+
+    @JsonProperty("labels")
+    @JsonPropertyDescription("Optionally set to add additional labels to the Job created for the update.")
+    Map<String, String> labels = new LinkedHashMap<String, String>();
 
     public UpdateStrategy getStrategy() {
         return strategy;
@@ -64,6 +76,14 @@ public class UpdateSpec {
         this.revision = revision;
     }
 
+    public SchedulingSpec getSchedulingSpec() {
+        return schedulingSpec;
+    }
+
+    public void setSchedulingSpec(SchedulingSpec schedulingSpec) {
+        this.schedulingSpec = schedulingSpec;
+    }
+
     public static UpdateStrategy getUpdateStrategy(Keycloak keycloak) {
         return CRDUtils.keycloakSpecOf(keycloak)
                 .map(KeycloakSpec::getUpdateSpec)
@@ -75,5 +95,13 @@ public class UpdateSpec {
         return CRDUtils.keycloakSpecOf(keycloak)
                 .map(KeycloakSpec::getUpdateSpec)
                 .map(UpdateSpec::getRevision);
+    }
+    
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
     }
 }

@@ -17,12 +17,6 @@
 
 package org.keycloak.it.junit5.extension;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.testcontainers.shaded.org.hamcrest.MatcherAssert.assertThat;
-import static org.testcontainers.shaded.org.hamcrest.Matchers.*;
-
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -30,6 +24,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.main.LaunchResult;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public interface CLIResult extends LaunchResult {
 
@@ -83,6 +86,10 @@ public interface CLIResult extends LaunchResult {
     default void assertNoError(String msg) {
         assertThat("The error output contains: " + msg,
                 getErrorOutput(), not(containsString(msg)));
+    }
+
+    default void assertWarning(String msg) {
+        assertError(msg); //seems that warnings are printed on stderr
     }
 
     default void assertExitCode(int code) {

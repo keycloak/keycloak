@@ -17,10 +17,14 @@
 
 package org.keycloak.operator.testsuite.unit;
 
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.quarkus.test.junit.QuarkusTest;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakDistConfigurator;
@@ -31,18 +35,16 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.keycloak.common.util.ObjectUtil.isBlank;
 import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
 import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
 import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusDoesNotContainMessage;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @QuarkusTest
 public class KeycloakDistConfiguratorTest {
@@ -168,6 +170,18 @@ public class KeycloakDistConfiguratorTest {
     }
 
     @Test
+    public void telemetry() {
+        final Map<String, String> expectedValues = Map.of(
+                "telemetry-endpoint", "http://my-telemetry:4317",
+                "telemetry-service-name", "my-best-keycloak-telemetry",
+                "telemetry-protocol", "http/protobuf",
+                "telemetry-resource-attributes", "service.namespace=keycloak-namespace-telemetry,service.name=custom-service-name-telemetry"
+        );
+
+        testFirstClassCitizen("/test-serialization-keycloak-cr-telemetry.yml", expectedValues);
+    }
+
+    @Test
     public void tracing() {
         final Map<String, String> expectedValues = Map.of(
                 "tracing-enabled", "true",
@@ -180,7 +194,49 @@ public class KeycloakDistConfiguratorTest {
                 "tracing-resource-attributes", "service.namespace=keycloak-namespace,service.name=custom-service-name"
         );
 
-        testFirstClassCitizen(expectedValues);
+        testFirstClassCitizen("/test-serialization-keycloak-cr-telemetry.yml", expectedValues);
+    }
+
+    @Test
+    public void invalidTelemetryResourceAttributes() {
+        Keycloak keycloakCR = K8sUtils.getResourceFromFile("test-serialization-keycloak-cr-telemetry.yml", Keycloak.class);
+        assertResourceAttributes(keycloakCR, keycloakCR.getSpec().getTelemetrySpec()::setResourceAttributes);
+    }
+
+    @Test
+    public void invalidTracingResourceAttributes() {
+        Keycloak keycloakCR = K8sUtils.getResourceFromFile("test-serialization-keycloak-cr-telemetry.yml", Keycloak.class);
+        assertResourceAttributes(keycloakCR, keycloakCR.getSpec().getTracingSpec()::setResourceAttributes);
+    }
+
+    public void assertResourceAttributes(Keycloak keycloakCR, Consumer<Map<String, String>> specResourceAttributesSetter) {
+        // invalid keys
+        specResourceAttributesSetter.accept(Map.of(
+                "invalid=key", "validValue",
+                "another,key", "anotherValue"
+        ));
+
+        KeycloakStatusAggregator statusBuilder = new KeycloakStatusAggregator(1L);
+        distConfig.validateOptions(keycloakCR, statusBuilder);
+        KeycloakStatus status = statusBuilder.build();
+
+        assertKeycloakStatusCondition(status, KeycloakStatusCondition.HAS_ERRORS, true);
+        assertThat(status.findCondition(KeycloakStatusCondition.HAS_ERRORS).get().getMessage())
+                .contains("Resource attributes keys cannot contain characters '=' or ','. Invalid keys: 'another,key', 'invalid=key'");
+
+        // invalid values
+        specResourceAttributesSetter.accept(Map.of(
+                "validKey1", "invalid=value",
+                "validKey2", "another,value"
+        ));
+
+        statusBuilder = new KeycloakStatusAggregator(1L);
+        distConfig.validateOptions(keycloakCR, statusBuilder);
+        status = statusBuilder.build();
+
+        assertKeycloakStatusCondition(status, KeycloakStatusCondition.HAS_ERRORS, true);
+        assertThat(status.findCondition(KeycloakStatusCondition.HAS_ERRORS).get().getMessage())
+                .contains("Resource attributes values cannot contain characters '=' or ','. Invalid values: 'another,value'(key 'validKey2'), 'invalid=value'(key 'validKey1')");
     }
 
     /* UTILS */

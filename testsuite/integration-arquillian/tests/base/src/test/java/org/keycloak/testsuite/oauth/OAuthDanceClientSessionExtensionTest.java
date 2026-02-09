@@ -17,9 +17,8 @@
 
 package org.keycloak.testsuite.oauth;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.keycloak.OAuth2Constants;
+import java.util.List;
+
 import org.keycloak.events.Details;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -27,9 +26,10 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import java.util.List;
+import org.junit.Rule;
+import org.junit.Test;
 
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
  * @author Sebastian Rose, AOE on 02.06.15.

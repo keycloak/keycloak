@@ -16,7 +16,10 @@
  */
 package org.keycloak.testsuite.model;
 
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
@@ -28,9 +31,7 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderEventListener;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;

@@ -1,5 +1,5 @@
-import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import { Page } from "@playwright/test";
+import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation.js";
+import type { Page } from "@playwright/test";
 
 export async function clickAddProvider(page: Page, provider: string) {
   await page.getByTestId(`${provider}-card`).click();

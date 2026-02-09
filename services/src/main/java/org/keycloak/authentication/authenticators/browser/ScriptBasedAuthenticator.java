@@ -16,7 +16,8 @@
  */
 package org.keycloak.authentication.authenticators.browser;
 
-import org.jboss.logging.Logger;
+import java.util.Map;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
@@ -29,7 +30,7 @@ import org.keycloak.scripting.InvocableScriptAdapter;
 import org.keycloak.scripting.ScriptExecutionException;
 import org.keycloak.scripting.ScriptingProvider;
 
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * An {@link Authenticator} that can execute a configured script during authentication flow.

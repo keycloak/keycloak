@@ -17,6 +17,14 @@
 
 package org.keycloak.tests.admin;
 
+import java.util.Arrays;
+import java.util.Map;
+
+import org.keycloak.testframework.annotations.InjectHttpClient;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -24,13 +32,6 @@ import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.keycloak.testframework.annotations.InjectHttpClient;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.server.KeycloakServerConfig;
-import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-
-import java.util.Arrays;
-import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -45,8 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @KeycloakIntegrationTest(config = AdminRootTest.AdminUrlConfig.class)
 public class AdminRootTest {
     // This might not be robust enough. If something made KC on a different port, this would fail.
-    private static final String HOSTNAME = "http://127.0.0.1.nip.io:8080";
-    private static final String HOSTNAME_ADMIN = "http://admin.127.0.0.1.nip.io:8080";
+    private static final String HOSTNAME = "http://localtest.me:8080";
+    private static final String HOSTNAME_ADMIN = "http://admin.localtest.me:8080";
     private static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080";
 
     @InjectHttpClient(followRedirects = false)

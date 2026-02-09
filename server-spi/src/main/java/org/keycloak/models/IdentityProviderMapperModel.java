@@ -17,11 +17,11 @@
 
 package org.keycloak.models;
 
-import org.keycloak.models.utils.MapperTypeSerializer;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+
+import org.keycloak.models.utils.MapperTypeSerializer;
 
 /**
  * Specifies a mapping from broker login to user data.

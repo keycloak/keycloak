@@ -17,6 +17,8 @@
 
 package org.keycloak.representations.idm;
 
+import java.util.List;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -25,6 +27,8 @@ public class ClientInitialAccessCreatePresentation {
     private Integer expiration;
 
     private Integer count;
+
+    private List<String> webOrigins;
 
     public ClientInitialAccessCreatePresentation() {
     }
@@ -50,4 +54,11 @@ public class ClientInitialAccessCreatePresentation {
         this.count = count;
     }
 
+    public List<String> getWebOrigins() {
+        return webOrigins;
+    }
+
+    public void setWebOrigins(List<String> webOrigins) {
+        this.webOrigins = webOrigins;
+    }
 }

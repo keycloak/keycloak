@@ -17,8 +17,6 @@
 
 package org.keycloak.models.jpa.entities;
 
-import org.keycloak.models.AuthenticationExecutionModel;
-
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
@@ -30,6 +28,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+
+import org.keycloak.models.AuthenticationExecutionModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

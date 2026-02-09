@@ -1,13 +1,14 @@
 package org.keycloak.testsuite.arquillian;
 
-import org.jboss.arquillian.container.spi.Container;
-import org.jboss.arquillian.container.spi.Container.State;
-import org.keycloak.common.util.KeycloakUriBuilder;
-
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Objects;
+
+import org.keycloak.common.util.KeycloakUriBuilder;
+
+import org.jboss.arquillian.container.spi.Container;
+import org.jboss.arquillian.container.spi.Container.State;
 
 /**
  *

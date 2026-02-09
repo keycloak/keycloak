@@ -16,34 +16,39 @@
  */
 package org.keycloak.saml.processing.core.util;
 
-import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.dom.xmlsec.w3.xmldsig.DSAKeyValueType;
-import org.keycloak.dom.xmlsec.w3.xmldsig.KeyValueType;
-import org.keycloak.dom.xmlsec.w3.xmldsig.RSAKeyValueType;
-import org.keycloak.dom.xmlsec.w3.xmldsig.SignatureType;
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.constants.WSTrustConstants;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.common.util.DocumentUtil;
-import org.keycloak.saml.common.util.StringUtil;
-import org.keycloak.saml.common.util.SystemPropertiesUtil;
-import org.keycloak.saml.common.util.TransformerUtil;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-
-import jakarta.xml.bind.JAXBException;
-import javax.xml.crypto.XMLStructure;
+import java.io.ByteArrayInputStream;
+import java.io.OutputStream;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+import java.security.KeyException;
+import java.security.KeyManagementException;
+import java.security.KeyPair;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.DSAPublicKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import javax.xml.crypto.AlgorithmMethod;
+import javax.xml.crypto.Data;
+import javax.xml.crypto.KeySelector;
+import javax.xml.crypto.KeySelectorException;
+import javax.xml.crypto.KeySelectorResult;
 import javax.xml.crypto.MarshalException;
+import javax.xml.crypto.NodeSetData;
+import javax.xml.crypto.URIReferenceException;
+import javax.xml.crypto.XMLCryptoContext;
+import javax.xml.crypto.XMLStructure;
+import javax.xml.crypto.dom.DOMStructure;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.crypto.dsig.DigestMethod;
 import javax.xml.crypto.dsig.Reference;
@@ -65,39 +70,36 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
-import java.io.ByteArrayInputStream;
-import java.io.OutputStream;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-import java.security.KeyException;
-import java.security.KeyManagementException;
-import java.security.KeyPair;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.DSAPublicKey;
-import java.security.interfaces.RSAPublicKey;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import javax.xml.crypto.AlgorithmMethod;
-import javax.xml.crypto.Data;
-import javax.xml.crypto.KeySelector;
-import javax.xml.crypto.KeySelectorException;
-import javax.xml.crypto.KeySelectorResult;
-import javax.xml.crypto.NodeSetData;
-import javax.xml.crypto.URIReferenceException;
-import javax.xml.crypto.XMLCryptoContext;
-import javax.xml.crypto.dom.DOMStructure;
+
+import jakarta.xml.bind.JAXBException;
+
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.dom.xmlsec.w3.xmldsig.DSAKeyValueType;
+import org.keycloak.dom.xmlsec.w3.xmldsig.KeyValueType;
+import org.keycloak.dom.xmlsec.w3.xmldsig.RSAKeyValueType;
+import org.keycloak.dom.xmlsec.w3.xmldsig.SignatureType;
 import org.keycloak.rotation.KeyLocator;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.constants.WSTrustConstants;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.SecurityActions;
+import org.keycloak.saml.common.util.StringUtil;
+import org.keycloak.saml.common.util.SystemPropertiesUtil;
+import org.keycloak.saml.common.util.TransformerUtil;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 /**
  * Utility for XML Signature <b>Note:</b> You can change the canonicalization method type by using the system property
@@ -134,8 +136,6 @@ public class XMLSignatureUtil {
         private final KeyLocator locator;
 
         private boolean keyLocated = false;
-
-        private String keyName = null;
 
         public KeySelectorUtilizingKeyNameHint(KeyLocator locator) {
             this.locator = locator;
@@ -527,7 +527,7 @@ public class XMLSignatureUtil {
                 return false;
             }
         } catch (XMLSignatureException ex) { // pass through MarshalException
-            logger.debug("Verification failed for key " + sel.keyName + ": " + ex);
+            logger.debug("Verification failed: " + ex);
             logger.trace(ex);
         }
 
@@ -734,8 +734,8 @@ public class XMLSignatureUtil {
             byte[] exponent = pubKey.getPublicExponent().toByteArray();
 
             RSAKeyValueType rsaKeyValue = new RSAKeyValueType();
-            rsaKeyValue.setModulus(Base64.encodeBytes(modulus).getBytes(GeneralConstants.SAML_CHARSET));
-            rsaKeyValue.setExponent(Base64.encodeBytes(exponent).getBytes(GeneralConstants.SAML_CHARSET));
+            rsaKeyValue.setModulus(Base64.getEncoder().encodeToString(modulus).getBytes(GeneralConstants.SAML_CHARSET));
+            rsaKeyValue.setExponent(Base64.getEncoder().encodeToString(exponent).getBytes(GeneralConstants.SAML_CHARSET));
             return rsaKeyValue;
         } else if (key instanceof DSAPublicKey) {
             DSAPublicKey pubKey = (DSAPublicKey) key;
@@ -745,10 +745,10 @@ public class XMLSignatureUtil {
             byte[] Y = pubKey.getY().toByteArray();
 
             DSAKeyValueType dsaKeyValue = new DSAKeyValueType();
-            dsaKeyValue.setP(Base64.encodeBytes(P).getBytes(GeneralConstants.SAML_CHARSET));
-            dsaKeyValue.setQ(Base64.encodeBytes(Q).getBytes(GeneralConstants.SAML_CHARSET));
-            dsaKeyValue.setG(Base64.encodeBytes(G).getBytes(GeneralConstants.SAML_CHARSET));
-            dsaKeyValue.setY(Base64.encodeBytes(Y).getBytes(GeneralConstants.SAML_CHARSET));
+            dsaKeyValue.setP(Base64.getEncoder().encodeToString(P).getBytes(GeneralConstants.SAML_CHARSET));
+            dsaKeyValue.setQ(Base64.getEncoder().encodeToString(Q).getBytes(GeneralConstants.SAML_CHARSET));
+            dsaKeyValue.setG(Base64.getEncoder().encodeToString(G).getBytes(GeneralConstants.SAML_CHARSET));
+            dsaKeyValue.setY(Base64.getEncoder().encodeToString(Y).getBytes(GeneralConstants.SAML_CHARSET));
             return dsaKeyValue;
         }
         throw logger.unsupportedType(key.toString());

@@ -1,12 +1,12 @@
 package org.keycloak.testframework.oauth;
 
-import org.keycloak.representations.adapters.action.LogoutAction;
-import org.keycloak.representations.adapters.action.PushNotBeforeAction;
-import org.keycloak.representations.adapters.action.TestAvailabilityAction;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import org.keycloak.representations.adapters.action.LogoutAction;
+import org.keycloak.representations.adapters.action.PushNotBeforeAction;
+import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 
 public class KcAdminInvocations {
 

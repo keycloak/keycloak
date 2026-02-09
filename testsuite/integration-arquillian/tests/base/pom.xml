@@ -45,6 +45,7 @@
         <mvel.version>2.5.2.Final</mvel.version>
         <systemrules.version>1.19.0</systemrules.version>
         <common.resources>${basedir}/../../servers/auth-server/common</common.resources>
+        <auth.server.ipv6>false</auth.server.ipv6>
     </properties>
     
     <dependencies>
@@ -142,11 +143,6 @@
         <dependency>
             <groupId>org.apache.maven.resolver</groupId>
             <artifactId>maven-resolver-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.smallrye</groupId>
-            <artifactId>jandex</artifactId>
-            <version>${smallrye.jandex.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.stefanbirkner</groupId>
@@ -308,7 +304,7 @@
                                     <includes>
                                         <include>wildfly-config.xml</include>
                                         <include>password-blacklists/**</include>
-                                        <include>log4j.properties</include>
+                                        <include>logging.properties</include>
                                         <include>vault/**</include>
                                         <include>firefox-cookies-prefs.js</include>
                                     </includes>
@@ -399,6 +395,12 @@
                                             <ORACLE_PASSWORD>${keycloak.connectionsJpa.password}</ORACLE_PASSWORD>
                                             <APP_USER>${keycloak.connectionsJpa.user}</APP_USER>
                                             <APP_USER_PASSWORD>${keycloak.connectionsJpa.password}</APP_USER_PASSWORD>
+
+                                            <!-- EnterpriseDB -->
+                                            <PGPORT>${docker.database.port}</PGPORT>
+                                            <PGDATABASE>${keycloak.connectionsJpa.database}</PGDATABASE>
+                                            <PGUSER>${keycloak.connectionsJpa.user}</PGUSER>
+                                            <PGPASSWORD>${keycloak.connectionsJpa.password}</PGPASSWORD>
                                         </env>
                                         <cmd>${docker.database.cmd}</cmd>
                                         <wait>
@@ -433,7 +435,20 @@
     </build>
 
     <profiles>
-
+    
+        <profile>
+            <id>ipv6</id>
+            <activation>
+                <property>
+                    <name>java.net.preferIPv6Addresses</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <auth.server.ipv6>true</auth.server.ipv6>
+            </properties>
+        </profile>
+        
         <profile>
             <id>app-server-wildfly</id>
             <activation>
@@ -718,7 +733,6 @@
                 <surefire.memory.Xmx>2048m</surefire.memory.Xmx>
                 <surefire.memory.metaspace>512m</surefire.memory.metaspace>
                 <surefire.memory.metaspace.max>1024m</surefire.memory.metaspace.max>
-                <junit-vintage-engine.version>5.9.3</junit-vintage-engine.version>
             </properties>
             <dependencies>
                 <dependency>
@@ -736,7 +750,6 @@
                 <dependency>
                     <groupId>org.junit.vintage</groupId>
                     <artifactId>junit-vintage-engine</artifactId>
-                    <version>${junit-vintage-engine.version}</version>
                     <scope>test</scope>
                 </dependency>
                 <dependency>
@@ -771,7 +784,7 @@
                                     <images>
                                         <image>
                                             <alias>infinispan</alias>
-                                            <name>quay.io/infinispan/server:${infinispan.version}</name>
+                                            <name>${infinispan.container}</name>
                                             <run>
                                                 <ports>
                                                     <port>11222:11222</port>

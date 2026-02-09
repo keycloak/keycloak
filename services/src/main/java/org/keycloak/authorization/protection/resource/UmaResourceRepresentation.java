@@ -19,10 +19,11 @@ package org.keycloak.authorization.protection.resource;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

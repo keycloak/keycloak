@@ -27,7 +27,7 @@
 
     <artifactId>keycloak-ldap-federation</artifactId>
     <name>Keycloak LDAP UserStoreProvider</name>
-    <description />
+    <description>Keycloak LDAP UserStoreProvider</description>
 
     <dependencies>
         <dependency>

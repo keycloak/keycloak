@@ -17,16 +17,11 @@
 
 package org.keycloak.tests.admin.authz.fgap;
 
+import java.util.Set;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
-import java.util.Set;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.fail;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
@@ -37,6 +32,15 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedUser;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest
 public class PermissionRESTTest extends AbstractPermissionTest {

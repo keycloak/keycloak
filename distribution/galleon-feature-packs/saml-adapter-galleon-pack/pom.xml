@@ -28,6 +28,7 @@
     <artifactId>keycloak-saml-adapter-galleon-pack</artifactId>
 
     <name>Keycloak Galleon Feature Pack: SAML Adapter</name>
+    <description>Keycloak Galleon Feature Pack: SAML Adapter</description>
     <packaging>pom</packaging>
 
     <properties>

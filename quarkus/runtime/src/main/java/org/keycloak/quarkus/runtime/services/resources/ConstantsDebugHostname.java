@@ -27,7 +27,8 @@ public class ConstantsDebugHostname {
             "X-Forwarded-Host",
             "X-Forwarded-Proto",
             "X-Forwarded-Port",
-            "X-Forwarded-For"
+            "X-Forwarded-For",
+            "X-Forwarded-Prefix"
     };
 
     public static final String FORWARDED_PROXY_HEADER = "Forwarded";

@@ -17,16 +17,16 @@
 
 package org.keycloak.models.jpa;
 
+import jakarta.persistence.EntityManager;
+
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmProviderFactory;
-
-import jakarta.persistence.EntityManager;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RealmProviderFactory;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.models.RoleModel;

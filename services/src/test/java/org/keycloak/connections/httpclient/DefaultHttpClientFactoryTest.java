@@ -17,16 +17,18 @@
 
 package org.keycloak.connections.httpclient;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-
 import javax.net.ssl.SSLPeerUnverifiedException;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.resteasy.ResteasyKeycloakSession;
+import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
+import org.keycloak.utils.ScopeUtil;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -34,42 +36,93 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Assume;
 import org.junit.Test;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.resteasy.ResteasyKeycloakSession;
-import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
-import org.keycloak.utils.ScopeUtil;
+
+import static org.junit.Assert.assertEquals;
 
 public class DefaultHttpClientFactoryTest {
 	private static final String DISABLE_TRUST_MANAGER_PROPERTY = "disable-trust-manager";
 	private static final String TEST_DOMAIN = "keycloak.org";
+	private static final String MAX_RETRIES_PROPERTY = "max-retries";
+
+	// Common objects for tests
+	private DefaultHttpClientFactory factory;
+	private KeycloakSession session;
+
+	/**
+	 * Helper method to create and initialize factory with default settings
+	 */
+	private HttpClientProvider createDefaultProvider() {
+		factory = new DefaultHttpClientFactory();
+		factory.init(ScopeUtil.createScope(new HashMap<>()));
+		session = new ResteasyKeycloakSession(new ResteasyKeycloakSessionFactory());
+		return factory.create(session);
+	}
+
+	/**
+	 * Helper method to create and initialize factory with custom settings
+	 */
+	private HttpClientProvider createProviderWithProperties(Map<String, String> values) {
+		factory = new DefaultHttpClientFactory();
+		factory.init(ScopeUtil.createScope(values));
+		session = new ResteasyKeycloakSession(new ResteasyKeycloakSessionFactory());
+		return factory.create(session);
+	}
 
 	@Test
-	public void createHttpClientProviderWithDisableTrustManager() throws IOException{
+	public void createHttpClientProviderWithDisableTrustManager() throws IOException {
+		// Create provider with trust manager disabled
 		Map<String, String> values = new HashMap<>();
 		values.put(DISABLE_TRUST_MANAGER_PROPERTY, "true");
-		DefaultHttpClientFactory factory = new DefaultHttpClientFactory();
-		factory.init(ScopeUtil.createScope(values));
-		KeycloakSession session = new ResteasyKeycloakSession(new ResteasyKeycloakSessionFactory());
-		HttpClientProvider provider = factory.create(session);
-        Optional<String> testURL = getTestURL();
-        Assume.assumeTrue( "Could not get test url for domain", testURL.isPresent() );
+		HttpClientProvider provider = createProviderWithProperties(values);
+
+		Optional<String> testURL = getTestURL();
+		Assume.assumeTrue("Could not get test url for domain", testURL.isPresent());
 		try (CloseableHttpClient httpClient = provider.getHttpClient();
-          CloseableHttpResponse response = httpClient.execute(new HttpGet(testURL.get()))) {
-    		assertEquals(HttpStatus.SC_NOT_FOUND,response.getStatusLine().getStatusCode());
+				CloseableHttpResponse response = httpClient.execute(new HttpGet(testURL.get()))) {
+			assertEquals(HttpStatus.SC_NOT_FOUND, response.getStatusLine().getStatusCode());
 		}
 	}
 
 	@Test(expected = SSLPeerUnverifiedException.class)
 	public void createHttpClientProviderWithUnvailableURL() throws IOException {
-		DefaultHttpClientFactory factory = new DefaultHttpClientFactory();
-		factory.init(ScopeUtil.createScope(new HashMap<>()));
-		KeycloakSession session = new ResteasyKeycloakSession(new ResteasyKeycloakSessionFactory());
-		HttpClientProvider provider = factory.create(session);
+		// Create provider with default settings
+		HttpClientProvider provider = createDefaultProvider();
+
 		try (CloseableHttpClient httpClient = provider.getHttpClient()) {
 			Optional<String> testURL = getTestURL();
 			Assume.assumeTrue("Could not get test url for domain", testURL.isPresent());
 			httpClient.execute(new HttpGet(testURL.get()));
 		}
+	}
+
+	@Test
+	public void testGetHttpClientWithRetries() throws IOException {
+		// Create provider with retry config
+		Map<String, String> values = new HashMap<>();
+		values.put(MAX_RETRIES_PROPERTY, "3");
+		HttpClientProvider provider = createProviderWithProperties(values);
+
+		// Get HTTP client (now has retry built-in)
+		CloseableHttpClient client = provider.getHttpClient();
+
+		// Verify client is not null
+		org.junit.Assert.assertNotNull("HTTP client should not be null", client);
+	}
+
+	@Test
+	public void testFactoryInitWithRetryProperties() {
+		// Create factory with custom retry properties
+		Map<String, String> values = new HashMap<>();
+		values.put(MAX_RETRIES_PROPERTY, "5");
+
+		// Create provider with custom properties
+		HttpClientProvider provider = createProviderWithProperties(values);
+
+		// Get HTTP client
+		CloseableHttpClient client = provider.getHttpClient();
+
+		// Verify client is not null
+		org.junit.Assert.assertNotNull("HTTP client should not be null", client);
 	}
 
 	private Optional<String> getTestURL() {

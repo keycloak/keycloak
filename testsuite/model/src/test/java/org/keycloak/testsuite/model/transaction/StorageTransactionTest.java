@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.model.transaction;
 
-import org.junit.Test;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -25,6 +24,8 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 import org.keycloak.testsuite.model.util.TransactionController;
+
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;

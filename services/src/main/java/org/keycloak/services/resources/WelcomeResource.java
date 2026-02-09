@@ -16,6 +16,15 @@
  */
 package org.keycloak.services.resources;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
@@ -32,7 +41,6 @@ import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.Provider;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
@@ -53,15 +61,7 @@ import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.SecureContextResolver;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -72,9 +72,7 @@ public class WelcomeResource {
 
     protected static final Logger logger = Logger.getLogger(WelcomeResource.class);
 
-    private static final String KEYCLOAK_STATE_CHECKER = "WELCOME_STATE_CHECKER";
-
-    private AtomicBoolean shouldBootstrap;
+    private volatile Boolean shouldBootstrap;
 
     @Context
     KeycloakSession session;
@@ -116,9 +114,24 @@ public class WelcomeResource {
             String username = formData.getFirst("username");
             String password = formData.getFirst("password");
             String passwordConfirmation = formData.getFirst("passwordConfirmation");
+            String firstName = formData.getFirst("firstName");
+            String lastName = formData.getFirst("lastName");
+            String email = formData.getFirst("email");
 
             if (username != null) {
                 username = username.trim();
+            }
+
+            if (firstName != null) {
+                firstName = firstName.trim();
+            }
+
+            if (lastName != null) {
+                lastName = lastName.trim();
+            }
+
+            if (email != null) {
+                email = email.trim();
             }
 
             if (username == null || username.length() == 0) {
@@ -133,9 +146,10 @@ public class WelcomeResource {
                 return createWelcomePage(null, "Password and confirmation doesn't match");
             }
 
+
             try {
                 ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
-                applianceBootstrap.createMasterRealmUser(username, password);
+                applianceBootstrap.createMasterRealmUser(username, password, firstName, lastName, email, false);
             } catch (ModelException e) {
                 session.getTransactionManager().rollback();
                 logger.error("Error creating the administrative user", e);
@@ -144,8 +158,7 @@ public class WelcomeResource {
 
             expireCsrfCookie();
 
-            shouldBootstrap.set(false);
-            ServicesLogger.LOGGER.createdTemporaryAdminUser(username);
+            shouldBootstrap = false;
             return createWelcomePage("User created", null);
         }
     }
@@ -179,7 +192,7 @@ public class WelcomeResource {
             Theme theme = getTheme();
 
             if(Objects.isNull(theme)) {
-                logger.error("Theme is null please check the \"--spi-theme-default\" parameter");
+                logger.error("Theme is null please check the \"--spi-theme--default\" parameter");
                 errorMessage = "The theme is null";
                 ResponseBuilder rb = Response.status(Status.BAD_REQUEST)
                         .entity(errorMessage)
@@ -262,11 +275,11 @@ public class WelcomeResource {
         if (shouldBootstrap == null) {
             synchronized (this) {
                 if (shouldBootstrap == null) {
-                    shouldBootstrap = new AtomicBoolean(new ApplianceBootstrap(session).isNoMasterUser());
+                    shouldBootstrap = new ApplianceBootstrap(session).isNoMasterUser();
                 }
             }
         }
-        return shouldBootstrap.get();
+        return shouldBootstrap;
     }
 
     public static boolean isLocal(KeycloakSession session) {
@@ -301,5 +314,4 @@ public class WelcomeResource {
             throw new ForbiddenException();
         }
     }
-
 }

@@ -17,17 +17,18 @@
 
 package org.keycloak.models.sessions.infinispan.stream;
 
-import org.infinispan.protostream.annotations.ProtoFactory;
-import org.infinispan.protostream.annotations.ProtoField;
-import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.keycloak.models.UserSessionModel;
+import java.util.Map;
+import java.util.function.Predicate;
+
 import org.keycloak.marshalling.Marshalling;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.AuthenticatedClientSessionAdapter;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
-import java.util.Map;
-import java.util.function.Predicate;
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -130,7 +131,7 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
 
         return realm.equals(entity.getRealmId()) &&
                 (user == null || entity.getUser().equals(user)) &&
-                (client == null || (entity.getAuthenticatedClientSessions() != null && entity.getAuthenticatedClientSessions().containsKey(client))) &&
+                (client == null || entity.getClientSessions().contains(client)) &&
                 (brokerSessionId == null || brokerSessionId.equals(entity.getBrokerSessionId())) &&
                 (brokerUserId == null || brokerUserId.equals(entity.getBrokerUserId()));
 

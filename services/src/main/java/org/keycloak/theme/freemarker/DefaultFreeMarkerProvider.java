@@ -1,19 +1,20 @@
 package org.keycloak.theme.freemarker;
 
-import freemarker.cache.URLTemplateLoader;
-import freemarker.core.HTMLOutputFormat;
-import freemarker.template.Configuration;
-import freemarker.template.Template;
-import org.keycloak.theme.FreeMarkerException;
-import org.keycloak.theme.KeycloakSanitizerMethod;
-import org.keycloak.theme.Theme;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.keycloak.theme.FreeMarkerException;
+import org.keycloak.theme.KeycloakSanitizerMethod;
+import org.keycloak.theme.Theme;
+
+import freemarker.cache.URLTemplateLoader;
+import freemarker.core.HTMLOutputFormat;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
 
 public class DefaultFreeMarkerProvider implements FreeMarkerProvider {
     private final ConcurrentHashMap<String, Template> cache;

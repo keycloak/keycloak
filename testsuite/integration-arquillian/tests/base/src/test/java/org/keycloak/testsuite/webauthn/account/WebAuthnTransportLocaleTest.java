@@ -17,14 +17,6 @@
 
 package org.keycloak.testsuite.webauthn.account;
 
-import org.hamcrest.Matchers;
-import org.junit.Test;
-import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
-import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
@@ -33,14 +25,24 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
+import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
+
+import org.hamcrest.Matchers;
+import org.junit.Test;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
+
 import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT;
 import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_BLE;
 import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_INTERNAL;
 import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_NFC;
 import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_USB;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test for checking localization for authenticator transport media name

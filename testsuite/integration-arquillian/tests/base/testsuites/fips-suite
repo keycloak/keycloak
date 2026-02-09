@@ -2,9 +2,7 @@ LoginTest
 LoginTotpTest
 PasswordHashingTest
 ClientAuthSignedJWTTest
-CredentialsTest
-JavaKeystoreKeyProviderTest
-ServerInfoTest
+ClientAuthEdDSASignedJWTTest
 UserFederationLdapConnectionTest
 LDAPUserLoginTest
 org.keycloak.testsuite.x509.**
@@ -34,3 +32,7 @@ KcSamlSignedBrokerTest
 KcSamlSpDescriptorTest
 KerberosLdapTest
 TrustStoreEmailTest
+OID4VCJWTIssuerEndpointTest
+OID4VCSdJwtIssuingEndpointTest
+OID4VCJwtAuthorizationCodeFlowTest
+OID4VCSdJwtAuthorizationCodeFlowTest

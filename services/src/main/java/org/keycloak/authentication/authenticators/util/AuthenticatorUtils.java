@@ -17,19 +17,28 @@
 
 package org.keycloak.authentication.authenticators.util;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.jboss.logging.Logger;
+import java.io.IOException;
+import java.util.Map;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.events.Errors;
-import org.keycloak.models.*;
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.Map;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator.USER_SET_BEFORE_USERNAME_PASSWORD_AUTH;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -116,4 +125,17 @@ public final class AuthenticatorUtils {
             throw new IllegalStateException(e);
         }
     }
+
+
+    // Make sure that form is setup for "re-authentication" rather than regular authentication if some error happens during re-authentication
+    public static void setupReauthenticationInUsernamePasswordFormError(AuthenticationFlowContext context) {
+        String userAlreadySetBeforeUsernamePasswordAuth = context.getAuthenticationSession().getAuthNote(USER_SET_BEFORE_USERNAME_PASSWORD_AUTH);
+
+        if (Boolean.parseBoolean(userAlreadySetBeforeUsernamePasswordAuth)) {
+            LoginFormsProvider form = context.form();
+            form.setAttribute(LoginFormsProvider.USERNAME_HIDDEN, true);
+            form.setAttribute(LoginFormsProvider.REGISTRATION_DISABLED, true);
+        }
+    }
+
 }

@@ -1,10 +1,10 @@
 package org.keycloak.testsuite.util;
 
+import java.io.InputStream;
+
 import org.jboss.logging.Logger;
 import org.subethamail.smtp.MessageContext;
 import org.subethamail.smtp.MessageHandler;
-
-import java.io.InputStream;
 
 public class MessageHandlerImpl implements MessageHandler {
     MessageContext context;

@@ -17,11 +17,11 @@
 
 package org.keycloak.authentication.requiredactions.util;
 
+import java.util.List;
+
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-
-import java.util.List;
 
 public class RequiredActionsValidator {
     /**

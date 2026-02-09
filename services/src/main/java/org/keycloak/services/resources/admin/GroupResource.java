@@ -16,11 +16,27 @@
  */
 package org.keycloak.services.resources.admin;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.resteasy.reactive.NoCache;
+import java.net.URI;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.ObjectUtil;
@@ -45,25 +61,13 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.net.URI;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Stream;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.resteasy.reactive.NoCache;
 
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
@@ -117,6 +121,11 @@ public class GroupResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
     @Operation( summary = "Update group, ignores subgroups.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "409", description = "Conflict")
+    })
     public Response updateGroup(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
@@ -137,13 +146,13 @@ public class GroupResource {
                 throw ErrorResponse.exists("Sibling group named '" + groupName + "' already exists.");
             }
         }
-        
+
         updateGroup(rep, group, realm, session);
         adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
-        
+
         return Response.noContent().build();
     }
-    
+
     private Stream<GroupModel> siblings() {
         if (group.getParentId() == null) {
             return session.groups().getTopLevelGroupsStream(realm);
@@ -157,9 +166,12 @@ public class GroupResource {
     @Operation()
     public void deleteGroup() {
         this.auth.groups().requireManage(group);
+        GroupRepresentation groupRepresentation = new GroupRepresentation();
+        groupRepresentation.setId(group.getId());
+        groupRepresentation.setName(group.getName());
 
         realm.removeGroup(group);
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+        adminEvent.operation(OperationType.DELETE).representation(groupRepresentation).resourcePath(session.getContext().getUri()).success();
     }
 
     @GET
@@ -169,12 +181,12 @@ public class GroupResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
     @Operation( summary = "Return a paginated list of subgroups that have a parent group corresponding to the group on the URL")
     public Stream<GroupRepresentation> getSubGroups(
-            @Parameter(description = "A String representing either an exact group name or a partial name") @QueryParam("search") String search,
+            @Parameter(description = "A String representing either an exact group name or a partial name, defaults to prefix search.") @QueryParam("search") String search,
             @Parameter(description = "Boolean which defines whether the params \"search\" must match exactly or not") @QueryParam("exact") Boolean exact,
             @Parameter(description = "The position of the first result to be returned (pagination offset).") @QueryParam("first") @DefaultValue("0") Integer first,
             @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
             @Parameter(description = "Boolean which defines whether brief groups representations are returned or not (default: false)") @QueryParam("briefRepresentation") @DefaultValue("false") Boolean briefRepresentation,
-            @Parameter(description = "Boolean which defines whether to return the count of subgroups for each subgroup of this group (default: true") @QueryParam("subGroupsCount") @DefaultValue("true") Boolean subGroupsCount) {
+            @Parameter(description = "Boolean which defines whether to return the count of subgroups for each subgroup of this group (default: true)") @QueryParam("subGroupsCount") @DefaultValue("true") Boolean subGroupsCount) {
         this.auth.groups().requireView(group);
 
         Stream<GroupModel> stream = group.getSubGroupsStream(search, exact, -1, -1);
@@ -208,6 +220,12 @@ public class GroupResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
     @Operation( summary = "Set or create child.", description = "This will just set the parent if it exists. Create it and set the parent if the group doesn’t exist.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "201", description = "Created"),
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "409", description = "Conflict")
+    })
     public Response addChild(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
@@ -313,7 +331,7 @@ public class GroupResource {
                                                  @Parameter(description = "Only return basic information (only guaranteed to return id, username, created, first and last name, email, enabled state, email verification state, federation link, and access. Note that it means that namely user attributes, required actions, and not before are not returned.)")
                                                      @QueryParam("briefRepresentation") Boolean briefRepresentation) {
         this.auth.groups().requireViewMembers(group);
-        
+
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
         boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
@@ -381,4 +399,3 @@ public class GroupResource {
         }
     }
 }
-

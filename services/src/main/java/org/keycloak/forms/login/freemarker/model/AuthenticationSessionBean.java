@@ -19,11 +19,11 @@
 
 package org.keycloak.forms.login.freemarker.model;
 
-import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.jose.jws.crypto.HashUtils;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.jose.jws.crypto.HashUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

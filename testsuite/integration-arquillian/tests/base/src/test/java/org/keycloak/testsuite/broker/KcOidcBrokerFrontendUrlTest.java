@@ -1,10 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -12,12 +7,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.util.ReverseProxy;
+
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.junit.Assert.assertTrue;
 
 public final class KcOidcBrokerFrontendUrlTest extends AbstractBrokerTest {
 

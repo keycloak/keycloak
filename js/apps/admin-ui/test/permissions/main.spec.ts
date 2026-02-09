@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { clickSaveButton, selectItem } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { goToRealm } from "../utils/sidebar";
-import { assertRowExists } from "../utils/table";
+import adminClient from "../utils/AdminClient.ts";
+import { clickSaveButton, selectItem } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { goToRealm } from "../utils/sidebar.ts";
+import { assertRowExists } from "../utils/table.ts";
 import {
   clickCreateNewPolicy,
   clickCreatePermission,
@@ -19,10 +19,10 @@ import {
   pickGroup,
   removeGroup,
   selectResource,
-} from "./main";
-import { fillPolicyForm, goToPolicies } from "./policy";
+} from "./main.ts";
+import { fillPolicyForm, goToPolicies } from "./policy.ts";
 
-test.describe("Permissions section tests", () => {
+test.describe.serial("Permissions section tests", () => {
   const realmName = `permissions-${uuid()}`;
 
   test.beforeAll(async () => {
@@ -116,7 +116,7 @@ test.describe("Permissions section tests", () => {
     );
   });
 
-  test.describe("evaluate permissions", () => {
+  test.describe.serial("evaluate permissions", () => {
     test.beforeAll(async () => {
       await adminClient.createUser({
         realm: realmName,
@@ -173,7 +173,7 @@ test.describe("Permissions section tests", () => {
     });
   });
 
-  test.describe("permission search", () => {
+  test.describe.serial("permission search", () => {
     test.beforeAll(async () => {
       for (let i = 0; i < 5; i++) {
         await adminClient.createPermission({

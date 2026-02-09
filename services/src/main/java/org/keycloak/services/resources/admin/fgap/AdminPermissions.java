@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
@@ -36,28 +35,27 @@ public class AdminPermissions {
 
 
     public static AdminPermissionEvaluator evaluator(KeycloakSession session, RealmModel realm, AdminAuth auth) {
-        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
             return new MgmtPermissionsV2(session, realm, auth);
         }
         return new MgmtPermissions(session, realm, auth);
     }
     public static AdminPermissionEvaluator evaluator(KeycloakSession session, RealmModel realm, RealmModel adminsRealm, UserModel admin) {
-        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
             return new MgmtPermissionsV2(session, adminsRealm, admin);
         }
         return new MgmtPermissions(session, realm, adminsRealm, admin);
     }
 
     public static RealmsPermissionEvaluator realms(KeycloakSession session, AdminAuth auth) {
-        RealmModel realm = session.getContext().getRealm();
-        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
             return new MgmtPermissionsV2(session, auth);
         }
         return new MgmtPermissions(session, auth);
     }
 
     public static AdminPermissionManagement management(KeycloakSession session, RealmModel realm) {
-        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
              return new MgmtPermissionsV2(session, realm);
         }
         return new MgmtPermissions(session, realm);

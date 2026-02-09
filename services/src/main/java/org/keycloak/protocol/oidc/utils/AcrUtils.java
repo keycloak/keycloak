@@ -17,7 +17,6 @@
 
 package org.keycloak.protocol.oidc.utils;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -37,6 +35,9 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.jboss.logging.Logger;
 
 public class AcrUtils {
 

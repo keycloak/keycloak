@@ -16,24 +16,32 @@
  */
 package org.keycloak.operator.testsuite.integration;
 
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.quarkus.test.junit.QuarkusTest;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Test;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpecBuilder;
-import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
-
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResource.KC_TRACING_RESOURCE_ATTRIBUTES;
-import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResource.KC_TRACING_SERVICE_NAME;
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TelemetrySpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpecBuilder;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
+
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
+import io.quarkus.test.junit.QuarkusTest;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResource.KC_TELEMETRY_RESOURCE_ATTRIBUTES;
+import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResource.KC_TELEMETRY_SERVICE_NAME;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisabledIfApiServerTest
 @QuarkusTest
@@ -73,11 +81,11 @@ public class TracingDeploymentTest extends BaseOperatorTest {
         assertThat(envVars).isNotNull();
         assertThat(envVars).isNotEmpty();
 
-        var serviceNameEnv = envVars.stream().filter(f -> f.getName().equals(KC_TRACING_SERVICE_NAME)).findAny().orElse(null);
+        var serviceNameEnv = envVars.stream().filter(f -> f.getName().equals(KC_TELEMETRY_SERVICE_NAME)).findAny().orElse(null);
         assertThat(serviceNameEnv).isNotNull();
         assertThat(serviceNameEnv.getValue()).isEqualTo(kc.getMetadata().getName());
 
-        var resourceAttributesEnv = envVars.stream().filter(f -> f.getName().equals(KC_TRACING_RESOURCE_ATTRIBUTES)).findAny().orElse(null);
+        var resourceAttributesEnv = envVars.stream().filter(f -> f.getName().equals(KC_TELEMETRY_RESOURCE_ATTRIBUTES)).findAny().orElse(null);
         assertThat(resourceAttributesEnv).isNotNull();
 
         var expectedAttributes = Map.of(
@@ -88,9 +96,18 @@ public class TracingDeploymentTest extends BaseOperatorTest {
     }
 
     @Test
-    public void tracingSpec() {
+    public void telemetryAndTracingSpec() {
         var kc = getTestKeycloakDeployment(false);
         kc.getSpec().setStartOptimized(false);
+
+        var telemetrySpec = new TelemetrySpecBuilder()
+                .withEndpoint("http://0.0.0.0:4320")
+                .withServiceName("my-best-keycloak-telemetry")
+                .withProtocol("http/protobuf")
+                .withResourceAttributes(Map.of(
+                        "something.a", "keycloak-rocks-telemetry",
+                        "something.b", "keycloak-rocks2-telemetry"))
+                .build();
 
         var tracingSpec = new TracingSpecBuilder()
                 .withEnabled()
@@ -105,7 +122,13 @@ public class TracingDeploymentTest extends BaseOperatorTest {
                         "something.b", "keycloak-rocks2"))
                 .build();
 
+        var additionalOptions = List.of(
+                new ValueOrSecret("tracing-header-Some-Header", "some-value-for-header")
+        );
+
+        kc.getSpec().setTelemetrySpec(telemetrySpec);
         kc.getSpec().setTracingSpec(tracingSpec);
+        kc.getSpec().setAdditionalOptions(additionalOptions);
 
         deployKeycloak(k8sclient, kc, true);
 
@@ -120,14 +143,33 @@ public class TracingDeploymentTest extends BaseOperatorTest {
         assertThat(pods).isNotEmpty();
 
         var map = pods.get(0).getSpec().getContainers().get(0).getEnv().stream()
-                .filter(Objects::nonNull).filter(f -> f.getName().startsWith("KC_TRACING_"))
+                .filter(Objects::nonNull)
+                .filter(f -> f.getName().startsWith("KC_TRACING_") || f.getName().startsWith("KC_TELEMETRY_"))
                 .collect(Collectors.toMap(EnvVar::getName, EnvVar::getValue));
 
         assertThat(map).isNotNull();
         assertThat(map).isNotEmpty();
 
-        // assertions
+        // telemetry assertions
+        var telemetryEndpoint = map.get("KC_TELEMETRY_ENDPOINT");
+        assertThat(telemetryEndpoint).isNotNull();
+        assertThat(telemetryEndpoint).isEqualTo("http://0.0.0.0:4320");
 
+        var telemetryServiceName = map.get("KC_TELEMETRY_SERVICE_NAME");
+        assertThat(telemetryServiceName).isNotNull();
+        assertThat(telemetryServiceName).isEqualTo("my-best-keycloak-telemetry");
+
+        var telemetryProtocol = map.get("KC_TELEMETRY_PROTOCOL");
+        assertThat(telemetryProtocol).isNotNull();
+        assertThat(telemetryProtocol).isEqualTo("http/protobuf");
+
+        var telemetryResourceAttributes = map.get("KC_TELEMETRY_RESOURCE_ATTRIBUTES");
+        assertThat(telemetryResourceAttributes).isNotNull();
+        assertThat(telemetryResourceAttributes).contains("something.a=keycloak-rocks-telemetry");
+        assertThat(telemetryResourceAttributes).contains("something.b=keycloak-rocks2-telemetry");
+        assertThat(telemetryResourceAttributes).contains(String.format("k8s.namespace.name=%s", namespace));
+
+        // tracing assertions
         var enabled = map.get("KC_TRACING_ENABLED");
         assertThat(enabled).isNotNull();
         assertThat(enabled).isEqualTo("true");
@@ -160,6 +202,45 @@ public class TracingDeploymentTest extends BaseOperatorTest {
         assertThat(resourceAttributes).isNotNull();
         assertThat(resourceAttributes).contains("something.a=keycloak-rocks");
         assertThat(resourceAttributes).contains("something.b=keycloak-rocks2");
-        assertThat(resourceAttributes).contains(String.format("k8s.namespace.name=%s", namespace));
+        // the telemetry resource attributes contain the info about namespace
+        assertThat(resourceAttributes).doesNotContain(String.format("k8s.namespace.name=%s", namespace));
+
+        var headerSomeHeader=map.get("KC_TRACING_HEADER_SOME_HEADER");
+        assertThat(headerSomeHeader).isNotNull();
+        assertThat(headerSomeHeader).isEqualTo("some-value-for-header");
+    }
+
+    @Test
+    public void testTracingHeaders() {
+        var kc = getTestKeycloakDeployment(false);
+        kc.getSpec().setImage(null); // doesn't seem to become ready with the custom image
+        var secretName = "tracing-secret";
+        var keyName = "token";
+        var tokenTracingSecret = new SecretBuilder()
+                .withNewMetadata()
+                .withName(secretName)
+                .withNamespace(namespace)
+                .endMetadata()
+                .addToStringData(keyName, "Bearer asdfasdfasdfasdf2345")
+                .build();
+        K8sUtils.set(k8sclient, tokenTracingSecret);
+
+        kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("tracing-header-Authorization",
+                new SecretKeySelectorBuilder()
+                        .withName(secretName)
+                        .withKey(keyName)
+                        .build()));
+        deployKeycloak(k8sclient, kc, true);
+
+        var pods = k8sclient
+                .pods()
+                .inNamespace(namespace)
+                .withLabels(Constants.DEFAULT_LABELS)
+                .list()
+                .getItems();
+
+        assertTrue(pods.get(0).getSpec().getContainers().get(0).getEnv().stream().anyMatch(
+                e -> e.getName().equals("KC_TRACING_HEADER_AUTHORIZATION") && e.getValueFrom() != null
+                        && e.getValueFrom().getSecretKeyRef().getName().equals(secretName) && e.getValueFrom().getSecretKeyRef().getKey().equals(keyName)));
     }
 }

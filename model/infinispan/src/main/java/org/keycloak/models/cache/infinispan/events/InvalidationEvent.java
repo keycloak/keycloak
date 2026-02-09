@@ -19,8 +19,9 @@ package org.keycloak.models.cache.infinispan.events;
 
 import java.util.Objects;
 
-import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.cluster.ClusterEvent;
+
+import org.infinispan.protostream.annotations.ProtoField;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

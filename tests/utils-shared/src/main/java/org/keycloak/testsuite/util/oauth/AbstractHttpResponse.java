@@ -1,16 +1,17 @@
 package org.keycloak.testsuite.util.oauth;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.http.Header;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.util.EntityUtils;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.util.JsonSerialization;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.http.Header;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.util.EntityUtils;
 
 public abstract class AbstractHttpResponse {
 
@@ -63,6 +64,10 @@ public abstract class AbstractHttpResponse {
         return error;
     }
 
+    protected void setError(String error) {
+        this.error = error;
+    }
+
     public String getErrorDescription() {
         return errorDescription;
     }
@@ -87,13 +92,13 @@ public abstract class AbstractHttpResponse {
 
     protected abstract void parseContent() throws IOException;
 
-    private void parseError() throws IOException {
+    protected void parseError() throws IOException {
         if (getStatusCode() == 504) {
             return;
         }
 
         ObjectNode json = asJson(ObjectNode.class);
-        error = json.get(OAuth2Constants.ERROR).asText();
+        error = json.has(OAuth2Constants.ERROR) ? json.get(OAuth2Constants.ERROR).asText() : null;
         errorDescription = json.has(OAuth2Constants.ERROR_DESCRIPTION) ? json.get(OAuth2Constants.ERROR_DESCRIPTION).asText() : null;
     }
 

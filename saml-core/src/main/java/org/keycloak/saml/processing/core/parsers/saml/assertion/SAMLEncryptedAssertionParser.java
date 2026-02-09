@@ -16,11 +16,12 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml.assertion;
 
+import javax.xml.stream.XMLEventReader;
+
 import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.parsers.StaxParser;
 import org.keycloak.saml.common.util.StaxParserUtil;
-import javax.xml.stream.XMLEventReader;
 
 public class SAMLEncryptedAssertionParser implements StaxParser {
 

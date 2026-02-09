@@ -16,10 +16,12 @@
  */
 package org.keycloak.subsystem.adapter.saml.extension;
 
-import org.keycloak.adapters.saml.AdapterConstants;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
+import org.keycloak.adapters.saml.AdapterConstants;
+
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;

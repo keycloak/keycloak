@@ -16,6 +16,17 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.util;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
+
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType.ASTChoiceType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
@@ -27,17 +38,6 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.saml.processing.core.constants.AttributeConstants;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
-
-import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.namespace.QName;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Deals with SAML2 Statements
@@ -85,8 +85,8 @@ public class StatementUtil {
 
         int i = 0;
 
-        Set<String> keys = attributes.keySet();
-        for (String key : keys) {
+        for (var entry : attributes.entrySet()) {
+            String key = entry.getKey();
             if (i == 0) {
                 // Deal with the X500 Profile of SAML2
                 attrStatement = new AttributeStatementType();
@@ -95,14 +95,14 @@ public class StatementUtil {
 
             // if the attribute contains roles, add each role as an attribute.
             if (AttributeConstants.ROLES.equalsIgnoreCase(key)) {
-                Object value = attributes.get(key);
+                Object value = entry.getValue();
                 if (value instanceof Collection<?>) {
                     Collection<?> roles = (Collection<?>) value;
                     attrStatement = createAttributeStatement(new ArrayList(roles));
                 }
             } else {
                 AttributeType att;
-                Object value = attributes.get(key);
+                Object value = entry.getValue();
 
                 String uri = X500SAMLProfileConstants.getOID(key);
                 if (StringUtil.isNotNull(uri)) {

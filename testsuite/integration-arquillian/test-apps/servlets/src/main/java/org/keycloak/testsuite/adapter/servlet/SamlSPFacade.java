@@ -17,6 +17,17 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.URI;
+import java.util.UUID;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -24,15 +35,6 @@ import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.core.UriBuilder;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.URI;
-import java.util.UUID;
 
 /**
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

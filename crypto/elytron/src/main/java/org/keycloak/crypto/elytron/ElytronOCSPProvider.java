@@ -16,10 +16,8 @@
  */
 package org.keycloak.crypto.elytron;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -27,11 +25,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CRLReason;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
-import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
-import java.security.cert.CertPathValidatorResult;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -46,17 +41,13 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
-import javax.net.ssl.TrustManagerFactory;
-
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.PemUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.utils.OCSPProvider;
+
+import org.jboss.logging.Logger;
 import org.wildfly.security.asn1.ASN1;
 import org.wildfly.security.asn1.DERDecoder;
-import org.wildfly.security.ssl.X509RevocationTrustManager;
 import org.wildfly.security.x500.X500;
 
 

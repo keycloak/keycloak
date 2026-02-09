@@ -17,10 +17,18 @@
 
 package org.keycloak.tests.admin.client;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import jakarta.ws.rs.ClientErrorException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.admin.client.resource.RoleResource;
@@ -39,20 +47,14 @@ import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RoleConfigBuilder;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.admin.ApiUtil;
-import org.keycloak.testsuite.util.RoleBuilder;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -89,7 +91,7 @@ public class ClientRolesTest {
     }
 
     private RoleRepresentation makeRole(String name) {
-        return RoleBuilder.create()
+        return RoleConfigBuilder.create()
                 .name(name)
                 .build();
     }
@@ -104,7 +106,7 @@ public class ClientRolesTest {
 
     @Test
     public void testAddRole() {
-        RoleRepresentation role1 = RoleBuilder.create()
+        RoleRepresentation role1 = RoleConfigBuilder.create()
                 .name("role1")
                 .description("role1-description")
                 .singleAttribute("role1-attr-key", "role1-attr-val")
@@ -121,7 +123,7 @@ public class ClientRolesTest {
 
     @Test
     public void createRoleWithSameName() {
-        RoleRepresentation role = RoleBuilder.create().name("role-a").build();
+        RoleRepresentation role = RoleConfigBuilder.create().name("role-a").build();
         rolesRsc.create(role);
         managedClient.cleanup().add(c -> c.roles().deleteRole("role-a"));
         assertThrows(ClientErrorException.class, () -> rolesRsc.create(role), "Client role with the same name is not allowed");
@@ -129,7 +131,7 @@ public class ClientRolesTest {
 
     @Test
     public void createRoleWithNamePattern() {
-        RoleRepresentation role = RoleBuilder.create().name("role-a-{pattern}").build();
+        RoleRepresentation role = RoleConfigBuilder.create().name("role-a-{pattern}").build();
         rolesRsc.create(role);
         managedClient.cleanup().add(c -> c.roles().deleteRole("role-a-{pattern}"));
     }
@@ -361,7 +363,7 @@ public class ClientRolesTest {
     public void getRolesWithFullRepresentation() {
         for (int i = 0; i < 5; i++) {
             String roleName = "attributesrole" + i;
-            RoleRepresentation role = RoleBuilder.create()
+            RoleRepresentation role = RoleConfigBuilder.create()
                     .name(roleName)
                     .attributes(Map.of("attribute1", List.of("value1", "value2")))
                     .build();
@@ -379,7 +381,7 @@ public class ClientRolesTest {
     public void getRolesWithBriefRepresentation() {
         for (int i = 0; i < 5; i++) {
             String roleName = "attributesrole" + i;
-            RoleRepresentation role = RoleBuilder.create()
+            RoleRepresentation role = RoleConfigBuilder.create()
                     .name(roleName)
                     .attributes(Map.of("attribute1", List.of("value1", "value2")))
                     .build();

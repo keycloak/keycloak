@@ -26,6 +26,7 @@
     <artifactId>keycloak-distribution-maven-plugins-parent</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak Distribution Maven Plugins Parent</name>
+    <description>Keycloak Distribution Maven Plugins Parent</description>
 
     <dependencies>
         <dependency>
@@ -73,7 +74,6 @@
                                 <goal>addTestSources</goal>
                                 <goal>generateStubs</goal>
                                 <goal>compile</goal>
-                                <goal>removeStubs</goal>
                                 <goal>generateTestStubs</goal>
                                 <goal>compileTests</goal>
                                 <goal>removeTestStubs</goal>

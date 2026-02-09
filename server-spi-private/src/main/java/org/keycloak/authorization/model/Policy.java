@@ -18,13 +18,13 @@
 
 package org.keycloak.authorization.model;
 
-import org.keycloak.representations.idm.authorization.DecisionStrategy;
-import org.keycloak.representations.idm.authorization.Logic;
-
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.Logic;
 
 /**
  * Represents an authorization policy and all the configuration associated with it.

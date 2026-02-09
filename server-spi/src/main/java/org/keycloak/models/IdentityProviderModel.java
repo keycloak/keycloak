@@ -16,12 +16,13 @@
  */
 package org.keycloak.models;
 
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 
 /**
  * <p>A model type representing the configuration for identity providers. It provides some common properties and also a {@link org.keycloak.models.IdentityProviderModel#config}
@@ -33,6 +34,7 @@ public class IdentityProviderModel implements Serializable {
 
     public static final String ALIAS = "alias";
     public static final String ALIAS_NOT_IN = "aliasNotIn";
+    public static final String ISSUER = "issuer";
     public static final String ALLOWED_CLOCK_SKEW = "allowedClockSkew";
     public static final String AUTHENTICATE_BY_DEFAULT = "authenticateByDefault";
     public static final String CASE_SENSITIVE_ORIGINAL_USERNAME = "caseSensitiveOriginalUsername";
@@ -56,6 +58,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String SEARCH = "search";
     public static final String SYNC_MODE = "syncMode";
     public static final String MIN_VALIDITY_TOKEN = "minValidityToken";
+	public static final String SHOW_IN_ACCOUNT_CONSOLE = "showInAccountConsole";
     public static final int DEFAULT_MIN_VALIDITY_TOKEN = 5;
 
     private String internalId;
@@ -73,18 +76,18 @@ public class IdentityProviderModel implements Serializable {
 
     private boolean enabled;
 
-    private boolean trustEmail;
+    private Boolean trustEmail;
 
-    private boolean storeToken;
+    private Boolean storeToken;
 
-    protected boolean addReadTokenRoleOnCreate;
+    protected Boolean addReadTokenRoleOnCreate;
 
-    protected boolean linkOnly;
+    protected Boolean linkOnly;
 
     /**
      * Specifies if particular provider should be used by default for authentication even before displaying login screen
      */
-    private boolean authenticateByDefault;
+    private Boolean authenticateByDefault;
 
     private String firstBrokerLoginFlowId;
 
@@ -96,7 +99,7 @@ public class IdentityProviderModel implements Serializable {
 
     private String displayIconClasses;
 
-    private boolean hideOnLogin;
+    private Boolean hideOnLogin;
 
     /**
      * <p>A map containing the configuration and properties for a specific identity provider instance and implementation. The items
@@ -160,29 +163,29 @@ public class IdentityProviderModel implements Serializable {
         this.enabled = enabled;
     }
 
-    public boolean isStoreToken() {
+    public Boolean isStoreToken() {
         return this.storeToken;
     }
 
-    public void setStoreToken(boolean storeToken) {
+    public void setStoreToken(Boolean storeToken) {
         this.storeToken = storeToken;
     }
 
-    public boolean isLinkOnly() {
+    public Boolean isLinkOnly() {
         return linkOnly;
     }
 
-    public void setLinkOnly(boolean linkOnly) {
+    public void setLinkOnly(Boolean linkOnly) {
         this.linkOnly = linkOnly;
     }
 
     @Deprecated
-    public boolean isAuthenticateByDefault() {
+    public Boolean isAuthenticateByDefault() {
         return authenticateByDefault;
     }
 
     @Deprecated
-    public void setAuthenticateByDefault(boolean authenticateByDefault) {
+    public void setAuthenticateByDefault(Boolean authenticateByDefault) {
         this.authenticateByDefault = authenticateByDefault;
     }
 
@@ -210,19 +213,19 @@ public class IdentityProviderModel implements Serializable {
         this.config = config;
     }
 
-    public boolean isAddReadTokenRoleOnCreate() {
+    public Boolean isAddReadTokenRoleOnCreate() {
         return addReadTokenRoleOnCreate;
     }
 
-    public void setAddReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
+    public void setAddReadTokenRoleOnCreate(Boolean addReadTokenRoleOnCreate) {
         this.addReadTokenRoleOnCreate = addReadTokenRoleOnCreate;
     }
 
-    public boolean isTrustEmail() {
+    public Boolean isTrustEmail() {
         return trustEmail;
     }
 
-    public void setTrustEmail(boolean trustEmail) {
+    public void setTrustEmail(Boolean trustEmail) {
         this.trustEmail = trustEmail;
     }
 
@@ -257,35 +260,35 @@ public class IdentityProviderModel implements Serializable {
     }
 
     public IdentityProviderSyncMode getSyncMode() {
-        return IdentityProviderSyncMode.valueOf(getConfig().getOrDefault(SYNC_MODE, "LEGACY"));
+        String syncMode = getConfig().get(SYNC_MODE);
+        return syncMode != null ? IdentityProviderSyncMode.valueOf(syncMode) : null;
     }
 
     public void setSyncMode(IdentityProviderSyncMode syncMode) {
-        getConfig().put(SYNC_MODE, syncMode.toString());
+        getConfig().put(SYNC_MODE, syncMode != null ? syncMode.toString() : null);
     }
 
     public boolean isLoginHint() {
-        return Boolean.valueOf(getConfig().get(LOGIN_HINT));
+        return getBooleanConfig(LOGIN_HINT);
     }
 
-    public void setLoginHint(boolean loginHint) {
-        getConfig().put(LOGIN_HINT, String.valueOf(loginHint));
+    public void setLoginHint(Boolean loginHint) {
+        setBooleanConfig(LOGIN_HINT, loginHint);
     }
 
     public boolean isPassMaxAge() {
-        return Boolean.valueOf(getConfig().get(PASS_MAX_AGE));
+        return getBooleanConfig(PASS_MAX_AGE);
     }
 
-    public void setPassMaxAge(boolean passMaxAge) {
-        getConfig().put(PASS_MAX_AGE, String.valueOf(passMaxAge));
+    public void setPassMaxAge(Boolean passMaxAge) {
+        setBooleanConfig(PASS_MAX_AGE, passMaxAge);
     }
 
-
-    public boolean isHideOnLogin() {
+    public Boolean isHideOnLogin() {
         return this.hideOnLogin;
     }
 
-    public void setHideOnLogin(boolean hideOnLogin) {
+    public void setHideOnLogin(Boolean hideOnLogin) {
         this.hideOnLogin = hideOnLogin;
     }
 
@@ -295,23 +298,23 @@ public class IdentityProviderModel implements Serializable {
      * @return
      */
     public boolean isTransientUsers() {
-        return Profile.isFeatureEnabled(Feature.TRANSIENT_USERS) && Boolean.valueOf(getConfig().get(DO_NOT_STORE_USERS));
+        return Profile.isFeatureEnabled(Feature.TRANSIENT_USERS) && getBooleanConfig(DO_NOT_STORE_USERS);
     }
 
     /**
      * Configures the IdP to not store users in Keycloak database. Default value: {@code false}.
      * @return
      */
-    public void setTransientUsers(boolean transientUsers) {
-        getConfig().put(DO_NOT_STORE_USERS, String.valueOf(transientUsers));
+    public void setTransientUsers(Boolean transientUsers) {
+        setBooleanConfig(DO_NOT_STORE_USERS, transientUsers);
     }
 
     public boolean isFilteredByClaims() {
-        return Boolean.valueOf(getConfig().getOrDefault(FILTERED_BY_CLAIMS, Boolean.toString(false)));
+        return getBooleanConfig(FILTERED_BY_CLAIMS);
     }
 
-    public void setFilteredByClaims(boolean filteredByClaims) {
-        getConfig().put(FILTERED_BY_CLAIMS, String.valueOf(filteredByClaims));
+    public void setFilteredByClaims(Boolean filteredByClaims) {
+        setBooleanConfig(FILTERED_BY_CLAIMS, filteredByClaims);
     }
 
     public String getClaimFilterName() {
@@ -339,16 +342,20 @@ public class IdentityProviderModel implements Serializable {
     }
 
     public boolean isCaseSensitiveOriginalUsername() {
-        return Boolean.parseBoolean(getConfig().getOrDefault(CASE_SENSITIVE_ORIGINAL_USERNAME, Boolean.FALSE.toString()));
+        return getBooleanConfig(CASE_SENSITIVE_ORIGINAL_USERNAME);
     }
 
-    public void setCaseSensitiveOriginalUsername(boolean caseSensitive) {
-        getConfig().put(CASE_SENSITIVE_ORIGINAL_USERNAME, Boolean.valueOf(caseSensitive).toString());
+    public void setCaseSensitiveOriginalUsername(Boolean caseSensitive) {
+        setBooleanConfig(CASE_SENSITIVE_ORIGINAL_USERNAME, caseSensitive);
     }
 
     public void setMinValidityToken(int minValidityToken) {
         getConfig().put(MIN_VALIDITY_TOKEN, Integer.toString(minValidityToken));
     }
+
+	public IdentityProviderShowInAccountConsole getShowInAccountConsole() {
+		return IdentityProviderShowInAccountConsole.valueOf(getConfig().getOrDefault(SHOW_IN_ACCOUNT_CONSOLE, IdentityProviderShowInAccountConsole.ALWAYS.name()));
+	}
 
     public int getMinValidityToken() {
         String minValidityTokenString = getConfig().get(MIN_VALIDITY_TOKEN);
@@ -380,4 +387,14 @@ public class IdentityProviderModel implements Serializable {
         return Objects.equals(getInternalId(), ((IdentityProviderModel) obj).getInternalId()) &&
                Objects.equals(getAlias(), ((IdentityProviderModel) obj).getAlias());
     }
+
+    private boolean getBooleanConfig(String key) {
+        String value = getConfig().get(key);
+        return value != null ? Boolean.parseBoolean(value) : Boolean.FALSE;
+    }
+
+    private void setBooleanConfig(String key, Boolean value) {
+        getConfig().put(key, value != null ? String.valueOf(value) : null);
+    }
+
 }

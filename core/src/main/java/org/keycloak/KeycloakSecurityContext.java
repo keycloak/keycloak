@@ -17,16 +17,16 @@
 
 package org.keycloak;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.DelegatingSerializationFilter;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 
 /**
  * Available in secured requests under HttpServletRequest.getAttribute()

@@ -262,4 +262,3 @@ public abstract class PathMatcher<P> {
         return entry;
     }
 }
-

@@ -17,11 +17,9 @@
 
 package org.keycloak.it.cli.dist;
 
-import io.quarkus.test.junit.main.Launch;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
+import java.io.File;
+import java.nio.file.Paths;
+
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DryRun;
@@ -29,8 +27,11 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
-import java.io.File;
-import java.nio.file.Paths;
+import io.quarkus.test.junit.main.Launch;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -49,6 +50,7 @@ public class StartDevCommandDistTest {
         String out = cliResult.getOutput().toUpperCase();
         assertFalse(out.contains("WARN"));
         assertFalse(out.contains("ERROR"));
+        assertFalse(out.contains("0.0.0.0") || out.contains("all addresses"));
     }
 
     @DryRun
@@ -59,11 +61,11 @@ public class StartDevCommandDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--debug", "--features=passkeys:v1" })
+    @Launch({ "start-dev", "--debug", "--features=oid4vc-vci:v1" })
     void testStartDevShouldStartTwoJVMs(CLIResult cliResult) {
         cliResult.assertMessageWasShownExactlyNumberOfTimes("Listening for transport dt_socket at address:", 2);
         cliResult.assertStartedDevMode();
-        cliResult.assertMessage("passkeys");
+        cliResult.assertMessage("oid4vc-vci");
         // ensure consistency with build-time properties
         cliResult.assertNoMessage("Build time property cannot");
     }

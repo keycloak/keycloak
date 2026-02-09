@@ -17,41 +17,20 @@
 
 package org.keycloak.testsuite.organization.member;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import java.io.IOException;
-import java.util.stream.Stream;
 
-import org.hamcrest.Matchers;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -71,6 +50,28 @@ import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import org.hamcrest.Matchers;
+import org.junit.Test;
+
+import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class OrganizationMemberTest extends AbstractOrganizationTest {
 
@@ -123,13 +124,13 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         OrganizationRepresentation orgB = createOrganization("orgb");
         testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
         OrganizationRepresentation expected = organization.toRepresentation();
-        List<OrganizationRepresentation> actual = organization.members().member(member.getId()).getOrganizations();
+        List<OrganizationRepresentation> actual = organization.members().member(member.getId()).getOrganizations(true);
         assertNotNull(actual);
         assertEquals(2, actual.size());
         assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(expected.getId()::equals));
         assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(orgB.getId()::equals));
 
-        actual = testRealm().organizations().members().getOrganizations(member.getId());
+        actual = testRealm().organizations().members().getOrganizations(member.getId(), true);
         assertNotNull(actual);
         assertEquals(2, actual.size());
         assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(expected.getId()::equals));
@@ -332,7 +333,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         for (MemberRepresentation member : expected) {
             try {
                 // user no longer bound to the organization
-                organization.members().member(member.getId()).getOrganizations();
+                organization.members().member(member.getId()).getOrganizations(true);
                 fail("should not be associated with the organization anymore");
             } catch (NotFoundException ignore) {
             }
@@ -507,7 +508,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         Assert.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
         String orgbId = orgb.toRepresentation().getId();
         String orgaId = orga.toRepresentation().getId();
-        List<String> memberOfOrgs = orga.members().member(member.getId()).getOrganizations().stream().map(OrganizationRepresentation::getId).toList();
+        List<String> memberOfOrgs = orga.members().member(member.getId()).getOrganizations(true).stream().map(OrganizationRepresentation::getId).toList();
         assertTrue(memberOfOrgs.contains(orgaId));
         assertTrue(memberOfOrgs.contains(orgbId));
     }
@@ -581,6 +582,59 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
         UserRepresentation updatedUser = testRealm().users().get(user.getId()).toRepresentation();
         assertThat(updatedUser.getEmail(), is(nullValue()));
+    }
+
+    @Test
+    public void testGetMemberOrganizationsBriefVsFullRepresentation() {
+        // Create an organization with attributes
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationRepresentation orgRep = organization.toRepresentation();
+        orgRep.singleAttribute("testAttribute", "testValue");
+        organization.update(orgRep).close();
+        
+        UserRepresentation member = addMember(organization);
+        
+        // Test brief representation (default, briefRepresentation=true)
+        List<OrganizationRepresentation> briefOrgs = organization.members().member(member.getId()).getOrganizations(true);
+        assertNotNull(briefOrgs);
+        assertEquals(1, briefOrgs.size());
+        OrganizationRepresentation briefRep = briefOrgs.get(0);
+        assertEquals(orgRep.getId(), briefRep.getId());
+        assertEquals(orgRep.getName(), briefRep.getName());
+        assertEquals(orgRep.getAlias(), briefRep.getAlias());
+        assertEquals(orgRep.getDescription(), briefRep.getDescription());
+        assertEquals(orgRep.getRedirectUrl(), briefRep.getRedirectUrl());
+        assertEquals(orgRep.isEnabled(), briefRep.isEnabled());
+        assertNull("Brief representation should not include attributes", briefRep.getAttributes());
+        
+        // Test full representation (briefRepresentation=false)
+        List<OrganizationRepresentation> fullOrgs = organization.members().member(member.getId()).getOrganizations(false);
+        assertNotNull(fullOrgs);
+        assertEquals(1, fullOrgs.size());
+        OrganizationRepresentation fullRep = fullOrgs.get(0);
+        assertEquals(orgRep.getId(), fullRep.getId());
+        assertEquals(orgRep.getName(), fullRep.getName());
+        assertEquals(orgRep.getAlias(), fullRep.getAlias());
+        assertEquals(orgRep.getDescription(), fullRep.getDescription());
+        assertEquals(orgRep.getRedirectUrl(), fullRep.getRedirectUrl());
+        assertEquals(orgRep.isEnabled(), fullRep.isEnabled());
+        assertNotNull("Full representation should include attributes", fullRep.getAttributes());
+        assertTrue("Full representation should include the test attribute", 
+                fullRep.getAttributes().containsKey("testAttribute"));
+        assertEquals("testValue", fullRep.getAttributes().get("testAttribute").get(0));
+        
+        // Test the global members API endpoint as well
+        List<OrganizationRepresentation> briefOrgsGlobal = testRealm().organizations().members().getOrganizations(member.getId(), true);
+        assertNotNull(briefOrgsGlobal);
+        assertEquals(1, briefOrgsGlobal.size());
+        assertNull("Brief representation should not include attributes", briefOrgsGlobal.get(0).getAttributes());
+        
+        List<OrganizationRepresentation> fullOrgsGlobal = testRealm().organizations().members().getOrganizations(member.getId(), false);
+        assertNotNull(fullOrgsGlobal);
+        assertEquals(1, fullOrgsGlobal.size());
+        assertNotNull("Full representation should include attributes", fullOrgsGlobal.get(0).getAttributes());
+        assertTrue("Full representation should include the test attribute", 
+                fullOrgsGlobal.get(0).getAttributes().containsKey("testAttribute"));
     }
 
     private void loginViaNonOrgIdP(String idpAlias) {

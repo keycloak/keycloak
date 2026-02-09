@@ -19,7 +19,6 @@ package org.keycloak.policy;
 import org.junit.Assert;
 import org.junit.Test;
 
-import org.keycloak.policy.NotEmailPasswordPolicyProvider;
 
 public class NotEmailPasswordPolicyProviderTest {
 

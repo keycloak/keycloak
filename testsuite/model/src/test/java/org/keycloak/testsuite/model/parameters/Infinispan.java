@@ -19,7 +19,6 @@ package org.keycloak.testsuite.model.parameters;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.google.common.collect.ImmutableSet;
 import org.keycloak.cluster.infinispan.InfinispanClusterProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
@@ -43,6 +42,8 @@ import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionPr
 import org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserLoginFailureProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
+import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionProviderFactory;
+import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionSpi;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.sessions.AuthenticationSessionSpi;
@@ -58,6 +59,8 @@ import org.keycloak.storage.configuration.ServerConfigurationStorageProviderSpi;
 import org.keycloak.testsuite.model.Config;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.timer.TimerProviderFactory;
+
+import com.google.common.collect.ImmutableSet;
 
 /**
  * @author hmlnarik
@@ -80,6 +83,7 @@ public class Infinispan extends KeycloakModelParameters {
             .add(CacheEmbeddedConfigProviderSpi.class)
             .add(JGroupsCertificateProviderSpi.class)
             .add(ServerConfigurationStorageProviderSpi.class)
+            .add(InfinispanTransactionSpi.class)
             .build();
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
@@ -100,6 +104,7 @@ public class Infinispan extends KeycloakModelParameters {
             .add(CacheEmbeddedConfigProviderFactory.class)
             .add(JGroupsCertificateProviderFactory.class)
             .add(ServerConfigStorageProviderFactory.class)
+            .add(InfinispanTransactionProviderFactory.class)
             .build();
 
     @Override

@@ -47,7 +47,7 @@ Redirect URL::
 After completing registration or accepting an invitation to the organization sent via email, the user is automatically redirected to the specified redirect url. If left empty, the user will be redirected to the account console by default.
 
 Domains::
-A set of one or more domains that belongs to this organization. A domain cannot be shared by different organizations within a realm.
+A set of zero or more domains that belongs to this organization. A domain cannot be shared by different organizations within a realm. When no domain is specified, organization members will not be validated against domain restrictions during authentication and profile validation.
 
 Description::
 A free-text field to describe the organization.

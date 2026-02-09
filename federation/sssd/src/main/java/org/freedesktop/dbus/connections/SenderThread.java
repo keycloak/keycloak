@@ -1,10 +1,10 @@
 package org.freedesktop.dbus.connections;
 
+import java.util.concurrent.LinkedBlockingQueue;
+
 import org.freedesktop.dbus.messages.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class SenderThread extends Thread {
     private final Logger logger = LoggerFactory.getLogger(getClass());

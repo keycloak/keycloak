@@ -20,7 +20,6 @@
 package org.keycloak.models;
 
 import java.io.Serializable;
-import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

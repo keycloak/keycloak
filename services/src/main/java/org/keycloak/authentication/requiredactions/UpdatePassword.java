@@ -17,9 +17,11 @@
 
 package org.keycloak.authentication.requiredactions;
 
+import java.util.concurrent.TimeUnit;
+
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-import org.jboss.logging.Logger;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.InitiatedActionSupport;
@@ -45,13 +47,11 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

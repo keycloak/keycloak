@@ -19,13 +19,13 @@ package org.keycloak.keys;
 
 import java.util.List;
 
-import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
-import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -51,8 +51,7 @@ public class GeneratedRsaEncKeyProviderFactory extends AbstractGeneratedRsaKeyPr
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return AbstractGeneratedRsaKeyProviderFactory.rsaKeyConfigurationBuilder()
-                .property(Attributes.KEY_SIZE_PROPERTY.get())
+        return generatedRsaKeyConfigurationBuilder()
                 .property(Attributes.RS_ENC_ALGORITHM_PROPERTY)
                 .build();
     }

@@ -1,9 +1,9 @@
-import { Page, test } from "@playwright/test";
+import { type Page, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
-import { goToUserFederation } from "../utils/sidebar";
-import { assertProviderCardText, assertRealmSettingsText } from "./i18n";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
+import { goToUserFederation } from "../utils/sidebar.ts";
+import { assertProviderCardText, assertRealmSettingsText } from "./i18n.ts";
 
 // Test configuration
 const testConfig = {
@@ -53,12 +53,11 @@ async function updateUserLocale(locale: string) {
 
 async function goToPage(page: Page, locale: string) {
   await updateUserLocale(locale);
-  await login(
-    page,
-    testConfig.username,
-    testConfig.password,
-    testConfig.realmName,
-  );
+  await login(page, {
+    realm: testConfig.realmName,
+    username: testConfig.username,
+    password: testConfig.password,
+  });
   await goToUserFederation(page);
 }
 
@@ -71,7 +70,7 @@ async function addLocalization(locale: string, key: string, value: string) {
   );
 }
 
-test.describe("i18n tests", () => {
+test.describe.serial("i18n tests", () => {
   // Constants for test assertions
   const texts = {
     realmLocalizationEn: "realmSettings en",

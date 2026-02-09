@@ -17,14 +17,15 @@
 
 package org.keycloak.keys;
 
-import org.jboss.logging.Logger;
+import java.util.List;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.List;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -53,8 +54,7 @@ public class GeneratedRsaKeyProviderFactory extends AbstractGeneratedRsaKeyProvi
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return AbstractGeneratedRsaKeyProviderFactory.rsaKeyConfigurationBuilder()
-                .property(Attributes.KEY_SIZE_PROPERTY.get())
+        return generatedRsaKeyConfigurationBuilder()
                 .property(Attributes.RS_ALGORITHM_PROPERTY)
                 .build();
     }

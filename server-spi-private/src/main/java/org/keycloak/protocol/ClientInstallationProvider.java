@@ -17,14 +17,15 @@
 
 package org.keycloak.protocol;
 
+import java.net.URI;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
-
-import jakarta.ws.rs.core.Response;
-import java.net.URI;
 
 /**
  * Provides a template/sample client config adapter file.  For example keycloak.json for our OIDC adapter.  keycloak-saml.xml for our SAML client adapter

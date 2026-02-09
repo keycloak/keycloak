@@ -16,24 +16,27 @@
  */
 package org.keycloak.testsuite.webauthn.registration;
 
-import com.webauthn4j.data.AuthenticatorAttachment;
-import com.webauthn4j.data.UserVerificationRequirement;
-import org.junit.Test;
-import org.junit.Ignore;
-import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
-import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
-import org.openqa.selenium.firefox.FirefoxDriver;
-
 import java.io.Closeable;
 import java.io.IOException;
+
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
+import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
+import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
+
+import com.webauthn4j.data.AuthenticatorAttachment;
+import com.webauthn4j.data.UserVerificationRequirement;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.openqa.selenium.firefox.FirefoxDriver;
+
+import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_BLE;
+import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_INTERNAL;
+import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_USB;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_BLE;
-import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_INTERNAL;
-import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_USB;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
@@ -59,6 +62,7 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
         try (Closeable u = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicyAuthenticatorAttachment(AuthenticatorAttachment.PLATFORM.getValue())
                 .setWebAuthnPolicyUserVerificationRequirement(UserVerificationRequirement.DISCOURAGED.getValue())
+                .setWebAuthnPolicyCreateTimeout(3)
                 .update()) {
 
             // It shouldn't be possible to register the authenticator
@@ -70,12 +74,18 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
 
             registerDefaultUser(false);
 
+            // Instead of returning an error it seems that selenium webauthn just hangs
+            // So we cannot test this correctly
             webAuthnRegisterPage.assertCurrent();
 
+            // click authentication again does nothing
             webAuthnRegisterPage.clickRegister();
+            webAuthnRegisterPage.clickRegister();
+            webAuthnRegisterPage.assertCurrent();
 
-            webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), containsString("A request is already pending."));
+            // it timeouts after create timeout
+            WaitUtils.waitUntilPageIsCurrent(webAuthnErrorPage);
+            assertThat(webAuthnErrorPage.getError(), containsString("The operation either timed out or was not allowed."));
         }
     }
 

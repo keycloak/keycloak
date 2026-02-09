@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -12,6 +13,22 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+
+import org.keycloak.admin.ui.rest.model.Authentication;
+import org.keycloak.admin.ui.rest.model.AuthenticationMapper;
+import org.keycloak.admin.ui.rest.model.ConfigurableRequiredActionProviderRepresentation;
+import org.keycloak.authentication.RequiredActionFactory;
+import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -20,21 +37,6 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.admin.ui.rest.model.Authentication;
-import org.keycloak.admin.ui.rest.model.AuthenticationMapper;
-import org.keycloak.admin.ui.rest.model.ConfigurableRequiredActionProviderRepresentation;
-import org.keycloak.authentication.RequiredActionFactory;
-import org.keycloak.authentication.RequiredActionProvider;
-import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredActionProviderModel;
-import org.keycloak.models.utils.DefaultAuthenticationFlows;
-import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 
 public class AuthenticationManagementResource extends RoleMappingResource {

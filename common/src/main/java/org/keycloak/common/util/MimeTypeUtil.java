@@ -17,8 +17,9 @@
 
 package org.keycloak.common.util;
 
-import jakarta.activation.MimetypesFileTypeMap;
 import java.io.File;
+
+import jakarta.activation.MimetypesFileTypeMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -33,6 +34,7 @@ public class MimeTypeUtil {
         map.addMimeTypes("image/png png PNG");
         map.addMimeTypes("image/svg+xml svg SVG");
         map.addMimeTypes("text/html html htm HTML HTM");
+        map.addMimeTypes("application/wasm wasm WASM");
     }
 
     public static String getContentType(File file) {

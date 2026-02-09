@@ -17,9 +17,9 @@
 
 package org.keycloak.email.freemarker.beans;
 
-import org.keycloak.events.admin.AdminEvent;
-
 import java.util.Date;
+
+import org.keycloak.events.admin.AdminEvent;
 
 /**
  * @author <a href="mailto:giriraj.sharma27@gmail.com">Giriraj Sharma</a>

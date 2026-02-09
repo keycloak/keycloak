@@ -18,7 +18,6 @@
 package org.keycloak.authentication.authenticators.broker;
 
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.models.KeycloakSession;
 
@@ -28,11 +27,10 @@ import org.keycloak.models.KeycloakSession;
 public class IdpUsernamePasswordFormFactory extends UsernamePasswordFormFactory {
 
     public static final String PROVIDER_ID = "idp-username-password-form";
-    public static final UsernamePasswordForm IDP_SINGLETON = new IdpUsernamePasswordForm();
 
     @Override
     public Authenticator create(KeycloakSession session) {
-        return IDP_SINGLETON;
+        return new IdpUsernamePasswordForm(session);
     }
 
     @Override

@@ -16,6 +16,8 @@
  */
 package org.keycloak.subsystem.adapter.saml.extension;
 
+import java.util.HashMap;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
@@ -28,8 +30,6 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelType;
-
-import java.util.HashMap;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

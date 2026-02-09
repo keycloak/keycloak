@@ -1,7 +1,12 @@
 package org.keycloak.authentication.requiredactions;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
+
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.CredentialRegistrator;
@@ -26,10 +31,6 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.validate.ValidationError;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
 
 import static org.keycloak.utils.CredentialHelper.createRecoveryCodesCredential;
 

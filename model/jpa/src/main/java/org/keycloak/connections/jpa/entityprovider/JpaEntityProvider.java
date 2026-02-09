@@ -17,9 +17,9 @@
 
 package org.keycloak.connections.jpa.entityprovider;
 
-import org.keycloak.provider.Provider;
-
 import java.util.List;
+
+import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:erik.mulder@docdatapayments.com">Erik Mulder</a>

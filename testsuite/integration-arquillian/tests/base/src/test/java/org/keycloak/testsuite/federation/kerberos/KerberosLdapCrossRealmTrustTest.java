@@ -17,10 +17,8 @@
 
 package org.keycloak.testsuite.federation.kerberos;
 
-import org.junit.ClassRule;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.representations.AccessToken;
@@ -28,12 +26,15 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
+import org.keycloak.testsuite.util.KerberosRule;
+import org.keycloak.testsuite.util.TestAppHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import jakarta.ws.rs.core.Response;
-import org.keycloak.testsuite.util.TestAppHelper;
+import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -18,7 +18,6 @@ package org.keycloak.testsuite.model.parameters;
 
 import java.util.Set;
 
-import com.google.common.collect.ImmutableSet;
 import org.keycloak.authorization.jpa.store.JPAAuthorizationStoreFactory;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderSpi;
@@ -30,11 +29,9 @@ import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionPr
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionSpi;
 import org.keycloak.connections.jpa.updater.liquibase.lock.LiquibaseDBLockProviderFactory;
 import org.keycloak.events.jpa.JpaEventStoreProviderFactory;
-import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.migration.MigrationProviderFactory;
 import org.keycloak.migration.MigrationSpi;
 import org.keycloak.models.IdentityProviderStorageSpi;
-import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.dblock.DBLockSpi;
 import org.keycloak.models.jpa.JpaClientProviderFactory;
 import org.keycloak.models.jpa.JpaClientScopeProviderFactory;
@@ -57,6 +54,8 @@ import org.keycloak.storage.DatastoreSpi;
 import org.keycloak.storage.datastore.DefaultDatastoreProviderFactory;
 import org.keycloak.testsuite.model.Config;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
+
+import com.google.common.collect.ImmutableSet;
 
 /**
  *

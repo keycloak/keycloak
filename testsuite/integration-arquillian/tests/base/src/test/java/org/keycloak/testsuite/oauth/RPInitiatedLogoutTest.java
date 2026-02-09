@@ -17,36 +17,6 @@
  */
 package org.keycloak.testsuite.oauth;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.hamcrest.MatcherAssert;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.OAuthErrorException;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.util.UriUtils;
-import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
-import org.keycloak.models.Constants;
-import org.keycloak.models.UserModel;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.InfoPage;
-import org.keycloak.testsuite.pages.LoginPage;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
@@ -59,16 +29,26 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
-import static org.hamcrest.Matchers.endsWith;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
-
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.util.UriUtils;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.models.Constants;
+import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.InfoPage;
+import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.PageUtils;
@@ -79,10 +59,31 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.Matchers;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.hamcrest.MatcherAssert;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.openqa.selenium.NoSuchElementException;
+
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test for OIDC RP-Initiated Logout - https://openid.net/specs/openid-connect-rpinitiated-1_0.html
@@ -158,6 +159,35 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         events.expectLogout(sessionId2).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
         MatcherAssert.assertThat(false, is(isSessionActive(sessionId2)));
         assertCurrentUrlEquals(redirectUri + "&state=something");
+    }
+
+    @Test
+    public void logoutRedirectWithLogoutConfirmationEnabled() throws Exception {
+        try (ClientAttributeUpdater ignore = ClientAttributeUpdater.forClient(adminClient, "test", "test-app")
+                     .setAttribute(OIDCConfigAttributes.LOGOUT_CONFIRMATION_ENABLED, "true")
+                     .update()) {
+            AccessTokenResponse tokenResponse = loginUser();
+            String sessionId = tokenResponse.getSessionState();
+
+            String redirectUri = APP_REDIRECT_URI + "?logout";
+
+            String idTokenString = tokenResponse.getIdToken();
+
+            oauth.logoutForm().postLogoutRedirectUri(redirectUri).idTokenHint(idTokenString).open();
+
+            // Logout should be processed and session terminated
+            events.expectLogout(sessionId).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
+            MatcherAssert.assertThat(false, is(isSessionActive(sessionId)));
+
+            // With logout confirmation enabled, an info page should be shown instead of an immediate redirect
+            infoPage.assertCurrent();
+            Assert.assertEquals("You are logged out", infoPage.getInfo());
+
+            // The info page should contain a link back to application (redirectUri). Use the link to finish.
+            infoPage.clickBackToApplicationLink();
+            WaitUtils.waitForPageToLoad();
+            assertCurrentUrlEquals(redirectUri);
+        }
     }
 
     @Test
@@ -986,7 +1016,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         errorPage.assertCurrent();
         Assert.assertEquals("Logout failed", errorPage.getError());
 
-        events.expectLogoutError(Errors.LOGOUT_FAILED).assertEvent();
+        events.expectLogoutError(Errors.SESSION_EXPIRED).assertEvent();
     }
 
     @Test

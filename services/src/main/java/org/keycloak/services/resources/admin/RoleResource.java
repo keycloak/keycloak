@@ -17,6 +17,16 @@
 
 package org.keycloak.services.resources.admin;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -26,15 +36,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
-
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.UriInfo;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Stream;
 
 /**
  * @resource Roles

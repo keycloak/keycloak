@@ -17,11 +17,16 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-import org.jboss.logging.Logger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -43,10 +48,15 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
+import org.keycloak.protocol.oidc.rar.InvalidAuthorizationDetailsException;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -56,9 +66,9 @@ import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.util.TokenUtil;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 
 /**
  * Base class for OAuth 2.0 grant types
@@ -102,20 +112,26 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         this.tokenManager = (TokenManager) context.tokenManager;
     }
 
-    protected Response createTokenResponse(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,
-        String scopeParam, boolean code, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
+    protected TokenManager.AccessTokenResponseBuilder createTokenResponseBuilder(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,  String scopeParam, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
         clientSessionCtx.setAttribute(Constants.GRANT_TYPE, context.getGrantType());
         AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
-            .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token);
-        boolean useRefreshToken = clientConfig.isUseRefreshToken();
+                .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token);
+        boolean useRefreshToken = useRefreshToken();
         if (useRefreshToken) {
             responseBuilder.generateRefreshToken();
             if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(responseBuilder.getRefreshToken().getType())
                     && clientSessionCtx.getClientSession().getNote(AuthenticationProcessor.FIRST_OFFLINE_ACCESS) != null) {
                 // the online session can be removed if first created for offline access
                 session.sessions().removeUserSession(realm, userSession);
+            }
+        } else {
+            TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
+            if (encoder.getTokenContextFromTokenId(responseBuilder.getAccessToken().getId()).getSessionType() == AccessTokenContext.SessionType.TRANSIENT) {
+                // transient sessions do not add the session ID to the token
+                responseBuilder.getAccessToken().setSessionId(null);
+                event.session((String) null);
             }
         }
 
@@ -137,6 +153,10 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
             }
         }
 
+        return responseBuilder;
+    }
+
+    protected Response createTokenResponse(TokenManager.AccessTokenResponseBuilder responseBuilder, ClientSessionContext clientSessionCtx, boolean code) {
         AccessTokenResponse res = null;
         if (code) {
             try {
@@ -144,7 +164,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
             } catch (RuntimeException re) {
                 if ("can not get encryption KEK".equals(re.getMessage())) {
                     throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                        "can not get encryption KEK", Response.Status.BAD_REQUEST);
+                            "can not get encryption KEK", Response.Status.BAD_REQUEST);
                 } else {
                     throw re;
                 }
@@ -153,9 +173,19 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
             res = responseBuilder.build();
         }
 
+        // Extension point for subclasses to add custom claims
+        addCustomTokenResponseClaims(res, clientSessionCtx);
+
         event.success();
 
         return cors.add(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE));
+    }
+
+    protected Response createTokenResponse(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,
+                                           String scopeParam, boolean code, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
+        TokenManager.AccessTokenResponseBuilder responseBuilder = createTokenResponseBuilder(user, userSession,
+                clientSessionCtx, scopeParam, clientPolicyContextGenerator);
+        return createTokenResponse(responseBuilder, clientSessionCtx, code);
     }
 
     protected void checkAndBindMtlsHoKToken(TokenManager.AccessTokenResponseBuilder responseBuilder, boolean useRefreshToken) {
@@ -240,6 +270,108 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         if (client.isBearerOnly()) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
         }
+    }
+
+    /**
+     * Extension point for subclasses to add custom claims to the AccessTokenResponse before it is returned.
+     * Default implementation does nothing.
+     */
+    protected void addCustomTokenResponseClaims(AccessTokenResponse res, ClientSessionContext clientSessionCtx) {
+        // Default: do nothing
+    }
+
+    /**
+     * Hook method called after authorization_details are processed and before the token response is created.
+     * This allows authorization details processors to perform post-processing actions (e.g., creating state objects).
+     * Processors can store information in session notes during processing, and this hook allows them to act on it.
+     * Default implementation does nothing.
+     *
+     * @param userSession                  the user session
+     * @param clientSessionCtx             the client session context
+     * @param authorizationDetailsResponse the processed authorization details response
+     */
+    protected void afterAuthorizationDetailsProcessed(UserSessionModel userSession, ClientSessionContext clientSessionCtx,
+                                                      List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponse) {
+        // Default: do nothing
+        // Subclasses or processors can override/extend this to perform post-processing
+    }
+
+    /**
+     * Processes the authorization_details parameter using provider discovery.
+     * This method can be overridden by subclasses to customize the behavior.
+     *
+     * @param userSession      the user session
+     * @param clientSessionCtx the client session context
+     * @return the authorization details response if processing was successful, null otherwise
+     */
+    protected List<AuthorizationDetailsJSONRepresentation> processAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        String authorizationDetailsParam = formParams.getFirst(AUTHORIZATION_DETAILS);
+        if (authorizationDetailsParam != null) {
+            try {
+                return new AuthorizationDetailsProcessorManager()
+                        .processAuthorizationDetails(session, userSession, clientSessionCtx, authorizationDetailsParam);
+            } catch (InvalidAuthorizationDetailsException e) {
+                logger.warnf(e, "Error when processing authorization_details");
+                event.detail(Details.REASON, e.getMessage());
+                event.error(Errors.INVALID_AUTHORIZATION_DETAILS);
+                throw new CorsErrorResponseException(cors, Errors.INVALID_AUTHORIZATION_DETAILS, "Error when processing authorization_details: " + e.getMessage(), Response.Status.BAD_REQUEST);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Allows processors to generate an authorization details response when the authorization_details parameter is missing in the request.
+     * This applies to flows where pre-authorization or credential offers are present, and is general to all AuthorizationDetailsProcessor implementations.
+     *
+     * @param userSession the user session
+     * @param clientSessionCtx the client session context
+     * @return the authorization details response if generation was successful, null otherwise
+     */
+    protected List<AuthorizationDetailsJSONRepresentation> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        try {
+            return new AuthorizationDetailsProcessorManager().handleMissingAuthorizationDetails(session, userSession, clientSessionCtx);
+        } catch (RuntimeException e) {
+            logger.warnf(e, "Error when handling missing authorization_details");
+            event.detail(Details.REASON, e.getMessage());
+            event.error(Errors.INVALID_AUTHORIZATION_DETAILS);
+            throw new CorsErrorResponseException(cors, Errors.INVALID_AUTHORIZATION_DETAILS, e.getMessage(), Response.Status.BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Process stored authorization_details from the authorization request (e.g., from PAR).
+     * This method is specifically for Authorization Code Flow where authorization_details was used
+     * in the authorization request but is missing from the token request.
+     *
+     * @param userSession the user session
+     * @param clientSessionCtx the client session context
+     * @return the authorization details response if processing was successful, null otherwise
+     */
+    protected List<AuthorizationDetailsJSONRepresentation> processStoredAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) throws CorsErrorResponseException {
+        // Check if authorization_details was stored during authorization request (e.g., from PAR)
+        String storedAuthDetails = clientSessionCtx.getClientSession().getNote(AUTHORIZATION_DETAILS);
+        if (storedAuthDetails != null) {
+            logger.debugf("Found authorization_details in client session, processing it");
+            try {
+                return new AuthorizationDetailsProcessorManager()
+                        .processStoredAuthorizationDetails(session, userSession, clientSessionCtx, storedAuthDetails);
+            } catch (InvalidAuthorizationDetailsException e) {
+                logger.warnf(e, "Error when processing stored authorization_details");
+                event.detail(Details.REASON, e.getMessage());
+                event.error(Errors.INVALID_AUTHORIZATION_DETAILS);
+                throw new CorsErrorResponseException(cors, Errors.INVALID_AUTHORIZATION_DETAILS, e.getMessage(), Response.Status.BAD_REQUEST);
+            }
+        }
+        return null;
+    }
+
+    /*
+     * If the grant type generates a refresh token or just the access token.
+     * @return true if refresh token is generated by the grant, false if not
+     */
+    protected boolean useRefreshToken() {
+        return clientConfig.isUseRefreshToken();
     }
 
     @Override

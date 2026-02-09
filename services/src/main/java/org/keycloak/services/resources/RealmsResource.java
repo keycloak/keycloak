@@ -16,14 +16,29 @@
  */
 package org.keycloak.services.resources;
 
-import org.jboss.logging.Logger;
-import org.keycloak.http.HttpRequest;
+import java.net.URI;
+import java.util.Comparator;
+
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.ext.Provider;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationService;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -41,22 +56,9 @@ import org.keycloak.utils.ProfileHelper;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.keycloak.wellknown.WellKnownProviderFactory;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.OPTIONS;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
-import jakarta.ws.rs.ext.Provider;
+import org.jboss.logging.Logger;
 
-import java.net.URI;
-import java.util.Comparator;
+import static org.keycloak.utils.MediaType.APPLICATION_JWT;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -180,6 +182,10 @@ public class RealmsResource {
     }
 
     private void resolveRealmAndUpdateSession(String realmName) {
+        resolveRealmAndUpdateSession(session, realmName);
+    }
+
+    private static void resolveRealmAndUpdateSession(KeycloakSession session, String realmName) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
         if (realm == null) {
@@ -222,11 +228,15 @@ public class RealmsResource {
 
     @GET
     @Path("{realm}/.well-known/{alias}")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, APPLICATION_JWT})
     public Response getWellKnown(final @PathParam("realm") String name,
                                  final @PathParam("alias") String alias) {
-        resolveRealmAndUpdateSession(name);
-        checkSsl(session.getContext().getRealm());
+        return getWellKnownResponse(session, name, alias, logger);
+    }
+
+    public static Response getWellKnownResponse(KeycloakSession session, String name, String alias, Logger logger) throws NotFoundException {
+        resolveRealmAndUpdateSession(session, name);
+        checkSsl(session, session.getContext().getRealm());
 
         WellKnownProviderFactory wellKnownProviderFactoryFound = session.getKeycloakSessionFactory().getProviderFactoriesStream(WellKnownProvider.class)
                 .map(providerFactory -> (WellKnownProviderFactory) providerFactory)
@@ -239,8 +249,13 @@ public class RealmsResource {
         WellKnownProvider wellKnown = session.getProvider(WellKnownProvider.class, wellKnownProviderFactoryFound.getId());
 
         if (wellKnown != null) {
-            ResponseBuilder responseBuilder = Response.ok(wellKnown.getConfig()).cacheControl(CacheControlUtil.noCache());
-            return Cors.builder().allowAllOrigins().auth().add(responseBuilder);
+            Object config = wellKnown.getConfig();
+            Response.ResponseBuilder responseBuilder;
+
+            // Check if the provider returned a JWT string or JSON object
+            responseBuilder = Response.ok(config).type(config instanceof String ? APPLICATION_JWT : MediaType.APPLICATION_JSON);
+
+            return Cors.builder().allowAllOrigins().auth().add(responseBuilder.cacheControl(CacheControlUtil.noCache()));
         }
 
         throw new NotFoundException();
@@ -276,6 +291,10 @@ public class RealmsResource {
     }
 
     private void checkSsl(RealmModel realm) {
+        checkSsl(session, realm);
+    }
+
+    private static void checkSsl(KeycloakSession session, RealmModel realm) {
         if (!"https".equals(session.getContext().getUri().getBaseUri().getScheme())
                 && realm.getSslRequired().isRequired(session.getContext().getConnection())) {
             HttpRequest request = session.getContext().getHttpRequest();

@@ -17,21 +17,23 @@
 
 package org.keycloak.models.cache.infinispan;
 
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.infinispan.entities.CachedGroup;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.RoleUtils;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.cache.infinispan.entities.CachedGroup;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.organization.OrganizationProvider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -51,7 +53,7 @@ public class GroupAdapter implements GroupModel {
         this.cacheSession = cacheSession;
         this.keycloakSession = keycloakSession;
         this.realm = realm;
-        modelSupplier = this::getGroupModel;
+        modelSupplier = new LazyModel<>(this::getGroupModel);
     }
 
     protected void getDelegateForUpdate() {
@@ -271,7 +273,8 @@ public class GroupAdapter implements GroupModel {
     @Override
     public Long getSubGroupsCount() {
         if (isUpdated()) return updated.getSubGroupsCount();
-        return getGroupModel().getSubGroupsCount();
+        GroupModel model = modelSupplier.get();
+        return model == null ? null : model.getSubGroupsCount();
     }
 
     @Override
@@ -307,5 +310,24 @@ public class GroupAdapter implements GroupModel {
     public Type getType() {
         if (isUpdated()) return updated.getType();
         return cached.getType();
+    }
+
+    @Override
+    public OrganizationModel getOrganization() {
+        if (isUpdated()) return updated.getOrganization();
+
+        // Use cached organization ID
+        String orgId = cached.getOrganizationId();
+        if (orgId == null) {
+            return null;
+        }
+
+        // Fetch organization from cached OrganizationProvider
+        OrganizationProvider orgProvider = keycloakSession.getProvider(OrganizationProvider.class);
+        if (orgProvider == null) {
+            return null;
+        }
+
+        return orgProvider.getById(orgId);
     }
 }

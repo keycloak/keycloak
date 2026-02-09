@@ -176,7 +176,6 @@ export const ResourcesPolicySelect = ({
         (value || []).map(async (id) =>
           adminClient.clients.findOnePolicy({
             id: clientId,
-            type: "",
             policyId: id,
           }),
         ),

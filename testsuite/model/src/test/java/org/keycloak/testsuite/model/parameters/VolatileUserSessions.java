@@ -16,12 +16,12 @@
  */
 package org.keycloak.testsuite.model.parameters;
 
+import java.util.Collections;
+
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.testsuite.model.Config;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
-
-import java.util.Collections;
 
 public class VolatileUserSessions extends KeycloakModelParameters {
 

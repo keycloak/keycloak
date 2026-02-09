@@ -17,24 +17,26 @@
  */
 package org.keycloak.testsuite.oauth.rar;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.rar.AuthorizationRequestSource;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
-import jakarta.ws.rs.core.Response;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import org.junit.Assert;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 

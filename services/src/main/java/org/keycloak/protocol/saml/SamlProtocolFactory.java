@@ -17,6 +17,12 @@
 
 package org.keycloak.protocol.saml;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.xml.crypto.dsig.CanonicalizationMethod;
+
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
@@ -27,11 +33,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper;
 import org.keycloak.protocol.AbstractLoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
-import org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
 import org.keycloak.representations.idm.CertificateRepresentation;
@@ -39,13 +45,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
-
 import org.keycloak.saml.validators.DestinationValidator;
-import javax.xml.crypto.dsig.CanonicalizationMethod;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -180,7 +180,8 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
             client.setRequiresClientSignature(true);
         }
 
-        if (client.requiresClientSignature() && client.getClientSigningCertificate() == null) {
+        if (client.requiresClientSignature() && client.getClientSigningCertificate() == null
+                && (!client.isUseMetadataDescriptorUrl() || client.getMetadataDescriptorUrl() != null)) {
             CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(newClient.getClientId());
             client.setClientSigningCertificate(info.getCertificate());
             client.setClientSigningPrivateKey(info.getPrivateKey());

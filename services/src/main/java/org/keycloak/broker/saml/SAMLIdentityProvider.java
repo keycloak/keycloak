@@ -16,16 +16,33 @@
  */
 package org.keycloak.broker.saml;
 
+import java.net.URI;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import javax.xml.parsers.ParserConfigurationException;
+
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import jakarta.xml.soap.SOAPException;
 import jakarta.xml.soap.SOAPMessage;
-import org.jboss.logging.Logger;
+
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
 import org.keycloak.broker.provider.IdentityProviderMapper;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
@@ -45,6 +62,7 @@ import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.models.FederatedIdentityModel;
@@ -56,13 +74,13 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
+import org.keycloak.protocol.saml.SAMLEncryptionAlgorithms;
 import org.keycloak.protocol.saml.SamlMetadataPublicKeyLoader;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.SamlSessionUtils;
 import org.keycloak.protocol.saml.mappers.SamlMetadataDescriptorUpdater;
 import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
-import org.keycloak.protocol.saml.SAMLEncryptionAlgorithms;
 import org.keycloak.protocol.saml.profile.util.Soap;
 import org.keycloak.saml.SAML2ArtifactResolveRequestBuilder;
 import org.keycloak.saml.SAML2AuthnRequestBuilder;
@@ -84,28 +102,12 @@ import org.keycloak.saml.processing.core.saml.v2.util.SAMLMetadataUtil;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
 
+import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
-import javax.xml.parsers.ParserConfigurationException;
-import java.net.URI;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * @author Pedro Igor
@@ -159,7 +161,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
             Integer attributeConsumingServiceIndex = getConfig().getAttributeConsumingServiceIndex();
 
-            String loginHint = getConfig().isLoginHint() ? request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM) : null;
+            String loginHint = Booleans.isTrue(getConfig().isLoginHint()) ? request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM) : null;
             Boolean allowCreate = null;
             if (getConfig().getConfig().get(SAMLIdentityProviderConfig.ALLOW_CREATE) == null || getConfig().isAllowCreate())
                 allowCreate = Boolean.TRUE;
@@ -285,7 +287,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             if (logoutRequest.getDestination() != null) {
                 singleLogoutServiceUrl = logoutRequest.getDestination().toString();
             }
-            int status = SimpleHttp.doPost(singleLogoutServiceUrl, session)
+            int status = SimpleHttp.create(session).doPost(singleLogoutServiceUrl)
                     .param(GeneralConstants.SAML_REQUEST_KEY, binding.postBinding(SAML2Request.convert(logoutRequest)).encoded())
                     .param(GeneralConstants.RELAY_STATE, userSession.getId()).asStatus();
             boolean success = status >=200 && status < 400;
@@ -425,7 +427,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             EntityDescriptorType entityDescriptor = SPMetadataDescriptor.buildSPDescriptor(
                 assertionConsumerServices, singleLogoutServices,
                 wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted,
-                entityId, nameIDPolicyFormat, signingKeys, encryptionKeys);
+                entityId, nameIDPolicyFormat, signingKeys, encryptionKeys, getConfig().getDescriptorCacheSeconds());
 
             // Create the AttributeConsumingService if at least one attribute importer mapper exists
             List<Entry<IdentityProviderMapperModel, SamlMetadataDescriptorUpdater>> metadataAttrProviders = new ArrayList<>();

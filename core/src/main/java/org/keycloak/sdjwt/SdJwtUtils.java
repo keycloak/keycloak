@@ -17,6 +17,7 @@
 package org.keycloak.sdjwt;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Optional;
 
@@ -45,12 +46,24 @@ public class SdJwtUtils {
         return Base64Url.encode(bytes);
     }
 
+    public static String encodeNoPad(String input) {
+        return encodeNoPad(utf8Bytes(input));
+    }
+
     public static byte[] decodeNoPad(String encoded) {
         return Base64Url.decode(encoded);
     }
 
     public static String hashAndBase64EncodeNoPad(byte[] disclosureBytes, String hashAlg) {
         return encodeNoPad(HashUtils.hash(hashAlg, disclosureBytes));
+    }
+
+    public static String hashAndBase64EncodeNoPad(String disclosure, String hashAlg) {
+        return hashAndBase64EncodeNoPad(utf8Bytes(disclosure), hashAlg);
+    }
+
+    public static byte[] utf8Bytes(String s) {
+        return s.getBytes(StandardCharsets.UTF_8);
     }
 
     public static String requireNonEmpty(String str, String message) {
@@ -82,8 +95,8 @@ public class SdJwtUtils {
     public static ArrayNode decodeDisclosureString(String disclosure) throws VerificationException {
         JsonNode jsonNode;
 
-        // Decode Base64URL-encoded disclosure
-        String decoded = new String(decodeNoPad(disclosure));
+    // Decode Base64URL-encoded disclosure using UTF-8
+    String decoded = new String(decodeNoPad(disclosure), StandardCharsets.UTF_8);
 
         // Parse the disclosure string into a JSON array
         try {
@@ -98,24 +111,6 @@ public class SdJwtUtils {
         }
 
         return (ArrayNode) jsonNode;
-    }
-
-    public static long readTimeClaim(JsonNode payload, String claimName) throws VerificationException {
-        JsonNode claim = payload.get(claimName);
-        if (claim == null || !claim.isNumber()) {
-            throw new VerificationException("Missing or invalid '" + claimName + "' claim");
-        }
-
-        return claim.asLong();
-    }
-
-    public static String readClaim(JsonNode payload, String claimName) throws VerificationException {
-        JsonNode claim = payload.get(claimName);
-        if (claim == null) {
-            throw new VerificationException("Missing '" + claimName + "' claim");
-        }
-
-        return claim.textValue();
     }
 
     public static JsonNode deepClone(JsonNode node) {

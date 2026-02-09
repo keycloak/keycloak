@@ -21,8 +21,9 @@ package org.keycloak.testsuite.util;
 
 import java.io.IOException;
 
-import org.junit.Assert;
 import org.keycloak.util.JsonSerialization;
+
+import org.junit.Assert;
 
 /**
  * Utility for comparing JSON objects

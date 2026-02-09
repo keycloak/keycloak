@@ -16,9 +16,15 @@
  */
 package org.keycloak.services.managers;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import org.jboss.logging.Logger;
+import java.net.URI;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.common.Profile;
@@ -27,6 +33,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
@@ -43,14 +50,9 @@ import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 
-import java.net.URI;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.models.Constants.defaultClients;
 
@@ -84,6 +86,9 @@ public class ClientManager {
 
         if (rep.getProtocol() != null) {
             LoginProtocolFactory providerFactory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, rep.getProtocol());
+            if (providerFactory == null) {
+                throw new ModelValidationException("Invalid protocol: " + rep.getProtocol());
+            }
             providerFactory.setupClientDefaults(rep, client);
         }
 
@@ -378,8 +383,9 @@ public class ClientManager {
 
     private Map<String, Object> getClientCredentialsAdapterConfig(ClientModel client) {
         String clientAuthenticator = client.getClientAuthenticatorType();
-        ClientAuthenticatorFactory authenticator = (ClientAuthenticatorFactory) realmManager.getSession().getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, clientAuthenticator);
-        return authenticator.getAdapterConfiguration(client);
+        KeycloakSession session = realmManager.getSession();
+        ClientAuthenticatorFactory authenticator = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, clientAuthenticator);
+        return authenticator.getAdapterConfiguration(session, client);
     }
 
     private boolean isInternalClient(String realmName, String clientId) {

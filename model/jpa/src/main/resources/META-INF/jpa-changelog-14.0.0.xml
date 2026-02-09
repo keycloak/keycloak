@@ -64,6 +64,10 @@
         <validCheckSum>7:fad08e83c77d0171ec166bc9bc5d390a</validCheckSum>
         <validCheckSum>7:72553fac2d2281052acbbbb14aa22ccf</validCheckSum>
         <validCheckSum>7:b558ad47ea0e4d3c3514225a49cc0d65</validCheckSum>
+
+        <!-- EDB previously did not run this change set, now it does -->
+        <validCheckSum>8:f43dfba07ba249d5d932dc489fd2b886</validCheckSum>
+        <validCheckSum>9:bd2bd0fc7768cf0845ac96a8786fa735</validCheckSum>
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <or>
                 <dbms type="mysql"/>

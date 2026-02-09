@@ -16,10 +16,11 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml.assertion;
 
+import javax.xml.namespace.QName;
+
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.parsers.saml.xmldsig.XmlDSigQNames;
 import org.keycloak.saml.processing.core.parsers.util.HasQName;
-import javax.xml.namespace.QName;
 
 /**
  * Elements and attribute names from saml-schema-assertion-2.0.xsd

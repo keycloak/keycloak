@@ -16,6 +16,12 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
+import jakarta.ws.rs.ForbiddenException;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
@@ -27,6 +33,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.policy.evaluation.DecisionPermissionCollector;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
@@ -35,18 +42,13 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-
-import jakarta.ws.rs.ForbiddenException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -137,6 +139,14 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         if (!hasAnyAdminRole()) {
             throw new ForbiddenException();
         }
+    }
+
+    @Override
+    public void requireRealmAdmin() {
+        if (isRealmAdmin()) {
+            return;
+        }
+        throw new ForbiddenException();
     }
 
     public boolean hasAnyAdminRole() {
@@ -323,11 +333,15 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         return evaluatePermission(permission, resourceServer, new DefaultEvaluationContext(identity, session));
     }
 
-    public Collection<Permission> evaluatePermission(List<ResourcePermission> permission, ResourceServer resourceServer) {
-        return evaluatePermission(permission, resourceServer, new DefaultEvaluationContext(identity, session));
+    public DecisionPermissionCollector getDecision(ResourcePermission permission, ResourceServer resourceServer) {
+        return evaluatePermission(List.of(permission), resourceServer, new DefaultEvaluationContext(identity, session));
     }
 
     public Collection<Permission> evaluatePermission(ResourcePermission permission, ResourceServer resourceServer, EvaluationContext context) {
+        return evaluatePermission(Arrays.asList(permission), resourceServer, context).results();
+    }
+
+    public DecisionPermissionCollector getDecision(ResourcePermission permission, ResourceServer resourceServer, EvaluationContext context) {
         return evaluatePermission(Arrays.asList(permission), resourceServer, context);
     }
 
@@ -337,14 +351,14 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     }
 
     public boolean evaluatePermission(Resource resource, ResourceServer resourceServer, EvaluationContext context, Scope... scope) {
-        return !evaluatePermission(Arrays.asList(new ResourcePermission(resource, Arrays.asList(scope), resourceServer)), resourceServer, context).isEmpty();
+        return !evaluatePermission(Arrays.asList(new ResourcePermission(resource, Arrays.asList(scope), resourceServer)), resourceServer, context).results().isEmpty();
     }
 
-    public Collection<Permission> evaluatePermission(List<ResourcePermission> permissions, ResourceServer resourceServer, EvaluationContext context) {
+    public DecisionPermissionCollector evaluatePermission(List<ResourcePermission> permissions, ResourceServer resourceServer, EvaluationContext context) {
         RealmModel oldRealm = session.getContext().getRealm();
         try {
             session.getContext().setRealm(realm);
-            return authz.evaluators().from(permissions, resourceServer, context).evaluate(resourceServer, null);
+            return authz.evaluators().from(permissions, resourceServer, context).getDecision(resourceServer, null, DecisionPermissionCollector.class);
         } finally {
             session.getContext().setRealm(oldRealm);
         }
@@ -387,7 +401,42 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         }
     }
 
+    @Override
+    public boolean isRealmAdmin() {
+        RealmModel masterRealm = getMasterRealm();
+        UserModel admin = admin();
+        RoleModel masterAdminRole = masterRealm.getRole(AdminRoles.ADMIN);
 
+        if (admin.hasRole(masterAdminRole)) {
+            // server admin
+            return true;
+        }
 
+        ClientModel realmManagementClient = getRealmManagementClient();
 
+        if (realmManagementClient != null && !realmManagementClient.getRealm().equals(masterRealm)) {
+            RoleModel realmAdminRole = realmManagementClient.getRole(AdminRoles.REALM_ADMIN);
+
+            if (realmAdminRole != null && admin.hasRole(realmAdminRole)) {
+                // realm admin
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    RealmModel getMasterRealm() {
+        return adminsRealm().getName().equals(Config.getAdminRealm()) ?
+                adminsRealm():
+                session.realms().getRealmByName(Config.getAdminRealm());
+    }
+
+    ClientModel getRealmManagementClient() {
+        if (realm.getName().equals(Config.getAdminRealm())) {
+            return realm.getClientByClientId(Config.getAdminRealm() + "-realm");
+        } else {
+            return realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+        }
+    }
 }

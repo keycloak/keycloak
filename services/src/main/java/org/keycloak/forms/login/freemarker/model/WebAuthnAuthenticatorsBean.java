@@ -15,7 +15,13 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
-import com.webauthn4j.data.AuthenticatorTransport;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.KeycloakSession;
@@ -25,12 +31,7 @@ import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.theme.DateTimeFormatterUtil;
 import org.keycloak.utils.StringUtil;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.webauthn4j.data.AuthenticatorTransport;
 
 public class WebAuthnAuthenticatorsBean {
 

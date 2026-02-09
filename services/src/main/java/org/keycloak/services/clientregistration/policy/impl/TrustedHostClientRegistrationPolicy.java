@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -39,6 +38,8 @@ import org.keycloak.services.clientregistration.ClientRegistrationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationProvider;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -175,12 +176,17 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
 
             logger.debugf("Trying verify request from address '%s' of host '%s' by domains", hostAddress, hostname);
 
-            if (hostname.equals(address.getHostAddress())) {
+            // On Windows, reverse lookup for loopback may return the IP (e.g., 127.0.0.1) instead of 'localhost'.
+            // Normalize to 'localhost' for consistent domain checks.
+            if (address.isLoopbackAddress()) {
+                hostname = "localhost";
+            } else if (hostname.equals(address.getHostAddress())) {
                 logger.debugf("The hostAddress '%s' was not resolved to a hostname", hostAddress);
                 return null;
             }
 
-            if (Arrays.stream(InetAddress.getAllByName(hostname)).filter(a -> address.equals(a)).findAny().isEmpty()) {
+            // For non-loopback addresses, perform a forward-confirmation check: the hostname must resolve back to the same address.
+            if (!address.isLoopbackAddress() && Arrays.stream(InetAddress.getAllByName(hostname)).noneMatch(a -> address.equals(a))) {
                 logger.debugf("The hostAddress '%s' is not among the direct lookups returned resolving '%s'", hostAddress, hostname);
                 return null;
             }
@@ -192,7 +198,17 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
                 }
             }
         } catch (UnknownHostException uhe) {
-            logger.debugf(uhe, "Request of address '%s' came from unknown host. Skip verification by domains", hostAddress);
+            logger.debugf(uhe, "Request of address '%s' came from unknown host. Skip verification by domains unless it's within localhost domain", hostAddress);
+
+            String lower = hostAddress == null ? null : hostAddress.toLowerCase();
+            if (lower != null && ("localhost".equals(lower) || lower.endsWith(".localhost"))) {
+                for (String confDomain : trustedDomains) {
+                    if (checkTrustedDomain(lower, confDomain)) {
+                        logger.debugf("Treating host '%s' as loopback due to localhost domain and returning success by trusted domain '%s'", lower, confDomain);
+                        return lower;
+                    }
+                }
+            }
         }
 
         return null;

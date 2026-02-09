@@ -17,14 +17,14 @@
 
 package org.keycloak.broker.provider;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+
 import org.keycloak.broker.oidc.mappers.AbstractClaimToGroupMapper;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
 
 /**
  * @author <a href="mailto:dmartino@redhat.com">Daniele Martinoli</a>

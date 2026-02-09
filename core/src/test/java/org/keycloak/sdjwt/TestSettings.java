@@ -19,10 +19,8 @@ package org.keycloak.sdjwt;
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.ECPrivateKeySpec;
@@ -40,6 +38,8 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
 
 /**
  * Import test-settings from:
@@ -105,7 +105,7 @@ public class TestSettings {
         return getSignatureVerifierContext(keyPair.getPublic(), algorithm, kid);
     }
 
-    private static KeyPair readKeyPair(JsonNode keySetting) {
+    public static KeyPair readKeyPair(JsonNode keySetting) {
         String curveName = keySetting.get("crv").asText();
         String base64UrlEncodedD = keySetting.get("d").asText();
         String base64UrlEncodedX = keySetting.get("x").asText();
@@ -119,8 +119,8 @@ public class TestSettings {
     }
 
     private static PublicKey readPublicKey(JsonNode keyData) {
-        if (keyData.has("jwk")) {
-            keyData = keyData.get("jwk");
+        if (keyData.has(CLAIM_NAME_JWK)) {
+            keyData = keyData.get(CLAIM_NAME_JWK);
         }
         String curveName = keyData.get("crv").asText();
         String base64UrlEncodedX = keyData.get("x").asText();
@@ -191,10 +191,7 @@ public class TestSettings {
     // generate key spec
     private static ECParameterSpec generateEcdsaKeySpec(String paramSpecName) {
         try {
-            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
-            ECGenParameterSpec ecGenParameterSpec = new ECGenParameterSpec(paramSpecName);
-            keyPairGenerator.initialize(ecGenParameterSpec);
-            KeyPair keyPair = keyPairGenerator.generateKeyPair();
+            KeyPair keyPair = KeyUtils.generateEcKeyPair(paramSpecName);
             return ((java.security.interfaces.ECPublicKey) keyPair.getPublic()).getParams();
         } catch (Exception e) {
             throw new RuntimeException("Error obtaining ECParameterSpec for P-256 curve", e);

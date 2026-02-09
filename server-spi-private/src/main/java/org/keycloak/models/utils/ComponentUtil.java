@@ -17,7 +17,10 @@
 
 package org.keycloak.models.utils;
 
-import org.jboss.logging.Logger;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
@@ -30,9 +33,7 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.storage.OnCreateComponent;
 import org.keycloak.storage.OnUpdateComponent;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

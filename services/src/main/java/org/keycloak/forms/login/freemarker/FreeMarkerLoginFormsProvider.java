@@ -16,12 +16,26 @@
  */
 package org.keycloak.forms.login.freemarker;
 
+import java.io.IOException;
+import java.net.URI;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.function.Function;
+
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
-import org.jboss.logging.Logger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -91,19 +105,7 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.MediaTypeMatcher;
 
-import java.io.IOException;
-import java.net.URI;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.function.Function;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
 import static org.keycloak.organization.utils.Organizations.resolveOrganization;
@@ -468,8 +470,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public String getMessage(String message) {
-        return formatMessage(new FormMessage(null, message));
+    public String getMessage(String message, Object... parameters) {
+        return formatMessage(new FormMessage(null, message, parameters));
     }
 
     /**
@@ -505,6 +507,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
             attributes.put("auth", new AuthenticationContextBean(context, page));
+            if (authenticationSession != null && Boolean.parseBoolean(authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.USERNAME_HIDDEN))) {
+                attributes.put(LoginFormsProvider.USERNAME_HIDDEN, Boolean.TRUE.toString());
+            }
             setAttribute(Constants.EXECUTION, execution);
 
             if (realm.isInternationalizationEnabled()) {
@@ -523,6 +528,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                         case LOGOUT_CONFIRM:
                             b = UriBuilder.fromUri(Urls.logoutConfirm(baseUri, realm.getName()));
                             break;
+                        case LOGIN_PAGE_EXPIRED:
+                            b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
+                            break;
                         case INFO:
                         case ERROR:
                             if (isDetachedAuthenticationSession()) {
@@ -540,12 +548,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                                 break;
                             }
                         default:
-                            b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
+                            b = getDefaultPageUriForLocale(baseUri);
                             break;
                     }
                 } else {
-                    b = UriBuilder.fromUri(baseUri)
-                            .path(uriInfo.getPath());
+                    b = getDefaultPageUriForLocale(baseUri);
                 }
 
                 if (execution != null) {
@@ -589,6 +596,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         attributes.put("lang", lang);
+    }
+
+    private UriBuilder getDefaultPageUriForLocale(URI baseUri) {
+        // Using "actionUri" by default in the language combobox when available
+        return actionUri != null ? UriBuilder.fromUri(actionUri.getPath()).replaceQuery(baseUri.getQuery()) :
+                UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
     }
 
     /**

@@ -18,6 +18,8 @@
 package org.keycloak.saml.processing.core.saml.v2.util;
 
 
+import javax.xml.stream.XMLStreamWriter;
+
 import org.keycloak.dom.xmlsec.w3.xmldsig.DSAKeyValueType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.KeyInfoType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.KeyValueType;
@@ -33,8 +35,6 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
 
 import org.w3c.dom.Element;
-
-import javax.xml.stream.XMLStreamWriter;
 
 /**
  * Utility methods for stax writing

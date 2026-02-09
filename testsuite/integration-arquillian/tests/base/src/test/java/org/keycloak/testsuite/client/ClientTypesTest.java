@@ -18,9 +18,15 @@
 
 package org.keycloak.testsuite.client;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
-import org.junit.Test;
+
 import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.models.ClientModel;
@@ -39,11 +45,9 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.ClientBuilder;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import org.junit.Test;
+
+import static org.keycloak.common.Profile.Feature.CLIENT_TYPES;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.everyItem;
@@ -53,7 +57,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
-import static org.keycloak.common.Profile.Feature.CLIENT_TYPES;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

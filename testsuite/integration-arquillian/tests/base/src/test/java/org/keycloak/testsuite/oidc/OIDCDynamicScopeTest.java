@@ -17,8 +17,12 @@
  */
 package org.keycloak.testsuite.oidc;
 
-import org.junit.Before;
-import org.junit.Test;
+import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
@@ -37,10 +41,8 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import jakarta.ws.rs.core.Response;
-import java.util.HashMap;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.keycloak.common.Profile.Feature.DYNAMIC_SCOPES;
 

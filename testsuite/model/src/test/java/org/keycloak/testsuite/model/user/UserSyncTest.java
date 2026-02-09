@@ -17,8 +17,11 @@
 
 package org.keycloak.testsuite.model.user;
 
-import org.hamcrest.Matchers;
-import org.junit.Test;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
+import javax.naming.directory.BasicAttribute;
+
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.Constants;
@@ -41,25 +44,25 @@ import org.keycloak.storage.ldap.idm.store.ldap.LDAPOperationManager;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
-import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import javax.naming.directory.BasicAttribute;
-import java.util.Collections;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.IntStream;
+import org.hamcrest.Matchers;
+import org.junit.Test;
+
+import static org.keycloak.models.LDAPConstants.LDAP_ID;
+import static org.keycloak.storage.UserStorageProviderModel.REMOVE_INVALID_USERS_ENABLED;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assume.assumeThat;
-import static org.keycloak.storage.UserStorageProviderModel.REMOVE_INVALID_USERS_ENABLED;
 
 @RequireProvider(UserProvider.class)
 @RequireProvider(ClusterProvider.class)
@@ -135,7 +138,7 @@ public class UserSyncTest extends KeycloakModelTest {
         long start = System.currentTimeMillis();
         SynchronizationResult res = withRealm(realmId, (session, realm) -> {
             UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
-            return UserStorageSyncManager.syncAllUsers(session.getKeycloakSessionFactory(), realm.getId(), providerModel);
+            return UserStoragePrivateUtil.runFullSync(session.getKeycloakSessionFactory(), providerModel);
         });
         long end = System.currentTimeMillis();
         long timeNeeded = end - start;
@@ -270,17 +273,17 @@ public class UserSyncTest extends KeycloakModelTest {
         });
 
         // import user
-        withRealm(realmId, (session, realm) -> {
+        String oldUserId = withRealm(realmId, (session, realm) -> {
             UserModel user1 = session.users().getUserByUsername(realm, "user1");
             user1.setSingleAttribute("LDAP_ID", "WRONG");
-            return user1;
+            return user1.getId();
         });
 
-        // validate imported user
+        // validate imported user, user will be deleted and re-created
         withRealm(realmId, (session, realm) -> {
-            assertThat(session.users().getUserByUsername(realm, "user1"), is(nullValue()));;
-            UserModel deletedUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, "user1");
-            assertThat(deletedUser, is(nullValue()));
+            UserModel user = session.users().getUserByUsername(realm, "user1");
+            assertThat(user, notNullValue());
+            assertThat(user.getId(), not(equalTo(oldUserId)));
             return null;
         });
     }
@@ -344,5 +347,55 @@ public class UserSyncTest extends KeycloakModelTest {
             return null;
         });
     }
-}
 
+    @Test
+    public void testInvalidUsernameWhenDifferentThanExternalStorage() {
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            providerModel.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
+            providerModel.getConfig().putSingle(REMOVE_INVALID_USERS_ENABLED, Boolean.FALSE.toString()); // prevent local delete
+            realm.updateComponent(providerModel);
+            return null;
+        });
+
+        // create user1 in LDAP
+        String ldapId = withRealm(realmId, (session, realm) -> {
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            int i = 1;
+            LDAPObject ldapObject = LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "user" + i, "User" + i + "FN", "User" + i + "LN", "user" + i + "@email.org", "my-street 9", "12" + i);
+            return ldapObject.getUuid();
+        });
+
+        // import user
+        String userId = withRealm(realmId, (session, realm) -> {
+            return session.users().getUserByUsername(realm, "user1").getId();
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider provider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPObject ldapObject = provider.loadLDAPUserByUuid(realm, ldapId);
+            ldapObject.setSingleAttribute(LDAPConstants.UID, "changed");
+            provider.getLdapIdentityStore().update(ldapObject);
+            return null;
+        });
+
+        // user id changed, user cannot be resolved
+        withRealm(realmId, (session, realm) -> {
+            assertThat(session.users().getUserByUsername(realm, "user1"), nullValue());
+            return null;
+        });
+
+        // cache and local database reflecting the change in the database for the existing account
+        withRealm(realmId, (session, realm) -> {
+            UserModel user = session.users().getUserByUsername(realm, "changed");
+            assertThat(user.getFirstAttribute(LDAP_ID), is(ldapId));
+            assertThat(user.getId(), is(userId));
+            assertThat(user.getUsername(), is("changed"));
+            UserModel localUser = UserStoragePrivateUtil.userLocalStorage(session).getUserById(realm, userId);
+            assertThat(localUser.getUsername(), is("changed"));
+            return null;
+        });
+    }
+}

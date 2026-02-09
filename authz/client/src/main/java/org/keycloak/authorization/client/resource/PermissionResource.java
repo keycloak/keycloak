@@ -19,10 +19,8 @@ package org.keycloak.authorization.client.resource;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.util.Http;
 import org.keycloak.authorization.client.util.Throwables;
@@ -31,6 +29,8 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
  * An entry point for managing permission tickets using the Protection API.

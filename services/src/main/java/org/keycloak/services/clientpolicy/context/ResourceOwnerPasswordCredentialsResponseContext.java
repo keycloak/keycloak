@@ -59,4 +59,3 @@ public class ResourceOwnerPasswordCredentialsResponseContext implements ClientPo
     }
 
 }
-

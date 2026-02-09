@@ -17,16 +17,6 @@
 
 package org.keycloak.adapters.cloned;
 
-import org.apache.http.HttpHost;
-import org.apache.http.conn.scheme.HostNameResolver;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.ssl.TrustStrategy;
-import org.apache.http.conn.ssl.X509HostnameVerifier;
-import org.apache.http.protocol.HttpContext;
-import org.keycloak.common.util.Environment;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -44,6 +34,17 @@ import java.security.UnrecoverableKeyException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+
+import org.keycloak.common.util.Environment;
+
+import org.apache.http.HttpHost;
+import org.apache.http.conn.scheme.HostNameResolver;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.conn.ssl.X509HostnameVerifier;
+import org.apache.http.protocol.HttpContext;
 
 /**
  * SSLSocketFactory that uses Server Name Indication (SNI) TLS extension.

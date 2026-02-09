@@ -19,12 +19,13 @@
 
 package org.keycloak.models.credential;
 
+import org.keycloak.common.util.Time;
+import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
+
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

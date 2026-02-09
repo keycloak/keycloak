@@ -1,8 +1,8 @@
 package org.freedesktop.dbus.exceptions;
 
-import org.freedesktop.dbus.interfaces.FatalException;
-
 import java.io.IOException;
+
+import org.freedesktop.dbus.interfaces.FatalException;
 
 public class MessageProtocolVersionException extends IOException implements FatalException {
 

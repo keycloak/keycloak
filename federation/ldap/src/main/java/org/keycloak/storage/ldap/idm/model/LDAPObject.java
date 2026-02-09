@@ -17,8 +17,6 @@
 
 package org.keycloak.storage.ldap.idm.model;
 
-import org.jboss.logging.Logger;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -193,8 +193,12 @@ public class LDAPObject {
 
     // Case-insensitive. Return null if there is not value of attribute with given name or set with all values otherwise
     public Set<String> getAttributeAsSet(String name) {
+        return getAttributeAsSetOrDefault(name, null);
+    }
+
+    public Set<String> getAttributeAsSetOrDefault(String name, Set<String> defaultValue) {
         Map.Entry<String, Set<String>> entry = lowerCasedAttributes.get(name.toLowerCase());
-        return (entry == null) ? null : new LinkedHashSet<>(entry.getValue());
+        return (entry == null) ? defaultValue : new LinkedHashSet<>(entry.getValue());
     }
 
     public boolean isRangeComplete(String name) {

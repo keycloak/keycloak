@@ -1,14 +1,16 @@
 package org.keycloak.saml.processing.core.parsers.saml;
 
-import javax.xml.stream.events.XMLEvent;
-import javax.xml.stream.XMLEventReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import org.junit.Assert;
-import org.junit.Test;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.XMLEvent;
+
 import org.keycloak.saml.common.parsers.AbstractParser;
 import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAttributeValueParser;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 public class SAMLAttributeValueParserTest {
 

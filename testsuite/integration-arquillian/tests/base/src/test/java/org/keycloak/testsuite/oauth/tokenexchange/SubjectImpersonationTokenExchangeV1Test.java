@@ -22,15 +22,13 @@ package org.keycloak.testsuite.oauth.tokenexchange;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-import org.junit.Rule;
-import org.junit.Test;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.Profile;
@@ -44,17 +42,23 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
+import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * Tests for subject impersonation token exchange (including "direct naked impersonation")
@@ -63,6 +67,7 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  */
 @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
 @EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
+@DisableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2, skipRestart = true)
 public class SubjectImpersonationTokenExchangeV1Test extends AbstractKeycloakTest  {
 
     @Rule
@@ -179,6 +184,24 @@ public class SubjectImpersonationTokenExchangeV1Test extends AbstractKeycloakTes
             Assert.assertEquals("target", exchangedToken.getAudience()[0]);
             Assert.assertEquals(exchangedToken.getPreferredUsername(), "impersonated-user");
             assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
+        }
+
+        // disabled user cannot be impersonated
+        try (UserAttributeUpdater userUpdater = UserAttributeUpdater
+                .forUserByUsername(adminClient.realm(TEST), "impersonated-user")
+                .setEnabled(Boolean.FALSE)
+                .update();
+            Response response = exchangeUrl.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("direct-legal", "secret"))
+                .post(Entity.form(
+                            new Form()
+                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                    .param(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user")
+                                    .param(OAuth2Constants.AUDIENCE, "target")
+                        ))) {
+            Assert.assertEquals(403, response.getStatus());
         }
 
         try (Response response = exchangeUrl.request()
@@ -522,6 +545,22 @@ public class SubjectImpersonationTokenExchangeV1Test extends AbstractKeycloakTes
                     ));
             assertTrue(response.getStatus() >= 400);
             response.close();
+        }
+
+        // disabled user cannot be impersonated
+        try (UserAttributeUpdater userUpdater = UserAttributeUpdater
+                .forUserByUsername(adminClient.realm(TEST), "impersonated-user")
+                .setEnabled(Boolean.FALSE)
+                .update();
+            Response response = exchangeUrl.request()
+                   .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("direct-legal", "secret"))
+                   .post(Entity.form(
+                            new Form()
+                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                    .param(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user")
+                                    .param(OAuth2Constants.AUDIENCE, "target")
+                    ))) {
+            Assert.assertEquals(403, response.getStatus());
         }
     }
 

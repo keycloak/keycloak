@@ -1,7 +1,8 @@
 package org.keycloak.testsuite.client;
 
-import org.junit.Test;
 import org.keycloak.validation.DefaultClientValidationProvider;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

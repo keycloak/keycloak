@@ -17,13 +17,21 @@
 
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.GroupRepresentation;
-
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.representations.idm.GroupRepresentation;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -92,7 +100,7 @@ public interface GroupsResource {
      * @param briefRepresentation if {@code true}, each returned group representation will only contain basic information
      *                            (id, name, path, and parentId). If {@code false}, the complete representations of the groups
      *                            are returned (including role mappings and attributes).
-     * @param subGroupsCount if {@code true}, the count of subgroups is returned for each subgroup. Defaults to true.
+     * @param subGroupsCount if {@code true}, the count of subgroups is returned for each subgroup. Defaults to true. Parameter supported since Keycloak 26.3. For older versions, it is always true.
      * @return A list containing the slice of all groups.
      */
     @GET

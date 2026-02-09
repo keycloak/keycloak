@@ -1,9 +1,9 @@
 package org.keycloak.models.cache.infinispan.authorization.entities;
 
-import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -18,15 +18,12 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.hamcrest.MatcherAssert;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+
+import jakarta.ws.rs.ClientErrorException;
+
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
@@ -52,11 +49,16 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+import org.keycloak.testsuite.util.WaitUtils;
+
+import org.hamcrest.MatcherAssert;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.openqa.selenium.By;
-
-import jakarta.ws.rs.ClientErrorException;
-
-import java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -211,6 +213,8 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
             testRealm().update(realm);
 
             UserRepresentation user = adminClient.realm("test").users().search("johnkeycloak", 0, 1).get(0);
+            Map<String, Object> bruteForceStatus = testRealm().attackDetection().bruteForceUserStatus(user.getId());
+            assertFalse("User should not be disabled by brute force.", (boolean) bruteForceStatus.get("disabled"));
             assertTrue(user.isEnabled());
 
             // Lock user (permanently) and make sure the number of failures matches failure factor
@@ -218,7 +222,11 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
             loginInvalidPassword("johnkeycloak");
             assertUserNumberOfFailures(user.getId(), failureFactor);
 
+            WaitUtils.waitForBruteForceExecutors(testingClient);
+
             // Make sure user is now disabled
+            bruteForceStatus = testRealm().attackDetection().bruteForceUserStatus(user.getId());
+            assertTrue("User should be disabled by brute force.", (boolean) bruteForceStatus.get("disabled"));
             user = adminClient.realm("test").users().search("johnkeycloak", 0, 1).get(0);
             assertFalse(user.isEnabled());
 

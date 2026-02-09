@@ -17,10 +17,8 @@
 
 package org.keycloak.tests.admin.client;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.util.stream.Collectors;
+
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.representations.AccessToken;
@@ -35,10 +33,13 @@ import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import java.util.stream.Collectors;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author rmartinc
@@ -59,7 +60,7 @@ public class ServiceAccountClientTest {
 
     @Test
     public void testServiceAccountEnableDisable() {
-        ClientScopeResource serviceAccountScopeRsc = ApiUtil.findClientScopeByName(
+        ClientScopeResource serviceAccountScopeRsc = AdminApiUtil.findClientScopeByName(
                 managedRealm.admin(), ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
         Assertions.assertNotNull(serviceAccountScopeRsc);
         ClientScopeRepresentation serviceAccountScope = serviceAccountScopeRsc.toRepresentation();

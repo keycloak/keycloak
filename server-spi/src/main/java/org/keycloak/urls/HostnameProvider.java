@@ -16,10 +16,12 @@
  */
 package org.keycloak.urls;
 
-import org.keycloak.models.KeycloakContext;
-import org.keycloak.provider.Provider;
+import java.net.URI;
 
 import jakarta.ws.rs.core.UriInfo;
+
+import org.keycloak.models.KeycloakContext;
+import org.keycloak.provider.Provider;
 
 /**
  * The Hostname provider is used by Keycloak to decide URLs for frontend and backend requests. A provider can either
@@ -117,6 +119,21 @@ public interface HostnameProvider extends Provider {
 
     @Override
     default void close() {
+    }
+
+    /**
+     * Returns the base URI for Keycloak with the scheme, host, port, and context-path set for the given UrlType
+     *
+     * @param originalUriInfo the original URI
+     * @param type type of the request
+     * @return the base URI
+     */
+    default URI getBaseUri(UriInfo originalUriInfo, UrlType type) {
+        String scheme = getScheme(originalUriInfo, type);
+        String hostname = getHostname(originalUriInfo, type);
+        int port = getPort(originalUriInfo, type);
+        String contextPath = getContextPath(originalUriInfo, type);
+        return originalUriInfo.getBaseUriBuilder().scheme(scheme).host(hostname).port(port).replacePath(contextPath).build();
     }
 
 }

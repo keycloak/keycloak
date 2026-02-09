@@ -19,12 +19,12 @@
 package org.keycloak.services.clienttype.impl;
 
 import org.keycloak.Config;
+import org.keycloak.client.clienttype.ClientTypeProvider;
+import org.keycloak.client.clienttype.ClientTypeProviderFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
-import org.keycloak.client.clienttype.ClientTypeProvider;
-import org.keycloak.client.clienttype.ClientTypeProviderFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

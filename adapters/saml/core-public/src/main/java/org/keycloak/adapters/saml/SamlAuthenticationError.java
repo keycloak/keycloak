@@ -17,11 +17,12 @@
 
 package org.keycloak.adapters.saml;
 
+import java.util.Objects;
+
 import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import java.util.Objects;
 
 /**
  * Object that describes the SAML error that happened.

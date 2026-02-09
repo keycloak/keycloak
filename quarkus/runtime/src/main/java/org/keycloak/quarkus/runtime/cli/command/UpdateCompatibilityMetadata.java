@@ -17,14 +17,16 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import org.keycloak.compatibility.CompatibilityMetadataProvider;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import picocli.CommandLine;
 
 @CommandLine.Command(
@@ -59,11 +61,6 @@ public class UpdateCompatibilityMetadata extends AbstractUpdatesCommand {
     }
 
     @Override
-    public boolean includeRuntime() {
-        return true;
-    }
-
-    @Override
     protected void validateConfig() {
         super.validateConfig();
         validateFileParameter();
@@ -83,7 +80,7 @@ public class UpdateCompatibilityMetadata extends AbstractUpdatesCommand {
     private void printToConsole(Map<String, Map<String, String>> metadata) {
         try {
             var json = JsonSerialization.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(metadata);
-            printOut("Metadata:%n%s".formatted(json));
+            picocli.getOutWriter().println("Metadata:%n%s".formatted(json));
         } catch (JsonProcessingException e) {
             throw new PropertyException("Unable to create JSON representation of the metadata", e);
         }

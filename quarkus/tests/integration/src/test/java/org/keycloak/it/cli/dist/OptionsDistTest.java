@@ -19,17 +19,18 @@ package org.keycloak.it.cli.dist;
 
 import java.nio.file.Paths;
 
-import io.quarkus.test.junit.main.Launch;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
+
+import io.quarkus.test.junit.main.Launch;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
@@ -72,11 +73,13 @@ public class OptionsDistTest {
 
     @Test
     @Order(5)
-    @WithEnvVars({"KC_LOG", "console", "KC_LOG_FILE", "something-env", "KC_HTTP_ENABLED", "true", "KC_HOSTNAME_STRICT", "false"})
+    @WithEnvVars({"KC_SPI_CONNECTIONS_HTTP_CLIENT__DEFAULT__EXPECT_CONTINUE_ENABLED", "true", "KC_LOG", "console", "KC_LOG_FILE", "something-env", "KC_HTTP_ENABLED", "true", "KC_HOSTNAME_STRICT", "false"})
     @Launch({"start", "--db=dev-file"})
     public void testSettingEnvVars(CLIResult cliResult) {
         cliResult.assertMessage("The following used run time options are UNAVAILABLE and will be ignored during build time:");
         cliResult.assertMessage("- log-file: Available only when File log handler is activated.");
+        cliResult.assertNoMessage("kc.spi-connections-http-client"); // no info/warning expected
+        cliResult.assertStarted();
     }
 
     @DryRun

@@ -34,22 +34,44 @@ public interface UserSessionProvider extends Provider {
     /**
      * Returns currently used Keycloak session.
      * @return {@link KeycloakSession}
+     * @deprecated for removal.
      */
+    // It is not used anywhere. Remove it?
+    @Deprecated(since = "26.4", forRemoval = true)
     KeycloakSession getKeycloakSession();
 
     AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession);
 
     /**
-     * @deprecated Use {@link #getClientSession(UserSessionModel, ClientModel, String, boolean)} instead.
+     * @deprecated Use {@link #getClientSession(UserSessionModel, ClientModel, boolean)} instead.
      */
+    @Deprecated(since = "26.4", forRemoval = true)
     default AuthenticatedClientSessionModel getClientSession(UserSessionModel userSession, ClientModel client, UUID clientSessionId, boolean offline) {
-        return getClientSession(userSession, client, clientSessionId == null ? null : clientSessionId.toString(), offline);
+        return getClientSession(userSession, client, offline);
     }
-    AuthenticatedClientSessionModel getClientSession(UserSessionModel userSession, ClientModel client, String clientSessionId, boolean offline);
+
+    /**
+     * @deprecated Use {@link #getClientSession(UserSessionModel, ClientModel, boolean)} instead.
+     */
+    @Deprecated(since = "26.4", forRemoval = true)
+    default AuthenticatedClientSessionModel getClientSession(UserSessionModel userSession, ClientModel client, String clientSessionId, boolean offline) {
+        return getClientSession(userSession, client, offline);
+    }
+
+    /**
+     * Gets the authenticated client session for a given user session and client.
+     *
+     * @param userSession The user's session model.
+     * @param client      The client model.
+     * @param offline     If {@code true}, retrieves the offline session; otherwise, retrieves the online session.
+     * @return The authenticated client session, or {@code null} if it doesn't exist.
+     */
+    AuthenticatedClientSessionModel getClientSession(UserSessionModel userSession, ClientModel client, boolean offline);
 
     /**
      * @deprecated Use {@link #createUserSession(String, RealmModel, UserModel, String, String, String, boolean, String, String, UserSessionModel.SessionPersistenceState)} instead.
      */
+    @Deprecated(forRemoval = true)
     default UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
         return createUserSession(null, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId,
                 brokerUserId, UserSessionModel.SessionPersistenceState.PERSISTENT);
@@ -61,13 +83,6 @@ public interface UserSessionProvider extends Provider {
      * @param id identifier. Is generated if {@code null}
      * @param realm the realm
      * @param user user associated with the created user session
-     * @param loginUsername
-     * @param ipAddress
-     * @param authMethod
-     * @param rememberMe
-     * @param brokerSessionId
-     * @param brokerUserId
-     * @param persistenceState
      * @return Model of the created user session
      */
     UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress,
@@ -87,23 +102,33 @@ public interface UserSessionProvider extends Provider {
     /**
      * Obtains the online user sessions associated with the specified client.
      *
-     * @param realm a reference to the realm.
+     * @param realm  a reference to the realm.
      * @param client the client whose user sessions are being searched.
      * @return a non-null {@link Stream} of online user sessions.
+     * @see #readOnlyStreamUserSessions(RealmModel, ClientModel, int, int)
+     * @deprecated use {@link #readOnlyStreamUserSessions(RealmModel, ClientModel, int, int)} instead.
      */
-    Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, ClientModel client);
+    @Deprecated(since = "26.6", forRemoval = true)
+    default Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, ClientModel client) {
+        return Stream.empty();
+    }
 
     /**
-     * Obtains the online user sessions associated with the specified client, starting from the {@code firstResult} and containing
-     * at most {@code maxResults}.
+     * Obtains the online user sessions associated with the specified client, starting from the {@code firstResult} and
+     * containing at most {@code maxResults}.
      *
-     * @param realm a reference to the realm.
-     * @param client the client whose user sessions are being searched.
+     * @param realm       a reference to the realm.
+     * @param client      the client whose user sessions are being searched.
      * @param firstResult first result to return. Ignored if negative or {@code null}.
-     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
+     * @param maxResults  maximum number of results to return. Ignored if negative or {@code null}.
      * @return a non-null {@link Stream} of online user sessions.
+     * @see #readOnlyStreamUserSessions(RealmModel, ClientModel, int, int)
+     * @deprecated use {@link #readOnlyStreamUserSessions(RealmModel, ClientModel, int, int)} instead.
      */
-    Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults);
+    @Deprecated(since = "26.6", forRemoval = true)
+    default Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults) {
+        return Stream.empty();
+    }
 
     /**
      * Obtains the online user sessions associated with the user that matches the specified {@code brokerUserId}.
@@ -126,10 +151,6 @@ public interface UserSessionProvider extends Provider {
 
     /**
      * Returns a summary of client sessions key is client.getId()
-     *
-     * @param realm
-     * @param offline
-     * @return
      */
     Map<String, Long> getActiveClientSessionStats(RealmModel realm, boolean offline);
 
@@ -139,17 +160,26 @@ public interface UserSessionProvider extends Provider {
 
     /**
      * Remove expired user sessions and client sessions in all the realms
+     *
+     * @deprecated to be removed without replacement. The providers are responsible for purging the expired entries
+     * themselves.
      */
-    void removeAllExpired();
+    @Deprecated(since = "26.5", forRemoval = true)
+    default void removeAllExpired() {
+    }
 
     /**
-     * Removes expired user sessions owned by this realm from this provider.
-     * If this `UserSessionProvider` uses `UserSessionPersister`, the removal of the expired
-     * {@link UserSessionModel user sessions} is also propagated to relevant `UserSessionPersister`.
+     * Removes expired user sessions owned by this realm from this provider. If this `UserSessionProvider` uses
+     * `UserSessionPersister`, the removal of the expired {@link UserSessionModel user sessions} is also propagated to
+     * relevant `UserSessionPersister`.
      *
      * @param realm {@link RealmModel} Realm where all the expired user sessions to be removed from.
+     * @deprecated to be removed without replacement. The providers are responsible for purging the expired entries
+     * themselves.
      */
-    void removeExpired(RealmModel realm);
+    @Deprecated(since = "26.5", forRemoval = true)
+    default void removeExpired(RealmModel realm) {
+    }
 
     /**
      * Removes all user sessions (regular and offline) from the specified realm.
@@ -209,19 +239,24 @@ public interface UserSessionProvider extends Provider {
      * Obtains the offline user sessions associated with the specified client, starting from the {@code firstResult} and
      * containing at most {@code maxResults}.
      *
-     * @param realm a reference to the realm.
-     * @param client the client whose user sessions are being searched.
+     * @param realm       a reference to the realm.
+     * @param client      the client whose user sessions are being searched.
      * @param firstResult first result to return. Ignored if negative or {@code null}.
-     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
+     * @param maxResults  maximum number of results to return. Ignored if negative or {@code null}.
      * @return a non-null {@link Stream} of offline user sessions.
+     * @see #readOnlyStreamOfflineUserSessions(RealmModel, ClientModel, int, int)
+     * @deprecated use {@link #readOnlyStreamOfflineUserSessions(RealmModel, ClientModel, int, int)} instead.
      */
-    Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults);
+    @Deprecated(since = "26.6", forRemoval = true)
+    default Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults) {
+        return Stream.empty();
+    }
 
     /** Triggered by persister during pre-load. It imports authenticatedClientSessions too.
      *
      * @deprecated Deprecated as offline session preloading was removed in KC25. This method will be removed in KC27.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "26.4", forRemoval = true)
     default void importUserSessions(Collection<UserSessionModel> persistentUserSessions, boolean offline) {}
 
     void close();
@@ -246,5 +281,79 @@ public interface UserSessionProvider extends Provider {
      */
     default UserSessionModel getUserSessionIfClientExists(RealmModel realm, String userSessionId, boolean offline, String clientUUID) {
         return getUserSessionWithPredicate(realm, userSessionId, offline, userSession -> userSession.getAuthenticatedClientSessionByClient(clientUUID) != null);
+    }
+
+    /**
+     * Stream all the regular sessions in the realm.
+     * <p>
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the transaction and any
+     * modification may throw an {@link UnsupportedOperationException}.
+     *
+     * @param realm The {@link RealmModel} instance.
+     * @return A {@link Stream} for all the sessions in the realm.
+     */
+    default Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm) {
+        return getActiveClientSessionStats(realm, false)
+                .keySet()
+                .stream()
+                .map(realm::getClientById)
+                .flatMap((client) -> readOnlyStreamUserSessions(realm, client, -1, -1));
+    }
+
+    /**
+     * Stream all the offline sessions in the realm.
+     * <p>
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the transaction and any
+     * modification may throw an {@link UnsupportedOperationException}.
+     *
+     * @param realm The {@link RealmModel} instance.
+     * @return A {@link Stream} for all the sessions in the realm.
+     */
+    default Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm) {
+        return getActiveClientSessionStats(realm, true)
+                .keySet()
+                .stream()
+                .map(realm::getClientById)
+                .flatMap((client) -> readOnlyStreamOfflineUserSessions(realm, client, -1, -1));
+    }
+
+    /**
+     * Stream all the regular sessions belonging to the realm and having a client session from the client.
+     * <p>
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the
+     * transaction and any modification may throw an {@link UnsupportedOperationException}.
+     * <p>
+     * The {@code skip} and {@code maxResults} parameters control how many sessions should be streamed. A negative value
+     * for either parameter is ignored (no skip/limit applied). If {@code maxResults} is zero, an empty stream is
+     * returned.
+     *
+     * @param realm      The {@link RealmModel} instance.
+     * @param client     The {@link ClientModel} instance.
+     * @param skip       The number of leading elements to skip.
+     * @param maxResults The number of elements the stream should be limited to.
+     * @return A {@link Stream} for all the sessions matching the parameters.
+     */
+    default Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm, ClientModel client, int skip, int maxResults) {
+        return getUserSessionsStream(realm, client, skip, maxResults);
+    }
+
+    /**
+     * Stream all the offline sessions belonging to the realm and having a client session from the client.
+     * <p>
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the
+     * transaction and any modification may throw an {@link UnsupportedOperationException}.
+     * <p>
+     * The {@code skip} and {@code maxResults} parameters control how many sessions should be streamed. A negative value
+     * for either parameter is ignored (no skip/limit applied). If {@code maxResults} is zero, an empty stream is
+     * returned.
+     *
+     * @param realm      The {@link RealmModel} instance.
+     * @param client     The {@link ClientModel} instance.
+     * @param skip       The number of leading elements to skip.
+     * @param maxResults The number of elements the stream should be limited to.
+     * @return A {@link Stream} for all the sessions matching the parameters.
+     */
+    default Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm, ClientModel client, int skip, int maxResults) {
+        return getOfflineUserSessionsStream(realm, client, skip, maxResults);
     }
 }

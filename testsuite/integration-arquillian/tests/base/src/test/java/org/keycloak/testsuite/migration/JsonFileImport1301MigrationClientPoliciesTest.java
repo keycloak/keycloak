@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
@@ -30,6 +29,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
+
+import org.junit.Test;
 
 /**
  * This is test only for migration of client policies from Keycloak 13. As the format JSON format of client policies changed between Keycloak 13 and 14

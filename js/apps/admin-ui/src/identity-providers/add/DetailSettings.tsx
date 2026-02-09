@@ -1,8 +1,12 @@
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
-import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import IdentityProviderRepresentation, {
+  IdentityProviderType,
+} from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
   Action,
   KeycloakDataTable,
+  KeycloakSpinner,
+  ListEmptyState,
   ScrollForm,
   useAlerts,
   useFetch,
@@ -17,6 +21,7 @@ import {
   PageSection,
   Tab,
   TabTitleText,
+  Text,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { useMemo, useState } from "react";
@@ -34,8 +39,6 @@ import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog"
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
-import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { PermissionsTab } from "../../components/permission-tab/PermissionTab";
 import {
   RoutableTabs,
@@ -66,8 +69,13 @@ import { OIDCAuthentication } from "./OIDCAuthentication";
 import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
 import { ReqAuthnConstraints } from "./ReqAuthnConstraintsSettings";
 import { SamlGeneralSettings } from "./SamlGeneralSettings";
+import { SpiffeSettings } from "./SpiffeSettings";
 import { AdminEvents } from "../../events/AdminEvents";
 import { UserProfileClaimsSettings } from "./OAuth2UserProfileClaimsSettings";
+import { KubernetesSettings } from "./KubernetesSettings";
+import { JWTAuthorizationGrantAssertionSettings } from "./JWTAuthorizationGrantAssertionSettings";
+import JWTAuthorizationGrantSettings from "./JWTAuthorizationGrantSettings";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -258,7 +266,7 @@ export default function DetailSettings() {
   const { alias, providerId } = useParams<IdentityProviderParams>();
   const isFeatureEnabled = useIsFeatureEnabled();
   const form = useForm<IdentityProviderRepresentation>();
-  const { handleSubmit, getValues, reset } = form;
+  const { handleSubmit, getValues, reset, control } = form;
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
   const [selectedMapper, setSelectedMapper] =
     useState<IdPWithMapperAttributes>();
@@ -404,6 +412,10 @@ export default function DetailSettings() {
       }
     },
   });
+  const jwtAuthorizationGrantEnabled = useWatch({
+    control,
+    name: "config.jwtAuthorizationGrantEnabled",
+  });
 
   if (!provider) {
     return <KeycloakSpinner />;
@@ -412,7 +424,16 @@ export default function DetailSettings() {
   const isOIDC = provider.providerId!.includes("oidc");
   const isSAML = provider.providerId!.includes("saml");
   const isOAuth2 = provider.providerId!.includes("oauth2");
+  const isSPIFFE = provider.providerId!.includes("spiffe");
+  const isKubernetes = provider.providerId!.includes("kubernetes");
+  const isJWTAuthorizationGrant = provider.providerId!.includes(
+    "jwt-authorization-grant",
+  );
   const isSocial = !isOIDC && !isSAML && !isOAuth2;
+  const isJWTAuthorizationGrantSupported =
+    (isOAuth2 || isOIDC) &&
+    !!provider?.types?.includes(IdentityProviderType.JWT_AUTHORIZATION_GRANT) &&
+    isFeatureEnabled(Feature.JWTAuthorizationGrant);
 
   const loader = async () => {
     const [loaderMappers, loaderMapperTypes] = await Promise.all([
@@ -442,6 +463,7 @@ export default function DetailSettings() {
   const sections = [
     {
       title: t("generalSettings"),
+      isHidden: isSPIFFE || isKubernetes || isJWTAuthorizationGrant,
       panel: (
         <FormAccess
           role="manage-identity-providers"
@@ -487,6 +509,75 @@ export default function DetailSettings() {
       ),
     },
     {
+      title: t("authorizationGrantSettings"),
+      isHidden: !isJWTAuthorizationGrantSupported,
+      panel: (
+        <>
+          <Text className="pf-v5-u-pb-lg">
+            {t("authorizationGrantSettingsHelp")}
+          </Text>
+          <Form
+            isHorizontal
+            className="pf-v5-u-py-lg"
+            onSubmit={handleSubmit(save)}
+          >
+            <DefaultSwitchControl
+              name="config.jwtAuthorizationGrantEnabled"
+              label={t("jwtAuthorizationGrantIdpEnabled")}
+              labelIcon={t("jwtAuthorizationGrantIdpEnabledHelp")}
+              stringify
+            />
+
+            {jwtAuthorizationGrantEnabled === "true" && (
+              <JWTAuthorizationGrantAssertionSettings />
+            )}
+          </Form>
+        </>
+      ),
+    },
+    {
+      title: t("generalSettings"),
+      isHidden: !isSPIFFE,
+      panel: (
+        <Form
+          isHorizontal
+          className="pf-v5-u-py-lg"
+          onSubmit={handleSubmit(save)}
+        >
+          <SpiffeSettings />
+          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
+        </Form>
+      ),
+    },
+    {
+      title: t("generalSettings"),
+      isHidden: !isJWTAuthorizationGrant,
+      panel: (
+        <Form
+          isHorizontal
+          className="pf-v5-u-py-lg"
+          onSubmit={handleSubmit(save)}
+        >
+          <JWTAuthorizationGrantSettings />
+          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
+        </Form>
+      ),
+    },
+    {
+      title: t("generalSettings"),
+      isHidden: !isKubernetes,
+      panel: (
+        <Form
+          isHorizontal
+          className="pf-v5-u-py-lg"
+          onSubmit={handleSubmit(save)}
+        >
+          <KubernetesSettings />
+          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
+        </Form>
+      ),
+    },
+    {
       title: t("samlSettings"),
       isHidden: !isSAML,
       panel: <DescriptorSettings readOnly={false} />,
@@ -506,6 +597,7 @@ export default function DetailSettings() {
     },
     {
       title: t("advancedSettings"),
+      isHidden: isSPIFFE || isKubernetes || isJWTAuthorizationGrant,
       panel: (
         <FormAccess
           role="manage-identity-providers"
@@ -557,6 +649,7 @@ export default function DetailSettings() {
           </Tab>
           <Tab
             id="mappers"
+            isHidden={isSPIFFE || isKubernetes || isJWTAuthorizationGrant}
             data-testid="mappers-tab"
             title={<TabTitleText>{t("mappers")}</TabTitleText>}
             {...mappersTab}

@@ -16,8 +16,13 @@
  */
 package org.keycloak.protocol.oid4vc.model;
 
+import java.util.Objects;
+
+import org.keycloak.util.JsonSerialization;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  *
@@ -47,5 +52,31 @@ public class ClaimDisplay {
     public ClaimDisplay setLocale(String locale) {
         this.locale = locale;
         return this;
+    }
+
+    @Override
+    public final boolean equals(Object object) {
+
+        if (!(object instanceof ClaimDisplay that)) {
+            return false;
+        }
+
+        return Objects.equals(name, that.name) && Objects.equals(locale, that.locale);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hashCode(name);
+        result = 31 * result + Objects.hashCode(locale);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return JsonSerialization.mapper.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

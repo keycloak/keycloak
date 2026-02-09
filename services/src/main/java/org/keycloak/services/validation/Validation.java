@@ -17,13 +17,13 @@
 
 package org.keycloak.services.validation;
 
-import org.keycloak.models.utils.FormMessage;
-import org.keycloak.userprofile.ValidationException;
-import org.keycloak.utils.EmailValidationUtil;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import org.keycloak.models.utils.FormMessage;
+import org.keycloak.userprofile.ValidationException;
+import org.keycloak.utils.EmailValidationUtil;
 
 public class Validation {
 

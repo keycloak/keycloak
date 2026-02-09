@@ -1,8 +1,9 @@
 package org.keycloak.testsuite.broker;
 
-import org.junit.Before;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.UserRepresentation;
+
+import org.junit.Before;
 
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;

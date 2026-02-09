@@ -17,6 +17,12 @@
 
 package org.keycloak.storage.ldap.mappers.membership.group;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -38,12 +44,6 @@ import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.UserRolesRetrieveStrategy;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleMapperConfig;
-
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -94,13 +94,13 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
         ProviderConfigurationBuilder config = ProviderConfigurationBuilder.create()
                 .property().name(GroupMapperConfig.GROUPS_DN)
                 .label("LDAP Groups DN")
-                .helpText("LDAP DN where are groups of this tree saved. For example 'ou=groups,dc=example,dc=org' ")
+                .helpText("LDAP DN where groups of this tree are saved. For example 'ou=groups,dc=example,dc=org' ")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .required(true)
                 .add()
                 .property().name(GroupMapperConfig.GROUPS_RELATIVE_CREATE_DN)
                 .label("Relative creation DN")
-                .helpText("LDAP DN where are groups of this tree will be created relative to the 'LDAP Groups DN' ")
+                .helpText("LDAP DN where groups of this tree will be created relative to the 'LDAP Groups DN' ")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
                 .property().name(GroupMapperConfig.GROUP_NAME_LDAP_ATTRIBUTE)

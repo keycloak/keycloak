@@ -16,12 +16,6 @@
  */
 package org.keycloak.testsuite.ssl;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.After;
-import org.junit.FixMethodOrder;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.events.Details;
@@ -41,12 +35,20 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.MailServerConfiguration;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.SslMailServer;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-import static org.junit.Assert.assertEquals;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
+import org.junit.FixMethodOrder;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
+
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  *

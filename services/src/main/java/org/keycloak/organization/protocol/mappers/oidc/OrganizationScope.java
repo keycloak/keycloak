@@ -17,10 +17,6 @@
 
 package org.keycloak.organization.protocol.mappers.oidc;
 
-import static org.keycloak.models.ClientScopeModel.VALUE_SEPARATOR;
-import static org.keycloak.organization.utils.Organizations.getProvider;
-import static org.keycloak.utils.StringUtil.isBlank;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -46,6 +42,10 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
+
+import static org.keycloak.models.ClientScopeModel.VALUE_SEPARATOR;
+import static org.keycloak.organization.utils.Organizations.getProvider;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
  * <p>An enum with utility methods to process the {@link OIDCLoginProtocolFactory#ORGANIZATION} scope.
@@ -116,7 +116,7 @@ public enum OrganizationScope {
                     return Stream.empty();
                 }
 
-                List<OrganizationModel> organizations = getProvider(session).getByMember(user).toList();
+                List<OrganizationModel> organizations = getProvider(session).getByMember(user).filter(OrganizationModel::isEnabled).toList();
 
                 if (organizations.size() == 1) {
                     return organizations.stream();

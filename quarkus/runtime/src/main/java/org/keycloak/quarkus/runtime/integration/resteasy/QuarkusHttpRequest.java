@@ -21,19 +21,15 @@ import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Deque;
 import java.util.Iterator;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriInfo;
 
-import org.jboss.resteasy.reactive.common.util.QuarkusMultivaluedHashMap;
-import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
-import org.jboss.resteasy.reactive.server.core.multipart.FormData;
-import org.jboss.resteasy.reactive.server.multipart.FormValue;
 import org.keycloak.config.ProxyOptions;
 import org.keycloak.http.FormPartValue;
 import org.keycloak.http.HttpRequest;
@@ -42,6 +38,10 @@ import org.keycloak.quarkus.runtime.integration.jaxrs.EmptyMultivaluedMap;
 import org.keycloak.services.FormPartValueImpl;
 
 import io.vertx.ext.web.RoutingContext;
+import org.jboss.resteasy.reactive.common.util.QuarkusMultivaluedHashMap;
+import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
+import org.jboss.resteasy.reactive.server.core.multipart.FormData;
+import org.jboss.resteasy.reactive.server.multipart.FormValue;
 
 public final class QuarkusHttpRequest implements HttpRequest {
 
@@ -49,6 +49,8 @@ public final class QuarkusHttpRequest implements HttpRequest {
     private static final MultivaluedMap<String, FormPartValue> EMPTY_MULTI_MAP_MULTI_PART = new EmptyMultivaluedMap<>();
 
     private final ResteasyReactiveRequestContext context;
+
+    private MultivaluedMap<String, String> decodedFormParameters;
 
     public <R> QuarkusHttpRequest(ResteasyReactiveRequestContext context) {
         this.context = context;
@@ -67,27 +69,30 @@ public final class QuarkusHttpRequest implements HttpRequest {
         if (context == null) {
             return null;
         }
-        FormData parameters = context.getFormData();
 
-        if (parameters == null || !parameters.iterator().hasNext()) {
-            return EMPTY_FORM_PARAM;
-        }
+        if (decodedFormParameters == null) {
+            FormData parameters = context.getFormData();
 
-        MultivaluedMap<String, String> params = new QuarkusMultivaluedHashMap<>();
-
-        for (String name : parameters) {
-            Deque<FormValue> values = parameters.get(name);
-
-            if (values == null || values.isEmpty()) {
-                continue;
+            if (parameters == null || !parameters.iterator().hasNext()) {
+                return EMPTY_FORM_PARAM;
             }
 
-            for (FormValue value : values) {
-                params.add(name, value.getValue());
+            decodedFormParameters = new QuarkusMultivaluedHashMap<>();
+
+            for (String name : parameters) {
+                Deque<FormValue> values = parameters.get(name);
+
+                if (values == null || values.isEmpty()) {
+                    continue;
+                }
+
+                for (FormValue value : values) {
+                    decodedFormParameters.add(name, value.getValue());
+                }
             }
         }
 
-        return params;
+        return decodedFormParameters;
     }
 
     @Override

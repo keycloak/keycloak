@@ -139,7 +139,7 @@ Alternatively, you can disable dark mode support for the built-in Keycloak theme
 There is a new metric available counting how many password validations were performed by {project_name}.
 This allows you to better assess where CPU resources are used, and can feed into your sizing calculations.
 
-See https://www.keycloak.org/observability/metrics-for-troubleshooting-http[Keycloak metrics] and https://www.keycloak.org/high-availability/concepts-memory-and-cpu-sizing#_measuring_the_activity_of_a_running_keycloak_instance[Concepts for sizing CPU and memory resources] for more details.
+See https://www.keycloak.org/observability/metrics-for-troubleshooting-http[Keycloak metrics] and https://www.keycloak.org/high-availability/multi-cluster/concepts-memory-and-cpu-sizing#multi-cluster-measture-running-instance[Concepts for sizing CPU and memory resources] for more details.
 
 = Sign out all active sessions in admin console now effectively removes all sessions
 

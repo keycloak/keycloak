@@ -16,36 +16,35 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
-import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames;
-import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLAttributeQueryParser;
-import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLSloRequestParser;
-import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLSloResponseParser;
-import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLArtifactResolveParser;
-import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLArtifactResponseParser;
-import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLResponseParser;
-import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLAuthNRequestParser;
-import org.keycloak.saml.common.ErrorCodes;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.parsers.AbstractParser;
-import org.keycloak.saml.common.util.StaxParserUtil;
-import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAssertionParser;
-import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLEntitiesDescriptorParser;
-import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLEntityDescriptorParser;
-import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLProtocolQNames;
-import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
-
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
+
+import org.keycloak.saml.common.ErrorCodes;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.parsers.AbstractParser;
 import org.keycloak.saml.common.parsers.StaxParser;
+import org.keycloak.saml.common.util.StaxParserUtil;
+import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAssertionParser;
 import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAssertionQNames;
 import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAuthnStatementParser;
 import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLEncryptedAssertionParser;
-import java.io.InputStream;
+import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLEntitiesDescriptorParser;
+import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLEntityDescriptorParser;
+import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLArtifactResolveParser;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLArtifactResponseParser;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLAttributeQueryParser;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLAuthNRequestParser;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLProtocolQNames;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLResponseParser;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLSloRequestParser;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLSloResponseParser;
+import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
 
 /**
  * Parse SAML payload
@@ -119,13 +118,18 @@ public class SAMLParser extends AbstractParser {
                     throw logger.parserException(new RuntimeException(ErrorCodes.UNKNOWN_START_ELEMENT + name + "::location="
                             + startElement.getLocation()));
                 }
+                try {
+                    return pf.create().parse(xmlEventReader);
+                } catch (RuntimeException e) {
+                     throw logger.parserException(e);
+                }
 
-                return pf.create().parse(xmlEventReader);
             }
 
             StaxParserUtil.getNextEvent(xmlEventReader);
         }
 
-        throw new RuntimeException(ErrorCodes.FAILED_PARSING + "SAML Parsing has failed");
+        throw logger.parserException(
+            new RuntimeException(ErrorCodes.FAILED_PARSING + "SAML Parsing has failed"));
     }
 }

@@ -55,4 +55,9 @@ class FGAPDecision implements Decision<Evaluation> {
     public void onComplete(ResourcePermission permission) {
         decision.onComplete(permission);
     }
+
+    @Override
+    public boolean isEvaluated(String scope) {
+        return decision.isEvaluated(scope);
+    }
 }

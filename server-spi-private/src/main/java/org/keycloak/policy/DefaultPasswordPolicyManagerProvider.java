@@ -17,13 +17,13 @@
 
 package org.keycloak.policy;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

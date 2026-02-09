@@ -17,6 +17,14 @@
 
 package org.keycloak.models.jpa;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import jakarta.persistence.EntityManager;
+
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.GroupProvider;
@@ -24,17 +32,10 @@ import org.keycloak.models.GroupProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import jakarta.persistence.EntityManager;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
-import org.keycloak.provider.ProviderConfigurationBuilder;
 
 public class JpaGroupProviderFactory implements GroupProviderFactory {
 

@@ -1,13 +1,14 @@
 package org.keycloak.testsuite.forms;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.LoginPage;
-
 import org.keycloak.theme.ThemeSelectorProvider;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 
 public class ThemeSelectorTest extends AbstractTestRealmKeycloakTest {

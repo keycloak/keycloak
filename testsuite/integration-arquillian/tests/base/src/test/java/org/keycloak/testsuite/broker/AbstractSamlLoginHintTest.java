@@ -1,13 +1,15 @@
 package org.keycloak.testsuite.broker;
 
-import org.junit.Test;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.Assert;
+
+import org.junit.Test;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 
-import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test of various scenarios related to the use of login hint

@@ -17,9 +17,12 @@
 
 package org.keycloak.authentication;
 
-import org.keycloak.http.HttpRequest;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -27,9 +30,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.managers.BruteForceProtector;
-
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -148,6 +148,15 @@ public interface AbstractAuthenticationFlowContext {
      *
      */
     void success();
+
+    /**
+     * Mark the current execution as successful and the auth session sets the
+     * credential type in the authentication session as the last credential used
+     * to authenticate the user.
+     *
+     * @param credentialType The credential used to authenticate the user
+     */
+    void success(String credentialType);
 
     /**
      * Aborts the current flow

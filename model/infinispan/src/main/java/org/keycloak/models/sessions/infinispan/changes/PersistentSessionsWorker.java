@@ -17,17 +17,6 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanBuilder;
-import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.context.Context;
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.Retry;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.tracing.TracingProvider;
-
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -36,6 +25,18 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.keycloak.common.util.Retry;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.tracing.TracingProvider;
+
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
+import org.jboss.logging.Logger;
+
 /**
  * Run one thread per session type and drain the queues once there is an entry. Will batch entries if possible.
  *
@@ -43,6 +44,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class PersistentSessionsWorker {
     private static final Logger LOG = Logger.getLogger(PersistentSessionsWorker.class);
+    public static final Duration UPDATE_TIMEOUT = Duration.of(10, ChronoUnit.SECONDS);
+    public static final int UPDATE_BASE_INTERVAL_MILLIS = 0;
 
     private final KeycloakSessionFactory factory;
     private final ArrayBlockingQueue<PersistentUpdate> asyncQueuePersistentUpdate;
@@ -150,7 +153,7 @@ public class PersistentSessionsWorker {
                                         }
                                     }
                                 },
-                                Duration.of(10, ChronoUnit.SECONDS), 0);
+                                UPDATE_TIMEOUT, UPDATE_BASE_INTERVAL_MILLIS);
                     } catch (RuntimeException ex) {
                         tracing.error(ex);
                         batch.forEach(o -> o.fail(ex));

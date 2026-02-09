@@ -17,9 +17,10 @@
 
 package org.keycloak.models;
 
+import org.keycloak.migration.ModelVersion;
+
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.migration.ModelVersion;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

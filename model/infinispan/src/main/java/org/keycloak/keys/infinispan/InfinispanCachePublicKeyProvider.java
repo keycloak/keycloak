@@ -17,11 +17,12 @@
 
 package org.keycloak.keys.infinispan;
 
-import org.infinispan.Cache;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.cache.CachePublicKeyProvider;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
+
+import org.infinispan.Cache;
 
 public class InfinispanCachePublicKeyProvider implements CachePublicKeyProvider {
 

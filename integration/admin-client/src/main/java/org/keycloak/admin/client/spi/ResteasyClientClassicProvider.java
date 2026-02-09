@@ -18,12 +18,15 @@
 package org.keycloak.admin.client.spi;
 
 import javax.net.ssl.SSLContext;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
-import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+
 import org.keycloak.admin.client.ClientBuilderWrapper;
 import org.keycloak.admin.client.JacksonProvider;
+
+import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 
 /**
  * An implementation of {@link ResteasyClientProvider} based on RESTEasy classic.

@@ -17,13 +17,23 @@
 
 package org.keycloak.tests.admin;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
@@ -44,6 +54,7 @@ import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -60,28 +71,24 @@ import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.RoleConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.Assert;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.admin.ApiUtil;
-import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
+
+import static org.keycloak.models.Constants.defaultClients;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -97,7 +104,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.keycloak.models.Constants.defaultClients;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -148,7 +154,7 @@ public class ClientTest {
         Response response = managedRealm.admin().clients().create(rep);
         String id = ApiUtil.getCreatedId(response);
         managedRealm.cleanup().add(r -> r.clients().get(id).remove());
-        ClientRepresentation found = ApiUtil.findClientByClientId(managedRealm.admin(), "my-app").toRepresentation();
+        ClientRepresentation found = AdminApiUtil.findClientByClientId(managedRealm.admin(), "my-app").toRepresentation();
 
         assertEquals("my-app", found.getClientId());
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientResourcePath(id), rep, ResourceType.CLIENT);
@@ -167,7 +173,7 @@ public class ClientTest {
         Response response = managedRealm.admin().clients().create(rep);
         String id = ApiUtil.getCreatedId(response);
         managedRealm.cleanup().add(r -> r.clients().get(id).remove());
-        ClientRepresentation found = ApiUtil.findClientByClientId(managedRealm.admin(), "my-app").toRepresentation();
+        ClientRepresentation found = AdminApiUtil.findClientByClientId(managedRealm.admin(), "my-app").toRepresentation();
 
         assertEquals("my-app", found.getClientId());
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientResourcePath(id), rep, ResourceType.CLIENT);
@@ -195,6 +201,24 @@ public class ClientTest {
         assertNull(client.toRepresentation().getSecret());
         Assert.assertNames(managedRealm.admin().clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", "my-app", "test-app", Constants.ADMIN_CLI_CLIENT_ID);
     }
+
+    @Test
+    public void testCreateClientWithBlankClientId() {
+        ClientRepresentation rep = ClientConfigBuilder.create()
+                .clientId("")
+                .description("blank")
+                .enabled(true)
+                .publicClient(true)
+                .build();
+        try (Response response = managedRealm.admin().clients().create(rep)) {
+            if (response.getStatus() != 400) {
+                response.bufferEntity();
+                String body = response.readEntity(String.class);
+                fail("expect 400 Bad request response code but receive: " + response.getStatus() + "\n" + body);
+            }
+        }
+    }
+
 
     @Test
     public void testInvalidLengthClientIdValidation() {
@@ -366,9 +390,9 @@ public class ClientTest {
         String id = ApiUtil.getCreatedId(response);
         adminEvents.skip();
 
-        assertNotNull(ApiUtil.findClientByClientId(managedRealm.admin(), "my-app"));
+        assertNotNull(AdminApiUtil.findClientByClientId(managedRealm.admin(), "my-app"));
         managedRealm.admin().clients().get(id).remove();
-        assertNull(ApiUtil.findClientResourceById(managedRealm.admin(), "my-app"));
+        assertNull(AdminApiUtil.findClientResourceById(managedRealm.admin(), "my-app"));
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.clientResourcePath(id), ResourceType.CLIENT);
     }
 
@@ -379,11 +403,11 @@ public class ClientTest {
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientResourcePath(id), clientRep, ResourceType.CLIENT);
         ClientResource clientRsc = managedRealm.admin().clients().get(id);
 
-        RoleRepresentation roleB = RoleBuilder.create().name("role-b").build();
+        RoleRepresentation roleB = RoleConfigBuilder.create().name("role-b").build();
         clientRsc.roles().create(roleB);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(id, "role-b"), roleB, ResourceType.CLIENT_ROLE);
 
-        RoleRepresentation roleA = RoleBuilder.create().name("role-a").build();
+        RoleRepresentation roleA = RoleConfigBuilder.create().name("role-a").build();
          clientRsc.roles().create(roleA);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(id, "role-a"), roleA, ResourceType.CLIENT_ROLE);
 
@@ -397,14 +421,14 @@ public class ClientTest {
 
     @Test
     public void removeInternalClientExpectingBadRequestException() {
-        final String testRealmClientId = ApiUtil.findClientByClientId(managedMasterRealm.admin(), managedRealm.getName() + "-realm")
+        final String testRealmClientId = AdminApiUtil.findClientByClientId(managedMasterRealm.admin(), managedRealm.getName() + "-realm")
                 .toRepresentation().getId();
 
         assertThrows(BadRequestException.class,
                 () -> managedMasterRealm.admin().clients().get(testRealmClientId).remove());
 
         defaultClients.forEach(defaultClient -> {
-            final String defaultClientId = ApiUtil.findClientByClientId(managedRealm.admin(), defaultClient)
+            final String defaultClientId = AdminApiUtil.findClientByClientId(managedRealm.admin(), defaultClient)
                     .toRepresentation().getId();
 
             assertThrows(BadRequestException.class,
@@ -444,7 +468,7 @@ public class ClientTest {
         AccessTokenResponse response2 = oauth.doAccessTokenRequest(codeResponse.getCode());
         assertEquals(200, response2.getStatusCode());
 
-        ClientResource app = ApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ClientResource app = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
 
         assertEquals(2, (long) app.getApplicationSessionCount().get("count"));
 
@@ -487,7 +511,7 @@ public class ClientTest {
     @Test
     public void getClientById() {
         createClient();
-        ClientRepresentation rep = ApiUtil.findClientByClientId(managedRealm.admin(), "my-app").toRepresentation();
+        ClientRepresentation rep = AdminApiUtil.findClientByClientId(managedRealm.admin(), "my-app").toRepresentation();
         ClientRepresentation gotById = managedRealm.admin().clients().get(rep.getId()).toRepresentation();
         assertClient(rep, gotById);
     }
@@ -524,7 +548,7 @@ public class ClientTest {
     @Test
     public void testProtocolMappers() {
         String clientDbId = createClient().getId();
-        ProtocolMappersResource mappersResource = ApiUtil.findClientByClientId(managedRealm.admin(), "my-app").getProtocolMappers();
+        ProtocolMappersResource mappersResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "my-app").getProtocolMappers();
 
         protocolMappersTest(clientDbId, mappersResource);
     }
@@ -589,7 +613,7 @@ public class ClientTest {
     public void pushRevocation() throws InterruptedException {
         testApp.kcAdmin().clear();
 
-        ClientResource client = ApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ClientResource client = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         String id = client.toRepresentation().getId();
 
         client.pushRevocation();
@@ -603,7 +627,7 @@ public class ClientTest {
     @Test
     public void testAddNodeWithReservedCharacter() {
         testApp.kcAdmin().clear();
-        String id = ApiUtil.findClientByClientId(managedRealm.admin(), "test-app").toRepresentation().getId();
+        String id = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app").toRepresentation().getId();
         assertThrows(BadRequestException.class,
                 () -> managedRealm.admin().clients().get(id).registerNode(Collections.singletonMap("node", "foo#"))
         );
@@ -613,7 +637,7 @@ public class ClientTest {
     public void nodes() throws MalformedURLException, InterruptedException {
         testApp.kcAdmin().clear();
 
-        String id = ApiUtil.findClientByClientId(managedRealm.admin(), "test-app").toRepresentation().getId();
+        String id = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app").toRepresentation().getId();
 
         String myhost = new URL(managedRealm.getBaseUrl()).getHost();
         managedRealm.admin().clients().get(id).registerNode(Collections.singletonMap("node", myhost));
@@ -643,7 +667,7 @@ public class ClientTest {
 
     @Test
     public void offlineUserSessions() {
-        ClientRepresentation client = ApiUtil.findClientByClientId(managedRealm.admin(), "test-app").toRepresentation();
+        ClientRepresentation client = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app").toRepresentation();
         String id = client.getId();
 
         Response response = managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").password("password").email("testuser@localhost").name("test", "user").build());
@@ -764,8 +788,8 @@ public class ClientTest {
         RolesResource roleContainerClientRolesRsc = managedRealm.admin().clients().get(roleContainerClientUuid).roles();
         managedRealm.cleanup().add(r -> r.clients().get(roleContainerClientUuid).remove());
 
-        roleContainerClientRolesRsc.create(RoleBuilder.create().name("client-composite").build());
-        roleContainerClientRolesRsc.create(RoleBuilder.create().name("client-child").build());
+        roleContainerClientRolesRsc.create(RoleConfigBuilder.create().name("client-composite").build());
+        roleContainerClientRolesRsc.create(RoleConfigBuilder.create().name("client-child").build());
         roleContainerClientRolesRsc.get("client-composite").addComposites(List.of(
                 roleContainerClientRolesRsc.get("client-child").toRepresentation()));
 
@@ -823,10 +847,10 @@ public class ClientTest {
         RoleMappingResource scopesResource = managedRealm.admin().clients().get(idA).getScopeMappings();
 
         // create a realm role and a role in clientB
-        RoleRepresentation realmRoleRep = RoleBuilder.create().name("realm-role").build();
+        RoleRepresentation realmRoleRep = RoleConfigBuilder.create().name("realm-role").build();
         managedRealm.admin().roles().create(realmRoleRep);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.roleResourcePath(realmRoleRep.getName()), realmRoleRep, ResourceType.REALM_ROLE);
-        RoleRepresentation clientBRoleRep = RoleBuilder.create().name("clientB-role").build();
+        RoleRepresentation clientBRoleRep = RoleConfigBuilder.create().name("clientB-role").build();
         managedRealm.admin().clients().get(idB).roles().create(clientBRoleRep);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(idB, clientBRoleRep.getName()), clientBRoleRep, ResourceType.CLIENT_ROLE);
 
@@ -1007,7 +1031,7 @@ public class ClientTest {
     }
 
     private RoleRepresentation createRealmRole(String roleName) {
-        RoleRepresentation role = RoleBuilder.create().name(roleName).build();
+        RoleRepresentation role = RoleConfigBuilder.create().name(roleName).build();
         managedRealm.admin().roles().create(role);
 
         String createdId = managedRealm.admin().roles().get(role.getName()).toRepresentation().getId();
@@ -1027,5 +1051,72 @@ public class ClientTest {
                     .password("password");
             return realm;
         }
+    }
+
+    @Test
+    public void testClientSessionTimeoutValidation() {
+        ClientRepresentation clientRepresentation = createClient();
+        clientRepresentation.setAttributes(new HashMap<>());
+        ClientResource clientResource = managedRealm.admin().clients().get(clientRepresentation.getId());
+        ClientRepresentation rep = clientResource.toRepresentation();
+        if (rep.getAttributes() == null) {
+            rep.setAttributes(new HashMap<>());
+        }
+
+        RealmRepresentation oldRepresentation = managedRealm.admin().toRepresentation();
+        managedRealm.cleanup().add(rr -> {
+            rr.update(oldRepresentation);
+        });
+
+        // Remember-Me Disabled
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
+        realm.setRememberMe(false);
+        realm.setSsoSessionIdleTimeout(300);
+        realm.setSsoSessionMaxLifespan(600);
+        managedRealm.admin().update(realm);
+
+        // Happy path
+        rep = clientResource.toRepresentation();
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT, "200");
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, "500");
+        managedRealm.admin().clients().get(rep.getId()).update(rep);
+
+        // Failing due to idle time
+        rep = clientResource.toRepresentation();
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT, "400");
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, "500");
+        createOrUpdateClientExpectingValidationErrors(rep, false,
+                "Client session idle timeout cannot exceed realm SSO session idle timeout.");
+
+        // Fix idle, break max lifespan
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT, "200");
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, "700");
+        createOrUpdateClientExpectingValidationErrors(rep, false,
+                "Client session max lifespan cannot exceed realm SSO session max lifespan.");
+
+        // Remember-Me Enabled
+        realm = managedRealm.admin().toRepresentation();
+        realm.setRememberMe(true);
+        realm.setSsoSessionIdleTimeoutRememberMe(500);
+        realm.setSsoSessionMaxLifespanRememberMe(900);
+        managedRealm.admin().update(realm);
+
+        // Happy path
+        rep = clientResource.toRepresentation();
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT, "400");
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, "800");
+        managedRealm.admin().clients().get(rep.getId()).update(rep);
+
+        // Failing due to idle time
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT, "550");
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, "800");
+        createOrUpdateClientExpectingValidationErrors(rep, false,
+                "Client session idle timeout cannot exceed realm SSO session idle timeout and RememberMe idle timeout.");
+
+        // Failing due to lifetime
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT, "300");
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, "950");
+        createOrUpdateClientExpectingValidationErrors(rep, false,
+                "Client session max lifespan cannot exceed realm SSO session max lifespan and RememberMe Max span.");
     }
 }

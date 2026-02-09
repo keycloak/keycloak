@@ -27,7 +27,7 @@
 
     <artifactId>keycloak-client-registration-api</artifactId>
     <name>Keycloak Client Registration API</name>
-    <description/>
+    <description>Keycloak Client Registration API</description>
 
     <dependencies>
         <dependency>

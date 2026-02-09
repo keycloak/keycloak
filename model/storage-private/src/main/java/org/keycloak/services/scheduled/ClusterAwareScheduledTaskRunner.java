@@ -17,14 +17,15 @@
 
 package org.keycloak.services.scheduled;
 
-import org.jboss.logging.Logger;
+import java.util.concurrent.Callable;
+
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.timer.ScheduledTask;
 
-import java.util.concurrent.Callable;
+import org.jboss.logging.Logger;
 
 /**
  * Ensures that there are not concurrent executions of same task (either on this host or any other cluster host)

@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 
 public abstract class AbstractConfig implements Serializable {
 
+    @Deprecated(since = "26.5", forRemoval = true)
     protected transient Supplier<RealmModel> realm;
 
     // Make sure setters are not called when calling this from constructor to avoid DB updates

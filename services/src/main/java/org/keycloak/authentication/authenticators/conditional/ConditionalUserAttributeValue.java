@@ -17,6 +17,10 @@
 
 package org.keycloak.authentication.authenticators.conditional;
 
+import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Pattern;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -24,10 +28,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-
-import java.util.Map;
-import java.util.Objects;
-import java.util.regex.Pattern;
 
 public class ConditionalUserAttributeValue implements ConditionalAuthenticator {
 

@@ -17,6 +17,22 @@
 
 package org.keycloak.connections.httpclient;
 
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.concurrent.TimeUnit;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import org.keycloak.common.enums.HostnameVerificationPolicy;
+
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
@@ -28,21 +44,6 @@ import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContexts;
-import org.keycloak.common.enums.HostnameVerificationPolicy;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Abstraction for creating HttpClients. Allows SSL configuration.
@@ -73,6 +74,8 @@ public class HttpClientBuilder {
         }
     }
 
+    public static long DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS = 5000L;
+
     protected KeyStore truststore;
     protected KeyStore clientKeyStore;
     protected String clientPrivateKeyPassword;
@@ -90,6 +93,8 @@ public class HttpClientBuilder {
     protected TimeUnit socketTimeoutUnits = TimeUnit.MILLISECONDS;
     protected long establishConnectionTimeout = -1;
     protected TimeUnit establishConnectionTimeoutUnits = TimeUnit.MILLISECONDS;
+    protected long connectionRequestTimeout = DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS;
+    protected TimeUnit connectionRequestTimeoutUnits = TimeUnit.MILLISECONDS;
     protected boolean disableCookies = false;
     protected ProxyMappings proxyMappings;
     protected boolean expectContinueEnabled = false;
@@ -119,6 +124,20 @@ public class HttpClientBuilder {
     {
         this.establishConnectionTimeout = timeout;
         this.establishConnectionTimeoutUnits = unit;
+        return this;
+    }
+
+    /**
+     * When trying to obtain a connection, what is the timeout?
+     *
+     * @param timeout
+     * @param unit
+     * @return
+     */
+    public HttpClientBuilder connectionRequestTimeout(long timeout, TimeUnit unit)
+    {
+        this.connectionRequestTimeout = timeout;
+        this.connectionRequestTimeoutUnits = unit;
         return this;
     }
 
@@ -250,6 +269,7 @@ public class HttpClientBuilder {
             RequestConfig requestConfig = RequestConfig.custom()
                     .setConnectTimeout((int) TimeUnit.MILLISECONDS.convert(establishConnectionTimeout, establishConnectionTimeoutUnits))
                     .setSocketTimeout((int) TimeUnit.MILLISECONDS.convert(socketTimeout, socketTimeoutUnits))
+                    .setConnectionRequestTimeout((int) TimeUnit.MILLISECONDS.convert(connectionRequestTimeout, connectionRequestTimeoutUnits))
                     .setExpectContinueEnabled(expectContinueEnabled).build();
 
             org.apache.http.impl.client.HttpClientBuilder builder = getApacheHttpClientBuilder()

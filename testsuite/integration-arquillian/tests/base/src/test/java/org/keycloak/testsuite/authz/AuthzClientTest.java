@@ -2,13 +2,14 @@ package org.keycloak.testsuite.authz;
 
 import java.io.ByteArrayInputStream;
 
+import org.keycloak.authorization.client.AuthzClient;
+
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
-import org.keycloak.authorization.client.AuthzClient;
 
 public class AuthzClientTest {
 

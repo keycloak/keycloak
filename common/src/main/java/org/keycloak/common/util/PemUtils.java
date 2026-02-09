@@ -24,8 +24,6 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 

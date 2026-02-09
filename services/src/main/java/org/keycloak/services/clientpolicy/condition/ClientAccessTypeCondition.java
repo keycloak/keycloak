@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
@@ -30,6 +29,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -82,6 +83,8 @@ public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProv
             case UPDATE:
             case UPDATED:
             case REGISTERED:
+            case TOKEN_EXCHANGE_REQUEST:
+            case JWT_AUTHORIZATION_GRANT:
                 if (isClientAccessTypeMatched()) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             case REGISTER:

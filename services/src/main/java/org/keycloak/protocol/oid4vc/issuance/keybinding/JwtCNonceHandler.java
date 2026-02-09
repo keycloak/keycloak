@@ -18,10 +18,22 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Random;
+
 import jakarta.annotation.Nullable;
+
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.Time;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -32,31 +44,20 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.oid4vci.Oid4VciConstants;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.model.JwtCNonce;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.saml.RandomSecret;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Random;
 
 /**
  * @author Pascal Knüppel
  */
 public class JwtCNonceHandler implements CNonceHandler {
 
-    public static final String SOURCE_ENDPOINT = "source_endpoint";
+    public static final String SOURCE_ENDPOINT = OID4VCIConstants.SOURCE_ENDPOINT;
 
     public static final int NONCE_DEFAULT_LENGTH = 50;
 
@@ -78,13 +79,13 @@ public class JwtCNonceHandler implements CNonceHandler {
         RealmModel realm = keycloakSession.getContext().getRealm();
         final String issuer = OID4VCIssuerWellKnownProvider.getIssuer(keycloakSession.getContext());
         // TODO discussion about the attribute name to use
-        final Integer nonceLifetimeMillis = realm.getAttribute(Oid4VciConstants.C_NONCE_LIFETIME_IN_SECONDS, 60);
+        final Integer nonceLifetimeSeconds = realm.getAttribute(OID4VCIConstants.C_NONCE_LIFETIME_IN_SECONDS, 60);
         audiences = Optional.ofNullable(audiences).orElseGet(Collections::emptyList);
-        final Instant now = Instant.now();
-        final long expiresAt = now.plus(nonceLifetimeMillis, ChronoUnit.SECONDS).getEpochSecond();
+        final long nowSeconds = Time.currentTime();
+        final long expiresAt = nowSeconds + nonceLifetimeSeconds;
         final int nonceLength = NONCE_DEFAULT_LENGTH + new Random().nextInt(NONCE_LENGTH_RANDOM_OFFSET);
         // this generated value itself is basically just a salt-value for the generated token, which itself is the nonce.
-        final String strongSalt = Base64.encodeBytes(RandomSecret.createRandomSecret(nonceLength));
+        final String strongSalt = Base64.getEncoder().encodeToString(RandomSecret.createRandomSecret(nonceLength));
 
         JsonWebToken jwtCNonce = new JwtCNonce().salt(strongSalt)
                                                 .issuer(issuer)
@@ -142,7 +143,7 @@ public class JwtCNonceHandler implements CNonceHandler {
                                             if (exp == null) {
                                                 throw new VerificationException("c_nonce has no expiration time");
                                             }
-                                            long now = Instant.now().getEpochSecond();
+                                            long now = Time.currentTime();
                                             if (exp < now) {
                                                 String message = String.format(
                                                         "c_nonce not valid: %s(exp) < %s(now)",

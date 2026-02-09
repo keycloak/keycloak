@@ -10,6 +10,7 @@ import { TextField } from "../component/TextField";
 const clientAuthentications = [
   "client_secret_post",
   "client_secret_basic",
+  "client_secret_basic_unencoded",
   "client_secret_jwt",
   "private_key_jwt",
 ];

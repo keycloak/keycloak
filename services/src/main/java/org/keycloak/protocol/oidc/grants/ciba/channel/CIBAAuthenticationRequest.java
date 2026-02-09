@@ -17,10 +17,9 @@
  */
 package org.keycloak.protocol.oidc.grants.ciba.channel;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.nio.charset.StandardCharsets;
 import javax.crypto.SecretKey;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
@@ -39,6 +38,9 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 import org.keycloak.util.TokenUtil;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * <p>Represents an authentication request sent by a consumption device (CD).

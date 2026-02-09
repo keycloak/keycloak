@@ -17,8 +17,6 @@
 
 package org.keycloak.authorization.fgap.evaluation;
 
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.SCHEMA;
-
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -32,6 +30,8 @@ import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.Realm;
+
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.SCHEMA;
 
 class FGAPEvaluation implements Evaluation {
 
@@ -65,13 +65,13 @@ class FGAPEvaluation implements Evaluation {
             return false;
         }
 
-        boolean granted = policyScopes.stream().map(Scope::getName).anyMatch(aliases::contains);
+        boolean grantedByResourceGroup = policyScopes.stream().map(Scope::getName).anyMatch(aliases::contains);
 
-        if (granted) {
+        if (grantedByResourceGroup) {
             scopesGrantedByResource.computeIfAbsent(grantedScope, k -> new HashSet<>()).addAll(grantedPolicy.getResources());
         }
 
-        return granted;
+        return grantedByResourceGroup;
     }
 
     @Override
@@ -83,8 +83,11 @@ class FGAPEvaluation implements Evaluation {
             return false;
         }
 
-        if (isForSpecificResource(deniedPolicy)) {
-            // denied by a permission that maps to a specific resource
+        Set<Scope> deniedScopes = deniedPolicy.getScopes();
+        boolean isPermissionDeniedForSpecificResource = isForSpecificResource(deniedPolicy);
+
+        if (isPermissionDeniedForSpecificResource && deniedScopes.contains(deniedScope)) {
+            // scope denied for an specific resource
             return true;
         }
 
@@ -99,8 +102,16 @@ class FGAPEvaluation implements Evaluation {
             return false;
         }
 
-        for (Scope scope : deniedPolicy.getScopes()) {
+        for (Scope scope : deniedScopes) {
             if (aliases.contains(scope.getName())) {
+                if (isPermissionDeniedForSpecificResource) {
+                    // denied for a specific group resource (e.g.: a user group)
+                    // if a specific resource is denied, then it is denied
+                    return true;
+                }
+
+                // denied if not granted for the specific resource (e.g.: user) or resource type
+                // permissions granted for a specific resource have precedence over denies on a resource group
                 return !isGranted(deniedScope);
             }
         }

@@ -17,13 +17,14 @@
 package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.util.UIUtils;
+
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class TermsAndConditionsPage extends AbstractPage {
+public class TermsAndConditionsPage extends LanguageComboboxAwarePage {
 
     @FindBy(id = "kc-accept")
     private WebElement submitButton;

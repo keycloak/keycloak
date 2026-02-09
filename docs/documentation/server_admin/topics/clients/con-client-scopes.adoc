@@ -123,6 +123,13 @@ If a user is not permitted to use the client scope, no protocol mappers or role 
 == Realm default client scopes
 include::proc-updating-default-scopes.adoc[]
 
+[[_downscoping]]
+== Downscoping
+
+In OAuth/OIDC, *downscoping* is the process of exchanging an existing JWT access token for a new one with a more restricted set of permissions (scopes) and/or a narrower audience. In the OAuth 2.0 refresh token grant type, the https://datatracker.ietf.org/doc/html/rfc6749#section-6[RFC 6749] itself restricts the requested scope, saying that it must not include any scope not originally granted by the resource owner. So, this *downscoping* concept is very common and very recommended for security reasons.
+
+{project_name} provides a <<_client_policies,client policy>> executor that ensures this *downscoping* idea for other grant types. The client executor is called `downscope-assertion-grant-enforcer` and, for the moment, applies for the link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange]. When this client executor is enforced, the token exchange is only allowed for the scopes that are already present in the initial JWT (`subject_token` parameter). An error is returned if any other extra scope is requested, no matter if the client configuration permits this scope as optional or default. Default scopes that are configured as *include in token scope* set to *false* (for example `basic` or `acr` in the default configuration) are the only exception. Those scopes are invisible for the requester and are considered compulsory for any grant type. Once this executor is applied for the client, *downscoping* is the only option when exchanging an access token, no additional scopes will ever be granted.
+
 == Scopes explained
 
 The term _scope_ has multiple meanings within {project_name} and across the OAuth/OIDC specifications. Below is a clarification of the different _scopes_ used in {project_name}:

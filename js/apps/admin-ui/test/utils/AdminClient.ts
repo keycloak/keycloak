@@ -1,21 +1,20 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
-import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
-import PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
-import ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import { Credentials } from "@keycloak/keycloak-admin-client/lib/utils/auth";
-import { merge } from "lodash-es";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation.js";
+import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation.js";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation.js";
+import type OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation.js";
+import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation.js";
+import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation.js";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation.js";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation.js";
+import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation.js";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata.js";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation.js";
+import type { Credentials } from "@keycloak/keycloak-admin-client/lib/utils/auth.js";
 
 class AdminClient {
   readonly #client = new KeycloakAdminClient({
-    baseUrl: "http://localhost:8080/",
+    baseUrl: "http://localhost:8080",
     realmName: "master",
   });
 
@@ -32,18 +31,9 @@ class AdminClient {
     return this.#client.auth(credentials);
   }
 
-  async loginUser(username: string, password: string, clientId: string) {
-    return this.#client.auth({
-      username: username,
-      password: password,
-      grantType: "password",
-      clientId: clientId,
-    });
-  }
-
   async createRealm(realm: string, payload?: RealmRepresentation) {
     await this.#login();
-    await this.#client.realms.create({ realm, ...payload });
+    return await this.#client.realms.create({ realm, ...payload });
   }
 
   async updateRealm(realm: string, payload: RealmRepresentation) {
@@ -82,11 +72,6 @@ class AdminClient {
     if (client) {
       await this.#client.clients.del({ id: client.id! });
     }
-  }
-
-  async getClient(clientName: string) {
-    await this.#login();
-    return (await this.#client.clients.find({ clientId: clientName }))[0];
   }
 
   async createGroup(groupName: string, realm: string = this.#client.realmName) {
@@ -151,40 +136,9 @@ class AdminClient {
     );
   }
 
-  async getAdminUser() {
-    await this.#login();
-    const [user] = await this.#client.users.find({ username: "admin" });
-    return user;
-  }
-
   async addUserToGroup(userId: string, groupId: string) {
     await this.#login();
     await this.#client.users.addToGroup({ id: userId, groupId });
-  }
-
-  async createUserInGroup(username: string, groupId: string) {
-    await this.#login();
-    const user = await this.createUser({ username, enabled: true });
-    await this.#client.users.addToGroup({ id: user.id!, groupId });
-  }
-
-  async addRealmRoleToUser(
-    userId: string,
-    roleName: string,
-    realmName: string = this.#client.realmName,
-  ) {
-    await this.#login();
-
-    const realmRole = await this.#client.roles.findOneByName({
-      name: roleName,
-      realm: realmName,
-    });
-
-    await this.#client.users.addRealmRoleMappings({
-      id: userId,
-      roles: [realmRole as RoleMappingPayload],
-      realm: realmName,
-    });
   }
 
   async addClientRoleToUser(
@@ -261,28 +215,6 @@ class AdminClient {
     return await this.#client.clientScopes.create(scope);
   }
 
-  async addMapping(id: string, mapping: ProtocolMapperRepresentation) {
-    await this.#login();
-    return this.#client.clientScopes.addProtocolMapper({ id }, mapping);
-  }
-
-  async deleteClientScope(clientScopeName: string) {
-    await this.#login();
-    const clientScope = await this.#client.clientScopes.findOneByName({
-      name: clientScopeName,
-    });
-    return await this.#client.clientScopes.del({ id: clientScope?.id! });
-  }
-
-  async existsClientScope(clientScopeName: string) {
-    await this.#login();
-    return (await this.#client.clientScopes.findOneByName({
-      name: clientScopeName,
-    })) == undefined
-      ? false
-      : true;
-  }
-
   async addDefaultClientScopeInClient(
     clientScopeName: string,
     clientId: string,
@@ -304,27 +236,6 @@ class AdminClient {
     });
   }
 
-  async removeDefaultClientScopeInClient(
-    clientScopeName: string,
-    clientId: string,
-  ) {
-    await this.#login();
-    const scope = await this.#client.clientScopes.findOneByName({
-      name: clientScopeName,
-    });
-    const client = await this.#client.clients.find({ clientId: clientId });
-    return await this.#client.clients.delDefaultClientScope({
-      id: client[0]?.id!,
-      clientScopeId: scope?.id!,
-    });
-  }
-
-  async getUserProfile(realm: string) {
-    await this.#login();
-
-    return await this.#client.users.getProfile({ realm });
-  }
-
   async addUserProfile(realm: string, userProfile: UserProfileConfig) {
     await this.#login();
     const currentProfile = await this.#client.users.getProfile({ realm });
@@ -335,24 +246,6 @@ class AdminClient {
         ...(currentProfile.attributes || []),
       ],
       realm,
-    });
-  }
-
-  async updateUserProfile(realm: string, userProfile: UserProfileConfig) {
-    await this.#login();
-
-    await this.#client.users.updateProfile(merge(userProfile, { realm }));
-  }
-
-  async addGroupToProfile(realm: string, groupName: string) {
-    await this.#login();
-
-    const currentProfile = await this.#client.users.getProfile({ realm });
-
-    await this.#client.users.updateProfile({
-      ...currentProfile,
-      realm,
-      ...{ groups: [...currentProfile.groups!, { name: groupName }] },
     });
   }
 
@@ -447,39 +340,6 @@ class AdminClient {
     });
   }
 
-  async unlinkAccountIdentityProvider(
-    username: string,
-    idpDisplayName: string,
-  ) {
-    await this.#login();
-    const user = await this.#client.users.find({ username });
-    const identityProviders =
-      (await this.#client.serverInfo.find()).identityProviders || [];
-    const idp = identityProviders.find(({ name }) => name === idpDisplayName);
-    await this.#client.users.delFromFederatedIdentity({
-      id: user[0].id!,
-      federatedIdentityId: idp?.id!,
-    });
-  }
-
-  async linkAccountIdentityProvider(username: string, idpDisplayName: string) {
-    await this.#login();
-    const user = await this.#client.users.find({ username });
-    const identityProviders =
-      (await this.#client.serverInfo.find()).identityProviders || [];
-    const idp = identityProviders.find(({ name }) => name === idpDisplayName);
-    const fedIdentity = {
-      identityProvider: idp?.id,
-      userId: "testUserIdApi",
-      userName: "testUserNameApi",
-    };
-    await this.#client.users.addToFederatedIdentity({
-      id: user[0].id!,
-      federatedIdentityId: idp?.id!,
-      federatedIdentity: fedIdentity,
-    });
-  }
-
   async addLocalizationText(
     locale: string,
     key: string,
@@ -506,16 +366,6 @@ class AdminClient {
         }),
       ),
     );
-  }
-
-  async inRealm<T>(realm: string, fn: () => Promise<T>) {
-    const prevRealm = this.#client.realmName;
-    this.#client.realmName = realm;
-    try {
-      return await fn();
-    } finally {
-      this.#client.realmName = prevRealm;
-    }
   }
 
   async createOrganization(
@@ -550,28 +400,6 @@ class AdminClient {
       newName: newName,
       realm: realmName,
     });
-  }
-
-  async getFlow(name: string, realmName: string = this.#client.realmName) {
-    await this.#login();
-    const flows = await this.#client.authenticationManagement.getFlows({
-      realm: realmName,
-    });
-    return flows.find((flow) => flow.alias === name);
-  }
-
-  async deleteFlow(name: string, realmName: string = this.#client.realmName) {
-    await this.#login();
-    const flows = await this.#client.authenticationManagement.getFlows({
-      realm: realmName,
-    });
-    const flow = flows.find((f) => f.alias === name)!;
-    if (flow) {
-      await this.#client.authenticationManagement.deleteFlow({
-        flowId: flow.id!,
-        realm: realmName,
-      });
-    }
   }
 
   async deleteAllTokens(realm: string = this.#client.realmName) {
@@ -666,6 +494,51 @@ class AdminClient {
         ...policy,
       },
     );
+  }
+
+  async createResource(
+    clientId: string,
+    resource: ResourceRepresentation & { realm?: string },
+  ) {
+    await this.#login();
+    const { realm = this.#client.realmName, ...payload } = resource;
+
+    const client = (await this.#client.clients.find({ clientId, realm }))[0];
+
+    if (!client?.id) {
+      throw new Error(`Client ${clientId} not found in realm ${realm}`);
+    }
+
+    return await this.#client.clients.createResource(
+      { id: client.id, realm },
+      payload,
+    );
+  }
+
+  async findUserByUsername(
+    realm: string,
+    username: string,
+  ): Promise<UserRepresentation> {
+    await this.#login();
+
+    const users = await this.#client.users.find({
+      realm,
+      username,
+      exact: true,
+      max: 1,
+    });
+
+    return users[0];
+  }
+
+  async createWorkflowAsYaml(realm: string, yaml: string): Promise<void> {
+    await this.#login();
+    await this.#client.workflows.createAsYaml({ realm, yaml });
+  }
+
+  async deleteWorkflow(realm: string, id: string): Promise<void> {
+    await this.#login();
+    await this.#client.workflows.delById({ realm, id });
   }
 }
 

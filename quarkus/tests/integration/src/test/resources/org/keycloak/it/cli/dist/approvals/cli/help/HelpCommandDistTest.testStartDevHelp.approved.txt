@@ -21,10 +21,16 @@ Cache:
                        mode, a 'ispn' cache is used to create a cluster between multiple server
                        nodes. By default in development mode, a 'local' cache disables clustering
                        and is intended for development and testing purposes. Possible values are:
-                       ispn, local. Default: ispn.
+                       ispn, local.
 --cache-config-file <file>
                      Defines the file from which cache configuration should be loaded from. The
                        configuration file is relative to the 'conf/' directory.
+--cache-config-mutate <true|false>
+                     Determines whether changes to the default cache configurations are allowed.
+                       This is only recommended for advanced use-cases where the default cache
+                       configurations are proven to be problematic. The only supported way to
+                       change the default cache configurations is via the other 'cache-...'
+                       options. Default: false.
 --cache-embedded-authorization-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the
                        authorization cache.
@@ -69,8 +75,8 @@ Database:
 
 --db <vendor>        The database vendor. In production mode the default value of 'dev-file' is
                        deprecated, you should explicitly specify the db instead. Possible values
-                       are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. Default:
-                       dev-file.
+                       are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres, tidb.
+                       Default: dev-file.
 --db-debug-jpql <true|false>
                      Add JPQL information as comments to SQL statements to debug JPA SQL statement
                        generation. Default: false.
@@ -83,6 +89,11 @@ Database:
                      The password of the database user.
 --db-pool-initial-size <size>
                      The initial size of the connection pool.
+--db-pool-max-lifetime <duration>
+                     The maximum time a connection remains in the pool, after which it will be
+                       closed upon return and replaced as necessary. May be an ISO 8601 duration
+                       value, an integer number of seconds, or an integer followed by one of [ms,
+                       h, m, s, d].
 --db-pool-max-size <size>
                      The maximum size of the connection pool. Default: 100.
 --db-pool-min-size <size>
@@ -109,17 +120,25 @@ Database:
 
 Database - additional datasources:
 
---db-active-<datasource> <true|false>
-                     Deactivate specific named datasource <datasource>. Default: true.
+--db-debug-jpql-<datasource> <true|false>
+                     Used for named <datasource>. Add JPQL information as comments to SQL
+                       statements to debug JPA SQL statement generation. Default: false.
 --db-driver-<datasource> <driver>
                      Used for named <datasource>. The fully qualified class name of the JDBC
                        driver. If not set, a default driver is set accordingly to the chosen
                        database.
+--db-enabled-<datasource> <true|false>
+                     If the named datasource <datasource> should be enabled at runtime. Default:
+                       true.
 --db-kind-<datasource> <vendor>
                      Used for named <datasource>. The database vendor. In production mode the
                        default value of 'dev-file' is deprecated, you should explicitly specify the
                        db instead. Possible values are: dev-file, dev-mem, mariadb, mssql, mysql,
-                       oracle, postgres. Default: dev-file.
+                       oracle, postgres, tidb.
+--db-log-slow-queries-threshold-<datasource> <milliseconds>
+                     Used for named <datasource>. Log SQL statements slower than the configured
+                       threshold with logger org.hibernate.SQL_SLOW and log-level info. Default:
+                       10000.
 --db-password-<datasource> <password>
                      Used for named <datasource>. The password of the database user.
 --db-pool-initial-size-<datasource> <size>
@@ -163,6 +182,10 @@ Transaction:
 
 Feature:
 
+--feature-<name> <enabled|disabled|vX(X is version)>
+                     Enable/Disable specific feature <feature>. It takes precedence over the
+                       'features', and 'features-disabled' options. Possible values are: 'enabled',
+                       'disabled', or specific version (lowercase) that will be enabled (f.e. 'v2')
 --features <feature> Enables a set of one or more features. Possible values are: <...>.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: <...>.
@@ -196,11 +219,20 @@ Hostname v2:
 
 HTTP(S):
 
+--http-accept-non-normalized-paths <true|false>
+                     DEPRECATED. If the server should accept paths that are not normalized
+                       according to RFC3986 or that contain a double slash ('//') or semicolon
+                       (';'). While accepting those requests might be relevant for legacy
+                       applications, it is recommended to disable it to allow for more concise URL
+                       filtering. Default: false.
 --http-enabled <true|false>
                      Enables the HTTP listener. Enabled by default in development mode. Typically
                        not enabled in production unless the server is fronted by a TLS termination
                        proxy. Default: false.
---http-host <host>   The HTTP Host. Default: 0.0.0.0.
+--http-host <host>   The HTTP Host. In prod mode or when running on Windows Subsystem For Linux the
+                       default is to bind to all network addresses (0.0.0.0), which means the
+                       server may be accessible from other machines on your network. Otherwise
+                       defaults to localhost.
 --http-max-queued-requests <requests>
                      Maximum number of queued HTTP requests. Use this to shed load in an overload
                        situation. Excess requests will return a "503 Server not Available" response.
@@ -219,7 +251,7 @@ HTTP(S):
                      The file path to a private key in PEM format.
 --https-certificates-reload-period <reload period>
                      Interval on which to reload key store, trust store, and certificate files
-                       referenced by https-* options. May be a java.time.Duration value, an integer
+                       referenced by https-* options. May be an ISO 8601 duration value, an integer
                        number of seconds, or an integer followed by one of [ms, h, m, s, d]. Must
                        be greater than 30 seconds. Use -1 to disable. Default: 1h.
 --https-cipher-suites <ciphers>
@@ -238,7 +270,9 @@ HTTP(S):
                        no value is set, it defaults to 'BCFKS'.
 --https-port <port>  The used HTTPS port. Default: 8443.
 --https-protocols <protocols>
-                     The list of protocols to explicitly enable. Default: TLSv1.3,TLSv1.2.
+                     The list of protocols to explicitly enable. If a value is not supported by the
+                       JRE / security configuration, it will be silently ignored. Possible values
+                       are: TLSv1.3, TLSv1.2, or a custom one. Default: TLSv1.3,TLSv1.2.
 --https-trust-store-file <file>
                      The trust store which holds the certificate information of the certificates to
                        trust.
@@ -248,6 +282,12 @@ HTTP(S):
                      The type of the trust store file. If not given, the type is automatically
                        detected based on the file extension. If 'fips-mode' is set to 'strict' and
                        no value is set, it defaults to 'BCFKS'.
+
+HTTP Access log:
+
+--http-access-log-enabled <true|false>
+                     If HTTP access logging is enabled. By default this will log records in
+                       console. Default: false.
 
 Health:
 
@@ -266,23 +306,32 @@ Management:
                        The path must start with a '/'. If not given, the value is inherited from
                        HTTP options. Relevant only when something is exposed on the management
                        interface - see the guide for details. Default: /.
+--http-management-scheme <scheme>
+                     Configures the management interface scheme. If 'inherited', the management
+                       interface will inherit the HTTPS settings of the main interface. If 'http',
+                       the management interface will be accessible via HTTP - it will not inherit
+                       HTTPS settings and cannot be configured for HTTPS. Possible values are:
+                       http, inherited. Default: inherited.
 --https-management-certificate-file <file>
                      The file path to a server certificate or certificate chain in PEM format for
                        the management server. If not given, the value is inherited from HTTP
                        options. Relevant only when something is exposed on the management interface
-                       - see the guide for details.
+                       - see the guide for details. Available only when http-management-scheme is
+                       inherited.
 --https-management-certificate-key-file <file>
                      The file path to a private key in PEM format for the management server. If not
                        given, the value is inherited from HTTP options. Relevant only when
-                       something is exposed on the management interface - see the guide for details.
+                       something is exposed on the management interface - see the guide for
+                       details. Available only when http-management-scheme is inherited.
 --https-management-certificates-reload-period <reload period>
                      Interval on which to reload key store, trust store, and certificate files
-                       referenced by https-management-* options for the management server. May be a
-                       java.time.Duration value, an integer number of seconds, or an integer
+                       referenced by https-management-* options for the management server. May be
+                       an ISO 8601 duration value, an integer number of seconds, or an integer
                        followed by one of [ms, h, m, s, d]. Must be greater than 30 seconds. Use -1
                        to disable. If not given, the value is inherited from HTTP options. Relevant
                        only when something is exposed on the management interface - see the guide
-                       for details. Default: 1h.
+                       for details. Default: 1h. Available only when http-management-scheme is
+                       inherited.
 --https-management-client-auth <auth>
                      Configures the management interface to require/request client authentication.
                        If not given, the value is inherited from HTTP options. Relevant only when
@@ -292,12 +341,13 @@ Management:
                      The key store which holds the certificate information instead of specifying
                        separate files for the management server. If not given, the value is
                        inherited from HTTP options. Relevant only when something is exposed on the
-                       management interface - see the guide for details.
+                       management interface - see the guide for details. Available only when
+                       http-management-scheme is inherited.
 --https-management-key-store-password <password>
                      The password of the key store file for the management server. If not given,
                        the value is inherited from HTTP options. Relevant only when something is
                        exposed on the management interface - see the guide for details. Default:
-                       password.
+                       password. Available only when http-management-scheme is inherited.
 --legacy-observability-interface <true|false>
                      DEPRECATED. If metrics/health endpoints should be exposed on the main HTTP
                        server (not recommended). If set to true, the management interface is
@@ -347,7 +397,8 @@ Logging:
                        parent property 'log-async' is used. Default: false. Available only when
                        Console log handler is activated.
 --log-console-color <true|false>
-                     Enable or disable colors when logging to console. Default: false. Available
+                     Enable or disable colors when logging to console. If this is not present then
+                       an attempt will be made to guess if the terminal supports color. Available
                        only when Console log handler is activated.
 --log-console-format <format>
                      The format of unstructured console log entries. If the format has spaces in
@@ -372,6 +423,10 @@ Logging:
                      The log level of a category. Takes precedence over the 'log-level' option.
                        Possible values are (case insensitive): off, fatal, error, warn, info,
                        debug, trace, all.
+--log-mdc-enabled <true|false>
+                     Indicates whether to add information about the realm and other information to
+                       the mapped diagnostic context. All elements will be prefixed with 'kc.'
+                       Default: false. Available only when log-mdc preview feature is enabled.
 
 Tracing:
 

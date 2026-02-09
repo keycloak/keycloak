@@ -18,19 +18,12 @@
 package org.keycloak.quarkus.runtime.storage.database.jpa;
 
 import java.util.function.Supplier;
+
 import jakarta.persistence.EntityManagerFactory;
-import org.keycloak.connections.jpa.DefaultJpaConnectionProvider;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.models.KeycloakSession;
 
 public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnectionProviderFactory {
 
     private String unitName;
-
-    @Override
-    public JpaConnectionProvider create(KeycloakSession session) {
-        return new DefaultJpaConnectionProvider(createEntityManager(entityManagerFactory, session));
-    }
 
     @Override
     protected EntityManagerFactory getEntityManagerFactory() {

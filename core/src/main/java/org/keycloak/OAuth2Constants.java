@@ -17,6 +17,10 @@
 
 package org.keycloak;
 
+import org.keycloak.jose.jws.Algorithm;
+
+import static org.keycloak.jose.jws.Algorithm.PS256;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -72,6 +76,9 @@ public interface OAuth2Constants {
     String PASSWORD = "password";
 
     String CLIENT_CREDENTIALS = "client_credentials";
+
+    String JWT_AUTHORIZATION_GRANT = "urn:ietf:params:oauth:grant-type:jwt-bearer";
+    String ASSERTION = "assertion";
 
     // https://tools.ietf.org/html/draft-ietf-oauth-assertions-01#page-5
     String CLIENT_ASSERTION_TYPE = "client_assertion_type";
@@ -155,6 +162,19 @@ public interface OAuth2Constants {
     String AUTHENTICATOR_METHOD_REFERENCE = "amr";
 
     String CNF = "cnf";
+
+    // RAR - https://datatracker.ietf.org/doc/html/rfc9396
+    // Used as url parameter in AuthorizationRequest and as claim in TokenResponse
+    String AUTHORIZATION_DETAILS = "authorization_details";
+
+    // DPoP - https://datatracker.ietf.org/doc/html/rfc9449
+    String DPOP_HTTP_HEADER = "DPoP";
+    String DPOP_NONCE_HEADER = "DPoP-Nonce";
+    Algorithm DPOP_DEFAULT_ALGORITHM = PS256;
+    String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
+    String ALGS_ATTRIBUTE = "algs";
+
+    // OID4VCI - https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html
+    String OPENID_CREDENTIAL = "openid_credential";
+    String CREDENTIAL_IDENTIFIERS = "credential_identifiers";
 }
-
-

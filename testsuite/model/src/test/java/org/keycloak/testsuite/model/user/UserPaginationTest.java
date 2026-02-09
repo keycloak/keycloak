@@ -1,7 +1,11 @@
 package org.keycloak.testsuite.model.user;
 
-import org.hamcrest.Matchers;
-import org.junit.Test;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -15,13 +19,10 @@ import org.keycloak.testsuite.federation.UserPropertyFileStorage;
 import org.keycloak.testsuite.federation.UserPropertyFileStorage.UserPropertyFileStorageCall;
 import org.keycloak.testsuite.federation.UserPropertyFileStorageFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
-
 import org.keycloak.testsuite.model.RequireProvider;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+
+import org.hamcrest.Matchers;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -133,9 +134,10 @@ public class UserPaginationTest extends KeycloakModelTest {
 
         assertThat(list, hasSize(3));
 
+        // https://github.com/keycloak/keycloak/issues/44860 brings an optimization where the count method is not invoked.
         expectedStorageCalls(
-                Collections.singletonList(new UserPropertyFileStorageCall(UserPropertyFileStorage.COUNT_SEARCH_METHOD, null, null)),
-                Arrays.asList(new UserPropertyFileStorageCall(UserPropertyFileStorage.COUNT_SEARCH_METHOD, null, null), new UserPropertyFileStorageCall(UserPropertyFileStorage.SEARCH_METHOD, 1, 6))
+                List.of(new UserPropertyFileStorageCall(UserPropertyFileStorage.COUNT_SEARCH_METHOD, null, null)),
+                List.of(new UserPropertyFileStorageCall(UserPropertyFileStorage.SEARCH_METHOD, 1, 6))
         );
     }
 

@@ -1,19 +1,16 @@
 package org.keycloak.testsuite.oauth;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import java.io.IOException;
+import java.security.KeyPair;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -36,26 +33,31 @@ import org.keycloak.testsuite.broker.NestedBrokerConfiguration;
 import org.keycloak.testsuite.broker.OidcBackchannelLogoutBrokerConfiguration;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.LogoutTokenUtil;
+import org.keycloak.testsuite.util.RealmManager;
+import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.BackchannelLogoutResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
-import org.keycloak.testsuite.util.RealmManager;
-import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-
-import java.io.IOException;
-import java.security.KeyPair;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import jakarta.ws.rs.core.Response;
 import org.openqa.selenium.WebElement;
+
+import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 

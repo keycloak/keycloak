@@ -20,11 +20,12 @@ package org.keycloak.models.sessions.infinispan.stream;
 import java.util.Map;
 import java.util.function.Function;
 
-import org.infinispan.protostream.annotations.ProtoFactory;
-import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
  * A {@link Function} to unwrap the {@link SessionEntity} from the {@link SessionEntityWrapper}.

@@ -16,8 +16,6 @@
  */
 package org.keycloak.client.cli.util;
 
-import org.keycloak.common.util.StreamUtil;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -39,6 +37,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
+
+import org.keycloak.common.util.StreamUtil;
 
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.createFile;

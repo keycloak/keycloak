@@ -19,6 +19,7 @@ package org.keycloak.jose.jwk;
 
 import org.keycloak.crypto.KeyType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -51,6 +52,25 @@ public class OKPPublicJWK extends JWK {
 
     public void setX(String x) {
         this.x = x;
+    }
+
+    @JsonIgnore
+    @Override
+    public <T> T getOtherClaim(String claimName, Class<T> claimType) {
+        Object claim = null;
+        switch (claimName) {
+            case CRV:
+                claim = getCrv();
+                break;
+            case X:
+                claim = getX();
+                break;
+        }
+        if (claim != null) {
+            return claimType.cast(claim);
+        } else {
+            return super.getOtherClaim(claimName, claimType);
+        }
     }
 
 }

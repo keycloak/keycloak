@@ -17,25 +17,28 @@
 
 package org.keycloak.models;
 
-import static org.keycloak.utils.StringUtil.isNotBlank;
-
-import org.keycloak.provider.ProviderEvent;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+
+import org.keycloak.provider.ProviderEvent;
+
+import static org.keycloak.utils.StringUtil.isNotBlank;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface UserModel extends RoleMapperModel {
+    String ID = "id";
     String USERNAME = "username";
     String FIRST_NAME = "firstName";
     String LAST_NAME = "lastName";
     String EMAIL = "email";
+    String EMAIL_PENDING = "kc.email.pending";
     String EMAIL_VERIFIED = "emailVerified";
+    String DID = "did";
     String LOCALE = "locale";
     String ENABLED = "enabled";
     String IDP_ALIAS = "keycloak.session.realm.users.query.idp_alias";

@@ -11,7 +11,7 @@ public class QuarkusProfileConfigResolver extends CommaSeparatedListProfileConfi
 
     static String getConfig(String key) {
         return Configuration.getRawPersistedProperty(key)
-                .orElse(Configuration.getRawValue(key));
+                .orElse(Configuration.getConfigValue(key).getValue());
     }
 
 }

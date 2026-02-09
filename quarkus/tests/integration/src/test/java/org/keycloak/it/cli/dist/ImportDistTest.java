@@ -18,18 +18,8 @@
 package org.keycloak.it.cli.dist;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
@@ -37,6 +27,10 @@ import org.keycloak.it.utils.KeycloakDistribution;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 @DistributionTest(defaultOptions = "--db=dev-file")
 @RawDistOnly(reason = "Containers are immutable")
@@ -53,6 +47,7 @@ public class ImportDistTest {
         cliResult = dist.run("export", "--realm=master", "--dir=" + dir.getAbsolutePath());
         cliResult.assertMessage("Export of realm 'master' requested.");
         cliResult.assertMessage("Export finished successfully");
+        cliResult.assertNoMessage("local_addr");
 
         // add a placeholder into the realm
         ObjectMapper mapper = new ObjectMapper();
@@ -62,63 +57,16 @@ public class ImportDistTest {
         mapper.writer().writeValue(file, node);
 
         dist.setEnvVar("REALM_ENABLED", "true");
+        dist.setEnvVar("KC_HOSTNAME_STRICT", "false");
+        dist.setEnvVar("KC_CACHE", "ispn");
         cliResult = dist.run("import", "--dir=" + dir.getAbsolutePath());
         cliResult.assertMessage("Realm 'master' imported");
         cliResult.assertMessage("Import finished successfully");
         cliResult.assertNoMessage("Changes detected in configuration");
         cliResult.assertNoMessage("Listening on: http");
+        cliResult.assertNoMessage("local_addr");
 
         cliResult = dist.run("import");
         cliResult.assertError("Must specify either --dir or --file options.");
-    }
-
-    @Test
-    void testImportLargeUserCount(KeycloakDistribution dist) throws Exception {
-        File dir = new File("target");
-
-        CLIResult cliResult = dist.run("export", "--realm=master", "--dir=" + dir.getAbsolutePath());
-        cliResult.assertMessage("Export of realm 'master' requested.");
-        cliResult.assertMessage("Export finished successfully");
-
-        createUserFile(dir.getAbsolutePath());
-
-        ExecutorService ex = Executors.newFixedThreadPool(1);
-        Future<CLIResult> result = ex.submit(() -> dist.run("import", "--dir=" + dir.getAbsolutePath()));
-        try {
-            cliResult = result.get(20, TimeUnit.SECONDS);
-            cliResult.assertMessage("Realm 'master' imported");
-            cliResult.assertMessage("Import finished successfully");
-            cliResult.assertMessage("master-users-0.json");
-        } finally {
-            ex.shutdownNow();
-        }
-    }
-
-    void createUserFile(String dir) throws IOException {
-        FileWriter writer = new FileWriter(dir + "/master-users-0.json");
-        writer.write("{\n" + "  \"realm\" : \"master\",\n" + "  \"users\" : [\n");
-
-        for (int i = 0; i < 10000; i++) {
-            if (i > 0) {
-                writer.write("\n,");
-            }
-            writer.write("{\n"
-                    + "    \"id\" : \""+UUID.randomUUID()+"\",\n"
-                    + "    \"username\" : \"bob"+i+"\",\n"
-                    + "    \"emailVerified\" : false,\n"
-                    + "    \"createdTimestamp\" : 1741358612691,\n"
-                    + "    \"enabled\" : true,\n"
-                    + "    \"totp\" : false,\n"
-                    + "    \"credentials\" : [ ],\n"
-                    + "    \"disableableCredentialTypes\" : [ ],\n"
-                    + "    \"requiredActions\" : [ ],\n"
-                    + "    \"realmRoles\" : [ ],\n"
-                    + "    \"notBefore\" : 0,\n"
-                    + "    \"groups\" : [ ]\n"
-                    + "  }");
-        }
-
-        writer.write(" ]\n" + "}");
-        writer.close();
     }
 }

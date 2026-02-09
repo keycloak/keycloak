@@ -16,7 +16,7 @@
  */
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.ComponentRepresentation;
+import java.util.List;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -28,7 +28,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
+
+import org.keycloak.representations.idm.ComponentRepresentation;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

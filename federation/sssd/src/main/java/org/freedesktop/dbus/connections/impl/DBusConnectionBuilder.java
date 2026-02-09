@@ -1,6 +1,6 @@
 package org.freedesktop.dbus.connections.impl;
 
-import static org.freedesktop.dbus.utils.AddressBuilder.getDbusMachineId;
+import java.nio.ByteOrder;
 
 import org.freedesktop.dbus.connections.BusAddress;
 import org.freedesktop.dbus.connections.config.ReceivingServiceConfig;
@@ -12,7 +12,7 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.messages.Message;
 import org.freedesktop.dbus.utils.AddressBuilder;
 
-import java.nio.ByteOrder;
+import static org.freedesktop.dbus.utils.AddressBuilder.getDbusMachineId;
 
 /**
  * Builder to create a new DBusConnection.

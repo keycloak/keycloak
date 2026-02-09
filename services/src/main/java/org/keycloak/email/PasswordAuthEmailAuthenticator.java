@@ -1,11 +1,12 @@
 package org.keycloak.email;
 
+import java.util.Map;
+
 import jakarta.mail.MessagingException;
 import jakarta.mail.Transport;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.vault.VaultStringSecret;
-
-import java.util.Map;
 
 public class PasswordAuthEmailAuthenticator implements EmailAuthenticator {
 

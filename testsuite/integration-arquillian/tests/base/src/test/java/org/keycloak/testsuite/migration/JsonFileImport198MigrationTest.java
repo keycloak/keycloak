@@ -16,17 +16,18 @@
  */
 package org.keycloak.testsuite.migration;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.util.KerberosUtils;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Tests that we can import json file from previous version.  MigrationTest only tests DB.
@@ -82,6 +83,7 @@ public class JsonFileImport198MigrationTest extends AbstractJsonFileImportMigrat
         testMigrationTo25_0_0();
         testMigrationTo26_0_0(false);
         testMigrationTo26_3_0();
+        testMigrationTo26_4_0();
     }
 
     @Override

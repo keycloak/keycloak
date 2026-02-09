@@ -23,7 +23,6 @@ import java.util.Map;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.util.Time;
@@ -56,6 +55,8 @@ import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+
+import org.jboss.logging.Logger;
 
 /**
  * OpenID Connect Client-Initiated Backchannel Authentication Flow
@@ -213,8 +214,8 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, request.getScope());
         if (additionalParams != null) {
-            for (String paramName : additionalParams.keySet()) {
-                authSession.setClientNote(ADDITIONAL_CALLBACK_PARAMS_PREFIX + paramName, additionalParams.get(paramName));
+            for (var entry : additionalParams.entrySet()) {
+                authSession.setClientNote(ADDITIONAL_CALLBACK_PARAMS_PREFIX + entry.getKey(), entry.getValue());
             }
         }
         if (request.getOtherClaims() != null) {

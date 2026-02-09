@@ -17,7 +17,9 @@
 
 package org.keycloak.saml;
 
-import org.jboss.logging.Logger;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.saml.common.PicketLinkLogger;
@@ -29,9 +31,7 @@ import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

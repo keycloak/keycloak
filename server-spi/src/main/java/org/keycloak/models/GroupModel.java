@@ -17,12 +17,12 @@
 
 package org.keycloak.models;
 
-import org.keycloak.provider.ProviderEvent;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+
+import org.keycloak.provider.ProviderEvent;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -110,7 +110,7 @@ public interface GroupModel extends RoleMapperModel {
     }
 
     interface GroupMemberJoinEvent extends GroupEvent {
-        static void fire(GroupModel group, KeycloakSession session) {
+        static void fire(GroupModel group, UserModel user, KeycloakSession session) {
             session.getKeycloakSessionFactory().publish(new GroupMemberJoinEvent() {
                 @Override
                 public RealmModel getRealm() {
@@ -123,15 +123,22 @@ public interface GroupModel extends RoleMapperModel {
                 }
 
                 @Override
+                public UserModel getUser() {
+                    return user;
+                }
+
+                @Override
                 public KeycloakSession getKeycloakSession() {
                     return session;
                 }
             });
         }
+
+        UserModel getUser();
     }
 
     interface GroupMemberLeaveEvent extends GroupEvent {
-        static void fire(GroupModel group, KeycloakSession session) {
+        static void fire(GroupModel group, UserModel user, KeycloakSession session) {
             session.getKeycloakSessionFactory().publish(new GroupMemberLeaveEvent() {
                 @Override
                 public RealmModel getRealm() {
@@ -144,11 +151,18 @@ public interface GroupModel extends RoleMapperModel {
                 }
 
                 @Override
+                public UserModel getUser() {
+                    return user;
+                }
+
+                @Override
                 public KeycloakSession getKeycloakSession() {
                     return session;
                 }
             });
         }
+
+        UserModel getUser();
     }
 
     interface GroupPathChangeEvent extends GroupEvent {
@@ -327,4 +341,9 @@ public interface GroupModel extends RoleMapperModel {
     default Type getType() {
         return Type.REALM;
     }
+
+    /**
+     * @return Organization this group belongs to, or null if the group is of {@link Type#REALM}.
+     */
+    OrganizationModel getOrganization();
 }

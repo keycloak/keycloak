@@ -1,8 +1,11 @@
 package org.keycloak.testsuite.federation.storage;
 
-import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -11,22 +14,21 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.testsuite.admin.concurrency.AbstractConcurrencyTest;
+import org.keycloak.testsuite.AbstractConcurrencyTest;
 import org.keycloak.testsuite.federation.UserMapStorage;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import org.hamcrest.Matchers;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 
 /**
  *

@@ -16,24 +16,17 @@
  */
 package org.keycloak.saml.common.util;
 
-import org.keycloak.common.util.StringPropertyReplacer;
-import org.keycloak.common.util.SystemEnvProperties;
-import org.keycloak.saml.common.ErrorCodes;
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-
-import org.keycloak.saml.processing.core.parsers.util.HasQName;
-import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
+import java.io.InputStream;
+import java.io.StringReader;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.StringTokenizer;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.xml.XMLConstants;
 import javax.xml.datatype.Duration;
+import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLEventReader;
@@ -52,15 +45,22 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.StringTokenizer;
-import java.util.concurrent.atomic.AtomicBoolean;
-import javax.xml.datatype.XMLGregorianCalendar;
+
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.common.util.SystemEnvProperties;
+import org.keycloak.saml.common.ErrorCodes;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.core.parsers.util.HasQName;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 /**
  * Utility for the stax based parser

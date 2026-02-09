@@ -17,21 +17,18 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
-
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+
+import org.keycloak.config.Option;
+import org.keycloak.utils.StringUtil;
 
 import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 
-import org.keycloak.config.Option;
-import org.keycloak.quarkus.runtime.cli.Picocli;
-import org.keycloak.utils.StringUtil;
-
+import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 /**
@@ -56,7 +53,7 @@ public final class Configuration {
     public static boolean isUserModifiable(ConfigValue configValue) {
         // This could check as low as SysPropConfigSource DEFAULT_ORDINAL, which is 400
         // for now we won't validate these as it's not expected for the user to specify options via system properties
-        return configValue.getConfigSourceOrdinal() >= KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL;
+        return configValue.getConfigSourceName() != null && configValue.getConfigSourceOrdinal() >= KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL;
     }
 
     public static boolean isSet(Option<?> option) {
@@ -91,6 +88,10 @@ public final class Configuration {
                 .isPresent();
     }
 
+    public static boolean isInitialized() {
+        return config != null;
+    }
+
     public static synchronized SmallRyeConfig getConfig() {
         if (config == null) {
             config = ConfigUtils.emptyConfigBuilder().addDiscoveredSources().build();
@@ -111,10 +112,6 @@ public final class Configuration {
 
     public static Map<String, String> getRawPersistedProperties() {
         return PersistedConfigSource.getInstance().getProperties();
-    }
-
-    public static String getRawValue(String propertyName) {
-        return getConfig().getRawValue(propertyName);
     }
 
     public static Iterable<String> getPropertyNames() {
@@ -178,12 +175,18 @@ public final class Configuration {
     }
 
     public static String toDashCase(String key) {
+        if (key == null) {
+            return null;
+        }
         StringBuilder sb = new StringBuilder(key.length());
         boolean l = false;
 
         for (int i = 0; i < key.length(); i++) {
             char c = key.charAt(i);
-            if (l && Character.isUpperCase(c)) {
+            if (c == '.') {
+                c = '-'; // this is not documented, but was in the previous logic
+                l = false;
+            } else if (l && Character.isUpperCase(c)) {
                 sb.append('-');
                 c = Character.toLowerCase(c);
                 l = false;

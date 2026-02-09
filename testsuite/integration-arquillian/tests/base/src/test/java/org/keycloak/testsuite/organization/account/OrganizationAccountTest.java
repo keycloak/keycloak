@@ -21,17 +21,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.SortedSet;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.ws.rs.core.Response.Status;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.OrganizationResource;
-import org.keycloak.broker.provider.util.SimpleHttp.Response;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.representations.account.LinkedAccountRepresentation;
 import org.keycloak.representations.account.OrganizationRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -42,6 +35,15 @@ import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 public class OrganizationAccountTest extends AbstractOrganizationTest {
 
@@ -75,7 +77,7 @@ public class OrganizationAccountTest extends AbstractOrganizationTest {
 
         LinkedAccountRepresentation link = findLinkedAccount(bc.getIDPAlias());
         Assert.assertNotNull(link);
-        try (Response response = SimpleHttpDefault.doDelete(getAccountUrl("linked-accounts/" + link.getProviderAlias()), client).auth(tokenUtil.getToken()).acceptJson().asResponse()) {
+        try (SimpleHttpResponse response = SimpleHttpDefault.doDelete(getAccountUrl("linked-accounts/" + link.getProviderAlias()), client).auth(tokenUtil.getToken()).acceptJson().asResponse()) {
             Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
             ErrorRepresentation error = response.asJson(ErrorRepresentation.class);
             Assert.assertEquals("You cannot remove the link to an identity provider associated with an organization.", error.getErrorMessage());
@@ -83,7 +85,7 @@ public class OrganizationAccountTest extends AbstractOrganizationTest {
 
         // broker no longer linked to the organization
         organization.identityProviders().get(bc.getIDPAlias()).delete().close();
-        try (Response response = SimpleHttpDefault.doDelete(getAccountUrl("linked-accounts/" + link.getProviderAlias()), client).auth(tokenUtil.getToken()).acceptJson().asResponse()) {
+        try (SimpleHttpResponse response = SimpleHttpDefault.doDelete(getAccountUrl("linked-accounts/" + link.getProviderAlias()), client).auth(tokenUtil.getToken()).acceptJson().asResponse()) {
             Assert.assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
     }

@@ -1,28 +1,34 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import io.quarkus.runtime.util.ClassPathUtils;
-import io.quarkus.vertx.http.runtime.options.TlsUtils;
-import io.smallrye.config.ConfigSourceInterceptorContext;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Optional;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Optional;
+import io.quarkus.runtime.LaunchMode;
+import io.quarkus.runtime.util.ClassPathUtils;
+import io.quarkus.vertx.http.runtime.options.TlsUtils;
+import io.smallrye.config.ConfigSourceInterceptorContext;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromFeature;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-public final class HttpPropertyMappers {
+public final class HttpPropertyMappers implements PropertyMapperGrouping {
     private static final int MIN_MAX_THREADS = 50;
     private static final String QUARKUS_HTTPS_CERT_FILES = "quarkus.http.ssl.certificate.files";
     private static final String QUARKUS_HTTPS_CERT_KEY_FILES = "quarkus.http.ssl.certificate.key-files";
@@ -31,13 +37,11 @@ public final class HttpPropertyMappers {
     public static final String QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE = "quarkus.http.ssl.certificate.trust-store-file-type";
     private static final String QUARKUS_HTTPS_KEY_STORE_FILE_TYPE = "quarkus.http.ssl.certificate.key-store-file-type";
 
-    private HttpPropertyMappers(){}
-
     // Transform runtime exceptions obtained from Quarkus to ours with a relevant message
     private static void setCustomExceptionTransformer() {
         ExecutionExceptionHandler.addExceptionTransformer(TlsUtils.class, exception -> {
             if (exception instanceof IOException ioe) {
-                return new PropertyException("Failed to load 'https-trust-store' or 'https-key-' material: " + ioe.getClass().getSimpleName() + " " + ioe.getMessage(), ioe);
+                return new PropertyException("Failed to load 'https-*' material: " + ioe.getClass().getSimpleName() + " " + ioe.getMessage(), ioe);
             } else if (exception instanceof IllegalArgumentException iae) {
                 if (iae.getMessage().contains(QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE)) {
                     return new PropertyException("Unable to determine 'https-trust-store-type' automatically. " +
@@ -53,18 +57,39 @@ public final class HttpPropertyMappers {
         });
     }
 
-    public static PropertyMapper<?>[] getHttpPropertyMappers() {
+    // taken from VertxConfigBuilder
+    private static boolean isWSL() {
+        var sysEnv = System.getenv();
+        return sysEnv.containsKey("IS_WSL") || sysEnv.containsKey("WSL_DISTRO_NAME");
+    }
+
+    String getHttpHost(String value) {
+        if (value != null) {
+            return value;
+        }
+        // account for modes that always need to be all interfaces
+        if (Boolean.parseBoolean(System.getenv("KC_RUN_IN_CONTAINER")) || LaunchMode.current().isRemoteDev()
+                || isWSL()) {
+            return "0.0.0.0";
+        }
+        // using start-dev from the cli, is not the same as LaunchMode dev or test, so we need a specific override
+        if (Environment.isDevMode()) {
+            return "localhost";
+        }
+        return null;
+    }
+
+    @Override
+    public List<PropertyMapper<?>> getPropertyMappers() {
         setCustomExceptionTransformer();
-        return new PropertyMapper[] {
+        return List.of(
                 fromOption(HttpOptions.HTTP_ENABLED)
                         .to("quarkus.http.insecure-requests")
                         .transformer(HttpPropertyMappers::getHttpEnabledTransformer)
                         .build(),
-                fromOption(HttpOptions.HTTP_SERVER_ENABLED)
-                        .to("quarkus.http.host-enabled")
-                        .build(),
                 fromOption(HttpOptions.HTTP_HOST)
                         .to("quarkus.http.host")
+                        .transformer((v, c) -> getHttpHost(v))
                         .paramLabel("host")
                         .build(),
                 fromOption(HttpOptions.HTTP_RELATIVE_PATH)
@@ -93,8 +118,7 @@ public final class HttpPropertyMappers {
                         .build(),
                 fromOption(HttpOptions.HTTPS_CERTIFICATES_RELOAD_PERIOD)
                         .to("quarkus.http.ssl.certificate.reload-period")
-                        // -1 means no reload
-                        .transformer((value, context) -> "-1".equals(value) ? null : value)
+                        .transformer(HttpPropertyMappers::transformNegativeReloadPeriod)
                         .paramLabel("reload period")
                         .build(),
                 fromOption(HttpOptions.HTTPS_CERTIFICATE_FILE)
@@ -153,14 +177,22 @@ public final class HttpPropertyMappers {
                 fromOption(HttpOptions.HTTP_METRICS_SLOS)
                         .isEnabled(MetricsPropertyMappers::metricsEnabled, MetricsPropertyMappers.METRICS_ENABLED_MSG)
                         .paramLabel("list of buckets")
+                        .build(),
+                fromFeature(Profile.Feature.HTTP_OPTIMIZED_SERIALIZERS)
+                        .to("quarkus.rest.jackson.optimization.enable-reflection-free-serializers")
+                        .build(),
+                fromOption(HttpOptions.HTTP_ACCEPT_NON_NORMALIZED_PATHS)
                         .build()
-        };
+        );
     }
 
-    public static void validateConfig() {
-        boolean enabled = isHttpEnabled(getOptionalKcValue(HttpOptions.HTTP_ENABLED.getKey()).orElse(null));
-        if (!enabled && !isHttpsEnabled()) {
-            throw new PropertyException(Messages.httpsConfigurationNotSet());
+    @Override
+    public void validateConfig(Picocli picocli) {
+        if (picocli.getParsedCommand().filter(AbstractCommand::isServing).isPresent()) {
+            boolean enabled = isHttpEnabled(getOptionalKcValue(HttpOptions.HTTP_ENABLED.getKey()).orElse(null));
+            if (!enabled && !isHttpsEnabled()) {
+                throw new PropertyException(Messages.httpsConfigurationNotSet());
+            }
         }
     }
 
@@ -178,25 +210,21 @@ public final class HttpPropertyMappers {
         return isHttpEnabled(value) ? "enabled" : "disabled";
     }
 
+    static String transformNegativeReloadPeriod(String value, ConfigSourceInterceptorContext context) {
+        // -1 means no reload
+        return "-1".equals(value) ? null : value;
+    }
+
     private static boolean isHttpEnabled(String value) {
-        if (Environment.isDevMode() || Environment.isNonServerMode()) {
+        if (Environment.isDevMode() || org.keycloak.common.util.Environment.isNonServerMode()) {
             return true;
         }
         return Boolean.parseBoolean(value);
     }
 
     private static File getDefaultKeystorePathValue() {
-        String homeDir = Environment.getHomeDir();
-
-        if (homeDir != null) {
-            File file = Paths.get(homeDir, "conf", "server.keystore").toFile();
-
-            if (file.exists()) {
-                return file;
-            }
-        }
-
-        return null;
+        return Environment.getHomeDir().map(f -> Paths.get(f, "conf", "server.keystore").toFile()).filter(File::exists)
+                .orElse(null);
     }
 
     private static String resolveKeyStoreType(String value,
@@ -215,4 +243,3 @@ public final class HttpPropertyMappers {
         return value;
     }
 }
-

@@ -1,10 +1,15 @@
 package org.keycloak.testframework.server;
 
-import org.jboss.logging.Logger;
-import org.keycloak.testframework.injection.AbstractInterceptorHelper;
+import java.util.List;
+
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.database.TestDatabase;
+import org.keycloak.testframework.https.ManagedCertificates;
+import org.keycloak.testframework.infinispan.InfinispanServer;
+import org.keycloak.testframework.injection.AbstractInterceptorHelper;
+import org.keycloak.testframework.injection.DependenciesBuilder;
+import org.keycloak.testframework.injection.Dependency;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.Registry;
@@ -13,28 +18,56 @@ import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierHelpers;
 import org.keycloak.testframework.injection.SupplierOrder;
 
+import org.jboss.logging.Logger;
+
 public abstract class AbstractKeycloakServerSupplier implements Supplier<KeycloakServer, KeycloakIntegrationTest> {
 
     @Override
+    public List<Dependency> getDependencies(RequestedInstance<KeycloakServer, KeycloakIntegrationTest> instanceContext) {
+        KeycloakServerConfigBuilder command = getKeycloakServerConfigBuilder(instanceContext.getAnnotation());
+
+        DependenciesBuilder builder = DependenciesBuilder.create(ManagedCertificates.class);
+        if (requiresDatabase()) {
+            builder.add(TestDatabase.class);
+        }
+
+        if (command.isExternalInfinispanEnabled()) {
+            builder.add(InfinispanServer.class);
+        }
+
+        return builder.build();
+    }
+
+    @Override
     public KeycloakServer getValue(InstanceContext<KeycloakServer, KeycloakIntegrationTest> instanceContext) {
-        KeycloakIntegrationTest annotation = instanceContext.getAnnotation();
-        KeycloakServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
 
-        KeycloakServerConfigBuilder command = KeycloakServerConfigBuilder.startDev()
-                .cache("local")
-                .bootstrapAdminClient(Config.getAdminClientId(), Config.getAdminClientSecret())
-                .bootstrapAdminUser(Config.getAdminUsername(), Config.getAdminPassword());
+        KeycloakServerConfigBuilder command = getKeycloakServerConfigBuilder(instanceContext.getAnnotation());
 
-        command.log().handlers(KeycloakServerConfigBuilder.LogHandlers.CONSOLE);
-
-        command = serverConfig.configure(command);
-
+        // Database startup and Keycloak connection setup
         if (requiresDatabase()) {
             instanceContext.getDependency(TestDatabase.class);
         }
 
+        // External Infinispan startup and Keycloak connection setup
+        if (command.isExternalInfinispanEnabled()) {
+            instanceContext.getDependency(InfinispanServer.class);
+        }
+
         ServerConfigInterceptorHelper interceptor = new ServerConfigInterceptorHelper(instanceContext.getRegistry());
         command = interceptor.intercept(command, instanceContext);
+
+        ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
+
+        if (managedCert.isTlsEnabled()) {
+            command.option("https-key-store-file", managedCert.getServerKeyStorePath());
+            command.option("https-key-store-password", managedCert.getServerKeyStorePassword());
+        }
+
+        if (managedCert.isMTlsEnabled()) {
+            command.option("https-client-auth", "request");
+            command.option("https-trust-store-file", managedCert.getServerTrustStorePath());
+            command.option("https-trust-store-password", managedCert.getServerTrustStorePassword());
+        }
 
         command.log().fromConfig(Config.getConfig());
 
@@ -46,11 +79,29 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
         long start = System.currentTimeMillis();
 
         KeycloakServer server = getServer();
-        server.start(command);
+        server.start(command, managedCert.isTlsEnabled());
 
         getLogger().infov("Keycloak test server started in {0} ms", System.currentTimeMillis() - start);
 
         return server;
+    }
+
+    private static KeycloakServerConfigBuilder getKeycloakServerConfigBuilder(KeycloakIntegrationTest annotation) {
+        KeycloakServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
+        KeycloakServerConfigBuilder command = KeycloakServerConfigBuilder.startDev()
+                .bootstrapAdminClient(Config.getAdminClientId(), Config.getAdminClientSecret())
+                .bootstrapAdminUser(Config.getAdminUsername(), Config.getAdminPassword());
+
+        command.log().handlers(KeycloakServerConfigBuilder.LogHandlers.CONSOLE);
+
+        String supplierConfig = Config.getSupplierConfig(KeycloakServer.class);
+        if (supplierConfig != null) {
+            KeycloakServerConfig serverConfigOverride = SupplierHelpers.getInstance(supplierConfig);
+            serverConfigOverride.configure(command);
+        }
+
+        command = serverConfig.configure(command);
+        return command;
     }
 
     @Override

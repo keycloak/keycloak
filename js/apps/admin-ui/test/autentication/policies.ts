@@ -1,8 +1,7 @@
-import { Page, expect } from "@playwright/test";
-import { selectItem } from "../utils/form";
+import { type Page, expect } from "@playwright/test";
+import { selectItem } from "../utils/form.ts";
 
 export async function goToOTPPolicyTab(page: Page) {
-  await page.getByTestId("policies").click();
   await page.getByTestId("otpPolicy").click();
 }
 
@@ -23,12 +22,10 @@ export async function increaseInitialCounter(page: Page) {
 }
 
 export async function goToWebauthnPage(page: Page) {
-  await page.getByTestId("policies").click();
   await page.getByTestId("webauthnPolicy").click();
 }
 
 export async function goToWebauthnPasswordlessPage(page: Page) {
-  await page.getByTestId("policies").click();
   await page.getByTestId("webauthnPasswordlessPolicy").click();
 }
 

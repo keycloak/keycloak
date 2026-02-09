@@ -17,13 +17,20 @@
 
 package org.keycloak.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.jboss.logging.Logger;
+import java.io.IOException;
+import java.security.PublicKey;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.PublicKeysWrapper;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.crypto.KeyType;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
@@ -32,15 +39,7 @@ import org.keycloak.jose.jwk.OKPPublicJWK;
 import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.jose.jws.crypto.HashUtils;
 
-import java.io.IOException;
-import java.security.PublicKey;
-import java.security.interfaces.ECPublicKey;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -55,6 +54,7 @@ public class JWKSUtils {
     static {
         JWK_THUMBPRINT_REQUIRED_MEMBERS.put(KeyType.RSA, new String[] { RSAPublicJWK.MODULUS, RSAPublicJWK.PUBLIC_EXPONENT });
         JWK_THUMBPRINT_REQUIRED_MEMBERS.put(KeyType.EC, new String[] { ECPublicJWK.CRV, ECPublicJWK.X, ECPublicJWK.Y });
+        JWK_THUMBPRINT_REQUIRED_MEMBERS.put(KeyType.OKP, new String[] { OKPPublicJWK.CRV, OKPPublicJWK.X });
     }
 
     /**
@@ -80,7 +80,7 @@ public class JWKSUtils {
             } else if ((requestedUse.asString().equals(jwk.getPublicKeyUse()) || (jwk.getPublicKeyUse() == null && useRequestedUseWhenNull))
                     && parser.isKeyTypeSupported(jwk.getKeyType())) {
                 try {
-                    KeyWrapper keyWrapper = wrap(jwk, parser);
+                    KeyWrapper keyWrapper = wrap(jwk, parser, false);
                     keyWrapper.setUse(getKeyUse(requestedUse.asString()));
                     result.add(keyWrapper);
                 } catch (RuntimeException e) {
@@ -118,26 +118,32 @@ public class JWKSUtils {
     }
 
     public static KeyWrapper getKeyWrapper(JWK jwk) {
+        return getKeyWrapper(jwk, false);
+    }
+
+    public static KeyWrapper getKeyWrapper(JWK jwk, boolean skipPublicKey) {
         JWKParser parser = JWKParser.create(jwk);
         if (parser.isKeyTypeSupported(jwk.getKeyType())) {
-            return wrap(jwk, parser);
+            return wrap(jwk, parser, skipPublicKey);
         } else {
             return null;
         }
     }
 
-    private static KeyWrapper wrap(JWK jwk, JWKParser parser) {
+    private static KeyWrapper wrap(JWK jwk, JWKParser parser, boolean skipPublicKey) {
         KeyWrapper keyWrapper = new KeyWrapper();
         keyWrapper.setKid(jwk.getKeyId());
         if (jwk.getAlgorithm() != null) {
             keyWrapper.setAlgorithm(jwk.getAlgorithm());
         }
-        if (jwk.getOtherClaims().get(OKPPublicJWK.CRV) != null) {
-            keyWrapper.setCurve((String) jwk.getOtherClaims().get(OKPPublicJWK.CRV));
+        if (jwk.getOtherClaim(OKPPublicJWK.CRV, String.class) != null) {
+            keyWrapper.setCurve(jwk.getOtherClaim(OKPPublicJWK.CRV, String.class));
         }
         keyWrapper.setType(jwk.getKeyType());
         keyWrapper.setUse(getKeyUse(jwk.getPublicKeyUse()));
-        keyWrapper.setPublicKey(parser.toPublicKey());
+        if (!skipPublicKey) {
+            keyWrapper.setPublicKey(parser.toPublicKey());
+        }
         return keyWrapper;
     }
 
@@ -160,9 +166,8 @@ public class JWKSUtils {
         members.put(JWK.KEY_TYPE, kty);
 
         try {
-            JsonNode node = JsonSerialization.writeValueAsNode(key);
             for (String member : requiredMembers) {
-                members.put(member, node.get(member).asText());
+                members.put(member, key.getOtherClaim(member, String.class));
             }
 
             byte[] bytes = JsonSerialization.writeValueAsBytes(members);

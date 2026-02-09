@@ -28,7 +28,7 @@
 	<artifactId>keycloak-dependencies-server-all</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak Dependencies Server All</name>
-	<description />
+    <description>Keycloak Dependencies Server All</description>
 
     <dependencies>
         <dependency>

@@ -18,12 +18,13 @@
 
 package org.keycloak.testsuite.webauthn;
 
-import org.junit.Test;
 import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.feature.AbstractFeatureStateTest;
+
+import org.junit.Test;
 
 public class WebAuthnFeatureTest extends AbstractFeatureStateTest {
 

@@ -17,16 +17,20 @@
 
 package org.keycloak.tests.admin.client;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -47,21 +51,20 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.realm.RoleConfigBuilder;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.tests.utils.matchers.Matchers;
-import org.keycloak.testsuite.util.RoleBuilder;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import static org.keycloak.tests.utils.Assert.assertNames;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.tests.utils.Assert.assertNames;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -346,9 +349,9 @@ public class ClientScopeTest extends AbstractClientScopeTest {
         String roleContainerClientUuid = realm.clients().findByClientId("role-container-client").stream().findFirst().orElseThrow().getId();
         ClientResource roleContainerClient = realm.clients().get(roleContainerClientUuid);
 
-        RoleRepresentation clientCompositeRole = RoleBuilder.create().name("client-composite").build();
+        RoleRepresentation clientCompositeRole = RoleConfigBuilder.create().name("client-composite").build();
         roleContainerClient.roles().create(clientCompositeRole);
-        roleContainerClient.roles().create(RoleBuilder.create().name("client-child").build());
+        roleContainerClient.roles().create(RoleConfigBuilder.create().name("client-child").build());
         roleContainerClient.roles().get("client-composite").addComposites(Collections
                 .singletonList(
                         roleContainerClient.roles().get("client-child").toRepresentation()));
@@ -741,7 +744,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
     @DisplayName("Create ClientScope with protocol:")
     @ParameterizedTest
-    @ValueSource(strings = {"openid-connect", "saml", "oid4vc"})
+    @ValueSource(strings = {"openid-connect", "saml"})
     public void createClientScopeWithOpenIdProtocol(String protocol) {
         createClientScope(protocol);
     }
@@ -762,6 +765,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
             Assertions.assertNotNull(location);
             clientScopeId = location.substring(location.lastIndexOf("/") + 1);
         } finally {
+            Assertions.assertNotNull(clientScopeId);
             // cleanup
             clientScopes().get(clientScopeId).remove();
         }

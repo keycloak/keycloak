@@ -1,27 +1,27 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { assertSaveButtonIsDisabled, clickSaveButton } from "../utils/form";
-import { login } from "../utils/login";
+import adminClient from "../utils/AdminClient.ts";
+import { assertSaveButtonIsDisabled, clickSaveButton } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
 import {
   assertNotificationMessage,
   selectActionToggleItem,
-} from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
-import { goToOrganizations, goToRealm } from "../utils/sidebar";
+} from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { goToOrganizations, goToRealm } from "../utils/sidebar.ts";
 import {
   assertRowExists,
   clickRowKebabItem,
   clickTableRowItem,
-} from "../utils/table";
+} from "../utils/table.ts";
 import {
   fillCreatePage,
   fillNameField,
   getNameField,
   goToCreate,
-} from "./main";
+} from "./main.ts";
 
-test.describe("Organization CRUD", () => {
+test.describe.serial("Organization CRUD", () => {
   const realmName = `organization-${uuid()}`;
 
   test.beforeAll(() =>
@@ -48,7 +48,7 @@ test.describe("Organization CRUD", () => {
     await assertNotificationMessage(page, "Organization successfully saved.");
   });
 
-  test.describe("Existing organization", () => {
+  test.describe.serial("Existing organization", () => {
     const orgName = `org-edit-${uuid()}`;
     const delOrgName = `org-del-${uuid()}`;
     const delOrgName2 = `org-del-${uuid()}`;
@@ -77,6 +77,10 @@ test.describe("Organization CRUD", () => {
 
     test("should modify existing organization", async ({ page }) => {
       await clickTableRowItem(page, orgName);
+
+      // This waits for the field to be filled before we clear and fill it with a new value
+      await expect(getNameField(page)).toHaveValue(orgName);
+
       const newValue = "newName";
       await fillNameField(page, newValue);
       await expect(getNameField(page)).toHaveValue(newValue);

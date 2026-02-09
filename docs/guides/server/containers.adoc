@@ -24,6 +24,22 @@ For the best start up of your {project_name} container, build an image by runnin
 This step will save time in every subsequent start phase of the container image.
 
 === Writing your optimized {project_name} Containerfile
+
+<@profile.ifCommunity>
+
+[NOTE]
+====
+A Containerfile is functionally identical to a Dockerfile and uses the same syntax.
+The term "Containerfile" is used to be more tool-agnostic, especially in non-Docker environments like Podman or Buildah.
+When using Docker, you have two options: either name your file `Dockerfile` (which Docker expects by default), or keep the name `Containerfile` and specify it explicitly using the `-f` flag:
+
+----
+docker build -f Containerfile -t mykeycloak .
+----
+====
+
+</@profile.ifCommunity>
+
 The following `Containerfile` creates a pre-configured {project_name} image that enables the health and metrics endpoints, enables the token exchange feature, and uses a PostgreSQL database.
 
 .Containerfile:
@@ -147,7 +163,7 @@ To build the actual container image, run the following command from the director
 
 [source,bash]
 ----
-podman|docker build . -t mykeycloak
+podman|docker build . -t mykeycloak -f Containerfile
 ----
 
 <@profile.ifProduct>

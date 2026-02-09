@@ -18,6 +18,22 @@
 package org.keycloak.protocol.oid4vc.issuance.signing.vcdm;
 
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Optional;
+
+import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
+
+import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerException;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.util.JsonSerialization;
+
 import com.apicatalog.jsonld.JsonLd;
 import com.apicatalog.jsonld.JsonLdError;
 import com.apicatalog.jsonld.document.JsonDocument;
@@ -32,20 +48,6 @@ import com.apicatalog.rdf.io.error.RdfWriterException;
 import com.apicatalog.rdf.io.error.UnsupportedContentException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.setl.rdf.normalization.RdfNormalize;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
-import org.keycloak.crypto.SignatureSignerContext;
-import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerException;
-import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
-import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Optional;
 
 /**
  * Implementation of an LD-Crypto Suite for Ed25519Signature2018

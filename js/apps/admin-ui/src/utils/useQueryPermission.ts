@@ -26,7 +26,7 @@ export default function useQueryPermission(
     setStatus(null);
     setPlainStatus(null);
 
-    navigator.permissions.query({ name }).then((newStatus) => {
+    void navigator.permissions.query({ name }).then((newStatus) => {
       setStatus(newStatus);
       updatePlainStatus(newStatus);
     });

@@ -16,12 +16,9 @@
  */
 package org.keycloak.testsuite.actions;
 
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -43,13 +40,19 @@ import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
-import java.util.List;
-import java.util.Map;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -57,7 +60,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -187,7 +189,7 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
                     attributes.get(TermsAndConditions.USER_ATTRIBUTE));
         }
         assertThat(DroneUtils.getCurrentDriver().getTitle(), equalTo("Account Management"));
-        Assert.assertTrue(DroneUtils.getCurrentDriver().getPageSource().contains("You need to accept the Terms and Conditions to continue"));
+        Assert.assertTrue(DroneUtils.getCurrentDriver().getPageSource().contains("Access denied"));
         Assert.assertFalse(DroneUtils.getCurrentDriver().getPageSource().contains("An unexpected error occurred"));
 
         WebElement tryAgainButton = DroneUtils.getCurrentDriver().findElement(By.tagName("button"));

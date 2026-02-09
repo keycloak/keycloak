@@ -17,11 +17,11 @@
 
 package org.keycloak.testsuite.webauthn.authenticators;
 
-import org.openqa.selenium.virtualauthenticator.VirtualAuthenticator;
-import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
-
 import java.util.Arrays;
 import java.util.Map;
+
+import org.openqa.selenium.virtualauthenticator.VirtualAuthenticator;
+import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
 /**
  * Keycloak Virtual Authenticator

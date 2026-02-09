@@ -16,11 +16,11 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
+import java.util.Set;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

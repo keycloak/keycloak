@@ -1,6 +1,7 @@
 package org.keycloak.admin.ui.rest.model;
 
 import java.util.Objects;
+
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 public final class ClientRole {

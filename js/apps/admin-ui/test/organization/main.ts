@@ -1,4 +1,4 @@
-import { Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 export async function goToCreate(page: Page, empty: boolean = true) {
   await page

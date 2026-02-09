@@ -25,6 +25,7 @@ Clicking *Sign out all active sessions* does not revoke outstanding access token
 .Client sessions
 image:images/client-sessions.png[Client sessions]
 
+[#viewing-user-sessions]
 ==== Viewing user sessions
 
 .Procedure

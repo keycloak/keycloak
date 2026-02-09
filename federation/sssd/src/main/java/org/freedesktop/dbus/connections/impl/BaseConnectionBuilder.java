@@ -1,5 +1,7 @@
 package org.freedesktop.dbus.connections.impl;
 
+import java.nio.ByteOrder;
+
 import org.freedesktop.dbus.connections.AbstractConnection;
 import org.freedesktop.dbus.connections.BusAddress;
 import org.freedesktop.dbus.connections.IDisconnectCallback;
@@ -12,8 +14,6 @@ import org.freedesktop.dbus.connections.transports.TransportBuilder;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.messages.Message;
 import org.freedesktop.dbus.messages.Message.Endian;
-
-import java.nio.ByteOrder;
 
 /**
  * Base class for connection builders containing commonly used options.

@@ -1,15 +1,15 @@
 package org.freedesktop.dbus.connections;
 
+import java.io.IOException;
+import java.util.Objects;
+import java.util.concurrent.RejectedExecutionException;
+
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.IllegalThreadPoolStateException;
 import org.freedesktop.dbus.interfaces.FatalException;
 import org.freedesktop.dbus.messages.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.Objects;
-import java.util.concurrent.RejectedExecutionException;
 
 public class IncomingMessageThread extends Thread {
     private final Logger             logger = LoggerFactory.getLogger(getClass());

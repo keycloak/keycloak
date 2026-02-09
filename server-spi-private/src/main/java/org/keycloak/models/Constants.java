@@ -17,12 +17,12 @@
 
 package org.keycloak.models;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.crypto.Algorithm;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.regex.Pattern;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.crypto.Algorithm;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -70,6 +70,11 @@ public final class Constants {
     public static final String DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME = "keycloak";
     // it stands for optional parameter not specified in WebAuthn
     public static final String DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED = "not specified";
+    public static final String WEBAUTHN_POLICY_OPTION_REQUIRED = "required";
+    public static final String WEBAUTHN_POLICY_OPTION_PREFERED = "preferred";
+    public static final String WEBAUTHN_POLICY_OPTION_DISCOURAGED = "discouraged";
+    public static final String WEBAUTHN_POLICY_OPTION_YES = "Yes";
+    public static final String WEBAUTHN_POLICY_OPTION_NO = "No";
 
     // Prefix used for the realm attributes and other places
     public static final String WEBAUTHN_PASSWORDLESS_PREFIX = "Passwordless";
@@ -214,4 +219,10 @@ public final class Constants {
     public static final String CREATED_FROM_PERSISTENT = "created_from_persistent";
     public static final String CREATED_FROM_PERSISTENT_ONLINE = "online";
     public static final String CREATED_FROM_PERSISTENT_OFFLINE = "offline";
+
+    // Provider ID of the openid-connect protocol
+    public static final String OIDC_PROTOCOL = "openid-connect";
+
+    // Internal note for storing authorization details response in client session context
+    public static final String AUTHORIZATION_DETAILS_RESPONSE = "authorization_details_response";
 }

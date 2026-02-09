@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc.mappers;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.keycloak.Config;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;

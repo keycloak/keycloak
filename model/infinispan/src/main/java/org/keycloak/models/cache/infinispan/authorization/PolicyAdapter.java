@@ -16,6 +16,14 @@
  */
 package org.keycloak.models.cache.infinispan.authorization;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
 import org.keycloak.authorization.model.CachedModel;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -25,17 +33,10 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.cache.infinispan.LazyModel;
 import org.keycloak.models.cache.infinispan.authorization.entities.CachedPolicy;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -53,7 +54,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         this.cached = cached;
         this.cacheSession = cacheSession;
         this.session = cacheSession.session;
-        this.modelSupplier = this::getPolicyModel;
+        this.modelSupplier = new LazyModel<>(this::getPolicyModel);
     }
 
     @Override
@@ -233,6 +234,9 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         ResourceServer resourceServer = getResourceServer();
         for (String resourceId : cached.getResourcesIds(session, modelSupplier)) {
             Resource resource = resourceStore.findById(resourceServer, resourceId);
+            if (resource == null) {
+                continue;
+            }
             cacheSession.cacheResource(resource);
             resources.add(resource);
         }
@@ -304,6 +308,9 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         ScopeStore scopeStore = cacheSession.getScopeStore();
         for (String scopeId : cached.getScopesIds(session, modelSupplier)) {
             Scope scope = scopeStore.findById(resourceServer, scopeId);
+            if (scope == null) {
+                continue;
+            }
             cacheSession.cacheScope(scope);
             scopes.add(scope);
         }

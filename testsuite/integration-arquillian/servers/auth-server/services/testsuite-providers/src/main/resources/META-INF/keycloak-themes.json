@@ -9,5 +9,9 @@
   {
     "name" : "organization",
     "types": [ "login" ]
+  },
+  {
+    "name" : "themeconfig",
+    "types": [ "login" ]
   }]
 }

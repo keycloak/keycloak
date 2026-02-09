@@ -41,7 +41,7 @@ public class AudienceProtocolMapper extends AbstractOIDCProtocolMapper implement
     private static final String INCLUDED_CLIENT_AUDIENCE_LABEL = "included.client.audience.label";
     private static final String INCLUDED_CLIENT_AUDIENCE_HELP_TEXT = "included.client.audience.tooltip";
 
-    private static final String INCLUDED_CUSTOM_AUDIENCE = "included.custom.audience";
+    public static final String INCLUDED_CUSTOM_AUDIENCE = "included.custom.audience";
     private static final String INCLUDED_CUSTOM_AUDIENCE_LABEL = "included.custom.audience.label";
     private static final String INCLUDED_CUSTOM_AUDIENCE_HELP_TEXT = "included.custom.audience.tooltip";
 

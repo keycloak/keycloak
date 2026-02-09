@@ -17,15 +17,15 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Allows to add statically configured claims to the credential subject
@@ -36,14 +36,13 @@ public class OID4VCStaticClaimMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-static-claim-mapper";
 
-    public static final String SUBJECT_PROPERTY_CONFIG_KEY = "subjectProperty";
     public static final String STATIC_CLAIM_KEY = "staticValue";
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
     static {
         ProviderConfigProperty subjectPropertyNameConfig = new ProviderConfigProperty();
-        subjectPropertyNameConfig.setName(SUBJECT_PROPERTY_CONFIG_KEY);
+        subjectPropertyNameConfig.setName(CLAIM_NAME);
         subjectPropertyNameConfig.setLabel("Static Claim Property Name");
         subjectPropertyNameConfig.setHelpText("Name of the property to contain the static value.");
         subjectPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
@@ -62,14 +61,15 @@ public class OID4VCStaticClaimMapper extends OID4VCMapper {
         return CONFIG_PROPERTIES;
     }
 
-    public void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                       UserSessionModel userSessionModel) {
+    public void setClaim(VerifiableCredential verifiableCredential,
+                         UserSessionModel userSessionModel) {
         // nothing to do for the mapper.
     }
 
     @Override
-    public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
-        String propertyName = mapperModel.getConfig().get(SUBJECT_PROPERTY_CONFIG_KEY);
+    public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
+        List<String> attributePath = getMetadataAttributePath();
+        String propertyName = attributePath.get(attributePath.size() - 1);
         String staticValue = mapperModel.getConfig().get(STATIC_CLAIM_KEY);
         claims.put(propertyName, staticValue);
     }

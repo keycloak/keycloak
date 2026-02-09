@@ -17,7 +17,9 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
-import org.jboss.logging.Logger;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.MapperTypeSerializer;
@@ -27,8 +29,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 
-import java.util.List;
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>
@@ -90,6 +91,8 @@ public class ClientAttributesCondition extends AbstractClientPolicyConditionProv
             case REGISTERED:
             case UPDATE:
             case UPDATED:
+            case TOKEN_EXCHANGE_REQUEST:
+            case JWT_AUTHORIZATION_GRANT:
             case SAML_AUTHN_REQUEST:
             case SAML_LOGOUT_REQUEST:
                 if (isAttributesMatched(session.getContext().getClient())) return ClientPolicyVote.YES;

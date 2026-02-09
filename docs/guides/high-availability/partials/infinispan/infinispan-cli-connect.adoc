@@ -7,7 +7,7 @@ kubectl -n {ns} exec -it pods/{cluster-name}-0 -- ./bin/cli.sh --trustall --conn
 ----
 +
 It asks for the username and password for the {jdgserver_name} cluster.
-Those credentials are the one set in the <@links.ha id="deploy-infinispan-kubernetes-crossdc"/> {section} in the configuring credentials section.
+Those credentials are the one set in the <@links.ha id="multi-cluster-deploy-infinispan-kubernetes-crossdc"/> {section} in the configuring credentials section.
 +
 .Output:
 [source,bash,subs="+attributes"]

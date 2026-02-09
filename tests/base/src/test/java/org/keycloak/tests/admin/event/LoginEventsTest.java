@@ -17,9 +17,12 @@
 
 package org.keycloak.tests.admin.event;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.events.Event;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
@@ -34,12 +37,12 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.LoginPage;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.util.List;
-import java.util.Map;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -60,6 +63,9 @@ public class LoginEventsTest {
     @InjectRunOnServer
     RunOnServerClient runOnServerClient;
 
+    @InjectPage
+    LoginPage loginPage;
+
     @BeforeEach
     public void init() {
         managedRealm.admin().clearEvents();
@@ -70,7 +76,9 @@ public class LoginEventsTest {
     }
 
     private void badLogin() {
-        oAuthClient.doLogin("bad", "user");
+        oAuthClient.openLoginForm();
+        oAuthClient.fillLoginForm("bad", "user");
+        loginPage.assertCurrent();
     }
 
     private void pause(int seconds) {
@@ -122,7 +130,7 @@ public class LoginEventsTest {
         badLogin();
         Assertions.assertEquals(0, events().size());
 
-        managedRealm.updateWithCleanup(r -> r.overwriteEnabledEventTypes("LOGIN_ERROR"));
+        managedRealm.updateWithCleanup(r -> r.setEnabledEventTypes("LOGIN_ERROR"));
 
         badLogin();
         Assertions.assertEquals(1, events().size());

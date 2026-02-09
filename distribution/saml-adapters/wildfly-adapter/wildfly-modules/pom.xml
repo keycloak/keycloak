@@ -32,6 +32,7 @@
     <artifactId>keycloak-saml-wildfly-modules</artifactId>
 
     <name>Keycloak SAML Wildfly Modules</name>
+    <description>Keycloak SAML Wildfly Modules</description>
     <packaging>pom</packaging>
     <dependencies>
         <dependency>

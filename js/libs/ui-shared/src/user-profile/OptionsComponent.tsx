@@ -27,7 +27,7 @@ export const OptionComponent = (props: UserProfileFieldProps) => {
       <Controller
         name={fieldName(attribute.name)}
         control={form.control}
-        defaultValue=""
+        defaultValue={attribute.defaultValue}
         render={({ field }) => (
           <>
             {options.map((option) => (
@@ -37,15 +37,15 @@ export const OptionComponent = (props: UserProfileFieldProps) => {
                 data-testid={option}
                 label={label(props.t, optionLabel[option], option, prefix)}
                 value={option}
-                isChecked={field.value.includes(option)}
+                isChecked={field.value?.includes(option)}
                 onChange={() => {
                   if (isMultiSelect) {
-                    if (field.value.includes(option)) {
+                    if (field.value?.includes(option)) {
                       field.onChange(
-                        field.value.filter((item: string) => item !== option),
+                        field.value?.filter((item: string) => item !== option),
                       );
                     } else {
-                      field.onChange([...field.value, option]);
+                      field.onChange([...(field.value || []), option]);
                     }
                   } else {
                     field.onChange([option]);

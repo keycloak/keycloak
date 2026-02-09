@@ -20,6 +20,7 @@ import realmRoutes from "./realm/routes";
 import sessionRoutes from "./sessions/routes";
 import userFederationRoutes from "./user-federation/routes";
 import userRoutes from "./user/routes";
+import workflowRoutes from "./workflows/routes";
 
 export type AppRouteObjectHandle = {
   access: AccessType | AccessType[];
@@ -47,6 +48,7 @@ export const routes: AppRouteObject[] = [
   ...identityProviders,
   ...organizationRoutes,
   ...realmRoleRoutes,
+  ...workflowRoutes,
   ...realmRoutes,
   ...realmSettingRoutes,
   ...sessionRoutes,

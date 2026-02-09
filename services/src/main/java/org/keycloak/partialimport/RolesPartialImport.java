@@ -16,6 +16,13 @@
  */
 package org.keycloak.partialimport;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -26,12 +33,6 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
-
-import jakarta.ws.rs.core.Response;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 
 /**
  * This class handles both realm roles and client roles.  It delegates to
@@ -137,8 +138,8 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
     }
 
     private void setUniqueIds(Map<String, List<RoleRepresentation>> clientRoles) {
-        for (String clientId : clientRoles.keySet()) {
-            for (RoleRepresentation clientRole : clientRoles.get(clientId)) {
+        for (List<RoleRepresentation> roleRepresentations : clientRoles.values()) {
+            for (RoleRepresentation clientRole : roleRepresentations) {
                 clientRole.setId(KeycloakModelUtils.generateId());
             }
         }
@@ -162,8 +163,9 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
                                        RealmModel realm) {
         if (isEmpty(clientRolesToSkip)) return;
 
-        for (String clientId : clientRolesToSkip.keySet()) {
-            for (RoleRepresentation roleRep : clientRolesToSkip.get(clientId)) {
+        for (var entry : clientRolesToSkip.entrySet()) {
+            String clientId = entry.getKey();
+            for (RoleRepresentation roleRep : entry.getValue()) {
                 rep.getRoles().getClient().get(clientId).remove(roleRep);
                 String modelId = clientRolesPI.getModelId(realm, clientId);
                 results.addResult(clientRolesPI.skipped(clientId, modelId, roleRep));
@@ -191,9 +193,9 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
     private void deleteClientRoleOverwrites(RealmModel realm) {
         if (isEmpty(clientRolesToOverwrite)) return;
 
-        for (String clientId : clientRolesToOverwrite.keySet()) {
-            for (RoleRepresentation roleRep : clientRolesToOverwrite.get(clientId)) {
-                clientRolesPI.deleteRole(realm, clientId, roleRep);
+        for (var entry : clientRolesToOverwrite.entrySet()) {
+            for (RoleRepresentation roleRep : entry.getValue()) {
+                clientRolesPI.deleteRole(realm, entry.getKey(), roleRep);
             }
         }
     }
@@ -201,8 +203,9 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
     private void addResultsForOverwrittenClientRoles(PartialImportResults results, RealmModel realm) {
         if (isEmpty(clientRolesToOverwrite)) return;
 
-        for (String clientId : clientRolesToOverwrite.keySet()) {
-            for (RoleRepresentation roleRep : clientRolesToOverwrite.get(clientId)) {
+        for (var entry : clientRolesToOverwrite.entrySet()) {
+            String clientId = entry.getKey();
+            for (RoleRepresentation roleRep : entry.getValue()) {
                 String modelId = clientRolesPI.getModelId(realm, clientId);
                 results.addResult(clientRolesPI.overwritten(clientId, modelId, roleRep));
             }
@@ -238,8 +241,9 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
         if (!rep.hasClientRoles()) return;
 
         Map<String, List<RoleRepresentation>> repList = clientRolesPI.getRepList(rep);
-        for (String clientId : repList.keySet()) {
-            for (RoleRepresentation roleRep : repList.get(clientId)) {
+        for (var entry : repList.entrySet()) {
+            String clientId = entry.getKey();
+            for (RoleRepresentation roleRep : entry.getValue()) {
                 if (clientRolesToOverwrite.get(clientId).contains(roleRep)) continue;
                 if (clientRolesToSkip.get(clientId).contains(roleRep)) continue;
 

@@ -27,7 +27,7 @@
 
     <artifactId>keycloak-model-jpa</artifactId>
     <name>Keycloak Model JPA</name>
-    <description/>
+    <description>Keycloak Model JPA</description>
 
     <properties>
         <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
@@ -38,6 +38,8 @@
         <jdbc.mvn.groupId>com.h2database</jdbc.mvn.groupId>
         <jdbc.mvn.artifactId>h2</jdbc.mvn.artifactId>
         <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
+        <db.verify.supportedFile>src/main/resources/META-INF/rolling-upgrades-supported-changes.json</db.verify.supportedFile>
+        <db.verify.unsupportedFile>src/main/resources/META-INF/rolling-upgrades-unsupported-changes.json</db.verify.unsupportedFile>
     </properties>
     
     <dependencies>
@@ -88,6 +90,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -134,6 +141,76 @@
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
+                <configuration>
+                    <visitor>true</visitor>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-sources/antlr4</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.keycloak</groupId>
+                <artifactId>db-compatibility-verifier-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <id>verify</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>db-changeset-snapshot</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.keycloak</groupId>
+                        <artifactId>db-compatibility-verifier-maven-plugin</artifactId>
+                        <version>${project.version}</version>
+                        <executions>
+                            <execution>
+                                <id>snapshot</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>snapshot</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

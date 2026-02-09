@@ -16,9 +16,15 @@
  */
 package org.keycloak.storage.adapter;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -31,13 +37,6 @@ import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Assumes everything is managed by federated storage except for username.  getId() returns a default value
@@ -401,7 +400,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
 
     @Override
     public SubjectCredentialManager credentialManager() {
-        return new UserCredentialManager(session, realm, this);
+        return session.users().getUserCredentialManager(this);
     }
 
     @Override

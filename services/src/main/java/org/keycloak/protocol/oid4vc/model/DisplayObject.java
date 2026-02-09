@@ -16,13 +16,22 @@
  */
 package org.keycloak.protocol.oid4vc.model;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Objects;
+
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
+
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Represents a DisplayObject, as used in the OID4VCI Credentials Issuer Metadata
@@ -38,6 +47,8 @@ import java.io.IOException;
 )
 public class DisplayObject {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(DisplayObject.class);
+
     @JsonIgnore
     private static final String NAME_KEY = "name";
     @JsonIgnore
@@ -50,6 +61,8 @@ public class DisplayObject {
     private static final String BG_COLOR_KEY = "background_color";
     @JsonIgnore
     private static final String TEXT_COLOR_KEY = "text_color";
+    @JsonIgnore
+    private static final String BG_IMAGE_KEY = "background_image";
 
     @JsonProperty(DisplayObject.NAME_KEY)
     private String name;
@@ -58,7 +71,7 @@ public class DisplayObject {
     private String locale;
 
     @JsonProperty(DisplayObject.LOGO_KEY)
-    private String logo;
+    private LogoObject logo;
 
     @JsonProperty(DisplayObject.DESCRIPTION_KEY)
     private String description;
@@ -69,6 +82,25 @@ public class DisplayObject {
     @JsonProperty(DisplayObject.TEXT_COLOR_KEY)
     private String textColor;
 
+    @JsonProperty(DisplayObject.BG_IMAGE_KEY)
+    private BackgroundImageObject backgroundImage;
+
+    public static List<DisplayObject> parse(CredentialScopeModel credentialScope) {
+        String display = credentialScope.getVcDisplay();
+        if (StringUtil.isBlank(display)) {
+            return null;
+        }
+        TypeReference<List<DisplayObject>> typeReference = new TypeReference<>() {};
+        try {
+            return JsonSerialization.mapper.readValue(display, typeReference);
+        } catch (JsonProcessingException e) {
+            // lets say we have an invalid value we should not kill the whole execution if just the display value is
+            // broken
+            LOGGER.debug(e.getMessage(), e);
+            LOGGER.warn("Failed to parse display-metadata for credential '{}': {}", credentialScope.getName(), e.getMessage());
+            return null;
+        }
+    }
 
     public String getName() {
         return name;
@@ -88,11 +120,11 @@ public class DisplayObject {
         return this;
     }
 
-    public String getLogo() {
+    public LogoObject getLogo() {
         return logo;
     }
 
-    public DisplayObject setLogo(String logo) {
+    public DisplayObject setLogo(LogoObject logo) {
         this.logo = logo;
         return this;
     }
@@ -124,6 +156,15 @@ public class DisplayObject {
         return this;
     }
 
+    public BackgroundImageObject getBackgroundImage() {
+        return backgroundImage;
+    }
+
+    public DisplayObject setBackgroundImage(BackgroundImageObject backgroundImage) {
+        this.backgroundImage = backgroundImage;
+        return this;
+    }
+
     public String toJsonString(){
         try {
             return JsonSerialization.writeValueAsString(this);
@@ -152,6 +193,8 @@ public class DisplayObject {
             return false;
         if (getBackgroundColor() != null ? !getBackgroundColor().equals(that.getBackgroundColor()) : that.getBackgroundColor() != null)
             return false;
+        if (getBackgroundImage() != null ? !getBackgroundImage().equals(that.getBackgroundImage()) : that.getBackgroundImage() != null)
+            return false;
         return getTextColor() != null ? getTextColor().equals(that.getTextColor()) : that.getTextColor() == null;
     }
 
@@ -162,7 +205,91 @@ public class DisplayObject {
         result = 31 * result + (getLogo() != null ? getLogo().hashCode() : 0);
         result = 31 * result + (getDescription() != null ? getDescription().hashCode() : 0);
         result = 31 * result + (getBackgroundColor() != null ? getBackgroundColor().hashCode() : 0);
+        result = 31 * result + (getBackgroundImage() != null ? getBackgroundImage().hashCode() : 0);
         result = 31 * result + (getTextColor() != null ? getTextColor().hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return JsonSerialization.mapper.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Represents a logo object as defined in the OID4VCI specification.
+     * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-issuer-metadata-p}
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class LogoObject {
+        @JsonProperty("uri")
+        private String uri;
+
+        @JsonProperty("alt_text")
+        private String altText;
+
+        public String getUri() {
+            return uri;
+        }
+
+        public LogoObject setUri(String uri) {
+            this.uri = uri;
+            return this;
+        }
+
+        public String getAltText() {
+            return altText;
+        }
+
+        public LogoObject setAltText(String altText) {
+            this.altText = altText;
+            return this;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof LogoObject that)) return false;
+            return Objects.equals(uri, that.uri) && Objects.equals(altText, that.altText);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(uri, altText);
+        }
+    }
+
+    /**
+     * Represents a background image object as defined in the OID4VCI specification.
+     * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-issuer-metadata-p}
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class BackgroundImageObject {
+        @JsonProperty("uri")
+        private String uri;
+
+        public String getUri() {
+            return uri;
+        }
+
+        public BackgroundImageObject setUri(String uri) {
+            this.uri = uri;
+            return this;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof BackgroundImageObject that)) return false;
+            return Objects.equals(uri, that.uri);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(uri);
+        }
     }
 }

@@ -18,16 +18,16 @@ package org.keycloak.testsuite.arquillian;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.testsuite.arquillian.migration.MigrationContext;
-
 import org.keycloak.testsuite.util.TextFileChecker;
-import java.util.LinkedList;
 
 import static java.lang.Boolean.parseBoolean;
+
 import static org.keycloak.testsuite.util.MailServerConfiguration.FROM;
 import static org.keycloak.testsuite.util.MailServerConfiguration.HOST;
 import static org.keycloak.testsuite.util.MailServerConfiguration.PORT;

@@ -16,14 +16,24 @@
  */
 package org.keycloak.services.resources;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
-import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.forms.login.MessageType;
-import org.keycloak.forms.login.freemarker.DetachedInfoStateChecker;
-import org.keycloak.forms.login.freemarker.DetachedInfoStateCookie;
-import org.keycloak.http.HttpRequest;
+import java.net.URI;
+import java.util.Map;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HEAD;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilderException;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -35,7 +45,6 @@ import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.ActionTokenHandler;
-import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.authentication.actiontoken.ExplainedTokenVerificationException;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionTokenHandler;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
@@ -44,6 +53,8 @@ import org.keycloak.authentication.authenticators.broker.util.SerializedBrokered
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.TriFunction;
@@ -54,15 +65,21 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.exceptions.TokenNotActiveException;
-import org.keycloak.models.KeycloakContext;
-import org.keycloak.models.SingleUseObjectKeyModel;
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.forms.login.MessageType;
+import org.keycloak.forms.login.freemarker.DetachedInfoStateChecker;
+import org.keycloak.forms.login.freemarker.DetachedInfoStateCookie;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
+import org.keycloak.models.DefaultActionTokenKey;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -97,21 +114,7 @@ import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriBuilderException;
-import jakarta.ws.rs.core.UriInfo;
-import java.net.URI;
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.authentication.actiontoken.DefaultActionToken.ACTION_TOKEN_BASIC_CHECKS;
 import static org.keycloak.models.utils.DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively;
@@ -548,6 +551,19 @@ public class LoginActionsService {
         return handleActionToken(key, execution, clientId, tabId, clientData, null);
     }
 
+    /**
+     * Skip processing {@link jakarta.ws.rs.HttpMethod#HEAD} requests for action tokens
+     * as they are usually used by mail servers to validate links. The actual request will eventually be
+     * processed by the {@link #executeActionToken} method.
+     *
+     * @return a {@link Response.Status#OK} response with no message body
+     */
+    @Path("action-token")
+    @HEAD
+    public Response executeActionTokenHead() {
+        return Response.ok().build();
+    }
+
     protected <T extends JsonWebToken & SingleUseObjectKeyModel> Response handleActionToken(String tokenString, String execution, String clientId, String tabId, String clientData, 
             TriFunction<ActionTokenHandler<T>, T, ActionTokenContext<T>, Response> preHandleToken) {
         T token;
@@ -915,8 +931,6 @@ public class LoginActionsService {
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, brokerContext.getUsername())
                 .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID, brokerContext.getBrokerSessionId());
 
-        event.success();
-
         AuthenticationProcessor processor = new AuthenticationProcessor() {
 
             @Override
@@ -953,7 +967,10 @@ public class LoginActionsService {
 
         configureOrganization(brokerContext);
 
-        return processFlow(checks.isActionRequest(), execution, authSession, flowPath, brokerLoginFlow, null, processor);
+        Response response = processFlow(checks.isActionRequest(), execution, authSession, flowPath, brokerLoginFlow, null, processor);
+        event.success();
+
+        return response;
     }
 
     private void configureOrganization(BrokeredIdentityContext brokerContext) {
@@ -1056,9 +1073,9 @@ public class LoginActionsService {
         }
 
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
-        event.success();
 
         ClientSessionContext clientSessionCtx = AuthenticationProcessor.attachSession(authSession, null, session, realm, clientConnection, event);
+        event.success();
         return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, clientSessionCtx.getClientSession().getUserSession(), clientSessionCtx, request, session.getContext().getUri(), clientConnection, event, authSession);
     }
 

@@ -16,10 +16,10 @@
  */
 package org.keycloak.storage.user;
 
+import java.util.Date;
+
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.storage.UserStorageProviderModel;
-
-import java.util.Date;
 
 /**
  * This is an optional capability interface intended to be implemented by any

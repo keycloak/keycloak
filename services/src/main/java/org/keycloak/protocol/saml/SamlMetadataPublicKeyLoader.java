@@ -16,9 +16,10 @@
  */
 package org.keycloak.protocol.saml;
 
-import org.jboss.logging.Logger;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.KeycloakSession;
+
+import org.jboss.logging.Logger;
 
 /**
  * <p>PublicKeyLoader to retrieve keys from a SAML metadata entity endpoint.

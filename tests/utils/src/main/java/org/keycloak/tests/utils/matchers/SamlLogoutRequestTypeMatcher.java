@@ -5,13 +5,14 @@
  */
 package org.keycloak.tests.utils.matchers;
 
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
+import java.net.URI;
+
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 
-import java.net.URI;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
 
 import static org.hamcrest.Matchers.is;
 

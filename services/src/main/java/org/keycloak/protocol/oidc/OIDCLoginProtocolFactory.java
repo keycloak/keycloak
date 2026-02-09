@@ -16,7 +16,12 @@
  */
 package org.keycloak.protocol.oidc;
 
-import org.jboss.logging.Logger;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
@@ -33,6 +38,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.DefaultClientScopes;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.organization.protocol.mappers.oidc.OrganizationMembershipMapper;
 import org.keycloak.protocol.AbstractLoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AcrProtocolMapper;
@@ -40,25 +46,28 @@ import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.AllowedWebOriginsProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.FullNameMapper;
-import org.keycloak.organization.protocol.mappers.oidc.OrganizationMembershipMapper;
+import org.keycloak.protocol.oidc.mappers.SubMapper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
-import org.keycloak.protocol.oidc.mappers.SubMapper;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
+import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_REQ_PARAMS_FAIL_FAST;
+import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_NUMBER;
+import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_OVERALL_SIZE;
+import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_SIZE;
+import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -115,10 +124,12 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String ROLES_SCOPE_CONSENT_TEXT = "${rolesScopeConsentText}";
     public static final String ORGANIZATION_SCOPE_CONSENT_TEXT = "${organizationScopeConsentText}";
 
-    public static final String CONFIG_OIDC_REQ_PARAMS_MAX_NUMBER = "add-req-params-max-number";
-    public static final String CONFIG_OIDC_REQ_PARAMS_MAX_SIZE = "add-req-params-max-size";
-    public static final String CONFIG_OIDC_REQ_PARAMS_MAX_OVERALL_SIZE = "add-req-params-max-overall-size";
-    public static final String CONFIG_OIDC_REQ_PARAMS_FAIL_FAST = "add-req-params-fail-fast";
+    public static final String CONFIG_OIDC_REQ_PARAMS_DEFAULT_MAX_SIZE = "req-params-default-max-size";
+    public static final String CONFIG_OIDC_REQ_PARAMS_MAX_SIZE_PREFIX = "req-params-max-size";
+    public static final String CONFIG_OIDC_ADD_REQ_PARAMS_MAX_NUMBER = "add-req-params-max-number";
+    public static final String CONFIG_OIDC_ADD_REQ_PARAMS_MAX_SIZE = "add-req-params-max-size";
+    public static final String CONFIG_OIDC_ADD_REQ_PARAMS_MAX_OVERALL_SIZE = "add-req-params-max-overall-size";
+    public static final String CONFIG_OIDC_ADD_REQ_PARAMS_FAIL_FAST = "add-req-params-fail-fast";
 
     /**
      * @deprecated To be removed in Keycloak 27
@@ -553,5 +564,49 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     @Override
     public int order() {
         return UI_ORDER;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                    .name(CONFIG_OIDC_REQ_PARAMS_DEFAULT_MAX_SIZE)
+                    .type("int")
+                    .helpText("Maximum default length of the standard OIDC parameter sent to the OIDC authentication request. This applies to most of the standard parameters like for example 'state', 'nonce' etc." +
+                            " The exception is 'login_hint' parameter, which has maximum length of 255 characters.")
+                    .defaultValue(DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE)
+                    .add()
+                .property()
+                    .name(CONFIG_OIDC_REQ_PARAMS_MAX_SIZE_PREFIX + "--" + OIDCLoginProtocol.LOGIN_HINT_PARAM)
+                    .type("int")
+                    .helpText("Maximum length of the standard OIDC authentication request parameter overriden for the specified parameter. Useful if some standard OIDC parameter should have different limit than '" + CONFIG_OIDC_REQ_PARAMS_DEFAULT_MAX_SIZE +
+                            "'. It is needed to add the name of the parameter after this prefix into the configuration. In this example, the '" + OIDCLoginProtocol.LOGIN_HINT_PARAM + "' parameter is used, but this format is supported for any known standard OIDC/OAuth2 parameter.")
+                    .add()
+                .property()
+                    .name(CONFIG_OIDC_ADD_REQ_PARAMS_MAX_NUMBER)
+                    .type("int")
+                    .helpText("Maximum number of additional request parameters sent to the OIDC authentication request. As 'additional request parameter' is meant some custom parameter not directly treated as standard OIDC/OAuth2 protocol parameter. Additional parameters might be useful for example to add custom claims to the OIDC token (in case that also particular protocol mappers are configured).")
+                    .defaultValue(DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_NUMBER)
+                    .add()
+                .property()
+                    .name(CONFIG_OIDC_ADD_REQ_PARAMS_MAX_SIZE)
+                    .type("int")
+                    .helpText("Maximum size of single additional request parameter value See '" + CONFIG_OIDC_ADD_REQ_PARAMS_MAX_NUMBER + "' for more details about additional request parameters")
+                    .defaultValue(DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_SIZE)
+                    .add()
+                .property()
+                    .name(CONFIG_OIDC_ADD_REQ_PARAMS_MAX_OVERALL_SIZE)
+                    .type("int")
+                    .helpText("Maximum size of all additional request parameters values together. See '" + CONFIG_OIDC_ADD_REQ_PARAMS_MAX_NUMBER + "' for more details about additional request parameters")
+                    .defaultValue(DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_OVERALL_SIZE)
+                    .add()
+                .property()
+                    .name(CONFIG_OIDC_ADD_REQ_PARAMS_FAIL_FAST)
+                    .type("boolean")
+                    .helpText("Whether the fail-fast strategy should be enforced in case if the limit for some standard OIDC parameter or additional OIDC parameter is not met for the parameters sent to the OIDC authentication request." +
+                            " If false, then all additional request parameters to not meet the configuration are silently ignored. If true, an exception will be raised and OIDC authentication request will not be allowed.")
+                    .defaultValue(DEFAULT_ADDITIONAL_REQ_PARAMS_FAIL_FAST)
+                    .add()
+                .build();
     }
 }

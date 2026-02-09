@@ -16,22 +16,22 @@
  */
 package org.keycloak.testsuite.pages;
 
-import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
-import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
-
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
+import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
 
 public class EmailUpdatePage extends AbstractPage {
 
 	@FindBy(id = "email")
 	private WebElement emailInput;
 
-	@FindBy(css = "input[type=\"submit\"]")
+	@FindBy(id = "kc-submit")
 	private WebElement submitButton;
 
-	@FindBy(name = "cancel-aia")
+	@FindBy(id = "kc-cancel")
 	private WebElement cancelAIAButton;
 
 	@FindBy(id = "input-error-email")

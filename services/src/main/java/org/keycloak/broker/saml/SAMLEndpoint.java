@@ -17,14 +17,46 @@
 
 package org.keycloak.broker.saml;
 
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.NoCache;
+import java.io.IOException;
+import java.net.URI;
+import java.security.Key;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.namespace.QName;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
@@ -42,6 +74,9 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.keys.PublicKeyLoader;
+import org.keycloak.keys.PublicKeyStorageProvider;
+import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeyManager;
@@ -51,12 +86,17 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
+import org.keycloak.protocol.saml.SAMLDecryptionKeysLocator;
+import org.keycloak.protocol.saml.SamlMetadataKeyLocator;
+import org.keycloak.protocol.saml.SamlMetadataPublicKeyLoader;
+import org.keycloak.protocol.saml.SamlPrincipalType;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.SamlSessionUtils;
 import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
-import org.keycloak.protocol.saml.SAMLDecryptionKeysLocator;
+import org.keycloak.rotation.HardcodedKeyLocator;
+import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -69,66 +109,25 @@ import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.saml.processing.core.saml.v2.util.ArtifactResponseUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
+import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
+import org.keycloak.saml.validators.ConditionsValidator;
+import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
-
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.FormParam;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
-import javax.xml.namespace.QName;
-import java.io.IOException;
-import java.security.Key;
-import java.security.cert.X509Certificate;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.keys.PublicKeyLoader;
-import org.keycloak.keys.PublicKeyStorageProvider;
-import org.keycloak.keys.PublicKeyStorageUtils;
-import org.keycloak.protocol.saml.SamlMetadataKeyLocator;
-import org.keycloak.protocol.saml.SamlMetadataPublicKeyLoader;
-import org.keycloak.protocol.saml.SamlPrincipalType;
-import org.keycloak.rotation.HardcodedKeyLocator;
-import org.keycloak.rotation.KeyLocator;
-import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
-import org.keycloak.saml.validators.ConditionsValidator;
-import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.Booleans;
 import org.keycloak.utils.StringUtil;
+
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-
-import java.net.URI;
-import java.security.cert.CertificateException;
-
-import java.util.Collections;
-import jakarta.ws.rs.core.MultivaluedMap;
-import javax.xml.crypto.dsig.XMLSignature;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -148,18 +147,15 @@ public class SAMLEndpoint {
     protected final RealmModel realm;
     protected EventBuilder event;
     protected final SAMLIdentityProviderConfig config;
-    protected final IdentityProvider.AuthenticationCallback callback;
+    protected final UserAuthenticationIdentityProvider.AuthenticationCallback callback;
     protected final SAMLIdentityProvider provider;
-    private final DestinationValidator destinationValidator;
-
-    private final KeycloakSession session;
-
-    private final ClientConnection clientConnection;
-
-    private final HttpHeaders headers;
+    protected final DestinationValidator destinationValidator;
+    protected final KeycloakSession session;
+    protected final ClientConnection clientConnection;
+    protected final HttpHeaders headers;
 
 
-    public SAMLEndpoint(KeycloakSession session, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
+    public SAMLEndpoint(KeycloakSession session, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, UserAuthenticationIdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
         this.realm = session.getContext().getRealm();
         this.config = config;
         this.callback = callback;
@@ -512,7 +508,7 @@ public class SAMLEndpoint {
             };
         }
 
-        private String getEntityId(UriInfo uriInfo, RealmModel realm) {
+        protected final String getEntityId(UriInfo uriInfo, RealmModel realm) {
             String configEntityId = config.getEntityId();
 
             if (configEntityId == null || configEntityId.isEmpty())
@@ -658,7 +654,7 @@ public class SAMLEndpoint {
                     identity.setEmail(subjectNameID.getValue());
                 }
 
-                if (config.isStoreToken()) {
+                if (Booleans.isTrue(config.isStoreToken())) {
                     identity.setToken(samlResponse);
                 }
 
@@ -721,7 +717,7 @@ public class SAMLEndpoint {
          * @param clientUrlName
          * @return see description
          */
-        private AuthenticationSessionModel samlIdpInitiatedSSO(final String clientUrlName) {
+        protected final AuthenticationSessionModel samlIdpInitiatedSSO(final String clientUrlName) {
             event.event(EventType.LOGIN);
             CacheControlUtil.noBackButtonCacheControlHeader(session);
             Optional<ClientModel> oClient = SAMLEndpoint.this.session.clients()
@@ -747,7 +743,7 @@ public class SAMLEndpoint {
         }
 
 
-        private boolean isSuccessfulSamlResponse(ResponseType responseType) {
+        protected final boolean isSuccessfulSamlResponse(ResponseType responseType) {
             return responseType != null
               && responseType.getStatus() != null
               && responseType.getStatus().getStatusCode() != null
@@ -955,20 +951,20 @@ public class SAMLEndpoint {
         }
     }
 
-    private String getX500Attribute(AssertionType assertion, X500SAMLProfileConstants attribute) {
+    protected final String getX500Attribute(AssertionType assertion, X500SAMLProfileConstants attribute) {
         return getFirstMatchingAttribute(assertion, attribute::correspondsTo);
     }
 
-    private String getAttributeByName(AssertionType assertion, String name) {
+    protected final String getAttributeByName(AssertionType assertion, String name) {
         return getFirstMatchingAttribute(assertion, attribute -> Objects.equals(attribute.getName(), name));
     }
 
-    private String getAttributeByFriendlyName(AssertionType assertion, String friendlyName) {
+    protected final String getAttributeByFriendlyName(AssertionType assertion, String friendlyName) {
         return getFirstMatchingAttribute(assertion, attribute -> Objects.equals(attribute.getFriendlyName(), friendlyName));
     }
 
-    private String getPrincipal(AssertionType assertion) {
 
+    protected final String getPrincipal(AssertionType assertion) {
         SamlPrincipalType principalType = config.getPrincipalType();
 
         if (principalType == null || principalType.equals(SamlPrincipalType.SUBJECT)) {
@@ -982,7 +978,7 @@ public class SAMLEndpoint {
 
     }
 
-    private String getFirstMatchingAttribute(AssertionType assertion, Predicate<AttributeType> predicate) {
+    protected final String getFirstMatchingAttribute(AssertionType assertion, Predicate<AttributeType> predicate) {
         return assertion.getAttributeStatements().stream()
                 .map(AttributeStatementType::getAttributes)
                 .flatMap(Collection::stream)
@@ -995,7 +991,7 @@ public class SAMLEndpoint {
                 .orElse(null);
     }
 
-    private String expectedPrincipalType() {
+    protected final String expectedPrincipalType() {
         SamlPrincipalType principalType = config.getPrincipalType();
         switch (principalType) {
             case SUBJECT:
@@ -1008,13 +1004,13 @@ public class SAMLEndpoint {
         }
     }
 
-    private NameIDType getSubjectNameID(final AssertionType assertion) {
+    protected final NameIDType getSubjectNameID(final AssertionType assertion) {
         SubjectType subject = assertion.getSubject();
         SubjectType.STSubType subType = subject.getSubType();
         return subType != null ? (NameIDType) subType.getBaseID() : null;
     }
 
-    private boolean validateInResponseToAttribute(ResponseType responseType, String expectedRequestId) {
+    protected final boolean validateInResponseToAttribute(ResponseType responseType, String expectedRequestId) {
         // If we are not expecting a request ID, don't bother
         if (expectedRequestId == null || expectedRequestId.isEmpty())
             return true;

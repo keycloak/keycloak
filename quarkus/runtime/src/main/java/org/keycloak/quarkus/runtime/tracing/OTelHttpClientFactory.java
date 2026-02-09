@@ -17,6 +17,8 @@
 
 package org.keycloak.quarkus.runtime.tracing;
 
+import java.util.Set;
+
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.config.TracingOptions;
@@ -29,8 +31,6 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.tracing.TracingProvider;
-
-import java.util.Set;
 
 /**
  * The traced {@link HttpClientFactory} for {@link HttpClientProvider HttpClientProvider's} used by Keycloak for outbound HTTP calls which are traced.

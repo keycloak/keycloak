@@ -16,8 +16,11 @@
  */
 package org.keycloak.testsuite.model.parameters;
 
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
+
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
@@ -28,12 +31,11 @@ import org.keycloak.storage.federated.UserFederatedStorageProviderSpi;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapperSpi;
+import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
+
 import com.google.common.collect.ImmutableSet;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 

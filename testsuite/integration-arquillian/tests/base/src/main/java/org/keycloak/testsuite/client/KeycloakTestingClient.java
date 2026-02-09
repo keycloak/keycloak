@@ -17,23 +17,29 @@
 
 package org.keycloak.testsuite.client;
 
+import java.util.Set;
+
 import jakarta.ws.rs.core.Response;
-import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
-import org.junit.Assert;
-import org.junit.AssumptionViolatedException;
+
 import org.keycloak.common.Profile;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.client.resources.TestApplicationResource;
 import org.keycloak.testsuite.client.resources.TestExampleCompanyResource;
 import org.keycloak.testsuite.client.resources.TestSamlApplicationResource;
 import org.keycloak.testsuite.client.resources.TestingResource;
-import org.keycloak.testsuite.runonserver.*;
+import org.keycloak.testsuite.runonserver.FetchOnServer;
+import org.keycloak.testsuite.runonserver.FetchOnServerWrapper;
+import org.keycloak.testsuite.runonserver.RunOnServer;
+import org.keycloak.testsuite.runonserver.RunOnServerException;
+import org.keycloak.testsuite.runonserver.SerializationUtil;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.util.JsonSerialization;
 
-import java.util.Set;
+import org.jboss.resteasy.client.jaxrs.ResteasyClient;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+import org.junit.Assert;
+import org.junit.AssumptionViolatedException;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -86,7 +92,7 @@ public class KeycloakTestingClient implements AutoCloseable {
 
     public void enableFeature(Profile.Feature feature) {
         String featureString;
-        if (Profile.getFeatureVersions(feature.getUnversionedKey()).size() > 1) {
+        if (shouldUseVersionedKey(feature)) {
             featureString = feature.getVersionedKey();
         } else {
             featureString = feature.getKey();
@@ -96,9 +102,13 @@ public class KeycloakTestingClient implements AutoCloseable {
         ProfileAssume.updateDisabledFeatures(disabledFeatures);
     }
 
+    private boolean shouldUseVersionedKey(Profile.Feature feature) {
+        return ((Profile.getFeatureVersions(feature.getUnversionedKey()).size() > 1) || (feature.getVersion() != 1));
+    }
+
     public void disableFeature(Profile.Feature feature) {
         String featureString;
-        if (Profile.getFeatureVersions(feature.getUnversionedKey()).size() > 1) {
+        if (shouldUseVersionedKey(feature)) {
             featureString = feature.getVersionedKey();
         } else {
             featureString = feature.getKey();
@@ -115,7 +125,7 @@ public class KeycloakTestingClient implements AutoCloseable {
      */
     public void resetFeature(Profile.Feature feature) {
         String featureString;
-        if (Profile.getFeatureVersions(feature.getUnversionedKey()).size() > 1) {
+        if (shouldUseVersionedKey(feature)) {
             featureString = feature.getVersionedKey();
             Profile.Feature featureVersionHighestPriority = Profile.getFeatureVersions(feature.getUnversionedKey()).iterator().next();
             if (featureVersionHighestPriority.getType().equals(Profile.Feature.Type.DEFAULT)) {

@@ -45,12 +45,12 @@ For Prometheus, this is a https://prometheus.io/docs/prometheus/latest/feature_f
 
 . Scrape the metrics using the `OpenMetricsText1.0.0` protocol, which is not enabled by default in Prometheus.
 +
-If you are using `PodMonitors` or similar in a Kubernetes environment, this can be achieved by adding it to the spec of the custom resource:
+If you are using a `ServiceMonitor` or similar in a Kubernetes environment, this can be achieved by adding it to the spec of the custom resource:
 +
 [source]
 ----
 apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
+kind: ServiceMonitor
 metadata:
   ...
 spec:

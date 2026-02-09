@@ -15,7 +15,6 @@ import {
   Card,
   CardBody,
   ClipboardCopy,
-  Divider,
   Form,
   FormGroup,
   PageSection,
@@ -34,6 +33,7 @@ import { FormFields } from "../ClientDetails";
 import { ClientSecret } from "./ClientSecret";
 import { SignedJWT } from "./SignedJWT";
 import { X509 } from "./X509";
+import { convertAttributeNameToForm } from "../../util";
 
 type AccessToken = {
   registrationAccessToken: string;
@@ -60,6 +60,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
     control,
     formState: { isDirty },
     handleSubmit,
+    reset,
   } = useFormContext<FormFields>();
 
   const clientAuthenticatorType = useWatch({
@@ -80,7 +81,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
     () =>
       componentTypes?.["org.keycloak.authentication.ClientAuthenticator"]?.find(
         (p) => p.id === clientAuthenticatorType,
-      )?.properties,
+      )?.clientProperties,
     [clientAuthenticatorType, componentTypes],
   );
 
@@ -172,6 +173,25 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
                 value: displayName || id!,
               }))}
             />
+            {clientAuthenticatorType === "client-secret" && (
+              <SelectControl
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.client.secret.authentication.allowed.method",
+                )}
+                label={t("clientSecretAuthenticationAllowedMethod")}
+                labelIcon={t("clientSecretAuthenticationAllowedMethodHelp")}
+                controller={{
+                  defaultValue: "",
+                }}
+                isScrollable
+                maxMenuHeight="200px"
+                options={[
+                  { key: "", value: t("any") },
+                  { key: "client_secret_basic", value: "client_secret_basic" },
+                  { key: "client_secret_post", value: "client_secret_post" },
+                ]}
+              />
+            )}
             {(clientAuthenticatorType === "client-jwt" ||
               clientAuthenticatorType === "client-secret-jwt") && (
               <SignedJWT clientAuthenticatorType={clientAuthenticatorType} />
@@ -186,28 +206,28 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               <Form>
                 <DynamicComponents
                   properties={providerProperties}
-                  convertToName={(name) => `attributes.${name}`}
+                  convertToName={(name) =>
+                    convertAttributeNameToForm(`attributes.${name}`)
+                  }
                 />
               </Form>
+            )}
+            {selectedProvider?.supportsSecret && (
+              <ClientSecret
+                client={client}
+                secret={secret}
+                toggle={toggleClientSecretConfirm}
+              />
             )}
             <ActionGroup>
               <Button variant="primary" type="submit" isDisabled={!isDirty}>
                 {t("save")}
               </Button>
+              <Button variant="link" onClick={() => reset()}>
+                {t("revert")}
+              </Button>
             </ActionGroup>
           </CardBody>
-          {selectedProvider?.supportsSecret && (
-            <>
-              <Divider />
-              <CardBody>
-                <ClientSecret
-                  client={client}
-                  secret={secret}
-                  toggle={toggleClientSecretConfirm}
-                />
-              </CardBody>
-            </>
-          )}
         </Card>
         <Card isFlat>
           <CardBody>

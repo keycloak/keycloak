@@ -19,14 +19,11 @@
 
 package org.keycloak.testsuite.client;
 
-import jakarta.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.List;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
@@ -37,10 +34,14 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.util.JsonSerialization;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.Before;
+import org.junit.Test;
+
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_CODE;
 import static org.keycloak.OAuth2Constants.CLIENT_CREDENTIALS;
 import static org.keycloak.OAuth2Constants.DEVICE_CODE_GRANT_TYPE;
@@ -52,6 +53,8 @@ import static org.keycloak.models.OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION
 import static org.keycloak.protocol.oidc.utils.OIDCResponseType.CODE;
 import static org.keycloak.protocol.oidc.utils.OIDCResponseType.ID_TOKEN;
 import static org.keycloak.protocol.oidc.utils.OIDCResponseType.NONE;
+
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 /**
  * Test of OIDC client registration with various combinations of parameters "response_types" and "grant_types"

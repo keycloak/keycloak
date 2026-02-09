@@ -17,13 +17,25 @@
 
 package org.keycloak.connections.jpa;
 
-import static org.keycloak.connections.jpa.util.JpaUtils.configureNamedQuery;
-import static org.keycloak.connections.jpa.util.JpaUtils.getDatabaseType;
-import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
+import java.io.File;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import javax.naming.InitialContext;
+import javax.sql.DataSource;
 
-import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
-import org.jboss.logging.Logger;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.SynchronizationType;
+import jakarta.transaction.TransactionManager;
+import jakarta.transaction.UserTransaction;
+
 import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
 import org.keycloak.common.util.StackUtil;
@@ -43,24 +55,14 @@ import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
-import javax.naming.InitialContext;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.SynchronizationType;
-import javax.sql.DataSource;
-import jakarta.transaction.TransactionManager;
-import jakarta.transaction.UserTransaction;
-import java.io.File;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import liquibase.GlobalConfiguration;
+import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.connections.jpa.util.JpaUtils.configureNamedQuery;
+import static org.keycloak.connections.jpa.util.JpaUtils.getDatabaseType;
+import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -89,10 +91,10 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
         logger.trace("Create JpaConnectionProvider");
         lazyInit(session);
 
-        return new DefaultJpaConnectionProvider(createEntityManager(session));
+        return new DefaultJpaConnectionProvider(createEntityManager(session, true));
     }
 
-    private EntityManager createEntityManager(KeycloakSession session) {
+    private EntityManager createEntityManager(KeycloakSession session, boolean sessionManaged) {
         EntityManager em;
         if (!jtaEnabled) {
             logger.trace("enlisting EntityManager in JpaKeycloakTransaction");
@@ -101,7 +103,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
             em = emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
         }
-        em = EntityManagerProxy.create(session, em);
+        em = EntityManagerProxy.create(session, em, sessionManaged);
         if (!jtaEnabled) {
             session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
         }
@@ -111,7 +113,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
     private void addSpecificNamedQueries(KeycloakSession session, Connection connection) {
         EntityManager em = null;
         try {
-            em = createEntityManager(session);
+            em = createEntityManager(session, false);
             String dbKind = getDatabaseType(connection.getMetaData().getDatabaseProductName());
             for (Map.Entry<Object, Object> query : loadSpecificNamedQueries(dbKind.toLowerCase()).entrySet()) {
                 String queryName = query.getKey().toString();
@@ -421,7 +423,15 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
     }
 
     private void migrateModel(KeycloakSession session) {
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), MigrationModelManager::migrate);
+        // Using a lock to prevent concurrent migration in concurrently starting nodes
+        DBLockManager dbLockManager = new DBLockManager(session);
+        DBLockProvider dbLock = dbLockManager.getDBLock();
+        dbLock.waitForLock(DBLockProvider.Namespace.DATABASE);
+        try {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), MigrationModelManager::migrate);
+        } finally {
+            dbLock.releaseLock();
+        }
     }
 
     /**

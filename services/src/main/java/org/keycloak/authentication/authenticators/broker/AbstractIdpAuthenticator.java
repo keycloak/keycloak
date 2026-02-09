@@ -17,6 +17,8 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -30,8 +32,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
-
-import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

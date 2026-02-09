@@ -20,10 +20,11 @@ package org.keycloak.testsuite.util.cli;
 import java.util.Map;
 import java.util.Set;
 
-import org.infinispan.Cache;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+
+import org.infinispan.Cache;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

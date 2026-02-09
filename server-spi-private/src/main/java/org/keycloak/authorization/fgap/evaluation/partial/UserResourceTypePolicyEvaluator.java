@@ -18,8 +18,6 @@
 
 package org.keycloak.authorization.fgap.evaluation.partial;
 
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
-
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -38,6 +36,8 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
 
 public final class UserResourceTypePolicyEvaluator implements ResourceTypePolicyEvaluator {
 

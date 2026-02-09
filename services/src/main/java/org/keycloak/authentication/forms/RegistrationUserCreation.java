@@ -17,7 +17,12 @@
 
 package org.keycloak.authentication.forms;
 
+import java.util.List;
+import java.util.function.Consumer;
+
 import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -38,11 +43,13 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.OrganizationInvitationModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -50,14 +57,10 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.userprofile.Attributes;
+import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
-import org.keycloak.userprofile.UserProfile;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -325,6 +328,15 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 return false;
             }
 
+            // Validate that the invitation still exists in the database
+            InvitationManager invitationManager = provider.getInvitationManager();
+            OrganizationInvitationModel invitation = invitationManager.getById(token.getId());
+
+            if (invitation == null || invitation.isExpired()) {
+                error.accept(List.of(new FormMessage("The invitation has expired or is no longer valid.")));
+                return false;
+            }
+
             if (!token.getEmail().equals(email)) {
                 error.accept(List.of(new FormMessage(UserModel.EMAIL, "Email does not match the invitation")));
                 return false;
@@ -345,6 +357,10 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 provider.addManagedMember(orgModel, user);
                 context.getEvent().detail(Details.ORG_ID, orgModel.getId());
                 context.getAuthenticationSession().setRedirectUri(token.getRedirectUri());
+
+                // Delete the invitation since it has been used
+                InvitationManager invitationManager = provider.getInvitationManager();
+                invitationManager.remove(token.getId());
             }
         }
     }

@@ -17,9 +17,9 @@
  */
 package org.keycloak.protocol.oidc.grants.ciba.endpoints.request;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-
 import java.util.Set;
+
+import jakarta.ws.rs.core.MultivaluedMap;
 
 /**
  * Parse the parameters from request body

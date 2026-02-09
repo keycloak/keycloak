@@ -26,11 +26,7 @@ import java.util.Map;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -41,11 +37,11 @@ import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesForm
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.AuthenticationFlowBindings;
 import org.keycloak.models.Constants;
@@ -70,7 +66,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.account.AccountRestClient;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.AppPage;
@@ -85,15 +80,22 @@ import org.keycloak.testsuite.pages.SetupRecoveryAuthnCodesPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.actions.AppInitiatedActionDeleteCredentialTest.getKcActionParamForDeleteCredential;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.actions.AppInitiatedActionDeleteCredentialTest.getKcActionParamForDeleteCredential;
 
 /**
  * Tests for Level Of Assurance conditions in authentication flow.
@@ -821,7 +823,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
                 .accessToken(token1.accessToken)
                 .build()) {
             otpCredentialId = accountRestClient.getCredentialByUserLabel("totp2-label").getId();
-            try (SimpleHttp.Response response = accountRestClient.removeCredential(otpCredentialId)) {
+            try (SimpleHttpResponse response = accountRestClient.removeCredential(otpCredentialId)) {
                 Assert.assertEquals(403, response.getStatus());
             }
         }
@@ -832,7 +834,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
                 .accessToken(token2.accessToken)
                 .build()) {
             otpCredentialId = accountRestClient.getCredentialByUserLabel("totp2-label").getId();
-            try (SimpleHttp.Response response = accountRestClient.removeCredential(otpCredentialId)) {
+            try (SimpleHttpResponse response = accountRestClient.removeCredential(otpCredentialId)) {
                 Assert.assertEquals(204, response.getStatus());
             }
             Assert.assertNull(accountRestClient.getCredentialByUserLabel("totp2-label"));

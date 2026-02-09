@@ -17,12 +17,21 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
-import org.jboss.logging.Logger;
+import java.net.URI;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilderException;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.actiontoken.idpverifyemail.IdpVerifyAccountLinkActionToken;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.util.Time;
 import org.keycloak.email.EmailException;
@@ -42,12 +51,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import java.net.URI;
-import java.util.Objects;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import java.util.concurrent.TimeUnit;
-import jakarta.ws.rs.core.*;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -66,6 +70,13 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
 
         if (realm.getSmtpConfig().isEmpty()) {
             ServicesLogger.LOGGER.smtpNotConfigured();
+            context.attempted();
+            return;
+        }
+
+        if (Boolean.parseBoolean(context.getAuthenticationSession().getAuthNote(AbstractIdentityProvider.UPDATE_PROFILE_USERNAME_CHANGED))
+                || Boolean.parseBoolean(context.getAuthenticationSession().getAuthNote(AbstractIdentityProvider.UPDATE_PROFILE_EMAIL_CHANGED))) {
+            logger.debug("Email or username changed on review. Ignoring email verification authenticator.");
             context.attempted();
             return;
         }

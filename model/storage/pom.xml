@@ -9,7 +9,7 @@
 
     <artifactId>keycloak-model-storage</artifactId>
     <name>Keycloak Database Support</name>
-    <description/>
+    <description>Keycloak Database Support</description>
 
     <dependencies>
         <dependency>

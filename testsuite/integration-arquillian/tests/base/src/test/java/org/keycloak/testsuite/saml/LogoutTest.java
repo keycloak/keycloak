@@ -16,6 +16,18 @@
  */
 package org.keycloak.testsuite.saml;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Consumer;
+import javax.xml.transform.dom.DOMSource;
+
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.UriBuilderException;
+import jakarta.xml.ws.soap.SOAPFaultException;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
@@ -46,34 +58,28 @@ import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
-
 import org.keycloak.testsuite.util.saml.CreateLogoutRequestStepBuilder;
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-import java.util.function.Consumer;
-import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.UriBuilderException;
-import javax.xml.transform.dom.DOMSource;
-import jakarta.xml.ws.soap.SOAPFaultException;
+import org.keycloak.testsuite.util.saml.SamlBackchannelLogoutReceiver;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.testsuite.util.saml.SamlBackchannelLogoutReceiver;
 
+import static org.keycloak.testsuite.util.Matchers.isSamlLogoutRequest;
+import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
+import static org.keycloak.testsuite.util.Matchers.isSamlStatusResponse;
+import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
+import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
+import static org.keycloak.testsuite.util.SamlClient.Binding.SOAP;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.util.Matchers.*;
-import static org.keycloak.testsuite.util.SamlClient.Binding.*;
 
 /**
  *
@@ -445,6 +451,49 @@ public class LogoutTest extends AbstractSamlTest {
               // Expect logout request for sales-post2
               SAML2Object so = (SAML2Object) SAMLParser.getInstance().parse(new DOMSource(doc));
               assertThat(so, isSamlLogoutRequest("http://url-to-sales-2"));
+
+              // Emulate successful logout response from sales-post2 logout
+              return new SAML2LogoutResponseBuilder()
+                .destination(getAuthServerSamlEndpoint(REALM_NAME).toString())
+                .issuer(SAML_CLIENT_ID_SALES_POST2)
+                .logoutRequestID(((LogoutRequestType) so).getID())
+                .buildDocument();
+            })
+            .targetAttributeSamlResponse()
+            .targetUri(getAuthServerSamlEndpoint(REALM_NAME))
+            .build()
+
+          .getSamlResponse(POST);
+
+        // Expect final successful logout response from auth server signalling final successful logout
+        assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        assertThat(((StatusResponseType) samlResponse.getSamlObject()).getDestination(), is("http://url"));
+        assertLogoutEvent(SAML_CLIENT_ID_SALES_POST2);
+    }
+
+    @Test
+    public void testFrontchannelLogoutInSameBrowserUsingDefaultAdminUrl() {
+        adminClient.realm(REALM_NAME)
+          .clients().get(sales2Rep.getId())
+          .update(ClientBuilder.edit(sales2Rep)
+            .frontchannelLogout(true)
+            .attribute(SamlConfigAttributes.SAML_FORCE_POST_BINDING, Boolean.TRUE.toString())
+            .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "")
+            .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "")
+            .adminUrl(SAML_ASSERTION_CONSUMER_URL_SALES_POST2)
+            .build());
+
+        SAMLDocumentHolder samlResponse = prepareLogIntoTwoApps()
+          .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, POST)
+            .nameId(nameIdRef::get)
+            .sessionIndex(sessionIndexRef::get)
+            .build()
+
+          .processSamlResponse(POST)
+            .transformDocument(doc -> {
+              // Expect logout request for sales-post2
+              SAML2Object so = (SAML2Object) SAMLParser.getInstance().parse(new DOMSource(doc));
+              assertThat(so, isSamlLogoutRequest(SAML_ASSERTION_CONSUMER_URL_SALES_POST2));
 
               // Emulate successful logout response from sales-post2 logout
               return new SAML2LogoutResponseBuilder()

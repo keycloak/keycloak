@@ -16,6 +16,9 @@
  */
 package org.keycloak.userprofile.validator;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.validation.Validation;
@@ -23,9 +26,6 @@ import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Validator to check that User Profile username is provided. Expects List of Strings as input.

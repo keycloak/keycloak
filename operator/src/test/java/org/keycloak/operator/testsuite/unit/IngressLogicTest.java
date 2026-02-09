@@ -20,8 +20,6 @@ package org.keycloak.operator.testsuite.unit;
 import java.util.Map;
 import java.util.Optional;
 
-import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
-import org.junit.jupiter.api.Test;
 import org.keycloak.operator.controllers.KeycloakIngressDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
@@ -29,11 +27,15 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.testsuite.utils.MockController;
 
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.operator.testsuite.utils.K8sUtils.disableHttps;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.disableHttps;
 
 public class IngressLogicTest {
 
@@ -61,18 +63,22 @@ public class IngressLogicTest {
         }
 
         public static MockKeycloakIngress build(Boolean defaultIngressEnabled, boolean ingressExists, boolean ingressSpecDefined, boolean tlsConfigured) {
-            return build(defaultIngressEnabled, ingressExists, ingressSpecDefined, tlsConfigured, null, null);
+            return build(defaultIngressEnabled, ingressExists, ingressSpecDefined, tlsConfigured, null,null, null);
         }
 
         public static MockKeycloakIngress build(String hostname) {
-            return build(true, false, true, true, null, hostname);
+            return build(true, false, true, true, null,null, hostname);
         }
 
         public static MockKeycloakIngress build(Boolean defaultIngressEnabled, boolean ingressExists, boolean ingressSpecDefined, boolean tlsConfigured, Map<String, String> annotations) {
-            return build(defaultIngressEnabled, ingressExists, ingressSpecDefined, tlsConfigured, annotations, null);
+            return build(defaultIngressEnabled, ingressExists, ingressSpecDefined, tlsConfigured, annotations,null, null);
         }
 
-        public static MockKeycloakIngress build(Boolean defaultIngressEnabled, boolean ingressExists, boolean ingressSpecDefined, boolean tlsConfigured, Map<String, String> annotations, String hostname) {
+        public static MockKeycloakIngress build(Boolean defaultIngressEnabled, boolean ingressExists, boolean ingressSpecDefined,Map<String, String> labels) {
+            return build(defaultIngressEnabled, ingressExists, ingressSpecDefined, true, null, labels, null);
+        }
+
+        public static MockKeycloakIngress build(Boolean defaultIngressEnabled, boolean ingressExists, boolean ingressSpecDefined, boolean tlsConfigured, Map<String, String> annotations, Map<String, String> labels,String hostname) {
             IngressSpec ingressSpec = null;
             if (ingressSpecDefined) {
                 ingressSpec = new IngressSpec();
@@ -81,6 +87,9 @@ public class IngressLogicTest {
                 }
                 if (annotations != null) {
                     ingressSpec.setAnnotations(annotations);
+                }
+                if (labels != null) {
+                    ingressSpec.setLabels(labels);
                 }
             }
             MockKeycloakIngress mock = new MockKeycloakIngress(tlsConfigured, ingressSpec, hostname);
@@ -182,6 +191,14 @@ public class IngressLogicTest {
         assertEquals("passthrough", reconciled.get().getMetadata().getAnnotations().get("route.openshift.io/termination"));
         assertEquals("value", reconciled.get().getMetadata().getAnnotations().get("custom"));
         assertFalse(reconciled.get().getMetadata().getAnnotations().containsKey(EXISTING_ANNOTATION_KEY));
+    }
+    @Test
+    public void testCustomLabels() {
+        var kc = MockKeycloakIngress.build(null, false, true, Map.of("custom", "value"));
+        Optional<Ingress> reconciled = kc.getReconciledResource();
+        assertTrue(reconciled.isPresent());
+        assertFalse(kc.deleted());
+        assertEquals("value", reconciled.get().getMetadata().getLabels().get("custom"));
     }
 
     @Test

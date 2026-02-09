@@ -17,13 +17,14 @@
 
 package org.keycloak.testsuite.model.session;
 
-import org.hamcrest.Matchers;
-import org.infinispan.Cache;
-import org.infinispan.factories.ComponentRegistry;
-import org.infinispan.interceptors.AsyncInterceptorChain;
-import org.infinispan.interceptors.impl.CacheMgmtInterceptor;
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.LongSupplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -36,16 +37,17 @@ import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.LongSupplier;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import org.hamcrest.Matchers;
+import org.infinispan.Cache;
+import org.infinispan.factories.ComponentRegistry;
+import org.infinispan.interceptors.AsyncInterceptorChain;
+import org.infinispan.interceptors.impl.CacheMgmtInterceptor;
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createClients;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createClients;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>

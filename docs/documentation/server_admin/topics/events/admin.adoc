@@ -1,4 +1,4 @@
- 
+
 === Auditing admin events
 
 You can record all actions that are performed by an administrator in the Admin Console. The Admin Console performs administrative actions by invoking the {project_name} REST interface and {project_name} audits these REST invocations. You can view the resulting events in the Admin Console.
@@ -35,9 +35,9 @@ You can now view admin events.
 .Admin events
 image:images/admin-events.png[Admin events]
 
-When the `Include Representation` switch is ON, it can lead to storing a lot of information in the database. You can set a maximum length of the representation by using the `--spi-events-store-jpa-max-field-length` argument. This setting is useful if you want to adhere to the underlying storage limitation. For example:
+When the `Include Representation` switch is ON, it can lead to storing a lot of information in the database. You can set a maximum length of the representation by using the `+--spi-events-store--jpa--max-field-length+` argument. This setting is useful if you want to adhere to the underlying storage limitation. For example:
 
 [source,bash]
 ----
-kc.[sh|bat] --spi-events-store-jpa-max-field-length=2500
+kc.[sh|bat] --spi-events-store--jpa--max-field-length=2500
 ----

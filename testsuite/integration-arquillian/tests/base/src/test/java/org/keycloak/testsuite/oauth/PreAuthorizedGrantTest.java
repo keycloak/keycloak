@@ -17,16 +17,12 @@
 
 package org.keycloak.testsuite.oauth;
 
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedList;
+import java.util.List;
+
 import jakarta.ws.rs.core.UriBuilder;
-import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicNameValuePair;
-import org.junit.Before;
-import org.junit.Test;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
@@ -36,13 +32,19 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.UserBuilder;
 
-import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
-import java.util.List;
+import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
@@ -63,7 +65,6 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
         AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
 
         assertEquals("An access token should have successfully been returned.", HttpStatus.SC_OK, accessTokenResponse.getStatusCode());
-        assertEquals("The correct session should have been used for the pre-authorized code.", userSessionId, accessTokenResponse.getSessionState());
     }
 
     @Test
@@ -96,6 +97,33 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
         assertEquals("If no code is provided, no access token should be returned.", HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode());
     }
 
+    /**
+     * When verifiable credentials are disabled for the realm, the pre-authorized code
+     * grant (used by OID4VCI flows) must be rejected with 403 Forbidden.
+     */
+    @Test
+    public void testPreAuthorizedGrantRealmDisabled() throws Exception {
+        // Disable verifiable credentials for the test realm
+        RealmRepresentation realmRep = adminClient.realm(TEST_REALM_NAME).toRepresentation();
+        realmRep.setVerifiableCredentialsEnabled(false);
+        adminClient.realm(TEST_REALM_NAME).update(realmRep);
+
+        try {
+            String userSessionId = getUserSession();
+            String preAuthorizedCode = getTestingClient().testing()
+                    .getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() + 30);
+
+            AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
+            assertEquals("Pre-authorized grant should be forbidden when verifiable credentials are disabled.",
+                    HttpStatus.SC_FORBIDDEN, accessTokenResponse.getStatusCode());
+        } finally {
+            // Re-enable verifiable credentials so other tests see the default behavior
+            RealmRepresentation realmRepReset = adminClient.realm(TEST_REALM_NAME).toRepresentation();
+            realmRepReset.setVerifiableCredentialsEnabled(true);
+            adminClient.realm(TEST_REALM_NAME).update(realmRepReset);
+        }
+    }
+
     private AccessTokenResponse postCode(String preAuthorizedCode) throws Exception {
         HttpPost post = new HttpPost(getTokenEndpoint());
         List<NameValuePair> parameters = new LinkedList<>();
@@ -122,6 +150,8 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.setVerifiableCredentialsEnabled(true);
+        
         UserRepresentation user = UserBuilder.create()
                 .id("user-id")
                 .username("john")

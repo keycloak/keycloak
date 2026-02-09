@@ -17,10 +17,11 @@
 
 package org.keycloak.models;
 
-import org.keycloak.provider.ProviderEvent;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+
+import org.keycloak.provider.ProviderEvent;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -38,6 +39,68 @@ public interface RoleModel {
          */
         String getClientId();
         KeycloakSession getKeycloakSession();
+    }
+
+    interface RoleEvent extends ProviderEvent {
+        RealmModel getRealm();
+        RoleModel getRole();
+        KeycloakSession getKeycloakSession();
+    }
+
+    interface RoleGrantedEvent extends RoleModel.RoleEvent {
+        static void fire(RoleModel role, UserModel user, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new RoleModel.RoleGrantedEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public RoleModel getRole() {
+                    return role;
+                }
+
+                @Override
+                public UserModel getUser() {
+                    return user;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+
+        UserModel getUser();
+    }
+
+    interface RoleRevokedEvent extends RoleModel.RoleEvent {
+        static void fire(RoleModel role, UserModel user, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new RoleModel.RoleRevokedEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public RoleModel getRole() {
+                    return role;
+                }
+
+                @Override
+                public UserModel getUser() {
+                    return user;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+
+        UserModel getUser();
     }
 
     String getName();

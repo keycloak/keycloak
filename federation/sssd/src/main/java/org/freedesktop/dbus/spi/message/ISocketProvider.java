@@ -1,9 +1,9 @@
 package org.freedesktop.dbus.spi.message;
 
-import org.freedesktop.dbus.connections.transports.AbstractTransport;
-
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+
+import org.freedesktop.dbus.connections.transports.AbstractTransport;
 
 public interface ISocketProvider {
     /**

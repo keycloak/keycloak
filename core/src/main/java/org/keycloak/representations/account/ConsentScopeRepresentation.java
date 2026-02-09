@@ -23,15 +23,15 @@ public class ConsentScopeRepresentation {
 
     private String name;
 
-    private String displayTest;
+    private String displayText;
 
     public ConsentScopeRepresentation() {
     }
 
-    public ConsentScopeRepresentation(String id, String name, String displayTest) {
+    public ConsentScopeRepresentation(String id, String name, String displayText) {
         this.id = id;
         this.name = name;
-        this.displayTest = displayTest;
+        this.displayText = displayText;
     }
 
     public String getId() {
@@ -50,11 +50,27 @@ public class ConsentScopeRepresentation {
         this.name = name;
     }
 
-    public String getDisplayTest() {
-        return displayTest;
+    public String getDisplayText() {
+        return displayText;
     }
 
+    public void setDisplayText(String displayText) {
+        this.displayText = displayText;
+    }
+
+    /**
+     * @deprecated Use {@link #getDisplayText()} instead. This method will be removed in KC 27.0.
+     */
+    @Deprecated
+    public String getDisplayTest() {
+        return displayText;
+    }
+
+    /**
+     * @deprecated Use {@link #setDisplayText(String)} instead. This method will be removed in KC 27.0.
+     */
+    @Deprecated
     public void setDisplayTest(String displayTest) {
-        this.displayTest = displayTest;
+        this.displayText = displayTest;
     }
 }

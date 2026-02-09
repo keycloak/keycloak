@@ -17,9 +17,10 @@
 
 package org.keycloak.testsuite.session;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
@@ -34,9 +35,9 @@ import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.timer.TimerProvider;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

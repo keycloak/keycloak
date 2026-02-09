@@ -17,11 +17,9 @@
 
 package org.keycloak.testsuite.events;
 
-import io.micrometer.core.instrument.Metrics;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.After;
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -35,8 +33,11 @@ import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableCon
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.RealmBuilder;
 
-import java.util.ArrayList;
-import java.util.List;
+import io.micrometer.core.instrument.Metrics;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.After;
+import org.junit.Test;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -110,7 +111,7 @@ public class EventMetricsProviderTest extends AbstractKeycloakTest {
 
         testingClient.server().run(session -> {
             MatcherAssert.assertThat("Searching for metrics match in " + Metrics.globalRegistry.find("keycloak.user").meters(),
-                    Metrics.globalRegistry.counter("keycloak.user", "event", "login", "error", "", "realm", TEST).count() == 1);
+                    Metrics.globalRegistry.counter("keycloak.user", "event", "login", "realm", TEST).count() == 1);
         });
 
         // Show all labels, but filter out events like logout@
@@ -148,7 +149,7 @@ public class EventMetricsProviderTest extends AbstractKeycloakTest {
             MatcherAssert.assertThat("Searching for login error metric",
                     Metrics.globalRegistry.counter("keycloak.user", "event", "login", "error", "ERROR", "realm", TEST, "client.id", CLIENT_ID, "idp", "IDENTITY_PROVIDER").count() == 1);
             MatcherAssert.assertThat("Searching for refresh with unknown client",
-                    Metrics.globalRegistry.counter("keycloak.user", "event", "refresh_token", "error", "client_not_found", "realm", TEST, "client.id", "unknown", "idp", "").count() == 1);
+                    Metrics.globalRegistry.counter("keycloak.user", "event", "refresh_token", "error", "client_not_found", "realm", TEST, "client.id", "unknown").count() == 1);
         });
 
     }

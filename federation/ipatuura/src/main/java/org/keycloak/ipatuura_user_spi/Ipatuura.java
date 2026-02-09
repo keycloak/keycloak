@@ -17,21 +17,21 @@
 
 package org.keycloak.ipatuura_user_spi;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.jboss.logging.Logger;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.broker.provider.util.SimpleHttp.Response;
-
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.ipatuura_user_spi.schemas.SCIMSearchRequest;
 import org.keycloak.ipatuura_user_spi.schemas.SCIMUser;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.logging.Logger;
 
 public class Ipatuura {
     private static final Logger logger = Logger.getLogger(Ipatuura.class);
@@ -52,7 +52,7 @@ public class Ipatuura {
         this.session = session;
     }
 
-    private void parseSetCookie(Response response) throws IOException {
+    private void parseSetCookie(SimpleHttpResponse response) throws IOException {
         List<String> setCookieHeaders = response.getHeader("Set-Cookie");
 
         for (String h : setCookieHeaders) {
@@ -73,7 +73,7 @@ public class Ipatuura {
 
     public Integer csrfAuthLogin() {
 
-        Response response;
+        SimpleHttpResponse response;
 
         /* Get inputs */
         String server = model.getConfig().getFirst("scimurl");
@@ -84,7 +84,7 @@ public class Ipatuura {
         String url = String.format("https://%s%s", server, "/admin/login/");
 
         try {
-            response = SimpleHttp.doGet(url, session).asResponse();
+            response = SimpleHttp.create(session).doGet(url).asResponse();
             parseSetCookie(response);
             response.close();
         } catch (Exception e) {
@@ -95,7 +95,7 @@ public class Ipatuura {
         /* Perform login POST */
         try {
             /* Here we retrieve the Response sessionid and csrftoken cookie */
-            response = SimpleHttp.doPost(url, session).header("X-CSRFToken", csrf_value).header("Cookie", csrf_cookie)
+            response = SimpleHttp.create(session).doPost(url).header("X-CSRFToken", csrf_value).header("Cookie", csrf_cookie)
                     .header("referer", url).param("username", username).param("password", password).asResponse();
 
             parseSetCookie(response);
@@ -120,10 +120,10 @@ public class Ipatuura {
         String endpointurl = String.format("https://%s/creds/simple_pwd", server);
 
         logger.debugv("Sending POST request to {0}", endpointurl);
-        SimpleHttp simpleHttp = SimpleHttp.doPost(endpointurl, session).header("X-CSRFToken", this.csrf_value)
+        SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(endpointurl).header("X-CSRFToken", this.csrf_value)
                 .header("Cookie", this.csrf_cookie).header("SessionId", sessionid_cookie).header("referer", endpointurl)
                 .param("username", username).param("password", password);
-        try (Response response = simpleHttp.asResponse()){
+        try (SimpleHttpResponse response = simpleHttp.asResponse()){
             JsonNode result = response.asJson();
             return (result.get("result").get("validated").asBoolean());
         } catch (Exception e) {
@@ -139,9 +139,9 @@ public class Ipatuura {
         String endpointurl = String.format("https://%s/bridge/login_kerberos/", server);
 
         logger.debugv("Sending POST request to {0}", endpointurl);
-        SimpleHttp simpleHttp = SimpleHttp.doPost(endpointurl, session).header("Authorization", "Negotiate " + spnegoToken)
+        SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(endpointurl).header("Authorization", "Negotiate " + spnegoToken)
                 .param("username", "");
-        try (Response response = simpleHttp.asResponse()) {
+        try (SimpleHttpResponse response = simpleHttp.asResponse()) {
             logger.debugv("Response status is {0}", response.getStatus());
             return response.getFirstHeader("Remote-User");
         } catch (Exception e) {
@@ -150,8 +150,8 @@ public class Ipatuura {
         }
     }
 
-    public <T> Response clientRequest(String endpoint, String method, T entity) throws Exception {
-        Response response = null;
+    public <T> SimpleHttpResponse clientRequest(String endpoint, String method, T entity) throws Exception {
+        SimpleHttpResponse response = null;
 
         if (!this.logged_in) {
             this.csrfAuthLogin();
@@ -171,22 +171,22 @@ public class Ipatuura {
         try {
             switch (method) {
                 case "GET":
-                    response = SimpleHttp.doGet(endpointurl, session).header("X-CSRFToken", csrf_value)
+                    response = SimpleHttp.create(session).doGet(endpointurl).header("X-CSRFToken", csrf_value)
                             .header("Cookie", csrf_cookie).header("SessionId", sessionid_cookie).asResponse();
                     break;
                 case "DELETE":
-                    response = SimpleHttp.doDelete(endpointurl, session).header("X-CSRFToken", csrf_value)
+                    response = SimpleHttp.create(session).doDelete(endpointurl).header("X-CSRFToken", csrf_value)
                             .header("Cookie", csrf_cookie).header("SessionId", sessionid_cookie).header("referer", endpointurl)
                             .asResponse();
                     break;
                 case "POST":
                     /* Header is needed for domains endpoint only, but use it here anyway */
-                    response = SimpleHttp.doPost(endpointurl, session).header("X-CSRFToken", this.csrf_value)
+                    response = SimpleHttp.create(session).doPost(endpointurl).header("X-CSRFToken", this.csrf_value)
                             .header("Cookie", this.csrf_cookie).header("SessionId", sessionid_cookie)
                             .header("referer", endpointurl).json(entity).asResponse();
                     break;
                 case "PUT":
-                    response = SimpleHttp.doPut(endpointurl, session).header("X-CSRFToken", this.csrf_value)
+                    response = SimpleHttp.create(session).doPut(endpointurl).header("X-CSRFToken", this.csrf_value)
                             .header("SessionId", sessionid_cookie).header("Cookie", this.csrf_cookie).json(entity).asResponse();
                     break;
                 default:
@@ -223,7 +223,7 @@ public class Ipatuura {
         String usersSearchUrl = "Users/.search";
         SCIMUser user = null;
 
-        Response response;
+        SimpleHttpResponse response;
         try {
             response = clientRequest(usersSearchUrl, "POST", newSearch);
             user = response.asJson(SCIMUser.class);
@@ -256,13 +256,13 @@ public class Ipatuura {
         return getUserByAttr(username, attribute);
     }
 
-    public Response deleteUser(String username) {
+    public SimpleHttpResponse deleteUser(String username) {
         SCIMUser userobj = getUserByUsername(username);
         SCIMUser.Resource user = userobj.getResources().get(0);
 
         String userIdUrl = String.format("Users/%s", user.getId());
 
-        Response response;
+        SimpleHttpResponse response;
         try {
             response = clientRequest(userIdUrl, "DELETE", null);
         } catch (Exception e) {
@@ -305,12 +305,12 @@ public class Ipatuura {
         return user;
     }
 
-    public Response createUser(String username) {
+    public SimpleHttpResponse createUser(String username) {
         String usersUrl = "Users";
 
         SCIMUser.Resource newUser = setupUser(username);
 
-        Response response;
+        SimpleHttpResponse response;
         try {
             response = clientRequest(usersUrl, "POST", newUser);
         } catch (Exception e) {
@@ -349,7 +349,7 @@ public class Ipatuura {
         }
     }
 
-    public Response updateUser(Ipatuura ipatuura, String username, String attr, List<String> values) {
+    public SimpleHttpResponse updateUser(Ipatuura ipatuura, String username, String attr, List<String> values) {
         logger.debug(String.format("Updating %s attribute for %s", attr, username));
         /* Get existing user */
         if (ipatuura.csrfAuthLogin() == null) {
@@ -365,7 +365,7 @@ public class Ipatuura {
         /* Update user in SCIM */
         String modifyUrl = String.format("Users/%s", user.getId());
 
-        Response response;
+        SimpleHttpResponse response;
         try {
             response = clientRequest(modifyUrl, "PUT", user);
         } catch (Exception e) {

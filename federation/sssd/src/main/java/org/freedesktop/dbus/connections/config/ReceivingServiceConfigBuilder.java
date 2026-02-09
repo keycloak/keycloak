@@ -1,14 +1,14 @@
 package org.freedesktop.dbus.connections.config;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+
 import org.freedesktop.dbus.connections.ReceivingService;
 import org.freedesktop.dbus.connections.ReceivingService.ExecutorNames;
 import org.freedesktop.dbus.connections.ReceivingService.IThreadPoolRetryHandler;
 import org.freedesktop.dbus.connections.impl.BaseConnectionBuilder;
 import org.freedesktop.dbus.utils.Util;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 /**
  * Configuration builder to configure {@link ReceivingService}.

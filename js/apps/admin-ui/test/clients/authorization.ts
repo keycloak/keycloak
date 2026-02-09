@@ -1,9 +1,9 @@
-import ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
-import ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
-import { Page, expect } from "@playwright/test";
-import { clickRowKebabItem, getRowByCellText } from "../utils/table";
-import { confirmModal } from "../utils/modal";
-import PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
+import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation.js";
+import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation.js";
+import { type Page, expect } from "@playwright/test";
+import { clickRowKebabItem, getRowByCellText } from "../utils/table.ts";
+import { confirmModal } from "../utils/modal.ts";
+import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation.js";
 
 export async function goToAuthorizationTab(page: Page) {
   await page.getByTestId("authorizationTab").click();
@@ -21,12 +21,6 @@ export async function clickAuthenticationSaveButton(page: Page) {
   await page.getByTestId("authenticationSettings-save").click();
 }
 
-export async function assertDefaultResource(page: Page) {
-  await expect(page.getByTestId("name-column-Default Resource")).toHaveText(
-    "Default Resource",
-  );
-}
-
 export async function assertResource(page: Page, name: string) {
   await expect(getRowByCellText(page, name)).toBeVisible();
 }
@@ -35,7 +29,11 @@ export async function createResource(
   page: Page,
   resource: ResourceRepresentation,
 ) {
-  await page.getByTestId("createResource").click();
+  await page
+    .locator(
+      '[data-testid="createResource"], [data-testid="no-resources-empty-action"]',
+    )
+    .click();
   await fillForm(page, resource);
 }
 
@@ -81,7 +79,11 @@ export async function createPolicy(
   type: string,
   policy: { [key: string]: string },
 ) {
-  await page.getByTestId("createPolicy").click();
+  await page
+    .locator(
+      '[data-testid="createPolicy"], [data-testid="no-policies-empty-action"]',
+    )
+    .click();
   await page.getByRole("gridcell", { name: type, exact: true }).click();
   await fillForm(page, policy);
 }
@@ -106,7 +108,13 @@ export async function createPermission(
   type: string,
   permission: PolicyRepresentation,
 ) {
-  await page.getByTestId("permissionCreateDropdown").click();
+  const dropdown = page.getByTestId("permissionCreateDropdown");
+  const hasDropdown = (await dropdown.count()) > 0;
+
+  if (hasDropdown) {
+    await dropdown.click();
+  }
+
   await page.getByTestId(`create-${type}`).click();
   await fillForm(page, permission);
 }

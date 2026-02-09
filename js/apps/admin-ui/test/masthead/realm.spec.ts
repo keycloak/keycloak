@@ -1,15 +1,16 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { assertRequiredFieldError, switchOff } from "../utils/form";
-import { login } from "../utils/login";
+import adminClient from "../utils/AdminClient.ts";
+import { DEFAULT_REALM } from "../utils/constants.ts";
+import { assertRequiredFieldError, switchOff } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
 import {
   assertNotificationMessage,
   selectActionToggleItem,
-} from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
-import { goToClients, goToRealmSettings } from "../utils/sidebar";
-import { assertRowExists } from "../utils/table";
+} from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { goToClients, goToRealmSettings } from "../utils/sidebar.ts";
+import { assertRowExists } from "../utils/table.ts";
 import {
   assertCurrentRealm,
   clickClearResourceFile,
@@ -18,7 +19,9 @@ import {
   clickCreateRealmForm,
   fillRealmName,
   goToRealmSection,
-} from "./realm";
+  getTextArea,
+  assertTextAreaContains,
+} from "./realm.ts";
 
 const testRealmName = `Test-realm-${uuid()}`;
 const newRealmName = `New-Test-realm-${uuid()}`;
@@ -26,7 +29,7 @@ const editedRealmName = `Edited-Test-realm-${uuid()}`;
 const testDisabledName = `Test-Disabled-${uuid()}`;
 const specialCharsName = `%22-${uuid()}`;
 
-test.describe("Realm tests", () => {
+test.describe.serial("Realm tests", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await clickCreateRealm(page);
@@ -46,7 +49,7 @@ test.describe("Realm tests", () => {
     await page.getByTestId("create").click();
     await assertRequiredFieldError(page, "realm");
 
-    await fillRealmName(page, "master");
+    await fillRealmName(page, DEFAULT_REALM);
     await clickCreateRealmForm(page);
 
     await assertNotificationMessage(
@@ -111,5 +114,26 @@ test.describe("Realm tests", () => {
 
     await goToClients(page);
     await assertRowExists(page, "account-console");
+  });
+
+  test("should disable preview if json very long", async ({ page }) => {
+    await page.getByTestId("create").click();
+    await getTextArea(page).fill("{}");
+    await assertTextAreaContains(page, "{}");
+
+    const s = '"attribute-name": "attribute-value",';
+    await getTextArea(page).fill(`{${s.repeat(3000)}"final":"value"}`);
+    await assertTextAreaContains(
+      page,
+      "Preview disabled because content is too long.",
+    );
+
+    await fillRealmName(page, testRealmName);
+    await clickCreateRealmForm(page);
+
+    await assertNotificationMessage(
+      page,
+      "Could not create realm unable to read contents from stream",
+    );
   });
 });

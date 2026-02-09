@@ -17,15 +17,15 @@
 
 package org.keycloak.testsuite.util;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 import org.htmlunit.WebClient;
 import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Helper class for managing tabs in browser.

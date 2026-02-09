@@ -34,9 +34,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.hamcrest.Matchers;
-import org.infinispan.commons.CacheException;
-import org.junit.Test;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -54,6 +51,10 @@ import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
+
+import org.hamcrest.Matchers;
+import org.infinispan.commons.CacheException;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;

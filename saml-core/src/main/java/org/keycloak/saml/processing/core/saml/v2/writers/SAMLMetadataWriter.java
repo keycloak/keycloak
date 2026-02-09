@@ -16,6 +16,11 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.writers;
 
+import java.net.URI;
+import java.util.List;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamWriter;
+
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.metadata.AdditionalMetadataLocationType;
 import org.keycloak.dom.saml.v2.metadata.AffiliationDescriptorType;
@@ -45,12 +50,8 @@ import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
-import org.w3c.dom.Element;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamWriter;
-import java.net.URI;
-import java.util.List;
+import org.w3c.dom.Element;
 
 /**
  * Write the SAML metadata elements
@@ -76,6 +77,9 @@ public class SAMLMetadataWriter extends BaseWriter {
 
         if (entities.getValidUntil() != null) {
             StaxUtil.writeAttribute(writer, JBossSAMLConstants.VALID_UNTIL.get(), entities.getValidUntil().toString());
+        }
+        if (entities.getCacheDuration() != null) {
+            StaxUtil.writeAttribute(writer, JBossSAMLConstants.CACHE_DURATION.get(), entities.getCacheDuration().toString());
         }
         if (entities.getID() != null) {
             StaxUtil.writeAttribute(writer, JBossSAMLConstants.ID.get(), entities.getID());
@@ -116,6 +120,9 @@ public class SAMLMetadataWriter extends BaseWriter {
         StaxUtil.writeAttribute(writer, JBossSAMLConstants.ENTITY_ID.get(), entityDescriptor.getEntityID());
         if (entityDescriptor.getValidUntil() != null) {
             StaxUtil.writeAttribute(writer, JBossSAMLConstants.VALID_UNTIL.get(), entityDescriptor.getValidUntil().toString());
+        }
+        if (entityDescriptor.getCacheDuration() != null) {
+            StaxUtil.writeAttribute(writer, JBossSAMLConstants.CACHE_DURATION.get(), entityDescriptor.getCacheDuration().toString());
         }
         if (entityDescriptor.getID() != null) {
             StaxUtil.writeAttribute(writer, JBossSAMLConstants.ID.get(), entityDescriptor.getID());

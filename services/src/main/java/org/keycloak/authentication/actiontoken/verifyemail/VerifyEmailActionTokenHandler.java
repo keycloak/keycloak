@@ -16,11 +16,22 @@
  */
 package org.keycloak.authentication.actiontoken.verifyemail;
 
+import java.util.Objects;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
+
+import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
-import org.keycloak.TokenVerifier.Predicate;
-import org.keycloak.authentication.actiontoken.*;
-import org.keycloak.events.*;
+import org.keycloak.authentication.actiontoken.ActionTokenContext;
+import org.keycloak.authentication.actiontoken.TokenUtils;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -35,12 +46,6 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import java.util.Objects;
-import java.util.stream.Stream;
-
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
 
 /**
  * Action token handler for verification of e-mail address.
@@ -74,13 +79,16 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
         KeycloakSession session = tokenContext.getSession();
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
         EventBuilder event = tokenContext.getEvent();
+        LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
 
         event.event(EventType.VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail());
 
         if (user.isEmailVerified() && !isVerifyEmailActionSet(user, authSession)) {
             event.user(user).error(Errors.EMAIL_ALREADY_VERIFIED);
-            return session.getProvider(LoginFormsProvider.class)
+
+            return forms
                     .setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", forms.getMessage(Messages.EMAIL_VERIFIED_ALREADY_HEADER, user.getEmail()))
                     .setInfo(Messages.EMAIL_VERIFIED_ALREADY, user.getEmail())
                     .setUser(user)
                     .createInfoPage();
@@ -99,8 +107,9 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
                     authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
             String confirmUri = builder.build(realm.getName()).toString();
 
-            return session.getProvider(LoginFormsProvider.class)
+            return forms
                     .setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", forms.getMessage(Messages.CONFIRM_EMAIL_ADDRESS_VERIFICATION_HEADER, user.getEmail()))
                     .setSuccess(Messages.CONFIRM_EMAIL_ADDRESS_VERIFICATION, user.getEmail())
                     .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
                     .setUser(user)
@@ -125,8 +134,9 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
             AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
             asm.removeAuthenticationSession(tokenContext.getRealm(), authSession, true);
 
-            return session.getProvider(LoginFormsProvider.class)
+            return forms
                     .setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", forms.getMessage(Messages.EMAIL_VERIFIED_HEADER, user.getEmail()))
                     .setSuccess(Messages.EMAIL_VERIFIED)
                     .setUser(user)
                     .createInfoPage();

@@ -1,11 +1,11 @@
 package org.keycloak.testsuite.util;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
 

@@ -97,7 +97,6 @@ export const AttributeAnnotations = () => {
                       "html5-week",
                       "html5-time",
                     ]}
-                    rules={{ required: true }}
                     {...props}
                   />
                 ) : (

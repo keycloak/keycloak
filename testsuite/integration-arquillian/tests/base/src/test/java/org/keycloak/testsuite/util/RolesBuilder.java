@@ -17,12 +17,12 @@
 
 package org.keycloak.testsuite.util;
 
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.RolesRepresentation;
-
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.RolesRepresentation;
 
 /**
  *

@@ -17,16 +17,15 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Represents a credentials issuer according to the OID4VCI Credentials Issuer Metadata
- * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-issuer-metadata}
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-15.html#name-credential-issuer-metadata}
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
@@ -42,16 +41,26 @@ public class CredentialIssuer {
     @JsonProperty("nonce_endpoint")
     private String nonceEndpoint;
 
+    @JsonProperty("deferred_credential_endpoint")
+    private String deferredCredentialEndpoint;
+
     @JsonProperty("authorization_servers")
     private List<String> authorizationServers;
 
-    @JsonProperty("notification_endpoint")
-    private String notificationEndpoint;
+    @JsonProperty("batch_credential_issuance")
+    private BatchCredentialIssuance batchCredentialIssuance;
 
     @JsonProperty("credential_configurations_supported")
     private Map<String, SupportedCredentialConfiguration> credentialsSupported;
 
-    private DisplayObject display;
+    @JsonProperty("display")
+    private List<DisplayObject> display;
+
+    @JsonProperty("credential_response_encryption")
+    private CredentialResponseEncryptionMetadata credentialResponseEncryption;
+
+    @JsonProperty("credential_request_encryption")
+    private CredentialRequestEncryptionMetadata credentialRequestEncryption;
 
     public String getCredentialIssuer() {
         return credentialIssuer;
@@ -80,21 +89,12 @@ public class CredentialIssuer {
         return this;
     }
 
-    public Map<String, SupportedCredentialConfiguration> getCredentialsSupported() {
-        return credentialsSupported;
+    public String getDeferredCredentialEndpoint() {
+        return deferredCredentialEndpoint;
     }
 
-    public CredentialIssuer setCredentialsSupported(Map<String, SupportedCredentialConfiguration> credentialsSupported) {
-        this.credentialsSupported = Collections.unmodifiableMap(credentialsSupported);
-        return this;
-    }
-
-    public DisplayObject getDisplay() {
-        return display;
-    }
-
-    public CredentialIssuer setDisplay(DisplayObject display) {
-        this.display = display;
+    public CredentialIssuer setDeferredCredentialEndpoint(String deferredCredentialEndpoint) {
+        this.deferredCredentialEndpoint = deferredCredentialEndpoint;
         return this;
     }
 
@@ -107,13 +107,70 @@ public class CredentialIssuer {
         return this;
     }
 
-    public String getNotificationEndpoint() {
-        return notificationEndpoint;
+    public BatchCredentialIssuance getBatchCredentialIssuance() {
+        return batchCredentialIssuance;
     }
 
-    public CredentialIssuer setNotificationEndpoint(String notificationEndpoint) {
-        this.notificationEndpoint = notificationEndpoint;
+    public CredentialIssuer setBatchCredentialIssuance(BatchCredentialIssuance batchCredentialIssuance) {
+        this.batchCredentialIssuance = batchCredentialIssuance;
         return this;
     }
-}
 
+    public Map<String, SupportedCredentialConfiguration> getCredentialsSupported() {
+        return credentialsSupported;
+    }
+
+    public CredentialIssuer setCredentialsSupported(Map<String, SupportedCredentialConfiguration> credentialsSupported) {
+        if (credentialsSupported == null) {
+            throw new IllegalArgumentException("credentialsSupported cannot be null");
+        }
+        credentialsSupported.forEach((k, v) -> v.setId(k));
+        this.credentialsSupported = Map.copyOf(credentialsSupported);
+        return this;
+    }
+
+    public List<DisplayObject> getDisplay() {
+        return display;
+    }
+
+    public CredentialIssuer setDisplay(List<DisplayObject> display) {
+        this.display = display;
+        return this;
+    }
+
+    public CredentialResponseEncryptionMetadata getCredentialResponseEncryption() {
+        return credentialResponseEncryption;
+    }
+
+    public CredentialIssuer setCredentialResponseEncryption(CredentialResponseEncryptionMetadata credentialResponseEncryption) {
+        this.credentialResponseEncryption = credentialResponseEncryption;
+        return this;
+    }
+
+    public CredentialRequestEncryptionMetadata getCredentialRequestEncryption() {
+        return credentialRequestEncryption;
+    }
+
+    public CredentialIssuer setCredentialRequestEncryption(CredentialRequestEncryptionMetadata credentialRequestEncryption) {
+        this.credentialRequestEncryption = credentialRequestEncryption;
+        return this;
+    }
+
+    /**
+     * Represents the batch_credential_issuance metadata parameter.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class BatchCredentialIssuance {
+        @JsonProperty("batch_size")
+        private Integer batchSize;
+
+        public Integer getBatchSize() {
+            return batchSize;
+        }
+
+        public BatchCredentialIssuance setBatchSize(Integer batchSize) {
+            this.batchSize = batchSize;
+            return this;
+        }
+    }
+}

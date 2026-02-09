@@ -17,20 +17,20 @@
 
 package org.keycloak.migration.migrators;
 
+import java.util.List;
+import javax.naming.directory.SearchControls;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.StorageProviderRealmModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.StorageProviderRealmModel;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
-
-import javax.naming.directory.SearchControls;
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

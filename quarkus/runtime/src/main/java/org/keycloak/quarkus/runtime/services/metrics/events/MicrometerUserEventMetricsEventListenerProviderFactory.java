@@ -17,11 +17,8 @@
 
 package org.keycloak.quarkus.runtime.services.metrics.events;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Meter;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.binder.BaseUnits;
-import org.bouncycastle.util.Strings;
+import java.util.HashSet;
+
 import org.keycloak.Config;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
@@ -29,7 +26,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-import java.util.HashSet;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.binder.BaseUnits;
+import org.bouncycastle.util.Strings;
 
 public class MicrometerUserEventMetricsEventListenerProviderFactory implements EventListenerProviderFactory, EnvironmentDependentProviderFactory {
 

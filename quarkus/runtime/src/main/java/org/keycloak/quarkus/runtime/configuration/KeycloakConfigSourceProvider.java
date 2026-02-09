@@ -49,7 +49,7 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
 
         addConfigSources("CLI", List.of(new ConfigArgsConfigSource()));
 
-        addConfigSources("ENV", List.of(new KcEnvConfigSource()));
+        addConfigSources("ENV", KcEnvConfigSource.getConfigSources());
 
         addConfigSources("quarkus.properties", new QuarkusPropertiesConfigSource().getConfigSources(Thread.currentThread().getContextClassLoader()));
 
@@ -70,13 +70,11 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
     }
 
     /**
-     * Mainly for test purposes as MicroProfile Config does not seem to provide a way to reload configsources when the config
-     * is released
+     * For test purposes
      */
     public static void reload() {
         CONFIG_SOURCES.clear();
         CONFIG_SOURCE_DISPLAY_NAMES.clear();
-        initializeSources();
     }
 
     @Override

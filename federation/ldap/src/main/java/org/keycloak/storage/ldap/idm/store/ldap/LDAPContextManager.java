@@ -1,13 +1,11 @@
 package org.keycloak.storage.ldap.idm.store.ldap;
 
-import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.storage.ldap.LDAPConfig;
-import org.keycloak.tracing.TracingProvider;
-import org.keycloak.truststore.TruststoreProvider;
-import org.keycloak.vault.VaultStringSecret;
-
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
 import javax.naming.AuthenticationException;
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -15,12 +13,15 @@ import javax.naming.ldap.LdapContext;
 import javax.naming.ldap.StartTlsRequest;
 import javax.naming.ldap.StartTlsResponse;
 import javax.net.ssl.SSLSocketFactory;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.tracing.TracingProvider;
+import org.keycloak.truststore.TruststoreProvider;
+import org.keycloak.vault.VaultStringSecret;
+
+import org.jboss.logging.Logger;
 
 import static javax.naming.Context.SECURITY_CREDENTIALS;
 

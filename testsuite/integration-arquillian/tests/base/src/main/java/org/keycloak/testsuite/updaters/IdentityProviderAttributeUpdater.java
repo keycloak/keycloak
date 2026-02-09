@@ -1,10 +1,11 @@
 package org.keycloak.testsuite.updaters;
 
-import org.keycloak.admin.client.resource.IdentityProviderResource;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import java.io.Closeable;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 /**
  *

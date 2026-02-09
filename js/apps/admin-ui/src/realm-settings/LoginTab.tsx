@@ -71,8 +71,8 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.registrationAllowed}
-              onChange={(_event, value) => {
-                updateSwitchValue({ registrationAllowed: value });
+              onChange={async (_event, value) => {
+                await updateSwitchValue({ registrationAllowed: value });
               }}
               aria-label={t("registrationAllowed")}
             />
@@ -96,8 +96,8 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.resetPasswordAllowed}
-              onChange={(_event, value) => {
-                updateSwitchValue({ resetPasswordAllowed: value });
+              onChange={async (_event, value) => {
+                await updateSwitchValue({ resetPasswordAllowed: value });
               }}
               aria-label={t("resetPasswordAllowed")}
             />
@@ -120,8 +120,8 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.rememberMe}
-              onChange={(_event, value) => {
-                updateSwitchValue({ rememberMe: value });
+              onChange={async (_event, value) => {
+                await updateSwitchValue({ rememberMe: value });
               }}
               aria-label={t("rememberMe")}
             />
@@ -148,8 +148,8 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.registrationEmailAsUsername}
-              onChange={(_event, value) => {
-                updateSwitchValue([
+              onChange={async (_event, value) => {
+                await updateSwitchValue([
                   {
                     registrationEmailAsUsername: value,
                   },
@@ -179,8 +179,8 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.loginWithEmailAllowed}
-              onChange={(_event, value) => {
-                updateSwitchValue([
+              onChange={async (_event, value) => {
+                await updateSwitchValue([
                   {
                     loginWithEmailAllowed: value,
                   },
@@ -207,8 +207,8 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.duplicateEmailsAllowed}
-              onChange={(_event, value) => {
-                updateSwitchValue({
+              onChange={async (_event, value) => {
+                await updateSwitchValue({
                   duplicateEmailsAllowed: value,
                 });
               }}
@@ -237,8 +237,8 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.verifyEmail}
-              onChange={(_event, value) => {
-                updateSwitchValue({ verifyEmail: value });
+              onChange={async (_event, value) => {
+                await updateSwitchValue({ verifyEmail: value });
               }}
               aria-label={t("verifyEmail")}
             />
@@ -268,8 +268,8 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.editUsernameAllowed}
-              onChange={(_event, value) => {
-                updateSwitchValue({ editUsernameAllowed: value });
+              onChange={async (_event, value) => {
+                await updateSwitchValue({ editUsernameAllowed: value });
               }}
               aria-label={t("editUsernameAllowed")}
             />

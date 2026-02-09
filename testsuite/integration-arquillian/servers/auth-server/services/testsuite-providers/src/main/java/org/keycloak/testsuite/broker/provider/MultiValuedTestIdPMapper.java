@@ -17,11 +17,11 @@
 
 package org.keycloak.testsuite.broker.provider;
 
-import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
-import org.keycloak.provider.ProviderConfigProperty;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
+import org.keycloak.provider.ProviderConfigProperty;
 
 /**
  * Testing IdP mapper with multivalued property

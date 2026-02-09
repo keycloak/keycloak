@@ -17,16 +17,16 @@
 
 package org.keycloak.partialimport;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Base PartialImport for most resource types.

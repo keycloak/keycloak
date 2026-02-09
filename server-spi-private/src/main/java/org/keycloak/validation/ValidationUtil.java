@@ -16,11 +16,11 @@
  */
 package org.keycloak.validation;
 
+import jakarta.ws.rs.BadRequestException;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
-
-import jakarta.ws.rs.BadRequestException;
 
 public class ValidationUtil {
 

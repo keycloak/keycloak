@@ -17,27 +17,27 @@
 
 package org.keycloak.it.cli.dist;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
-import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.DryRun;
+import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.WithEnvVars;
+import org.keycloak.it.utils.KeycloakDistribution;
 
+import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
 
-import io.quarkus.test.junit.main.Launch;
-import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.junit5.extension.WithEnvVars;
-import org.keycloak.it.utils.KeycloakDistribution;
+import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @WithEnvVars({"KC_CACHE", "local"}) // avoid flakey port conflicts
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -76,12 +76,12 @@ public class StartCommandDistTest {
         CLIResult cliResult = dist.run("build",  "--db=dev-file");
         cliResult.assertBuild();
 
-        cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--spi-events-listener-jboss-logging-enabled=false");
-        cliResult.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener-jboss-logging-enabled");
+        cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--spi-events-listener--jboss-logging--enabled=false");
+        cliResult.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener--jboss-logging--enabled");
     }
 
     @DryRun
-    @WithEnvVars({"KC_SPI_EVENTS_LISTENER_JBOSS_LOGGING_ENABLED", "false"})
+    @WithEnvVars({"KC_SPI_EVENTS_LISTENER__JBOSS_LOGGING__ENABLED", "false"})
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void noErrorSpiBuildtimeNotChanged(KeycloakDistribution dist) {
@@ -92,11 +92,28 @@ public class StartCommandDistTest {
         cliResult.assertNoError("The following build time options");
     }
 
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    void terminateStartOptimized(KeycloakDistribution dist) {
+        CLIResult cliResult = dist.run("build", "--db=dev-file");
+        cliResult.assertBuild();
+
+        dist.setManualStop(true);
+        cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        cliResult.assertStarted();
+
+        // if the child java process does not clean up, then subsequent start will fail
+        dist.stop();
+
+        cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        cliResult.assertStarted();
+    }
+
     @DryRun
     @Test
     @Launch({ "--profile=dev", "start",  "--db=dev-file" })
     void failUsingDevProfile(CLIResult cliResult) {
-        assertTrue(cliResult.getErrorOutput().contains("ERROR: You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."),
+        assertTrue(cliResult.getErrorOutput().contains("You can not 'start' the server in development mode. Please re-build the server first, using '" + KeycloakDistribution.SCRIPT_CMD + " build' for the default production mode."),
                 () -> "The Output:\n" + cliResult.getErrorOutput() + "doesn't contains the expected string.");
     }
 
@@ -108,16 +125,9 @@ public class StartCommandDistTest {
 
     @DryRun
     @Test
-    @Launch({ "-v", "start", "--db=dev-mem", OPTIMIZED_BUILD_OPTION_LONG})
-    void failBuildPropertyNotAvailable(CLIResult cliResult) {
-        cliResult.assertError("Build time option: '--db' not usable with pre-built image and --optimized");
-    }
-
-    @DryRun
-    @Test
     @Launch({ "--profile=dev", "start", "--http-enabled=true", "--hostname-strict=false" })
     void failIfAutoBuildUsingDevProfile(CLIResult cliResult) {
-        assertThat(cliResult.getErrorOutput(), containsString("You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."));
+        assertThat(cliResult.getErrorOutput(), containsString("You can not 'start' the server in development mode. Please re-build the server first, using '" + KeycloakDistribution.SCRIPT_CMD + " build' for the default production mode."));
         assertEquals(4, cliResult.getErrorStream().size());
     }
 
@@ -154,17 +164,9 @@ public class StartCommandDistTest {
         cliResult.assertMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
         cliResult.assertMessage("Server configuration updated and persisted. Run the following command to review the configuration:");
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " show-config");
-        cliResult.assertMessage("Next time you run the server, just run:");
-        cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start --http-enabled=true --hostname-strict=false " + OPTIMIZED_BUILD_OPTION_LONG);
+        cliResult.assertMessage("Next time you run the server, just add --optimized to the command to ensure this build is used.");
         assertFalse(cliResult.getOutput().contains("--metrics-enabled"));
         assertTrue(cliResult.getErrorOutput().isBlank(), cliResult.getErrorOutput());
-    }
-
-    @DryRun
-    @Test
-    @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--db=postgres" })
-    void testStartUsingOptimizedDoesNotAllowBuildOptions(CLIResult cliResult) {
-        cliResult.assertError("Build time option: '--db' not usable with pre-built image and --optimized");
     }
 
     @DryRun

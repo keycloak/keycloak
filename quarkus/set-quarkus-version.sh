@@ -47,18 +47,35 @@ if [ "$QUARKUS_BRANCH" == "$DEFAULT_QUARKUS_VERSION" ]; then
 fi
 
 QUARKUS_BOM_URL="https://raw.githubusercontent.com/quarkusio/quarkus/$QUARKUS_BRANCH/bom/application/pom.xml"
+QUARKUS_PARENT_POM_URL="https://raw.githubusercontent.com/quarkusio/quarkus/$QUARKUS_BRANCH/independent-projects/parent/pom.xml"
+
+VERSIONS_FROM_QUARKUS_PARENT=(
+    "version.surefire.plugin"
+)
 
 if ! $(curl --output /dev/null --silent --head --fail "$QUARKUS_BOM_URL"); then
     echo "Failed to resolve version from Quarkus BOM at '$QUARKUS_BOM_URL'"
     exit 1
 fi
 
+if ! $(curl --output /dev/null --silent --head --fail "$QUARKUS_PARENT_POM_URL"); then
+    echo "Failed to resolve version from Quarkus Parent pom.xml at '$QUARKUS_PARENT_POM_URL'"
+    exit 1
+fi
+
 QUARKUS_BOM=$(curl -f -s "$QUARKUS_BOM_URL")
+QUARKUS_PARENT_POM=$(curl -f -s "$QUARKUS_PARENT_POM_URL")
 
 echo "Setting Quarkus version: $QUARKUS_VERSION"
 
 $SCRIPT_DIR/../mvnw -B versions:set-property -f $SCRIPT_DIR/../pom.xml -Dproperty=quarkus.version -DnewVersion="$QUARKUS_VERSION" 1> /dev/null
 $SCRIPT_DIR/../mvnw -B versions:set-property -f $SCRIPT_DIR/../pom.xml -Dproperty=quarkus.build.version -DnewVersion="$QUARKUS_VERSION" 1> /dev/null
+
+for dependency in "${VERSIONS_FROM_QUARKUS_PARENT[@]}"; do
+    VERSION=$(grep -oP "(?<=<$dependency>)[^<]*(?=</$dependency>)" <<< "$QUARKUS_PARENT_POM")
+    echo "Setting $dependency to $VERSION based on the Quarkus Parent pom.xml"
+    $SCRIPT_DIR/../mvnw versions:set-property -f $SCRIPT_DIR/../pom.xml -Dproperty="$dependency" -DnewVersion="$VERSION" 1> /dev/null
+done
 
 DEPENDENCIES_LIST=$(grep -oP '(?<=\</).*(?=\.version\>)' "$SCRIPT_DIR/../pom.xml")
 

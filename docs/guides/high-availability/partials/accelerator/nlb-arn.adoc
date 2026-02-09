@@ -11,8 +11,8 @@ aws elbv2 describe-load-balancers \
   --output text
 </#noparse>
 ----
-<1> The Kubernetes namespace containing the Keycloak deployment
-<2> The AWS Region hosting the Kubernetes cluster
+<1> The {kubernetes} namespace containing the Keycloak deployment
+<2> The AWS Region hosting the {kubernetes} cluster
 +
 .Output:
 [source,bash]

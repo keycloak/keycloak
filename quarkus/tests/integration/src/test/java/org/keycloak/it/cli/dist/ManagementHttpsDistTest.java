@@ -16,18 +16,19 @@
  */
 package org.keycloak.it.cli.dist;
 
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.RawDistOnly;
+
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import io.restassured.RestAssured;
 import io.restassured.config.RedirectConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.RawDistOnly;
 
 import static io.restassured.RestAssured.when;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.containsString;
 
 @DistributionTest(keepAlive = true,
         enableTls = true,
@@ -52,7 +53,28 @@ public class ManagementHttpsDistTest {
         when().get(url).then()
                 .statusCode(200)
                 .and()
-                .body(is("Keycloak Management Interface"));
+                .body(containsString("Keycloak Management Interface"));
+        when().get(url + "/health").then()
+                .statusCode(200);
+        when().get(url + "/health/live").then()
+                .statusCode(200);
+        when().get(url + "/health/ready").then()
+                .statusCode(200);
+        when().get(url + "/metrics").then()
+                .statusCode(200);
+    }
+
+    @Test
+    @Launch({"start-dev", "--http-management-scheme=http"})
+    public void simpleHttpStartDev(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        var url = "http://localhost:9000";
+        cliResult.assertMessage("Management interface listening on http://0.0.0.0:9000");
+
+        when().get(url).then()
+                .statusCode(200)
+                .and()
+                .body(containsString("Keycloak Management Interface"));
         when().get(url + "/health").then()
                 .statusCode(200);
         when().get(url + "/health/live").then()

@@ -17,9 +17,6 @@
 
 package org.keycloak.theme;
 
-import org.keycloak.models.RealmModel;
-import org.keycloak.services.util.LocaleUtil;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,10 +28,13 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
+import org.keycloak.models.RealmModel;
+import org.keycloak.services.util.LocaleUtil;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class FolderTheme implements Theme {
+public class FolderTheme extends FileBasedTheme {
 
     private String parentName;
     private String importName;
@@ -89,6 +89,12 @@ public class FolderTheme implements Theme {
     }
 
     @Override
+    public boolean hasResource(String path) throws IOException {
+        var file = ResourceLoader.getFile(resourcesDir, path);
+        return file != null && file.isFile();
+    }
+
+    @Override
     public InputStream getResourceAsStream(String path) throws IOException {
         return ResourceLoader.getFileAsStream(resourcesDir, path);
     }
@@ -101,14 +107,8 @@ public class FolderTheme implements Theme {
     private static final Pattern LEGAL_LOCALE = Pattern.compile("[a-zA-Z0-9-_#]*");
 
     @Override
-    public Properties getMessages(String baseBundlename, Locale locale) throws IOException {
-        if (locale == null){
-            return null;
-        }
-
-        Properties m = new Properties();
-
-        String filename = baseBundlename + "_" + locale;
+    protected void loadBundle(String baseBundlename, Locale locale, Properties m) throws IOException {
+        String filename = toBundleName(baseBundlename, locale);
 
         if (!LEGAL_LOCALE.matcher(filename).matches()) {
             throw new RuntimeException("Found illegal characters in locale or bundle name: " + filename);
@@ -120,7 +120,6 @@ public class FolderTheme implements Theme {
                 PropertiesUtil.readCharsetAware(m, stream);
             }
         }
-        return m;
     }
 
     public Properties getEnhancedMessages(RealmModel realm, Locale locale) throws IOException {

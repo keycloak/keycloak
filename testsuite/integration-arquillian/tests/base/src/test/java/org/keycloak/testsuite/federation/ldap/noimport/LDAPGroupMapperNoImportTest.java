@@ -17,11 +17,12 @@
 
 package org.keycloak.testsuite.federation.ldap.noimport;
 
+import org.keycloak.testsuite.federation.ldap.LDAPGroupMapperTest;
+
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.testsuite.federation.ldap.LDAPGroupMapperTest;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

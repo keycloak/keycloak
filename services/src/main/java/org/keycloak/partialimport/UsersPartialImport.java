@@ -17,18 +17,18 @@
 
 package org.keycloak.partialimport;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.models.UserManager;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * PartialImport handler for users.

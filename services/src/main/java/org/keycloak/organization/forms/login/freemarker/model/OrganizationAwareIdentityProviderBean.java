@@ -18,6 +18,7 @@
 package org.keycloak.organization.forms.login.freemarker.model;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 
@@ -25,6 +26,7 @@ import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.util.Booleans;
 
 import static org.keycloak.models.IdentityProviderStorageProvider.FetchMode.ALL;
 import static org.keycloak.models.IdentityProviderStorageProvider.FetchMode.ORG_ONLY;
@@ -60,23 +62,35 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
                     .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                     .sorted(IDP_COMPARATOR_INSTANCE).toList();
         }
+        Predicate<IdentityProviderModel> defaultFilter = idp -> {
+            if (idp.isEnabled() && !Objects.equals(existingIDP, idp.getAlias())) {
+                if (organization == null) {
+                    Map<String, String> config = idp.getConfig();
+                    return !Boolean.parseBoolean(config.get(OrganizationModel.HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN));
+                }
+
+                return true;
+            }
+
+            return false;
+        };
         if (onlyOrganizationBrokers) {
             // we already have the organization, just fetch the organization's public enabled IDPs.
             if (this.organization != null) {
                 return organization.getIdentityProviders()
-                        .filter(idp -> idp.isEnabled() && !idp.isLinkOnly() && !idp.isHideOnLogin())
+                        .filter(idp -> idp.isEnabled() && Booleans.isFalse(idp.isLinkOnly()) && Booleans.isFalse(idp.isHideOnLogin()))
                         .filter(idp -> !Objects.equals(existingIDP, idp.getAlias()))
                         .map(idp -> createIdentityProvider(super.realm, super.baseURI, idp))
                         .sorted(IDP_COMPARATOR_INSTANCE).toList();
             }
             // we don't have a specific organization - fetch public enabled IDPs linked to any org.
             return session.identityProviders().getForLogin(ORG_ONLY, null)
-                    .filter(idp -> idp.isEnabled() && !Objects.equals(existingIDP, idp.getAlias())) // re-check isEnabled as idp might have been wrapped.
+                    .filter(defaultFilter) // re-check isEnabled as idp might have been wrapped.
                     .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                     .sorted(IDP_COMPARATOR_INSTANCE).toList();
         }
         return session.identityProviders().getForLogin(ALL, this.organization != null ? this.organization.getId() : null)
-                .filter(idp -> idp.isEnabled() && !Objects.equals(existingIDP, idp.getAlias())) // re-check isEnabled as idp might have been wrapped.
+                .filter(defaultFilter) // re-check isEnabled as idp might have been wrapped.
                 .map(idp -> createIdentityProvider(this.realm, this.baseURI, idp))
                 .sorted(IDP_COMPARATOR_INSTANCE).toList();
     }
@@ -103,6 +117,6 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
         if (organization != null && !Objects.equals(organization.getId(),idp.getOrganizationId())) {
             return false;
         }
-        return !idp.isHideOnLogin();
+        return Booleans.isFalse(idp.isHideOnLogin());
     }
 }

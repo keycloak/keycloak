@@ -1,12 +1,12 @@
 package org.keycloak.protocol.docker.installation.compose;
 
-import org.keycloak.common.util.PemUtils;
-
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.Base64;
+
+import org.keycloak.common.util.PemUtils;
 
 public final class DockerCertFileUtils {
     public static final String BEGIN_CERT = PemUtils.BEGIN_CERT;

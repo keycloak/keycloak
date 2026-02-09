@@ -1,5 +1,5 @@
 The simplest way to verify that a connection is possible between a ROSA cluster and an Aurora DB cluster is to deploy
-`psql` on the Openshift cluster and attempt to connect to the writer endpoint.
+`psql` on the OpenShift cluster and attempt to connect to the writer endpoint.
 
 The following command creates a pod in the default namespace and establishes a `psql` connection with the Aurora cluster if possible.
 Upon exiting the pod shell, the pod is deleted.

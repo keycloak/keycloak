@@ -16,20 +16,15 @@
  */
 package org.keycloak.saml.common.util;
 
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.w3c.dom.DOMException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.Objects;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -42,15 +37,21 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.Objects;
+
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+
+import org.w3c.dom.DOMException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * Utility dealing with DOM
@@ -62,7 +63,7 @@ public class DocumentUtil {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
-    private static DocumentBuilderFactory documentBuilderFactory;
+    private static volatile DocumentBuilderFactory documentBuilderFactory;
 
     public static final String feature_external_general_entities = "http://xml.org/sax/features/external-general-entities";
     public static final String feature_external_parameter_entities = "http://xml.org/sax/features/external-parameter-entities";
@@ -394,31 +395,37 @@ public class DocumentUtil {
      * @return
      */
     private static DocumentBuilderFactory getDocumentBuilderFactory() {
-        boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
-                .equalsIgnoreCase("true");
-        ClassLoader prevTCCL = SecurityActions.getTCCL();
         if (documentBuilderFactory == null) {
-            try {
-                if (tccl_jaxp) {
-                    SecurityActions.setTCCL(DocumentUtil.class.getClassLoader());
-                }
-                documentBuilderFactory = DocumentBuilderFactory.newInstance();
-                documentBuilderFactory.setNamespaceAware(true);
-                documentBuilderFactory.setXIncludeAware(false);
-                String feature = "";
-                try {
-                    feature = feature_disallow_doctype_decl;
-                    documentBuilderFactory.setFeature(feature, true);
-                    feature = feature_external_general_entities;
-                    documentBuilderFactory.setFeature(feature, false);
-                    feature = feature_external_parameter_entities;
-                    documentBuilderFactory.setFeature(feature, false);
-                } catch (ParserConfigurationException e) {
-                    throw logger.parserFeatureNotSupported(feature);
-                }
-            } finally {
-                if (tccl_jaxp) {
-                    SecurityActions.setTCCL(prevTCCL);
+            synchronized(DocumentUtil.class) {
+                if (documentBuilderFactory == null) {
+                    ClassLoader prevTCCL = SecurityActions.getTCCL();
+                    boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
+                            .equalsIgnoreCase("true");
+                    try {
+                        if (tccl_jaxp) {
+                            SecurityActions.setTCCL(DocumentUtil.class.getClassLoader());
+                        }
+                        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+                        documentBuilderFactory.setNamespaceAware(true);
+                        documentBuilderFactory.setXIncludeAware(false);
+                        String feature = "";
+                        try {
+                            feature = feature_disallow_doctype_decl;
+                            documentBuilderFactory.setFeature(feature, true);
+                            feature = feature_external_general_entities;
+                            documentBuilderFactory.setFeature(feature, false);
+                            feature = feature_external_parameter_entities;
+                            documentBuilderFactory.setFeature(feature, false);
+                        } catch (ParserConfigurationException e) {
+                            throw logger.parserFeatureNotSupported(feature);
+                        }
+                        // only place the fully initialized factory in the instance
+                        DocumentUtil.documentBuilderFactory = documentBuilderFactory;
+                    } finally {
+                        if (tccl_jaxp) {
+                            SecurityActions.setTCCL(prevTCCL);
+                        }
+                    }
                 }
             }
         }

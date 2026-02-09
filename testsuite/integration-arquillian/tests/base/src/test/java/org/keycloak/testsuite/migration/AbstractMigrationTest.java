@@ -16,9 +16,21 @@
  */
 package org.keycloak.testsuite.migration;
 
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.hamcrest.Matchers;
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -48,6 +60,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlProtocolFactory;
 import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.representations.AccessToken;
@@ -82,20 +95,19 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.theme.DefaultThemeSelectorProvider;
 import org.keycloak.util.TokenUtil;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.xml.security.encryption.XMLCipher;
+import org.hamcrest.Matchers;
+
+import static org.keycloak.migration.migrators.MigrateTo24_0_0.REALM_USER_PROFILE_ENABLED;
+import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
+import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
+import static org.keycloak.models.AccountRoles.VIEW_GROUPS;
+import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
+import static org.keycloak.testsuite.Assert.assertNames;
+import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
 
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -115,14 +127,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.migration.migrators.MigrateTo24_0_0.REALM_USER_PROFILE_ENABLED;
-import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
-import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
-import static org.keycloak.models.AccountRoles.VIEW_GROUPS;
-import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
-import static org.keycloak.testsuite.Assert.assertNames;
-import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
-import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -149,7 +153,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigratedMigrationData(boolean supportsAuthzService) {
         assertNames(migrationRealm.roles().list(), "offline_access", "uma_authorization", "default-roles-migration", "migration-test-realm-role");
-        List<String> expectedClientIds = new ArrayList<>(Arrays.asList("account", "account-console", "admin-cli", "broker", "migration-test-client", "migration-saml-client", "realm-management", "security-admin-console"));
+        List<String> expectedClientIds = new ArrayList<>(Arrays.asList("account", "account-console", "admin-cli", "broker", "migration-test-client", "migration-saml-client",
+                "realm-management", "security-admin-console", "http://localhost:8280/sales-post-enc/"));
 
         if (supportsAuthzService) {
             expectedClientIds.add("authz-servlet");
@@ -449,6 +454,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testIdpLinkActionAvailable(migrationRealm);
     }
 
+    protected void testMigrationTo26_4_0() {
+        testSamlEncryptionAttributes(migrationRealm);
+    }
+
     private void testClientContainsExpectedClientScopes() {
         // Test OIDC client contains expected client scopes
         ClientResource migrationTestOIDCClient = ApiUtil.findClientByClientId(migrationRealm, "migration-test-client");
@@ -600,8 +609,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                 ConditionalUserConfiguredAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED, 5, 0);
 
         AuthenticationExecutionModel.Requirement requirement = imported ? AuthenticationExecutionModel.Requirement.REQUIRED : AuthenticationExecutionModel.Requirement.ALTERNATIVE;
-        testAuthenticationExecution(authExecutions.get(11), null,
-                OTPFormAuthenticatorFactory.PROVIDER_ID, requirement, 5, 1);
+        testAuthenticationExecution(imported ? authExecutions.get(11) : authExecutions.get(12), null,
+                OTPFormAuthenticatorFactory.PROVIDER_ID, requirement, 5, imported ? 1 : 2);
     }
 
 
@@ -1001,9 +1010,9 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                 if (action.getAlias().equals("update_user_locale")) {
                     assertEquals(1000, action.getPriority());
                 } else if (action.getAlias().equals("delete_credential")) {
-                    assertEquals(100, action.getPriority());
-                } else if (action.getAlias().equals("idp_link")) {
                     assertEquals(110, action.getPriority());
+                } else if (action.getAlias().equals("idp_link")) {
+                    assertEquals(120, action.getPriority());
                 } else {
                     assertEquals(priority, action.getPriority());
                 }
@@ -1353,7 +1362,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertEquals("delete_credential", rep.getAlias());
         assertEquals("delete_credential", rep.getProviderId());
         assertEquals("Delete Credential", rep.getName());
-        assertEquals(100, rep.getPriority());
+        assertEquals(110, rep.getPriority());
         assertTrue(rep.isEnabled());
         assertFalse(rep.isDefaultAction());
     }
@@ -1364,7 +1373,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertEquals("idp_link", rep.getAlias());
         assertEquals("idp_link", rep.getProviderId());
         assertEquals("Linking Identity Provider", rep.getName());
-        assertEquals(110, rep.getPriority());
+        assertEquals(120, rep.getPriority());
         assertTrue(rep.isEnabled());
         assertFalse(rep.isDefaultAction());
     }
@@ -1380,5 +1389,20 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         ClientRepresentation clientRepresentation = realm.clients().findByClientId(clientId).get(0);
         assertTrue(clientRepresentation.isFullScopeAllowed());
         assertTrue(Boolean.parseBoolean(clientRepresentation.getAttributes().get(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED)));
+    }
+
+    private void testSamlEncryptionAttributes(RealmResource realm) {
+        // check all the saml clients have the encryption attributes
+        List<ClientRepresentation> samlClients = realm.clients().findAll().stream()
+                .filter(client -> SamlProtocol.LOGIN_PROTOCOL.equals(client.getProtocol()))
+                .filter(client -> "true".equals(client.getAttributes().get(SamlConfigAttributes.SAML_ENCRYPT)))
+                .collect(Collectors.toList());
+        assertThat(samlClients.size(), is(1));
+        for (ClientRepresentation client : samlClients) {
+            assertThat(client.getAttributes().get(SamlConfigAttributes.SAML_ENCRYPTION_ALGORITHM), is(XMLCipher.AES_128));
+            assertThat(client.getAttributes().get(SamlConfigAttributes.SAML_ENCRYPTION_KEY_ALGORITHM), is(XMLCipher.RSA_OAEP));
+            assertThat(client.getAttributes().get(SamlConfigAttributes.SAML_ENCRYPTION_DIGEST_METHOD), is(XMLCipher.SHA1));
+            assertThat(client.getAttributes().get(SamlConfigAttributes.SAML_ENCRYPTION_MASK_GENERATION_FUNTION), nullValue());
+        }
     }
 }

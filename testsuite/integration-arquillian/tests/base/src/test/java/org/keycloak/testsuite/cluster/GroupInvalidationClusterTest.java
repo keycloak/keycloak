@@ -1,7 +1,12 @@
 package org.keycloak.testsuite.cluster;
 
-import org.apache.commons.lang.RandomStringUtils;
-import org.junit.Before;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -10,16 +15,14 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.util.GroupBuilder;
 
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.Response;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import org.apache.commons.lang.RandomStringUtils;
+import org.junit.Before;
+
+import static org.keycloak.testsuite.Assert.assertNames;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.Assert.assertNames;
 
 /**
  *

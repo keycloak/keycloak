@@ -17,14 +17,14 @@
 
 package org.keycloak.storage.user;
 
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 
 /**
  * This is an optional capability interface that is intended to be implemented by 

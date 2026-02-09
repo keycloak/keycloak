@@ -3,9 +3,8 @@ package org.keycloak.models.sessions.infinispan.remote;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.util.concurrent.BlockingManager;
 import org.keycloak.Config;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -21,16 +20,27 @@ import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.UserS
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionKey;
 import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
+import org.keycloak.models.sessions.infinispan.listeners.RemoteUserSessionExpirationListener;
 import org.keycloak.models.sessions.infinispan.remote.transaction.ClientSessionChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.remote.transaction.RemoteChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.remote.transaction.UserSessionChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.remote.transaction.UserSessionTransaction;
+import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionProvider;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.util.concurrent.BlockingManager;
+
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 public class RemoteUserSessionProviderFactory implements UserSessionProviderFactory<RemoteUserSessionProvider>, EnvironmentDependentProviderFactory, ProviderEventListener, ServerInfoAwareProviderFactory {
 
@@ -46,11 +56,13 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
     private volatile int batchSize = DEFAULT_BATCH_SIZE;
     private volatile int maxRetries = InfinispanUtils.DEFAULT_MAX_RETRIES;
     private volatile int backOffBaseTimeMillis = InfinispanUtils.DEFAULT_RETRIES_BASE_TIME_MILLIS;
+    private volatile RemoteUserSessionExpirationListener expirationListener;
 
     @Override
     public RemoteUserSessionProvider create(KeycloakSession session) {
+        var provider = session.getProvider(InfinispanTransactionProvider.class);
         var tx = createTransaction(session);
-        session.getTransactionManager().enlistAfterCompletion(tx);
+        provider.registerTransaction(tx);
         return new RemoteUserSessionProvider(session, tx, batchSize);
     }
 
@@ -71,6 +83,11 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
 
     @Override
     public void close() {
+        if (expirationListener != null) {
+            userSessionState.cache().removeClientListener(expirationListener);
+            offlineUserSessionState.cache().removeClientListener(expirationListener);
+        }
+        expirationListener = null;
         blockingManager = null;
         userSessionState = null;
         offlineUserSessionState = null;
@@ -120,6 +137,11 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
         }
     }
 
+    @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(InfinispanTransactionProvider.class, InfinispanConnectionProvider.class);
+    }
+
     private void onUserRemoved(UserModel.UserRemovedEvent event) {
         event.getKeycloakSession().getProvider(UserSessionProvider.class, getId()).removeUserSessions(event.getRealm(), event.getUser());
         event.getKeycloakSession().getProvider(UserSessionPersisterProvider.class).onUserRemoved(event.getRealm(), event.getUser());
@@ -130,11 +152,14 @@ public class RemoteUserSessionProviderFactory implements UserSessionProviderFact
             return;
         }
         var connections = session.getProvider(InfinispanConnectionProvider.class);
-        userSessionState = new SharedStateImpl<>(connections.getRemoteCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME));
-        offlineUserSessionState = new SharedStateImpl<>(connections.getRemoteCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME));
-        clientSessionState = new SharedStateImpl<>(connections.getRemoteCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME));
-        offlineClientSessionState = new SharedStateImpl<>(connections.getRemoteCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME));
+        userSessionState = new SharedStateImpl<>(connections.getRemoteCache(USER_SESSION_CACHE_NAME));
+        offlineUserSessionState = new SharedStateImpl<>(connections.getRemoteCache(OFFLINE_USER_SESSION_CACHE_NAME));
+        clientSessionState = new SharedStateImpl<>(connections.getRemoteCache(CLIENT_SESSION_CACHE_NAME));
+        offlineClientSessionState = new SharedStateImpl<>(connections.getRemoteCache(OFFLINE_CLIENT_SESSION_CACHE_NAME));
         blockingManager = connections.getBlockingManager();
+        expirationListener = new RemoteUserSessionExpirationListener(session.getKeycloakSessionFactory(), blockingManager, userSessionState.cache().getRemoteCacheContainer().getMarshaller());
+        userSessionState.cache().addClientListener(expirationListener);
+        offlineUserSessionState.cache().addClientListener(expirationListener);
     }
 
     private UserSessionTransaction createTransaction(KeycloakSession session) {

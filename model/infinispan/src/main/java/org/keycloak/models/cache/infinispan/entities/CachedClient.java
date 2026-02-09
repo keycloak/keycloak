@@ -25,7 +25,6 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
@@ -33,7 +32,7 @@ import org.keycloak.models.RoleModel;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedClient extends AbstractRevisioned implements InRealm {
+public class CachedClient extends AbstractCachedClientScope<ClientModel> {
     protected String clientId;
     protected String name;
     protected String description;
@@ -53,7 +52,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected int notBefore;
     protected Set<String> scope = new HashSet<>();
     protected Set<String> webOrigins = new HashSet<>();
-    protected Set<ProtocolMapperModel> protocolMappers = new HashSet<>();
     protected boolean surrogateAuthRequired;
     protected String managementUrl;
     protected String rootUrl;
@@ -68,7 +66,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected Map<String, Integer> registeredNodes;
 
     public CachedClient(Long revision, RealmModel realm, ClientModel model) {
-        super(revision, model.getId());
+        super(revision, model);
         clientAuthenticatorType = model.getClientAuthenticatorType();
         secret = model.getSecret();
         registrationToken = model.getRegistrationToken();
@@ -88,7 +86,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         redirectUris.addAll(model.getRedirectUris());
         webOrigins.addAll(model.getWebOrigins());
         scope.addAll(model.getScopeMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()));
-        protocolMappers.addAll(model.getProtocolMappersStream().collect(Collectors.toSet()));
         surrogateAuthRequired = model.isSurrogateAuthRequired();
         managementUrl = model.getManagementUrl();
         rootUrl = model.getRootUrl();
@@ -174,10 +171,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
 
     public boolean isFrontchannelLogout() {
         return frontchannelLogout;
-    }
-
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        return protocolMappers;
     }
 
     public boolean isSurrogateAuthRequired() {

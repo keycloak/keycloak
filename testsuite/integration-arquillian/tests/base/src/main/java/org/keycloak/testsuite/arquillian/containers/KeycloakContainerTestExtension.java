@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.arquillian.containers;
 
+import org.keycloak.testsuite.arquillian.ModelTestExecutor;
+
 import org.jboss.arquillian.container.test.impl.ClientTestInstanceEnricher;
 import org.jboss.arquillian.container.test.impl.client.LocalCommandService;
 import org.jboss.arquillian.container.test.impl.client.container.ClientContainerControllerCreator;
@@ -48,7 +50,6 @@ import org.jboss.arquillian.test.impl.context.TestContextImpl;
 import org.jboss.arquillian.test.impl.enricher.resource.ArquillianResourceTestEnricher;
 import org.jboss.arquillian.test.spi.TestEnricher;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
-import org.keycloak.testsuite.arquillian.ModelTestExecutor;
 
 /**
  * KeycloakContainerTestExtension

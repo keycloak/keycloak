@@ -16,6 +16,28 @@
 
 package org.keycloak.credential;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import jakarta.annotation.Nonnull;
+
+import org.keycloak.authentication.authenticators.browser.WebAuthnMetadataService;
+import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
+import org.keycloak.common.util.Time;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.WebAuthnPolicy;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.models.credential.dto.WebAuthnCredentialData;
+import org.keycloak.models.credential.dto.WebAuthnCredentialPresentationData;
+import org.keycloak.util.JsonSerialization;
+
 import com.webauthn4j.WebAuthnAuthenticationManager;
 import com.webauthn4j.authenticator.Authenticator;
 import com.webauthn4j.authenticator.AuthenticatorImpl;
@@ -31,25 +53,9 @@ import com.webauthn4j.data.client.Origin;
 import com.webauthn4j.server.ServerProperty;
 import com.webauthn4j.util.AssertUtil;
 import com.webauthn4j.util.exception.WebAuthnException;
-import com.webauthn4j.validator.OriginValidatorImpl;
-import com.webauthn4j.validator.exception.BadOriginException;
-import jakarta.annotation.Nonnull;
+import com.webauthn4j.verifier.OriginVerifierImpl;
+import com.webauthn4j.verifier.exception.BadOriginException;
 import org.jboss.logging.Logger;
-import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
-import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.WebAuthnPolicy;
-import org.keycloak.models.credential.WebAuthnCredentialModel;
-import org.keycloak.models.credential.dto.WebAuthnCredentialData;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Credential provider for WebAuthn 2-factor credential of the user
@@ -57,18 +63,19 @@ import java.util.stream.Collectors;
 public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCredentialModel>, CredentialInputValidator {
 
     private static final Logger logger = Logger.getLogger(WebAuthnCredentialProvider.class);
+    private static final String WEBAUTHN_AUTHENTICATOR_PROVIDER = "webauthn-authenticator-provider";
+    private static final String WEBAUTHN_TRANSPORTS = "webauthn-transports";
 
-    private KeycloakSession session;
+    private final KeycloakSession session;
+    private final WebAuthnMetadataService metadataService;
+    private final CredentialPublicKeyConverter credentialPublicKeyConverter;
+    private final AttestationStatementConverter attestationStatementConverter;
 
-    private CredentialPublicKeyConverter credentialPublicKeyConverter;
-    private AttestationStatementConverter attestationStatementConverter;
-
-    public WebAuthnCredentialProvider(KeycloakSession session, ObjectConverter objectConverter) {
+    public WebAuthnCredentialProvider(KeycloakSession session, WebAuthnMetadataService metadataService, ObjectConverter objectConverter) {
         this.session = session;
-        if (credentialPublicKeyConverter == null)
-            credentialPublicKeyConverter = new CredentialPublicKeyConverter(objectConverter);
-        if (attestationStatementConverter == null)
-            attestationStatementConverter = new AttestationStatementConverter(objectConverter);
+        this.metadataService = metadataService;
+        this.credentialPublicKeyConverter = new CredentialPublicKeyConverter(objectConverter);
+        this.attestationStatementConverter = new AttestationStatementConverter(objectConverter);
     }
 
     @Override
@@ -91,6 +98,21 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         return WebAuthnCredentialModel.createFromCredentialModel(model);
     }
 
+    @Override
+    public WebAuthnCredentialModel getCredentialForPresentationFromModel(CredentialModel model) {
+        WebAuthnCredentialModel origCredential = getCredentialFromModel(model);
+        WebAuthnCredentialData data = origCredential.getWebAuthnCredentialData();
+
+        String authenticatorProvider = metadataService.getAuthenticatorProvider(data.getAaguid());
+        if (authenticatorProvider == null)
+            return origCredential;
+
+        WebAuthnCredentialPresentationData presentationData = new WebAuthnCredentialPresentationData(
+                data.getAaguid(), data.getCredentialId(), data.getCounter(), data.getAttestationStatement(), data.getCredentialPublicKey(),
+                data.getAttestationStatementFormat(), data.getTransports(), authenticatorProvider);
+        return WebAuthnCredentialModel.create(origCredential.getId(), origCredential.getType(), origCredential.getCreatedDate(), origCredential.getUserLabel(),
+                presentationData, origCredential.getWebAuthnSecretData());
+    }
 
     /**
      * Convert WebAuthn credential input to the model, which can be saved in the persistent storage (DB)
@@ -104,7 +126,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         WebAuthnCredentialModelInput webAuthnModel = (WebAuthnCredentialModelInput) input;
 
         String aaguid = webAuthnModel.getAttestedCredentialData().getAaguid().toString();
-        String credentialId = Base64.encodeBytes(webAuthnModel.getAttestedCredentialData().getCredentialId());
+        String credentialId = Base64.getEncoder().encodeToString(webAuthnModel.getAttestedCredentialData().getCredentialId());
         String credentialPublicKey = credentialPublicKeyConverter.convertToDatabaseColumn(webAuthnModel.getAttestedCredentialData().getCOSEKey());
         long counter = webAuthnModel.getCount();
         String attestationStatementFormat = webAuthnModel.getAttestationStatementFormat();
@@ -144,8 +166,8 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
         byte[] credentialId = null;
         try {
-            credentialId = Base64.decode(credData.getCredentialId());
-        } catch (IOException ioe) {
+            credentialId = Base64.getMimeDecoder().decode(credData.getCredentialId());
+        } catch (IllegalArgumentException ex) {
             // NOP
         }
 
@@ -209,7 +231,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                             authenticator,
                             context.getAuthenticationParameters().isUserVerificationRequired()
                     );
-                    webAuthnAuthenticationManager.validate(authenticationData, authenticationParameters);
+                    webAuthnAuthenticationManager.verify(authenticationData, authenticationParameters);
 
 
                     logger.debugv("response.getAuthenticatorData().getFlags() = {0}", authenticationData.getAuthenticatorData().getFlags());
@@ -246,9 +268,9 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                 .map(Origin::new)
                 .collect(Collectors.toSet());
         WebAuthnAuthenticationManager webAuthnAuthenticationManager = new WebAuthnAuthenticationManager();
-        webAuthnAuthenticationManager.getAuthenticationDataValidator().setOriginValidator(new OriginValidatorImpl(){
+        webAuthnAuthenticationManager.getAuthenticationDataVerifier().setOriginVerifier(new OriginVerifierImpl() {
             @Override
-            protected void validate(@Nonnull CollectedClientData collectedClientData,
+            protected void verify(@Nonnull CollectedClientData collectedClientData,
                                     @Nonnull ServerProperty serverProperty) {
                 AssertUtil.notNull(collectedClientData, "collectedClientData must not be null");
                 AssertUtil.notNull(serverProperty, "serverProperty must not be null");
@@ -302,6 +324,34 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
     protected KeycloakSession getKeycloakSession() {
         return session;
+    }
+    @Override
+    public CredentialMetadata getCredentialMetadata(WebAuthnCredentialModel credentialModel, CredentialTypeMetadata credentialTypeMetadata) {
+
+        CredentialMetadata credentialMetadata = new CredentialMetadata();
+        List<CredentialMetadata.LocalizedMessage> properties = new LinkedList<>();
+
+        try {
+            credentialModel = getCredentialForPresentationFromModel(credentialModel);
+            WebAuthnCredentialPresentationData credentialData = JsonSerialization.readValue(credentialModel.getCredentialData(), WebAuthnCredentialPresentationData.class);
+            Set<String> transports = credentialData.getTransports();
+            if (credentialData.getAuthenticatorProvider() != null) {
+                properties.add(new CredentialMetadata.LocalizedMessage(WEBAUTHN_AUTHENTICATOR_PROVIDER, new String[] { credentialData.getAuthenticatorProvider() }));
+            }
+            if (transports != null && !transports.isEmpty()) {
+                String joinedTransports = String.join(", ", transports);
+                properties.add(new CredentialMetadata.LocalizedMessage(WEBAUTHN_TRANSPORTS, new String[] { joinedTransports }));
+            }
+            if (!properties.isEmpty()) {
+                credentialMetadata.setInfoProperties(properties);
+            }
+        } catch (
+                IOException e) {
+            logger.warn("unable to deserialize model information, skipping messages", e);
+        }
+
+        credentialMetadata.setCredentialModel(credentialModel);
+        return credentialMetadata;
     }
 
 }

@@ -17,7 +17,11 @@
 
 package org.keycloak.testsuite.drone;
 
+import java.io.File;
+import java.net.MalformedURLException;
 import java.util.concurrent.TimeUnit;
+
+import org.keycloak.testsuite.util.WaitUtils;
 
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
@@ -30,16 +34,12 @@ import org.jboss.arquillian.graphene.proxy.Interceptor;
 import org.jboss.arquillian.graphene.proxy.InvocationContext;
 import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.logging.Logger;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.remote.RemoteWebDriver;
-
-import java.io.File;
-import java.net.MalformedURLException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -106,6 +106,15 @@ public class KeycloakDronePostSetup {
 
     private void configureHtmlUnitDriver(WebDriver driver) {
         if (driver instanceof HtmlUnitDriver htmlUnitDriver) {
+            var options = htmlUnitDriver.getWebClient().getOptions();
+
+            // Configure timeout for better compatibility with slower CI environments (especially Windows)
+            // Default 60 seconds should be sufficient for most scenarios including broker flows with OTP
+            int timeoutMillis = Integer.parseInt(System.getProperty("htmlunit.timeout", "60000"));
+            log.infof("Setting HtmlUnit timeout: %d ms", timeoutMillis);
+            options.setTimeout(timeoutMillis);
+
+            // Configure TLS settings if provided
             final var keystore = System.getProperty(HTML_UNIT_SSL_KEYSTORE_PROP);
             final var keystorePassword = System.getProperty(HTML_UNIT_SSL_KEYSTORE_PASSWORD_PROP);
             final var keystoreType = System.getProperty(HTML_UNIT_SSL_KEYSTORE_TYPE_PROP);
@@ -115,7 +124,6 @@ public class KeycloakDronePostSetup {
             if (keystore != null && keystorePassword != null && keystoreType != null) {
                 log.infof("Keystore '%s', password '%s', type '%s'", keystore, keystorePassword, keystoreType);
 
-                var options = htmlUnitDriver.getWebClient().getOptions();
                 options.setUseInsecureSSL(true);
                 try {
                     options.setSSLClientCertificateKeyStore(new File(keystore).toURI().toURL(), keystorePassword, keystoreType);

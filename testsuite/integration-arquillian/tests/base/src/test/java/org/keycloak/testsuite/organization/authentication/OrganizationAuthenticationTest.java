@@ -17,19 +17,13 @@
 
 package org.keycloak.testsuite.organization.authentication;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 import jakarta.ws.rs.core.Response;
-import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel.RequiredAction;
@@ -45,6 +39,16 @@ import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
@@ -72,8 +76,20 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         openIdentityFirstLoginPage("user", false, null, false, false);
 
         // check if the login page is shown
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
+        loginPage.assertAttemptedUsernameAvailability(true);
         Assert.assertTrue(loginPage.isPasswordInputPresent());
+    }
+
+    @Test
+    public void testEmptyUserNameValidation() {
+        createOrganization();
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        loginPage.loginUsername("");
+
+        assertEquals("Invalid username.", loginPage.getUsernameInputError());
     }
 
     @Test
@@ -83,7 +99,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
 
         // check if the login page is shown
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
+        loginPage.assertAttemptedUsernameAvailability(true);
         Assert.assertTrue(loginPage.isPasswordInputPresent());
     }
 
@@ -265,6 +281,122 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginPage.clickSignIn();
         loginPage.login(memberPassword);
         appPage.assertCurrent();
+    }
+
+    @Test
+    public void testRestartLogin() {
+        testRealm().organizations().get(createOrganization().getId());
+
+        openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
+
+        // check if the login page is shown
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assert.assertTrue(loginPage.isPasswordInputPresent());
+
+        loginPage.clickResetLogin();
+        Assert.assertTrue(loginPage.isUsernameInputPresent());
+        Assert.assertFalse(loginPage.isPasswordInputPresent());
+    }
+
+    @Test
+    public void testAttemptedUsernameKeptAfterPasswordFailures() {
+        testRealm().organizations().get(createOrganization().getId());
+
+        openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
+
+        // check if the login page is shown
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assert.assertTrue(loginPage.isPasswordInputPresent());
+
+        for (int i = 0; i < 3; i++) {
+            loginPage.login("wrong-password");
+            loginPage.assertAttemptedUsernameAvailability(true);
+            Assert.assertFalse(loginPage.isEmailInputPresent());
+            Assert.assertTrue(loginPage.isPasswordInputPresent());
+        }
+    }
+
+    @Test
+    public void testHideUsernameKeptAfterPasswordFailuresBruteForceEnabled() {
+        testRealm().organizations().get(createOrganization().getId());
+
+        RealmRepresentation realm = testRealm().toRepresentation();
+        realm.setBruteForceProtected(true);
+        realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
+        realm.setFailureFactor(1);
+        realm.setMaxDeltaTimeSeconds(30);
+        realm.setMaxFailureWaitSeconds(30);
+        realm.setWaitIncrementSeconds(30);
+        testRealm().update(realm);
+        getCleanup().addCleanup(() -> {
+            RealmRepresentation r = testRealm().toRepresentation();
+            r.setBruteForceProtected(false);
+            testRealm().update(r);
+        });
+
+        String email = "existing-user@" + organizationName + ".org";
+        createUser(realm.getRealm(), "existing-user", memberPassword, "John", "Doe", email);
+        openIdentityFirstLoginPage(email, false, null, false, false);
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assert.assertTrue(loginPage.isPasswordInputPresent());
+
+        loginPage.login("wrong-password");
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        loginPage.login("wrong-password");
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assert.assertTrue(loginPage.isPasswordInputPresent());
+
+        openIdentityFirstLoginPage(email, false, null, false, false);
+        realm.setRegistrationEmailAsUsername(true);
+        testRealm().update(realm);
+        loginPage.login("wrong-password");
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assert.assertFalse(loginPage.isEmailInputPresent());
+        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        loginPage.login("wrong-password");
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assert.assertFalse(loginPage.isEmailInputPresent());
+        Assert.assertTrue(loginPage.isPasswordInputPresent());
+    }
+
+    @Test
+    public void testUsernameExposureWhenEnteringEmail() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        UserRepresentation member = UserBuilder.create()
+                .username("secretusername123")  // Different from email
+                .email("contractor@contractor.org")
+                .firstName("John")
+                .lastName("Doe")
+                .enabled(true)
+                .password(memberPassword)
+                .build();
+        
+        String memberId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), member, memberPassword);
+        organization.members().addMember(memberId).close();
+        
+        // Enter the email address in the login form
+        openIdentityFirstLoginPage(member.getEmail(), false, null, false, false);
+        
+        // when we enter an email, the attempted username should show the email, not the actual username of the resolved user account
+        loginPage.assertAttemptedUsernameAvailability(true);
+        String displayedUsername = loginPage.getAttemptedUsername();
+
+        assertEquals("Entering email should not expose actual username", member.getEmail(), displayedUsername);
+
+        // Enter email with different case (should still work with case-insensitive comparison)
+        String upperCaseEmail = member.getEmail().toUpperCase();
+        openIdentityFirstLoginPage(upperCaseEmail, false, null, false, false);
+
+        loginPage.assertAttemptedUsernameAvailability(true);
+        String displayedUsernameUpper = loginPage.getAttemptedUsername();
+        assertEquals("Should show what user entered (uppercase email)", upperCaseEmail, displayedUsernameUpper);
+        
+        Assert.assertTrue("Password input should be present", loginPage.isPasswordInputPresent());
+        
+        // Clean up
+        testRealm().users().get(memberId).remove();
     }
 
     private void runOnServer(RunOnServer function) {

@@ -16,14 +16,15 @@
  */
 package org.keycloak.testsuite.federation.ldap;
 
-import org.junit.ClassRule;
-import org.junit.Test;
+import java.util.stream.Collectors;
+
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.testsuite.util.LDAPRule;
 
-import java.util.stream.Collectors;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;

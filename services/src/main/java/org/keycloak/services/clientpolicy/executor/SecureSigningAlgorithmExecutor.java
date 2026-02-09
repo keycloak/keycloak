@@ -19,13 +19,9 @@ package org.keycloak.services.clientpolicy.executor;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-
-import org.jboss.logging.Logger;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.crypto.Algorithm;
@@ -41,6 +37,7 @@ import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>

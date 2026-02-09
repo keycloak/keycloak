@@ -16,13 +16,14 @@
  */
 package org.keycloak.protocol.oid4vc.model;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.keycloak.util.JsonSerialization;
-
 import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
+
+import org.keycloak.util.JsonSerialization;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author Pascal Knueppel

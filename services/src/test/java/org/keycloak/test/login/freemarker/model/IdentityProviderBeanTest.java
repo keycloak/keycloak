@@ -20,10 +20,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean.IdentityProvider;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Unit test for {@link org.keycloak.forms.login.freemarker.model.IdentityProviderBean}

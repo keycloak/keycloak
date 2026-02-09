@@ -1,0 +1,43 @@
+
+Target size:
+
+* 45 logins and logouts per seconds
+* 360 client credential grants per second^*^
+* 360 refresh token requests per second (1:8 ratio for logins)^*^
+* 3 Pods
+
+Limits calculated:
+
+* CPU requested per Pod: 3 vCPU
++
+(45 logins per second = 3 vCPU, 360 client credential grants per second = 3 vCPU, 360 refresh tokens = 3 vCPU. This sums up to 9 vCPU total. With 3 Pods running in the cluster, each Pod then requests 3 vCPU)
+
+* CPU limit per Pod: 7.5 vCPU
++
+(Allow for an additional 150% CPU requested to handle peaks, startups and failover tasks)
+
+* Memory requested per Pod: 1250 MB
++
+(1250 MB base memory)
+
+* Memory limit per Pod: 1360 MB
++
+(1250 MB expected memory usage minus 300 non-heap-usage, divided by 0.7)
+
+* Aurora Database instance: either `db.t4g.large` or `db.t4g.xlarge` depending on the required response times during peak loads.
++
+(45 logins per second, 5 logouts per second, 360 refresh tokens per seconds.
+This sums up to 410 requests per second.
+This expected DB usage is 1.4 to 2.8 vCPU, with a DB idle load of 0.3 vCPU.
+This indicates either a 2 vCPU `db.t4g.large` instance or a 4 vCPU `db.t4g.xlarge` instance.
+A 2 vCPU `db.t4g.large` would be more cost-effective if the response times are allowed to be higher during peak usage.
+In our tests, the median response time for a login and a token refresh increased by up to 120 ms once the CPU saturation reached 90% on a 2 vCPU `db.t4g.large` instance given this scenario.
+For faster response times during peak usage, consider a 4 vCPU `db.t4g.xlarge` instance for this scenario.)
+
+////
+<#noparse>
+
+./benchmark.sh eu-west-1 --scenario=keycloak.scenario.authentication.AuthorizationCode --server-url=${KEYCLOAK_URL} --realm-name=realm-0 --users-per-sec=45 --ramp-up=10 --refresh-token-period=2 --refresh-token-count=8 --logout-percentage=10 --measurement=600 --users-per-realm=20000 --log-http-on-failure
+
+</#noparse>
+////

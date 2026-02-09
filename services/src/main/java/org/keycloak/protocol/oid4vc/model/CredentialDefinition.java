@@ -16,13 +16,14 @@
  */
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Pojo to represent a CredentialDefinition for internal handling
@@ -35,7 +36,18 @@ public class CredentialDefinition {
     @JsonProperty("@context")
     private List<String> context;
     private List<String> type = new ArrayList<>();
-    private CredentialSubject credentialSubject = new CredentialSubject();
+
+    public static CredentialDefinition parse(CredentialScopeModel credentialModel) {
+        List<String> contexts = Optional.of(credentialModel.getVcContexts())
+                                        .filter(list -> !list.isEmpty())
+                                        .orElseGet(() -> new ArrayList<>(List.of(credentialModel.getName())));
+        List<String> types = Optional.ofNullable(credentialModel.getSupportedCredentialTypes())
+                                     .filter(list -> !list.isEmpty())
+                                     .orElseGet(() -> new ArrayList<>(List.of(credentialModel.getName())));
+
+        return new CredentialDefinition().setContext(contexts)
+                                         .setType(types);
+    }
 
     public List<String> getContext() {
         return context;
@@ -53,30 +65,5 @@ public class CredentialDefinition {
     public CredentialDefinition setType(List<String> type) {
         this.type = type;
         return this;
-    }
-
-    public CredentialSubject getCredentialSubject() {
-        return credentialSubject;
-    }
-
-    public CredentialDefinition setCredentialSubject(CredentialSubject credentialSubject) {
-        this.credentialSubject = credentialSubject;
-        return this;
-    }
-
-    public String toJsonString() {
-        try {
-            return JsonSerialization.writeValueAsString(this);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static CredentialDefinition fromJsonString(String jsonString) {
-        try {
-            return JsonSerialization.readValue(jsonString, CredentialDefinition.class);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

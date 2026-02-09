@@ -17,14 +17,14 @@
 
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.MappingsRepresentation;
-
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+
+import org.keycloak.representations.idm.MappingsRepresentation;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br

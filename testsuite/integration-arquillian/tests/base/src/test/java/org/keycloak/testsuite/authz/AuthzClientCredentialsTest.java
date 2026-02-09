@@ -16,13 +16,6 @@
  */
 package org.keycloak.testsuite.authz;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -30,8 +23,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -52,9 +45,12 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
+import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionResponse;
+import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -64,11 +60,23 @@ import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class AuthzClientCredentialsTest extends AbstractAuthzTest {
+
+    private static final String TEST_RESOURCE = "Test Resource";
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -89,6 +97,10 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
                 .secret("weird-secret-for-test-hs512")
                 .attribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, "HS512")
                 .authenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID))
+                .build());
+        testRealms.add(configureRealm(RealmBuilder.create().name("authz-client-jwt-test-Ed25519"), ClientBuilder.create()
+                .attribute(JWTClientAuthenticator.CERTIFICATE_ATTR, "MIH9MIGwoAMCAQICCQDdYD1y8dkE8jAFBgMrZXAwEjEQMA4GA1UEAxMHY2xpZW50NDAgFw0yNTA5MTkwNjIwMjNaGA8yMDc1MDkwNzA2MjAyM1owEjEQMA4GA1UEAxMHY2xpZW50NDAqMAUGAytlcAMhAKjqQuu4BpGsOi0KRwuelXLHW45J6349akYxwadEGordoyEwHzAdBgNVHQ4EFgQUuYEYJBazl+lky1x1tE66zCM3BLUwBQYDK2VwA0EAEOf2nwTiTU+7fAqni3d5N3htu6aCAtUgmPL8VLWlDbj3NpTs7jEIV8oH62Ach/aNFL1ZSrzNEKab19ICxPH8AA==")
+                .authenticatorType(JWTClientAuthenticator.PROVIDER_ID))
                 .build());
         testRealms.add(configureRealm(RealmBuilder.create().name("authz-test"), ClientBuilder.create().secret("secret")).build());
         testRealms.add(configureRealm(RealmBuilder.create().name("authz-test-session").accessTokenLifespan(1), ClientBuilder.create().secret("secret")).build());
@@ -118,6 +130,39 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
             settings.setAllowRemoteResourceManagement(true);
 
             authorization.update(settings);
+
+            // create authorization model
+            // create resource
+            ResourceRepresentation testResource = new ResourceRepresentation(TEST_RESOURCE);
+
+            String resourceId;
+            try (Response response = authorization.resources().create(testResource)) {
+                assertEquals(201, response.getStatus());
+                testResource = response.readEntity(ResourceRepresentation.class);
+                resourceId = testResource.getId();
+            }
+
+            // create client policy
+            ClientPolicyRepresentation clientPolicy = new ClientPolicyRepresentation();
+            clientPolicy.setName("Policy for " + client.getClientId());
+            clientPolicy.addClient(client.getClientId());
+            clientPolicy.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+
+            String policyId;
+            try (Response response = authorization.policies().client().create(clientPolicy)) {
+                assertEquals(201, response.getStatus());
+                policyId = response.readEntity(ClientPolicyRepresentation.class).getId();
+            }
+
+            // create permission
+            ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+            permission.setName("Permission for " + TEST_RESOURCE);
+            permission.addResource(resourceId);
+            permission.addPolicy(policyId);
+
+            try (Response response = authorization.permissions().resource().create(permission)) {
+                assertEquals(201, response.getStatus());
+            }
         });
     }
 
@@ -129,7 +174,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     private void testSuccessfulAuthorizationRequest(String config) throws Exception {
         AuthzClient authzClient = getAuthzClient(config);
         ProtectionResource protection = authzClient.protection();
-        PermissionRequest request = new PermissionRequest("Default Resource");
+        PermissionRequest request = new PermissionRequest(TEST_RESOURCE);
         PermissionResponse ticketResponse = protection.permission().create(request);
         String ticket = ticketResponse.getTicket();
 
@@ -147,7 +192,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
         List<Permission> permissions = new ArrayList<>(authorization.getPermissions());
 
         assertFalse(permissions.isEmpty());
-        assertEquals("Default Resource", permissions.get(0).getResourceName());
+        assertEquals(TEST_RESOURCE, permissions.get(0).getResourceName());
     }
 
     @Test
@@ -168,6 +213,11 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     @Test
     public void testSuccessfulAuthorizationES512Request() throws Exception {
         testSuccessfulAuthorizationRequest("keycloak-with-jwt-es512-authentication.json");
+    }
+
+    @Test
+    public void testSuccessfulAuthorizationEd25519Request() throws Exception {
+        testSuccessfulAuthorizationRequest("keycloak-with-jwt-Ed25519-authentication.json");
     }
 
     @Test
@@ -218,13 +268,13 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
         AuthzClient authzClient = getAuthzClient("default-session-keycloak.json");
         ProtectionResource protection = authzClient.protection();
 
-        protection.resource().findByName("Default Resource");
+        protection.resource().findByName(TEST_RESOURCE);
         userSessions = clients.get(clientRepresentation.getId()).getUserSessions(null, null);
         assertEquals(expectedUserSessionsCount, userSessions.size());
 
         Thread.sleep(2000);
         protection = authzClient.protection();
-        protection.resource().findByName("Default Resource");
+        protection.resource().findByName(TEST_RESOURCE);
 
         userSessions = clients.get(clientRepresentation.getId()).getUserSessions(null, null);
 
@@ -245,7 +295,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
         AccessToken accessToken = toAccessToken(response.getToken());
 
         assertEquals(1, accessToken.getAuthorization().getPermissions().size());
-        assertEquals("Default Resource", accessToken.getAuthorization().getPermissions().iterator().next().getResourceName());
+        assertEquals(TEST_RESOURCE, accessToken.getAuthorization().getPermissions().iterator().next().getResourceName());
     }
 
     @Test
@@ -263,7 +313,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
         String sessionState = accessToken.getSessionState();
 
         assertEquals(1, accessToken.getAuthorization().getPermissions().size());
-        assertEquals("Default Resource", accessToken.getAuthorization().getPermissions().iterator().next().getResourceName());
+        assertEquals(TEST_RESOURCE, accessToken.getAuthorization().getPermissions().iterator().next().getResourceName());
 
         userSessions = clients.get(clientRepresentation.getId()).getUserSessions(null, null);
 
@@ -290,7 +340,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
         AccessToken accessToken = toAccessToken(response.getToken());
 
         assertEquals(1, accessToken.getAuthorization().getPermissions().size());
-        assertEquals("Default Resource", accessToken.getAuthorization().getPermissions().iterator().next().getResourceName());
+        assertEquals(TEST_RESOURCE, accessToken.getAuthorization().getPermissions().iterator().next().getResourceName());
 
         ProtectionResource protection = authzClient.protection();
 

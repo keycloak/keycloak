@@ -17,6 +17,15 @@
 
 package org.keycloak.it.cli.dist;
 
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.TestProvider;
+import org.keycloak.it.junit5.extension.WithEnvVars;
+import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
+import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import io.restassured.RestAssured;
@@ -26,14 +35,6 @@ import org.apache.http.HttpHeaders;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.junit5.extension.TestProvider;
-import org.keycloak.it.junit5.extension.WithEnvVars;
-import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
-import org.keycloak.it.utils.KeycloakDistribution;
-import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
@@ -104,10 +105,28 @@ public class ProxyHostnameV2DistTest {
     }
 
     @Test
+    @Launch({ "start-dev", "--hostname=https://mykeycloak.org:8443/path", "--proxy-headers=forwarded", "--hostname-backchannel-dynamic=true" })
+    public void testForwardedProxyHeadersWithPathAndDynamicBackchannel(LaunchResult result) {
+        assertFrontEndUrl("https://mykeycloak.org:8443", "https://mykeycloak.org:8443/path/");
+        // a backend url generated via the frontend protocol/host/port should be a front-end url
+        assertBackEndUrl("https://mykeycloak.org:8443", "https://mykeycloak.org:8443/path/");
+        // any other protocol/host/port will be the backend
+        assertBackEndUrl("http://localhost:8080", "http://localhost:8080/");
+    }
+
+    @Test
     @Launch({ "start-dev", "--hostname-strict=false", "--proxy-headers=xforwarded" })
     public void testXForwardedProxyHeaders() {
         assertForwardedHeaderIsIgnored();
         assertXForwardedHeaders();
+    }
+
+    @Test
+    @Launch({ "start-dev", "--hostname=fixed", "--proxy-headers=xforwarded" })
+    public void testXForwardedProxyHeadersWithHostname() {
+        given().header("X-Forwarded-Prefix", "/prefix").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://fixed:8080/prefix/admin"));
+        given().header("X-Forwarded-Host", "test:123").when().get("https://localhost:8443").then().header(HttpHeaders.LOCATION, containsString("https://fixed:123/admin"));
+        given().header("X-Forwarded-Proto", "https").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("https://fixed/admin"));
     }
 
     private void assertForwardedHeader() {
@@ -128,6 +147,7 @@ public class ProxyHostnameV2DistTest {
     }
 
     private void assertXForwardedHeaders() {
+        given().header("X-Forwarded-Prefix", "/prefix").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://localhost:8080/prefix/admin"));
         given().header("X-Forwarded-Host", "test:123").when().get("http://mykeycloak.org:8080").then().header(HttpHeaders.LOCATION, containsString("http://test:123/admin"));
         given().header("X-Forwarded-Host", "test:123").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://test:123/admin"));
         given().header("X-Forwarded-Host", "test:123").when().get("https://localhost:8443").then().header(HttpHeaders.LOCATION, containsString("https://test:123/admin"));
@@ -151,4 +171,10 @@ public class ProxyHostnameV2DistTest {
         Assert.assertEquals(expectedBaseUrl + "realms/master/protocol/openid-connect/auth", getServerMetadata(requestBaseUrl)
                 .getAuthorizationEndpoint());
     }
+
+    private void assertBackEndUrl(String requestBaseUrl, String expectedBaseUrl) {
+        Assert.assertEquals(expectedBaseUrl + "realms/master/protocol/openid-connect/token", getServerMetadata(requestBaseUrl)
+                .getTokenEndpoint());
+    }
+
 }

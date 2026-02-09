@@ -17,8 +17,15 @@
 
 package org.keycloak.tests.admin.client;
 
-import org.junit.jupiter.api.Test;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.utils.matchers.Matchers;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -28,10 +35,11 @@ public class ClientSearchJpaTest extends AbstractClientSearchTest {
 
     @Test
     public void testJpaSearchableAttributesUnset() {
-        // JPA store removes all attributes by default, i.e. returns all clients
-        String[] expectedRes = {CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3, "account", "account-console", "admin-cli", "broker", "realm-management", "security-admin-console"};
-
-        search(String.format("%s:%s", ATTR_ORG_NAME, ATTR_ORG_VAL), expectedRes);
+        try {
+            search(String.format("%s:%s", "wrong_name", "wrong_value"));
+        } catch (ClientErrorException ex) {
+            assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
+        }
     }
 
 }

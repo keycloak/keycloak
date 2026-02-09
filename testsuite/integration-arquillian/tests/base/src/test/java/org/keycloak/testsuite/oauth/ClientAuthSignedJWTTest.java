@@ -17,11 +17,12 @@
 
 package org.keycloak.testsuite.oauth;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.message.BasicNameValuePair;
-import org.junit.Test;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -35,24 +36,27 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.KeystoreUtils;
 import org.keycloak.testsuite.util.SignatureSignerUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.util.LinkedList;
-import java.util.List;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.message.BasicNameValuePair;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -71,6 +75,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     @Test
     public void testServiceAccountAndLogoutSuccess() throws Exception {
         String client1Jwt = getClient1SignedJWT();
+        JsonWebToken client1JsonWebToken = new JWSInput(client1Jwt).readJsonContent(JsonWebToken.class);
         AccessTokenResponse response = doClientCredentialsGrantRequest(client1Jwt);
 
         assertEquals(200, response.getStatusCode());
@@ -85,6 +90,9 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "client1")
                 .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
+                .detail(Details.CLIENT_ASSERTION_ID, client1JsonWebToken.getId())
+                .detail(Details.CLIENT_ASSERTION_ISSUER, "client1")
+                .detail(Details.CLIENT_ASSERTION_SUB, "client1")
                 .assertEvent();
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
@@ -278,7 +286,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
             clientResource.update(clientRepresentation);
             response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, Algorithm.PS256));
             assertEquals(400, response.getStatusCode());
-            assertEquals("invalid signature algorithm", response.getErrorDescription());
+            assertEquals("Invalid signature algorithm", response.getErrorDescription());
         } finally {
             // Revert jwks_url settings
             revertJwksUriSettings(clientRepresentation, clientResource);
@@ -337,54 +345,77 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     @Test
     public void testClientWithGeneratedKeysJKS() throws Exception {
         KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.JKS);
-        testClientWithGeneratedKeys("JKS");
+        testClientWithGeneratedKeys("JKS", null, null);
     }
 
     @Test
     public void testClientWithGeneratedKeysPKCS12() throws Exception {
         KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.PKCS12);
-        testClientWithGeneratedKeys("PKCS12");
+        testClientWithGeneratedKeys("PKCS12", 2048, null);
     }
 
     @Test
     public void testClientWithGeneratedKeysBCFKS() throws Exception {
         KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.BCFKS);
-        testClientWithGeneratedKeys(KeystoreFormat.BCFKS.toString());
+        testClientWithGeneratedKeys(KeystoreFormat.BCFKS.toString(), 3072, 5);
     }
 
     @Test
     public void testUploadKeystoreJKS() throws Exception {
         KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.JKS);
         testUploadKeystore("JKS", generatedKeystoreClient1.getKeystoreFile().getAbsolutePath(), "clientkey", "storepass");
+        testCodeToTokenRequestSuccess("client3", keyPairClient1, Algorithm.RS256, null);
     }
 
     @Test
     public void testUploadKeystorePKCS12() throws Exception {
         KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.PKCS12);
-        KeystoreUtils.KeystoreInfo ksInfo = KeystoreUtils.generateKeystore(folder, KeystoreFormat.PKCS12, "clientkey", "pwd2", "keypass");
-        testUploadKeystore(KeystoreFormat.PKCS12.toString(), ksInfo.getKeystoreFile().getAbsolutePath(), "clientkey", "pwd2");
+        KeyPair keyPair = org.keycloak.common.util.KeyUtils.generateRsaKeyPair(2048);
+        KeystoreUtils.KeystoreInfo ksInfo = KeystoreUtils.generateKeystore(folder, KeystoreFormat.PKCS12, "clientkey", "pwd2", "keypass", keyPair);
+        try {
+            testUploadKeystore(KeystoreFormat.PKCS12.toString(), ksInfo.getKeystoreFile().getAbsolutePath(), "clientkey", "pwd2");
+            testCodeToTokenRequestSuccess("client3", keyPair, Algorithm.RS256, null);
+        } finally {
+            ksInfo.getKeystoreFile().delete();
+        }
     }
 
     @Test
     public void testUploadKeystoreBCFKS() throws Exception {
         KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.BCFKS);
-        KeystoreUtils.KeystoreInfo ksInfo = KeystoreUtils.generateKeystore(folder, KeystoreFormat.BCFKS, "clientkey", "pwd2", "keypass");
-        testUploadKeystore(KeystoreFormat.BCFKS.toString(), ksInfo.getKeystoreFile().getAbsolutePath(), "clientkey", "pwd2");
+        KeyPair keyPair = org.keycloak.common.util.KeyUtils.generateRsaKeyPair(2048);
+        KeystoreUtils.KeystoreInfo ksInfo = KeystoreUtils.generateKeystore(folder, KeystoreFormat.BCFKS, "clientkey", "pwd2", "keypass", keyPair);
+        try {
+            testUploadKeystore(KeystoreFormat.BCFKS.toString(), ksInfo.getKeystoreFile().getAbsolutePath(), "clientkey", "pwd2");
+            testCodeToTokenRequestSuccess("client3", keyPair, Algorithm.RS256, null);
+        } finally {
+            ksInfo.getKeystoreFile().delete();
+        }
     }
 
     @Test
-    public void testUploadCertificatePEM() throws Exception {
-        testUploadKeystore(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.CERTIFICATE_PEM, "client-auth-test/certificate.pem", "undefined", "undefined");
+    public void testUploadCertificatePemRsa() throws Exception {
+        testUploadCertificatePEM(org.keycloak.common.util.KeyUtils.generateRsaKeyPair(2048), Algorithm.RS256, null);
     }
 
     @Test
-    public void testUploadPublicKeyPEM() throws Exception {
-        testUploadKeystore(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.PUBLIC_KEY_PEM, "client-auth-test/publickey.pem", "undefined", "undefined");
+    public void testUploadCertificatePemEcdsa() throws Exception {
+        testUploadCertificatePEM(KeyUtils.generateECKey(Algorithm.ES256), Algorithm.ES256, null);
+    }
+
+    @Test
+    public void testUploadPublicKeyPemRsa() throws Exception {
+        testUploadPublicKeyPem(org.keycloak.common.util.KeyUtils.generateRsaKeyPair(2048), Algorithm.RS256, null);
+    }
+
+    @Test
+    public void testUploadPublicKeyPemEcdsa() throws Exception {
+        testUploadPublicKeyPem(KeyUtils.generateECKey(Algorithm.ES256), Algorithm.ES256, null);
     }
 
     @Test
     public void testUploadJWKS() throws Exception {
-        testUploadKeystore(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.JSON_WEB_KEY_SET, "clientreg-test/jwks.json", "undefined", "undefined");
+        testUploadKeystore(CertificateInfoHelper.JSON_WEB_KEY_SET, "clientreg-test/jwks.json", "undefined", "undefined");
     }
 
     // TEST ERRORS
@@ -410,6 +441,32 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         AccessTokenResponse response = new AccessTokenResponse(resp);
 
         assertError(response,401, null, "invalid_client", Errors.CLIENT_NOT_FOUND);
+
+    }
+
+    @Test
+    public void testWithClientAndMissingClientAssertionType() throws Exception {
+        List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "client1"));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
+
+        CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        AccessTokenResponse response = new AccessTokenResponse(resp);
+
+        assertError(response, 400, "client1", "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+    }
+
+    @Test
+    public void testWithClientAndInvalidClientAssertionType() throws Exception {
+        List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "client1"));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, "invalid"));
+
+        CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        AccessTokenResponse response = new AccessTokenResponse(resp);
+
+        assertError(response,400, "client1", "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
 
     }
 
@@ -452,7 +509,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
         AccessTokenResponse response = new AccessTokenResponse(resp);
 
-        assertError(response,401, "unknown-client", "invalid_client", Errors.CLIENT_NOT_FOUND);
+        assertError(response,401, null, "invalid_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
@@ -743,7 +800,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     @Test
     public void testMissingIssuerClaim() throws Exception {
         AccessTokenResponse response = testMissingClaim("issuer");
-        assertError(response,401, null, OAuthErrorException.INVALID_CLIENT, Errors.CLIENT_NOT_FOUND);
+        assertError(response,401, null, "invalid_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
@@ -769,14 +826,6 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     public void testMissingExpirationClaim() throws Exception {
         // Missing only exp; the lifespan should be calculated from issuedAt
         AccessTokenResponse response = testMissingClaim("expiration");
-        assertSuccess(response, app1.getClientId(), serviceAccountUser.getId(), serviceAccountUser.getUsername());
-
-        // Test expired lifespan
-        response = testMissingClaim(- 11 - 15, "expiration"); // 15 sec clock skew
-        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
-
-        // Missing exp and issuedAt should return error
-        response = testMissingClaim("expiration", "issuedAt");
         assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
     }
 

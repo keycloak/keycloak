@@ -17,9 +17,19 @@
 
 package org.keycloak.models.jpa;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
+
+import jakarta.persistence.EntityManager;
+
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -28,13 +38,6 @@ import org.keycloak.models.jpa.entities.ClientScopeEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
-
-import jakarta.persistence.EntityManager;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -54,6 +57,7 @@ public class ClientScopeAdapter implements ClientScopeModel, JpaModel<ClientScop
         this.entity = entity;
     }
 
+    @Override
     public ClientScopeEntity getEntity() {
         return entity;
     }
@@ -169,6 +173,9 @@ public class ClientScopeAdapter implements ClientScopeModel, JpaModel<ClientScop
     @Override
     public void updateProtocolMapper(ProtocolMapperModel mapping) {
         ProtocolMapperEntity entity = getProtocolMapperEntity(mapping.getId());
+        if (entity == null) {
+            throw new ModelException("mapping with id " + mapping.getId() + " does not exist");
+        }
         entity.setProtocolMapper(mapping.getProtocolMapper());
         if (entity.getConfig() == null) {
             entity.setConfig(mapping.getConfig());
@@ -185,6 +192,14 @@ public class ClientScopeAdapter implements ClientScopeModel, JpaModel<ClientScop
         ProtocolMapperEntity entity = getProtocolMapperEntity(id);
         if (entity == null) return null;
         return entityToModel(entity);
+    }
+
+    @Override
+    public List<ProtocolMapperModel> getProtocolMapperByType(String type) {
+        return this.entity.getProtocolMappers().stream()
+                .filter((mapper) -> mapper.getProtocolMapper().equals(type))
+                .map(this::entityToModel)
+                .toList();
     }
 
     @Override

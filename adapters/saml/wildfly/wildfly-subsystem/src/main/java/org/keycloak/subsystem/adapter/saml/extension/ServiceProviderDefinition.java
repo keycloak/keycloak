@@ -16,6 +16,10 @@
  */
 package org.keycloak.subsystem.adapter.saml.extension;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshallers;
 import org.jboss.as.controller.ListAttributeDefinition;
@@ -31,10 +35,6 @@ import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelType;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

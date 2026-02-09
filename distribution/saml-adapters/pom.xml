@@ -24,7 +24,7 @@
     </parent>
 
     <name>SAML Adapters Distribution Parent</name>
-    <description/>
+    <description>SAML Adapters Distribution Parent</description>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-saml-adapters-distribution-parent</artifactId>

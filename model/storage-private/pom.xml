@@ -9,7 +9,7 @@
 
     <artifactId>keycloak-model-storage-private</artifactId>
     <name>Keycloak Database Support - Private classes</name>
-    <description/>
+    <description>Keycloak Database Support - Private classes</description>
 
     <dependencies>
         <dependency>

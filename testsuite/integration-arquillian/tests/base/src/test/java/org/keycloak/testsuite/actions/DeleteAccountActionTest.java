@@ -4,11 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.cookie.CookieType;
@@ -26,6 +21,12 @@ import org.keycloak.testsuite.auth.page.login.DeleteAccountActionConfirmPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.openqa.selenium.Cookie;
 
 public class DeleteAccountActionTest extends AbstractTestRealmKeycloakTest {

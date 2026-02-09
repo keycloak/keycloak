@@ -35,13 +35,29 @@ To build Keycloak Documentation run:
 Or to build a specific guide run:
 
     ./mvnw clean install -pl docs/documentation/GUIDE_DIR -Pdocumentation
-    
+
 By default, an archive version of the documentation is built. To build the latest build run:
 
     ./mvnw clean install ... -Platest,documentation
 
 You can then view the documentation by opening `docs/documentation/GUIDE_DIR/target/generated-docs/index.html`.
 
+To build the REST API documentation and the Javadoc:
+
+- Export the `JAVA_HOME` variable, for example:
+  ```
+  export JAVA_HOME=/usr/lib/jvm/java-21-openjdk
+  ```
+  (without this, you may get the following error: `Unable to find javadoc command: The environment variable JAVA_HOME is not correctly set.`)
+- Run:
+  ```
+  ./mvnw clean package -am -pl services -Pjboss-release -DskipTests
+  ```
+
+You can view the generated docs by opening the following files:
+
+- REST API: `services/target/apidocs-rest/output/index.html`
+- Javadoc: `services/target/apidocs/index.html`
 
 License
 -------

@@ -25,11 +25,7 @@ import java.util.Collections;
 import java.util.List;
 
 import jakarta.ws.rs.core.Response;
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.broker.provider.IdpLinkAction;
@@ -38,6 +34,7 @@ import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -45,13 +42,21 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.IdpLinkActionPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.utils.BrokerUtil;
 
-import static org.hamcrest.Matchers.is;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+
+import static org.hamcrest.Matchers.is;
 
 /**
  * Test for client-initiated-account linking of the custom application
@@ -317,6 +322,84 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
             events.assertEmpty();
         });
 
+    }
+
+    @Test
+    public void testAccountLinkingWithDirectRoleManageAccount() throws Exception {
+        // Remove "manage-account" role from user
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        String user1Id = consumerRealm.users().search("user1").iterator().next().getId();
+
+        RoleRepresentation defaultRoles = consumerRealm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + bc.consumerRealmName()).toRepresentation();
+        consumerRealm.users().get(user1Id).roles().realmLevel().remove(Collections.singletonList(defaultRoles));
+
+        ClientRepresentation accountClient = ApiUtil.findClientResourceByClientId(consumerRealm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).toRepresentation();
+        RoleRepresentation manageAccount = consumerRealm.clients().get(accountClient.getId()).roles().get(AccountRoles.MANAGE_ACCOUNT).toRepresentation();
+        consumerRealm.users().get(user1Id).roles().clientLevel(accountClient.getId()).add(Collections.singletonList(manageAccount));
+
+        loginToConsumer();
+
+        // Redirect to link account on behalf of "broker-app" and login to the IDP
+        String kcAction = getKcActionParamForLinkIdp(bc.getIDPAlias());
+        oauth.loginForm().kcAction(kcAction).open();
+        confirmIdpLinking();
+
+        // Login to provider
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+        events.clear();
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        appPage.assertCurrent();
+        assertKcActionParams(IdpLinkAction.PROVIDER_ID, RequiredActionContext.KcActionStatus.SUCCESS.name().toLowerCase());
+
+        // Check that user is linked to the IDP
+        assertUserLinkedToIDP(true);
+
+        assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
+            assertProviderEventsSuccess(providerRealmId, providerUserId);
+            assertConsumerSuccessLinkEvents(consumerRealmId, consumerUserId, consumerUsername);
+        });
+    }
+
+    @Test
+    public void testAccountLinkingWithDirectRoleManageAccountLinks() throws Exception {
+        // Remove "manage-account-link" role from user
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        String user1Id = consumerRealm.users().search("user1").iterator().next().getId();
+
+        RoleRepresentation defaultRoles = consumerRealm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + bc.consumerRealmName()).toRepresentation();
+        consumerRealm.users().get(user1Id).roles().realmLevel().remove(Collections.singletonList(defaultRoles));
+
+        ClientRepresentation accountClient = ApiUtil.findClientResourceByClientId(consumerRealm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).toRepresentation();
+        RoleRepresentation manageAccountLinks = consumerRealm.clients().get(accountClient.getId()).roles().get(AccountRoles.MANAGE_ACCOUNT_LINKS).toRepresentation();
+        consumerRealm.users().get(user1Id).roles().clientLevel(accountClient.getId()).add(Collections.singletonList(manageAccountLinks));
+
+        loginToConsumer();
+
+        // Redirect to link account on behalf of "broker-app" and login to the IDP
+        String kcAction = getKcActionParamForLinkIdp(bc.getIDPAlias());
+        oauth.loginForm().kcAction(kcAction).open();
+        confirmIdpLinking();
+
+        // Login to provider
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+        events.clear();
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        appPage.assertCurrent();
+        assertKcActionParams(IdpLinkAction.PROVIDER_ID, RequiredActionContext.KcActionStatus.SUCCESS.name().toLowerCase());
+
+        // Check that user is linked to the IDP
+        assertUserLinkedToIDP(true);
+
+        assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
+            assertProviderEventsSuccess(providerRealmId, providerUserId);
+            assertConsumerSuccessLinkEvents(consumerRealmId, consumerUserId, consumerUsername);
+        });
     }
 
     @Test

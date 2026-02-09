@@ -201,7 +201,7 @@ export default function UserFederationSection() {
             </TextContent>
             <TextContent>
               <Text className="pf-v5-u-mt-lg" component={TextVariants.h2}>
-                {t("providers")}
+                {t("add-providers")}
               </Text>
             </TextContent>
             <hr className="pf-v5-u-mb-lg" />

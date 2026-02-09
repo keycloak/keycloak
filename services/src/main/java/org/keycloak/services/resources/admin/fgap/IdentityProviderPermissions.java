@@ -16,7 +16,13 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
-import org.jboss.logging.Logger;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.ClientModelIdentity;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
@@ -30,12 +36,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.services.resources.admin.fgap.AdminPermissionManagement.TOKEN_EXCHANGE;
 

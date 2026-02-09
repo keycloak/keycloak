@@ -16,10 +16,10 @@
  */
 package org.keycloak.client.cli.common;
 
+import java.io.PrintWriter;
+
 import org.keycloak.client.cli.util.ClassLoaderUtil;
 import org.keycloak.common.crypto.CryptoIntegration;
-
-import java.io.PrintWriter;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;

@@ -22,10 +22,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
@@ -35,6 +31,8 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.test.junit.main.Launch;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
@@ -81,18 +79,10 @@ public class ImportAtStartupDistTest {
     }
 
     @Test
-    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
-    @BeforeStartDistribution(CreateRealmConfigurationFile.class)
-    @Launch({"start-dev", "--import-realm=some-file"})
-    void failSetValueToImportRealmOption(CLIResult cliResult) {
-        cliResult.assertError("option '--import-realm' should be specified without 'some-file' parameter");
-    }
-
-    @Test
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
     void testImportFromFileCreatedByExportAllRealms(KeycloakDistribution dist) throws IOException {
         dist.run("start-dev", "--import-realm");
-        dist.run("--profile=dev", "export", "--file=../data/import/realm.json");
+        dist.run("--profile=dev", "export", "--file=../data/import/realm.json", "--verbose");
 
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
         FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());

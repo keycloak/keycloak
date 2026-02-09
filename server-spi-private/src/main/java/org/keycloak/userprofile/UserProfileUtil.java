@@ -28,7 +28,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ConfiguredProvider;
@@ -37,6 +36,8 @@ import org.keycloak.representations.idm.UserProfileAttributeMetadata;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.validate.Validators;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -155,14 +156,17 @@ public class UserProfileUtil {
             group = am.getAttributeGroupMetadata().getName();
         }
 
+        Attributes attributes = profile.getAttributes();
+
         return new UserProfileAttributeMetadata(am.getName(),
                 am.getAttributeDisplayName(),
-                profile.getAttributes().isRequired(am.getName()),
-                profile.getAttributes().isReadOnly(am.getName()),
+                attributes.isRequired(am.getName()),
+                attributes.isReadOnly(am.getName()),
                 group,
-                am.getAnnotations(),
+                attributes.getAnnotations(am.getName()),
                 toValidatorMetadata(am, session),
-                am.isMultivalued());
+                am.isMultivalued(),
+                am.getDefaultValue());
     }
 
     private static Map<String, Map<String, Object>> toValidatorMetadata(AttributeMetadata am, KeycloakSession session){

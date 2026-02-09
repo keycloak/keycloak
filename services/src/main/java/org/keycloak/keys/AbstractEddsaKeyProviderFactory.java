@@ -25,9 +25,6 @@ import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-
 import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
 
 /**
@@ -38,7 +35,7 @@ public abstract class AbstractEddsaKeyProviderFactory implements KeyProviderFact
     protected static final String EDDSA_PRIVATE_KEY_KEY = "eddsaPrivateKey";
     protected static final String EDDSA_PUBLIC_KEY_KEY = "eddsaPublicKey";
     protected static final String EDDSA_ELLIPTIC_CURVE_KEY = "eddsaEllipticCurveKey";
-    protected static final String DEFAULT_EDDSA_ELLIPTIC_CURVE = Algorithm.Ed25519;
+    public static final String DEFAULT_EDDSA_ELLIPTIC_CURVE = Algorithm.Ed25519;
 
     protected static ProviderConfigProperty EDDSA_ELLIPTIC_CURVE_PROPERTY = new ProviderConfigProperty(EDDSA_ELLIPTIC_CURVE_KEY, 
             "Elliptic Curve", "Elliptic Curve used in EdDSA", LIST_TYPE,
@@ -57,15 +54,6 @@ public abstract class AbstractEddsaKeyProviderFactory implements KeyProviderFact
                 .checkLong(Attributes.PRIORITY_PROPERTY, false)
                 .checkBoolean(Attributes.ENABLED_PROPERTY, false)
                 .checkBoolean(Attributes.ACTIVE_PROPERTY, false);
-    }
-
-    public static KeyPair generateEddsaKeyPair(String curveName) {
-        try {
-            KeyPairGenerator keyGen = KeyPairGenerator.getInstance(curveName);
-            return keyGen.generateKeyPair();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }

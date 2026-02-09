@@ -29,13 +29,15 @@
     </parent>
 
     <name>Keycloak Quarkus Server Integration tests</name>
+    <description>Keycloak Quarkus Server Integration tests</description>
+
     <artifactId>keycloak-quarkus-integration-tests</artifactId>
     <packaging>jar</packaging>
 
     <properties>
         <kc.quarkus.tests.dist>raw</kc.quarkus.tests.dist>
         <kc.quarkus.tests.groups>!invalid</kc.quarkus.tests.groups>
-        <approvaltests.version>14.0.0</approvaltests.version>
+        <approvaltests.version>26.1.0</approvaltests.version>
         <build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
     </properties>
 
@@ -186,8 +188,9 @@
                                 <kc.db.postgresql.container.image>${postgresql.container}</kc.db.postgresql.container.image>
                                 <kc.db.mariadb.container.image>${mariadb.container}</kc.db.mariadb.container.image>
                                 <kc.db.mysql.container.image>${mysql.container}</kc.db.mysql.container.image>
-                                <kc.infinispan.container.image>quay.io/infinispan/server:${infinispan.version}</kc.infinispan.container.image>
+                                <kc.infinispan.container.image>${infinispan.container}</kc.infinispan.container.image>
                                 <kc.db.mssql.container.image>${mssql.container}</kc.db.mssql.container.image>
+                                <kc.db.tidb.container.image>${tidb.container}</kc.db.tidb.container.image>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

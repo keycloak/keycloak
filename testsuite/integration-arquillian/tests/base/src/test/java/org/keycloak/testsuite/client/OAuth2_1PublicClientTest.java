@@ -18,15 +18,17 @@
 
 package org.keycloak.testsuite.client;
 
+import java.security.KeyPair;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.Response;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
@@ -39,7 +41,6 @@ import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -47,19 +48,18 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
-import java.security.KeyPair;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createEcJwk;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.generateEcdsaKey;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.generateSignedDPoPProof;
 
-@EnableFeature(value = Profile.Feature.DPOP, skipRestart = true)
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 public class OAuth2_1PublicClientTest extends AbstractFAPITest {
 
     private static final String OAUTH2_1_PUBLIC_CLIENT_PROFILE_NAME = "oauth-2-1-for-public-client";

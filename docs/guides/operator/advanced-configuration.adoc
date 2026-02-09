@@ -91,19 +91,46 @@ metadata:
 spec:
   ...
   additionalOptions:
-    - name: spi-connections-http-client-default-connection-pool-size
+    - name: spi-connections-http-client--default--connection-pool-size
       secret: # Secret reference
-        name: http-client-secret # name of the Secret
-        key: poolSize # name of the Key in the Secret
-    - name: spi-email-template-mycustomprovider-enabled
-      value: true # plain text value
+        name: http-client-secret # Name of the Secret
+        key: poolSize # Name of the Key in the Secret
+    - name: spi-email-template--mycustomprovider--enabled
+      value: 'true' # Plain text value. Use quotes for numbers and boolean values.
 ----
 NOTE:  The name format of options defined in this way is identical to the key format of options specified in the configuration file.
        For details on various configuration formats, see <@links.server id="configuration"/>.
 
+NOTE: If you configure mTLS with `https-client-auth` set to `required`, this configuration is inherited by the management interface.
+If you have not otherwise configured the usage of HTTP for the health endpoints, you will likely want to also set the additionalOption `https-management-client-auth` to `request` or `none` so that a valid client certificate is not required for probe requests.
+
+==== Custom environment variables
+
+You may find a need to set custom environment variables - such as for theme properties or `kc.[sh|bat]` script variables.
+The `spec.env` field of the Keycloak CR allows you to directly set any environment variable.
+Logic in the operator based upon looking for value of a particular setting does not consult `spec.env`,
+therefore do not use `spec.env` for anything that has a first-class configuration in the CR or may be specified as an `additionalOption`.
+
+Here's an example setting JAVA_OPTS_APPEND:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  env:
+    - name: JAVA_OPTS_APPEND
+      value: -Djava.net.preferIPv6Addresses=true
+----
+
+Similar to `additionalOptions` you may specify either a value or reference a Secret.
+
 === Secret References
 
-Secret References are used by some dedicated options in the Keycloak CR, such as `tlsSecret`, or as a value in `additionalOptions`.
+Secret References are used by some dedicated options in the Keycloak CR, such as a `tlsSecret`, or as a value in `additionalOptions`.
 
 Similarly ConfigMap References are used by options such as the `configMapFile`.
 
@@ -149,15 +176,9 @@ spec:
               secretName: keycloak-additional-secret
 ----
 
-===== Probe Timeouts
+===== Probe Configuration
 
-The unsupported podTemplate may be used to override the default probes.
-
-In particular the default startup probe timeout of 10 minutes may be too short in scenarios where there is a long-running migration.
-
-If your instances encounter this startup failure or if you wish to proactively prevent such a startup failure from occurring, then the startup probe timeout should be increased.
-
-With otherwise default settings, something like the following increases the timeout to 20 minutes:
+The Keycloak CR exposes options to set periodSeconds and failureThreshold on each of the three probes (readiness, liveness and startup)
 
 [source,yaml]
 ----
@@ -166,21 +187,16 @@ kind: Keycloak
 metadata:
   name: example-kc
 spec:
-  ...
-  unsupported:
-    podTemplate:
-      spec:
-        containers:
-          startupProbe:
-            httpGet:
-              path: "/health/started"
-            port: 9000
-            scheme: "HTTPS"
-            failureThreshold: 1200
-            periodSeconds: 1
+  readinessProbe:
+    periodSeconds: 20
+    failureThreshold: 5
+  livenessProbe:
+    periodSeconds: 20
+    failureThreshold: 5
+  startupProbe:
+    periodSeconds: 20
+    failureThreshold: 5
 ----
-
-Note that the usage of a relative HTTP path, or an alternative management port, requires changes to the probe configuration.
 
 === Disabling required options
 
@@ -277,7 +293,26 @@ spec:
 
 Please see https://kubernetes.io/docs/concepts/scheduling-eviction[the kubernetes docs] for more on scheduling concepts.
 
-If you do not specify a custom affinity, your Pods will have an affinity for the same zone and an anti-affinity for the same node to improve availability. Scheduling to the same zone if possible helps prevent stretch clusters where cross zone cache cluster traffic may have too high of a latency.
+If you do not specify a custom topology spread constraint, your Pods will have a spread constraint across zones and nodes to improve availability. These defaults do not affect import and update Jobs, only server Pods.
+
+==== Job Scheduling
+
+Realm import and update Jobs inherit the scheduling of the server Pods if it is specified in the Keycloak CR `spec.scheduling` field. If your server Pod scheduling is highly restrictive this may result in the
+Job Pods being unschedulable. In this situation you may override the Job scheduling using the Keycloak CR `spec.update.scheduling` and `spec.import.scheduling` fields.
+
+For example the following will remove the use of any server Pod scheduling for the update Job:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  update:
+    scheduling: {}
+  ...
+----
 
 === Management Interface
 
@@ -301,7 +336,7 @@ spec:
 ----
 
 NOTE: If you are using a custom image, the Operator is *unaware* of any configuration options that might've been specified there.
-For instance, it may cause that the management interface uses the `https` schema, but the Operator accesses it via `http` when the TLS settings is specified in the custom image.
+For instance, the management interface may use `https`, but the Operator accesses it via `http` when the TLS settings are specified in the custom image.
 To ensure proper TLS configuration, use the `tlsSecret` and `truststores` fields in the Keycloak CR so that the Operator can reflect that.
 
 For more details, see <@links.server id="management-interface" />.
@@ -310,7 +345,7 @@ For more details, see <@links.server id="management-interface" />.
 
 If you need to provide trusted certificates, the Keycloak CR provides a top level feature for configuring the server's truststore as discussed in <@links.server id="keycloak-truststore"/>.
 
-Use the truststores stanza of the Keycloak spec to specify Secrets containing PEM encoded files, or PKCS12 files with extension `.p12`, `.pfx`, or `.pkcs12`, for example:
+Use the truststores stanza of the Keycloak spec to specify Secrets or ConfigMaps containing PEM encoded files, or PKCS12 files with extension `.p12`, `.pfx`, or `.pkcs12`, for example:
 
 [source,yaml]
 ----
@@ -342,6 +377,8 @@ stringData:
 
 When running on a Kubernetes or OpenShift environment well-known locations of trusted certificates are included automatically.
 This includes `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt` and the `/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt` when present.
+In order to not include `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt` in Keycloak pods, set the `automountServiceAccountToken` field in the spec to `false`
+This is useful if some security policies require that the service account token is not mounted in the pod, but it cannot be `false` if you plan to use an external infinispan cluster, or if plan to use the Kubernetes service accounts identity provider, or if you have some custom provider logic which expects to implicitly use the Kubernetes API.
 
 === Admin Bootstrapping
 
@@ -374,6 +411,13 @@ spec:
   additionalOptions:
     - name: tracing-jdbc-enabled
       value: false                            # default 'true'
+    - name: tracing-header-My-Custom-header
+      value: keycloak-custom-header
+    - name: tracing-header-Authorization
+      secret:
+        name: tracing-secret
+        key: token
+
 ----
 
 These fields should reflect 1:1 association with `tracing-*` options that contain more information.
@@ -472,5 +516,115 @@ The traffic from outside the OpenShift cluster goes through these pods.
 They need to access {project_name} to scrape the available metrics.
 
 Check the https://kubernetes.io/docs/concepts/services-networking/network-policies/[Kubernetes Network Policies documentation] for more information about NetworkPolicies.
+
+=== Parameterizing service labels and annotations
+
+If you need to set custom labels or annotations to keycloak service you can do that through `spec.http.labels` and `spec.http.annotations`
+
+.Custom service labels and annotations
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  http:
+    labels:
+      label1: label-value1
+      label2: label-value2
+    annotations:
+      annotation1: annotation-value1
+      annotation2: annotation-value2
+----
+
+=== ServiceMonitor
+A `ServiceMonitor` resource is used to define how a service's metrics are discovered and scraped by Prometheus.
+The {project_name} Operator automatically generates a `ServiceMonitor` resource for your deployment. In order for the
+`ServiceMonitor` resource to be created, at least version `v0.72.0` of the `monitoring.coreos.com/v1:ServiceMonitor`
+Custom Resource Definition (CRD) must be installed on your {kubernetes} cluster.
+
+A ServiceMonitor is only created if the `metrics-enabled` option is set.
+
+.Enable Keycloak metrics
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  additionalOptions:
+    - name: metrics-enabled
+      value: "true"
+----
+
+The Operator generates a `ServiceMonitor` with the following spec:
+
+.Default ServiceMonitor
+[source,yaml]
+----
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: example-kc # <1>
+  namespace: example-namespace # <2>
+spec:
+  endpoints:
+  - interval: 30s
+    path: /metrics # <3>
+    port: management
+    scheme: https # <4>
+    scrapeTimeout: 10s
+    tlsConfig:
+      insecureSkipVerify: true
+  namespaceSelector:
+    matchNames:
+    - example-namespace # <2>
+  selector:
+    matchLabels:
+      app: keycloak
+      app.kubernetes.io/instance: example-kc # <2>
+      app.kubernetes.io/managed-by: keycloak-operator
+  scrapeProtocols:
+    - OpenMetricsText1.0.0
+----
+<1> The `ServiceMonitor` is created with the same name as the Keycloak CR.
+<2> The `ServiceMonitor` is always deployed to the same namespace as the Keycloak CR and will only match a Service
+in that namespace.
+<3> The configured path defaults to `/metrics`, but respects the `http-management-relative-path` value if configured.
+<4> The configured scheme is changed automatically depending on whether TLS is enabled or not.
+
+
+==== Modify ServiceMonitor configuration
+You can configure the `interval` and `scrapeTimeout` fields of the generated `ServiceMonitor` by modifying the Keycloak CR spec.
+
+.Modified ServiceMonitor
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  serviceMonitor:
+    interval: 10s
+    scrapeTimeout: 5s
+----
+
+==== Disable ServiceMonitor creation
+You can prevent the Operator from creating a ServiceMonitor by configuring the Keycloak CR as follows:
+
+.Disabled ServiceMonitor
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  serviceMonitor:
+    enabled: false
+----
 
 </@tmpl.guide>

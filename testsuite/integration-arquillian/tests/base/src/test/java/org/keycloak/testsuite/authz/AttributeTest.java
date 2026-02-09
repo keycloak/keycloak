@@ -17,21 +17,22 @@
 
 package org.keycloak.testsuite.authz;
 
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.net.InetAddress;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import org.keycloak.authorization.attribute.Attributes;
+
 import org.apache.commons.collections.map.HashedMap;
 import org.junit.Test;
-import org.keycloak.authorization.attribute.Attributes;
+
+import static java.util.Arrays.asList;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -68,7 +69,7 @@ public class AttributeTest {
 
         assertEquals(new SimpleDateFormat("dd/MM/yyyy").parse("12/12/2016"), attributes.getValue("date").asDate(0, "dd/MM/yyyy"));
 
-        assertEquals(InetAddress.getLoopbackAddress(), attributes.getValue("ip_network_address").asInetAddress(0));
-        assertEquals(InetAddress.getLoopbackAddress(), attributes.getValue("host_network_address").asInetAddress(0));
+        assertEquals("127.0.0.1", attributes.getValue("ip_network_address").asInetAddress(0).getHostAddress());
+        assertEquals("localhost", attributes.getValue("host_network_address").asInetAddress(0).getHostName());
     }
 }

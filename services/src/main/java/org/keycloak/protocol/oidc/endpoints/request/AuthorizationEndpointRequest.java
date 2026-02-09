@@ -17,11 +17,11 @@
 
 package org.keycloak.protocol.oidc.endpoints.request;
 
-import org.keycloak.protocol.ClientData;
-import org.keycloak.rar.AuthorizationRequestContext;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.keycloak.protocol.ClientData;
+import org.keycloak.rar.AuthorizationRequestContext;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -18,9 +18,10 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import org.keycloak.representations.JsonWebToken;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.representations.JsonWebToken;
 
 /**
  * @author Pascal Knüppel

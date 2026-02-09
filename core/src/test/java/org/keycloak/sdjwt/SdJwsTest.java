@@ -17,24 +17,25 @@
 
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.rule.CryptoInitRule;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.LongNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.VerificationException;
-import org.keycloak.rule.CryptoInitRule;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public abstract class SdJwsTest {
 
@@ -43,144 +44,171 @@ public abstract class SdJwsTest {
 
     static TestSettings testSettings = TestSettings.getInstance();
 
-    private JsonNode createPayload() {
+    private ObjectNode createPayload() {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode node = mapper.createObjectNode();
         node.put("sub", "test");
-        node.put("exp", Instant.now().plus(1, ChronoUnit.HOURS).getEpochSecond());
+        node.put("exp", Instant.ofEpochSecond(Time.currentTime()).plus(1, ChronoUnit.HOURS).getEpochSecond());
         node.put("name", "Test User");
         return node;
     }
 
     @Test
     public void testVerifySignature_Positive() throws Exception {
-        SdJws sdJws = new SdJws(createPayload(), testSettings.holderSigContext, "jwt") {
+        JWSHeader jwsHeader = new JWSHeader();
+        jwsHeader.setType("jwt");
+        JwsToken sdJws = new JwsToken(jwsHeader, createPayload(), testSettings.holderSigContext) {
         };
         sdJws.verifySignature(testSettings.holderVerifierContext);
     }
 
     @Test
     public void testVerifySignature_WrongPublicKey() {
-        SdJws sdJws = new SdJws(createPayload(), testSettings.holderSigContext, "jwt") {
+        JWSHeader jwsHeader = new JWSHeader();
+        jwsHeader.setType("jwt");
+        JwsToken sdJws = new JwsToken(jwsHeader, createPayload(), testSettings.holderSigContext) {
         };
         assertThrows(VerificationException.class, () -> sdJws.verifySignature(testSettings.issuerVerifierContext));
     }
 
     @Test
     public void testVerifyExpClaim_ExpiredJWT() {
-        JsonNode payload = createPayload();
-        ((ObjectNode) payload).put("exp", Instant.now().minus(1, ChronoUnit.HOURS).getEpochSecond());
-        SdJws sdJws = new SdJws(payload) {
-        };
-        assertThrows(VerificationException.class, sdJws::verifyExpClaim);
+        ObjectNode payload = createPayload();
+        payload.put("exp", Instant.ofEpochSecond(Time.currentTime()).minus(1, ChronoUnit.HOURS).getEpochSecond());
+        assertThrows(VerificationException.class, () -> {
+            new ClaimVerifier.ExpCheck(0, false).test(payload);
+        });
     }
 
     @Test
     public void testVerifyExpClaim_Positive() throws Exception {
-        JsonNode payload = createPayload();
-        ((ObjectNode) payload).put("exp", Instant.now().plus(1, ChronoUnit.HOURS).getEpochSecond());
-        SdJws sdJws = new SdJws(payload) {
-        };
-        sdJws.verifyExpClaim();
+        ObjectNode payload = createPayload();
+        payload.put("exp", Instant.ofEpochSecond(Time.currentTime()).plus(1, ChronoUnit.HOURS).getEpochSecond());
+
+        new ClaimVerifier.ExpCheck(0, false).test(payload);
     }
 
     @Test
     public void testVerifyNotBeforeClaim_Negative() {
-        JsonNode payload = createPayload();
-        ((ObjectNode) payload).put("nbf", Instant.now().plus(1, ChronoUnit.HOURS).getEpochSecond());
-        SdJws sdJws = new SdJws(payload) {
-        };
-        assertThrows(VerificationException.class, sdJws::verifyNotBeforeClaim);
+        ObjectNode payload = createPayload();
+        payload.put("nbf", Instant.ofEpochSecond(Time.currentTime()).plus(1, ChronoUnit.HOURS).getEpochSecond());
+        assertThrows(VerificationException.class, () -> {
+            new ClaimVerifier.NbfCheck(0, false).test(payload);
+        });
     }
 
     @Test
     public void testVerifyNotBeforeClaim_Positive() throws Exception {
-        JsonNode payload = createPayload();
-        ((ObjectNode) payload).put("nbf", Instant.now().minus(1, ChronoUnit.HOURS).getEpochSecond());
-        SdJws sdJws = new SdJws(payload) {
-        };
-        sdJws.verifyNotBeforeClaim();
+        ObjectNode payload = createPayload();
+        payload.put("nbf", Instant.ofEpochSecond(Time.currentTime()).minus(1, ChronoUnit.HOURS).getEpochSecond());
+
+        new ClaimVerifier.NbfCheck(0, false).test(payload);
     }
 
     @Test
     public void testPayloadJwsConstruction() {
-        SdJws sdJws = new SdJws(createPayload()) {
+        JWSHeader jwsHeader = new JWSHeader();
+        jwsHeader.setType("jwt");
+        JwsToken sdJws = new JwsToken(jwsHeader, createPayload()) {
         };
+        assertNotNull(sdJws.getJwsHeader());
         assertNotNull(sdJws.getPayload());
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void testUnsignedJwsConstruction() {
-        SdJws sdJws = new SdJws(createPayload()) {
-        };
-        sdJws.toJws();
     }
 
     @Test
     public void testSignedJwsConstruction() {
-        SdJws sdJws = new SdJws(createPayload(), testSettings.holderSigContext, "jwt") {
+        JWSHeader jwsHeader = new JWSHeader();
+        jwsHeader.setType("jwt");
+        JwsToken sdJws = new JwsToken(jwsHeader, createPayload(), testSettings.holderSigContext) {
         };
-        assertNotNull(sdJws.toJws());
+
+        assertNotNull(sdJws.getJws());
     }
-
-
 
     @Test
     public void testVerifyIssClaim_Negative() {
-        List<String> allowedIssuers = Arrays.asList(new String[]{"issuer1@sdjwt.com", "issuer2@sdjwt.com"});
-        JsonNode payload = createPayload();
-        ((ObjectNode) payload).put("iss", "unknown-issuer@sdjwt.com");
-        SdJws sdJws = new SdJws(payload) {};
-        VerificationException exception = assertThrows(VerificationException.class, () -> sdJws.verifyIssClaim(allowedIssuers));
-        assertEquals("Unknown 'iss' claim value: unknown-issuer@sdjwt.com", exception.getMessage());
+        String allowedIssuer = "issuer1@sdjwt.com";
+        ObjectNode payload = createPayload();
+        String invalidIssuer = "unknown-issuer@sdjwt.com";
+        payload.put("iss", invalidIssuer);
+        JWSHeader jwsHeader = new JWSHeader();
+        jwsHeader.setType("jwt");
+        VerificationException exception = assertThrows(VerificationException.class, () -> {
+            new ClaimVerifier.ClaimCheck("iss", allowedIssuer).test(payload);
+        });
+        assertEquals(String.format("Expected value '%s' in token for claim 'iss' does not match actual value '%s'",
+                                   allowedIssuer,
+                                   invalidIssuer), exception.getMessage());
     }
 
     @Test
     public void testVerifyIssClaim_Positive() throws VerificationException {
-        List<String> allowedIssuers = Arrays.asList(new String[]{"issuer1@sdjwt.com", "issuer2@sdjwt.com"});
-        JsonNode payload = createPayload();
-        ((ObjectNode) payload).put("iss", "issuer1@sdjwt.com");
-        SdJws sdJws = new SdJws(payload) {};
-        sdJws.verifyIssClaim(allowedIssuers);
+        String allowedIssuer = "issuer1@sdjwt.com";
+        ObjectNode payload = createPayload();
+        payload.put("iss", "issuer1@sdjwt.com");
+        new ClaimVerifier.ClaimCheck("iss", allowedIssuer).test(payload);
     }
 
     @Test
     public void testVerifyVctClaim_Negative() {
-        JsonNode payload = createPayload();
-        ((ObjectNode) payload).put("vct", "IdentityCredential");
-        SdJws sdJws = new SdJws(payload) {};
-        VerificationException exception = assertThrows(VerificationException.class, () -> sdJws.verifyVctClaim(Collections.singletonList("PassportCredential")));
-        assertEquals("Unknown 'vct' claim value: IdentityCredential", exception.getMessage());
+        ObjectNode payload = createPayload();
+
+        final String claimName = "vct";
+        final String actualValue = "IdentityCredential";
+        payload.put(claimName, actualValue);
+
+        final String expectedClaimValue = "PassportCredential";
+        VerificationException exception = assertThrows(VerificationException.class, () -> {
+            new ClaimVerifier.ClaimCheck(claimName, expectedClaimValue).test(payload);
+        });
+
+        assertEquals(String.format("Expected value '%s' in token for claim '%s' does not match actual value '%s'",
+                                   expectedClaimValue,
+                                   claimName,
+                                   actualValue), exception.getMessage());
     }
 
     @Test
     public void testVerifyVctClaim_Positive() throws VerificationException {
-        JsonNode payload = createPayload();
-        ((ObjectNode) payload).put("vct", "IdentityCredential");
-        SdJws sdJws = new SdJws(payload) {};
-        sdJws.verifyVctClaim(Collections.singletonList("IdentityCredential"));
+        ObjectNode payload = createPayload();
+
+        final String claimName = "vct";
+        final String expectedClaimValue = "IdentityCredential";
+        payload.put(claimName, expectedClaimValue);
+
+        new ClaimVerifier.ClaimCheck(claimName, expectedClaimValue).test(payload);
     }
 
     @Test
     public void shouldValidateAgeSinceIssued() throws VerificationException {
-        long now = Instant.now().getEpochSecond();
-        SdJws sdJws = exampleSdJws(now);
-        sdJws.verifyAge(180);
+        long now = Time.currentTime();
+        JwsToken sdJws = exampleSdJws(now);
+
+        new ClaimVerifier.IatLifetimeCheck(0, 180).test(sdJws.getPayload());
     }
 
     @Test
     public void shouldValidateAgeSinceIssued_IfJwtIsTooOld() {
-        long now = Instant.now().getEpochSecond();
-        SdJws sdJws = exampleSdJws(now - 1000); // that will be too old
-        VerificationException exception = assertThrows(VerificationException.class, () -> sdJws.verifyAge(180));
-        assertEquals("jwt is too old", exception.getMessage());
+        long now = Time.currentTime();
+        long iat = now - 1000;
+        long maxLifetime = 180;
+        JwsToken sdJws = exampleSdJws(iat); // that will be too old
+        VerificationException exception = assertThrows(VerificationException.class, () -> {
+            new ClaimVerifier.IatLifetimeCheck(0, maxLifetime).test(sdJws.getPayload());
+        });
+
+        assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
+                exception.getMessage().matches("Token has expired by iat: now: '\\d+', expired at:"
+                        + " '\\d+', iat: '\\d+', maxLifetime: '180'"));
     }
 
-    private SdJws exampleSdJws(long iat) {
-        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.set("iat", SdJwtUtils.mapper.valueToTree(iat));
+    private JwsToken exampleSdJws(long iat) {
+        ObjectNode payload = new ObjectNode(JsonNodeFactory.instance);
+        payload.set("iat", new LongNode(iat));
 
-        return new SdJws(payload) {
+        JWSHeader jwsHeader = new JWSHeader();
+        jwsHeader.setType("jwt");
+        return new JwsToken(jwsHeader, payload) {
         };
     }
 }

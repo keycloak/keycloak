@@ -49,6 +49,11 @@ public class AdminClientBuilder {
         return this;
     }
 
+    public AdminClientBuilder authorization(String accessToken) {
+        delegate.authorization(accessToken);
+        return this;
+    }
+
     public AdminClientBuilder autoClose() {
         this.close = true;
         return this;

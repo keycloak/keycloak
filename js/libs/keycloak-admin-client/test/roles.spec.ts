@@ -69,6 +69,7 @@ describe("Roles", () => {
     await client.roles.updateById(
       { id: currentRole.id! },
       {
+        name: "cool-role",
         description: "another description",
       },
     );

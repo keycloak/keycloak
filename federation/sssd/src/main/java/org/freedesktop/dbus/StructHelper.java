@@ -1,11 +1,11 @@
 package org.freedesktop.dbus;
 
-import org.freedesktop.dbus.types.DBusStructType;
-import org.freedesktop.dbus.types.Variant;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+
+import org.freedesktop.dbus.types.DBusStructType;
+import org.freedesktop.dbus.types.Variant;
 
 /**
  * Helper util to create {@link Struct} subclasses when receiving it from DBus.

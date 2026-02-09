@@ -20,19 +20,19 @@
 package org.keycloak.migration.migrators;
 
 
-import org.jboss.logging.Logger;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.idm.RealmRepresentation;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:ggrazian@redhat.com">Giuseppe Graziano</a>
  */
-public class MigrateTo25_0_0 implements Migration {
+public class MigrateTo25_0_0 extends RealmMigration {
 
     public static final ModelVersion VERSION = new ModelVersion("25.0.0");
 
@@ -51,14 +51,11 @@ public class MigrateTo25_0_0 implements Migration {
             session.sessions().migrate(VERSION.toString());
         }
 
-        session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm));
+        super.migrate(session);
     }
 
     @Override
-    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        migrateRealm(session, realm);
-    }
-    protected void migrateRealm(KeycloakSession session, RealmModel realm) {
+    public void migrateRealm(KeycloakSession session, RealmModel realm) {
         MigrationProvider migrationProvider = session.getProvider(MigrationProvider.class);
 
         ClientScopeModel basicScope = KeycloakModelUtils.getClientScopeByName(realm, "basic");
@@ -74,4 +71,3 @@ public class MigrateTo25_0_0 implements Migration {
 
     }
 }
-

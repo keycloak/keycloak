@@ -16,7 +16,17 @@
  */
 package org.keycloak.broker.provider;
 
-import org.jboss.logging.Logger;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.EventBuilder;
@@ -28,27 +38,20 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.Booleans;
 
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
-
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import org.jboss.logging.Logger;
 
 /**
  * @author Pedro Igor
  */
-public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> implements IdentityProvider<C> {
+public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> implements UserAuthenticationIdentityProvider<C> {
 
     protected static final Logger logger = Logger.getLogger(AbstractIdentityProvider.class);
 
-    // The clientSession note flag to indicate that email provided by identityProvider was changed on updateProfile page
+    // The clientSession note flag to indicate that email or username provided by identityProvider was changed on updateProfile page
     public static final String UPDATE_PROFILE_EMAIL_CHANGED = "UPDATE_PROFILE_EMAIL_CHANGED";
+    public static final String UPDATE_PROFILE_USERNAME_CHANGED = "UPDATE_PROFILE_USERNAME_CHANGED";
 
     // clientSession.note flag specifies if we imported new user to keycloak (true) or we just linked to an existing keycloak user (false)
     public static final String BROKER_REGISTERED_NEW_USER = "BROKER_REGISTERED_NEW_USER";
@@ -64,11 +67,6 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
     public C getConfig() {
         return this.config;
-    }
-
-    @Override
-    public Response export(UriInfo uriInfo, RealmModel realm, String format) {
-        return Response.noContent().build();
     }
 
     @Override
@@ -175,8 +173,18 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
     protected void updateEmail(UserModel user, BrokeredIdentityContext context) {
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
+
         // Could be the case during external-internal token exchange
-        if (authSession == null) return;
+        if (authSession == null) {
+            return;
+        }
+
+        String email = context.getEmail();
+
+        if (email == null) {
+            // do not set email if not provided by the IdP
+            return;
+        }
 
         boolean isNewUser = Boolean.parseBoolean(authSession.getAuthNote(BROKER_REGISTERED_NEW_USER));
 
@@ -184,11 +192,11 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
             if (Boolean.parseBoolean(authSession.getAuthNote(UPDATE_PROFILE_EMAIL_CHANGED))) {
                 // user updated the email and needs verification
                 user.setEmailVerified(false);
-                return;
+            } else {
+                setEmailVerified(user, context);
             }
 
-            setEmailVerified(user, context);
-            user.setEmail(context.getEmail());
+            user.setEmail(email);
         }
     }
 
@@ -200,7 +208,7 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
         if (isNewUser || federatedEmail != null && !federatedEmail.equalsIgnoreCase(localEmail)) {
             IdentityProviderModel config = context.getIdpConfig();
-            boolean trustEmail = config.isTrustEmail();
+            boolean trustEmail = Booleans.isTrue(config.isTrustEmail());
 
             if (logger.isTraceEnabled()) {
                 logger.tracef("Email %s verified automatically after updating user '%s' through Identity provider '%s' ", trustEmail ? "" : "not", user.getUsername(), config.getAlias());

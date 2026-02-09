@@ -16,21 +16,9 @@
  */
 package org.keycloak.testsuite.account;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
-import static org.keycloak.testsuite.util.oauth.OAuthClient.APP_ROOT;
-
 import java.io.IOException;
 import java.util.List;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -41,6 +29,20 @@ import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
+import static org.keycloak.testsuite.util.oauth.OAuthClient.APP_ROOT;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -85,6 +87,7 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
         testRealm.getUsers().add(UserBuilder.create().username("view-applications-access").addRoles("user", "offline_access").role("account", "view-applications").role("account", "manage-consent").password("password").build());
         testRealm.getUsers().add(UserBuilder.create().username("view-consent-access").role("account", "view-consent").password("password").build());
         testRealm.getUsers().add(UserBuilder.create().username("manage-consent-access").role("account", "manage-consent").role("account", "view-profile").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("manage-account-access").role("account", "view-profile").role("account", "manage-account").addRoles("user", "offline_access").password("password").build());
 
         org.keycloak.representations.idm.ClientRepresentation inUseApp = ClientBuilder.create().clientId("in-use-client")
                 .id(KeycloakModelUtils.generateId())

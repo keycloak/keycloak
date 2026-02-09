@@ -26,13 +26,13 @@ With this change, most of the time you do not need to get the `RealmResource` vi
 
 ### Changed packages/classes
 
-| Old                                         | New                                            |
-|---------------------------------------------|------------------------------------------------|
-| org.junit.Assert                            | org.junit.jupiter.api.Assertions               |
-| org.keycloak.testsuite.Assert               | org.keycloak.tests.utils.Assert                |
-| org.junit.Test                              | org.junit.jupiter.api.Test                     |
-| org.keycloak.testsuite.admin.ApiUtil        | org.keycloak.tests.utils.admin.ApiUtil         |
-| org.keycloak.testsuite.util.AdminEventPaths | org.keycloak.tests.utils.admin.AdminEventPaths |
+| Old                                         | New                                                                                     |
+|---------------------------------------------|-----------------------------------------------------------------------------------------|
+| org.junit.Assert                            | org.junit.jupiter.api.Assertions                                                        |
+| org.keycloak.testsuite.Assert               | org.keycloak.tests.utils.Assert                                                         |
+| org.junit.Test                              | org.junit.jupiter.api.Test                                                              |
+| org.keycloak.testsuite.admin.ApiUtil        | org.keycloak.testframework.util.ApiUtil and org.keycloak.tests.utils.admin.AdminApiUtil |
+| org.keycloak.testsuite.util.AdminEventPaths | org.keycloak.tests.utils.admin.AdminEventPaths                                          |
 
 ### Assertions
 

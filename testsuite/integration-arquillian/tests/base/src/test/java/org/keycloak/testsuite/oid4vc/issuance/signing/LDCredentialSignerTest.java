@@ -17,8 +17,12 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import org.junit.Before;
-import org.junit.Test;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.KeyWrapper;
@@ -37,11 +41,8 @@ import org.keycloak.protocol.oid4vc.model.vcdm.LdProof;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -169,6 +170,7 @@ public class LDCredentialSignerTest extends OID4VCTest {
             KeycloakSession session, String signingKeyId, Map<String, Object> claims,
             String overrideKeyId, String ldpProofType) {
         CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
+                .setCredentialIssuer(TEST_DID.toString())
                 .setTokenJwsType("JWT")
                 .setSigningKeyId(signingKeyId)
                 .setSigningAlgorithm("EdDSA")
@@ -179,7 +181,7 @@ public class LDCredentialSignerTest extends OID4VCTest {
                 session, new StaticTimeProvider(1000));
 
         VerifiableCredential testCredential = getTestCredential(claims);
-        LDCredentialBody ldCredentialBody = new LDCredentialBuilder(TEST_DID.toString())
+        LDCredentialBody ldCredentialBody = new LDCredentialBuilder()
                 .buildCredentialBody(testCredential, credentialBuildConfig);
 
         VerifiableCredential verifiableCredential = ldCredentialSigner
@@ -209,6 +211,8 @@ public class LDCredentialSignerTest extends OID4VCTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.setVerifiableCredentialsEnabled(true);
+        
         if (testRealm.getComponents() != null) {
             testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getEdDSAKeyProvider());
         } else {

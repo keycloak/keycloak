@@ -18,9 +18,9 @@
 
 package org.keycloak.client.clienttype;
 
-import org.keycloak.models.ClientModel;
-
 import java.util.Set;
+
+import org.keycloak.models.ClientModel;
 
 /**
  * TODO:client-types javadocs

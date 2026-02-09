@@ -17,9 +17,6 @@
 
 package org.keycloak.crypto.elytron.test.sdjwt;
 
-import org.junit.Assume;
-import org.junit.Before;
-import org.keycloak.common.util.Environment;
 import org.keycloak.sdjwt.sdjwtvp.SdJwtVPVerificationTest;
 
 /**

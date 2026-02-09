@@ -16,16 +16,21 @@
  */
 package org.keycloak.services.resources.admin;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.NoCache;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -40,7 +45,6 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
-import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.services.ErrorResponse;
@@ -48,20 +52,15 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
 
 
 /**
@@ -126,8 +125,13 @@ public class ClientScopeResource {
     })
     public Response update(final ClientScopeRepresentation rep) {
         auth.clients().requireManageClientScopes();
+        ClientScopeResource.validateClientScope(session, rep);
         validateDynamicScopeUpdate(rep);
         try {
+            LoginProtocolFactory loginProtocolFactory = //
+                    (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class,
+                                                                                                  clientScope.getProtocol());
+            Optional.ofNullable(loginProtocolFactory).ifPresent(lp -> lp.addClientScopeDefaults(rep));
             RepresentationToModel.updateClientScope(rep, clientScope);
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
@@ -243,11 +247,24 @@ public class ClientScopeResource {
                                                       .map(type -> (LoginProtocolFactory) type)
                                                       .map(LoginProtocolFactory::getId)
                                                       .collect(Collectors.toSet());
-        // the OID4VC protocol is not registered to prevent it from being displayed in the client-details ui
-        acceptedProtocols.add(OID4VCLoginProtocolFactory.PROTOCOL_ID);
 
         if (protocol == null || !acceptedProtocols.contains(protocol)) {
             throw ErrorResponse.error("Unexpected protocol", Response.Status.BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Validates client scope during creation or update
+     *
+     * @param session  the Keycloak session
+     * @param clientScope clientScope to validate
+     * @throws ErrorResponseException if error happens during client-scope validation
+     */
+    public static void validateClientScope(KeycloakSession session, ClientScopeRepresentation clientScope)
+            throws ErrorResponseException {
+        LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, clientScope.getProtocol());
+        if (factory != null) {
+            factory.validateClientScope(session, clientScope);
         }
     }
 

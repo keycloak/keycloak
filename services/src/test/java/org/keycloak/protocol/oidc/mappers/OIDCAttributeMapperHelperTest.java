@@ -16,9 +16,10 @@
  */
 package org.keycloak.protocol.oidc.mappers;
 
+import org.keycloak.utils.JsonUtils;
+
 import org.hamcrest.Matchers;
 import org.junit.Test;
-import org.keycloak.utils.JsonUtils;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 

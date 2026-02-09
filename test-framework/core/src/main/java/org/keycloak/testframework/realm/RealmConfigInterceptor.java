@@ -1,8 +1,8 @@
 package org.keycloak.testframework.realm;
 
-import org.keycloak.testframework.injection.InstanceContext;
-
 import java.lang.annotation.Annotation;
+
+import org.keycloak.testframework.injection.InstanceContext;
 
 public interface RealmConfigInterceptor<T, S extends Annotation> {
 

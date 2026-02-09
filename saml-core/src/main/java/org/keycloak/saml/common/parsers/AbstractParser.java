@@ -16,6 +16,20 @@
  */
 package org.keycloak.saml.common.parsers;
 
+import java.io.InputStream;
+import java.util.regex.Pattern;
+import javax.xml.stream.EventFilter;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.events.Characters;
+import javax.xml.stream.events.EndElement;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
+import javax.xml.stream.util.EventReaderDelegate;
+import javax.xml.transform.Source;
+import javax.xml.transform.dom.DOMSource;
+
 import org.keycloak.common.util.Environment;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
@@ -25,19 +39,6 @@ import org.keycloak.saml.common.util.SecurityActions;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.common.util.SystemPropertiesUtil;
 
-import javax.xml.stream.EventFilter;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.Characters;
-import javax.xml.stream.events.XMLEvent;
-import javax.xml.stream.util.EventReaderDelegate;
-import java.io.InputStream;
-import java.util.regex.Pattern;
-import javax.xml.stream.events.EndElement;
-import javax.xml.stream.events.StartElement;
-import javax.xml.transform.Source;
-import javax.xml.transform.dom.DOMSource;
 import org.w3c.dom.Node;
 
 /**

@@ -179,9 +179,9 @@ export const NewPermissionPolicyDialog = ({
     >
       <Form
         id="createPermissionPolicy-form"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.stopPropagation();
-          handleSubmit(save)(e);
+          await handleSubmit(save)(e);
         }}
         isHorizontal
       >

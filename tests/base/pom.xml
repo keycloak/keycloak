@@ -58,6 +58,10 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-db-edb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-db-mariadb</artifactId>
         </dependency>
         <dependency>
@@ -75,6 +79,15 @@
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-db-postgres</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-db-tidb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.jdbc</groupId>
+            <artifactId>aws-advanced-jdbc-wrapper</artifactId>
+            <version>${aws-jdbc-wrapper.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
@@ -106,6 +119,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.keycloak.tests</groupId>
+            <artifactId>keycloak-tests-custom-scripts</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-suite</artifactId>
             <scope>test</scope>
@@ -115,20 +133,61 @@
             <artifactId>jboss-logmanager</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <systemPropertyVariables>
-                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                        <java.util.concurrent.ForkJoinPool.common.threadFactory>io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory</java.util.concurrent.ForkJoinPool.common.threadFactory>
-                    </systemPropertyVariables>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <profiles>
+        <profile>
+            <id>execute-sql</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>sql-maven-plugin</artifactId>
+                        <version>3.0.0</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>software.amazon.jdbc</groupId>
+                                <artifactId>aws-advanced-jdbc-wrapper</artifactId>
+                                <version>${aws-jdbc-wrapper.version}</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.postgresql</groupId>
+                                <artifactId>postgresql</artifactId>
+                                <version>${postgresql-jdbc.version}</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>com.microsoft.sqlserver</groupId>
+                                <artifactId>mssql-jdbc</artifactId>
+                                <version>${mssql-jdbc.version}</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <id>clear-schema-psql</id>
+                                <configuration>
+                                    <srcFiles>
+                                        <srcFile>../../.github/scripts/aws/rds/pg_clear.sql</srcFile>
+                                    </srcFiles>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>clear-schema-mssql</id>
+                                <configuration>
+                                    <srcFiles>
+                                        <srcFile>../../.github/scripts/azure/sql/mssql_clear.sql</srcFile>
+                                    </srcFiles>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

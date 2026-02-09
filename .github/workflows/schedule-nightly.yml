@@ -2,7 +2,7 @@ name: Scheduled nightly workflows
 
 on: 
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 4 * * *'
   workflow_dispatch:
 
 permissions:
@@ -19,7 +19,7 @@ jobs:
     steps:
       - id: latest-release
         run: |
-          branch="release/$(gh api repos/keycloak/keycloak/branches | jq -r '.[].name' | sort -r | awk -F'/' '/[0-9.]+$/ {print $NF; exit}')"
+          branch="$(gh api --paginate repos/keycloak/keycloak/branches -q '.[].name' | grep '^release/' | sort -r -V | head -n 1)"
           echo "branch=$branch"
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
         env:

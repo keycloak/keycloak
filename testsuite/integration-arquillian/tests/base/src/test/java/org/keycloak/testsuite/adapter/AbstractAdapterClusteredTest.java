@@ -16,10 +16,6 @@
  */
 package org.keycloak.testsuite.adapter;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.APP_SERVER_CURRENT;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -27,6 +23,11 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import org.keycloak.testsuite.arquillian.ContainerInfo;
+import org.keycloak.testsuite.auth.page.login.LoginActions;
+import org.keycloak.testsuite.util.ContainerAssume;
+import org.keycloak.testsuite.util.ServerURLs;
 
 import io.undertow.Undertow;
 import io.undertow.server.handlers.ResponseCodeHandler;
@@ -42,10 +43,11 @@ import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.keycloak.testsuite.arquillian.ContainerInfo;
-import org.keycloak.testsuite.auth.page.login.LoginActions;
-import org.keycloak.testsuite.util.ContainerAssume;
-import org.keycloak.testsuite.util.ServerURLs;
+
+import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.APP_SERVER_CURRENT;
+
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 /**
  *

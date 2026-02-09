@@ -17,12 +17,13 @@
 
 package org.keycloak.testsuite.client;
 
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.representations.idm.ClientRepresentation;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;

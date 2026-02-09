@@ -16,6 +16,10 @@
  */
 package org.keycloak.testsuite.federation;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
@@ -33,10 +37,6 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -193,10 +193,10 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
         local.setLastName(last);
         local.setEmail(email);
         local.setFederationLink(model.getId());
-        for (String key : attributes.keySet()) {
-            List<String> values = attributes.get(key);
+        for (var entry : attributes.entrySet()) {
+            List<String> values = entry.getValue();
             if (values == null) continue;
-            local.setAttribute(key, values);
+            local.setAttribute(entry.getKey(), values);
         }
         return new Delegate(local);
     }

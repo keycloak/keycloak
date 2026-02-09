@@ -1,6 +1,5 @@
 package org.keycloak.tests.admin.tracing;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.connections.httpclient.DefaultHttpClientFactory;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.quarkus.runtime.tracing.OTelHttpClientFactory;
@@ -9,6 +8,8 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;

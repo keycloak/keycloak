@@ -1,12 +1,12 @@
 package org.keycloak.testsuite.updaters;
 
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.representations.idm.RealmRepresentation;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * Updater for realm attributes. See {@link ServerResourceUpdater} for further details.
@@ -103,6 +103,21 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
 
     public RealmAttributeUpdater setQuickLoginCheckMilliSeconds(Long value) {
         rep.setQuickLoginCheckMilliSeconds(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setWaitIncrementSeconds(Integer value) {
+        rep.setWaitIncrementSeconds(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setMaxFailureWaitSeconds(Integer value) {
+        rep.setMaxFailureWaitSeconds(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setMaxDeltaTimeSeconds(Integer value) {
+        rep.setMaxDeltaTimeSeconds(value);
         return this;
     }
 
@@ -219,6 +234,11 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
 
     public RealmAttributeUpdater setAdminPermissionsEnabled(Boolean adminPermissionsEnabled) {
         rep.setAdminPermissionsEnabled(adminPermissionsEnabled);
+        return this;
+    }
+
+    public RealmAttributeUpdater setWebAuthnPolicyPasswordlessPasskeysEnabled(Boolean passkeysEnabled) {
+        rep.setWebAuthnPolicyPasswordlessPasskeysEnabled(passkeysEnabled);
         return this;
     }
 }

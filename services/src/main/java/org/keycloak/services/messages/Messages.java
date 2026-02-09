@@ -94,6 +94,7 @@ public class Messages {
     public static final String RECAPTCHA_NOT_CONFIGURED = "recaptchaNotConfigured";
 
     public static final String EMAIL_EXISTS = "emailExistsMessage";
+    public static final String EMAIL_VERIFICATION_PENDING = "emailVerificationPending";
 
     public static final String FEDERATED_IDENTITY_EXISTS = "federatedIdentityExistsMessage";
 
@@ -119,12 +120,19 @@ public class Messages {
 
     public static final String VERIFY_EMAIL = "verifyEmailMessage";
 
+    public static final String COOLDOWN_VERIFICATION_EMAIL = "emailVerifySendCooldown";
+
     public static final String UPDATE_EMAIL = "updateEmailMessage";
 
     public static final String LINK_IDP = "linkIdpMessage";
 
     public static final String EMAIL_VERIFIED = "emailVerifiedMessage";
+
+    public static final String EMAIL_VERIFIED_HEADER = "emailVerifiedMessageHeader";
+
     public static final String EMAIL_VERIFIED_ALREADY = "emailVerifiedAlreadyMessage";
+
+    public static final String EMAIL_VERIFIED_ALREADY_HEADER = "emailVerifiedAlreadyMessageHeader";
 
     public static final String EMAIL_SENT = "emailSentMessage";
 
@@ -169,6 +177,8 @@ public class Messages {
 
     public static final String IDENTITY_PROVIDER_ALREADY_LINKED = "identityProviderAlreadyLinkedMessage";
 
+    public static final String IDENTITY_PROVIDER_ALREADY_LINKED_TO_CURRENT_USER = "identityProviderAlreadyLinkedToCurrentUserMessage";
+
     public static final String INSUFFICIENT_PERMISSION = "insufficientPermissionMessage";
 
     public static final String COULD_NOT_PROCEED_WITH_AUTHENTICATION_REQUEST = "couldNotProceedWithAuthenticationRequestMessage";
@@ -195,6 +205,8 @@ public class Messages {
 
     public static final String STALE_VERIFY_EMAIL_LINK = "staleEmailVerificationLink";
 
+    public static final String EMAIL_VERIFICATION_CANCELLED = "emailVerificationCancelled";
+
     public static final String STALE_INVITE_ORG_LINK = "staleInviteOrgLink";
 
     public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedErrorMessage";
@@ -215,7 +227,11 @@ public class Messages {
 
     public static final String CONFIRM_ACCOUNT_LINKING = "confirmAccountLinking";
 
+    public static final String CONFIRM_ACCOUNT_LINKING_BODY = "confirmAccountLinkingBody";
+
     public static final String CONFIRM_EMAIL_ADDRESS_VERIFICATION = "confirmEmailAddressVerification";
+
+    public static final String CONFIRM_EMAIL_ADDRESS_VERIFICATION_HEADER = "confirmEmailAddressVerificationHeader";
 
     public static final String CONFIRM_EXECUTION_OF_ACTIONS = "confirmExecutionOfActions";
 
@@ -333,4 +349,10 @@ public class Messages {
     public static final String CONFIRM_ORGANIZATION_MEMBERSHIP = "organization.confirm-membership";
     public static final String CONFIRM_ORGANIZATION_MEMBERSHIP_TITLE = "organization.confirm-membership.title";
     public static final String REGISTER_ORGANIZATION_MEMBER = "organization.member.register.title";
+
+   // Client sessions
+    public static final String CLIENT_IDLE_REMEMBERME = "clientIdleExceedsRealmRememberMeIdle";
+    public static final String CLIENT_IDLE = "clientSessionIdleTimeoutExceedsRealm";
+    public static final String CLIENT_MAXLIFE_SPAN = "clientSessionMaxLifespanExceedsRealm";
+    public static final String CLIENT_MAXLIFESPAN_REMEMBERME = "clientSessionMaxLifespanExceedsRealmRememberMeMaxSpan";
 }

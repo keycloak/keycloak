@@ -16,7 +16,7 @@ include::templates/hw-requirements.adoc[]
 
 Make sure you have Docker installed.
 
-include::templates/start-keycloak-container.adoc[]
+<#include "templates/start-keycloak-container.adoc" />
 
 include::templates/realm-config.adoc[]
 

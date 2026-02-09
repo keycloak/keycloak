@@ -1,10 +1,10 @@
 package org.keycloak.testframework.realm;
 
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.representations.idm.RealmRepresentation;
-
 import java.util.LinkedList;
 import java.util.List;
+
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 public class ManagedRealmCleanup {
 
@@ -13,10 +13,6 @@ public class ManagedRealmCleanup {
     public ManagedRealmCleanup add(RealmCleanup realmCleanup) {
         this.cleanupTasks.add(realmCleanup);
         return this;
-    }
-
-    public ManagedRealmCleanup deleteUsers() {
-        return add(r -> r.users().list().forEach(u -> r.users().delete(u.getId()).close()));
     }
 
     void resetToOriginalRepresentation(RealmRepresentation rep) {

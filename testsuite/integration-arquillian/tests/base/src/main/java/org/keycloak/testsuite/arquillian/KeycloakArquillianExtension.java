@@ -17,20 +17,12 @@
 
 package org.keycloak.testsuite.arquillian;
 
-import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
-import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
-import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
-import org.jboss.arquillian.core.spi.LoadableExtension;
-import org.jboss.arquillian.graphene.location.ContainerCustomizableURLResourceProvider;
-import org.jboss.arquillian.graphene.location.CustomizableURLResourceProvider;
-import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
-import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
+import org.keycloak.testsuite.arquillian.decider.AdapterTestExecutionDecider;
+import org.keycloak.testsuite.arquillian.decider.AuthServerExcludeExecutionDecider;
 import org.keycloak.testsuite.arquillian.decider.BrowserDriverIgnoreDecider;
+import org.keycloak.testsuite.arquillian.decider.MigrationTestExecutionDecider;
 import org.keycloak.testsuite.arquillian.h2.H2TestEnricher;
 import org.keycloak.testsuite.arquillian.jmx.JmxConnectorRegistryCreator;
-import org.keycloak.testsuite.arquillian.decider.AdapterTestExecutionDecider;
-import org.keycloak.testsuite.arquillian.decider.MigrationTestExecutionDecider;
-import org.keycloak.testsuite.arquillian.decider.AuthServerExcludeExecutionDecider;
 import org.keycloak.testsuite.arquillian.provider.AdminClientProvider;
 import org.keycloak.testsuite.arquillian.provider.LoadBalancerControllerProvider;
 import org.keycloak.testsuite.arquillian.provider.OAuthClientProvider;
@@ -40,6 +32,15 @@ import org.keycloak.testsuite.arquillian.provider.URLProvider;
 import org.keycloak.testsuite.drone.HtmlUnitScreenshots;
 import org.keycloak.testsuite.drone.KeycloakDronePostSetup;
 import org.keycloak.testsuite.drone.KeycloakWebDriverConfigurator;
+
+import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
+import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
+import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
+import org.jboss.arquillian.core.spi.LoadableExtension;
+import org.jboss.arquillian.graphene.location.ContainerCustomizableURLResourceProvider;
+import org.jboss.arquillian.graphene.location.CustomizableURLResourceProvider;
+import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
+import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
 
 /**
  *

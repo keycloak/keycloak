@@ -17,6 +17,7 @@
 
 package org.keycloak.operator.controllers;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -25,15 +26,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 
 import io.fabric8.kubernetes.api.model.ContainerFluent;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
@@ -47,7 +51,6 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
-import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentResource<Job, Keycloak> {
@@ -102,7 +105,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     public static boolean isJobFromCurrentKeycloakCr(Job job, Keycloak keycloak) {
         var annotations = job.getMetadata().getAnnotations();
         var hash = annotations.get(KEYCLOAK_CR_HASH_ANNOTATION);
-        return Objects.equals(hash, keycloakHash(keycloak));
+        return job.hasOwnerReferenceFor(keycloak) && Objects.equals(hash, keycloakHash(keycloak));
     }
 
     public static String jobName(Keycloak keycloak) {
@@ -114,10 +117,14 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     }
 
     private static ObjectMeta createMetadata(String name, Keycloak keycloak) {
+        var labels = new HashMap<String ,String>();
+        var optionalSpec = Optional.ofNullable(keycloak.getSpec().getUpdateSpec());
+        optionalSpec.map(UpdateSpec::getLabels).ifPresent(labels::putAll);
         var builder = new ObjectMetaBuilder();
         builder.withName(name)
                 .withNamespace(keycloak.getMetadata().getNamespace())
-                .withLabels(getLabels(keycloak))
+                .addToLabels(labels)
+                .addToLabels(getLabels(keycloak))
                 .withAnnotations(Map.of(KEYCLOAK_CR_HASH_ANNOTATION, keycloakHash(keycloak)));
         return builder.build();
     }
@@ -125,7 +132,12 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     private void addPodSpecTemplate(JobSpecFluent<?> builder, Keycloak keycloak, Context<Keycloak> context) {
         var podTemplate = builder.withNewTemplate();
         podTemplate.withMetadata(createMetadata(podName(keycloak), keycloak));
-        podTemplate.withSpec(createPodSpec(context));
+        PodSpec podSpec = createPodSpec(context);
+        KeycloakRealmImportJobDependentResource.handleJobScheduling(
+                keycloak,
+                Optional.ofNullable(keycloak.getSpec().getUpdateSpec()).map(UpdateSpec::getSchedulingSpec),
+                podSpec);
+        podTemplate.withSpec(podSpec);
         podTemplate.endTemplate();
     }
 
@@ -140,8 +152,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         // remove things we don't want - the main keycloak container, and any sidecars added via the unsupported PodTemplate
         builder.withContainers();
 
-        // We'll leave the scheduling fields alone - it should be fine to run these jobs where ever the keycloak workload is restricted to,
-        // if there is some corner case we are not considering that would leave the upgrade job unscheduable, we'll address that later
+        // We'll leave the scheduling fields alone - they can be overriden if needed
 
         // mix in the existing state
         var desiredPullSecrets = Optional.ofNullable(builder.buildImagePullSecrets()).orElse(List.of());
@@ -193,8 +204,9 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
             containerBuilder.withVolumeMounts(newVolumeMounts);
         }
 
-        // remove restart policy and probes
+        // remove restart policy, lifecycle, and probes
         containerBuilder.withRestartPolicy(null);
+        containerBuilder.withLifecycle(null);
         containerBuilder.withReadinessProbe(null);
         containerBuilder.withLivenessProbe(null);
         containerBuilder.withStartupProbe(null);
@@ -212,8 +224,12 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         return Stream.concat(updateArgs.stream(), currentArgs.stream().filter(arg -> !arg.equals("start"))).toList();
     }
 
-    private static String keycloakHash(Keycloak keycloak) {
-        return Utils.hash(List.of(keycloak.getSpec()));
+    public static String keycloakHash(Keycloak keycloak) {
+        return Utils.hash(
+                List.of(new KeycloakSpecBuilder(keycloak.getSpec()).withInstances(null).withLivenessProbeSpec(null)
+                        .withStartupProbeSpec(null).withReadinessProbeSpec(null).withResourceRequirements(null)
+                        .withSchedulingSpec(null).withNetworkPolicySpec(null).withIngressSpec(null)
+                        .withImagePullSecrets().withImportSpec(null).withServiceMonitorSpec(null).build()));
     }
 
     private static Map<String, String> getLabels(HasMetadata keycloak) {

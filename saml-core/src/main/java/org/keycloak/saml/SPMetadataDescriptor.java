@@ -22,9 +22,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
-
+import java.util.concurrent.TimeUnit;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
@@ -33,12 +35,14 @@ import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.dom.xmlsec.w3.xmlenc.EncryptionMethodType;
+import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLDSIG_NSURI;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLDSIG_NSURI;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -51,15 +55,31 @@ public class SPMetadataDescriptor {
             String entityId, String nameIDPolicyFormat, List<KeyDescriptorType> signingCerts, List<KeyDescriptorType> encryptionCerts) {
         return buildSPDescriptor(Collections.singletonList(new EndpointType(loginBinding, assertionEndpoint)),
                 Collections.singletonList(new EndpointType(logoutBinding, logoutEndpoint)),
-                wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted, entityId, nameIDPolicyFormat, signingCerts, encryptionCerts);
+                wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted, entityId, nameIDPolicyFormat, signingCerts, encryptionCerts, null);
     }
 
     public static EntityDescriptorType buildSPDescriptor(List<EndpointType> assertionConsumerServices, List<EndpointType> singleLogoutServices,
             boolean wantAuthnRequestsSigned, boolean wantAssertionsSigned, boolean wantAssertionsEncrypted,
             String entityId, String nameIDPolicyFormat, List<KeyDescriptorType> signingCerts,
             List<KeyDescriptorType> encryptionCerts) {
+        return buildSPDescriptor(assertionConsumerServices, singleLogoutServices, wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted,
+                entityId, nameIDPolicyFormat, signingCerts, encryptionCerts, null);
+    }
+
+    public static EntityDescriptorType buildSPDescriptor(List<EndpointType> assertionConsumerServices, List<EndpointType> singleLogoutServices,
+            boolean wantAuthnRequestsSigned, boolean wantAssertionsSigned, boolean wantAssertionsEncrypted,
+            String entityId, String nameIDPolicyFormat, List<KeyDescriptorType> signingCerts,
+            List<KeyDescriptorType> encryptionCerts, Long expiration) {
         EntityDescriptorType entityDescriptor = new EntityDescriptorType(entityId);
         entityDescriptor.setID(IDGenerator.create("ID_"));
+        if (expiration != null && expiration > 0) {
+            try {
+                Duration cacheDuration = DatatypeFactory.newInstance().newDuration(TimeUnit.SECONDS.toMillis(expiration));
+                entityDescriptor.setCacheDuration(cacheDuration);
+            } catch (DatatypeConfigurationException e) {
+                throw new RuntimeException("Cannot create datatype factory to create duration", e);
+            }
+        }
 
         SPSSODescriptorType spSSODescriptor = new SPSSODescriptorType(Arrays.asList(PROTOCOL_NSURI.get()));
         spSSODescriptor.setAuthnRequestsSigned(wantAuthnRequestsSigned);
@@ -110,8 +130,7 @@ public class SPMetadataDescriptor {
     public static Element buildKeyInfoElement(String keyName, String pemEncodedCertificate)
         throws javax.xml.parsers.ParserConfigurationException
     {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        DocumentBuilder db = dbf.newDocumentBuilder();
+        DocumentBuilder db = DocumentUtil.getDocumentBuilder();
         Document doc = db.newDocument();
 
         Element keyInfo = doc.createElementNS(XMLDSIG_NSURI.get(), "ds:KeyInfo");

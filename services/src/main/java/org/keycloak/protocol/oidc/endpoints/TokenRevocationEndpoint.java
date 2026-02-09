@@ -29,6 +29,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
@@ -55,6 +56,7 @@ import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.clientpolicy.context.TokenRevokeResponseContext;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.util.TokenUtil;
 
 /**
@@ -218,24 +220,14 @@ public class TokenRevocationEndpoint {
     }
 
     private void checkUser() {
-        if (token.getSessionState() == null) {
-            user = TokenManager.lookupUserFromStatelessToken(session, realm, token);
-        } else {
-            var userSessionProvider = session.sessions();
-            UserSessionModel userSession = userSessionProvider.getUserSessionIfClientExists(realm, token.getSessionId(), false, client.getId());
-
-            if (userSession == null) {
-                userSession = userSessionProvider.getUserSessionIfClientExists(realm, token.getSessionId(), true, client.getId());
-
-                if (userSession == null) {
-                    event.error(Errors.USER_SESSION_NOT_FOUND);
-                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Invalid token",
-                            Response.Status.OK);
-                }
-            }
-
-            user = userSession.getUser();
+        UserSessionUtil.UserSessionValidationResult validationResult = UserSessionUtil.findValidSessionForAccessToken(
+                session, realm, token, client, (UserSessionModel t) -> {});
+        if (validationResult.getError() != null) {
+            event.error(validationResult.getError());
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.OK);
         }
+
+        user = validationResult.getUserSession().getUser();
 
         if (user == null) {
             event.error(Errors.USER_NOT_FOUND);
@@ -246,8 +238,8 @@ public class TokenRevocationEndpoint {
     }
 
     private void checkParameterDuplicated(MultivaluedMap<String, String> formParams) {
-        for (String key : formParams.keySet()) {
-            if (formParams.get(key).size() != 1) {
+        for (List<String> strings : formParams.values()) {
+            if (strings.size() != 1) {
                 throw new CorsErrorResponseException(cors, Errors.INVALID_REQUEST, "duplicated parameter", Response.Status.BAD_REQUEST);
             }
         }

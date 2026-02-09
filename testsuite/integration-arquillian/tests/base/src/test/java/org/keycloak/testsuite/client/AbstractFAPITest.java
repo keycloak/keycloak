@@ -17,9 +17,6 @@
  */
 package org.keycloak.testsuite.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -31,6 +28,33 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
+import org.keycloak.representations.AuthorizationResponseToken;
+import org.keycloak.representations.IDToken;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
+import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.OAuthGrantPage;
+import org.keycloak.testsuite.util.ServerURLs;
+import org.keycloak.testsuite.util.SignatureSignerUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -44,27 +68,10 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.BeforeClass;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.models.AdminRoles;
-import org.keycloak.models.Constants;
-import org.keycloak.representations.AuthorizationResponseToken;
-import org.keycloak.representations.IDToken;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
-import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.OAuthGrantPage;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.ServerURLs;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.PkceGenerator;
+
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+
+import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
 
@@ -173,7 +180,7 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
         Assert.assertEquals("john", idToken.getPreferredUsername());
         Assert.assertEquals("john@keycloak.org", idToken.getEmail());
         Assert.assertEquals("Johny", idToken.getGivenName());
-        Assert.assertEquals(idToken.getNonce(), "123456");
+        Assert.assertEquals("123456", idToken.getNonce());
     }
 
     protected void logoutUserAndRevokeConsent(String clientId, String username) {
@@ -222,6 +229,38 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
         PrivateKey privateKey = keyPair.getPrivate();
         PublicKey publicKey = keyPair.getPublic();
         return createSignedRequestToken(clientId, privateKey, publicKey, algorithm);
+    }
+
+    protected String createSignedRequestToken(String clientId, String algorithm, String audUrl) throws Exception {
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        Map<String, String> generatedKeys = oidcClientEndpointsResource.getKeysAsBase64();
+        KeyPair keyPair = getKeyPairFromGeneratedBase64(generatedKeys, algorithm);
+        PrivateKey privateKey = keyPair.getPrivate();
+        PublicKey publicKey = keyPair.getPublic();
+        return createSignedRequestToken(clientId, privateKey, publicKey, algorithm, audUrl);
+    }
+
+    protected String createSignedRequestToken(String clientId, String algorithm, String[] audienceUrls) throws Exception {
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        Map<String, String> generatedKeys = oidcClientEndpointsResource.getKeysAsBase64();
+        KeyPair keyPair = getKeyPairFromGeneratedBase64(generatedKeys, algorithm);
+        PrivateKey privateKey = keyPair.getPrivate();
+        PublicKey publicKey = keyPair.getPublic();
+        return createSignedRequestToken(clientId, privateKey, publicKey, algorithm, audienceUrls);
+    }
+
+    private String createSignedRequestToken(String clientId, PrivateKey privateKey, PublicKey publicKey, String algorithm, String audUrl) {
+        JsonWebToken jwt = createRequestToken(clientId, audUrl);
+        String kid = KeyUtils.createKeyId(publicKey);
+        SignatureSignerContext signer = SignatureSignerUtil.createSigner(privateKey, kid, algorithm);
+        return new JWSBuilder().kid(kid).jsonContent(jwt).sign(signer);
+    }
+
+    private String createSignedRequestToken(String clientId, PrivateKey privateKey, PublicKey publicKey, String algorithm, String[] audienceUrls) {
+        JsonWebToken jwt = createRequestToken(clientId, audienceUrls);
+        String kid = KeyUtils.createKeyId(publicKey);
+        SignatureSignerContext signer = SignatureSignerUtil.createSigner(privateKey, kid, algorithm);
+        return new JWSBuilder().kid(kid).jsonContent(jwt).sign(signer);
     }
 
     protected CloseableHttpResponse sendRequest(String requestUrl, List<NameValuePair> parameters, Supplier<CloseableHttpClient> httpClientSupplier) throws Exception {

@@ -17,36 +17,6 @@
 
 package org.keycloak.testsuite.client.policies;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyOrNullString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createConsentRequiredExecutorConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createFullScopeDisabledExecutorConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createGrantTypeConditionConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createHolderOfKeyEnforceExecutorConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createIntentClientBindCheckExecutorConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createPKCEEnforceExecutorConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createRejectImplicitGrantExecutorConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientAuthenticatorExecutorConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionConditionConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
@@ -59,11 +29,6 @@ import java.util.Objects;
 
 import jakarta.ws.rs.core.Response;
 
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.jboss.logging.Logger;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -129,22 +94,59 @@ import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionE
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
-import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.TextNode;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.jboss.logging.Logger;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createConsentRequiredExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createFullScopeDisabledExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createGrantTypeConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createHolderOfKeyEnforceExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createIntentClientBindCheckExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createPKCEEnforceExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createRejectImplicitGrantExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientAuthenticatorExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -1276,7 +1278,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         try {
             String expectedErrorDescription = "Implicit/Hybrid flow is prohibited.";
-            oauth.client(clientId);
+            oauth.client(clientId, clientSecret);
 
             // implicit grant
             testProhibitedImplicitOrHybridFlow(false, OIDCResponseType.TOKEN, null, OAuthErrorException.INVALID_REQUEST, expectedErrorDescription);
@@ -1290,6 +1292,24 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             // hybrid grant
             testProhibitedImplicitOrHybridFlow(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN, "exsefweag", OAuthErrorException.INVALID_REQUEST, expectedErrorDescription);
 
+            //
+            // Pushed Authorization Request
+            //
+
+            // implicit grant
+            testProhibitedImplicitOrHybridFlowOnPARRequest(false, OIDCResponseType.TOKEN, "evawieak39j", OAuthErrorException.INVALID_REQUEST, expectedErrorDescription);
+
+            // hybrid grant
+            testProhibitedImplicitOrHybridFlowOnPARRequest(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.ID_TOKEN, "ob937kcoiei3", OAuthErrorException.INVALID_REQUEST, expectedErrorDescription);
+
+            // hybrid grant
+            testProhibitedImplicitOrHybridFlowOnPARRequest(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.CODE, "xiensoi3", OAuthErrorException.INVALID_REQUEST, expectedErrorDescription);
+
+            // hybrid grant
+            testProhibitedImplicitOrHybridFlowOnPARRequest(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN, "bor9v8uoan", OAuthErrorException.INVALID_REQUEST, expectedErrorDescription);
+
+            // authorization code grant
+            testAllowedAuthorizationCodeFlowOnPARRequest(true, "ddab9e88");
         } finally {
             // revert test client instance settings the same as OAuthClient.init
             oauth.openid(true);
@@ -1399,4 +1419,18 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(expectedErrorDescription, authorizationEndpointResponse.getErrorDescription());
     }
 
+    private void testProhibitedImplicitOrHybridFlowOnPARRequest(boolean isOpenid, String responseType, String nonce, String expectedError, String expectedErrorDescription) {
+        oauth.openid(isOpenid);
+        oauth.responseType(responseType);
+        ParResponse pResp = oauth.pushedAuthorizationRequest().nonce(nonce).send();
+        assertEquals(expectedError, pResp.getError());
+        assertEquals(expectedErrorDescription, pResp.getErrorDescription());
+    }
+
+    private void testAllowedAuthorizationCodeFlowOnPARRequest(boolean isOpenid, String nonce) {
+        oauth.openid(isOpenid);
+        oauth.responseType(OAuth2Constants.CODE);
+        ParResponse pResp = oauth.pushedAuthorizationRequest().nonce(nonce).send();
+        assertEquals(201, pResp.getStatusCode());
+    }
 }

@@ -17,7 +17,14 @@
 
 package org.keycloak.storage.ldap.mappers.msad;
 
-import org.jboss.logging.Logger;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import javax.naming.AuthenticationException;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
@@ -34,14 +41,7 @@ import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import org.keycloak.storage.ldap.mappers.PasswordUpdateCallback;
 import org.keycloak.storage.ldap.mappers.TxAwareLDAPUserModelDelegate;
 
-import javax.naming.AuthenticationException;
-
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
+import org.jboss.logging.Logger;
 
 /**
  * Mapper specific to MSAD. It's able to read the userAccountControl and pwdLastSet attributes and set actions in Keycloak based on that.
@@ -163,7 +163,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
                 // User needs to change his MSAD password. Allow him to login, but add UPDATE_PASSWORD required action to authenticationSession
                 if (user.getRequiredActionsStream().noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
                     // This usually happens when 532 was returned, which means that "pwdLastSet" is set to some positive value, which is older than MSAD password expiration policy.
-                    AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+                    AuthenticationSessionModel authSession = getSession().getContext().getAuthenticationSession();
                     if (authSession != null) {
                         if (authSession.getRequiredActions().stream().noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
                             logger.debugf("Adding requiredAction UPDATE_PASSWORD to the authenticationSession of user %s", user.getUsername());
@@ -226,7 +226,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
             return control;
         }
 
-        RealmModel realm = session.getContext().getRealm();
+        RealmModel realm = getSession().getContext().getRealm();
 
         if (realm == null) {
             return control;
@@ -250,7 +250,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     }
 
     private String getRealmName() {
-        RealmModel realm = session.getContext().getRealm();
+        RealmModel realm = getSession().getContext().getRealm();
         return (realm != null) ? realm.getName() : "null";
     }
 

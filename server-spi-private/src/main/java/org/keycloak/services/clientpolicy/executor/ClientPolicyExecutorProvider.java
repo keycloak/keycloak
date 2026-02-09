@@ -19,9 +19,9 @@ package org.keycloak.services.clientpolicy.executor;
 
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
-import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 
 /**
  * This executor specifies what action is executed on the client to which a client policy is adopted.

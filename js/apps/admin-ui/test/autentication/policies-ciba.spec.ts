@@ -1,14 +1,13 @@
 import { test } from "@playwright/test";
-import { v4 as uuidv4 } from "uuid";
-import adminClient from "../utils/AdminClient";
+import { toAuthentication } from "../../src/authentication/routes/Authentication.tsx";
+import { createTestBed } from "../support/testbed.ts";
 import {
   assertFieldError,
   assertRequiredFieldError,
   clickSaveButton,
-} from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { goToAuthentication, goToRealm } from "../utils/sidebar";
+} from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
 import {
   assertBackchannelTokenDeliveryMode,
   assertExpiresInput,
@@ -22,27 +21,16 @@ import {
   setBackchannelTokenDeliveryMode,
   setExpiresInput,
   setIntervalInput,
-} from "./policies-ciba";
+} from "./policies-ciba.ts";
 
 test.describe("Authentication - Policies - CIBA", () => {
-  const realmName = `authentication-policies-${uuidv4()}`;
-
-  test.beforeAll(async () => {
-    await adminClient.createRealm(realmName);
-  });
-
-  test.afterAll(async () => {
-    await adminClient.deleteRealm(realmName);
-  });
-
-  test.beforeEach(async ({ page }) => {
-    await login(page);
-    await goToRealm(page, realmName);
-    await goToAuthentication(page);
-    await goToCIBAPolicyTab(page);
-  });
-
   test("displays the initial state", async ({ page }) => {
+    await using testBed = await createTestBed();
+
+    await login(page, {
+      to: toAuthentication({ realm: testBed.realm, tab: "policies" }),
+    });
+    await goToCIBAPolicyTab(page);
     // Check initial select value
     await assertBackchannelTokenDeliveryMode(page, "Poll");
 
@@ -53,6 +41,13 @@ test.describe("Authentication - Policies - CIBA", () => {
   });
 
   test("validates the fields", async ({ page }) => {
+    await using testBed = await createTestBed();
+
+    await login(page, {
+      to: toAuthentication({ realm: testBed.realm, tab: "policies" }),
+    });
+    await goToCIBAPolicyTab(page);
+
     // Test required fields
     await clearExpiresInput(page);
     await clearIntervalInput(page);
@@ -83,6 +78,13 @@ test.describe("Authentication - Policies - CIBA", () => {
   });
 
   test("saves the form", async ({ page }) => {
+    await using testBed = await createTestBed();
+
+    await login(page, {
+      to: toAuthentication({ realm: testBed.realm, tab: "policies" }),
+    });
+    await goToCIBAPolicyTab(page);
+
     // Set new values
     await setBackchannelTokenDeliveryMode(page, "Ping");
 

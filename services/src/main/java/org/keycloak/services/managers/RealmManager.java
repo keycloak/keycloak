@@ -16,14 +16,22 @@
  */
 package org.keycloak.services.managers;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Encode;
 import org.keycloak.connections.jpa.support.EntityManagers;
+import org.keycloak.email.EmailException;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.AbstractKeycloakTransaction;
@@ -34,6 +42,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
@@ -61,17 +70,15 @@ import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.clientregistration.policy.DefaultClientRegistrationPolicies;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.StoreMigrateRepresentationEvent;
 import org.keycloak.storage.StoreSyncEvent;
-import org.keycloak.services.clientregistration.policy.DefaultClientRegistrationPolicies;
-
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
 import org.keycloak.utils.ReservedCharValidator;
+import org.keycloak.utils.SMTPUtil;
 import org.keycloak.utils.StringUtil;
+
+import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 
 /**
  * Per request object
@@ -93,7 +100,7 @@ public class RealmManager {
         return session;
     }
 
-    public RealmModel getKeycloakAdminstrationRealm() {
+    public RealmModel getKeycloakAdministrationRealm() {
         return getRealmByName(Config.getAdminRealm());
     }
 
@@ -242,7 +249,6 @@ public class RealmManager {
         viewUsers.addCompositeRole(queryGroups);
     }
 
-
     public String getRealmAdminClientId(RealmModel realm) {
         return Constants.REALM_MANAGEMENT_CLIENT_ID;
     }
@@ -251,9 +257,11 @@ public class RealmManager {
         return Constants.REALM_MANAGEMENT_CLIENT_ID;
     }
 
-
-
     protected void setupRealmDefaults(RealmModel realm) {
+        setupRealmDefaults(realm, null);
+    }
+
+    protected void setupRealmDefaults(RealmModel realm, RealmRepresentation realmRep) {
         realm.setBrowserSecurityHeaders(BrowserSecurityHeaders.realmDefaultHeaders);
 
         // brute force
@@ -271,6 +279,16 @@ public class RealmManager {
         realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
         realm.setLoginWithEmailAllowed(true);
 
+        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) {
+            // Only create the role if it doesn't exist in the realm representation (during import)
+            // or if it doesn't exist in the realm model (during fresh creation)
+            if ((realmRep == null || !hasRealmRole(realmRep, CREDENTIAL_OFFER_CREATE.getName())) 
+                    && realm.getRole(CREDENTIAL_OFFER_CREATE.getName()) == null) {
+                RoleModel roleModel = realm.addRole(CREDENTIAL_OFFER_CREATE.getName());
+                roleModel.setDescription(CREDENTIAL_OFFER_CREATE.getDescription());
+            }
+        }
+
         realm.setEventsListeners(Collections.singleton("jboss-logging"));
     }
 
@@ -280,7 +298,7 @@ public class RealmManager {
         boolean removed = model.removeRealm(realm.getId());
         if (removed) {
             if (masterAdminClient != null) {
-                session.clients().removeClient(getKeycloakAdminstrationRealm(), masterAdminClient.getId());
+                session.clients().removeClient(getKeycloakAdministrationRealm(), masterAdminClient.getId());
             }
 
             UserSessionProvider sessions = session.sessions();
@@ -293,8 +311,19 @@ public class RealmManager {
                 authSessions.onRealmRemoved(realm);
             }
 
-          // Refresh periodic sync tasks for configured storageProviders
-          StoreSyncEvent.fire(session, realm, true);
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    // Refresh periodic sync tasks for configured storageProviders
+                    sessionFactory.publish(new StoreSyncEvent(session, realm, true));
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    // nothing to rollback
+                }
+            });
         }
         return removed;
     }
@@ -566,11 +595,12 @@ public class RealmManager {
             ReservedCharValidator.validate(rep.getRealm());
             ReservedCharValidator.validateLocales(rep.getSupportedLocales());
             ReservedCharValidator.validateSecurityHeaders(rep.getBrowserSecurityHeaders());
+            SMTPUtil.checkSMTPConfiguration(session, rep.getSmtpServer());
             realm.setName(rep.getRealm());
 
             // setup defaults
 
-            setupRealmDefaults(realm);
+            setupRealmDefaults(realm, rep);
 
             if (rep.getDefaultRole() == null) {
                 KeycloakModelUtils.setupDefaultRole(realm, determineDefaultRoleName(rep));
@@ -655,12 +685,13 @@ public class RealmManager {
                 KeycloakModelUtils.setupDeleteAccount(realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID));
             }
 
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
             // enlistAfterCompletion(..) as we need to ensure that the realm is committed to the database before we can update the sync tasks
             session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
                 @Override
                 protected void commitImpl() {
                     // Refresh periodic sync tasks for configured storageProviders
-                    StoreSyncEvent.fire(session, realm, false);
+                    sessionFactory.publish(new StoreSyncEvent(session, realm, false));
                 }
 
                 @Override
@@ -679,6 +710,8 @@ public class RealmManager {
             session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
 
             fireRealmPostCreate(realm);
+        } catch (EmailException e) {
+            throw new BadRequestException(e.getMessage());
         } finally {
             session.getContext().setRealm(currentRealm);
         }

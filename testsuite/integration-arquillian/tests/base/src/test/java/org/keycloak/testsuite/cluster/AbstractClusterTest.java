@@ -1,10 +1,11 @@
 package org.keycloak.testsuite.cluster;
 
-import org.jboss.arquillian.container.test.api.ContainerController;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -14,16 +15,17 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import org.jboss.arquillian.container.test.api.ContainerController;
+import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
 
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  *

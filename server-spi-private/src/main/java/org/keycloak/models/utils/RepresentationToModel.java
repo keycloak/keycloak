@@ -18,9 +18,11 @@
 package org.keycloak.models.utils;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -35,12 +37,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -130,7 +131,10 @@ import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
+import org.jboss.logging.Logger;
+
 import static java.util.Optional.ofNullable;
+
 import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
 import static org.keycloak.protocol.saml.util.ArtifactBindingUtils.computeArtifactBindingIdentifierString;
 
@@ -194,6 +198,9 @@ public class RepresentationToModel {
 
     public static void importGroup(RealmModel realm, GroupModel parent, GroupRepresentation group) {
         GroupModel newGroup = realm.createGroup(group.getId(), group.getName(), parent);
+        if (group.getDescription() != null) {
+            newGroup.setDescription(group.getDescription());
+        }
         if (group.getAttributes() != null) {
             for (Map.Entry<String, List<String>> attr : group.getAttributes().entrySet()) {
                 newGroup.setAttribute(attr.getKey(), attr.getValue());
@@ -430,7 +437,7 @@ public class RepresentationToModel {
 
         updateClientProperties(resource, rep, false);
 
-        if ("saml".equals(rep.getProtocol())
+        if (newClientId != null && "saml".equals(rep.getProtocol())
                 && (rep.getAttributes() == null
                 || !rep.getAttributes().containsKey("saml.artifact.binding.identifier"))) {
             resource.setAttribute("saml.artifact.binding.identifier", computeArtifactBindingIdentifierString(newClientId));
@@ -635,25 +642,28 @@ public class RepresentationToModel {
 
     public static void updateClientScopes(ClientRepresentation resourceRep, ClientModel client) {
         if (resourceRep.getDefaultClientScopes() != null || resourceRep.getOptionalClientScopes() != null) {
-            // First remove all default/built in client scopes
-            for (ClientScopeModel clientScope : client.getClientScopes(true).values()) {
-                client.removeClientScope(clientScope);
+            // first collect all the desired scopes
+            LinkedHashMap<String, Boolean> allScopes = new LinkedHashMap<String, Boolean>();
+            Optional.ofNullable(resourceRep.getOptionalClientScopes()).ifPresent(scopes -> scopes.forEach(scope -> allScopes.put(scope, false)));
+            Optional.ofNullable(resourceRep.getDefaultClientScopes()).ifPresent(scopes -> scopes.forEach(scope -> allScopes.put(scope, true)));
+
+            // next determine what already exists
+            Map<Map.Entry<String, Boolean>, ClientScopeModel> existing = new HashMap<Map.Entry<String,Boolean>, ClientScopeModel>();
+            client.getClientScopes(false).entrySet().stream().forEach(entry -> existing.put(new AbstractMap.SimpleEntry<String, Boolean>(entry.getKey(), false), entry.getValue()));
+            client.getClientScopes(true).entrySet().stream().forEach(entry -> existing.put(new AbstractMap.SimpleEntry<String, Boolean>(entry.getKey(), true), entry.getValue()));
+
+            // remove anything that isn't desired - this includes client scopes that are toggling the default flag
+            for (Entry<Entry<String, Boolean>, ClientScopeModel> entry : existing.entrySet()) {
+                if (Optional.ofNullable(allScopes.get(entry.getKey().getKey())).filter(entry.getKey().getValue()::equals).isEmpty()) {
+                    client.removeClientScope(entry.getValue());
+                }
             }
 
-            // First remove all default/built in client scopes
-            for (ClientScopeModel clientScope : client.getClientScopes(false).values()) {
-                client.removeClientScope(clientScope);
-            }
-        }
-
-        if (resourceRep.getDefaultClientScopes() != null) {
-            for (String clientScopeName : resourceRep.getDefaultClientScopes()) {
-                addClientScopeToClient(client.getRealm(), client, clientScopeName, true);
-            }
-        }
-        if (resourceRep.getOptionalClientScopes() != null) {
-            for (String clientScopeName : resourceRep.getOptionalClientScopes()) {
-                addClientScopeToClient(client.getRealm(), client, clientScopeName, false);
+            // finally add in all the desired
+            for (Map.Entry<String, Boolean> entry : allScopes.entrySet()) {
+                if (!existing.containsKey(entry)) {
+                    addClientScopeToClient(client.getRealm(), client, entry.getKey(), entry.getValue());
+                }
             }
         }
     }
@@ -725,13 +735,13 @@ public class RepresentationToModel {
             }
         }
 
+
         return clientScope;
     }
 
     public static void updateClientScope(ClientScopeRepresentation rep, ClientScopeModel resource) {
         if (rep.getName() != null) resource.setName(rep.getName());
         if (rep.getDescription() != null) resource.setDescription(rep.getDescription());
-
 
         if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());
 
@@ -742,9 +752,6 @@ public class RepresentationToModel {
         }
 
     }
-
-    // Scope mappings
-
 
     // Users
 
@@ -880,7 +887,15 @@ public class RepresentationToModel {
         identityProviderModel.setAddReadTokenRoleOnCreate(representation.isAddReadTokenRoleOnCreate());
         updateOrganizationBroker(representation, session);
         identityProviderModel.setOrganizationId(representation.getOrganizationId());
-        identityProviderModel.setConfig(removeEmptyString(representation.getConfig()));
+
+        // Merge config from the identity provider model in case the provider sets some default config
+        Map<String, String> repConfig = removeEmptyString(representation.getConfig());
+        if (repConfig != null && !repConfig.isEmpty()) {
+            if (identityProviderModel.getConfig() == null) {
+                identityProviderModel.setConfig(new HashMap<>());
+            }
+            identityProviderModel.getConfig().putAll(repConfig);
+        }
 
         String flowAlias = representation.getFirstBrokerLoginFlowAlias();
         if (flowAlias == null || flowAlias.trim().isEmpty()) {
@@ -1539,9 +1554,8 @@ public class RepresentationToModel {
             Map<String, List<String>> attributes = resource.getAttributes();
 
             if (attributes != null) {
-                Set<String> existingAttrNames = existing.getAttributes().keySet();
 
-                for (String name : existingAttrNames) {
+                for (String name : existing.getAttributes().keySet()) {
                     if (attributes.containsKey(name)) {
                         existing.setAttribute(name, attributes.get(name));
                         attributes.remove(name);
@@ -1550,8 +1564,8 @@ public class RepresentationToModel {
                     }
                 }
 
-                for (String name : attributes.keySet()) {
-                    existing.setAttribute(name, attributes.get(name));
+                for (var entry : attributes.entrySet()) {
+                    existing.setAttribute(entry.getKey(), entry.getValue());
                 }
             }
 

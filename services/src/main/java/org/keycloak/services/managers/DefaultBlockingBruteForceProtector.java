@@ -16,12 +16,13 @@
  */
 package org.keycloak.services.managers;
 
-import jakarta.ws.rs.core.UriInfo;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.AbstractKeycloakTransaction;

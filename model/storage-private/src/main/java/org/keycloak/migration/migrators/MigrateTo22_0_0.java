@@ -19,7 +19,6 @@
 
 package org.keycloak.migration.migrators;
 
-import org.jboss.logging.Logger;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.KeycloakSession;
@@ -28,10 +27,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 
+import org.jboss.logging.Logger;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MigrateTo22_0_0 implements Migration {
+public class MigrateTo22_0_0 extends RealmMigration {
 
     public static final ModelVersion VERSION = new ModelVersion("22.0.0");
 
@@ -40,16 +41,8 @@ public class MigrateTo22_0_0 implements Migration {
     private static final Logger LOG = Logger.getLogger(MigrateTo22_0_0.class);
 
     @Override
-    public void migrate(KeycloakSession session) {
-        session.realms().getRealmsStream().forEach(realm -> {
-            RealmModel currentRealm = session.getContext().getRealm();
-            session.getContext().setRealm(realm);
-            try {
-                removeHttpChallengeFlow(session, realm);
-            } finally {
-                session.getContext().setRealm(currentRealm);
-            }
-        });
+    public void migrateRealm(KeycloakSession session, RealmModel realm) {
+        removeHttpChallengeFlow(session, realm);
         //login, account, email themes are handled by JpaUpdate22_0_0_RemoveRhssoThemes
     }
 

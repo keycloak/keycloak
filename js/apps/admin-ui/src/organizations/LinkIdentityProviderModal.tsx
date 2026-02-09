@@ -141,7 +141,9 @@ export const LinkIdentityProviderModal = ({
             options={[
               { key: "", value: t("none") },
               { key: "ANY", value: t("any") },
-              ...getValues("domains")!.map((d) => ({ key: d, value: d })),
+              ...(getValues("domains")
+                ? getValues("domains")!.map((d) => ({ key: d, value: d }))
+                : []),
             ]}
             menuAppendTo="parent"
           />
@@ -150,6 +152,14 @@ export const LinkIdentityProviderModal = ({
             label={t("hideOnLoginPage")}
             labelIcon={t("hideOnLoginPageHelp")}
             defaultValue={true}
+          />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm(
+              "config.kc.org.broker.login.hide-when-org-unknown",
+            )}
+            label={t("hideOnLoginWhenOrgNotResolved")}
+            labelIcon={t("hideOnLoginWhenOrgNotResolvedHelp")}
+            stringify
           />
           <DefaultSwitchControl
             name={convertAttributeNameToForm(

@@ -17,12 +17,12 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
-import io.quarkus.arc.Arc;
-
-import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
-import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.utils.KeycloakSessionUtil;
+
+import io.quarkus.arc.Arc;
+import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
+import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
 
 public final class TransactionalSessionHandler implements ServerRestHandler, org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler {
 

@@ -17,25 +17,6 @@
 
 package org.keycloak.storage.ldap.mappers;
 
-import org.jboss.logging.Logger;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.UserModelDelegate;
-import org.keycloak.models.utils.reflection.Property;
-import org.keycloak.storage.UserStoragePrivateUtil;
-import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.ldap.LDAPStorageProvider;
-import org.keycloak.storage.ldap.LDAPUtils;
-import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.storage.ldap.idm.query.Condition;
-import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,6 +27,30 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.component.ComponentModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.UserModelDelegate;
+import org.keycloak.models.utils.reflection.Property;
+import org.keycloak.storage.DatastoreProvider;
+import org.keycloak.storage.StoreManagers;
+import org.keycloak.storage.UserStoragePrivateUtil;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.ldap.LDAPStorageProvider;
+import org.keycloak.storage.ldap.LDAPUtils;
+import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.storage.ldap.idm.query.Condition;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+
+import org.jboss.logging.Logger;
+
+import static java.util.Optional.ofNullable;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -165,15 +170,14 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
             UserModel that = UserStoragePrivateUtil.userLocalStorage(session).getUserByEmail(realm, email);
 
-            if (that != null) {
-                // delete and invalidate the cache for any existing account no longer available from LDAP
-                that = session.users().getUserByEmail(realm, that.getEmail());
-            }
-
             if (that != null && !that.getId().equals(user.getId())) {
-                session.getTransactionManager().setRollbackOnly();
-                String exceptionMessage = String.format("Can't import user '%s' from LDAP because email '%s' already exists in Keycloak. Existing user with this email is '%s'", user.getUsername(), email, that.getUsername());
-                throw new ModelDuplicateException(exceptionMessage, UserModel.EMAIL);
+                // call getUserById to trigger validation - if user is federated from LDAP and no longer exists there, it is removed from the local DB.
+                that = ((StoreManagers) session.getProvider(DatastoreProvider.class)).userStorageManager().getUserById(realm, that.getId());
+                if (that != null) {
+                    session.getTransactionManager().setRollbackOnly();
+                    String exceptionMessage = String.format("Can't import user '%s' from LDAP because email '%s' already exists in Keycloak. Existing user with this email is '%s'", user.getUsername(), email, that.getUsername());
+                    throw new ModelDuplicateException(exceptionMessage, UserModel.EMAIL);
+                }
             }
         }
     }
@@ -288,6 +292,26 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     super.setEmailVerified(verified);
                 }
 
+                @Override
+                public String getUsername() {
+                    if (UserModel.USERNAME.equals(userModelAttrName)) {
+                        return ofNullable(ldapUser.getAttributeAsString(ldapAttrName))
+                                .map(this::toLowerCaseIfImportEnabled)
+                                .orElse(null);
+                    }
+                    return super.getUsername();
+                }
+
+                @Override
+                public String getEmail() {
+                    if (UserModel.EMAIL.equals(userModelAttrName)) {
+                        return ofNullable(ldapUser.getAttributeAsString(ldapAttrName))
+                                .map(this::toLowerCaseIfImportEnabled)
+                                .orElse(null);
+                    }
+                    return super.getEmail();
+                }
+
                 protected boolean setLDAPAttribute(String modelAttrName, Object value) {
                     if (modelAttrName.equalsIgnoreCase(userModelAttrName)) {
                         if (UserAttributeLDAPStorageMapper.logger.isTraceEnabled()) {
@@ -324,6 +348,12 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     return true;
                 }
 
+                private String toLowerCaseIfImportEnabled(String value) {
+                    if (getLdapProvider().getModel().isImportEnabled()) {
+                        return value.toLowerCase();
+                    }
+                    return value;
+                }
             };
 
         } else if (isBinaryAttribute) {
@@ -506,11 +536,18 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             userModelProperty.setValue(user, null);
         } else {
             Class<Object> clazz = userModelProperty.getJavaClass();
+            Object currentValue = userModelProperty.getValue(user);
 
             if (String.class.equals(clazz)) {
+                if (ldapAttrValue.equals(currentValue)) {
+                    return;
+                }
                 userModelProperty.setValue(user, ldapAttrValue);
             } else if (Boolean.class.equals(clazz) || boolean.class.equals(clazz)) {
                 Boolean boolVal = Boolean.valueOf(ldapAttrValue);
+                if (boolVal.equals(currentValue)) {
+                    return;
+                }
                 userModelProperty.setValue(user, boolVal);
             } else {
                 logger.warnf("Don't know how to set the property '%s' on user '%s' . Value of LDAP attribute is '%s' ", userModelProperty.getName(), user.getUsername(), ldapAttrValue.toString());

@@ -16,16 +16,17 @@
  */
 package org.keycloak.services;
 
+import java.util.LinkedList;
+import java.util.List;
+
+import jakarta.transaction.TransactionManager;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.tracing.TracingProvider;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 import org.keycloak.transaction.JtaTransactionWrapper;
-
-import jakarta.transaction.TransactionManager;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

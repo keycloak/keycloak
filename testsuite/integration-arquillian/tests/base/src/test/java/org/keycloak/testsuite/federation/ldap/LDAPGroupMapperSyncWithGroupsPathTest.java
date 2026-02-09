@@ -17,14 +17,10 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.core.Response;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.LDAPConstants;
@@ -44,7 +40,12 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import java.util.stream.Collectors;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LDAPGroupMapperSyncWithGroupsPathTest extends AbstractLDAPTest {

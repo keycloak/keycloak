@@ -20,15 +20,16 @@ package org.keycloak.testsuite.arquillian;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import org.keycloak.common.util.reflections.Reflections;
+import org.keycloak.testsuite.arquillian.annotation.ModelTest;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
+
 import org.jboss.arquillian.container.test.impl.execution.LocalTestExecuter;
 import org.jboss.arquillian.container.test.impl.execution.event.LocalExecutionEvent;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.spi.TestResult;
-import org.keycloak.common.util.reflections.Reflections;
-import org.keycloak.testsuite.arquillian.annotation.ModelTest;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

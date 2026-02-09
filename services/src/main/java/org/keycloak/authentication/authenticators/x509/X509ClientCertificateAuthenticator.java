@@ -22,21 +22,23 @@ import java.security.cert.X509Certificate;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import jakarta.ws.rs.core.MultivaluedHashMap;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.ServicesLogger;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 
@@ -179,7 +181,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
             }
             else {
                 // Bypass the confirmation page and log the user in
-                context.success();
+                context.success(UserCredentialModel.CLIENT_CERT);
             }
         }
         catch(Exception e) {
@@ -269,7 +271,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
         }
         if (context.getUser() != null) {
             recordX509CertificateAuditDataViaContextEvent(context);
-            context.success();
+            context.success(UserCredentialModel.CLIENT_CERT);
             return;
         }
         context.attempted();

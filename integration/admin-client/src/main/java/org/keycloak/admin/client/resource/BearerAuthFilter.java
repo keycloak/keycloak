@@ -17,15 +17,16 @@
 
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.admin.client.token.TokenManager;
+import java.io.IOException;
+import java.util.List;
 
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientRequestFilter;
 import jakarta.ws.rs.client.ClientResponseContext;
 import jakarta.ws.rs.client.ClientResponseFilter;
 import jakarta.ws.rs.core.HttpHeaders;
-import java.io.IOException;
-import java.util.List;
+
+import org.keycloak.admin.client.token.TokenManager;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
@@ -34,7 +35,7 @@ public class BearerAuthFilter implements ClientRequestFilter, ClientResponseFilt
 
     public static final String AUTH_HEADER_PREFIX = "Bearer ";
     private final String tokenString;
-    private final TokenManager tokenManager;
+    protected final TokenManager tokenManager;
 
     public BearerAuthFilter(String tokenString) {
         this.tokenString = tokenString;
@@ -66,12 +67,17 @@ public class BearerAuthFilter implements ClientRequestFilter, ClientResponseFilt
             for (Object authHeader : authHeaders) {
                 if (authHeader instanceof String) {
                     String headerValue = (String) authHeader;
-                    if (headerValue.startsWith(AUTH_HEADER_PREFIX)) {
-                        String token = headerValue.substring( AUTH_HEADER_PREFIX.length() );
+                    String authHeaderPrefix = getAuthHeaderPrefix();
+                    if (headerValue.startsWith(authHeaderPrefix)) {
+                        String token = headerValue.substring( authHeaderPrefix.length() );
                         tokenManager.invalidate( token );
                     }
                 }
             }
         }
+    }
+
+    protected String getAuthHeaderPrefix() {
+        return AUTH_HEADER_PREFIX;
     }
 }

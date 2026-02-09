@@ -336,7 +336,7 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
                               collapsedText: t("showRemaining"),
                             }}
                             variant={SelectVariant.typeaheadMulti}
-                            typeAheadAriaLabel="Select"
+                            typeAheadAriaLabel="select-resourceTypes"
                             onToggle={(isOpen) =>
                               setSelectResourceTypesOpen(isOpen)
                             }
@@ -403,7 +403,7 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
                               collapsedText: t("showRemaining"),
                             }}
                             variant={SelectVariant.typeaheadMulti}
-                            typeAheadAriaLabel="Select"
+                            typeAheadAriaLabel="select-operationTypes"
                             onToggle={(isOpen) =>
                               setSelectOperationTypesOpen(isOpen)
                             }
@@ -444,10 +444,7 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
                             }
                           >
                             {operationTypes?.map((option) => (
-                              <SelectOption
-                                key={option.toString()}
-                                value={option}
-                              >
+                              <SelectOption key={option} value={option}>
                                 {option}
                               </SelectOption>
                             ))}

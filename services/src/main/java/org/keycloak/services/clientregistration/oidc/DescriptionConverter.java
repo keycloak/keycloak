@@ -17,6 +17,19 @@
 
 package org.keycloak.services.clientregistration.oidc;
 
+import java.io.IOException;
+import java.net.URI;
+import java.security.PublicKey;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
@@ -51,20 +64,6 @@ import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
-
-import java.io.IOException;
-import java.net.URI;
-import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_CODE;
 import static org.keycloak.OAuth2Constants.IMPLICIT;
@@ -122,6 +121,7 @@ public class DescriptionConverter {
                 setOidcGrantEnabled(client, CibaConfig.OIDC_CIBA_GRANT_ENABLED, oidcGrantTypes.contains(OAuth2Constants.CIBA_GRANT_TYPE));
                 setOidcGrantEnabled(client, OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, oidcGrantTypes.contains(OAuth2Constants.DEVICE_CODE_GRANT_TYPE));
                 setOidcGrantEnabled(client, OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, oidcGrantTypes.contains(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
+                setOidcGrantEnabled(client, OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED, oidcGrantTypes.contains(OAuth2Constants.JWT_AUTHORIZATION_GRANT));
                 client.setAuthorizationServicesEnabled(oidcGrantTypes.contains(OAuth2Constants.UMA_GRANT_TYPE));
                 configWrapper.setUseRefreshToken(oidcGrantTypes.contains(OAuth2Constants.REFRESH_TOKEN));
             }
@@ -137,6 +137,9 @@ public class DescriptionConverter {
             if (oidcGrantTypes != null && oidcGrantTypes.contains(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)) {
                 throw new ClientRegistrationException("Token Exchange cannot be enabled in a public client");
             }
+            if (oidcGrantTypes != null && oidcGrantTypes.contains(OAuth2Constants.JWT_AUTHORIZATION_GRANT)) {
+                throw new ClientRegistrationException("JWT authorization grant cannot be enabled in a public client");
+            }
         } else {
             ClientAuthenticatorFactory clientAuthFactory;
             if (authMethod == null) {
@@ -148,7 +151,7 @@ public class DescriptionConverter {
             if (clientAuthFactory == null) {
                 throw new ClientRegistrationException("Not found clientAuthenticator for requested token_endpoint_auth_method");
             }
-            client.setClientAuthenticatorType(clientAuthFactory.getId());
+            clientAuthFactory.setClientAuthenticationMethod(client, authMethod);
         }
 
         boolean publicKeySet = setPublicKey(clientOIDC, client);
@@ -353,9 +356,9 @@ public class DescriptionConverter {
             response.setTokenEndpointAuthMethod("none");
         } else {
             ClientAuthenticatorFactory clientAuth = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, client.getClientAuthenticatorType());
-            Set<String> oidcClientAuthMethods = clientAuth.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL);
-            if (oidcClientAuthMethods != null && !oidcClientAuthMethods.isEmpty()) {
-                response.setTokenEndpointAuthMethod(oidcClientAuthMethods.iterator().next());
+            String oidcClientAuthMethod = clientAuth.getProtocolAuthenticatorMethod(client);
+            if (oidcClientAuthMethod != null) {
+                response.setTokenEndpointAuthMethod(oidcClientAuthMethod);
             }
 
             if (clientAuth.supportsSecret()) {
@@ -543,6 +546,9 @@ public class DescriptionConverter {
         }
         if (!client.isPublicClient() && oidcClient.isStandardTokenExchangeEnabled()) {
             grantTypes.add(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+        }
+        if (!client.isPublicClient() && oidcClient.getJWTAuthorizationGrantEnabled()) {
+            grantTypes.add(OAuth2Constants.JWT_AUTHORIZATION_GRANT);
         }
         return grantTypes;
     }

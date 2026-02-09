@@ -20,10 +20,8 @@ import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.util.concurrent.BlockingManager;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -40,10 +38,16 @@ import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.remote.transaction.LoginFailureChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.remote.transaction.RemoteChangeLogTransaction;
+import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionProvider;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.util.concurrent.BlockingManager;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 
@@ -121,6 +125,11 @@ public class RemoteUserLoginFailureProviderFactory implements UserLoginFailurePr
     }
 
     @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(InfinispanTransactionProvider.class);
+    }
+
+    @Override
     public LoginFailuresUpdater create(LoginFailureKey key, LoginFailureEntity entity) {
         return LoginFailuresUpdater.create(key, entity);
     }
@@ -160,8 +169,9 @@ public class RemoteUserLoginFailureProviderFactory implements UserLoginFailurePr
     }
 
     private LoginFailureChangeLogTransaction createAndEnlistTransaction(KeycloakSession session) {
+        var provider = session.getProvider(InfinispanTransactionProvider.class);
         var tx = new LoginFailureChangeLogTransaction(this, this, new ByRealmIdQueryConditionalRemover<>(PROTO_ENTITY));
-        session.getTransactionManager().enlistAfterCompletion(tx);
+        provider.registerTransaction(tx);
         return tx;
     }
 }

@@ -29,17 +29,19 @@ import { Banners } from "./Banners";
 
 export const AppContexts = ({ children }: PropsWithChildren) => (
   <ErrorBoundaryProvider>
-    <ServerInfoProvider>
-      <RealmContextProvider>
-        <WhoAmIContextProvider>
-          <RecentRealmsProvider>
-            <AccessContextProvider>
-              <SubGroups>{children}</SubGroups>
-            </AccessContextProvider>
-          </RecentRealmsProvider>
-        </WhoAmIContextProvider>
-      </RealmContextProvider>
-    </ServerInfoProvider>
+    <ErrorBoundaryFallback fallback={ErrorRenderer}>
+      <ServerInfoProvider>
+        <RealmContextProvider>
+          <WhoAmIContextProvider>
+            <RecentRealmsProvider>
+              <AccessContextProvider>
+                <SubGroups>{children}</SubGroups>
+              </AccessContextProvider>
+            </RecentRealmsProvider>
+          </WhoAmIContextProvider>
+        </RealmContextProvider>
+      </ServerInfoProvider>
+    </ErrorBoundaryFallback>
   </ErrorBoundaryProvider>
 );
 
@@ -48,12 +50,17 @@ export const App = () => {
   const [adminClient, setAdminClient] = useState<KeycloakAdminClient>();
 
   useEffect(() => {
+    const fragment = "#/";
+    if (window.location.href.endsWith(fragment)) {
+      const newPath = window.location.pathname.replace(fragment, "");
+      window.history.replaceState(null, "", newPath);
+    }
     const init = async () => {
       const client = await initAdminClient(keycloak, environment);
       setAdminClient(client);
     };
     init().catch(console.error);
-  }, []);
+  }, [environment, keycloak]);
 
   if (!adminClient) return <KeycloakSpinner />;
   return (

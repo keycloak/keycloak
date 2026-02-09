@@ -17,12 +17,12 @@
 
 package org.keycloak.services;
 
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
-import org.keycloak.services.cors.Cors;
-
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.services.cors.Cors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

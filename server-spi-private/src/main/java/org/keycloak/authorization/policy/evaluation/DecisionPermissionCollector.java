@@ -17,6 +17,15 @@
 
 package org.keycloak.authorization.policy.evaluation;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -27,15 +36,6 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Permission;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -112,6 +112,9 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                             deniedScopes.addAll(policyScopes);
                         } else {
                             for (Scope scope : requestedScopes) {
+                                // check if the scope should be denied if the permission is not directly associated with a resource
+                                // this is necessary because the scope may be granted by a permission associated with a resource group
+                                // for instance, in FGAP that means the scope granted by a permission associated with a resource type
                                 if (evaluation.isDenied(policy, scope)) {
                                     deniedScopes.add(scope);
                                 }

@@ -17,20 +17,21 @@
 
 package org.keycloak.testsuite.pages;
 
-import static org.keycloak.testsuite.util.UIUtils.clickLink;
-import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
+
+import org.jboss.arquillian.graphene.page.Page;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -128,6 +129,15 @@ public class LoginUpdateProfilePage extends AbstractPage {
             return driver.findElement(id);
         } catch (NoSuchElementException | TimeoutException ignore) {
             return null;
+        }
+    }
+
+    public boolean isEmailInputPresent() {
+        try {
+            emailInput.isDisplayed();
+            return true;
+        } catch (NoSuchElementException e) {
+            return false;
         }
     }
 

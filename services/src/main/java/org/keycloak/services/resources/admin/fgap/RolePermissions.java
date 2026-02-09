@@ -16,7 +16,15 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
-import org.jboss.logging.Logger;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
+import jakarta.ws.rs.ForbiddenException;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -35,14 +43,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Permission;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-
-import jakarta.ws.rs.ForbiddenException;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -149,11 +150,11 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         return root.resourceServer(client);
     }
 
-    private boolean checkAdminRoles(RoleModel role) {
+    protected boolean checkAdminRoles(RoleModel role) {
         if (AdminRoles.ALL_ROLES.contains(role.getName())) {
             if (root.admin().hasRole(role)) return true;
 
-            ClientModel adminClient = root.getRealmPermissionsClient();
+            ClientModel adminClient = root.getRealmManagementClient();
             // is this an admin role in 'realm-management' client of the realm we are managing?
             if (adminClient.equals(role.getContainer())) {
                 // if this is realm admin role, then check to see if admin has similar permissions
@@ -481,7 +482,6 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         if (role.getContainer() instanceof RealmModel) {
             return root.realm().canManageRealmDefault();
         } else if (role.getContainer() instanceof ClientModel) {
-            ClientModel client = (ClientModel)role.getContainer();
             return root.clients().canManageClientsDefault();
         }
         return false;
@@ -656,7 +656,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         return MAP_ROLE_COMPOSITE_SCOPE + ".permission." + role.getId();
     }
 
-    private static String getRoleResourceName(RoleModel role) {
+    private String getRoleResourceName(RoleModel role) {
         return "role.resource." + role.getId();
     }
 

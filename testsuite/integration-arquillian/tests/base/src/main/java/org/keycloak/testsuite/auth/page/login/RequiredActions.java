@@ -17,9 +17,9 @@
 
 package org.keycloak.testsuite.auth.page.login;
 
-import org.keycloak.testsuite.util.URLUtils;
-
 import jakarta.ws.rs.core.UriBuilder;
+
+import org.keycloak.testsuite.util.URLUtils;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>

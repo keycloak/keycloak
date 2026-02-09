@@ -1,24 +1,26 @@
 package org.keycloak.testsuite.broker;
 
-import org.hamcrest.CoreMatchers;
+import java.security.PublicKey;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import javax.xml.namespace.QName;
+
 import org.keycloak.saml.RandomSecret;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.testsuite.util.saml.SamlDocumentStepBuilder;
+
+import org.hamcrest.CoreMatchers;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import javax.xml.namespace.QName;
-import java.security.PublicKey;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
-import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 
 public class KcSamlEncryptedIdTest extends AbstractKcSamlEncryptedElementsTest {
 

@@ -1,17 +1,13 @@
 package org.keycloak.testsuite.arquillian.containers;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import org.keycloak.common.crypto.FipsMode;
+
 import org.jboss.arquillian.container.spi.ConfigurationException;
 import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;
 import org.jboss.logging.Logger;
-import org.keycloak.common.crypto.FipsMode;
-import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author mhajas

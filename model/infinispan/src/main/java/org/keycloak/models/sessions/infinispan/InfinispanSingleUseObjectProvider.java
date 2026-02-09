@@ -20,15 +20,16 @@ package org.keycloak.models.sessions.infinispan;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.infinispan.client.hotrod.exceptions.HotRodClientException;
-import org.infinispan.commons.api.BasicCache;
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.session.RevokedTokenPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
+
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
+import org.infinispan.commons.api.BasicCache;
+import org.jboss.logging.Logger;
 
 /**
  * TODO: Check if Boolean can be used as single-use cache argument instead of SingleUseObjectValueEntity. With respect to other single-use cache usecases like "Revoke Refresh Token" .
@@ -46,12 +47,11 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
     private final boolean persistRevokedTokens;
     private final InfinispanKeycloakTransaction tx;
 
-    public InfinispanSingleUseObjectProvider(KeycloakSession session, BasicCache<String, SingleUseObjectValueEntity> singleUseObjectCache, boolean persistRevokedTokens) {
+    public InfinispanSingleUseObjectProvider(KeycloakSession session, BasicCache<String, SingleUseObjectValueEntity> singleUseObjectCache, boolean persistRevokedTokens, InfinispanKeycloakTransaction tx) {
         this.session = session;
         this.singleUseObjectCache = singleUseObjectCache;
         this.persistRevokedTokens = persistRevokedTokens;
-        this.tx = new InfinispanKeycloakTransaction();
-        session.getTransactionManager().enlistAfterCompletion(tx);
+        this.tx = tx;
     }
 
     @Override
@@ -117,14 +117,13 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
     @Override
     public boolean putIfAbsent(String key, long lifespanInSeconds) {
-        if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
-            throw new ModelException("Revoked tokens can't be used in putIfAbsent");
-        }
-
         SingleUseObjectValueEntity tokenValue = new SingleUseObjectValueEntity(null);
 
         try {
             SingleUseObjectValueEntity existing = singleUseObjectCache.putIfAbsent(key, tokenValue, Time.toMillis(lifespanInSeconds), TimeUnit.MILLISECONDS);
+            if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
+                session.getProvider(RevokedTokenPersisterProvider.class).revokeToken(key.substring(0, key.length() - REVOKED_KEY.length()), lifespanInSeconds);
+            }
             return existing == null;
         } catch (HotRodClientException re) {
             // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.

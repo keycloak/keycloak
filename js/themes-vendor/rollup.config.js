@@ -21,6 +21,15 @@ const plugins = [
 
 const targetDir = "target/classes/theme/keycloak/common/resources/vendor";
 
+/** @type{import("rollup").WarningHandlerWithDefault} */
+function onwarn(warning, defaultHandler) {
+  if (warning.code === "UNRESOLVED_IMPORT") {
+    throw new Error(`Unresolved import: ${warning.exporter}`);
+  }
+
+  defaultHandler(warning);
+}
+
 export default defineConfig([
   {
     input: [
@@ -32,6 +41,7 @@ export default defineConfig([
       format: "es",
     },
     plugins,
+    onwarn,
   },
   {
     input: "node_modules/react-dom/cjs/react-dom.production.min.js",
@@ -41,6 +51,7 @@ export default defineConfig([
     },
     external: ["react"],
     plugins,
+    onwarn,
   },
   {
     input: "src/main/js/web-crypto-shim.js",
@@ -49,5 +60,6 @@ export default defineConfig([
       format: "es",
     },
     plugins,
+    onwarn,
   },
 ]);

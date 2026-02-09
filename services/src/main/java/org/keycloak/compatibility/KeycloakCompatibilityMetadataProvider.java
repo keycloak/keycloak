@@ -15,6 +15,8 @@ public class KeycloakCompatibilityMetadataProvider implements CompatibilityMetad
     public static final String VERSION_KEY = "version";
     private final String version;
 
+    // Constructor required for ServiceLoader
+    @SuppressWarnings("unused")
     public KeycloakCompatibilityMetadataProvider() {
         this(Version.VERSION);
     }

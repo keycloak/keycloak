@@ -157,11 +157,14 @@ export const ResetPasswordDialog = ({
             <PasswordInput
               data-testid="passwordField"
               id="password"
-              onChange={(e) => {
-                onChange(e);
-                if (passwordConfirmation !== e.currentTarget.value) {
+              onChange={async (e) => {
+                await onChange(e);
+                if (
+                  e.currentTarget &&
+                  passwordConfirmation !== e.currentTarget.value
+                ) {
                   setError("passwordConfirmation", {
-                    message: t("confirmPasswordDoesNotMatch").toString(),
+                    message: t("confirmPasswordDoesNotMatch"),
                   });
                 } else {
                   clearErrors("passwordConfirmation");
@@ -187,8 +190,7 @@ export const ResetPasswordDialog = ({
               {...register("passwordConfirmation", {
                 required: true,
                 validate: (value) =>
-                  value === password ||
-                  t("confirmPasswordDoesNotMatch").toString(),
+                  value === password || t("confirmPasswordDoesNotMatch"),
               })}
             />
             {errors.passwordConfirmation && (

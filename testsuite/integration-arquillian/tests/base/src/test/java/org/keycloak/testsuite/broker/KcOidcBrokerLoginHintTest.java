@@ -3,15 +3,6 @@ package org.keycloak.testsuite.broker;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
-
-import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.models.IdentityProviderModel;
@@ -21,6 +12,17 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import org.junit.Test;
+
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
+import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+
+import static org.junit.Assert.assertTrue;
 
 public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
 

@@ -1,13 +1,13 @@
 package org.keycloak.testsuite.broker;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.broker.oidc.mappers.AdvancedClaimToRoleMapper;
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * <a href="mailto:external.benjamin.weimer@bosch-si.com">Benjamin Weimer</a>,

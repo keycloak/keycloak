@@ -17,8 +17,16 @@
 
 package org.keycloak.tests.admin.authentication;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.NotFoundException;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.RequiredActionConfigInfoRepresentation;
@@ -33,18 +41,12 @@ import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.testsuite.actions.DummyConfigurableRequiredActionFactory;
 import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
-import org.keycloak.tests.utils.admin.AdminEventPaths;
 
-import jakarta.ws.rs.ClientErrorException;
-import jakarta.ws.rs.NotFoundException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -66,6 +68,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         addRequiredAction(expected, "CONFIGURE_RECOVERY_AUTHN_CODES", "Recovery Authentication Codes", true, false, null);
         addRequiredAction(expected, "CONFIGURE_TOTP", "Configure OTP", true, false, null);
         addRequiredAction(expected, "TERMS_AND_CONDITIONS", "Terms and Conditions", false, false, null);
+        addRequiredAction(expected, "UPDATE_EMAIL", "Update Email", false, false, null);
         addRequiredAction(expected, "UPDATE_PASSWORD", "Update Password", true, false, null);
         addRequiredAction(expected, "UPDATE_PROFILE", "Update Profile", true, false, null);
         addRequiredAction(expected, "VERIFY_EMAIL", "Verify Email", true, false, null);

@@ -16,8 +16,19 @@
  */
 package org.keycloak.operator.controllers;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Optional;
+
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.Utils;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
+
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1.IngressTLSBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -25,18 +36,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
-
 import io.quarkus.logging.Log;
 import org.jboss.logging.Logger;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
-
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Optional;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
@@ -114,6 +115,7 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
                 .withNewMetadata()
                     .withName(getName(keycloak))
                     .withNamespace(keycloak.getMetadata().getNamespace())
+                    .addToLabels(optionalSpec.map(IngressSpec::getLabels).orElse(null))
                     .addToLabels(Utils.allInstanceLabels(keycloak))
                     .addToAnnotations(annotations)
                 .endMetadata()
@@ -146,8 +148,9 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
                 .build();
 
         final var hostnameSpec = keycloak.getSpec().getHostnameSpec();
+        String hostname = null;
         if (hostnameSpec != null && hostnameSpec.getHostname() != null) {
-            String hostname = hostnameSpec.getHostname();
+            hostname = hostnameSpec.getHostname();
 
             try {
                 hostname = new URL(hostname).getHost();
@@ -158,6 +161,13 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
             }
 
             ingress.getSpec().getRules().get(0).setHost(hostname);
+        }
+
+        if (hostname != null) {
+            String[] hosts = new String[] {hostname};
+            optionalSpec.map(IngressSpec::getTlsSecret).ifPresent(tlsSecret ->
+                ingress.getSpec().getTls().add(new IngressTLSBuilder().addToHosts(hosts).withSecretName(tlsSecret).build())
+            );
         }
 
         return ingress;

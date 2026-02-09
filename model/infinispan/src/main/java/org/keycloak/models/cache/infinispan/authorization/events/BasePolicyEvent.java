@@ -21,8 +21,9 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
+
+import org.infinispan.protostream.annotations.ProtoField;
 
 abstract class BasePolicyEvent extends InvalidationEvent implements AuthorizationCacheInvalidationEvent {
 

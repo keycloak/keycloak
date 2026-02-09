@@ -25,14 +25,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import io.micrometer.core.instrument.Metrics;
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.cache.StatisticsConfigurationBuilder;
-import org.infinispan.configuration.global.ShutdownHookBehavior;
-import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
-import org.infinispan.configuration.parsing.ParserRegistry;
-import org.infinispan.metrics.config.MicrometerMeterRegisterConfigurationBuilder;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
@@ -51,9 +43,21 @@ import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderFactory;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 import org.keycloak.spi.infinispan.impl.Util;
 
+import io.micrometer.core.instrument.Metrics;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.cache.StatisticsConfigurationBuilder;
+import org.infinispan.configuration.global.ShutdownHookBehavior;
+import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
+import org.infinispan.configuration.parsing.ParserRegistry;
+import org.infinispan.metrics.config.MicrometerMeterRegisterConfigurationBuilder;
+import org.jboss.logging.Logger;
+
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ALL_CACHES_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NUM_OWNERS;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_MAX_COUNT_CACHES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_MAX_COUNT_CACHES;
+import static org.keycloak.spi.infinispan.impl.embedded.JGroupsConfigurator.createJGroupsProperties;
 
 /**
  * The default implementation of {@link CacheEmbeddedConfigProviderFactory}.
@@ -72,11 +76,14 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
 
     // Configuration
     public static final String CONFIG = "configFile";
-    private static final String METRICS = "metricsEnabled";
+    public static final String CONFIG_MUTATE = "configMutate";
+    public static final String TRACING = "tracingEnabled";
     private static final String HISTOGRAMS = "metricsHistogramsEnabled";
     public static final String STACK = "stack";
     public static final String NODE_NAME = "nodeName";
     public static final String SITE_NAME = "siteName";
+    public static final String MACHINE_NAME = "machineName";
+    public static final String RACK_NAME = "rackName";
 
     private volatile ConfigurationBuilderHolder builderHolder;
     private volatile Config.Scope keycloakConfig;
@@ -117,10 +124,17 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
         var builder = ProviderConfigurationBuilder.create();
         Util.copyFromOption(builder, CONFIG, "file", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_CONFIG_FILE, false);
         Util.copyFromOption(builder, HISTOGRAMS, "enabled", ProviderConfigProperty.BOOLEAN_TYPE, CachingOptions.CACHE_METRICS_HISTOGRAMS_ENABLED, false);
-        Util.copyFromOption(builder, METRICS, "enabled", ProviderConfigProperty.BOOLEAN_TYPE, MetricsOptions.INFINISPAN_METRICS_ENABLED, false);
-        Stream.concat(Arrays.stream(LOCAL_CACHE_NAMES), Arrays.stream(CLUSTERED_MAX_COUNT_CACHES))
+        Stream.concat(Arrays.stream(LOCAL_MAX_COUNT_CACHES), Arrays.stream(CLUSTERED_MAX_COUNT_CACHES))
                 .forEach(name -> Util.copyFromOption(builder, CacheConfigurator.maxCountConfigKey(name), "max-count", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.maxCountOption(name), false));
+        Arrays.stream(CLUSTERED_CACHE_NUM_OWNERS)
+                .forEach(name -> builder.property()
+                        .name(CacheConfigurator.numOwnerConfigKey(name))
+                        .helpText("Sets the number of owners for the %s distributed cache. It defines the number of copies of your data in the cluster.".formatted(name))
+                        .label("owners")
+                        .type(ProviderConfigProperty.INTEGER_TYPE)
+                        .add());
         createTopologyProperties(builder);
+        createJGroupsProperties(builder);
         return builder.build();
     }
 
@@ -158,13 +172,13 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
 
     private static ConfigurationBuilderHolder configureSingleSiteWithVolatileSessions(ConfigurationBuilderHolder holder, Config.Scope keycloakConfig, KeycloakSessionFactory factory) {
         singleSiteConfiguration(keycloakConfig, holder, factory);
-        CacheConfigurator.configureSessionsCachesForVolatileSessions(holder);
+        CacheConfigurator.configureSessionsCachesForVolatileSessions(keycloakConfig, holder);
         return holder;
     }
 
     private static ConfigurationBuilderHolder configureSingleSiteWithPersistentSessions(ConfigurationBuilderHolder holder, Config.Scope keycloakConfig, KeycloakSessionFactory factory) {
         singleSiteConfiguration(keycloakConfig, holder, factory);
-        CacheConfigurator.configureSessionsCachesForPersistentSessions(holder);
+        CacheConfigurator.configureSessionsCachesForPersistentSessions(keycloakConfig, holder);
         return holder;
     }
 
@@ -199,7 +213,8 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
         holder.getGlobalConfigurationBuilder()
                 .addModule(KeycloakConfigurationBuilder.class)
                 .setKeycloakSessionFactory(factory);
-        CacheConfigurator.applyDefaultConfiguration(holder);
+
+        CacheConfigurator.applyDefaultConfiguration(holder, !keycloakConfig.getBoolean(CONFIG_MUTATE, Boolean.FALSE));
         CacheConfigurator.configureLocalCaches(keycloakConfig, holder);
         JGroupsConfigurator.configureTopology(keycloakConfig, holder);
         return holder;
@@ -208,23 +223,26 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
     private static void singleSiteConfiguration(Config.Scope config, ConfigurationBuilderHolder holder, KeycloakSessionFactory factory) {
         logger.debug("Configuring Infinispan for single-site deployment");
         CacheConfigurator.checkCachesExist(holder, Arrays.stream(ALL_CACHES_NAME));
-        CacheConfigurator.configureCacheMaxCount(config, holder, Arrays.stream(CLUSTERED_MAX_COUNT_CACHES));
+        CacheConfigurator.configureNumOwners(config, holder);
         CacheConfigurator.validateWorkCacheConfiguration(holder);
-        KeycloakModelUtils.runJobInTransaction(factory, session -> JGroupsConfigurator.configureJGroups(config, holder, session));
+        CacheConfigurator.ensureMinimumOwners(holder);
+        if (JGroupsConfigurator.isClustered(holder)) {
+            KeycloakModelUtils.runJobInTransaction(factory, session -> JGroupsConfigurator.configureJGroups(config, holder, session));
+        }
         configureMetrics(config, holder);
     }
 
     private static void configureMetrics(Config.Scope keycloakConfig, ConfigurationBuilderHolder holder) {
         //metrics are disabled by default (check MetricsOptions class)
-        if (keycloakConfig.getBoolean(METRICS, Boolean.FALSE)) {
+        if (keycloakConfig.root().getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), Boolean.FALSE)) {
             logger.debug("Enabling Infinispan metrics");
             var builder = holder.getGlobalConfigurationBuilder();
             builder.addModule(MicrometerMeterRegisterConfigurationBuilder.class)
                     .meterRegistry(Metrics.globalRegistry);
             builder.cacheContainer().statistics(true);
             builder.metrics()
-                    .namesAsTags(true)
-                    .histograms(keycloakConfig.getBoolean(HISTOGRAMS, Boolean.FALSE));
+                    .histograms(keycloakConfig.getBoolean(HISTOGRAMS, Boolean.FALSE))
+                    .legacy(true);
             holder.getNamedConfigurationBuilders()
                     .values()
                     .stream()
@@ -242,7 +260,19 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
                 .add();
         builder.property()
                 .name(SITE_NAME)
-                .helpText("The name of the site where this node runs. Used for server hinting.")
+                .helpText("The name of the site (availability zone) where this instance runs. It can be set if running Keycloak in different availability zones. Infinispan takes into consideration this value to keep the backup data spread between different sites.")
+                .label("name")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add();
+        builder.property()
+                .name(MACHINE_NAME)
+                .helpText("The name of the physical machine where this instance runs. It can be set if multiple Keycloak instances are running in the same physical machines. Infinispan takes into consideration this value to keep the backup data spread between different machines.")
+                .label("name")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add();
+        builder.property()
+                .name(RACK_NAME)
+                .helpText("The name of the rack where this instance runs. It can be set if multiple Keycloak instances are running in the same physical rack. Infinispan takes into consideration this value to keep the backup data spread between different racks.")
                 .label("name")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add();

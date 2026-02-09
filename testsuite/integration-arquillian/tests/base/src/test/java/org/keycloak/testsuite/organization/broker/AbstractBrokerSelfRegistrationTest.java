@@ -17,25 +17,13 @@
 
 package org.keycloak.testsuite.organization.broker;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-
 import java.util.List;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.OrganizationIdentityProviderResource;
 import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
@@ -56,6 +44,21 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.Test;
+
+import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganizationTest {
 
@@ -78,15 +81,27 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     }
 
     @Test
-    public void testDefaultAuthenticationIfUserDoesNotExistAndNoOrgMatch() {
-        testRealm().organizations().get(createOrganization().getId());
+    public void testLoginHintSentToBrokerIfUserAlreadyAMember() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(IdentityProviderModel.LOGIN_HINT, "true");
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
+        String userId = ApiUtil.getCreatedId(testRealm().users().create(UserBuilder.create()
+                .username("test")
+                .email("test@neworg.org")
+                .enabled(true)
+                .firstName("f")
+                .lastName("l")
+                .build()));
+        organization.members().addMember(userId).close();
 
-        // login with email only
-        openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
+        // login hint will automatically redirect user to broker
+        oauth.realm(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.loginForm().loginHint("test@neworg.org").open();
 
-        // check if the login page is shown
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        MatcherAssert.assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.providerRealmName() + "/"));
     }
 
     @Test
@@ -204,7 +219,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         openIdentityFirstLoginPage("user", false, null, false, false);
 
         // check if the login page is shown
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
+        loginPage.assertAttemptedUsernameAvailability(true);
         Assert.assertTrue(loginPage.isPasswordInputPresent());
         Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
@@ -215,7 +230,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         driver.navigate().refresh();
 
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
+        loginPage.assertAttemptedUsernameAvailability(true);
         Assert.assertTrue(loginPage.isPasswordInputPresent());
         Assert.assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
         Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
@@ -299,6 +314,189 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         loginPage.login(bc.getUserEmail(), bc.getUserPassword());
         appPage.assertCurrent();
         assertIsMember(bc.getUserEmail(), organization);
+    }
+
+    @Test
+    public void testRedirectManagedMemberOfMultipleOrganizations() {
+        OrganizationResource orgA = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgB = testRealm().organizations().get(createOrganization("org-b").getId());
+        String email = bc.getUserLogin() + "@" + orgA.toRepresentation().getDomains().iterator().next().getName();
+        UserRepresentation account = UserBuilder.create()
+                .username(email)
+                .email(email)
+                .password(bc.getUserPassword())
+                .enabled(true)
+                .build();
+        UsersResource users = realmsResouce().realm(bc.providerRealmName()).users();
+        try (Response response = users.create(account)) {
+            account.setId(ApiUtil.getCreatedId(response));
+        }
+        UserRepresentation finalAccount = account;
+        getCleanup().addCleanup(() -> users.get(finalAccount.getId()).remove());
+        // add the member for the first time
+        assertBrokerRegistration(orgA, email, email);
+        account = getUserRepresentation(account.getEmail());
+        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+
+        orgB.members().addMember(account.getId()).close();
+        openIdentityFirstLoginPage(email, true, null, false, false);
+        // login to the organization identity provider using e-mail and automatically redirects to the app as the account already exists
+        loginPage.login(email, bc.getUserPassword());
+        appPage.assertCurrent();
+        UserRepresentation finalAccount1 = account;
+        getCleanup().addCleanup(() -> realmsResouce().realm(bc.consumerRealmName()).users().get(finalAccount1.getId()).remove());
+
+        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+        openIdentityFirstLoginPage(email, true, null, false, false);
+        // login to the organization identity provider user username and automatically redirects to the app as the account already exists
+        loginPage.login(account.getUsername(), bc.getUserPassword());
+        appPage.assertCurrent();
+    }
+
+    @Test
+    public void testRedirectManagedMemberOfMultipleOrganizationsAllOrganizationsScope() {
+        OrganizationResource orgA = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgB = testRealm().organizations().get(createOrganization("org-b").getId());
+        String email = bc.getUserLogin() + "@" + orgA.toRepresentation().getDomains().iterator().next().getName();
+        UserRepresentation account = UserBuilder.create()
+                .username(email)
+                .email(email)
+                .password(bc.getUserPassword())
+                .enabled(true)
+                .build();
+        UsersResource users = realmsResouce().realm(bc.providerRealmName()).users();
+        try (Response response = users.create(account)) {
+            account.setId(ApiUtil.getCreatedId(response));
+        }
+        UserRepresentation finalAccount = account;
+        getCleanup().addCleanup(() -> users.get(finalAccount.getId()).remove());
+        // add the member for the first time
+        assertBrokerRegistration(orgA, email, email);
+        account = getUserRepresentation(account.getEmail());
+        UserRepresentation finalAccount1 = account;
+        getCleanup().addCleanup(() -> realmsResouce().realm(bc.consumerRealmName()).users().get(finalAccount1.getId()).remove());
+        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+
+        orgB.members().addMember(account.getId()).close();
+        oauth.scope("organization:*");
+        openIdentityFirstLoginPage(email, true, null, false, false);
+        // login to the organization identity provider by username and automatically redirects to the app as the account already exists
+        loginPage.login(email, bc.getUserPassword());
+        appPage.assertCurrent();
+    }
+
+    @Test
+    public void testRedirectManagedMemberUsingUnManagedMemberAllOrganizationsScope() {
+        OrganizationResource orgA = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgB = testRealm().organizations().get(createOrganization("org-b").getId());
+        String email = bc.getUserLogin() + "@" + orgA.toRepresentation().getDomains().iterator().next().getName();
+        UserRepresentation account = UserBuilder.create()
+                .username(email)
+                .email(email)
+                .password(bc.getUserPassword())
+                .enabled(true)
+                .build();
+        UsersResource users = realmsResouce().realm(bc.providerRealmName()).users();
+        try (Response response = users.create(account)) {
+            account.setId(ApiUtil.getCreatedId(response));
+        }
+        UserRepresentation finalAccount = account;
+        getCleanup().addCleanup(() -> users.get(finalAccount.getId()).remove());
+        // add the member for the first time
+        assertBrokerRegistration(orgA, email, email);
+        account = getUserRepresentation(account.getEmail());
+        UserRepresentation finalAccount1 = account;
+        getCleanup().addCleanup(() -> realmsResouce().realm(bc.consumerRealmName()).users().get(finalAccount1.getId()).remove());
+        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+
+        orgB.members().addMember(account.getId()).close();
+        oauth.scope("organization:*");
+        String orgBEmail = bc.getUserLogin() + "@" + orgB.toRepresentation().getDomains().iterator().next().getName();
+        openIdentityFirstLoginPage(orgBEmail, true, null, false, false);
+        // login to the organization identity provider by username and as to review profile because the user is not yet linked with the idp
+        loginPage.login(email, bc.getUserPassword());
+        updateAccountInformationPage.assertCurrent();
+        // should enforce a email with the same domain as the organization
+        updateAccountInformationPage.updateAccountInformation(email, email, "f", "l");
+        Assert.assertTrue(driver.getPageSource().contains("Email domain does not match any domain from the organization"));
+
+        updateAccountInformationPage.updateAccountInformation(email, orgBEmail, "f", "l");
+        // user is asked to link accounts
+        idpConfirmLinkPage.assertCurrent();
+    }
+
+    @Test
+    public void testRedirectUnManagedMemberAllOrganizationsScope() {
+        OrganizationResource orgA = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgB = testRealm().organizations().get(createOrganization("org-b").getId());
+        String orgAEmail = bc.getUserLogin() + "@" + orgA.toRepresentation().getDomains().iterator().next().getName();
+        // create user without credential to force the redirect to the IdP
+        UserRepresentation account = UserBuilder.create()
+                .username(orgAEmail)
+                .email(orgAEmail)
+                .enabled(true)
+                .build();
+        UsersResource users = realmsResouce().realm(bc.consumerRealmName()).users();
+        try (Response response = users.create(account)) {
+            String id = ApiUtil.getCreatedId(response);
+            account.setId(id);
+            getCleanup().addCleanup(() -> users.get(id).remove());
+        }
+
+        // add the unmanaged member to both organizations
+        orgA.members().addMember(account.getId()).close();
+        orgB.members().addMember(account.getId()).close();
+
+        oauth.scope("organization:*");
+        // resolve both organizations and redirect the user automatically
+        openIdentityFirstLoginPage(orgAEmail, true, null, false, false);
+        assertTrue(driver.getPageSource().contains("Sign in to provider"));
+        openIdentityFirstLoginPage(bc.getUserLogin() + "@" + orgB.toRepresentation().getDomains().iterator().next().getName(), true, null, false, false);
+        assertTrue(driver.getPageSource().contains("Sign in to provider"));
+
+        oauth.scope("organization");
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(orgAEmail);
+        selectOrganizationPage.assertCurrent();
+    }
+
+    @Test
+    public void testRedirectBrokerManagedMemberUsingUsernameAllOrganizationsScope() {
+        OrganizationResource orgA = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgB = testRealm().organizations().get(createOrganization("org-b").getId());
+        String email = bc.getUserLogin() + "@" + orgA.toRepresentation().getDomains().iterator().next().getName();
+        UserRepresentation account = UserBuilder.create()
+                .username(email)
+                .email(email)
+                .password(bc.getUserPassword())
+                .enabled(true)
+                .build();
+        UsersResource users = realmsResouce().realm(bc.providerRealmName()).users();
+        try (Response response = users.create(account)) {
+            account.setId(ApiUtil.getCreatedId(response));
+        }
+        UserRepresentation finalAccount = account;
+        getCleanup().addCleanup(() -> users.get(finalAccount.getId()).remove());
+        // add the member for the first time
+        assertBrokerRegistration(orgA, bc.getUserLogin(), email);
+        account = getUserRepresentation(account.getEmail());
+        UserRepresentation finalAccount1 = account;
+        getCleanup().addCleanup(() -> realmsResouce().realm(bc.consumerRealmName()).users().get(finalAccount1.getId()).remove());
+        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+
+        orgB.members().addMember(account.getId()).close();
+        oauth.scope("organization:*");
+        // provide the username, the user is automatically redirected to home broker because he is a managed member
+        openIdentityFirstLoginPage(bc.getUserLogin(), true, null, false, false);
+        // login to the organization identity provider by username
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        appPage.assertCurrent();
     }
 
     @Test
@@ -575,6 +773,48 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         loginPage.loginUsername("user@org-1.org");
         Assert.assertTrue(driver.getPageSource().contains("Your email domain matches the " + org1Name + " organization but you don't have an account yet."));
         Assert.assertTrue(loginPage.isSocialButtonPresent(org1Broker.getAlias()));
+        Assert.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+    }
+
+    @Test
+    public void testDoNotShowBrokersIfOrganizationNotResolved() {
+        String org0Name = "org-0";
+        OrganizationResource org0 = testRealm().organizations().get(createOrganization(org0Name).getId());
+        IdentityProviderRepresentation org0Broker = org0.identityProviders().getIdentityProviders().get(0);
+        org0Broker.setHideOnLogin(false);
+        org0Broker.getConfig().put(OrganizationModel.HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN, Boolean.TRUE.toString());
+        org0Broker.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        testRealm().identityProviders().get(org0Broker.getAlias()).update(org0Broker);
+
+        // do not show if organization cannot be resolved
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername("user@unknowndomain.org");
+        Assert.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+
+        // show if organization can be resolved
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername("user@org-0.org");
+        Assert.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+
+        // show if the config is set to false
+        org0Broker.getConfig().put(OrganizationModel.HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN, Boolean.FALSE.toString());
+        testRealm().identityProviders().get(org0Broker.getAlias()).update(org0Broker);
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername("user@unknowndomain.org");
+        Assert.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername("user@org-0.org");
+        Assert.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+
+        // hide if hide on login is set to true
+        org0Broker.setHideOnLogin(true);
+        testRealm().identityProviders().get(org0Broker.getAlias()).update(org0Broker);
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername("user@unknowndomain.org");
+        Assert.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername("user@org-0.org");
         Assert.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
     }
 

@@ -1,14 +1,9 @@
 package org.keycloak.testsuite.saml;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Test;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -19,11 +14,17 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.SamlClient;
-import org.w3c.dom.Document;
 
-import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.hamcrest.Matchers;
+import org.junit.Assert;
+import org.junit.Test;
+import org.w3c.dom.Document;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 

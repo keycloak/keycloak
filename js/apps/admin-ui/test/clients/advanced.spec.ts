@@ -1,9 +1,9 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { v4 as uuidv4 } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
-import { goToClients, goToRealm } from "../utils/sidebar";
-import { assertEmptyTable, clickTableRowItem } from "../utils/table";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
+import { goToClients, goToRealm } from "../utils/sidebar.ts";
+import { assertEmptyTable, clickTableRowItem } from "../utils/table.ts";
 import {
   assertAccessTokenSignatureAlgorithm,
   assertAdvancedSwitchesOn,
@@ -30,9 +30,13 @@ import {
   switchOffExcludeSessionStateSwitch,
   saveAuthFlowOverride,
   revertAuthFlowOverride,
-} from "./advanced";
+  saveOid4vci,
+  revertOid4vci,
+  assertOid4vciEnabled,
+  switchOid4vciEnabled,
+} from "./advanced.ts";
 
-test.describe("Advanced tab test", () => {
+test.describe.serial("Advanced tab test", () => {
   const clientId = `advanced-tab-${uuidv4()}`;
 
   test.beforeAll(() =>
@@ -105,7 +109,7 @@ test.describe("Advanced tab test", () => {
   });
 });
 
-test.describe("Client Offline Session Max", () => {
+test.describe.serial("Client Offline Session Max", () => {
   const realmName = `client-offline-session-${uuidv4()}`;
   const clientId = `clientId-${uuidv4()}`;
 
@@ -127,5 +131,81 @@ test.describe("Client Offline Session Max", () => {
 
   test("Client Offline Session Max", async ({ page }) => {
     await assertTokenLifespanClientOfflineSessionMaxVisible(page, true);
+  });
+});
+
+test.describe.serial("OpenID for Verifiable Credentials", () => {
+  const realmName = `oid4vci-test-${uuidv4()}`;
+  const clientIdOpenIdConnect = `client-oidc-${uuidv4()}`;
+  test.beforeAll(async () => {
+    await adminClient.createRealm(realmName, {
+      verifiableCredentialsEnabled: true,
+    });
+    await adminClient.createClient({
+      clientId: clientIdOpenIdConnect,
+      realm: realmName,
+      protocol: "openid-connect",
+    });
+  });
+
+  test.afterAll(() => adminClient.deleteRealm(realmName));
+
+  test.describe.serial("with protocol openid-connect", () => {
+    test.beforeEach(async ({ page }) => {
+      await login(page);
+      await goToRealm(page, realmName);
+      await goToClients(page);
+      await clickTableRowItem(page, clientIdOpenIdConnect);
+
+      await page.waitForSelector('[data-testid="advancedTab"]', {
+        state: "visible",
+        timeout: 10000,
+      });
+      await page.getByTestId("advancedTab").click();
+    });
+
+    test("should handle OID4VC section visibility based on feature flag", async ({
+      page,
+    }) => {
+      const toggleSwitch = page.locator("#attributes\\.oid4vci🍺enabled");
+
+      const isVisible = await toggleSwitch.isVisible();
+
+      if (isVisible) {
+        await toggleSwitch.scrollIntoViewIfNeeded();
+        await assertOid4vciEnabled(page, false);
+        await switchOid4vciEnabled(page, true);
+        await saveOid4vci(page);
+        await assertOid4vciEnabled(page, true);
+        await switchOid4vciEnabled(page, false);
+        await assertOid4vciEnabled(page, false);
+        await revertOid4vci(page);
+        await assertOid4vciEnabled(page, true);
+      } else {
+        await expect(toggleSwitch).toBeHidden();
+      }
+    });
+
+    test("should hide OID4VC section when verifiable credentials are disabled for the realm", async ({
+      page,
+    }) => {
+      await adminClient.updateRealm(realmName, {
+        verifiableCredentialsEnabled: false,
+      });
+
+      await page.reload();
+      await page.waitForSelector('[data-testid="advancedTab"]', {
+        state: "visible",
+        timeout: 10000,
+      });
+      await page.getByTestId("advancedTab").click();
+
+      const toggleSwitch = page.locator("#attributes\\.oid4vci🍺enabled");
+      await expect(toggleSwitch).toBeHidden();
+
+      await adminClient.updateRealm(realmName, {
+        verifiableCredentialsEnabled: true,
+      });
+    });
   });
 });

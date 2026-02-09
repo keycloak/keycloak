@@ -17,8 +17,12 @@
 
 package org.keycloak.testsuite.federation.storage;
 
-import org.junit.Before;
-import org.junit.Test;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
@@ -32,16 +36,14 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.HardcodedGroupStorageProviderFactory;
 
-import jakarta.ws.rs.core.Response;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.stream.Collectors;
+import org.junit.Before;
+import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertNotNull;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
 

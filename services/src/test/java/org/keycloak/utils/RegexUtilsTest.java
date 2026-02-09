@@ -1,11 +1,11 @@
 package org.keycloak.utils;
 
-import org.junit.Test;
-
 import java.util.Arrays;
 
-import static org.hamcrest.Matchers.is;
+import org.junit.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 /**
  * <a href="mailto:external.benjamin.weimer@bosch-si.com">Benjamin Weimer</a>,

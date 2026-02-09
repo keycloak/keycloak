@@ -17,27 +17,33 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jboss.logging.Logger;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
-import org.keycloak.protocol.oid4vc.model.Role;
-import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
-import org.keycloak.provider.ProviderConfigProperty;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperContainerModel;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.ProtocolMapperConfigException;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
+import org.keycloak.protocol.oid4vc.model.Role;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.commons.collections4.ListUtils;
+import org.jboss.logging.Logger;
 
 /**
  * Adds the users roles to the credential subject
@@ -46,140 +52,178 @@ import java.util.stream.Collectors;
  */
 public class OID4VCTargetRoleMapper extends OID4VCMapper {
 
-    private static final Logger LOGGER = Logger.getLogger(OID4VCTargetRoleMapper.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+	private static final Logger LOGGER = Logger.getLogger(OID4VCTargetRoleMapper.class);
 
-    public static final String MAPPER_ID = "oid4vc-target-role-mapper";
-    public static final String SUBJECT_PROPERTY_CONFIG_KEY = "subjectProperty";
-    public static final String CLIENT_CONFIG_KEY = "clientId";
+	public static final String DEFAULT_CLAIM_NAME = "roles";
+	public static final String CLIENT_CONFIG_KEY = "clientId";
+	public static final String MAPPER_ID = "oid4vc-target-role-mapper";
 
-    private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
+	private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
-    static {
-        ProviderConfigProperty subjectPropertyNameConfig = new ProviderConfigProperty();
-        subjectPropertyNameConfig.setName(SUBJECT_PROPERTY_CONFIG_KEY);
-        subjectPropertyNameConfig.setLabel("Roles Property Name");
-        subjectPropertyNameConfig.setHelpText("Property to add the roles to in the credential subject.");
-        subjectPropertyNameConfig.setDefaultValue("roles");
-        subjectPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
-        CONFIG_PROPERTIES.add(subjectPropertyNameConfig);
-    }
+	static {
+		ProviderConfigProperty subjectPropertyNameConfig = new ProviderConfigProperty();
+		subjectPropertyNameConfig.setName(CLAIM_NAME);
+		subjectPropertyNameConfig.setLabel("Roles Property Name");
+		subjectPropertyNameConfig.setHelpText("Property to add the roles to in the credential subject.");
+		subjectPropertyNameConfig.setDefaultValue("roles");
+		subjectPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
+		CONFIG_PROPERTIES.add(subjectPropertyNameConfig);
 
-    @Override
-    protected List<ProviderConfigProperty> getIndividualConfigProperties() {
-        return CONFIG_PROPERTIES;
-    }
+		ProviderConfigProperty clientIdPropertyNameConfig = new ProviderConfigProperty();
+		subjectPropertyNameConfig.setName(CLIENT_CONFIG_KEY);
+		subjectPropertyNameConfig.setLabel("Client ID");
+		subjectPropertyNameConfig.setHelpText("Property to configure the client to get the roles from.");
+		subjectPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
+		CONFIG_PROPERTIES.add(clientIdPropertyNameConfig);
+	}
 
-    @Override
-    public String getDisplayType() {
-        return "Target-Role Mapper";
-    }
+	private final KeycloakSession keycloakSession;
 
-    @Override
-    public String getHelpText() {
-        return "Map the assigned role to the credential subject, providing the client id as the target.";
-    }
+	public OID4VCTargetRoleMapper() {
+		this.keycloakSession = null;
+	}
 
-    public static ProtocolMapperModel create(String clientId, String name) {
-        var mapperModel = new ProtocolMapperModel();
-        mapperModel.setName(name);
-        Map<String, String> configMap = new HashMap<>();
-        configMap.put(SUBJECT_PROPERTY_CONFIG_KEY, "roles");
-        configMap.put(CLIENT_CONFIG_KEY, clientId);
-        mapperModel.setConfig(configMap);
-        mapperModel.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
-        mapperModel.setProtocolMapper(MAPPER_ID);
-        return mapperModel;
-    }
+	public OID4VCTargetRoleMapper(KeycloakSession keycloakSession) {
+		this.keycloakSession = keycloakSession;
+	}
 
-    @Override
-    public ProtocolMapper create(KeycloakSession session) {
-        return new OID4VCTargetRoleMapper();
-    }
+	@Override
+	protected List<ProviderConfigProperty> getIndividualConfigProperties() {
+		return CONFIG_PROPERTIES;
+	}
 
-    @Override
-    public String getId() {
-        return MAPPER_ID;
-    }
+	@Override
+	public List<String> getMetadataAttributePath() {
+		return ListUtils.union(getAttributePrefix(),
+				List.of(Optional.ofNullable(mapperModel.getConfig().get(CLAIM_NAME))
+						.orElse(DEFAULT_CLAIM_NAME)));
+	}
 
-    @Override
-    public void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                       UserSessionModel userSessionModel) {
-        // nothing to do for the mapper.
-    }
+	@Override
+	public String getDisplayType() {
+		return "Target-Role Mapper";
+	}
 
-    @Override
-    public void setClaimsForSubject(Map<String, Object> claims,
-                                    UserSessionModel userSessionModel) {
-        String client = mapperModel.getConfig().get(CLIENT_CONFIG_KEY);
-        String propertyName = mapperModel.getConfig().get(SUBJECT_PROPERTY_CONFIG_KEY);
-        ClientModel clientModel = userSessionModel.getRealm().getClientByClientId(client);
-        if (clientModel == null) {
-            LOGGER.warnf("Client %s not found in realm.", client);
-            return;
-        }
+	@Override
+	public String getHelpText() {
+		return "Map the assigned role to the credential subject, providing the client id as the target.";
+	}
 
-        // Retrieve only the roles assigned to the user for this specific client
-        List<RoleModel> userRoles = userSessionModel.getUser().getClientRoleMappingsStream(clientModel).toList();
-        if (userRoles.isEmpty()) {
-            LOGGER.debugf("No roles assigned to client '%s'. Skipping claim assignment.", client);
-            return;
-        }
+	public static ProtocolMapperModel create(String name) {
+		var mapperModel = new ProtocolMapperModel();
+		mapperModel.setName(name);
+		Map<String, String> configMap = new HashMap<>();
+		configMap.put(CLAIM_NAME, DEFAULT_CLAIM_NAME);
+		mapperModel.setConfig(configMap);
+		mapperModel.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
+		mapperModel.setProtocolMapper(MAPPER_ID);
+		return mapperModel;
+	}
 
-        // Create ClientRoleModel and convert to roles claim
-        ClientRoleModel clientRoleModel = new ClientRoleModel(clientModel.getClientId(), userRoles);
-        Role rolesClaim = toRolesClaim(clientRoleModel);
-        if (rolesClaim.getNames().isEmpty()) {
-            LOGGER.debugf("No valid role names found for client '%s'. Skipping claim assignment.", client);
-            return;
-        }
+	@Override
+	public ProtocolMapper create(KeycloakSession session) {
+		return new OID4VCTargetRoleMapper(session);
+	}
 
-        Map<String, Object> modelMap = OBJECT_MAPPER.convertValue(rolesClaim, new TypeReference<>() {});
+	@Override
+	public void validateConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel client, ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
+		super.validateConfig(session, realm, client, mapperModel);
+		if (!mapperModel.getConfig().containsKey(CLIENT_CONFIG_KEY)) {
+			throw new ProtocolMapperConfigException("The OID4VCTargetRoleMapper requires a clientId to be present.");
+		}
+		String clientId = mapperModel.getConfig().get(CLIENT_CONFIG_KEY);
+		if (realm.getClientByClientId(clientId) == null) {
+			throw new ProtocolMapperConfigException(String.format("ClientId %s does not exist in the realm.", clientId));
+		}
+	}
 
-        Object existingProperty = claims.get(propertyName);
-        if (existingProperty == null) {
-            Set<Map<String, Object>> roles = new HashSet<>();
-            roles.add(modelMap);
-            claims.put(propertyName, roles);
-        } else if (existingProperty instanceof Set<?> rawSet) {
-            if (rawSet.stream().allMatch(item -> item instanceof Map<?, ?>)) {
-                @SuppressWarnings("unchecked")
-                Set<Map<String, Object>> rolesProperty = (Set<Map<String, Object>>) rawSet;
-                rolesProperty.add(modelMap);
-            } else {
-                LOGGER.warnf("Claim '%s' contains incompatible types. Expected Set<Map<String, Object>>, found '%s'. Skipping role assignment for client '%s'.",
-                        propertyName, existingProperty.getClass().getSimpleName(), client);
-            }
-        } else {
-            LOGGER.warnf("Claim '%s' is of type '%s', expected Set. Skipping role assignment for client '%s'.",
-                    propertyName, existingProperty.getClass().getSimpleName(), client);
-        }
-    }
+	@Override
+	public String getId() {
+		return MAPPER_ID;
+	}
 
-    private Role toRolesClaim(ClientRoleModel crm) {
-        Set<String> roleNames = crm
-                .getRoleModels()
-                .stream()
-                .map(RoleModel::getName)
-                .collect(Collectors.toSet());
-        return new Role(roleNames, crm.getClientId());
-    }
+	@Override
+	public void setClaim(VerifiableCredential verifiableCredential,
+						 UserSessionModel userSessionModel) {
+		// nothing to do for the mapper.
+	}
 
-    private static class ClientRoleModel {
-        private final String clientId;
-        private final List<RoleModel> roleModels;
+	@Override
+	public void setClaim(Map<String, Object> claims,
+						 UserSessionModel userSessionModel) {
+		List<String> attributePath = getMetadataAttributePath();
+		String propertyName = attributePath.get(attributePath.size() - 1);
+		String client = mapperModel.getConfig().get(CLIENT_CONFIG_KEY);
+		ClientModel clientModel = userSessionModel.getRealm().getClientByClientId(client);
+		if (clientModel == null) {
+			LOGGER.warnf("Client %s not found.", client);
+			return;
+		}
 
-        public ClientRoleModel(String clientId, List<RoleModel> roleModels) {
-            this.clientId = clientId;
-            this.roleModels = roleModels;
-        }
+		// Retrieve only the roles assigned to the user for this specific client
+		List<RoleModel> userRoles = userSessionModel.getUser().getClientRoleMappingsStream(clientModel).toList();
+		if (userRoles.isEmpty()) {
+			LOGGER.debugf("No roles assigned to client '%s'. Skipping claim assignment.",
+					clientModel.getClientId());
+			return;
+		}
 
-        public String getClientId() {
-            return clientId;
-        }
+		// Create ClientRoleModel and convert to roles claim
+		ClientRoleModel clientRoleModel = new ClientRoleModel(clientModel.getClientId(), userRoles);
+		Role rolesClaim = toRolesClaim(clientRoleModel);
+		if (rolesClaim.getNames().isEmpty()) {
+			LOGGER.debugf("No valid role names found for client '%s'. Skipping claim assignment.",
+					clientModel.getClientId());
+			return;
+		}
 
-        public List<RoleModel> getRoleModels() {
-            return roleModels;
-        }
-    }
+		Map<String, Object> modelMap = JsonSerialization.mapper.convertValue(rolesClaim, new TypeReference<>() {
+		});
+
+		Object existingProperty = claims.get(propertyName);
+		if (existingProperty == null) {
+			Set<Map<String, Object>> roles = new HashSet<>();
+			roles.add(modelMap);
+			claims.put(propertyName, roles);
+		} else if (existingProperty instanceof Set<?> rawSet) {
+			if (rawSet.stream().allMatch(item -> item instanceof Map<?, ?>)) {
+				@SuppressWarnings("unchecked")
+				Set<Map<String, Object>> rolesProperty = (Set<Map<String, Object>>) rawSet;
+				rolesProperty.add(modelMap);
+			} else {
+				LOGGER.warnf("Claim '%s' contains incompatible types. Expected Set<Map<String, Object>>, found '%s'. Skipping role assignment for client '%s'.",
+						propertyName, existingProperty.getClass().getSimpleName(), clientModel.getClientId());
+			}
+		} else {
+			LOGGER.warnf("Claim '%s' is of type '%s', expected Set. Skipping role assignment for client '%s'.",
+					propertyName, existingProperty.getClass().getSimpleName(), clientModel.getClientId());
+		}
+	}
+
+	private Role toRolesClaim(ClientRoleModel crm) {
+		Set<String> roleNames = crm
+				.getRoleModels()
+				.stream()
+				.map(RoleModel::getName)
+				.collect(Collectors.toSet());
+		return new Role(roleNames, crm.getClientId());
+	}
+
+	private static class ClientRoleModel {
+		private final String clientId;
+		private final List<RoleModel> roleModels;
+
+		public ClientRoleModel(String clientId, List<RoleModel> roleModels) {
+			this.clientId = clientId;
+			this.roleModels = roleModels;
+		}
+
+		public String getClientId() {
+			return clientId;
+		}
+
+		public List<RoleModel> getRoleModels() {
+			return roleModels;
+		}
+	}
 }

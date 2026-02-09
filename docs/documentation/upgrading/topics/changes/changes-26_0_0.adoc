@@ -90,7 +90,7 @@ For more details, see link:{adminguide_link}#_ldap_connection_pool[Configuring t
 This release introduced the capability to easily add a custom footer to the login pages for the `base/login` and `keycloak.v2/login` theme.
 In order to use a custom footer, create a `footer.ftl` file in your custom login theme with the desired content.
 
-For more details, see link:{developerguide_link}#_theme_custom_footer[Adding a custom footer to a login theme].
+For more details, see link:https://www.keycloak.org/ui-customization/themes#_theme_custom_footer[Adding a custom footer to a login theme].
 
 = Persisting revoked access tokens across restarts
 
@@ -443,7 +443,7 @@ Make sure to update your code to `await` these methods.
 
 == A secure context is now required
 
-Keycloak JS now requires a link:https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts[secure context] to run. The reason for this is that the library now uses the Web Crypto API for various cryptographic functions. This API is only available in secure contexts, which are contexts that are served over HTTPS, `localhost` or a `.localhost` domain. If you are using the library in a non-secure context you'll need to update your development environment to use a secure context.
+Keycloak JS now requires a link:https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Secure_Contexts[secure context] to run. The reason for this is that the library now uses the Web Crypto API for various cryptographic functions. This API is only available in secure contexts, which are contexts that are served over HTTPS, `localhost` or a `.localhost` domain. If you are using the library in a non-secure context you'll need to update your development environment to use a secure context.
 
 = Stricter startup behavior for build-time options
 

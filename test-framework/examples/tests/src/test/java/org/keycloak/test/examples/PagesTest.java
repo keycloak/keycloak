@@ -1,50 +1,55 @@
 package org.keycloak.test.examples;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
-import org.keycloak.testframework.ui.page.WelcomePage;
+import org.keycloak.testframework.ui.webdriver.BrowserType;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 @KeycloakIntegrationTest
 public class PagesTest {
 
-    @InjectWebDriver
-    WebDriver webDriver;
+    @InjectAdminClient
+    Keycloak adminClient;
 
-    @InjectPage
-    WelcomePage welcomePage;
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
+    @InjectWebDriver
+    ManagedWebDriver webDriver;
 
     @InjectPage
     LoginPage loginPage;
 
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
+
     @Test
     public void testLoginFromWelcome() {
-        welcomePage.navigateTo();
+        webDriver.open(keycloakUrls.getBaseUrl());
 
-        if (welcomePage.isActivePage()) {
-            welcomePage.fillRegistration("admin", "admin");
-            welcomePage.submit();
-            welcomePage.clickOpenAdminConsole();
-        }
-
-        if (webDriver instanceof HtmlUnitDriver) {
+        if (webDriver.getBrowserType().equals(BrowserType.HTML_UNIT)) {
             String pageId = webDriver.findElement(By.xpath("//body")).getAttribute("data-page-id");
             Assertions.assertEquals("admin", pageId);
             Assertions.assertTrue(webDriver.getCurrentUrl().endsWith("/admin/master/console/"));
         } else {
-            loginPage.waitForPage();
-
-            Assertions.assertTrue(loginPage.isActivePage());
+            loginPage.assertCurrent();
 
             loginPage.fillLogin("admin", "admin");
             loginPage.submit();
         }
+
     }
 
 }

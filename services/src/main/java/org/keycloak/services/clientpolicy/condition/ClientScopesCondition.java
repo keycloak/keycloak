@@ -23,11 +23,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
@@ -39,11 +39,14 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.JWTAuthorizationGrantContext;
 import org.keycloak.services.clientpolicy.context.ServiceAccountTokenRequestContext;
 import org.keycloak.services.clientpolicy.context.ServiceAccountTokenResponseContext;
 import org.keycloak.services.clientpolicy.context.TokenExchangeRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenResponseContext;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -118,6 +121,9 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
             case TOKEN_EXCHANGE_REQUEST:
                 if (isScopeMatched(((TokenExchangeRequestContext) context).getTokenExchangeContext())) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
+            case JWT_AUTHORIZATION_GRANT:
+                if (isScopeMatched(((JWTAuthorizationGrantContext) context).getAuthorizationGrantContext())) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
             default:
                 return ClientPolicyVote.ABSTAIN;
         }
@@ -141,6 +147,11 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
     private boolean isScopeMatched(TokenExchangeContext context) {
         if (context == null) return false;
         return isScopeMatched(context.getParams().getScope(), context.getClient());
+    }
+
+    private boolean isScopeMatched(JWTAuthorizationGrantValidationContext context) {
+        if (context == null) return false;
+        return isScopeMatched(context.getScopeParam(), session.getContext().getClient());
     }
 
     private boolean isScopeMatched(String explicitScopes, ClientModel client) {

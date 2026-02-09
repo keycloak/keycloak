@@ -17,16 +17,17 @@
 
 package org.keycloak.models;
 
-import org.jboss.logging.Logger;
+import java.io.Serializable;
+import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.Base32;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.utils.StringUtil;
 
-import java.io.Serializable;
-import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 

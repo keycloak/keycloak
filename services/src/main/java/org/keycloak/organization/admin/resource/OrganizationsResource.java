@@ -32,17 +32,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.NoCache;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
@@ -63,6 +53,18 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.SearchQueryUtils;
 import org.keycloak.utils.StringUtil;
+
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
 
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class OrganizationsResource {
@@ -222,7 +224,10 @@ public class OrganizationsResource {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "400", description = "Bad Request")
     })
-    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("member-id") String memberId) {
-        return new OrganizationMemberResource(session, null, adminEvent).getOrganizations(memberId);
+    public Stream<OrganizationRepresentation> getOrganizations(
+            @PathParam("member-id") String memberId,
+            @Parameter(description = "if false, return the full representation. Otherwise, only the basic fields are returned.")
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+        return new OrganizationMemberResource(session, null, adminEvent).getOrganizations(memberId, briefRepresentation);
     }
 }

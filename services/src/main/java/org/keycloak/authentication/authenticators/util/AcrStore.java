@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.CredentialAction;
 import org.keycloak.authentication.RequiredActionProvider;
@@ -39,6 +37,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.models.Constants.NO_LOA;
 

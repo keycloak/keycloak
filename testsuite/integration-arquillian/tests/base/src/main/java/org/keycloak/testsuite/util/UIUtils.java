@@ -1,9 +1,14 @@
 package org.keycloak.testsuite.util;
 
-import org.apache.commons.lang3.StringUtils;
-import org.junit.Assert;
+import java.time.Duration;
+import java.util.Optional;
+import java.util.function.Supplier;
+
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.keycloak.testsuite.pages.AbstractPage;
+
+import org.apache.commons.lang3.StringUtils;
+import org.junit.Assert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
@@ -11,16 +16,12 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.time.Duration;
-import java.util.Optional;
-import java.util.function.Supplier;
-
-import org.openqa.selenium.chrome.ChromeDriver;
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 import static org.keycloak.testsuite.util.WaitUtils.log;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;

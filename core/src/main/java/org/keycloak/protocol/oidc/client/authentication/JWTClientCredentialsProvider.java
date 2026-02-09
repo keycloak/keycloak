@@ -20,11 +20,11 @@ package org.keycloak.protocol.oidc.client.authentication;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.Map;
-import java.util.UUID;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
@@ -73,7 +73,7 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
         keyWrapper.setUse(KeyUse.SIG);
 
         // check the algorithm is valid
-        switch (keyPair.getPublic().getAlgorithm()) {
+        switch (JavaAlgorithm.getKeyType(keyPair.getPublic().getAlgorithm())) {
             case KeyType.RSA:
                 if (!JavaAlgorithm.isRSAJavaAlgorithm(algorithm)) {
                     throw new RuntimeException("Invalid algorithm for a RSA KeyPair: " + algorithm);
@@ -85,6 +85,12 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
                     throw new RuntimeException("Invalid algorithm for a EC KeyPair: " + algorithm);
                 }
                 this.sigCtx = new ECDSASignatureSignerContext(keyWrapper);
+                break;
+            case KeyType.OKP:
+                if (!JavaAlgorithm.isEddsaJavaAlgorithm(algorithm)) {
+                    throw new RuntimeException("Invalid algorithm for a EdDSA KeyPair: " + algorithm);
+                }
+                this.sigCtx = new AsymmetricSignatureSignerContext(keyWrapper);
                 break;
             default:
                 throw new RuntimeException("Invalid KeyPair algorithm: " + keyPair.getPublic().getAlgorithm());
@@ -177,7 +183,7 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
 
     protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
         JsonWebToken reqToken = new JsonWebToken();
-        reqToken.id(UUID.randomUUID().toString());
+        reqToken.id(SecretGenerator.getInstance().generateSecureID());
         reqToken.issuer(clientId);
         reqToken.subject(clientId);
         reqToken.audience(realmInfoUrl);

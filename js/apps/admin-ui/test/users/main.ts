@@ -1,4 +1,4 @@
-import { Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 export async function clickCancelButton(page: Page) {
   await page.getByTestId("user-creation-revert").click();
@@ -9,7 +9,7 @@ export async function clickSaveButton(page: Page) {
 }
 
 export async function clickAddUserButton(page: Page) {
-  page.getByTestId("no-users-found-empty-action").click();
+  await page.getByTestId("no-users-found-empty-action").click();
 }
 
 export async function fillUserForm(

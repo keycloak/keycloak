@@ -1,12 +1,12 @@
 package org.freedesktop.dbus.utils;
 
-import org.freedesktop.dbus.annotations.DBusInterfaceName;
-import org.freedesktop.dbus.annotations.DBusMemberName;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.regex.Pattern;
+
+import org.freedesktop.dbus.annotations.DBusInterfaceName;
+import org.freedesktop.dbus.annotations.DBusMemberName;
 
 /**
  * DBus name Util class for internal and external use.

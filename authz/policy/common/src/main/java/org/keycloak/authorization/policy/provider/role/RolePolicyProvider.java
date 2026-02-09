@@ -22,15 +22,14 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.attribute.Attributes.Entry;
+import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.identity.UserModelIdentity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
-import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
@@ -43,6 +42,8 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.authorization.ResourceType;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.models.utils.RoleUtils.getDeepUserRoleMappings;
 
@@ -133,7 +134,7 @@ public class RolePolicyProvider implements PolicyProvider, PartialEvaluationPoli
     }
 
     @Override
-    public Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, UserModel subject) {
+    public Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, ResourceType groupResourceType, UserModel subject) {
         AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
         RealmModel realm = session.getContext().getRealm();
         ClientModel adminPermissionsClient = realm.getAdminPermissionsClient();
@@ -143,7 +144,7 @@ public class RolePolicyProvider implements PolicyProvider, PartialEvaluationPoli
         List<String> roleIds = getDeepUserRoleMappings(subject).stream().map(RoleModel::getId).toList();
         Stream<Policy> policies = Stream.of();
 
-        return Stream.concat(policies, policyStore.findDependentPolicies(resourceServer, resourceType.getType(), RolePolicyProviderFactory.ID, "roles", roleIds));
+        return Stream.concat(policies, policyStore.findDependentPolicies(resourceServer, resourceType.getType(), groupResourceType == null ? null : groupResourceType.getType(), RolePolicyProviderFactory.ID, "roles", roleIds));
     }
 
     @Override

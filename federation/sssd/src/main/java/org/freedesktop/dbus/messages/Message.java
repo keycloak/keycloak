@@ -1,5 +1,18 @@
 package org.freedesktop.dbus.messages;
 
+import java.lang.reflect.Array;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+
 import org.freedesktop.dbus.ArrayFrob;
 import org.freedesktop.dbus.Container;
 import org.freedesktop.dbus.DBusMap;
@@ -20,19 +33,6 @@ import org.freedesktop.dbus.utils.Hexdump;
 import org.freedesktop.dbus.utils.LoggingHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.Array;
-import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 /**
  * Superclass of all messages which are sent over the Bus. This class deals with all the marshalling to/from the wire

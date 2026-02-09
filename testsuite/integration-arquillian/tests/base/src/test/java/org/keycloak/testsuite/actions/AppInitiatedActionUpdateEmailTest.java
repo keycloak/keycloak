@@ -20,13 +20,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.userprofile.UserProfileConstants.ROLE_USER;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -39,11 +32,23 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
+import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.validate.validators.LengthValidator;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Test;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.userprofile.UserProfileConstants.ROLE_USER;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActionUpdateEmailTest {
 
@@ -52,6 +57,7 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
 
     @After
     public void after() {
+        setTimeOffset(0);
         // update email required action max auth age back to default
         Optional<RequiredActionProviderRepresentation> updateEmailAction = testRealm().flows().getRequiredActions()
                 .stream()
@@ -137,13 +143,10 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
     public void updateEmailReAuthentication() {
         appPage.open();
         appPage.openAccount();
-
         loginPage.login("test-user@localhost", "password");
 
-        setTimeOffset(50);
-
+        setTimeOffset(400);
         UIUtils.clickLink(updateEmailBtn);
-
         loginPage.assertCurrent();
         loginPage.login("password");
 
@@ -152,10 +155,23 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
     }
 
     @Test
+    @IgnoreBrowserDriver(value={FirefoxDriver.class}, negate=true)
+    public void testNoReAuthenticationIfMaxAgeNotReached() {
+        appPage.open();
+        appPage.openAccount();
+        loginPage.login("test-user@localhost", "password");
+
+        UIUtils.clickLink(updateEmailBtn);
+        emailUpdatePage.assertCurrent();
+        emailUpdatePage.changeEmail("test-user2@localhost");
+        assertThat(DroneUtils.getCurrentDriver().getTitle(), equalTo("Account Management"));
+    }
+
+    @Test
     // only for firefox as it needs to go to the account console
     // chrome doesn't work due to "change password popup"
     @IgnoreBrowserDriver(value={FirefoxDriver.class}, negate=true)
-    public void updateEmailCustomMaxAgeReAuthentication() {
+    public void testAlwaysReAuthenticateBeforeUpdateEmail() {
         RequiredActionProviderRepresentation updateEmailAction = testRealm().flows().getRequiredActions()
                 .stream()
                 .filter(requiredAction -> requiredAction.getProviderId().equals(UserModel.RequiredAction.UPDATE_EMAIL.name()))
@@ -163,16 +179,14 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
                 .orElseThrow();
 
         // this custom config should be ignored and re-authentication should be always required
-        updateEmailAction.getConfig().put(Constants.MAX_AUTH_AGE_KEY, "300");
+        updateEmailAction.getConfig().put(Constants.MAX_AUTH_AGE_KEY, "0");
         testRealm().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name(), updateEmailAction);
 
         appPage.open();
         appPage.openAccount();
-
         loginPage.login("test-user@localhost", "password");
 
         UIUtils.clickLink(updateEmailBtn);
-
         loginPage.assertCurrent();
         loginPage.login("password");
 

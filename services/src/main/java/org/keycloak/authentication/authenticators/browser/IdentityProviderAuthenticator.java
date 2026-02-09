@@ -17,8 +17,10 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
-import org.jboss.logging.Logger;
-import org.keycloak.OAuth2Constants;
+import java.net.URI;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
@@ -31,11 +33,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.ClientSessionCode;
 
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import java.net.URI;
-import java.util.Objects;
-import java.util.Optional;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -75,7 +73,8 @@ public class IdentityProviderAuthenticator implements Authenticator {
     }
 
     protected void redirect(AuthenticationFlowContext context, String providerId) {
-        redirect(context, providerId, null);
+        String loginHint = context.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+        redirect(context, providerId, loginHint);
     }
 
     protected void redirect(AuthenticationFlowContext context, String providerId, String loginHint) {

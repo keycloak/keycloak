@@ -4,7 +4,7 @@ ADD target/ubi-null.sh /tmp/
 RUN bash /tmp/ubi-null.sh java-21-openjdk-headless glibc-langpack-en
 
 FROM registry.access.redhat.com/ubi9-micro
-ENV LANG en_US.UTF-8
+ENV LANG=en_US.UTF-8
 
 COPY --from=ubi-micro-build /tmp/null/rootfs/ /
 
@@ -56,5 +56,5 @@ ARG KEYCLOAK_DOCS=${KEYCLOAK_URL}documentation
 LABEL org.opencontainers.image.title=${KEYCLOAK_OPERATOR_DISPLAY_NAME} \
       org.opencontainers.image.url=${KEYCLOAK_URL} \
       org.opencontainers.image.source=${KEYCLOAK_SOURCE} \
-      org.opencontainers.image.description=${KEYCLOAK_DESCRIPTION} \
+      org.opencontainers.image.description=${KEYCLOAK_OPERATOR_DESCRIPTION} \
       org.opencontainers.image.documentation=${KEYCLOAK_DOCS}

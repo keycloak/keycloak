@@ -14,13 +14,6 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jboss.logging.Logger;
-import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientPoliciesPoliciesResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -52,11 +45,21 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jboss.logging.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.junit.After;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -69,7 +72,6 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 /**
  * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
@@ -230,7 +232,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         assertThat(secondSecret, not(equalTo(firstSecret)));
         assertThat(wrapper.hasRotatedSecret(), is(Boolean.TRUE));
-        assertThat(wrapper.getClientRotatedSecret(), equalTo(firstSecret));
+        assertThat(wrapper.getClientRotatedSecret(null), equalTo(firstSecret));
     }
 
     /**
@@ -263,7 +265,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
                 clientResource.toRepresentation());
         assertThat(wrapper.hasRotatedSecret(), is(Boolean.TRUE));
-        assertThat(wrapper.getClientRotatedSecret(), equalTo(secondSecret));
+        assertThat(wrapper.getClientRotatedSecret(null), equalTo(secondSecret));
         int rotatedCreationTime = wrapper.getClientSecretCreationTime();
         assertThat(rotatedCreationTime, is(notNullValue()));
         assertThat(rotatedCreationTime, greaterThan(0));
@@ -311,7 +313,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
                 clientResource.toRepresentation());
         assertThat(wrapper.getClientSecretCreationTime(), not(equalTo(secretCreationTime)));
         assertThat(wrapper.hasRotatedSecret(), is(Boolean.TRUE));
-        assertThat(wrapper.getClientRotatedSecret(), equalTo(firstSecret));
+        assertThat(wrapper.getClientRotatedSecret(null), equalTo(firstSecret));
     }
 
     /**
@@ -475,7 +477,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         logger.debug("client secret:" + updatedSecret + "\nsecret expiration: " + Time.toDate(
                 wrapper.getClientSecretExpirationTime()) + "\nrotated secret: "
-                + wrapper.getClientRotatedSecret() + "\nrotated expiration: " + Time.toDate(
+                + wrapper.getClientRotatedSecret(null) + "\nrotated expiration: " + Time.toDate(
                 wrapper.getClientRotatedSecretExpirationTime()) + " | Time: " + Time.toDate(
                 Time.currentTime()));
         logger.debug(">>> trying login at time " + Time.toDate(Time.currentTime()));

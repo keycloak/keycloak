@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login, logout } from "../utils/login";
-import { assertAxeViolations } from "../utils/masthead";
-import { goToClients } from "../utils/sidebar";
+import adminClient from "../utils/AdminClient.ts";
+import { login, logout } from "../utils/login.ts";
+import { assertAxeViolations } from "../utils/masthead.ts";
+import { goToClients } from "../utils/sidebar.ts";
 import {
   assertIsDesktopView,
   assertIsMobileView,
@@ -13,14 +13,14 @@ import {
   toggleGlobalHelp,
   toggleMobileViewHelp,
   toggleUsernameDropdown,
-} from "./main";
+} from "./main.ts";
 
-test.describe("Masthead tests", () => {
+test.describe.serial("Masthead tests", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
   });
 
-  test.describe("Desktop view", () => {
+  test.describe.serial("Desktop view", () => {
     test("Go to account console and back to admin console", async ({
       page,
     }) => {
@@ -65,7 +65,7 @@ test.describe("Masthead tests", () => {
     });
   });
 
-  test.describe("Login works for unprivileged users", () => {
+  test.describe.serial("Login works for unprivileged users", () => {
     const realmName = `test-realm-${uuid()}`;
     const username = `test-user-${uuid()}`;
 
@@ -87,13 +87,18 @@ test.describe("Masthead tests", () => {
 
     test("Login without privileges to see admin console", async ({ page }) => {
       await logout(page);
-      await login(page, username, "test", realmName);
-      await logout(page, "Test User");
+      await login(page, { realm: realmName, username, password: "test" });
+      await expect(
+        page.getByText(
+          "You do not have permission to access this resource, sign in with a user that has permission, or contact your administrator.",
+        ),
+      ).toBeVisible();
+      await page.getByRole("button", { name: "Sign out" }).click();
       await expect(page).toHaveURL(/\/auth/);
     });
   });
 
-  test.describe("Mobile view", () => {
+  test.describe.serial("Mobile view", () => {
     test.beforeEach(async ({ page }) => {
       await page.setViewportSize({ width: 360, height: 640 });
     });

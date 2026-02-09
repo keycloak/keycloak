@@ -16,11 +16,14 @@
  */
 package org.keycloak.testsuite.federation.storage;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
+import java.io.Closeable;
+import java.io.File;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.NotFoundException;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.credential.CredentialModel;
@@ -40,16 +43,12 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.testsuite.AbstractAuthTest;
 
-import java.io.Closeable;
-import jakarta.ws.rs.NotFoundException;
-import java.io.File;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

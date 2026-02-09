@@ -13,7 +13,8 @@
     <version>999.0.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
-    <name>github-maven-plugin</name>
+    <name>header-maven-plugin</name>
+    <description>header-maven-plugin</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

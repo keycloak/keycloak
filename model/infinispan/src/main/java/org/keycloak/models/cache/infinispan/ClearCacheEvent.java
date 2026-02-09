@@ -16,10 +16,11 @@
  */
 package org.keycloak.models.cache.infinispan;
 
-import org.infinispan.protostream.annotations.ProtoFactory;
-import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.marshalling.Marshalling;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

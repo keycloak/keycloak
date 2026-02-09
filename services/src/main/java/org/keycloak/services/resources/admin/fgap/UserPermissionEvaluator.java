@@ -16,13 +16,13 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
+import java.util.Map;
+
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.UserModel;
-
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -56,6 +56,23 @@ public interface UserPermissionEvaluator {
      * of the group chain the user is associated with.
      */
     boolean canManage(UserModel user);
+
+    /**
+     * Throws ForbiddenException if {@link #canResetPassword(UserModel)} returns {@code false}.
+     */
+    default void requireResetPassword(UserModel user) {
+        if (!canResetPassword(user)) {
+            throw new jakarta.ws.rs.ForbiddenException();
+        }
+    }
+
+    /**
+     * Returns {@code true} if the caller has permission to {@link org.keycloak.authorization.fgap.AdminPermissionsSchema#RESET_PASSWORD}
+     * for the given user. Default implementation falls back to {@link #canManage(UserModel)} for backward compatibility.
+     */
+    default boolean canResetPassword(UserModel user) {
+        return canManage(user);
+    }
 
     /**
      * Throws ForbiddenException if {@link #canQuery()} returns {@code false}.

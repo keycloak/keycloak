@@ -17,9 +17,6 @@
 
 package org.keycloak.theme;
 
-import org.keycloak.models.RealmModel;
-import org.keycloak.services.util.LocaleUtil;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -28,10 +25,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
+import org.keycloak.models.RealmModel;
+import org.keycloak.services.util.LocaleUtil;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ClassLoaderTheme implements Theme {
+public class ClassLoaderTheme extends FileBasedTheme {
 
     private String name;
 
@@ -116,19 +116,13 @@ public class ClassLoaderTheme implements Theme {
     }
 
     @Override
-    public Properties getMessages(String baseBundlename, Locale locale) throws IOException {
-        if(locale == null){
-            return null;
-        }
-        Properties m = new Properties();
-
-        URL url = classLoader.getResource(this.messageRoot + baseBundlename + "_" + locale + ".properties");
+    protected void loadBundle(String baseBundlename, Locale locale, Properties m) throws IOException {
+        URL url = classLoader.getResource(this.messageRoot + toBundleName(baseBundlename, locale) + ".properties");
         if (url != null) {
             try (InputStream stream = url.openStream()) {
                 PropertiesUtil.readCharsetAware(m, stream);
             }
         }
-        return m;
     }
 
     @Override

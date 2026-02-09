@@ -17,9 +17,9 @@
 package org.keycloak.testsuite.model;
 
 import java.util.List;
+
 import jakarta.persistence.EntityManager;
-import org.jboss.logging.Logger;
-import org.junit.Test;
+
 import org.keycloak.common.Version;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.migration.MigrationModel;
@@ -33,6 +33,9 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.jpa.entities.MigrationModelEntity;
+
+import org.jboss.logging.Logger;
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -153,6 +156,47 @@ public class MigrationModelTest extends KeycloakModelTest {
             } finally {
                 em.remove(entities.get(1));
                 em.remove(entities.get(2));
+            }
+
+            return null;
+        });
+    }
+
+    @Test
+    public void duplicatedUpdateTime() {
+        inComittedTransaction(1, (session, i) -> {
+            String currentVersion = new ModelVersion(Version.VERSION).toString();
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+
+            List<MigrationModelEntity> entities = getMigrationEntities(em);
+            assertThat(entities.size(), is(1));
+            assertMigrationModelEntity(entities.get(0), currentVersion);
+
+            MigrationModel m = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
+            assertThat(m.getStoredVersion(), is(currentVersion));
+            assertThat(entities.get(0).getId(), is(m.getResourcesTag()));
+
+            try {
+                MigrationModelEntity mm1 = new MigrationModelEntity();
+                mm1.setId("a");
+                mm1.setUpdatedTime(0);
+                mm1.setVersion("26.0.0");
+                em.persist(mm1);
+
+                em.flush();
+
+                // Same time, everything different - testing for the constraint to be present
+                MigrationModelEntity mm2 = new MigrationModelEntity();
+                mm2.setId("b");
+                mm2.setUpdatedTime(0);
+                mm2.setVersion("26.0.1");
+                em.persist(mm2);
+
+                // added at the same time - exception thrown by the unique constraint
+                assertThrows(ModelDuplicateException.class, em::flush);
+
+            } finally {
+                em.remove(em.find(MigrationModelEntity.class, "a"));
             }
 
             return null;

@@ -16,12 +16,12 @@
  */
 package org.keycloak.testsuite.arquillian.containers;
 
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+
 import org.wildfly.extras.creaper.core.CommandFailedException;
 import org.wildfly.extras.creaper.core.online.CliException;
 import org.wildfly.extras.creaper.core.online.operations.OperationException;
-
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
 
 /**
  * The test implementing the interface is expected to maintain container lifecycle 

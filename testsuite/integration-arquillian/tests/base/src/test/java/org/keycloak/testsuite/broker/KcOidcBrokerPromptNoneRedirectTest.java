@@ -19,8 +19,6 @@ package org.keycloak.testsuite.broker;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Ignore;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -29,14 +27,18 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.CLIENT_ID;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * This class tests the propagation of the {@code prompt=none} request parameter to a default IDP (if one has been specified)

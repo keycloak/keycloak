@@ -17,27 +17,40 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
+import java.net.URI;
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.IntStream;
+
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.sdjwt.DisclosureSpec;
+import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
+import org.keycloak.util.JsonSerialization;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.IntStream;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_ISSUER;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_JTI;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUB;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
 
 public class SdJwtCredentialBuilder implements CredentialBuilder {
 
-    public static final String ISSUER_CLAIM = "iss";
-    public static final String VERIFIABLE_CREDENTIAL_TYPE_CLAIM = "vct";
-
-    private final String credentialIssuer;
-
-    public SdJwtCredentialBuilder(String credentialIssuer) {
-        this.credentialIssuer = credentialIssuer;
+    public SdJwtCredentialBuilder() {
     }
 
     @Override
@@ -50,15 +63,32 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
             VerifiableCredential verifiableCredential,
             CredentialBuildConfig credentialBuildConfig
     ) throws CredentialBuilderException {
-        // Retrieve claims
+
+        URI vcId = verifiableCredential.getId();
+        Instant issuanceDate = verifiableCredential.getIssuanceDate();
+        Instant expirationDate = verifiableCredential.getExpirationDate();
+
+        // Retrieve subject claims
         CredentialSubject credentialSubject = verifiableCredential.getCredentialSubject();
-        Map<String, Object> claimSet = credentialSubject.getClaims();
+        Map<String, Object> claims = new LinkedHashMap<>(credentialSubject.getClaims());
+
+        // Map subject id => sub
+        Optional.ofNullable(claims.remove(CLAIM_NAME_SUBJECT_ID)).ifPresent(it ->
+                claims.put(CLAIM_NAME_SUB, it)
+        );
+
+        // Always add a jti (the credential id)
+        claims.put(CLAIM_NAME_JTI, vcId != null ? vcId : UUID.randomUUID().toString());
+
+        Optional.ofNullable(issuanceDate).ifPresent(it ->
+                claims.put(CLAIM_NAME_IAT, it.getEpochSecond())
+        );
 
         // Put all claims into the disclosure spec, except the one to be kept visible
         DisclosureSpec.Builder disclosureSpecBuilder = DisclosureSpec.builder();
-        claimSet.entrySet()
+        claims.entrySet()
                 .stream()
-                .filter(entry -> !credentialBuildConfig.getVisibleClaims().contains(entry.getKey()))
+                .filter(entry -> !credentialBuildConfig.getSdJwtVisibleClaims().contains(entry.getKey()))
                 .forEach(entry -> {
                     if (entry instanceof List<?> listValue) {
                         // FIXME: Unreachable branch. The intent was probably to check `entry.getValue()`,
@@ -75,10 +105,18 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
                 });
 
         // Populate configured fields (necessarily visible)
-        claimSet.put(ISSUER_CLAIM, credentialIssuer);
-        claimSet.put(VERIFIABLE_CREDENTIAL_TYPE_CLAIM, credentialBuildConfig.getCredentialType());
+        claims.put(CLAIM_NAME_ISSUER, credentialBuildConfig.getCredentialIssuer());
+        claims.put(CLAIM_NAME_VCT, credentialBuildConfig.getCredentialType());
 
-        // jti, nbf, iat and exp are all optional. So need to be set by a protocol mapper if needed.
+        // Set exp claim from verifiable credential expiration date
+        // expiry is optional, but should be set if available to comply with HAIP
+        // see: https://openid.github.io/OpenID4VC-HAIP/openid4vc-high-assurance-interoperability-profile-wg-draft.html#section-6.1
+        // Only set if not already set by a protocol mapper
+        if (!claims.containsKey(CLAIM_NAME_EXP) && expirationDate != null) {
+            claims.put(CLAIM_NAME_EXP, expirationDate.getEpochSecond());
+        }
+
+        // jti, nbf, and iat are all optional. So need to be set by a protocol mapper if needed.
         // see: https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-03.html#name-registered-jwt-claims
 
         // Add the configured number of decoys
@@ -87,11 +125,21 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
                     .forEach(i -> disclosureSpecBuilder.withDecoyClaim(SdJwtUtils.randomSalt()));
         }
 
-        var sdJwtBuilder = SdJwt.builder()
-                .withDisclosureSpec(disclosureSpecBuilder.build())
-                .withHashAlgorithm(credentialBuildConfig.getHashAlgorithm())
-                .withJwsType(credentialBuildConfig.getTokenJwsType());
+        ObjectNode claimsNode = JsonSerialization.mapper.convertValue(claims, ObjectNode.class);
+        IssuerSignedJWT issuerSignedJWT = IssuerSignedJWT.builder()
+                                                         .withClaims(claimsNode,
+                                                                     disclosureSpecBuilder.build())
+                                                         .withHashAlg(credentialBuildConfig.getHashAlgorithm())
+                                                         .withJwsType(credentialBuildConfig.getTokenJwsType())
+                                                         .build();
+        SdJwt.Builder sdJwtBuilder = SdJwt.builder();
 
-        return new SdJwtCredentialBody(sdJwtBuilder, claimSet);
+        return new SdJwtCredentialBody(sdJwtBuilder, issuerSignedJWT);
+    }
+
+    @Override
+    public void contributeToMetadata(SupportedCredentialConfiguration credentialConfig, CredentialScopeModel credentialScope) {
+        String vct = Optional.ofNullable(credentialScope.getVct()).orElse(credentialScope.getName());
+        credentialConfig.setVct(vct);
     }
 }

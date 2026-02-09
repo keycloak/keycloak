@@ -17,10 +17,10 @@
 
 package org.keycloak.representations.idm;
 
-import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-
 import java.util.List;
 import java.util.Map;
+
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

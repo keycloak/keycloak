@@ -17,13 +17,6 @@
 
 package org.keycloak.testsuite.util;
 
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.jboss.logging.Logger;
-import org.keycloak.common.constants.GenericConstants;
-import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.storage.UserStorageProvider;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -31,6 +24,14 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.keycloak.common.constants.GenericConstants;
+import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.storage.UserStorageProvider;
+
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -8,7 +8,7 @@
 
     <#if section = "header">
         <#if messageHeader??>
-            ${kcSanitize(msg("${messageHeader}"))?no_esc}
+            ${msg(messageHeader)}
         <#else>
             ${msg("registerTitle")}
         </#if>
@@ -55,7 +55,7 @@
             <div class="${properties.kcFormGroupClass!} pf-v5-c-login__main-footer-band">
                 <div id="kc-form-options" class="${properties.kcFormOptionsClass!} pf-v5-c-login__main-footer-band-item">
                     <div class="${properties.kcFormOptionsWrapperClass!}">
-                        <span><a href="${url.loginUrl}">${kcSanitize(msg("backToLogin"))?no_esc}</a></span>
+                        <span><a href="${url.loginUrl}">${msg("backToLogin")}</a></span>
                     </div>
                 </div>
             </div>

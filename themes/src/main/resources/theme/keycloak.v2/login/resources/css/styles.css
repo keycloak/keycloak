@@ -109,6 +109,10 @@ div.kc-logo-text span {
     text-align: center;
 }
 
+#kc-code pre code {
+    word-break: break-all;
+}
+
 hr {
     margin-top: var(--pf-v5-global--spacer--sm);
     margin-bottom: var(--pf-v5-global--spacer--md);

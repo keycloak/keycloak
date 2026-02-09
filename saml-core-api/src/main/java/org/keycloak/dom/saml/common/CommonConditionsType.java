@@ -16,8 +16,8 @@
  */
 package org.keycloak.dom.saml.common;
 
-import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.Serializable;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 /**
  * @author Anil.Saldhana@redhat.com

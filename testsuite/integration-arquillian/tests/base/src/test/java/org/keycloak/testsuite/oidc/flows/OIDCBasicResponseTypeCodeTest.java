@@ -17,8 +17,9 @@
 
 package org.keycloak.testsuite.oidc.flows;
 
-import org.junit.Before;
-import org.junit.Test;
+import java.util.Collections;
+import java.util.List;
+
 import org.keycloak.events.Details;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
@@ -27,8 +28,8 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import java.util.Collections;
-import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Test for response_type=code

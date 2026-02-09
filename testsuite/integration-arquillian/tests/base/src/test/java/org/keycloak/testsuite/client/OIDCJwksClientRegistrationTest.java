@@ -27,17 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.ws.rs.core.UriBuilder;
-
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.common.util.KeycloakUriBuilder;
@@ -50,7 +39,6 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.client.authentication.JWTClientCredentialsProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
@@ -64,6 +52,16 @@ import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

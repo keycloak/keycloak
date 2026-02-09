@@ -28,6 +28,7 @@ public class ComponentTypeRepresentation {
     protected String id;
     protected String helpText;
     protected List<ConfigPropertyRepresentation> properties;
+    protected List<ConfigPropertyRepresentation> clientProperties;
 
     protected Map<String, Object> metadata = new HashMap<>();
 
@@ -54,6 +55,14 @@ public class ComponentTypeRepresentation {
 
     public void setProperties(List<ConfigPropertyRepresentation> properties) {
         this.properties = properties;
+    }
+
+    public List<ConfigPropertyRepresentation> getClientProperties() {
+        return clientProperties;
+    }
+
+    public void setClientProperties(List<ConfigPropertyRepresentation> clientProperties) {
+        this.clientProperties = clientProperties;
     }
 
     /**

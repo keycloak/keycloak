@@ -78,8 +78,7 @@ export const LogoutPanel = ({
           label={t("frontchannelLogoutUrl")}
           labelIcon={t("frontchannelLogoutUrlHelp")}
           rules={{
-            validate: (uri) =>
-              validateUrl(uri, t("frontchannelUrlInvalid").toString()),
+            validate: (uri) => validateUrl(uri, t("frontchannelUrlInvalid")),
           }}
         />
       )}
@@ -105,8 +104,7 @@ export const LogoutPanel = ({
             label={t("backchannelLogoutUrl")}
             labelIcon={t("backchannelLogoutUrlHelp")}
             rules={{
-              validate: (uri) =>
-                validateUrl(uri, t("backchannelUrlInvalid").toString()),
+              validate: (uri) => validateUrl(uri, t("backchannelUrlInvalid")),
             }}
           />
           <FormGroup
@@ -124,7 +122,7 @@ export const LogoutPanel = ({
               name={convertAttributeNameToForm<FormFields>(
                 "attributes.backchannel.logout.session.required",
               )}
-              defaultValue="true"
+              defaultValue="false"
               control={control}
               render={({ field }) => (
                 <Switch
@@ -168,6 +166,17 @@ export const LogoutPanel = ({
             />
           </FormGroup>
         </>
+      )}
+      {protocol === "openid-connect" && (
+        <DefaultSwitchControl
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.logout.confirmation.enabled",
+          )}
+          defaultValue="false"
+          label={t("logoutConfirmation")}
+          labelIcon={t("logoutConfirmationHelp")}
+          stringify
+        />
       )}
       <FixedButtonsGroup
         name="settings"

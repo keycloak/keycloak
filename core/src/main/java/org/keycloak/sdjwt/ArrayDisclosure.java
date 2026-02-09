@@ -27,9 +27,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 /**
  * Handles selective disclosure of elements within a top-level array claim,
  * supporting both visible and undisclosed elements.
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
- * 
+ *
  */
 public class ArrayDisclosure extends AbstractSdJwtClaim {
     private final List<SdJwtArrayElement> elements;
@@ -82,6 +82,26 @@ public class ArrayDisclosure extends AbstractSdJwtClaim {
                         disclosureStrings.add(disclosureString);
                 });
         return disclosureStrings;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (!(o instanceof ArrayDisclosure)) {
+            return false;
+        }
+
+        ArrayDisclosure that = (ArrayDisclosure) o;
+        return Objects.equals(elements, that.elements) && //
+            Objects.equals(visibleClaimValue, that.visibleClaimValue) && //
+            Objects.equals(decoyElements, that.decoyElements);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hashCode(elements);
+        result = 31 * result + Objects.hashCode(visibleClaimValue);
+        result = 31 * result + Objects.hashCode(decoyElements);
+        return result;
     }
 
     public static class Builder {

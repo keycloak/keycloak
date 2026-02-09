@@ -16,22 +16,22 @@
  */
 package org.keycloak.testsuite.oauth;
 
+import java.io.IOException;
+import java.net.URI;
+import java.util.Collections;
+import java.util.List;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.representations.AuthorizationResponseToken;
@@ -43,16 +43,17 @@ import org.keycloak.testsuite.pages.InstalledAppRedirectPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.openqa.selenium.By;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -60,7 +61,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -120,16 +120,16 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         String error = "<p><a href=\"javascript&amp;colon;alert(document.domain);\">Back to application</a></p>";
         installedAppPage.open("test", null, error, null);
 
-        // Assert text escaped and not "a" link present
+        // Assert text escaped
         installedAppPage.assertLinkBackToApplicationNotPresent();
-        Assert.assertEquals("Error code: <p>Back to application</p>", installedAppPage.getPageTitleText());
+        Assert.assertEquals("Error code: <p><a href=\"javascript&amp;colon;alert(document.domain);\">Back to application</a></p>", installedAppPage.getPageTitleText());
 
         error = "<p><a href=\"http://foo.com\">Back to application</a></p>";
         installedAppPage.open("test", null, error, null);
 
-        // In this case, link is not sanitized as it is valid link, however it is escaped and not shown as a link
+        // Assert text is escaped
         installedAppPage.assertLinkBackToApplicationNotPresent();
-        Assert.assertEquals("Error code: <p><a href=\"http://foo.com\" rel=\"nofollow\">Back to application</a></p>", installedAppPage.getPageTitleText());
+        Assert.assertEquals("Error code: <p><a href=\"http://foo.com\">Back to application</a></p>", installedAppPage.getPageTitleText());
     }
 
     @Test
@@ -159,6 +159,17 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         assertTrue(errorPage.isCurrent());
         assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testInvalidNULCharacterClientId() {
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris(oauth.getRedirectUri());
+
+        oauth.client("%00");
+        oauth.openLoginForm();
+
+        assertTrue(errorPage.isCurrent());
+        assertEquals("An internal server error has occurred", errorPage.getError());
     }
 
     @Test
@@ -288,7 +299,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
             events.expect(EventType.LOGIN)
                     .user(AssertEvents.isUUID())
-                    .session(AssertEvents.isUUID())
+                    .session(AssertEvents.isSessionId())
                     .detail(Details.USERNAME, "test-user@localhost")
                     .detail(OIDCLoginProtocol.RESPONSE_MODE_PARAM, OIDCResponseMode.FORM_POST.name().toLowerCase())
                     .detail(OAuth2Constants.REDIRECT_URI, redirectUri)

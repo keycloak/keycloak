@@ -16,22 +16,24 @@
  */
 package org.keycloak.quarkus.runtime.services.health;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
 import io.agroal.api.AgroalDataSource;
 import io.agroal.api.AgroalDataSourceMetrics;
 import io.quarkus.agroal.runtime.health.DataSourceHealthCheck;
 import io.quarkus.smallrye.health.runtime.QuarkusAsyncHealthCheckFactory;
 import io.smallrye.health.api.AsyncHealthCheck;
 import io.smallrye.mutiny.Uni;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Readiness;
-
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Keycloak Healthcheck Readiness Probe.
@@ -64,7 +66,7 @@ public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
     @Inject
     DataSourceHealthCheck dataSourceHealthCheck;
 
-    AtomicReference<Instant> failingSince = new AtomicReference<>();
+    private final AtomicReference<Instant> failingSince = new AtomicReference<>();
 
     @Override
     public Uni<HealthCheckResponse> call() {
@@ -77,7 +79,7 @@ public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
                 HealthCheckResponse activeCheckResult = dataSourceHealthCheck.call();
                 if (activeCheckResult.getStatus() == HealthCheckResponse.Status.DOWN) {
                     builder.down();
-                    Instant failingTime = failingSince.updateAndGet(this::createInstanceIfNeeded);
+                    Instant failingTime = failingSince.updateAndGet(KeycloakReadyHealthCheck::createInstanceIfNeeded);
                     builder.withData(FAILING_SINCE, DATE_FORMATTER.format(failingTime));
                 } else {
                     failingSince.set(null);
@@ -90,10 +92,7 @@ public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
         }
     }
 
-    Instant createInstanceIfNeeded(Instant instant) {
-        if (instant == null) {
-            return Instant.now();
-        }
-        return instant;
+    static Instant createInstanceIfNeeded(Instant instant) {
+        return Objects.requireNonNullElseGet(instant, Instant::now);
     }
 }

@@ -1,8 +1,7 @@
 package org.keycloak.testsuite.broker;
 
-import org.apache.commons.lang3.StringUtils;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Test;
+import java.util.List;
+
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.FederatedIdentityModel;
@@ -10,6 +9,8 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
+import org.keycloak.models.jpa.JpaRealmProviderFactory;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -20,28 +21,24 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.broker.oidc.TestKeycloakOidcIdentityProviderFactory;
 import org.keycloak.testsuite.forms.RegisterWithUserProfileTest;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.RegisterPage;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.MailServerConfiguration;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.util.JsonSerialization;
+
+import org.apache.commons.lang3.StringUtils;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
+import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.grantReadTokenRole;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
@@ -51,7 +48,16 @@ import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.ATTRIBUTE_
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ADMIN_EDITABLE;
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ALL;
 
-import java.util.List;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -142,6 +148,99 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
         assertThat(firstLoginAccessToken, not(equalTo(secondLoginAccessToken)));
         assertThat(firstLoginRefreshToken, is(equalTo(secondLoginRefreshToken)));
+    }
+
+    @Test
+    public void testRefreshTokenFetchExternalIdpTokenSuccess() {
+        // Step 1: Set up the identity provider and user in the provider realm
+        IdentityProviderResource idp = realmsResouce().realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation representation = idp.toRepresentation();
+        representation.setStoreToken(true);
+        idp.update(representation);
+
+        // Create a test user in the provider realm
+        createUser(bc.providerRealmName(), "brucewayne", BrokerTestConstants.USER_PASSWORD, "Bruce", "Wayne", "brucewayne@gotham.com");
+
+        oauth.client("broker-app", "broker-app-secret");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        logInWithIdp(bc.getIDPAlias(), "brucewayne", BrokerTestConstants.USER_PASSWORD);
+        testingClient.server(bc.consumerRealmName()).run(grantReadTokenRole("brucewayne"));
+
+        String code = oauth.parseLoginResponse().getCode();
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(code);
+        assertEquals(200, internalTokens.getStatusCode());
+
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(bc.getIDPAlias(), internalTokens.getAccessToken());
+        assertEquals(200, externalTokens.getStatusCode());
+
+        String realmName = bc.consumerRealmName();
+        String userName = "brucewayne";
+        String idpAlias = bc.getIDPAlias();
+        String oldTokenFromDatabase = testingClient.server().fetch(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            UserModel user = session.users().getUserByUsername(realm, userName);
+            return session.getProvider(UserProvider.class, JpaRealmProviderFactory.PROVIDER_ID).getFederatedIdentity(realm, user, idpAlias).getToken();
+        }, String.class);
+
+        setTimeOffset(externalTokens.getExpiresIn() - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN + 1);
+
+        internalTokens = oauth
+                .doRefreshTokenRequest(internalTokens.getRefreshToken());
+        assertEquals(200, internalTokens.getStatusCode());
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse externalTokens2 = oauth.doFetchExternalIdpToken(bc.getIDPAlias(), internalTokens.getAccessToken());
+        assertEquals(200, externalTokens2.getStatusCode());
+
+        // Check that we now have a different access and refresh token
+        assertNotEquals(externalTokens.getAccessToken(), externalTokens2.getAccessToken());
+        assertNotEquals(externalTokens.getRefreshToken(), externalTokens2.getRefreshToken());
+
+        String newTokenFromDatabase = testingClient.server().fetch(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            UserModel user = session.users().getUserByUsername(realm, userName);
+            return session.getProvider(UserProvider.class, JpaRealmProviderFactory.PROVIDER_ID).getFederatedIdentity(realm, user, idpAlias).getToken();
+        }, String.class);
+
+        // Ensure that the new token has been persisted
+        assertNotEquals(newTokenFromDatabase, oldTokenFromDatabase);
+
+    }
+
+    @Test
+    public void testRefreshTokenFetchExternalIdpTokenFailure() {
+        // Step 1: Set up the identity provider and user in the provider realm
+        IdentityProviderResource idp = realmsResouce().realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation representation = idp.toRepresentation();
+        representation.setStoreToken(true);
+        idp.update(representation);
+
+        // Create a test user in the provider realm
+        createUser(bc.providerRealmName(), "brucewayne", BrokerTestConstants.USER_PASSWORD, "Bruce", "Wayne", "brucewayne@gotham.com");
+
+        oauth.client("broker-app", "broker-app-secret");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        logInWithIdp(bc.getIDPAlias(), "brucewayne", BrokerTestConstants.USER_PASSWORD);
+        testingClient.server(bc.consumerRealmName()).run(grantReadTokenRole("brucewayne"));
+
+        String code = oauth.parseLoginResponse().getCode();
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(code);
+        assertEquals(200, internalTokens.getStatusCode());
+
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(bc.getIDPAlias(), internalTokens.getAccessToken());
+        assertEquals(200, externalTokens.getStatusCode());
+
+        setTimeOffset(externalTokens.getExpiresIn() + 10);
+
+        representation.getConfig().put("clientSecret", "wrongpassword");
+        idp.update(representation);
+
+        internalTokens = oauth.doRefreshTokenRequest(internalTokens.getRefreshToken());
+        assertEquals(200, internalTokens.getStatusCode());
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse error = oauth.doFetchExternalIdpToken(bc.getIDPAlias(), internalTokens.getAccessToken());
+        assertEquals(502, error.getStatusCode());
+        assertEquals("Unable to refresh token", error.getError());
+
     }
 
     /**
@@ -886,5 +985,30 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
     private RealmResource testRealm() {
         return adminClient.realm(bc.consumerRealmName());
+    }
+
+    @Test
+    public void testSsoLoginWithCustomAttributeWithDefaultValue() {
+        updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
+
+        String userProfileConfig = "{\"attributes\": ["
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"usertype\", \"defaultValue\": \"daily\", " + PERMISSIONS_ADMIN_EDITABLE + "}"
+                + "]}";
+        setUserProfileConfiguration(userProfileConfig);
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        logInWithBroker(bc);
+
+        waitForPage(driver, "update account information", false);
+        Assert.assertTrue("Should be on update profile page", updateAccountInformationPage.isCurrent());
+
+        updateAccountInformationPage.updateAccountInformation("Test", "User");
+
+        Assert.assertTrue("User should be logged in successfully after profile update", appPage.isCurrent());
     }
 }

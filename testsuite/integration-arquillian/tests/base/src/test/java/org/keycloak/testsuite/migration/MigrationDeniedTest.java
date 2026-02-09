@@ -21,8 +21,6 @@ package org.keycloak.testsuite.migration;
 
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.common.Version;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.Constants;
@@ -34,6 +32,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.datastore.DefaultMigrationManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

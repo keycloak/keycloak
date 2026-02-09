@@ -1,15 +1,16 @@
 package org.keycloak.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.keycloak.representations.account.DeviceRepresentation;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.function.Supplier;
+
+import org.keycloak.representations.account.DeviceRepresentation;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class SecureContextResolverTest {
 

@@ -3,8 +3,10 @@ package org.keycloak.protocol.oidc;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;

@@ -16,8 +16,6 @@
  */
 package org.keycloak.saml.processing.api.util;
 
-import org.keycloak.saml.common.constants.GeneralConstants;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -26,6 +24,8 @@ import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
+
+import org.keycloak.saml.common.constants.GeneralConstants;
 
 /**
  * Encoder of saml messages based on DEFLATE compression

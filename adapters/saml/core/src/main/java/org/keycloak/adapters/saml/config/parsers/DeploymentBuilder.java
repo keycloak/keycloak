@@ -17,7 +17,24 @@
 
 package org.keycloak.adapters.saml.config.parsers;
 
-import org.jboss.logging.Logger;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.net.URI;
+import java.security.KeyPair;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import org.keycloak.adapters.cloned.HttpClientBuilder;
 import org.keycloak.adapters.saml.DefaultSamlDeployment;
 import org.keycloak.adapters.saml.RoleMappingsProviderUtils;
 import org.keycloak.adapters.saml.SamlDeployment;
@@ -30,23 +47,7 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.exceptions.ParsingException;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.security.KeyPair;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.Certificate;
-import java.util.HashSet;
-import java.util.Set;
-import org.keycloak.adapters.cloned.HttpClientBuilder;
-import java.net.URI;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.concurrent.TimeUnit;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

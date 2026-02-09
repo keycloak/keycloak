@@ -17,32 +17,37 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.toDashCase;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
-
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import org.apache.commons.lang3.ArrayUtils;
-import org.eclipse.microprofile.config.ConfigProvider;
 
 import org.keycloak.Config;
+import org.keycloak.Config.AbstractScope;
+import org.keycloak.Config.Scope;
+
+import io.smallrye.config.SmallRyeConfig;
+import org.eclipse.microprofile.config.ConfigValue;
+
+import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.toDashCase;
 
 public class MicroProfileConfigProvider implements Config.ConfigProvider {
 
     public static final String NS_KEYCLOAK = "kc";
     public static final String NS_KEYCLOAK_PREFIX = NS_KEYCLOAK + ".";
+    public static final String SPI_PREFIX = NS_KEYCLOAK_PREFIX + "spi" + OPTION_PART_SEPARATOR;
     public static final String NS_QUARKUS = "quarkus";
     public static final String NS_QUARKUS_PREFIX = "quarkus" + ".";
 
-    private final org.eclipse.microprofile.config.Config config;
+    private final SmallRyeConfig config;
 
     public MicroProfileConfigProvider() {
-        this(ConfigProvider.getConfig());
+        this(Configuration.getConfig());
     }
 
-    public MicroProfileConfigProvider(org.eclipse.microprofile.config.Config config) {
+    public MicroProfileConfigProvider(SmallRyeConfig config) {
         this.config = config;
     }
 
@@ -53,92 +58,67 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
 
     @Override
     public String getDefaultProvider(String spi) {
-        return scope(spi).get("provider.default");
+        return scope(spi).get("provider-default");
     }
 
     @Override
     public Config.Scope scope(String... scope) {
-        return new MicroProfileScope(scope);
+        return new MicroProfileScope(SPI_PREFIX, scope);
     }
 
-    public class MicroProfileScope implements Config.Scope {
+    public class MicroProfileScope extends AbstractScope {
 
-        private final String[] scope;
         private final String prefix;
+        private final String separatorPrefix;
 
-        public MicroProfileScope(String... scopes) {
-            this.scope = scopes;
-            StringBuilder prefix = new StringBuilder(NS_KEYCLOAK_PREFIX).append("spi");
+        public MicroProfileScope(String prefix, String... scopes) {
+            StringBuilder prefixBuilder = new StringBuilder(prefix);
             for (String scope : scopes) {
-                prefix.append(OPTION_PART_SEPARATOR).append(scope);
+                prefixBuilder.append(toDashCase(scope)).append(OPTION_PART_SEPARATOR + OPTION_PART_SEPARATOR);
             }
-            this.prefix = prefix.toString();
+            this.separatorPrefix = prefixBuilder.toString();
+            this.prefix = separatorPrefix.replace(OPTION_PART_SEPARATOR + OPTION_PART_SEPARATOR, OPTION_PART_SEPARATOR);
         }
 
         @Override
         public String get(String key) {
-            return getValue(key, String.class, null);
-        }
-
-        @Override
-        public String get(String key, String defaultValue) {
-            return getValue(key, String.class, defaultValue);
-        }
-
-        @Override
-        public String[] getArray(String key) {
-            return getValue(key, String[].class, null);
-        }
-
-        @Override
-        public Integer getInt(String key) {
-            return getValue(key, Integer.class, null);
-        }
-
-        @Override
-        public Integer getInt(String key, Integer defaultValue) {
-            return getValue(key, Integer.class, defaultValue);
-        }
-
-        @Override
-        public Long getLong(String key) {
-            return getValue(key, Long.class, null);
-        }
-
-        @Override
-        public Long getLong(String key, Long defaultValue) {
-            return getValue(key, Long.class, defaultValue);
-        }
-
-        @Override
-        public Boolean getBoolean(String key) {
-            return getValue(key, Boolean.class, null);
-        }
-
-        @Override
-        public Boolean getBoolean(String key, Boolean defaultValue) {
-            return getValue(key, Boolean.class, defaultValue);
+            return get(key, null);
         }
 
         @Override
         public Config.Scope scope(String... scope) {
-            return new MicroProfileScope(ArrayUtils.addAll(this.scope, scope));
+            return new MicroProfileScope(prefix, scope);
         }
 
         @Override
         public Set<String> getPropertyNames() {
             return StreamSupport.stream(config.getPropertyNames().spliterator(), false)
-                    .filter(this::startWithPrefix)
+                    .filter(key -> key.startsWith(separatorPrefix))
                     .collect(Collectors.toSet());
         }
 
-        private <T> T getValue(String key, Class<T> clazz, T defaultValue) {
-            return config.getOptionalValue(toDashCase(prefix.concat(OPTION_PART_SEPARATOR).concat(key.replace('.', '-'))), clazz).orElse(defaultValue);
+        @Override
+        protected <T> T getValue(String key, Function<String, T> conversion, Class<T> clazz, T defaultValue) {
+            if (NS_KEYCLOAK_PREFIX.equals(separatorPrefix)) {
+                return config.getOptionalValue(separatorPrefix.concat(key), clazz).orElse(defaultValue);
+            }
+            String dashCase = toDashCase(key);
+            String name = separatorPrefix.concat(dashCase);
+            String oldName = prefix.concat(dashCase);
+            ConfigValue value = config.getConfigValue(name);
+            ConfigValue oldValue = config.getConfigValue(oldName);
+            if (value.getValue() == null
+                    || (oldValue.getValue() != null && oldValue.getSourceOrdinal() > value.getSourceOrdinal())) {
+                value = oldValue;
+            }
+            return Optional.ofNullable(config.convert(value.getValue(), clazz)).orElse(defaultValue);
         }
 
-        private boolean startWithPrefix(String key) {
-            return key.startsWith(toDashCase(prefix)) || key.startsWith(toDashCase(toEnvVarFormat(prefix)));
+        @Override
+        public Scope root() {
+            return new MicroProfileScope(NS_KEYCLOAK_PREFIX);
         }
+
     }
 
 }

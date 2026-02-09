@@ -17,22 +17,32 @@
 
 package org.keycloak.testsuite.client;
 
-import org.apache.http.Header;
-import org.apache.http.HeaderElement;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Test;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
@@ -54,29 +64,24 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.util.JsonSerialization;
 
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.Response;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
+import org.apache.http.Header;
+import org.apache.http.HeaderElement;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matchers;
+import org.junit.Test;
 
 import static java.util.Arrays.asList;
+
+import static org.keycloak.services.clientregistration.ErrorCodes.INVALID_CLIENT_METADATA;
+import static org.keycloak.services.clientregistration.ErrorCodes.INVALID_REDIRECT_URI;
+import static org.keycloak.utils.MediaType.APPLICATION_JSON;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.notNullValue;
@@ -88,9 +93,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.services.clientregistration.ErrorCodes.INVALID_CLIENT_METADATA;
-import static org.keycloak.services.clientregistration.ErrorCodes.INVALID_REDIRECT_URI;
-import static org.keycloak.utils.MediaType.APPLICATION_JSON;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -154,6 +156,26 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void updateServiceAccount() throws Exception {
+        authManageClients();
+        ClientRepresentation client = buildClient();
+        final ClientRepresentation createdClient = registerClient(client);
+
+        client = reg.get(CLIENT_ID);
+        assertFalse(client.isServiceAccountsEnabled());
+        assertTrue(adminClient.realm(REALM_NAME).users().search(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId(), true).isEmpty());
+        client.setServiceAccountsEnabled(true);
+        client = reg.update(client);
+        assertTrue(client.isServiceAccountsEnabled());
+        assertFalse(adminClient.realm(REALM_NAME).users().search(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId(), true).isEmpty());
+
+        client.setServiceAccountsEnabled(false);
+        client = reg.update(client);
+        assertFalse(client.isServiceAccountsEnabled());
+        assertTrue(adminClient.realm(REALM_NAME).users().search(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId(), true).isEmpty());
+    }
+
+    @Test
     public void registerClientInMasterRealm() throws Exception {
         ClientRegistration masterReg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", "master").build();
 
@@ -182,6 +204,22 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     public void registerClientAsAdminWithCreateOnly() throws ClientRegistrationException {
         authCreateClients();
         registerClient();
+    }
+
+    /**
+     * OID4VC protocol is not valid for clients. It can only be used for ClientScopes.
+     * Attempting to create a client with protocol "oid4vc" should be rejected.
+     */
+    @Test
+    public void registerOid4vcClientShouldBeRejected() {
+        authManageClients();
+
+        ClientRepresentation client = buildClient();
+        client.setProtocol("oid4vc");
+
+        Response response = adminClient.realm(REALM_NAME).clients().create(client);
+        assertEquals("Creating a client with OID4VC protocol should be rejected as it is not a valid protocol for clients.",
+                400, response.getStatus());
     }
 
     @Test

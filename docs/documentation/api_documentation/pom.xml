@@ -10,6 +10,8 @@
     </parent>
 
     <name>API Documentation</name>
+    <description>API Documentation</description>
+
     <artifactId>api-documentation</artifactId>
     <packaging>pom</packaging>
 

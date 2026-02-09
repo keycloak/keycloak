@@ -69,6 +69,11 @@ Auth Token Client Secret::
   Only needed when *Authentication Type* 'token' is selected.
   Supply the *Auth Client Secret* that authenticates the client to fetch a token from the *Auth Token URL*. The value of the *Auth Client Secret* field can refer a value from an external <<_vault-administration,vault>>.
 
+Allow UTF-8::
+  Enable to UTF-8-encode email address when sending them to the server. This should only be enabled if the mail server supports UTF-8 via the SMTPUTF8 extension. If disabled, domain names containing non-ASCII characters will be encoded using punycode, and addresses containing non-ASCII characters in the local part of the address will return an error.
++
+If the realm is configured to send emails (this SMTP configuration is setup) and *Allow UTF-8* option is disabled, the built-in <<user-profile, user profile>> email validator checks the local part of the address contains only ASCII characters. This way, {project_name} prevents user emails that cannot be notified.
+
 ifeval::[{project_community}==true]
 
 == XOAUTH2 email configuration with third-party vendors

@@ -54,6 +54,7 @@ export const SwitchControl = <
             id={props.name}
             data-testid={debeerify(props.name)}
             label={labelOn}
+            aria-label={props.label}
             isChecked={stringify ? value === "true" : value}
             onChange={(e, checked) => {
               const value = stringify ? checked.toString() : checked;

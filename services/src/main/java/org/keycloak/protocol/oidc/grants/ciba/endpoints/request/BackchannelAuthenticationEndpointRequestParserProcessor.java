@@ -18,6 +18,12 @@
 
 package org.keycloak.protocol.oidc.grants.ciba.endpoints.request;
 
+import java.util.HashSet;
+import java.util.List;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.events.EventBuilder;
@@ -28,11 +34,6 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorResponseException;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import java.util.HashSet;
-import java.util.List;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>

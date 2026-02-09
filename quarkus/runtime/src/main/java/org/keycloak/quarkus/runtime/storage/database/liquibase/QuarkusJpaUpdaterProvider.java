@@ -28,21 +28,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import liquibase.Scope;
-import org.jboss.logging.Logger;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseConstants;
 import org.keycloak.connections.jpa.updater.liquibase.ThreadLocalSessionContext;
-import org.keycloak.connections.jpa.updater.liquibase.conn.CustomChangeLogHistoryService;
 import org.keycloak.connections.jpa.updater.liquibase.conn.KeycloakLiquibase;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
+import org.keycloak.connections.jpa.updater.liquibase.conn.MySQLCustomChangeLogHistoryService;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
 
 import liquibase.Contexts;
 import liquibase.LabelExpression;
 import liquibase.Liquibase;
+import liquibase.Scope;
 import liquibase.changelog.ChangeLogHistoryService;
 import liquibase.changelog.ChangeLogHistoryServiceFactory;
 import liquibase.changelog.ChangeSet;
@@ -62,6 +61,7 @@ import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Column;
 import liquibase.structure.core.Table;
 import liquibase.util.StreamUtil;
+import org.jboss.logging.Logger;
 
 public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
 
@@ -217,6 +217,13 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
         // in org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockService.init() called indirectly from
         // KeycloakApplication constructor (search for waitForLock() call). Hence it is not included in the creation script.
 
+        // For MySQL, add primary key to DATABASECHANGELOG table (handled by MySQLCustomChangeLogHistoryService at runtime)
+        ChangeLogHistoryService changeLogHistoryService = ChangeLogHistoryServiceFactory.getInstance().getChangeLogService(database);
+        if (changeLogHistoryService instanceof MySQLCustomChangeLogHistoryService customChangeLogHistoryService) {
+            loggingExecutor.comment("Add primary key to DATABASECHANGELOG table for MySQL");
+            loggingExecutor.execute(customChangeLogHistoryService.getAddDatabaseChangeLogPKStatement());
+        }
+
         executorService.setExecutor(LiquibaseConstants.JDBC_EXECUTOR, database, oldTemplate);
     }
 
@@ -251,6 +258,8 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
             }
         } catch (LiquibaseException e) {
             throw new RuntimeException("Failed to validate database", e);
+        } finally {
+            ThreadLocalSessionContext.removeCurrentSession();
         }
 
         return Status.VALID;
@@ -281,7 +290,7 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
 
     private void resetLiquibaseServices(KeycloakLiquibase liquibase) {
         liquibase.resetServices();
-        getChangeLogHistoryService().register(new CustomChangeLogHistoryService());
+        getChangeLogHistoryService().register(new MySQLCustomChangeLogHistoryService());
     }
 
     private ChangeLogHistoryServiceFactory getChangeLogHistoryService() {

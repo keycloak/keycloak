@@ -17,13 +17,12 @@
 
 package org.keycloak.services.resources.admin.fgap;
 
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.ROLES_RESOURCE_TYPE;
-
 import java.util.Map;
 import java.util.Set;
+
 import org.keycloak.Config;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -31,8 +30,11 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.services.resources.admin.fgap.ModelRecord.RoleModelRecord;
+
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.ROLES_RESOURCE_TYPE;
 
 class RolePermissionsV2 extends RolePermissions {
 
@@ -43,22 +45,22 @@ class RolePermissionsV2 extends RolePermissions {
         this.eval = new FineGrainedAdminPermissionEvaluator(session, root, resourceStore, policyStore);
     }
 
-    private boolean hasMasterAdminRole() {
-        RealmModel masterRealm = root.adminsRealm().getName().equals(Config.getAdminRealm()) ? 
-                root.adminsRealm(): 
-                session.realms().getRealmByName(Config.getAdminRealm());
-
-        RoleModel adminRole = masterRealm.getRole(AdminRoles.ADMIN);
-        return root.admin().hasRole(adminRole);
-    }
-
     @Override
     public boolean canMapRole(RoleModel role) {
-        if (AdminRoles.ALL_ROLES.contains(role.getName()) && !hasMasterAdminRole()) {
-            return false;
+        if (isRealmAdminRole(role)) {
+            if (AdminRoles.VIEW_SYSTEM.equals(role.getName()) && !root.isAdmin(root.getMasterRealm())) {
+                return false;
+            }
+            if (realm.isAdminPermissionsEnabled()) {
+                // only server or realm admins can map roles if FGAP is enabled
+                return root.isRealmAdmin();
+            }
+            // otherwise, check if the user is granted with manage-users and is granted with the role being granted
+            return root.hasOneAdminRole(AdminRoles.MANAGE_USERS) && checkAdminRoles(role);
         }
 
         if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
+            // user has manage-users, so they can map any non-admin role
             return true;
         }
 
@@ -73,8 +75,21 @@ class RolePermissionsV2 extends RolePermissions {
 
     @Override
     public boolean canMapComposite(RoleModel role) {
-        if (AdminRoles.ALL_ROLES.contains(role.getName()) && !hasMasterAdminRole()) {
-            return false;
+        if (isRealmAdminRole(role)) {
+            if (AdminRoles.VIEW_SYSTEM.equals(role.getName()) && !root.isAdmin(root.getMasterRealm())) {
+                return false;
+            }
+            if (realm.isAdminPermissionsEnabled()) {
+                // only server or realm admins can map roles if FGAP is enabled
+                return root.isRealmAdmin();
+            }
+            // otherwise, check if the user is granted with manage-realm or manage-client roles and is granted with the role being granted
+            return canManageDefault(role) && checkAdminRoles(role);
+        }
+
+        if (canManageDefault(role)) {
+            // user has manage-realm or manage-client roles, so they can map any non-admin composite role
+            return checkAdminRoles(role);
         }
 
         if (role.getContainer() instanceof ClientModel clientModel) {
@@ -169,5 +184,20 @@ class RolePermissionsV2 extends RolePermissions {
     @Override
     public Policy rolePolicy(ResourceServer server, RoleModel role) {
         throw new UnsupportedOperationException("Not supported in V2");
+    }
+
+    private boolean isRealmAdminRole(RoleModel role) {
+        RoleContainerModel container = role.getContainer();
+        boolean isMasterRealmRole = container.equals(root.getMasterRealm());
+        boolean isMasterRealmManagementAdminRole = (container instanceof ClientModel c)
+                && c.getRealm().getName().equals(Config.getAdminRealm())
+                && c.getClientId().endsWith("-realm");
+        boolean isRealmManagementAdminRole = container.equals(root.getRealmManagementClient());
+
+        if (isMasterRealmRole|| isRealmManagementAdminRole || isMasterRealmManagementAdminRole) {
+            return AdminRoles.ALL_ROLES.contains(role.getName());
+        }
+
+        return false;
     }
 }

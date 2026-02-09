@@ -16,11 +16,11 @@
  */
 package org.keycloak.rar;
 
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
-
 import java.io.Serializable;
 import java.util.Objects;
+
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 
 /**
  * The internal Keycloak representation of a Rich Authorization Request authorization_details object, together with

@@ -17,11 +17,18 @@
 
 package org.keycloak.authentication.authenticators.broker.util;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.models.Constants;
@@ -35,13 +42,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -282,7 +283,7 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         ctx.setBrokerUserId(getBrokerUserId());
         ctx.setToken(getToken());
 
-        IdentityProvider idp = IdentityBrokerService.getIdentityProvider(session, idpConfig.getAlias());
+        UserAuthenticationIdentityProvider<?> idp = IdentityBrokerService.getIdentityProvider(session, idpConfig.getAlias());
         ctx.setIdp(idp);
 
         IdentityProviderDataMarshaller serializer = idp.getMarshaller();

@@ -17,31 +17,6 @@
 
 package org.keycloak.util.ldap;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.text.StrSubstitutor;
-import org.apache.directory.api.ldap.model.entry.DefaultEntry;
-import org.apache.directory.api.ldap.model.exception.LdapEntryAlreadyExistsException;
-import org.apache.directory.api.ldap.model.exception.LdapException;
-import org.apache.directory.api.ldap.model.ldif.LdifEntry;
-import org.apache.directory.api.ldap.model.ldif.LdifReader;
-import org.apache.directory.api.ldap.model.schema.SchemaManager;
-import org.apache.directory.server.core.api.DirectoryService;
-import org.apache.directory.server.core.api.interceptor.Interceptor;
-import org.apache.directory.server.core.api.partition.Partition;
-import org.apache.directory.server.core.factory.DefaultDirectoryServiceFactory;
-import org.apache.directory.server.core.factory.JdbmPartitionFactory;
-import org.apache.directory.server.core.normalization.NormalizationInterceptor;
-import org.apache.directory.server.ldap.ExtendedOperationHandler;
-import org.apache.directory.server.ldap.handlers.extended.StartTlsHandler;
-import org.apache.directory.server.ldap.LdapServer;
-import org.apache.directory.server.ldap.handlers.extended.PwdModifyHandler;
-import org.apache.directory.server.protocol.shared.transport.TcpTransport;
-import org.apache.directory.server.protocol.shared.transport.Transport;
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.FindFile;
-import org.keycloak.common.util.StreamUtil;
-
 import java.io.File;
 import java.io.InputStream;
 import java.security.KeyStore;
@@ -50,10 +25,41 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.keycloak.common.util.FindFile;
+import org.keycloak.common.util.StreamUtil;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.text.StrSubstitutor;
+import org.apache.directory.api.ldap.model.entry.DefaultEntry;
+import org.apache.directory.api.ldap.model.exception.LdapEntryAlreadyExistsException;
+import org.apache.directory.api.ldap.model.exception.LdapException;
+import org.apache.directory.api.ldap.model.ldif.LdifEntry;
+import org.apache.directory.api.ldap.model.ldif.LdifReader;
+import org.apache.directory.server.core.api.DirectoryService;
+import org.apache.directory.server.core.api.interceptor.Interceptor;
+import org.apache.directory.server.core.api.partition.Partition;
+import org.apache.directory.server.core.factory.DefaultDirectoryServiceFactory;
+import org.apache.directory.server.core.factory.JdbmPartitionFactory;
+import org.apache.directory.server.core.normalization.NormalizationInterceptor;
+import org.apache.directory.server.ldap.ExtendedOperationHandler;
+import org.apache.directory.server.ldap.LdapServer;
+import org.apache.directory.server.ldap.handlers.extended.PwdModifyHandler;
+import org.apache.directory.server.ldap.handlers.extended.StartTlsHandler;
+import org.apache.directory.server.protocol.shared.transport.TcpTransport;
+import org.apache.directory.server.protocol.shared.transport.Transport;
+import org.jboss.logging.Logger;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class LDAPEmbeddedServer {
+
+    static {
+        if (System.getProperty("java.util.logging.manager") == null) {
+            System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
+        }
+    }
 
     private static final Logger log = Logger.getLogger(LDAPEmbeddedServer.class);
     private static final int PAGE_SIZE = 30;
@@ -363,13 +369,9 @@ public class LDAPEmbeddedServer {
 
         // Find LDIF file on filesystem or classpath ( if it's like classpath:ldap/users.ldif )
         InputStream is = FindFile.findFile(ldifFile);
-        if (is == null) {
-            throw new IllegalStateException("LDIF file not found on classpath or on file system. Location was: " + ldifFile);
-        }
 
         final String ldifContent = StrSubstitutor.replace(StreamUtil.readString(is), map);
         log.info("Content of LDIF: " + ldifContent);
-        final SchemaManager schemaManager = directoryService.getSchemaManager();
 
         importLdifContent(directoryService, ldifContent);
     }

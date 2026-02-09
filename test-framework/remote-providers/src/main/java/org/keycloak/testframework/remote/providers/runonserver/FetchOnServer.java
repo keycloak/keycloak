@@ -17,9 +17,9 @@
 
 package org.keycloak.testframework.remote.providers.runonserver;
 
-import org.keycloak.models.KeycloakSession;
-
 import java.io.Serializable;
+
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -22,7 +22,34 @@ import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.Config;
+import org.keycloak.common.Profile;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.crypto.CryptoProvider;
+import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.HealthOptions;
+import org.keycloak.config.HttpOptions;
+import org.keycloak.config.MetricsOptions;
+import org.keycloak.config.OpenApiOptions;
+import org.keycloak.config.TruststoreOptions;
+import org.keycloak.marshalling.Marshalling;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter;
+import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.theme.ClasspathThemeProviderFactory;
+import org.keycloak.truststore.TruststoreBuilder;
+import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
 
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.agroal.DataSource;
@@ -36,24 +63,6 @@ import liquibase.Scope;
 import liquibase.servicelocator.ServiceLocator;
 import org.hibernate.cfg.AvailableSettings;
 import org.infinispan.protostream.SerializationContextInitializer;
-import org.keycloak.Config;
-import org.keycloak.common.Profile;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.crypto.CryptoProvider;
-import org.keycloak.common.crypto.FipsMode;
-import org.keycloak.config.TruststoreOptions;
-import org.keycloak.marshalling.Marshalling;
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
-import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
-import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
-import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.theme.ClasspathThemeProviderFactory;
-import org.keycloak.truststore.TruststoreBuilder;
-import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
 
 @Recorder
 public class KeycloakRecorder {
@@ -71,18 +80,45 @@ public class KeycloakRecorder {
         return routingContext -> routingContext.redirect(redirectPath);
     }
 
+    private static final List<ManagementInterfaceItem> MANAGEMENT_INTERFACE_ENDPOINTS = List.of(
+            new ManagementInterfaceItem("/health", "Health endpoint", () -> Configuration.isTrue(HealthOptions.HEALTH_ENABLED)),
+            new ManagementInterfaceItem("/metrics", "Metrics endpoint", () -> Configuration.isTrue(MetricsOptions.METRICS_ENABLED)),
+            new ManagementInterfaceItem("/openapi", "OpenAPI specification", () -> Configuration.isTrue(OpenApiOptions.OPENAPI_ENABLED)),
+            new ManagementInterfaceItem("/openapi/ui", "OpenAPI UI specification (Swagger)", () -> Configuration.isTrue(OpenApiOptions.OPENAPI_UI_ENABLED))
+    );
+
     // default handler for the management interface
     public Handler<RoutingContext> getManagementHandler() {
-        return routingContext -> routingContext.response().end("Keycloak Management Interface");
+        String itemsHtml = "<ul>%s</ul>".formatted(MANAGEMENT_INTERFACE_ENDPOINTS.stream()
+                .filter(f -> f.isEnabled.getAsBoolean())
+                .map(ManagementInterfaceItem::getListItem)
+                .collect(Collectors.joining("\n")));
+
+        return routingContext -> routingContext.response().end("""
+                <html>
+                <h2>Keycloak Management Interface</h2>
+                %s
+                </html>
+                """.formatted(itemsHtml));
+    }
+
+    private record ManagementInterfaceItem(String path, String description, BooleanSupplier isEnabled) {
+        String getListItem() {
+            return "<li><a href=\"%s\">%s</a> - %s</li>".formatted(path, path, description);
+        }
+    }
+
+    public Handler<RoutingContext> getRejectNonNormalizedPathFilter() {
+        return !Configuration.isTrue(HttpOptions.HTTP_ACCEPT_NON_NORMALIZED_PATHS) ? new RejectNonNormalizedPathFilter() : null;
     }
 
     public void configureTruststore() {
         String[] truststores = Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
                 .map(s -> s.split(",")).orElse(new String[0]);
 
-        String dataDir = Environment.getDataDir();
+        Optional<String> dataDir = Environment.getDataDir();
 
-        File truststoresDir = Optional.ofNullable(Environment.getHomePath()).map(path -> path.resolve("conf").resolve("truststores").toFile()).orElse(null);
+        File truststoresDir = Environment.getHomePath().map(p -> p.resolve("conf").resolve("truststores").toFile()).orElse(null);
 
         if (truststoresDir != null && truststoresDir.exists() && Optional.ofNullable(truststoresDir.list()).map(a -> a.length).orElse(0) > 0) {
             truststores = Stream.concat(Stream.of(truststoresDir.getAbsolutePath()), Stream.of(truststores)).toArray(String[]::new);
@@ -90,7 +126,7 @@ public class KeycloakRecorder {
             return; // nothing to configure, we'll just use the system default
         }
 
-        TruststoreBuilder.setSystemTruststore(truststores, true, dataDir);
+        TruststoreBuilder.setSystemTruststore(truststores, true, dataDir.orElseThrow());
     }
 
     public void configureLiquibase(Map<String, List<String>> services) {
@@ -130,7 +166,7 @@ public class KeycloakRecorder {
     }
 
     public HibernateOrmIntegrationRuntimeInitListener createDefaultUnitListener() {
-        return propertyCollector -> propertyCollector.accept(AvailableSettings.DEFAULT_SCHEMA, Configuration.getRawValue("kc.db-schema"));
+        return propertyCollector -> propertyCollector.accept(AvailableSettings.DEFAULT_SCHEMA, Configuration.getConfigValue(DatabaseOptions.DB_SCHEMA).getValue());
     }
 
     public void setCryptoProvider(FipsMode fipsMode) {

@@ -17,13 +17,13 @@
 
 package org.keycloak.testsuite.policy;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.function.Consumer;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -40,9 +40,11 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.function.Consumer;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;

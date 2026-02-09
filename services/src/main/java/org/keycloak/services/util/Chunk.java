@@ -1,8 +1,8 @@
 package org.keycloak.services.util;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Optional;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Represents a chunk from the Vite build manifest (see {@link ViteManifest}).

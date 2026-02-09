@@ -1,13 +1,27 @@
 package org.keycloak.common.util;
 
 import java.security.SecureRandom;
-import java.util.Random;
+import java.util.Base64;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 public class SecretGenerator {
 
     public static final int SECRET_LENGTH_256_BITS = 32;
     public static final int SECRET_LENGTH_384_BITS = 48;
     public static final int SECRET_LENGTH_512_BITS = 64;
+    /**
+     * Session ID length in bytes.
+     * <p />
+     * Both NIST and ANSSI ask for at least 128 bits of entropy, see <a href="https://github.com/keycloak/keycloak/issues/38663">#38663</a>.
+     * As we are about to filter those session IDs on each node to find a key of the local segment using org.keycloak.models.sessions.infinispan.SessionAffinityService,
+     * we add some more entropy so that the filtering then leaves enough entropy for those IDs.
+     * Usually there are 256 segments in a cache. Just in case someone increases it, we add 16 bits.
+     * This should handle the case when a caller connects to one node and generates codes (as it is the case with a keep-alive HTTP connection),
+     * instead of a caller connecting to a random node on each request.
+     */
+    private static final int SESSION_ID_BYTES = 18;
+    public static final Supplier<String> SECURE_ID_GENERATOR = () -> getInstance().generateBase64SecureId(SESSION_ID_BYTES);
 
     public static final char[] UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
 
@@ -17,18 +31,32 @@ public class SecretGenerator {
 
     private static final SecretGenerator instance = new SecretGenerator();
 
-    private ThreadLocal<Random> random = new ThreadLocal<Random>() {
-        @Override
-        protected Random initialValue() {
-            return new SecureRandom();
-        }
-    };
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private SecretGenerator() {
     }
 
     public static SecretGenerator getInstance() {
         return instance;
+    }
+    
+    public String generateSecureID() {
+        return generateSecureUUID().toString();
+    }
+
+    public String generateBase64SecureId(int nBytes) {
+        assert nBytes > 0;
+        byte[] data = new byte[nBytes];
+        SECURE_RANDOM.nextBytes(data);
+        String id = Base64.getUrlEncoder().encodeToString(data);
+
+        // disallow a dot, as a dot is used as a separator in AuthenticationSessionManager.decodeBase64AndValidateSignature
+        assert !id.contains(".");
+
+        // disallow a space, as session_state must not contain a space (see https://openid.net/specs/openid-connect-session-1_0.html#CreatingUpdatingSessions)
+        assert !id.contains(" ");
+
+        return id;
     }
 
     public String randomString() {
@@ -47,11 +75,10 @@ public class SecretGenerator {
             throw new IllegalArgumentException();
         }
 
-        Random r = random.get();
         char[] buf = new char[length];
 
         for (int idx = 0; idx < buf.length; ++idx) {
-            buf[idx] = symbols[r.nextInt(symbols.length)];
+            buf[idx] = symbols[SECURE_RANDOM.nextInt(symbols.length)];
         }
 
         return new String(buf);
@@ -67,8 +94,17 @@ public class SecretGenerator {
         }
 
         byte[] buf = new byte[length];
-        random.get().nextBytes(buf);
+        SECURE_RANDOM.nextBytes(buf);
         return buf;
+    }
+
+    public String randomBytesHex(int length) {
+        final StringBuilder sb = new StringBuilder();
+        for (byte b : randomBytes(length)) {
+            sb.append(Character.forDigit((b >> 4) & 0xF, 16));
+            sb.append(Character.forDigit((b & 0xF), 16));
+        }
+        return sb.toString();
     }
 
     /**
@@ -94,5 +130,26 @@ public class SecretGenerator {
      */
     public static int equivalentEntropySize(int length, int srcAlphabetLength, int dstAlphabetLeng) {
         return (int) Math.ceil(length * ((Math.log(srcAlphabetLength)) / (Math.log(dstAlphabetLeng))));
+    }
+
+    /**
+     * Returns a pseudo-UUID where all bits are random to have a maximum entropy.
+     *
+     * @return UUID with all bits random
+     */
+    public UUID generateSecureUUID() {
+        byte[] data = randomBytes(16);
+        return new UUID(toLong(data, 0), toLong(data, 8));
+    }
+
+    private static long toLong(byte[] data, int offset) {
+        return  ((data[offset] & 0xFFL) << 56) |
+                ((data[offset + 1] & 0xFFL) << 48) |
+                ((data[offset + 2] & 0xFFL) << 40) |
+                ((data[offset + 3] & 0xFFL) << 32) |
+                ((data[offset + 4] & 0xFFL) << 24) |
+                ((data[offset + 5] & 0xFFL) << 16) |
+                ((data[offset + 6] & 0xFFL) <<  8) |
+                ((data[offset + 7] & 0xFFL)) ;
     }
 }

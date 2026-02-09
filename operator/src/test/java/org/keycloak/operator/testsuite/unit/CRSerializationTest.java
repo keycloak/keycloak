@@ -21,23 +21,28 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
-import io.fabric8.kubernetes.client.utils.Serialization;
-import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ServiceMonitorSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TelemetrySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.update.UpdateStrategy;
+
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.SecretKeySelector;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
+import io.fabric8.kubernetes.client.utils.Serialization;
+import org.hamcrest.CoreMatchers;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
@@ -102,6 +107,16 @@ public class CRSerializationTest {
         HttpManagementSpec managementSpec = keycloak.getSpec().getHttpManagementSpec();
         assertNotNull(managementSpec);
         assertEquals(9003, managementSpec.getPort());
+
+        assertEquals(50,keycloak.getSpec().getReadinessProbeSpec().getProbePeriodSeconds());
+        assertEquals(3,keycloak.getSpec().getReadinessProbeSpec().getProbeFailureThreshold());
+        assertEquals(60,keycloak.getSpec().getLivenessProbeSpec().getProbePeriodSeconds());
+        assertEquals(1,keycloak.getSpec().getLivenessProbeSpec().getProbeFailureThreshold());
+        assertEquals(40,keycloak.getSpec().getStartupProbeSpec().getProbePeriodSeconds());
+        assertEquals(2,keycloak.getSpec().getStartupProbeSpec().getProbeFailureThreshold());
+        assertEquals("MY_ENV_VAR", keycloak.getSpec().getEnv().get(0).getName());
+        assertEquals("--- {}\n", Serialization.asYaml(keycloak.getSpec().getUpdateSpec().getSchedulingSpec()));
+        assertEquals("x", keycloak.getSpec().getSchedulingSpec().getPriorityClassName());
     }
 
     @Test
@@ -180,8 +195,27 @@ public class CRSerializationTest {
     }
 
     @Test
+    public void telemetrySpecification() {
+        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr-telemetry.yml"), Keycloak.class);
+
+        TelemetrySpec telemetry = keycloak.getSpec().getTelemetrySpec();
+        assertThat(telemetry, notNullValue());
+
+        assertThat(telemetry.getEndpoint(), is("http://my-telemetry:4317"));
+        assertThat(telemetry.getServiceName(), is("my-best-keycloak-telemetry"));
+        assertThat(telemetry.getProtocol(), is("http/protobuf"));
+
+        var attributes = telemetry.getResourceAttributes();
+        assertThat(attributes, notNullValue());
+
+        assertThat(attributes.size(), is(2));
+        assertThat(attributes, hasEntry("service.namespace", "keycloak-namespace-telemetry"));
+        assertThat(attributes, hasEntry("service.name", "custom-service-name-telemetry"));
+    }
+
+    @Test
     public void tracingSpecification() {
-        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr.yml"), Keycloak.class);
+        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr-telemetry.yml"), Keycloak.class);
 
         TracingSpec tracing = keycloak.getSpec().getTracingSpec();
         assertThat(tracing, notNullValue());
@@ -200,6 +234,33 @@ public class CRSerializationTest {
         assertThat(attributes.size(), is(2));
         assertThat(attributes, hasEntry("service.namespace", "keycloak-namespace"));
         assertThat(attributes, hasEntry("service.name", "custom-service-name"));
+
+        var additionalOptions = keycloak.getSpec().getAdditionalOptions().stream().collect(Collectors.toMap(ValueOrSecret::getName, e -> e));
+        assertNotNull(additionalOptions);
+        assertThat(additionalOptions.isEmpty(), is(false));
+        assertThat(additionalOptions, hasEntry("tracing-header-Authorization", new ValueOrSecret("tracing-header-Authorization", new SecretKeySelector("tracing-secret", "token", false))));
+        assertThat(additionalOptions, hasEntry("tracing-header-X-Org-Id", new ValueOrSecret("tracing-header-X-Org-Id", "my-org-id")));
+    }
+
+    @Test
+    public void telemetryHeaders(){
+        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr-telemetry.yml"), Keycloak.class);
+        assertThat(keycloak, notNullValue());
+        var additionalOptions = keycloak.getSpec().getAdditionalOptions().stream().collect(Collectors.toMap(ValueOrSecret::getName, e -> e));
+        assertNotNull(additionalOptions);
+        assertThat(additionalOptions.isEmpty(), is(false));
+
+        assertThat(additionalOptions, hasEntry("tracing-header-Authorization", new ValueOrSecret("tracing-header-Authorization", new SecretKeySelector("tracing-secret", "token", false))));
+        assertThat(additionalOptions, hasEntry("tracing-header-X-Org-Id", new ValueOrSecret("tracing-header-X-Org-Id", "my-org-id")));
+
+        assertThat(additionalOptions, hasEntry("telemetry-header-Some-key", new ValueOrSecret("telemetry-header-Some-key", new SecretKeySelector("telemetry-header-secret", "token", false))));
+        assertThat(additionalOptions, hasEntry("telemetry-header-Org-name", new ValueOrSecret("telemetry-header-Org-name", "Keycloak123")));
+
+        assertThat(additionalOptions, hasEntry("telemetry-logs-header-Authorization", new ValueOrSecret("telemetry-logs-header-Authorization", new SecretKeySelector("telemetry-logs-secret", "token", false))));
+        assertThat(additionalOptions, hasEntry("telemetry-logs-header-X-Org-Id", new ValueOrSecret("telemetry-logs-header-X-Org-Id", "my-org-id-logs")));
+
+        assertThat(additionalOptions, hasEntry("telemetry-metrics-header-Authorization", new ValueOrSecret("telemetry-metrics-header-Authorization", new SecretKeySelector("telemetry-metrics-secret", "token", false))));
+        assertThat(additionalOptions, hasEntry("telemetry-metrics-header-X-Org-Id", new ValueOrSecret("telemetry-metrics-header-X-Org-Id", "my-org-id-metrics")));
     }
 
     @Test
@@ -282,6 +343,18 @@ public class CRSerializationTest {
         assertEquals("1", revision);
     }
 
+    @Test
+    public void serviceMonitorSpecification() {
+        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr.yml"), Keycloak.class);
+
+        ServiceMonitorSpec serviceMonitorSpec = keycloak.getSpec().getServiceMonitorSpec();
+        assertThat(serviceMonitorSpec, notNullValue());
+
+        assertThat(serviceMonitorSpec.isEnabled(), is(true));
+        assertThat(serviceMonitorSpec.getInterval(), is(ServiceMonitorSpec.DEFAULT_INTERVAL));
+        assertThat(serviceMonitorSpec.getScrapeTimeout(), is(ServiceMonitorSpec.DEFAULT_SCRAPE_TIMEOUT));
+    }
+
     private static void assertNetworkPolicyRules(Collection<NetworkPolicyPeer> rules) {
         assertNotNull(rules);
         assertEquals(3, rules.size());
@@ -305,5 +378,11 @@ public class CRSerializationTest {
             fail();
         }
     }
-
+    @Test
+    public void testNoAutoMountServiceAccountToken() {
+        var keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr-without-automount.yml"), Keycloak.class);
+        var keycloakSpec = keycloak.getSpec();
+        assertNotNull(keycloakSpec);
+        assertFalse(keycloakSpec.getAutomountServiceAccountToken());
+    }
 }

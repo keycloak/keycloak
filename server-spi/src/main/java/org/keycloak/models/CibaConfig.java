@@ -42,10 +42,10 @@ public class CibaConfig extends AbstractConfig {
     public static final int DEFAULT_CIBA_POLICY_INTERVAL = 5;
     public static final String DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT = "login_hint";
 
-    private String backchannelTokenDeliveryMode = DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE;
-    private int expiresIn = DEFAULT_CIBA_POLICY_EXPIRES_IN;
-    private int poolingInterval = DEFAULT_CIBA_POLICY_INTERVAL;
-    private String authRequestedUserHint = DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT;
+    private String backchannelTokenDeliveryMode;
+    private int expiresIn;
+    private int poolingInterval;
+    private String authRequestedUserHint;
 
     // client attribute names
     public static final String OIDC_CIBA_GRANT_ENABLED = "oidc.ciba.grant.enabled";
@@ -54,23 +54,19 @@ public class CibaConfig extends AbstractConfig {
     public static final String CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG = "ciba.backchannel.auth.request.signing.alg";
 
     public CibaConfig(RealmModel realm) {
-        this.realm = () -> realm;
-
-        setBackchannelTokenDeliveryMode(realm.getAttribute(CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE));
-
-        String expiresIn = realm.getAttribute(CIBA_EXPIRES_IN);
-
-        if (StringUtil.isNotBlank(expiresIn)) {
-            setExpiresIn(Integer.parseInt(expiresIn));
+        this.backchannelTokenDeliveryMode = realm.getAttribute(CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE);
+        if (this.backchannelTokenDeliveryMode == null) {
+            this.backchannelTokenDeliveryMode =  DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE;
         }
 
-        String interval = realm.getAttribute(CIBA_INTERVAL);
+        this.expiresIn = realm.getAttribute(CIBA_EXPIRES_IN, DEFAULT_CIBA_POLICY_EXPIRES_IN);
 
-        if (StringUtil.isNotBlank(interval)) {
-            setPoolingInterval(Integer.parseInt(interval));
+        this.poolingInterval = realm.getAttribute(CIBA_INTERVAL, DEFAULT_CIBA_POLICY_INTERVAL);
+
+        this.authRequestedUserHint = realm.getAttribute(CIBA_AUTH_REQUESTED_USER_HINT);
+        if (authRequestedUserHint == null) {
+            authRequestedUserHint = DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT;
         }
-
-        setAuthRequestedUserHint(realm.getAttribute(CIBA_AUTH_REQUESTED_USER_HINT));
 
         this.realmForWrite = () -> realm;
     }

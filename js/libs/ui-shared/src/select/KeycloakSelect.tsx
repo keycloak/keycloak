@@ -18,7 +18,7 @@ export type KeycloakSelectProps<> = Omit<
   "name" | "toggle" | "selected" | "onClick" | "onSelect" | "variant"
 > & {
   toggleId?: string;
-  onFilter?: (value: string) => JSX.Element[];
+  onFilter?: (value: string) => void;
   onClear?: () => void;
   variant?: Variant;
   isDisabled?: boolean;

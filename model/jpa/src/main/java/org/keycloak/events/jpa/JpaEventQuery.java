@@ -17,16 +17,6 @@
 
 package org.keycloak.events.jpa;
 
-import org.keycloak.events.Event;
-import org.keycloak.events.EventQuery;
-import org.keycloak.events.EventType;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -34,6 +24,19 @@ import java.util.GregorianCalendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+
+import org.keycloak.events.Event;
+import org.keycloak.events.EventQuery;
+import org.keycloak.events.EventType;
+
+import org.hibernate.jpa.AvailableHints;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -161,6 +164,7 @@ public class JpaEventQuery implements EventQuery {
         }
 
         TypedQuery<EventEntity> query = em.createQuery(cq);
+        query.setHint(AvailableHints.HINT_READ_ONLY, true);
 
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(JpaEventStoreProvider::convertEvent));
     }

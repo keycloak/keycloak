@@ -1,16 +1,16 @@
 package org.keycloak.testsuite.util.oauth;
 
+import java.io.IOException;
+import java.security.PublicKey;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jwk.OKPPublicJWK;
-
-import java.io.IOException;
-import java.security.PublicKey;
-import java.util.HashMap;
-import java.util.Map;
 
 public class KeyManager {
 
@@ -62,8 +62,8 @@ public class KeyManager {
                 KeyWrapper key = new KeyWrapper();
                 key.setKid(k.getKeyId());
                 key.setAlgorithm(k.getAlgorithm());
-                if (k.getOtherClaims().get(OKPPublicJWK.CRV) != null) {
-                    key.setCurve((String) k.getOtherClaims().get(OKPPublicJWK.CRV));
+                if (k.getOtherClaim(OKPPublicJWK.CRV, String.class) != null) {
+                    key.setCurve(k.getOtherClaim(OKPPublicJWK.CRV, String.class));
                 }
                 key.setPublicKey(publicKey);
                 key.setUse(KeyUse.SIG);

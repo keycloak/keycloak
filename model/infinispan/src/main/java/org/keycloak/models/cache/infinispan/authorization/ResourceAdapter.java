@@ -16,6 +16,14 @@
  */
 package org.keycloak.models.cache.infinispan.authorization;
 
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
 import org.keycloak.authorization.model.CachedModel;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Resource;
@@ -24,15 +32,8 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.cache.infinispan.LazyModel;
 import org.keycloak.models.cache.infinispan.authorization.entities.CachedResource;
-
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -50,7 +51,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
         this.cached = cached;
         this.cacheSession = cacheSession;
         this.session = cacheSession.session;
-        this.modelSupplier = this::getResourceModel;
+        this.modelSupplier = new LazyModel<>(this::getResourceModel);
     }
 
     @Override

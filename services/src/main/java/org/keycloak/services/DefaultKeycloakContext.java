@@ -17,13 +17,21 @@
 
 package org.keycloak.services;
 
-import io.opentelemetry.api.trace.Span;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+
 import jakarta.ws.rs.core.HttpHeaders;
+
 import org.keycloak.Token;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.locale.LocaleSelectorProvider;
+import org.keycloak.logging.MappedDiagnosticContextProvider;
+import org.keycloak.logging.MappedDiagnosticContextUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -34,16 +42,11 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.theme.Theme;
 import org.keycloak.tracing.TracingAttributes;
 import org.keycloak.tracing.TracingProvider;
 import org.keycloak.urls.UrlType;
 
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import io.opentelemetry.api.trace.Span;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -118,7 +121,8 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     public void setRealm(RealmModel realm) {
         this.realm = realm;
         this.uriInfo = null;
-        trace(this.realm);
+        trace(realm);
+        mdc().update(this, realm);
     }
 
     @Override
@@ -134,7 +138,8 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public void setClient(ClientModel client) {
         this.client = client;
-        trace(this.client);
+        trace(client);
+        mdc().update(this, client);
     }
 
     @Override
@@ -145,6 +150,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public void setOrganization(OrganizationModel organization) {
         this.organization = organization;
+        mdc().update(this, organization);
     }
 
     @Override
@@ -174,7 +180,8 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public void setAuthenticationSession(AuthenticationSessionModel authenticationSession) {
         this.authenticationSession = authenticationSession;
-        trace(this.authenticationSession);
+        trace(authenticationSession);
+        mdc().update(this, authenticationSession);
     }
 
     @Override
@@ -230,7 +237,8 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public void setUserSession(UserSessionModel userSession) {
         this.userSession = userSession;
-        trace(this.userSession);
+        trace(userSession);
+        mdc().update(this, userSession);
     }
 
     // Tracing
@@ -297,9 +305,10 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
             String issuer = jwt.getIssuer();
             String realmName = issuer.substring(issuer.lastIndexOf("/") + 1);
             RealmModel realm = session.realms().getRealmByName(realmName);
+            String id = jwt.getSubject();
 
-            if (realm != null) {
-                user = session.users().getUserById(realm, jwt.getSubject());
+            if (realm != null && id != null) {
+                user = session.users().getUserById(realm, id);
             }
         }
 
@@ -308,5 +317,9 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
         }
 
         return user;
+    }
+
+    private MappedDiagnosticContextProvider mdc() {
+        return MappedDiagnosticContextUtil.getMappedDiagnosticContextProvider(session);
     }
 }

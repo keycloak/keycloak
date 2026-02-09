@@ -17,6 +17,7 @@
 package org.keycloak.forms.login.freemarker.model;
 
 import jakarta.ws.rs.core.MultivaluedMap;
+
 import org.keycloak.saml.common.constants.GeneralConstants;
 
 public class SAMLPostFormBean {

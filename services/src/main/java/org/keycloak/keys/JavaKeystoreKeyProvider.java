@@ -17,20 +17,6 @@
 
 package org.keycloak.keys;
 
-import org.keycloak.common.util.KeyUtils;
-import org.keycloak.common.util.KeystoreUtil;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.crypto.KeyStatus;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.jose.jwe.JWEConstants;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.vault.VaultTranscriber;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -55,6 +41,20 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.crypto.SecretKey;
+
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.crypto.KeyStatus;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.jose.jwe.JWEConstants;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.vault.VaultTranscriber;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

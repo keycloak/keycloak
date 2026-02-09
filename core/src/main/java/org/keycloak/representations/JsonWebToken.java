@@ -17,23 +17,27 @@
 
 package org.keycloak.representations;
 
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import org.keycloak.Token;
+import org.keycloak.TokenCategory;
+import org.keycloak.common.util.Time;
+import org.keycloak.json.StringOrArrayDeserializer;
+import org.keycloak.json.StringOrArraySerializer;
+import org.keycloak.util.JsonSerialization;
+
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.keycloak.Token;
-import org.keycloak.TokenCategory;
-import org.keycloak.common.util.Time;
-import org.keycloak.json.StringOrArrayDeserializer;
-import org.keycloak.json.StringOrArraySerializer;
-
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -104,12 +108,21 @@ public class JsonWebToken implements Serializable, Token {
 
     /**
      * Tests that the token is not expired and is not-before.
-     *
-     * @return
+     * This assumes a default clock-skew for the "is not before" of 10 seconds which is in line FAPI 2.0.
+     * See <a href="https://openid.net/specs/fapi-security-profile-2_0-final.html#section-5.3.2.1-6">FAPI 2.0 Security Profile</a>:
+     * <blockquote>
+     * Clock skew is a cause of many interoperability issues. Even a few hundred milliseconds of clock skew can cause JWTs to be rejected
+     * for being "issued in the future". The DPoP specification [RFC9449] suggests that JWTs are accepted in the reasonably near future
+     * (on the order of seconds or minutes). This document goes further by requiring authorization servers to accept JWTs that have
+     * timestamps up to 10 seconds in the future. 10 seconds was chosen as a value that does not affect security while greatly increasing
+     * interoperability. Implementers are free to accept JWTs with a timestamp of up to 60 seconds in the future. Some ecosystems
+     * have found that the value of 30 seconds is needed to fully eliminate clock skew issues. To prevent implementations switching
+     * off iat and nbf checks completely this document imposes a maximum timestamp in the future of 60 seconds.
+     * </blockquote>
      */
     @JsonIgnore
     public boolean isActive() {
-        return isActive(0);
+        return isActive(10);
     }
 
     @JsonIgnore
@@ -261,5 +274,48 @@ public class JsonWebToken implements Serializable, Token {
     @Override
     public TokenCategory getCategory() {
         return TokenCategory.INTERNAL;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (!(o instanceof JsonWebToken)) {
+            return false;
+        }
+
+        JsonWebToken that = (JsonWebToken) o;
+        return Objects.equals(id, that.id) && //
+                Objects.equals(exp, that.exp) && //
+                Objects.equals(nbf, that.nbf) && //
+                Objects.equals(iat, that.iat) && //
+                Objects.equals(issuer, that.issuer) && //
+                Arrays.equals(audience, that.audience) && //
+                Objects.equals(subject, that.subject) && //
+                Objects.equals(type, that.type) && //
+                Objects.equals(issuedFor, that.issuedFor) && //
+                Objects.equals(otherClaims, that.otherClaims);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hashCode(id);
+        result = 31 * result + Objects.hashCode(exp);
+        result = 31 * result + Objects.hashCode(nbf);
+        result = 31 * result + Objects.hashCode(iat);
+        result = 31 * result + Objects.hashCode(issuer);
+        result = 31 * result + Arrays.hashCode(audience);
+        result = 31 * result + Objects.hashCode(subject);
+        result = 31 * result + Objects.hashCode(type);
+        result = 31 * result + Objects.hashCode(issuedFor);
+        result = 31 * result + Objects.hashCode(otherClaims);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return JsonSerialization.writeValueAsString(this);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

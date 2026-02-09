@@ -36,6 +36,23 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipType;
+import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.utils.StringUtil;
+
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -47,23 +64,6 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.OrganizationModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-
-import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.representations.idm.MemberRepresentation;
-import org.keycloak.representations.idm.MembershipType;
-import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.AdminEventBuilder;
-import org.keycloak.utils.StringUtil;
 
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class OrganizationMemberResource {
@@ -241,14 +241,18 @@ public class OrganizationMemberResource {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "400", description = "Bad Request")
     })
-    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("member-id") String memberId) {
+    public Stream<OrganizationRepresentation> getOrganizations(
+            @PathParam("member-id") String memberId,
+            @Parameter(description = "if false, return the full representation. Otherwise, only the basic fields are returned.")
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         if (StringUtil.isBlank(memberId)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
 
         UserModel member = getUser(memberId);
 
-        return provider.getByMember(member).map(ModelToRepresentation::toRepresentation);
+        return provider.getByMember(member)
+                .map(model -> ModelToRepresentation.toRepresentation(model, briefRepresentation));
     }
 
     @Path("count")

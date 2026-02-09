@@ -28,7 +28,7 @@
 
     <artifactId>keycloak-services</artifactId>
     <name>Keycloak REST Services</name>
-    <description/>
+    <description>Keycloak REST Services</description>
 
     <properties>
         <version.swagger.doclet>1.1.2</version.swagger.doclet>
@@ -81,7 +81,6 @@
             <groupId>org.twitter4j</groupId>
             <artifactId>twitter4j-core</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
@@ -122,6 +121,12 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-micrometer</artifactId>
             <scope>provided</scope>
+            <exclusions>
+            	<exclusion>
+            		<groupId>io.quarkus</groupId>
+            		<artifactId>quarkus-bootstrap-runner</artifactId>
+            	</exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -183,6 +188,11 @@
             <version>${woodstox.version}</version>    <!-- this version has to match that of used in Wildfly -->
             <scope>test</scope>
         </dependency>
+        <!-- YAML -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.jakarta.rs</groupId>
+            <artifactId>jackson-jakarta-rs-yaml-provider</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.google.zxing</groupId>
             <artifactId>javase</artifactId>
@@ -216,6 +226,21 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest</artifactId>
             <scope>test</scope>
@@ -238,6 +263,10 @@
         <dependency>
             <groupId>com.github.ua-parser</groupId>
             <artifactId>uap-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.openapi</groupId>
@@ -420,6 +449,7 @@
                                          -->
                                         <toc/>
                                         <toc-position>left</toc-position>
+                                        <sectanchors />
                                         <generated>${project.basedir}/target/apidocs-rest/asciidoc</generated>
                                         <!-- Boolean attributes are passed as defined/undefined to AsciiDoc, not at their literal value -->
                                         <project_community>true</project_community>

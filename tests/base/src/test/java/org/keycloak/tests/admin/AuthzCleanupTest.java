@@ -16,7 +16,6 @@
  */
 package org.keycloak.tests.admin;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -40,6 +39,8 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.util.JsonSerialization;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -105,7 +106,7 @@ public class AuthzCleanupTest {
 
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.addClient(clientId).secret(clientSecret).authorizationServices().redirectUris("http://localhost/myclient");
+            realm.addClient(clientId).secret(clientSecret).authorizationServicesEnabled(true).redirectUris("http://localhost/myclient");
             realm.roles("client-role-1",
                     "client-role-2",
                     "Acme administrator",

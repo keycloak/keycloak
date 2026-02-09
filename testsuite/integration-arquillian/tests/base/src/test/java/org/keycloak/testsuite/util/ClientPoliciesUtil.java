@@ -17,27 +17,28 @@
 
 package org.keycloak.testsuite.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.interfaces.ECPublicKey;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedMap;
-import org.keycloak.crypto.AsymmetricSignatureSignerContext;
-import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.crypto.SignatureException;
-import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.RSAPublicJWK;
+import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
-import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.utils.MapperTypeSerializer;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaAuthenticationRequestSigningAlgorithmExecutor;
-import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
@@ -62,36 +63,26 @@ import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutor;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
-import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutor;
 import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutor;
+import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutor;
-import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExceptionCondition;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutor;
+import org.keycloak.util.DPoPGenerator;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.Key;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.SecureRandom;
-import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.ECGenParameterSpec;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
 
 import static org.junit.Assert.fail;
-import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
 
 public final class ClientPoliciesUtil {
 
@@ -274,9 +265,11 @@ public final class ClientPoliciesUtil {
         return config;
     }
 
-    public static DPoPBindEnforcerExecutor.Configuration createDPoPBindEnforcerExecutorConfig(Boolean autoConfigure) {
+    public static DPoPBindEnforcerExecutor.Configuration createDPoPBindEnforcerExecutorConfig(Boolean autoConfigure, Boolean enforceAuthorizationCodeBindingToDpop, Boolean bindRefreshToken) {
         DPoPBindEnforcerExecutor.Configuration config = new DPoPBindEnforcerExecutor.Configuration();
         config.setAutoConfigure(autoConfigure);
+        config.setEnforceAuthorizationCodeBindingToDpop(enforceAuthorizationCodeBindingToDpop);
+        config.setAllowOnlyRefreshTokenBinding(bindRefreshToken);
         return config;
     }
 
@@ -454,14 +447,8 @@ public final class ClientPoliciesUtil {
 
     // DPoP
     public static  JWK createRsaJwk(Key publicKey) {
-        RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
-
-        RSAPublicJWK k = new RSAPublicJWK();
-        k.setKeyType(KeyType.RSA);
-        k.setModulus(Base64Url.encode(toIntegerBytes(rsaKey.getModulus())));
-        k.setPublicExponent(Base64Url.encode(toIntegerBytes(rsaKey.getPublicExponent())));
-
-        return k;
+        return JWKBuilder.create()
+                .rsa(publicKey, KeyUse.SIG);
     }
 
     public static JWK createEcJwk(Key publicKey) {
@@ -478,54 +465,24 @@ public final class ClientPoliciesUtil {
     }
 
     public static KeyPair generateEcdsaKey(String ecDomainParamName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
-        SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
-        ECGenParameterSpec ecSpec = new ECGenParameterSpec(ecDomainParamName);
-        keyGen.initialize(ecSpec, randomGen);
-        KeyPair keyPair = keyGen.generateKeyPair();
-        return keyPair;
+        return org.keycloak.common.util.KeyUtils.generateEcKeyPair(ecDomainParamName);
     }
 
     public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, String algorithm, JWSHeader jwsHeader, PrivateKey privateKey, String accessToken) throws IOException {
-
-        String dpopProofHeaderEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(jwsHeader));
-
-        DPoP dpop = new DPoP();
-        dpop.id(jti);
-        dpop.setHttpMethod(htm);
-        dpop.setHttpUri(htu);
-        dpop.iat(iat);
-        if (accessToken != null) {
-            dpop.setAccessTokenHash(HashUtils.accessTokenHash(DPoPUtil.DPOP_ATH_ALG, accessToken, true));
-        }
-
-        String dpopProofPayloadEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(dpop));
-
-        try {
-            KeyWrapper keyWrapper = new KeyWrapper();
-            keyWrapper.setKid(jwsHeader.getKeyId());
-            keyWrapper.setAlgorithm(algorithm);
-            keyWrapper.setPrivateKey(privateKey);
-            keyWrapper.setType(privateKey.getAlgorithm());
-            keyWrapper.setUse(KeyUse.SIG);
-            SignatureSignerContext sigCtx = createSignatureSignerContext(keyWrapper);
-
-            String data = dpopProofHeaderEncoded + "." + dpopProofPayloadEncoded;
-            byte[] signatureByteArray = sigCtx.sign(data.getBytes());
-            return data + "." + Base64Url.encode(signatureByteArray);
-        } catch (SignatureException e) {
-            throw new RuntimeException(e);
-        }
+        return generateSignedDPoPProof(jti, htm, htu, iat, algorithm, jwsHeader, privateKey, accessToken, new DPoPGenerator());
     }
 
-    private static SignatureSignerContext createSignatureSignerContext(KeyWrapper keyWrapper) {
-        switch (keyWrapper.getType()) {
-            case KeyType.RSA:
-                return new AsymmetricSignatureSignerContext(keyWrapper);
-            case KeyType.EC:
-                return new ECDSASignatureSignerContext(keyWrapper);
-            default:
-                throw new IllegalArgumentException("No signer provider for key algorithm type " + keyWrapper.getType());
+    public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, String algorithm, JWSHeader jwsHeader, PrivateKey privateKey, String accessToken, DPoPGenerator dpopGenerator) throws IOException {
+        if (algorithm.equals(jwsHeader.getAlgorithm().toString())) {
+            return dpopGenerator.generateSignedDPoPProof(jti, htm, htu, iat, jwsHeader, privateKey, accessToken);
+        } else {
+            // Ability to test failure scenarios when different algorithms are used for the JWSHeader and for the actual key
+            JWSHeader updatedHeader = new JWSHeader(Algorithm.valueOf(algorithm), jwsHeader.getType(), jwsHeader.getKeyId(), jwsHeader.getKey());
+            String dpop = dpopGenerator.generateSignedDPoPProof(jti, htm, htu, iat, updatedHeader, privateKey, accessToken);
+            String dpopOrigHeader = Base64Url.encode(JsonSerialization.writeValueAsBytes(jwsHeader));
+            // Replace header with the original algorithm
+            String updatedAlgorithmHeader = dpop.substring(0, dpop.indexOf('.'));
+            return dpop.replace(updatedAlgorithmHeader, dpopOrigHeader);
         }
     }
 }

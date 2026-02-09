@@ -16,20 +16,13 @@
  */
 package org.keycloak.testsuite.actions;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-
 import java.util.Arrays;
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -38,10 +31,22 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.auth.page.login.UpdateEmailPage;
 import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.openqa.selenium.WebDriver;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 @EnableFeature(Profile.Feature.UPDATE_EMAIL)
 public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTestRealmKeycloakTest {
@@ -55,15 +60,22 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 	@Page
 	protected UpdateEmailPage updateEmailPage;
 
-	@Page
+    @Page
+    protected LoginUpdateProfilePage updateProfilePage;
+
+    @Page
 	protected AppPage appPage;
 
-        @Drone
-        @SecondBrowser
-        protected WebDriver driver2;
+    @Page
+    protected ErrorPage errorPage;
+
+    @Drone
+    @SecondBrowser
+    protected WebDriver driver2;
 
 	@Before
 	public void beforeTest() {
+        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
 		ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
 		UserRepresentation user = UserBuilder.create().enabled(true)
 				.username("test-user@localhost")
@@ -190,7 +202,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 			String lastName = user.getLastName();
 			assertNotNull(firstName);
 			assertNotNull(lastName);
-			changeEmailUsingRequiredAction("new@localhost", true);
+			changeEmailUsingRequiredAction("new@localhost", true, true);
 			user = ActionUtil.findUserWithAdminClient(adminClient, "new@localhost");
 			Assert.assertNotNull(user);
 			firstName = user.getFirstName();
@@ -202,5 +214,5 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 		}
 	}
 
-	protected abstract void changeEmailUsingRequiredAction(String newEmail, boolean logoutOtherSessions) throws Exception;
+	protected abstract void changeEmailUsingRequiredAction(String newEmail, boolean logoutOtherSessions, boolean newEmailAsUsername) throws Exception;
 }

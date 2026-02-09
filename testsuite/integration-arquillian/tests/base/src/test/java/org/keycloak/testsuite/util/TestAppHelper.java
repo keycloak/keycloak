@@ -16,18 +16,12 @@
  */
 package org.keycloak.testsuite.util;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
-
-import jakarta.ws.rs.core.Response;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-import java.io.IOException;
 
 public class TestAppHelper {
     private OAuthClient oauth;

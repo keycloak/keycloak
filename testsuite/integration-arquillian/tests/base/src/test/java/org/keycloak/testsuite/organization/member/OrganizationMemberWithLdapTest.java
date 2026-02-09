@@ -22,8 +22,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.ws.rs.core.Response;
-import org.junit.ClassRule;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
@@ -39,6 +38,9 @@ import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -89,7 +91,7 @@ public class OrganizationMemberWithLdapTest extends AbstractOrganizationTest {
         try (Response response = organization.members().addMember(ldapUser.getId())) {
             assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
         }
-        List<OrganizationRepresentation> orgMemberships = organization.members().member(ldapUser.getId()).getOrganizations();
+        List<OrganizationRepresentation> orgMemberships = organization.members().member(ldapUser.getId()).getOrganizations(true);
         assertThat(orgMemberships, notNullValue());
         assertThat(orgMemberships, hasSize(1));
         assertThat(orgMemberships.get(0).getId(), equalTo(orgRepresentation.getId()));

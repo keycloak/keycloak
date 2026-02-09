@@ -95,6 +95,7 @@ const LoginFlow = ({
 };
 
 const SYNC_MODES = ["IMPORT", "LEGACY", "FORCE"];
+const SHOW_IN_ACCOUNT_CONSOLE_VALUES = ["ALWAYS", "WHEN_LINKED", "NEVER"];
 type AdvancedSettingsProps = {
   isOIDC: boolean;
   isSAML: boolean;
@@ -121,12 +122,24 @@ export const AdvancedSettings = ({
   const claimFilterRequired = filteredByClaim === "true";
   const isFeatureEnabled = useIsFeatureEnabled();
   const isTransientUsersEnabled = isFeatureEnabled(Feature.TransientUsers);
+  const isClientAuthFederatedEnabled = isFeatureEnabled(
+    Feature.ClientAuthFederated,
+  );
+  const jwtAuthorizationGrant = isFeatureEnabled(Feature.JWTAuthorizationGrant);
   const transientUsers = useWatch({
     control,
     name: "config.doNotStoreUsers",
     defaultValue: "false",
   });
   const syncModeAvailable = transientUsers === "false";
+  const jwtAuthorizationGrantEnabled = useWatch({
+    control,
+    name: "config.jwtAuthorizationGrantEnabled",
+  });
+  const supportsClientAssertions = useWatch({
+    control,
+    name: "config.supportsClientAssertions",
+  });
   return (
     <>
       {!isOIDC && !isSAML && !isOAuth2 && (
@@ -162,6 +175,21 @@ export const AdvancedSettings = ({
         field="hideOnLogin"
         label="hideOnLoginPage"
         fieldType="boolean"
+      />
+      <SelectControl
+        name="config.showInAccountConsole"
+        label={t("showInAccountConsole")}
+        labelIcon={t("showInAccountConsoleHelp")}
+        options={SHOW_IN_ACCOUNT_CONSOLE_VALUES.map((showInAccountConsole) => ({
+          key: showInAccountConsole,
+          value: t(
+            `showInAccountConsole.${showInAccountConsole.toLocaleLowerCase()}`,
+          ),
+        }))}
+        controller={{
+          defaultValue: SHOW_IN_ACCOUNT_CONSOLE_VALUES[0],
+          rules: { required: t("required") },
+        }}
       />
 
       {((!isSAML && !isOAuth2) || isOIDC) && (
@@ -295,6 +323,30 @@ export const AdvancedSettings = ({
         field="config.caseSensitiveOriginalUsername"
         label="caseSensitiveOriginalUsername"
       />
+      {isClientAuthFederatedEnabled && isOIDC && (
+        <SwitchField
+          field="config.supportsClientAssertions"
+          label="supportsClientAssertions"
+        />
+      )}
+      {isClientAuthFederatedEnabled &&
+        isOIDC &&
+        supportsClientAssertions === "true" && (
+          <SwitchField
+            field="config.supportsClientAssertionReuse"
+            label="supportsClientAssertionReuse"
+          />
+        )}
+      {isOIDC &&
+        ((isClientAuthFederatedEnabled &&
+          supportsClientAssertions === "true") ||
+          (jwtAuthorizationGrant &&
+            jwtAuthorizationGrantEnabled === "true")) && (
+          <SwitchField
+            field="config.allowClientIdAsAudience"
+            label="allowClientIdAsAudience"
+          />
+        )}
     </>
   );
 };

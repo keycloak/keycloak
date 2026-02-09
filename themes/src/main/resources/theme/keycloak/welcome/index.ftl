@@ -2,7 +2,6 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light${(properties.darkMode)?boolean?then(' dark', '')}">
     <title>Welcome to ${productName}</title>
@@ -50,13 +49,13 @@
           <main class="pf-v5-c-login__main">
             <header class="pf-v5-c-login__main-header">
               <#if localUser>
-                <h1 class="pf-v5-c-title pf-m-2xl">Create a temporary administrative user</h1>
+                <h1 class="pf-v5-c-title pf-m-2xl">Create an administrative user</h1>
                 <#if !successMessage?has_content>
-                  <p class="pf-v5-c-login__main-header-desc">To get started with ${productName}, you first create a temporary administrative user.  Later, to harden security, create a new permanent administrative user and delete the temporary user that was created during this setup.</p>
+                  <p class="pf-v5-c-login__main-header-desc">To get started with ${productName}, you first create an administrative user.</p>
                 </#if>
               <#else>
                 <h1 class="pf-v5-c-title pf-m-3xl">Local access required</h1>
-                <p class="pf-v5-c-login__main-header-desc">You will need local access to create the temporary administrative user.</p>
+                <p class="pf-v5-c-login__main-header-desc">You will need local access to create the administrative user.</p>
               </#if>
             </header>
             <div class="pf-v5-c-login__main-body">
@@ -126,13 +125,49 @@
                         </span>
                       </div>
                     </div>
+                    <div class="pf-v5-c-form__group">
+                      <div class="pf-v5-c-form__group-label">
+                        <label class="pf-v5-c-form__label" for="email">
+                          <span class="pf-v5-c-form__label-text">Email</span>
+                        </label>
+                      </div>
+                      <div class="pf-v5-c-form__group-control">
+                        <span class="pf-v5-c-form-control">
+                          <input id="email" type="email" name="email" autocomplete="email">
+                        </span>
+                      </div>
+                    </div>
+                    <div class="pf-v5-c-form__group">
+                      <div class="pf-v5-c-form__group-label">
+                        <label class="pf-v5-c-form__label" for="firstName">
+                          <span class="pf-v5-c-form__label-text">First name</span>
+                        </label>
+                      </div>
+                      <div class="pf-v5-c-form__group-control">
+                        <span class="pf-v5-c-form-control">
+                          <input id="firstName" type="text" name="firstName" autocomplete="given-name">
+                        </span>
+                      </div>
+                    </div>
+                    <div class="pf-v5-c-form__group">
+                      <div class="pf-v5-c-form__group-label">
+                        <label class="pf-v5-c-form__label" for="lastName">
+                          <span class="pf-v5-c-form__label-text">Last name</span>
+                        </label>
+                      </div>
+                      <div class="pf-v5-c-form__group-control">
+                        <span class="pf-v5-c-form-control">
+                          <input id="lastName" type="text" name="lastName" autocomplete="family-name">
+                        </span>
+                      </div>
+                    </div>
                     <input name="stateChecker" type="hidden" value="${stateChecker}">
                     <div class="pf-v5-c-form__group pf-m-action">
                       <button class="pf-v5-c-button pf-m-primary pf-m-block" type="submit">Create user</button>
                     </div>
                   </form>
                 <#else>
-                  <p>To create the temporary administrative user, access the Administration Console over localhost, or use a <code>bootstrap-admin</code> command.</p>
+                  <p>To create the administrative user, access the Administration Console over localhost, or use a <code>bootstrap-admin</code> command.</p>
                 </#if>
               </#if>
             </div>

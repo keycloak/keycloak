@@ -61,6 +61,7 @@ parent=keycloak.v2
 import=common/quick-theme
 
 ${logo ? "logo=" + logoName : ""}
+${favicon ? "favIcon=/img/favicon.ico" : ""}
 styles=css/theme-styles.css
 `,
     );
@@ -72,6 +73,7 @@ parent=keycloak.v3
 import=common/quick-theme
 
 ${logo ? "logo=" + logoName : ""}
+${favicon ? "favIcon=/img/favicon.ico" : ""}
 styles=css/theme-styles.css
 `,
     );
@@ -134,7 +136,7 @@ styles=css/login.css css/theme-styles.css
       }
       `,
     );
-    zip.generateAsync({ type: "blob" }).then((content) => {
+    await zip.generateAsync({ type: "blob" }).then((content) => {
       const url = URL.createObjectURL(content);
       const a = document.createElement("a");
       a.href = url;

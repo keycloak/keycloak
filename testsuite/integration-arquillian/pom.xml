@@ -52,11 +52,9 @@
         <arquillian-wildfly-container.version>3.0.1.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
         <arquillian-infinispan-container.version>1.2.0.Beta3</arquillian-infinispan-container.version>
-        <undertow.version>${undertow-jakarta.version}</undertow.version>
         <undertow-embedded.version>1.0.0.Final</undertow-embedded.version>
         <version.org.wildfly.extras.creaper>2.0.3</version.org.wildfly.extras.creaper>
         <jakarta.persistence-legacy.version>2.2.3</jakarta.persistence-legacy.version>
-        <smallrye.jandex.version>3.0.5</smallrye.jandex.version>
         <commons.validator.version>1.8.0</commons.validator.version>
         <byte-buddy.version>1.14.13</byte-buddy.version>
 
@@ -418,6 +416,30 @@
             </properties>
         </profile>
         <profile>
+            <id>db-tidb</id>
+            <properties>
+                <keycloak.storage.connections.vendor>tidb</keycloak.storage.connections.vendor>
+                <keycloak.connectionsJpa.driver>com.mysql.jdbc.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>test</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>root</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:mysql://${auth.server.db.host}:${docker.database.port}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <auth.server.feature>db-tidb</auth.server.feature>
+
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>com.mysql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mysql-connector-j</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${mysql-jdbc.version}</jdbc.mvn.version>
+                <docker.database.image>${tidb.container}</docker.database.image>
+                <docker.database.port>4000</docker.database.port>
+                <docker.database.skip>false</docker.database.skip>
+                <docker.database.cmd>start</docker.database.cmd>
+                <docker.database.wait-for-log-regex>server is running MySQL protocol</docker.database.wait-for-log-regex>
+            </properties>
+        </profile>
+        <profile>
             <id>db-postgres</id>
             <properties>
                 <keycloak.storage.connections.vendor>postgres</keycloak.storage.connections.vendor>
@@ -458,6 +480,28 @@
             </properties>
         </profile>
         <profile>
+            <id>db-edb</id>
+            <properties>
+                <keycloak.storage.connections.vendor>postgres</keycloak.storage.connections.vendor>
+                <keycloak.connectionsJpa.driver>org.postgresql.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:postgresql://${auth.server.db.host}:${docker.database.port}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${postgresql-jdbc.version}</jdbc.mvn.version>
+                <docker.database.image>${edb.container}</docker.database.image>
+                <docker.database.port>5432</docker.database.port>
+                <docker.database.skip>false</docker.database.skip>
+                <docker.database.cmd>./init-and-start-db.sh</docker.database.cmd>
+                <docker.database.wait-for-log-regex>Database keycloak created.</docker.database.wait-for-log-regex>
+            </properties>
+        </profile>
+        <profile>
             <id>db-mariadb</id>
             <properties>
                 <keycloak.storage.connections.vendor>mariadb</keycloak.storage.connections.vendor>
@@ -486,7 +530,7 @@
                 <docker.database.image>${mssql.container}</docker.database.image>
                 <docker.database.port>1433</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
-                <docker.database.postStart>/opt/mssql-tools18/bin/sqlcmd -e -U sa -P ${keycloak.connectionsJpa.password} -No -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database}</docker.database.postStart>
+                <docker.database.postStart>/opt/mssql-tools18/bin/sqlcmd -e -U sa -P ${keycloak.connectionsJpa.password} -No -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database};\ ALTER\ DATABASE\ ${keycloak.connectionsJpa.database}\ SET\ READ_COMMITTED_SNAPSHOT\ ON</docker.database.postStart>
                 <docker.database.cmd>/bin/sh -c /opt/mssql/bin/sqlservr</docker.database.cmd>
                 <docker.database.wait-for-log-regex>Recovery is complete. This is an informational message only. No user action is required.</docker.database.wait-for-log-regex>
                 <keycloak.storage.connections.vendor>mssql</keycloak.storage.connections.vendor>
@@ -498,6 +542,17 @@
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
                 <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>com.microsoft.sqlserver</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mssql-jdbc</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${mssql-jdbc.version}</jdbc.mvn.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-mssql-azure</id>
+            <properties>
+                <keycloak.storage.connections.vendor>mssql</keycloak.storage.connections.vendor>
+                <keycloak.connectionsJpa.driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</keycloak.connectionsJpa.driver>
+                <docker.database.skip>true</docker.database.skip>
                 <jdbc.mvn.groupId>com.microsoft.sqlserver</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mssql-jdbc</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${mssql-jdbc.version}</jdbc.mvn.version>

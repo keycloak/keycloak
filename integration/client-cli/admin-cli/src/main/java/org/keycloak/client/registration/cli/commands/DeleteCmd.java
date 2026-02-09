@@ -17,11 +17,11 @@
 
 package org.keycloak.client.registration.cli.commands;
 
-import org.keycloak.client.cli.config.ConfigData;
-import org.keycloak.client.registration.cli.CmdStdinContext;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
+
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.registration.cli.CmdStdinContext;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;

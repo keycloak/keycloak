@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.webauthn.utils;
 
 import org.keycloak.testsuite.util.BrowserDriverUtil;
+
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chromium.ChromiumDriver;
 

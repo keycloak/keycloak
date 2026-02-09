@@ -17,14 +17,8 @@
 
 package org.keycloak.testsuite.oidc;
 
-import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.events.Details;
@@ -44,7 +38,13 @@ import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import jakarta.ws.rs.core.UriBuilder;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
+
 
 
 /**

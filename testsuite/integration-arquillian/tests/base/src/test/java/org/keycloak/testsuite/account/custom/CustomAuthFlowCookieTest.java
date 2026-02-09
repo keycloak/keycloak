@@ -16,8 +16,9 @@
  */
 package org.keycloak.testsuite.account.custom;
 
-import org.junit.Test;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 

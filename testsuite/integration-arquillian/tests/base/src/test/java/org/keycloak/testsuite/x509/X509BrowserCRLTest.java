@@ -17,12 +17,6 @@
 
 package org.keycloak.testsuite.x509;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
 import org.keycloak.events.Details;
 import org.keycloak.models.Constants;
@@ -31,12 +25,19 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.HtmlUnitBrowser;
+
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 import org.openqa.selenium.WebDriver;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -225,7 +226,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         Assert.assertNotNull(cfgId);
 
         // Verify there is an error message because of invalid CRL signature
-        assertLoginFailedWithExpectedX509Error("Certificate validation's failed.\nCertificate revoked or incorrect.");
+        assertLoginFailedWithExpectedX509Error("Certificate validation's failed. Certificate revoked or incorrect.");
     }
 
 
@@ -305,7 +306,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
 
 
     private void assertLoginFailedDueRevokedCertificate() {
-        assertLoginFailedWithExpectedX509Error("Certificate validation's failed.\nCertificate revoked or incorrect.");
+        assertLoginFailedWithExpectedX509Error("Certificate validation's failed. Certificate revoked or incorrect.");
     }
 
     private void assertLoginFailedWithExpectedX509Error(String expectedError) {

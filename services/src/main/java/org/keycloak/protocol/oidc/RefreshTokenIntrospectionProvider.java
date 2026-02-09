@@ -17,7 +17,6 @@
  */
 package org.keycloak.protocol.oidc;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -26,6 +25,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.util.TokenUtil;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

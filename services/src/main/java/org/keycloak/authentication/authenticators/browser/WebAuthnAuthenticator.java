@@ -16,14 +16,12 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
-import com.webauthn4j.data.AuthenticationRequest;
-import com.webauthn4j.data.client.Origin;
-import com.webauthn4j.data.client.challenge.Challenge;
-import com.webauthn4j.data.client.challenge.DefaultChallenge;
-import com.webauthn4j.server.ServerProperty;
-import com.webauthn4j.util.exception.WebAuthnException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 
-import org.jboss.logging.Logger;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
@@ -43,6 +41,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.WebAuthnAuthenticatorsBean;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -51,15 +50,21 @@ import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
+import com.webauthn4j.data.AuthenticationRequest;
+import com.webauthn4j.data.client.Origin;
+import com.webauthn4j.data.client.challenge.Challenge;
+import com.webauthn4j.data.client.challenge.DefaultChallenge;
+import com.webauthn4j.server.ServerProperty;
+import com.webauthn4j.util.exception.WebAuthnException;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.WebAuthnConstants.AUTH_ERR_DETAIL_LABEL;
 import static org.keycloak.WebAuthnConstants.AUTH_ERR_LABEL;
-import static org.keycloak.services.messages.Messages.*;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_GET;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_AUTH_VERIFICATION;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_DIFFERENT_USER;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_REGISTRATION;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_USER_NOT_FOUND;
 
 /**
  * Authenticator for WebAuthn authentication, which will be typically used when WebAuthn is used as second factor.
@@ -209,7 +214,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
 
         boolean isUVFlagChecked = false;
         String userVerificationRequirement = getWebAuthnPolicy(context).getUserVerificationRequirement();
-        if (WebAuthnConstants.OPTION_REQUIRED.equals(userVerificationRequirement)) isUVFlagChecked = true;
+        if (Constants.WEBAUTHN_POLICY_OPTION_REQUIRED.equals(userVerificationRequirement)) isUVFlagChecked = true;
 
         UserModel user = session.users().getUserById(context.getRealm(), userId);
 
@@ -252,7 +257,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
             context.getEvent()
                 .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, isUVChecked)
                 .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, encodedCredentialID);
-            context.success();
+            context.success(getCredentialType());
         } else {
             context.getEvent()
                 .detail(WebAuthnConstants.AUTHENTICATED_USER_ID, userId)

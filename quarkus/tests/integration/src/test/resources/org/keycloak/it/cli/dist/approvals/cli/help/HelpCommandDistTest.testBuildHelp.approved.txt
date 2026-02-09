@@ -21,8 +21,8 @@ Database:
 
 --db <vendor>        The database vendor. In production mode the default value of 'dev-file' is
                        deprecated, you should explicitly specify the db instead. Possible values
-                       are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. Default:
-                       dev-file.
+                       are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres, tidb.
+                       Default: dev-file.
 --db-driver <driver> The fully qualified class name of the JDBC driver. If not set, a default
                        driver is set accordingly to the chosen database.
 
@@ -36,7 +36,7 @@ Database - additional datasources:
                      Used for named <datasource>. The database vendor. In production mode the
                        default value of 'dev-file' is deprecated, you should explicitly specify the
                        db instead. Possible values are: dev-file, dev-mem, mariadb, mssql, mysql,
-                       oracle, postgres. Default: dev-file.
+                       oracle, postgres, tidb.
 
 Transaction:
 
@@ -47,6 +47,10 @@ Transaction:
 
 Feature:
 
+--feature-<name> <enabled|disabled|vX(X is version)>
+                     Enable/Disable specific feature <feature>. It takes precedence over the
+                       'features', and 'features-disabled' options. Possible values are: 'enabled',
+                       'disabled', or specific version (lowercase) that will be enabled (f.e. 'v2')
 --features <feature> Enables a set of one or more features. Possible values are: <...>.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: <...>.
@@ -93,6 +97,13 @@ Metrics:
 Vault:
 
 --vault <provider>   Enables a vault provider. Possible values are: file, keystore.
+
+Logging:
+
+--log-mdc-enabled <true|false>
+                     Indicates whether to add information about the realm and other information to
+                       the mapped diagnostic context. All elements will be prefixed with 'kc.'
+                       Default: false. Available only when log-mdc preview feature is enabled.
 
 Tracing:
 

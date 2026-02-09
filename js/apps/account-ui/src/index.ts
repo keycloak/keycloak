@@ -38,6 +38,7 @@ export { ResourcesTab } from "./resources/ResourcesTab";
 export { ResourceToolbar } from "./resources/ResourceToolbar";
 export { SharedWith } from "./resources/SharedWith";
 export { Oid4Vci } from "./oid4vci/Oid4Vci";
+export { Organizations } from "./organizations/Organizations";
 export { ShareTheResource } from "./resources/ShareTheResource";
 export {
   deleteConsent,
@@ -57,3 +58,4 @@ export type { Environment as AccountEnvironment } from "./environment";
 export { KeycloakProvider, useEnvironment } from "@keycloak/keycloak-ui-shared";
 export { useAccountAlerts } from "./utils/useAccountAlerts";
 export { usePromise } from "./utils/usePromise";
+export { routes } from "./routes";

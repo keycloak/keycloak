@@ -48,7 +48,7 @@
 :adminguide_bruteforce_link: {adminguide_link}#password-guess-brute-force-attacks
 :adminguide_eventlistener_name: Event listener
 :adminguide_eventlistener_link: {adminguide_link}#event-listener
-:adminguide_finegrained_name: fine-grained admin permissions
+:adminguide_finegrained_name: Delegating realm administration using permissions
 :adminguide_finegrained_link: {adminguide_link}#_fine_grained_permissions
 :adminguide_timeouts_name: Timeouts
 :adminguide_timeouts_link: {adminguide_link}#_timeouts
@@ -58,18 +58,26 @@
 :apidocs_link: https://www.keycloak.org/docs/{project_version}/api_documentation/
 :adminguide_email_name: Configuring email for a realm
 :adminguide_email_link: {adminguide_link}#_email
+:server_guide_base_link: https://www.keycloak.org/server
+:allproviderconfigguide_name: All provider configuration Guide
+:allproviderconfigguide_link: {server_guide_base_link}/all-provider-config
 :bootstrapadminrecovery_name: Admin Bootstrap and Recovery
-:bootstrapadminrecovery_link: https://www.keycloak.org/server/bootstrap-admin-recovery
-:client_certificate_lookup_link: https://www.keycloak.org/server/reverseproxy#_enabling_client_certificate_lookup
+:bootstrapadminrecovery_link: {server_guide_base_link}/bootstrap-admin-recovery
+:client_certificate_lookup_link: {server_guide_base_link}/reverseproxy#_enabling_client_certificate_lookup
+:databaseguide_name: Configuring the database
+:databaseguide_link: {server_guide_base_link}/db
 :developerguide_name: Server Developer Guide
 :developerguide_name_short: Server Developer
 :developerguide_link: {project_doc_base_url}/server_development/
 :developerguide_link_latest: {project_doc_base_url_latest}/server_development/
-:developerguide_deploying_themes: {developerguide_link}#deploying-themes
+:developerguide_deploying_themes: https://www.keycloak.org/ui-customization/themes#_deploying_themes
 :developerguide_actiontoken_name: Action Token Handler SPI
 :developerguide_actiontoken_link: {developerguide_link}#_action_token_handler_spi
 :developerguide_jsproviders_name: JavaScript Providers
+:developerguide_userstoragespi_link: {developerguide_link}#_user-storage-spi
+:developerguide_userstoragespi_name: User Storage SPI
 :developerguide_jsproviders_link: {developerguide_link}#_script_providers
+:importexportguide_link: https://www.keycloak.org/nightly/server/importExport
 :gettingstarted_name: Getting Started Guide
 :gettingstarted_name_short: Getting Started
 :gettingstarted_link: https://www.keycloak.org/guides#getting-started
@@ -78,8 +86,12 @@
 :highavailabilityguide_name: High Availability Guide
 :highavailabilityguide_link: https://www.keycloak.org/guides#high-availability
 :observablitycategory_link: https://www.keycloak.org/guides#observability
-:tracingguide_name: Enabling Tracing
+:operatorguide_name: Operator  Guide
+:operatorguide_link: https://www.keycloak.org/guides#operator
+:tracingguide_name: Root cause analysis with tracing
 :tracingguide_link: https://www.keycloak.org/observability/tracing
+:telemetryguide_name: Centralize your observability stack with OpenTelemetry
+:telemetryguide_link: https://www.keycloak.org/observability/telemetry
 :upgradingguide_name: Upgrading Guide
 :upgradingguide_name_short: Upgrading
 :upgradingguide_link: {project_doc_base_url}/upgrading/
@@ -134,5 +146,8 @@
 :securing_apps_base_link: https://www.keycloak.org/securing-apps
 :securing_apps_java_policy_enforcer_link: {securing_apps_base_link}/policy-enforcer
 :securing_apps_java_policy_enforcer_name: Java Policy enforcer
+:securing_apps_javascript_adapter_link: {securing_apps_base_link}/javascript-adapter
+:securing_apps_javascript_adapter_name: {project_name} Javascript adapter
 :securing_apps_token_exchange_link: {securing_apps_base_link}/token-exchange
+:securing_apps_dpop_link: {securing_apps_base_link}/dpop
 :securing_apps_token_exchange_name: Token exchange Documentation

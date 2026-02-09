@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -168,6 +169,11 @@ public class ClientScopeDecorator implements ClientScopeModel {
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
         return delegate.getProtocolMapperById(id);
+    }
+
+    @Override
+    public List<ProtocolMapperModel> getProtocolMapperByType(String type) {
+        return delegate.getProtocolMapperByType(type);
     }
 
     @Override

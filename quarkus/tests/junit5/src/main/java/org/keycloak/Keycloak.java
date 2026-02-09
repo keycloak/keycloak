@@ -17,17 +17,14 @@
 
 package org.keycloak;
 
-import static java.util.Optional.ofNullable;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeoutException;
 
-import io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory;
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.keycloak.common.Version;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.HttpOptions;
@@ -36,15 +33,17 @@ import org.keycloak.config.Option;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.platform.Platform;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.cli.Picocli;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
 
 import io.quarkus.bootstrap.app.AugmentAction;
 import io.quarkus.bootstrap.app.CuratedApplication;
 import io.quarkus.bootstrap.app.QuarkusBootstrap;
 import io.quarkus.bootstrap.app.RunningQuarkusApplication;
 import io.quarkus.bootstrap.app.StartupAction;
+import io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory;
 import io.quarkus.bootstrap.model.ApplicationModel;
 import io.quarkus.bootstrap.resolver.AppModelResolverException;
 import io.quarkus.bootstrap.resolver.BootstrapAppModelResolver;
@@ -55,6 +54,9 @@ import io.quarkus.bootstrap.workspace.WorkspaceModuleId;
 import io.quarkus.maven.dependency.Dependency;
 import io.quarkus.maven.dependency.DependencyBuilder;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+
+import static java.util.Optional.ofNullable;
 
 public class Keycloak {
 
@@ -122,7 +124,7 @@ public class Keycloak {
             addOptionIfNotSet(args, HttpOptions.HTTP_PORT);
             addOptionIfNotSet(args, HttpOptions.HTTPS_PORT);
 
-            boolean isFipsEnabled = ofNullable(getOptionValue(args, SecurityOptions.FIPS_MODE)).map(FipsMode::valueOf).orElse(FipsMode.DISABLED).isFipsEnabled();
+            boolean isFipsEnabled = ofNullable(getOptionValue(args, SecurityOptions.FIPS_MODE)).map(FipsMode::valueOfOption).orElse(FipsMode.DISABLED).isFipsEnabled();
 
             if (isFipsEnabled) {
                 String logLevel = getOptionValue(args, LoggingOptions.LOG_LEVEL);
@@ -173,6 +175,7 @@ public class Keycloak {
     private Path homeDir;
     private List<Dependency> dependencies;
     private boolean fipsEnabled;
+    private Properties systemProperties;
 
     public Keycloak() {
         this(null, Version.VERSION, List.of(), false);
@@ -190,6 +193,7 @@ public class Keycloak {
     }
 
     private Keycloak start(List<String> args) {
+        systemProperties = (Properties) System.getProperties().clone();
         QuarkusBootstrap.Builder builder = QuarkusBootstrap.builder()
                 .setExistingModel(applicationModel)
                 .setApplicationRoot(applicationModel.getApplicationModule().getModuleDir().toPath())
@@ -202,8 +206,10 @@ public class Keycloak {
             curated = builder.build().bootstrap();
             AugmentAction action = curated.createAugmentor();
             Environment.setHomeDir(homeDir);
-            ConfigArgsConfigSource.setCliArgs(args.toArray(new String[0]));
+            initSys(args.toArray(String[]::new));
+            System.setProperty(Environment.KC_TEST_REBUILD, "true");
             StartupAction startupAction = action.createInitialRuntimeApplication();
+            System.getProperties().remove(Environment.KC_TEST_REBUILD);
 
             application = startupAction.runMainClass(args.toArray(new String[0]));
 
@@ -214,8 +220,15 @@ public class Keycloak {
     }
 
     public void stop() throws TimeoutException {
-        if (isRunning()) {
-            closeApplication();
+        try {
+            if (isRunning()) {
+                closeApplication();
+            }
+        } finally {
+            if (systemProperties != null) {
+                KeycloakMain.reset(systemProperties);
+                systemProperties = null;
+            }
         }
     }
 
@@ -240,11 +253,9 @@ public class Keycloak {
                 .addExclusion("org.jboss.logmanager", "log4j-jboss-logmanager");
 
         if (fipsEnabled) {
-            serverDependency.addExclusion("org.bouncycastle", "bcprov-jdk18on");
-            serverDependency.addExclusion("org.bouncycastle", "bcpkix-jdk18on");
-            serverDependency.addExclusion("org.keycloak", "keycloak-crypto-default");
+            IgnoredArtifacts.FIPS_ENABLED.stream().map(s -> s.split(":")).forEach(d -> serverDependency.addExclusion(d[0], d[1]));
         } else {
-            serverDependency.addExclusion("org.keycloak", "keycloak-crypto-fips1402");
+            IgnoredArtifacts.FIPS_DISABLED.stream().map(s -> s.split(":")).forEach(d -> serverDependency.addExclusion(d[0], d[1]));
         }
 
         WorkspaceModule.Mutable builder = WorkspaceModule.builder()
@@ -254,12 +265,6 @@ public class Keycloak {
                 .addDependencyConstraint(
                         Dependency.pomImport("org.keycloak", "keycloak-quarkus-parent", keycloakVersion))
                 .addDependency(serverDependency.build());
-
-        if (fipsEnabled) {
-            builder.addDependency(Dependency.of("org.bouncycastle", "bc-fips"));
-            builder.addDependency(Dependency.of("org.bouncycastle", "bctls-fips"));
-            builder.addDependency(Dependency.of("org.bouncycastle", "bcpkix-fips"));
-        }
 
         for (Dependency dependency : dependencies) {
             builder.addDependency(dependency);
@@ -315,5 +320,31 @@ public class Keycloak {
 
         application = null;
         curated = null;
+    }
+
+    /**
+     * Uses a dummy {@link Picocli} to process the args and set system
+     * variables needed to run augmentation
+     */
+    public static void initSys(String... args) {
+        Picocli picocli = new Picocli() {
+
+            @Override
+            public void build() throws Throwable {
+                // do nothing
+            }
+
+            @Override
+            public void start() {
+                throw new AssertionError();
+            }
+
+            @Override
+            public void exit(int exitCode) {
+                // do nothing
+            }
+        };
+        picocli.parseAndRun(List.of(args));
+        System.setProperty(Environment.KC_CONFIG_BUILT, "true");
     }
 }

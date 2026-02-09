@@ -16,10 +16,12 @@
  */
 package org.keycloak.operator.crds.v2alpha1.deployment;
 
-import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.model.annotation.SpecReplicas;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.AdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
@@ -27,24 +29,26 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ImportSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ServiceMonitorSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TelemetrySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
-
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.model.annotation.SpecReplicas;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class KeycloakSpec {
@@ -65,6 +69,10 @@ public class KeycloakSpec {
     @JsonPropertyDescription("Configuration of the Keycloak server.\n" +
             "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
     private List<ValueOrSecret> additionalOptions = new ArrayList<ValueOrSecret>(); // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
+
+    @JsonPropertyDescription("Environment variables for the Keycloak server.\n" +
+            "Values can be either direct values or references to secrets. Use additionalOptions for first-class options rather than KC_ values here.")
+    private List<ValueOrSecret> env = new ArrayList<ValueOrSecret>();
 
     @JsonProperty("http")
     @JsonPropertyDescription("In this section you can configure Keycloak features related to HTTP and HTTPS")
@@ -119,13 +127,21 @@ public class KeycloakSpec {
     @JsonPropertyDescription("In this section you can configure Keycloak's scheduling")
     private SchedulingSpec schedulingSpec;
 
+    @JsonProperty("import")
+    @JsonPropertyDescription("In this section you can configure import Jobs")
+    private ImportSpec importSpec;
+
     @JsonProperty("bootstrapAdmin")
-    @JsonPropertyDescription("In this section you can configure Keycloak's bootstrap admin - will be used only for inital cluster creation.")
+    @JsonPropertyDescription("In this section you can configure Keycloak's bootstrap admin - will be used only for initial cluster creation.")
     private BootstrapAdminSpec bootstrapAdminSpec;
 
     @JsonProperty("networkPolicy")
     @JsonPropertyDescription("Controls the ingress traffic flow into Keycloak pods.")
     private NetworkPolicySpec networkPolicySpec;
+
+    @JsonProperty("telemetry")
+    @JsonPropertyDescription("In this section you can configure general shared OpenTelemetry settings for Keycloak.")
+    private TelemetrySpec telemetrySpec;
 
     @JsonProperty("tracing")
     @JsonPropertyDescription("In this section you can configure OpenTelemetry Tracing for Keycloak.")
@@ -134,6 +150,30 @@ public class KeycloakSpec {
     @JsonProperty("update")
     @JsonPropertyDescription("Configuration related to Keycloak deployment updates.")
     private UpdateSpec updateSpec;
+
+    @JsonProperty("readinessProbe")
+    @JsonPropertyDescription("Configuration for readiness probe, by default it is 10 for periodSeconds and 3 for failureThreshold")
+    private ProbeSpec readinessProbeSpec;
+
+    @JsonProperty("livenessProbe")
+    @JsonPropertyDescription("Configuration for liveness probe, by default it is 10 for periodSeconds and 3 for failureThreshold")
+    private ProbeSpec livenessProbeSpec;
+
+    @JsonProperty("startupProbe")
+    @JsonPropertyDescription("Configuration for startup probe, by default it is 1 for periodSeconds and 600 for failureThreshold")
+    private ProbeSpec startupProbeSpec;
+
+    @JsonProperty("serviceMonitor")
+    @JsonPropertyDescription("Configuration related to the generated ServiceMonitor")
+    private ServiceMonitorSpec serviceMonitorSpec;
+
+    @JsonProperty("automountServiceAccountToken")
+    @JsonPropertyDescription("Set this to to false to disable automounting the default ServiceAccount Token and Service CA. This is enabled by default.")
+    private Boolean automountServiceAccountToken;
+
+    @JsonProperty("admin")
+    @JsonPropertyDescription("In this section you can find all properties related to making admin connections from the operator to the server. These settings are not used by the server.")
+    private AdminSpec adminSpec;
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -230,6 +270,14 @@ public class KeycloakSpec {
         return additionalOptions;
     }
 
+    public List<ValueOrSecret> getEnv() {
+        return env;
+    }
+
+    public void setEnv(List<ValueOrSecret> env) {
+        this.env = env;
+    }
+
     public void setAdditionalOptions(List<ValueOrSecret> additionalOptions) {
         this.additionalOptions = additionalOptions;
     }
@@ -301,6 +349,14 @@ public class KeycloakSpec {
         this.networkPolicySpec = networkPolicySpec;
     }
 
+    public TelemetrySpec getTelemetrySpec() {
+        return telemetrySpec;
+    }
+
+    public void setTelemetrySpec(TelemetrySpec telemetrySpec) {
+        this.telemetrySpec = telemetrySpec;
+    }
+
     public TracingSpec getTracingSpec() {
         return tracingSpec;
     }
@@ -315,5 +371,56 @@ public class KeycloakSpec {
 
     public void setUpdateSpec(UpdateSpec updateSpec) {
         this.updateSpec = updateSpec;
+    }
+
+    public ProbeSpec getLivenessProbeSpec() {return livenessProbeSpec;}
+
+    public void setLivenessProbeSpec(ProbeSpec livenessProbeSpec) {
+        this.livenessProbeSpec = livenessProbeSpec;
+    }
+
+    public ProbeSpec getReadinessProbeSpec() {return readinessProbeSpec;}
+
+    public void setReadinessProbeSpec(ProbeSpec readinessProbeSpec) {
+        this.readinessProbeSpec = readinessProbeSpec;
+    }
+
+    public ProbeSpec getStartupProbeSpec() {return startupProbeSpec;}
+
+    public void setStartupProbeSpec(ProbeSpec startupProbeSpec) {
+        this.startupProbeSpec = startupProbeSpec;
+    }
+
+    public ImportSpec getImportSpec() {
+        return importSpec;
+    }
+
+    public void setImportSpec(ImportSpec importSpec) {
+        this.importSpec = importSpec;
+    }
+
+
+    public ServiceMonitorSpec getServiceMonitorSpec() {
+        return serviceMonitorSpec;
+    }
+
+    public void setServiceMonitorSpec(ServiceMonitorSpec serviceMonitorSpec) {
+        this.serviceMonitorSpec = serviceMonitorSpec;
+    }
+
+    public Boolean getAutomountServiceAccountToken() {
+        return automountServiceAccountToken;
+    }
+
+    public void setAutomountServiceAccountToken(Boolean automountServiceAccountToken) {
+        this.automountServiceAccountToken = automountServiceAccountToken;
+    }
+
+    public AdminSpec getAdminSpec() {
+        return adminSpec;
+    }
+
+    public void setAdminSpec(AdminSpec adminSpec) {
+        this.adminSpec = adminSpec;
     }
 }

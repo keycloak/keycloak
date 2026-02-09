@@ -17,20 +17,6 @@
 
 package org.keycloak.testsuite.arquillian.provider;
 
-import org.apache.http.client.utils.URIBuilder;
-import org.jboss.arquillian.container.test.api.OperateOnDeployment;
-import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
-import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.api.annotation.Inject;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.logging.Logger;
-import org.keycloak.testsuite.arquillian.SuiteContext;
-import org.keycloak.testsuite.arquillian.TestContext;
-import org.keycloak.testsuite.arquillian.annotation.AppServerBrowserContext;
-import org.keycloak.testsuite.arquillian.annotation.AppServerContext;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerBrowserContext;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContext;
-
 import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -38,7 +24,21 @@ import java.net.URL;
 import java.util.List;
 
 import org.keycloak.testsuite.arquillian.ContainerInfo;
+import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.arquillian.TestContext;
+import org.keycloak.testsuite.arquillian.annotation.AppServerBrowserContext;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContext;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerBrowserContext;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContext;
 import org.keycloak.testsuite.util.ServerURLs;
+
+import org.apache.http.client.utils.URIBuilder;
+import org.jboss.arquillian.container.test.api.OperateOnDeployment;
+import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
+import org.jboss.arquillian.core.api.Instance;
+import org.jboss.arquillian.core.api.annotation.Inject;
+import org.jboss.arquillian.test.api.ArquillianResource;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.testsuite.util.ServerURLs.APP_SERVER_HOST;
 import static org.keycloak.testsuite.util.ServerURLs.APP_SERVER_PORT;

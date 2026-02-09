@@ -1,12 +1,10 @@
 package org.keycloak.tests.admin.authz.fgap;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -21,10 +19,14 @@ import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW_MEMBERS;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 
 
 @KeycloakIntegrationTest
@@ -187,7 +189,7 @@ public class FineGrainedPermissionsUsersTest extends AbstractPermissionTest {
 
         if (grp1ViewPermissions) {
             UserPolicyRepresentation userPolicy = createUserPolicy(realm, client, "allow-test-user", testUserId);
-            createGroupPermission(groups.get(0), Set.of(VIEW), userPolicy);
+            createGroupPermission(groups.get(0), Set.of(VIEW_MEMBERS), userPolicy);
         }
 
         Keycloak testUserClient = KeycloakBuilder.builder()
@@ -258,14 +260,5 @@ public class FineGrainedPermissionsUsersTest extends AbstractPermissionTest {
         groups.add(grp2);
 
         return groups;
-    }
-
-    private GroupRepresentation createGroup(String name) {
-        GroupRepresentation grp = new GroupRepresentation();
-        grp.setName(name);
-        String groupId = ApiUtil.getCreatedId(realm.admin().groups().add(grp));
-        grp.setId(groupId);
-        realm.cleanup().add(r -> r.groups().group(groupId).remove());
-        return grp;
     }
 }

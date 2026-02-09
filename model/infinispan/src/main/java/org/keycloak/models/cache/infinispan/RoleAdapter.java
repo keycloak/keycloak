@@ -17,6 +17,14 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -25,14 +33,6 @@ import org.keycloak.models.cache.infinispan.entities.CachedClientRole;
 import org.keycloak.models.cache.infinispan.entities.CachedRealmRole;
 import org.keycloak.models.cache.infinispan.entities.CachedRole;
 import org.keycloak.models.utils.KeycloakModelUtils;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -53,7 +53,7 @@ public class RoleAdapter implements RoleModel {
         this.cacheSession = cacheSession;
         this.session = cacheSession.session;
         this.realm = realm;
-        this.modelSupplier = this::getRoleModel;
+        this.modelSupplier = new LazyModel<>(this::getRoleModel);
     }
 
     protected void getDelegateForUpdate() {
@@ -142,7 +142,7 @@ public class RoleAdapter implements RoleModel {
 
         if (composites == null) {
             composites = new HashSet<>();
-            for (String id : cached.getComposites()) {
+            for (String id : cached.getComposites(session, modelSupplier)) {
                 RoleModel role = realm.getRoleById(id);
                 if (role == null) {
                     // chance that composite role was removed, so invalidate this entry and fallback to delegate
@@ -160,7 +160,7 @@ public class RoleAdapter implements RoleModel {
     public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) {
         if (isUpdated()) return updated.getCompositesStream(search, first, max);
 
-        return cacheSession.getRoleDelegate().getRolesStream(realm, cached.getComposites().stream(), search, first, max);
+        return cacheSession.getRoleDelegate().getRolesStream(realm, cached.getComposites(session, modelSupplier).stream(), search, first, max);
     }
 
     @Override

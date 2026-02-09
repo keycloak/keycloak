@@ -1,12 +1,8 @@
-SessionTest
 KcSamlBrokerSessionNotOnOrAfterTest
 OidcClaimToUserSessionNoteMapperTest
 KcOidcBrokerTransientSessionsTest
 KcAdmSessionTest
 TransientSessionTest
-UserSessionProviderOfflineTest
-AuthenticationSessionProviderTest
-UserSessionProviderTest
 OAuthDanceClientSessionExtensionTest
 SessionNotOnOrAfterTest
 SessionTimeoutValidationTest
@@ -14,7 +10,6 @@ KcOidcUserSessionLimitsBrokerTest
 KcSamlUserSessionLimitsBrokerTest
 AbstractUserSessionLimitsBrokerTest
 UserSessionLimitsTest
-ConcurrentLoginTest
 RefreshTokenTest
 OfflineTokenTest
 AccessTokenTest

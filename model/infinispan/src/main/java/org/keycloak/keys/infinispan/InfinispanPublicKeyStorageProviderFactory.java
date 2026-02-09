@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
 
-import org.infinispan.Cache;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.jose.jwk.JWK;
@@ -39,6 +37,9 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
+
+import org.infinispan.Cache;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -80,7 +81,9 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
                     .helpText("Maximum interval in seconds that keys are cached when they are retrieved via all keys methods. "
                             + "When all keys for the entry are retrieved there is no way to detect if a key is missing "
                             + "(different to the case when the key is retrieved via ID for example). "
-                            + "In that situation this option forces a refresh from time to time. Default 24 hours.")
+                            + "In that situation this option forces a refresh from time to time. "
+                            + "This time can be overriden by the protocol (for example using cacheDuration or validUntil in the SAML descriptor). "
+                            + "Default 24 hours.")
                     .defaultValue(24*60*60)
                     .add()
                 .build();

@@ -16,29 +16,47 @@
  */
 package org.keycloak.testsuite.actions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.keycloak.admin.client.resource.AuthenticationManagementResource;
+import org.keycloak.admin.client.resource.UserProfileResource;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.requiredactions.UpdateEmail;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
-import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import static org.keycloak.userprofile.UserProfileConstants.ROLE_ADMIN;
+import static org.keycloak.userprofile.UserProfileConstants.ROLE_USER;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateEmailTest {
 
     @Override
-    protected void changeEmailUsingRequiredAction(String newEmail, boolean logoutOtherSessions) {
+    protected void changeEmailUsingRequiredAction(String newEmail, boolean logoutOtherSessions, boolean newEmailAsUsername) {
         loginPage.open();
 
         loginPage.login("test-user@localhost", "password");
@@ -62,7 +80,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
 
         // add the action and change it
         configureRequiredActionsToUser("test-user@localhost", UserModel.RequiredAction.UPDATE_EMAIL.name());
-        changeEmailUsingRequiredAction("new@localhost", logoutOtherSessions);
+        changeEmailUsingRequiredAction("new@localhost", logoutOtherSessions, false);
 
         if (logoutOtherSessions) {
             events.expectLogout(event1.getSessionId())
@@ -101,5 +119,136 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
     @Test
     public void updateEmailLogoutSessionsNotChecked() {
         updateEmail(false);
+    }
+
+    @Test
+    public void updateEmailRequiredActionWhenEmailIsReadonly() {
+        UserProfileResource userProfile = testRealm().users().userProfile();
+        UPConfig upConfigOld = userProfile.getConfiguration();
+        UPConfig upConfig = userProfile.getConfiguration();
+        upConfig.addOrReplaceAttribute((new UPAttribute(UserModel.EMAIL, new UPAttributePermissions(Set.of(ROLE_USER, ROLE_ADMIN), Set.of(ROLE_ADMIN)))));
+        getCleanup().addCleanup(() -> {
+            userProfile.update(upConfigOld);
+        });
+        userProfile.update(upConfig);
+
+        configureRequiredActionsToUser("test-user@localhost", UserModel.RequiredAction.UPDATE_EMAIL.name());
+
+        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+        assertEquals(1, testUser.toRepresentation().getRequiredActions().size());
+
+        loginPage.open();
+
+        loginPage.login("test-user@localhost", "password");
+
+        // UPDATE_EMAIL required action is skipped and cleared
+        appPage.assertCurrent();
+
+        assertEquals(0, testUser.toRepresentation().getRequiredActions().size());
+    }
+
+    @Test
+    public void testUpdateProfileWhenEmailIsSetAndIsWritable() {
+        configureRequiredActionsToUser("test-user@localhost", RequiredAction.UPDATE_PROFILE.name());
+        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+        assertEquals(1, testUser.toRepresentation().getRequiredActions().size());
+
+        // login and update profile, email is already set and should not be visible
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        updateProfilePage.assertCurrent();
+        assertFalse(updateProfilePage.isEmailInputPresent());
+        updateProfilePage.update("Tom", "Brady");
+
+        // successfully update the profile without providing the email
+        appPage.assertCurrent();
+        assertEquals(0, testUser.toRepresentation().getRequiredActions().size());
+    }
+
+    @Test
+    public void testUpdateProfileWhenEmailNotSetAndIsWritable() {
+        configureRequiredActionsToUser("test-user@localhost", RequiredAction.UPDATE_PROFILE.name());
+        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+        assertEquals(1, testUser.toRepresentation().getRequiredActions().size());
+        UserRepresentation rep = testUser.toRepresentation();
+        rep.setEmail("");
+        testUser.update(rep);
+
+        // login and update profile, including the email
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        updateProfilePage.assertCurrent();
+        assertTrue(updateProfilePage.isEmailInputPresent());
+        updateProfilePage.update("Tom", "Brady", "test-user@localhost");
+
+        appPage.assertCurrent();
+        rep = testUser.toRepresentation();
+        assertEquals(0, rep.getRequiredActions().size());
+        assertNull(Optional.ofNullable(rep.getAttributes()).orElse(Map.of()).get(UserModel.EMAIL_PENDING));
+        assertEquals("test-user@localhost", rep.getEmail());
+    }
+
+    @Test
+    public void testUpdateProfileWhenEmailNotSetAndIsNotWritable() {
+        UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
+        upConfig.getAttribute(UserModel.EMAIL).setPermissions(new UPAttributePermissions(Set.of(ROLE_USER, ROLE_ADMIN), Set.of(ROLE_ADMIN)));
+        testRealm().users().userProfile().update(upConfig);
+        getCleanup().addCleanup(() -> {
+            upConfig.getAttribute(UserModel.EMAIL).setPermissions(new UPAttributePermissions(Set.of(ROLE_USER, ROLE_ADMIN), Set.of(ROLE_USER, ROLE_ADMIN)));
+            testRealm().users().userProfile().update(upConfig);
+        });
+        configureRequiredActionsToUser("test-user@localhost", RequiredAction.UPDATE_PROFILE.name());
+        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+        assertEquals(1, testUser.toRepresentation().getRequiredActions().size());
+        UserRepresentation rep = testUser.toRepresentation();
+        rep.setEmail("");
+        testUser.update(rep);
+
+        // login and update profile, email is readonly for users and should not be visible
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        updateProfilePage.assertCurrent();
+        assertFalse(updateProfilePage.isEmailInputPresent());
+        updateProfilePage.update("Tom", "Brady");
+
+        appPage.assertCurrent();
+        rep = testUser.toRepresentation();
+        assertEquals(0, rep.getRequiredActions().size());
+        assertNull(Optional.ofNullable(rep.getAttributes()).orElse(Map.of()).get(UserModel.EMAIL_PENDING));
+        assertNull(rep.getEmail());
+    }
+
+    @Test
+    public void testFailWhenSendingVerificationEmail() {
+        AuthenticationManagementResource authMgt = testRealm().flows();
+        RequiredActionProviderRepresentation requiredAction = authMgt.getRequiredActions().stream()
+                .filter(action -> RequiredAction.UPDATE_EMAIL.name().equals(action.getAlias()))
+                .findAny().get();
+        requiredAction.getConfig().put(UpdateEmail.CONFIG_VERIFY_EMAIL, Boolean.TRUE.toString());
+        authMgt.updateRequiredAction(requiredAction.getAlias(), requiredAction);
+        getCleanup().addCleanup(() -> {
+            requiredAction.getConfig().remove(UpdateEmail.CONFIG_VERIFY_EMAIL);
+            authMgt.updateRequiredAction(requiredAction.getAlias(), requiredAction);
+        });
+
+        configureRequiredActionsToUser("test-user@localhost", RequiredAction.UPDATE_PROFILE.name());
+        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+        assertEquals(1, testUser.toRepresentation().getRequiredActions().size());
+        UserRepresentation rep = testUser.toRepresentation();
+        rep.setEmail("");
+        testUser.update(rep);
+
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        updateProfilePage.assertCurrent();
+        assertTrue(updateProfilePage.isEmailInputPresent());
+        updateProfilePage.update("Tom", "Brady", "test-user@localhost");
+        errorPage.assertCurrent();
+        assertEquals("Failed to send email, please try again later.", errorPage.getError());
+        rep = testUser.toRepresentation();
+        assertEquals(1, rep.getRequiredActions().size());
+        assertEquals(RequiredAction.UPDATE_EMAIL.name(), rep.getRequiredActions().get(0));
+        assertNull(Optional.ofNullable(rep.getAttributes()).orElse(Map.of()).get(UserModel.EMAIL_PENDING));
+        assertNull(rep.getEmail());
     }
 }

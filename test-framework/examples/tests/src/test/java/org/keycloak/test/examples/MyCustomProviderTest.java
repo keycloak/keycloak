@@ -1,5 +1,14 @@
 package org.keycloak.test.examples;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -7,14 +16,6 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.keycloak.testframework.annotations.InjectRealm;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-import org.keycloak.testframework.server.KeycloakServerConfig;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 
 /**

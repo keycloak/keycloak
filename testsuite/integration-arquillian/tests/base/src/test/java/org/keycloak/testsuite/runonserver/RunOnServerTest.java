@@ -17,14 +17,16 @@
 
 package org.keycloak.testsuite.runonserver;
 
-import org.junit.ComparisonFailure;
-import org.junit.Test;
+import java.util.List;
+
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import java.util.List;
+
+import org.junit.ComparisonFailure;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

@@ -17,15 +17,15 @@
 
 package org.keycloak.email;
 
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.events.Event;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.sessions.AuthenticationSessionModel;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -102,4 +102,26 @@ public interface EmailTemplateProvider extends Provider {
      * @throws EmailException
      */
     void send(String subjectFormatKey, List<Object> subjectAttributes, String bodyTemplate, Map<String, Object> bodyAttributes) throws EmailException;
+    /**
+     * Send formatted email to a specific address, ignoring the user's email
+     *
+     * @param subjectFormatKey message property that will be used to format email subject
+     * @param bodyTemplate freemarker template file
+     * @param bodyAttributes attributes used to fill template
+     * @param destinationEmail the email address to send the email to
+     * @throws EmailException
+     */
+    void send(String subjectFormatKey, String bodyTemplate, Map<String, Object> bodyAttributes, String destinationEmail) throws EmailException;
+
+    /**
+     * Send formatted email to a specific address, ignoring the user's email
+     *
+     * @param subjectFormatKey message property that will be used to format email subject
+     * @param subjectAttributes attributes used to fill subject format message
+     * @param bodyTemplate freemarker template file
+     * @param bodyAttributes attributes used to fill template
+     * @param destinationEmail the email address to send the email to
+     * @throws EmailException
+     */
+    void send(String subjectFormatKey, List<Object> subjectAttributes, String bodyTemplate, Map<String, Object> bodyAttributes, String destinationEmail) throws EmailException;
 }

@@ -17,9 +17,6 @@
 
 package org.keycloak.organization.protocol.mappers.oidc;
 
-import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.JSON_TYPE;
-import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,6 +49,9 @@ import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
+
+import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.JSON_TYPE;
+import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME;
 
 public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper, EnvironmentDependentProviderFactory {
 
@@ -162,11 +162,13 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
             Map<String, Object> claims = new HashMap<>();
 
-            if (isAddOrganizationId(model)) {
-                claims.put(OAuth2Constants.ORGANIZATION_ID, o.getId());
-            }
+            // Add organization attributes first
             if (isAddOrganizationAttributes(model)) {
                 claims.putAll(o.getAttributes());
+            }
+            // Add organization ID last so it overrides any custom "id" attribute
+            if (isAddOrganizationId(model)) {
+                claims.put(OAuth2Constants.ORGANIZATION_ID, o.getId());
             }
 
             value.put(o.getAlias(), claims);

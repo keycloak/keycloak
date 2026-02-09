@@ -6,12 +6,13 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 
-import org.jboss.logging.Logger;
-import org.keycloak.http.HttpRequest;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
+
+import org.jboss.logging.Logger;
 
 public class MtlsHoKTokenUtil {
     // KEYCLOAK-6771 Certificate Bound Token

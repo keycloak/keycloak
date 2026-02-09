@@ -17,11 +17,6 @@
 
 package org.keycloak.operator.testsuite.utils;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -35,11 +30,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.assertj.core.api.ObjectAssert;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Assertions;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
+import org.keycloak.operator.controllers.KeycloakController;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -57,11 +50,18 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPort;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.netty.util.NetUtil;
 import io.quarkus.logging.Log;
+import org.assertj.core.api.ObjectAssert;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Assertions;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -75,14 +75,18 @@ public final class CRAssert {
     public static void assertKeycloakStatusCondition(Keycloak kc, String condition, Boolean status) {
         assertKeycloakStatusCondition(kc, condition, status, null);
     }
-    public static void assertKeycloakStatusCondition(Keycloak kc, String condition, Boolean status, String containedMessage) {
+    public static ObjectAssert<KeycloakStatusCondition> assertKeycloakStatusCondition(Keycloak kc, String condition, Boolean status, String containedMessage) {
         Log.debugf("Asserting CR: %s, condition: %s, status: %s, message: %s", kc.getMetadata().getName(), condition, status, containedMessage);
         try {
-            assertKeycloakStatusCondition(kc.getStatus(), condition, status, containedMessage, null);
+            return assertKeycloakStatusCondition(kc.getStatus(), condition, status, containedMessage, null);
         } catch (Exception e) {
             Log.infof("Asserting CR: %s with status:\n%s", kc.getMetadata().getName(), Serialization.asYaml(kc.getStatus()));
             throw e;
         }
+    }
+
+    public static void assertKeycloakStatusCondition(KeycloakStatus kcStatus, String condition, Boolean status) {
+        assertKeycloakStatusCondition(kcStatus, condition, status, null);
     }
 
     public static void assertKeycloakStatusCondition(KeycloakStatus kcStatus, String condition, Boolean status, String containedMessage) {
@@ -297,13 +301,9 @@ public final class CRAssert {
     }
 
     public static CompletableFuture<Void> eventuallyRollingUpdateStatus(KubernetesClient client, Keycloak keycloak, String reason) {
-        var cf1 = client.resource(keycloak).informOnCondition(kcs -> {
-            try {
-                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.ROLLING_UPDATE, true, "Rolling out deployment update");
-                return true;
-            } catch (AssertionError e) {
-                return false;
-            }
+        // test the statefulset, rather that the keycloak status as the events with the local api server may happen too quickly and the keycloak status may not get updated
+        var cf1 = client.apps().statefulSets().withName(keycloak.getMetadata().getName()).informOnCondition(ss -> {
+            return !ss.isEmpty() && KeycloakController.isRolling(ss.get(0));
         });
         var cf2 = client.resource(keycloak).informOnCondition(kcs -> {
             try {

@@ -18,6 +18,7 @@
 package org.keycloak.tests.admin.group;
 
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.AccessToken;
@@ -30,8 +31,8 @@ import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 /**

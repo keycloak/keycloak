@@ -17,6 +17,7 @@
 package org.keycloak.common.util;
 
 import java.util.Arrays;
+
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;

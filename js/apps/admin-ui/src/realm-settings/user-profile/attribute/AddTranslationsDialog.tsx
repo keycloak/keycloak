@@ -34,6 +34,7 @@ type AddTranslationsDialogProps = {
   translationKey: string;
   fieldName: string;
   toggleDialog: () => void;
+  predefinedAttributes?: string[];
 };
 
 export const AddTranslationsDialog = ({
@@ -41,6 +42,7 @@ export const AddTranslationsDialog = ({
   translationKey,
   fieldName,
   toggleDialog,
+  predefinedAttributes,
 }: AddTranslationsDialogProps) => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
@@ -77,7 +79,7 @@ export const AddTranslationsDialog = ({
     async () => {
       const selectedLocales = combinedLocales
         .filter((l) =>
-          localeToDisplayName(l, whoAmI.getLocale())
+          localeToDisplayName(l, whoAmI.locale)
             ?.toLocaleLowerCase(realm?.defaultLocale)
             ?.includes(filter.toLocaleLowerCase(realm?.defaultLocale)),
         )
@@ -155,7 +157,11 @@ export const AddTranslationsDialog = ({
                 label={t("translationKey")}
                 data-testid="translation-key"
                 isDisabled
-                value={t(orgKey) !== orgKey ? `\${${orgKey}}` : translationKey}
+                value={
+                  predefinedAttributes?.includes(orgKey)
+                    ? `\${${orgKey}}`
+                    : `\${${translationKey}}`
+                }
               />
             </FormGroup>
             <FlexItem>
@@ -215,7 +221,7 @@ export const AddTranslationsDialog = ({
                           <Td dataLabel={t("supportedLanguage")}>
                             {localeToDisplayName(
                               translation.locale,
-                              whoAmI.getLocale(),
+                              whoAmI.locale,
                             )}
                             {translation.locale === realm?.defaultLocale && (
                               <Label className="pf-v5-u-ml-xs" color="blue">

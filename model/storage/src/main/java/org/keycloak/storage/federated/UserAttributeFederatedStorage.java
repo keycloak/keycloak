@@ -16,11 +16,11 @@
  */
 package org.keycloak.storage.federated;
 
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.models.RealmModel;
-
 import java.util.List;
 import java.util.stream.Stream;
+
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.RealmModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

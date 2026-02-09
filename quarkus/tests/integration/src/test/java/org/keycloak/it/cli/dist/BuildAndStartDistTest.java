@@ -17,12 +17,6 @@
 
 package org.keycloak.it.cli.dist;
 
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
-import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DryRun;
@@ -31,8 +25,16 @@ import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @WithEnvVars({"KC_CACHE", "local"}) // avoid flakey port conflicts
 @DistributionTest
@@ -61,7 +63,7 @@ public class BuildAndStartDistTest {
         cliResult.assertBuild();
         cliResult = rawDist.run("start", OPTIMIZED_BUILD_OPTION_LONG);
         cliResult.assertNoBuild();
-        assertTrue(cliResult.getErrorOutput().isBlank());
+        assertTrue(cliResult.getErrorOutput().isBlank(), cliResult.getErrorOutput());
         // running start without optimized flag should not cause a build
         cliResult = rawDist.run("start");
         cliResult.assertNoBuild();

@@ -17,8 +17,6 @@
 
 package org.keycloak.util;
 
-import org.junit.ClassRule;
-import org.junit.Test;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.PublicKeysWrapper;
@@ -27,9 +25,11 @@ import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.rule.CryptoInitRule;
 
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 
 
@@ -168,7 +168,7 @@ public abstract class JWKSUtilsTest {
 
         key = keyWrappersForUse.getKeyByKidAndAlg(kidEC2, null);
         assertNotNull(key);
-        assertNull(key.getAlgorithmOrDefault());
+        assertEquals("ES384", key.getAlgorithmOrDefault());
         assertEquals(KeyUse.SIG, key.getUse());
         assertEquals(kidEC2, key.getKid());
         assertEquals("EC", key.getType());

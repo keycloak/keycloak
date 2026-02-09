@@ -7,18 +7,17 @@ import {
   TextContent,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { getNetworkErrorDescription } from "../utils/errors";
+import { getNetworkErrorMessage } from "../utils/errors";
 
 type ErrorPageProps = {
   error?: unknown;
 };
 
 export const ErrorPage = (props: ErrorPageProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const error = props.error;
-  const errorMessage =
-    getErrorMessage(error) ||
-    getNetworkErrorDescription(error)?.replace(/\+/g, " ");
+  const errorMessage = getErrorMessage(error);
+  const networkErrorMessage = getNetworkErrorMessage(error);
   console.error(error);
 
   function onRetry() {
@@ -29,7 +28,7 @@ export const ErrorPage = (props: ErrorPageProps) => {
     <Page>
       <Modal
         variant={ModalVariant.small}
-        title={errorMessage ? "" : t("somethingWentWrong")}
+        title={t("somethingWentWrong")}
         titleIconVariant="danger"
         showClose={false}
         isOpen
@@ -42,6 +41,8 @@ export const ErrorPage = (props: ErrorPageProps) => {
         <TextContent>
           {errorMessage ? (
             <Text>{t(errorMessage)}</Text>
+          ) : networkErrorMessage && i18n.exists(networkErrorMessage) ? (
+            <Text>{t(networkErrorMessage)}</Text>
           ) : (
             <Text>{t("somethingWentWrongDescription")}</Text>
           )}
@@ -52,10 +53,6 @@ export const ErrorPage = (props: ErrorPageProps) => {
 };
 
 function getErrorMessage(error: unknown): string | null {
-  if (typeof error === "string") {
-    return error;
-  }
-
   if (error instanceof Error) {
     return error.message;
   }

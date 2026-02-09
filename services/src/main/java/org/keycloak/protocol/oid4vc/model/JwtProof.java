@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,31 +21,29 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * JWT Proof for Credential Request in OID4VCI (Section 8.2.1.1).
- * Represents a signed JWT for holder binding.
+ * Deprecated: Represents a single JWT-based proof (historical 'proof' structure).
+ * Prefer using {@link Proofs} with the appropriate array field (e.g., jwt).
+ * This class is kept for backward compatibility only.
+ * Supports 'jwt' proof type as per OID4VCI Draft 15.
  *
- * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
- * @see <a href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request">OID4VCI Credential Request</a>
+ * @see <a href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-15.html#name-credential-request">OID4VCI Credential Request</a>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class JwtProof implements Proof {
-
-    @JsonProperty("proof_type")
-    private final String proofType = ProofType.JWT;
+@Deprecated
+public class JwtProof {
 
     @JsonProperty("jwt")
     private String jwt;
 
+    @JsonProperty("proof_type")
+    private String proofType;
+
     public JwtProof() {
     }
 
-    public JwtProof(String jwt) {
+    public JwtProof(String jwt, String proofType) {
         this.jwt = jwt;
-    }
-
-    @Override
-    public String getProofType() {
-        return proofType;
+        this.proofType = proofType;
     }
 
     public String getJwt() {
@@ -54,6 +52,15 @@ public class JwtProof implements Proof {
 
     public JwtProof setJwt(String jwt) {
         this.jwt = jwt;
+        return this;
+    }
+
+    public String getProofType() {
+        return proofType;
+    }
+
+    public JwtProof setProofType(String proofType) {
+        this.proofType = proofType;
         return this;
     }
 }

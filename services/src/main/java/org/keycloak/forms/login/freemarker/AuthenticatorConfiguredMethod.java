@@ -17,14 +17,15 @@
 
 package org.keycloak.forms.login.freemarker;
 
-import freemarker.template.TemplateMethodModelEx;
-import freemarker.template.TemplateModelException;
+import java.util.List;
+
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
-import java.util.List;
+import freemarker.template.TemplateMethodModelEx;
+import freemarker.template.TemplateModelException;
 
 /**
  */

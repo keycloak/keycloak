@@ -16,11 +16,10 @@
  */
 package org.keycloak.testsuite.account;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
-import org.junit.Test;
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
@@ -33,11 +32,13 @@ import org.keycloak.testsuite.util.ThirdBrowser;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
-import org.openqa.selenium.WebDriver;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
+import org.junit.Test;
+import org.openqa.selenium.WebDriver;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
@@ -164,7 +165,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         List<SessionRepresentation> sessions = device.getSessions();
         assertEquals(1, sessions.size());
         SessionRepresentation session = sessions.get(0);
-        assertEquals("127.0.0.1", session.getIpAddress());
+        assertThat(session.getIpAddress(), anyOf(equalTo("127.0.0.1"), equalTo("0:0:0:0:0:0:0:1")));
         assertTrue(device.getLastAccess() == session.getLastAccess());
 
         List<ClientRepresentation> clients = session.getClients();
@@ -372,7 +373,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         List<SessionRepresentation> sessions = device.getSessions();
         assertEquals(1, sessions.size());
         SessionRepresentation session = sessions.get(0);
-        assertEquals("127.0.0.1", session.getIpAddress());
+        assertThat(session.getIpAddress(), anyOf(equalTo("127.0.0.1"), equalTo("0:0:0:0:0:0:0:1")));
         assertEquals(device.getLastAccess(), session.getLastAccess());
 
         assertEquals(1, session.getClients().size());

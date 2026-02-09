@@ -3,7 +3,6 @@ package org.keycloak.models.cache.infinispan.entities;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.cache.CachedObject;
 
-import java.io.Serializable;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

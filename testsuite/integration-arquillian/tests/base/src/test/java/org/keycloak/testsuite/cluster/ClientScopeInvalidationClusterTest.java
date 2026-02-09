@@ -20,6 +20,7 @@ package org.keycloak.testsuite.cluster;
 import java.util.Map;
 
 import jakarta.ws.rs.NotFoundException;
+
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.representations.idm.ClientScopeRepresentation;

@@ -17,6 +17,7 @@
 package org.keycloak.storage.role;
 
 import java.util.stream.Stream;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;

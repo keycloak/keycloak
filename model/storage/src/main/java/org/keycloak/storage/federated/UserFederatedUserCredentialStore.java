@@ -16,11 +16,11 @@
  */
 package org.keycloak.storage.federated;
 
+import java.util.stream.Stream;
+
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
-
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

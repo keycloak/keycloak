@@ -1,26 +1,17 @@
 package org.keycloak.saml.processing.core.saml.v2.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Scanner;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.DerUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
@@ -28,8 +19,18 @@ import org.keycloak.dom.saml.v2.assertion.SubjectType.STSubType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParserTest;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class AssertionUtilTest {
 
@@ -48,7 +49,7 @@ public class AssertionUtilTest {
     @Test
     public void testSaml20Signed() throws Exception {
 
-        X509Certificate decodeCertificate = DerUtils.decodeCertificate(new ByteArrayInputStream(Base64.decode(PUBLIC_CERT)));
+        X509Certificate decodeCertificate = DerUtils.decodeCertificate(new ByteArrayInputStream(Base64.getMimeDecoder().decode(PUBLIC_CERT)));
 
         try (InputStream st = AssertionUtilTest.class.getResourceAsStream("saml20-signed-response.xml")) {
             Document document = DocumentUtil.getDocument(st);
@@ -59,18 +60,19 @@ public class AssertionUtilTest {
 
             // test manipulation of signature
             Element signatureElement = AssertionUtil.getSignature(assertion);
-            byte[] validSignature = Base64.decode(signatureElement.getTextContent());
+            Element signatureValue = (Element) signatureElement.getElementsByTagNameNS("http://www.w3.org/2000/09/xmldsig#", "SignatureValue").item(0);
+            byte[] validSignature = Base64.getMimeDecoder().decode(signatureValue.getTextContent());
 
             // change the signature value slightly
             byte[] invalidSignature =  Arrays.copyOf(validSignature, validSignature.length);
             invalidSignature[0] ^= invalidSignature[0];
-            signatureElement.setTextContent(Base64.encodeBytes(invalidSignature));
+            signatureValue.setTextContent(Base64.getEncoder().encodeToString(invalidSignature));
 
             // check that signature now is invalid
             assertFalse(AssertionUtil.isSignatureValid(document.getDocumentElement(), decodeCertificate.getPublicKey()));
 
             // restore valid signature, but remove Signature element, check that still invalid
-            signatureElement.setTextContent(Base64.encodeBytes(validSignature));
+            signatureElement.setTextContent(Base64.getEncoder().encodeToString(validSignature));
 
             assertion.removeChild(signatureElement);
             assertFalse(AssertionUtil.isSignatureValid(document.getDocumentElement(), decodeCertificate.getPublicKey()));

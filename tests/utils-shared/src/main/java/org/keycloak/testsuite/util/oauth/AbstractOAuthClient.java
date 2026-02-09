@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
@@ -10,6 +9,9 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.testsuite.util.oauth.ciba.CibaClient;
 import org.keycloak.testsuite.util.oauth.device.DeviceClient;
+import org.keycloak.testsuite.util.oauth.oid4vc.OID4VCClient;
+
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.openqa.selenium.WebDriver;
 
 public abstract class AbstractOAuthClient<T> {
@@ -109,6 +111,14 @@ public abstract class AbstractOAuthClient<T> {
         return passwordGrantRequest(username, password).send();
     }
 
+    public JWTAuthorizationGrantRequest jwtAuthorizationGrantRequest(String assertion) {
+        return new JWTAuthorizationGrantRequest(assertion, this);
+    }
+
+    public AccessTokenResponse doJWTAuthorizationGrantRequest(String assertion) {
+        return jwtAuthorizationGrantRequest(assertion).send();
+    }
+
     public AccessTokenRequest accessTokenRequest(String code) {
         return new AccessTokenRequest(code, this);
     }
@@ -141,12 +151,12 @@ public abstract class AbstractOAuthClient<T> {
         logoutForm().open();
     }
 
-    public LogoutRequest logoutRequest(String refreshToken) {
-        return new LogoutRequest(refreshToken, this);
+    public LogoutRequest logoutRequest() {
+        return new LogoutRequest(this);
     }
 
     public LogoutResponse doLogout(String refreshToken) {
-        return logoutRequest(refreshToken).send();
+        return logoutRequest().refreshToken(refreshToken).send();
     }
 
     public BackchannelLogoutRequest backchannelLogoutRequest(String logoutToken) {
@@ -209,12 +219,24 @@ public abstract class AbstractOAuthClient<T> {
         return tokenExchangeRequest(subjectToken).send();
     }
 
+    public FetchExternalIdpTokenRequest fetchExternalIdpTokenRequest(String providerAlias, String accessToken) {
+        return new FetchExternalIdpTokenRequest(providerAlias, accessToken, this);
+    }
+
+    public AccessTokenResponse doFetchExternalIdpToken(String providerAlias, String accessToken) {
+        return fetchExternalIdpTokenRequest(providerAlias, accessToken).send();
+    }
+
     public CibaClient ciba() {
         return new CibaClient(this);
     }
 
     public DeviceClient device() {
         return new DeviceClient(this);
+    }
+
+    public OID4VCClient oid4vc() {
+        return new OID4VCClient(this);
     }
 
     public ParRequest pushedAuthorizationRequest() {

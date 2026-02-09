@@ -18,7 +18,7 @@
 package org.keycloak.connections.jpa.updater.liquibase.lock;
 
 import java.util.List;
-import org.jboss.logging.Logger;
+
 import org.keycloak.Config;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -26,6 +26,8 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.dblock.DBLockProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

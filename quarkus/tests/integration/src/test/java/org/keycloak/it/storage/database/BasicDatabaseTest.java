@@ -17,18 +17,6 @@
 
 package org.keycloak.it.storage.database;
 
-import io.quarkus.logging.Log;
-import io.quarkus.test.junit.main.Launch;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.utils.RawDistRootPath;
-import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -36,23 +24,34 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static org.apache.commons.lang3.StringUtils.countMatches;
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.utils.RawDistRootPath;
+import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
+
+import io.quarkus.logging.Log;
+import io.quarkus.test.junit.main.Launch;
+import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public abstract class BasicDatabaseTest {
 
     @Test
-    @Launch({ "start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false" })
     protected void testSuccessful(CLIResult cliResult) {
         cliResult.assertStarted();
     }
 
     @Test
-    @Launch({ "start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false", "--db-username=wrong" })
+    @Launch({ "start", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false", "--db-username=wrong" })
     protected void testWrongUsername(CLIResult cliResult) {
         cliResult.assertMessage("ERROR: Failed to obtain JDBC connection");
         assertWrongUsername(cliResult);
@@ -61,7 +60,7 @@ public abstract class BasicDatabaseTest {
     protected abstract void assertWrongUsername(CLIResult cliResult);
 
     @Test
-    @Launch({ "start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false", "--db-password=wrong" })
+    @Launch({ "start", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false", "--db-password=wrong" })
     protected void testWrongPassword(CLIResult cliResult) {
         cliResult.assertMessage("ERROR: Failed to obtain JDBC connection");
         assertWrongPassword(cliResult);
@@ -71,7 +70,7 @@ public abstract class BasicDatabaseTest {
 
     @Order(1)
     @Test
-    @Launch({ "export", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--dir=./target/export"})
+    @Launch({ "export", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--dir=./target/export"})
     public void testExportSucceeds(CLIResult cliResult) {
         cliResult.assertMessage("Full model export requested");
         cliResult.assertMessage("Export finished successfully");
@@ -79,24 +78,24 @@ public abstract class BasicDatabaseTest {
 
     @Order(2)
     @Test
-    @Launch({ "import", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--dir=./target/export" })
+    @Launch({ "import", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--dir=./target/export" })
     void testImportSucceeds(CLIResult cliResult) {
         cliResult.assertMessage("target/export");
         cliResult.assertMessage("Realm 'master' imported");
         cliResult.assertMessage("Import finished successfully");
     }
 
-    public void assertManualDbInitialization(CLIResult cliResult, RawDistRootPath rawDistRootPath) {
+    public String assertManualDbInitialization(CLIResult cliResult, RawDistRootPath rawDistRootPath) {
         cliResult.assertMessage("Database not initialized, please initialize database with");
 
         var output = readKeycloakDbUpdateScript(rawDistRootPath);
 
         assertThat(output, notNullValue());
-        assertThat(output, containsString("Create Database Change Log Table"));
+        assertThat(output, containsString("Keycloak database creation script - apply this script to empty DB"));
+        assertThat(output, containsString("Change Log: META-INF/jpa-changelog-master.xml"));
+        assertThat(output, containsString("Changeset META-INF/jpa-changelog-26.2.6.xml"));
 
-        var outputLowerCase = output.toLowerCase();
-        var count = countMatches(outputLowerCase, "create table public.databasechangelog") + countMatches(outputLowerCase, "create table keycloak.databasechangelog");
-        assertThat(count, is(1));
+        return output;
     }
 
     protected static String readKeycloakDbUpdateScript(RawDistRootPath path) {

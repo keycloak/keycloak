@@ -102,7 +102,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
           (attribute) => attribute.name !== attributeToDelete,
         );
 
-        save(
+        await save(
           { ...config, attributes: updatedAttributes, groups: config.groups },
           {
             successMessageKey: "deleteAttributeSuccess",
@@ -139,8 +139,8 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
     attributes.splice(fromIndex, 1);
     attributes.splice(newIndex, 0, movedAttribute);
 
-    save(
-      { attributes, groups },
+    await save(
+      { ...config, attributes, groups },
       {
         successMessageKey: "updatedUserProfileSuccess",
         errorMessageKey: "updatedUserProfileError",
@@ -228,7 +228,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
           const dragged = attributes[oldIndex];
           if (!dragged.name) return;
 
-          executeMove(dragged, newIndex);
+          await executeMove(dragged, newIndex);
         }}
         actions={[
           {

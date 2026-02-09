@@ -33,12 +33,12 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.naming.AuthenticationException;
+import javax.naming.CommunicationException;
+import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 import javax.naming.directory.SearchControls;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialAuthentication;
@@ -64,15 +64,15 @@ import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CachedUserModel;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
-import org.keycloak.models.cache.UserCache;
 import org.keycloak.storage.DatastoreProvider;
-import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -100,9 +100,10 @@ import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.userprofile.UserProfileUtil;
-
 import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -667,15 +668,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     private void doImportUser(final RealmModel realm, final UserModel user, final LDAPObject ldapUser) {
         user.setEnabled(true);
-        realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
-                .sorted(ldapMappersComparator.sortDesc())
-                .forEachOrdered(mapperModel -> {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
-                    }
-                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
-                    ldapMapper.onImportUserFromLDAP(ldapUser, user, realm, true);
-                });
+
+        importUserAttributes(realm, user, ldapUser);
 
         String userDN = ldapUser.getDn().toString();
         if (model.isImportEnabled()) user.setFederationLink(model.getId());
@@ -784,6 +778,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
             LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
             // If email attribute mapper is set to "Always Read Value From LDAP" the user may be in Keycloak DB with an old email address
             if (ldapUser.getUuid().equals(user.getFirstAttribute(LDAPConstants.LDAP_ID))) {
+                importUserAttributes(realm, user, ldapUser);
                 return proxy(realm, user, ldapUser, false);
             }
             throw new ModelDuplicateException("User with username '" + ldapUsername + "' already exists in Keycloak. It conflicts with LDAP user with email '" + email + "'");
@@ -1129,19 +1124,36 @@ public class LDAPStorageProvider implements UserStorageProvider,
             return Stream.iterate(ldapQuery,
                     query -> {
                         //the very 1st page - Pagination context might not yet be present
-                        if (query.getPaginationContext() == null) try {
-                            query.initPagination();
-                            //returning true for first iteration as the LDAP was not queried yet
-                            return true;
-                        } catch (NamingException e) {
-                            throw new ModelException("Querying of LDAP failed " + query, e);
+                        if (query.getPaginationContext() == null) {
+                            try {
+                                query.initPagination();
+                                //returning true for first iteration as the LDAP was not queried yet
+                                return true;
+                            } catch (NameNotFoundException | CommunicationException e) {
+                                logger.errorf(e, "Failed to init LDAP query pagination %s", query);
+                                return false;
+                            } catch (NamingException e) {
+                                throw new ModelException("Querying of LDAP failed " + query, e);
+                            }
                         }
                         return query.getPaginationContext().hasNextPage();
                     },
                     query -> query
             ).flatMap(query -> {
                         query.setLimit(limit);
-                        List<LDAPObject> ldapObjects = query.getResultList();
+                        List<LDAPObject> ldapObjects;
+
+                        try {
+                            ldapObjects = query.getResultList();
+                        } catch (ModelException mde) {
+                            if (mde.isCausedBy(NameNotFoundException.class, CommunicationException.class)) {
+                                logger.errorf(mde, "Failed to query LDAP %s", query);
+                                return Stream.empty();
+                            } else {
+                                throw mde;
+                            }
+                        }
+
                         if (ldapObjects.isEmpty()) {
                             return Stream.empty();
                         }
@@ -1239,5 +1251,17 @@ public class LDAPStorageProvider implements UserStorageProvider,
             return (Long.parseLong(value) / 10000L) - 11644473600000L;
         }
         return LDAPUtils.generalizedTimeToDate(value).getTime();
+    }
+
+    private void importUserAttributes(RealmModel realm, UserModel user, LDAPObject ldapUser) {
+        realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+                .sorted(ldapMappersComparator.sortDesc())
+                .forEachOrdered(mapperModel -> {
+                    if (logger.isTraceEnabled()) {
+                        logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
+                    }
+                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
+                    ldapMapper.onImportUserFromLDAP(ldapUser, user, realm, true);
+                });
     }
 }

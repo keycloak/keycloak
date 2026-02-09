@@ -1,9 +1,9 @@
 package org.keycloak.common.util;
 
+import java.util.Collection;
+
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Collection;
 
 public class PathMatcherTest {
 

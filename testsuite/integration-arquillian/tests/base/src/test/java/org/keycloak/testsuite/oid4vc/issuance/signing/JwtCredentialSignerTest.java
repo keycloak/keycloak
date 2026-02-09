@@ -17,9 +17,13 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import org.jboss.logging.Logger;
-import org.junit.Before;
-import org.junit.Test;
+import java.security.PublicKey;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -43,12 +47,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.util.JsonSerialization;
 
-import java.security.PublicKey;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import org.jboss.logging.Logger;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -161,6 +162,7 @@ public class JwtCredentialSignerTest extends OID4VCTest {
     public static void testSignJwtCredential(
             KeycloakSession session, String signingKeyId, String algorithm, Map<String, Object> claims) {
         CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
+                .setCredentialIssuer(TEST_DID.toString())
                 .setTokenJwsType("JWT")
                 .setSigningKeyId(signingKeyId)
                 .setSigningAlgorithm(algorithm);
@@ -169,8 +171,8 @@ public class JwtCredentialSignerTest extends OID4VCTest {
 
         VerifiableCredential testCredential = getTestCredential(claims);
         JwtCredentialBuilder builder = new JwtCredentialBuilder(
-                TEST_DID.toString(),
-                new StaticTimeProvider(1000)
+                new StaticTimeProvider(1000),
+                session
         );
 
         CredentialBody credentialBody = builder.buildCredentialBody(
@@ -241,6 +243,8 @@ public class JwtCredentialSignerTest extends OID4VCTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.setVerifiableCredentialsEnabled(true);
+        
         if (testRealm.getComponents() != null) {
             testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getRsaKeyProvider(rsaKey));
         } else {

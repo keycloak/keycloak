@@ -1,10 +1,10 @@
 package org.keycloak.common.crypto;
 
-import static org.junit.Assert.assertNull;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.junit.Assert.assertNull;
 
 public class CryptoIntegrationTest {
     private static CryptoProvider originalProvider;

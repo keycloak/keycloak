@@ -16,8 +16,6 @@
  */
 package org.keycloak.broker.saml;
 
-import static org.keycloak.common.util.UriUtils.checkUrl;
-
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.dom.saml.v2.protocol.AuthnContextComparisonType;
 import org.keycloak.models.IdentityProviderModel;
@@ -26,6 +24,8 @@ import org.keycloak.protocol.saml.SamlPrincipalType;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 import org.keycloak.utils.StringUtil;
+
+import static org.keycloak.common.util.UriUtils.checkUrl;
 
 /**
  * @author Pedro Igor
@@ -67,6 +67,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String ATTRIBUTE_CONSUMING_SERVICE_INDEX = "attributeConsumingServiceIndex";
     public static final String ATTRIBUTE_CONSUMING_SERVICE_NAME = "attributeConsumingServiceName";
     public static final String USE_METADATA_DESCRIPTOR_URL = "useMetadataDescriptorUrl";
+    public static final String DESCRIPTOR_CACHE_SECONDS = "descriptorCacheSeconds";
 
     public SAMLIdentityProviderConfig() {
     }
@@ -251,7 +252,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public boolean isPostBindingLogout() {
         String postBindingLogout = getConfig().get(POST_BINDING_LOGOUT);
         if (postBindingLogout == null) {
-            // To maintain unchanged behavior when adding this field, we set the inital value to equal that
+            // To maintain unchanged behavior when adding this field, we set the initial value to equal that
             // of the binding for the response:
             return isPostBindingResponse();
         }
@@ -426,6 +427,29 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public boolean isUseMetadataDescriptorUrl() {
         return Boolean.parseBoolean(getConfig().get(USE_METADATA_DESCRIPTOR_URL));
+    }
+
+    public Long getDescriptorCacheSeconds() {
+        String descriptorCacheSeconds = getConfig().get(DESCRIPTOR_CACHE_SECONDS);
+        if (descriptorCacheSeconds != null && !descriptorCacheSeconds.isEmpty()) {
+            try {
+                Long descriptorCacheSecondsLong = Long.valueOf(descriptorCacheSeconds);
+                if (descriptorCacheSecondsLong > 0) {
+                    return descriptorCacheSecondsLong;
+                }
+            } catch (NumberFormatException e) {
+                // ignore it and use null
+            }
+        }
+        return null;
+    }
+
+    public void setDescriptorCacheSeconds(Long descriptorCacheSeconds) {
+        if (descriptorCacheSeconds == null || descriptorCacheSeconds <= 0) {
+            getConfig().remove(DESCRIPTOR_CACHE_SECONDS);
+        } else {
+            getConfig().put(DESCRIPTOR_CACHE_SECONDS, String.valueOf(descriptorCacheSeconds));
+        }
     }
 
     @Override

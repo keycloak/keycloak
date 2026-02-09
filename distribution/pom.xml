@@ -25,7 +25,7 @@
     </parent>
 
     <name>Distribution Parent</name>
-    <description/>
+    <description>Distribution Parent</description>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-distribution-parent</artifactId>
@@ -80,6 +80,17 @@
             <modules>
                 <module>api-docs-dist</module>
                 <module>downloads</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>dist-api-docs</id>
+            <activation>
+                <property>
+                    <name>dist.api.docs</name>
+                </property>
+            </activation>
+            <modules>
+                <module>api-docs-dist</module>
             </modules>
         </profile>
     </profiles>

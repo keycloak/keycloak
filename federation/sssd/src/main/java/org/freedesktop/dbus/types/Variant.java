@@ -1,14 +1,14 @@
 package org.freedesktop.dbus.types;
 
-import org.freedesktop.dbus.Marshalling;
-import org.freedesktop.dbus.exceptions.DBusException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
+import org.freedesktop.dbus.Marshalling;
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A Wrapper class for Variant values.

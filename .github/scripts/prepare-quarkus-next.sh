@@ -7,7 +7,7 @@ add_repository() {
 
   local id="sonatype-snapshots"
   local name="Sonatype Snapshots"
-  local url="https://s01.oss.sonatype.org/content/repositories/snapshots/"
+  local url="https://central.sonatype.com/repository/maven-snapshots/"
 
   # Decide the tag based on the element
   local tag

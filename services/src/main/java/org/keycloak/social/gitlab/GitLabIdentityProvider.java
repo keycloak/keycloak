@@ -17,7 +17,11 @@
 
 package org.keycloak.social.gitlab;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
@@ -25,20 +29,19 @@ import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorResponseException;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import java.io.IOException;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -134,14 +137,13 @@ public class GitLabIdentityProvider extends OIDCIdentityProvider  implements Soc
 
 
 	protected BrokeredIdentityContext extractIdentity(AccessTokenResponse tokenResponse, String accessToken, JsonWebToken idToken) throws IOException {
-
-		SimpleHttp.Response response = null;
+		SimpleHttpResponse response = null;
 		int status = 0;
 
 		for (int i = 0; i < 10; i++) {
 			try {
 				String userInfoUrl = getUserInfoUrl();
-				response = SimpleHttp.doGet(userInfoUrl, session)
+				response = SimpleHttp.create(session).doGet(userInfoUrl)
 						.header("Authorization", "Bearer " + accessToken).asResponse();
 				status = response.getStatus();
 			} catch (IOException e) {

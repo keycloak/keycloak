@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.jboss.logging.Logger;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
@@ -60,8 +59,9 @@ import org.keycloak.models.cache.infinispan.entities.ClientScopeListQuery;
 import org.keycloak.models.cache.infinispan.entities.GroupListQuery;
 import org.keycloak.models.cache.infinispan.entities.GroupNameQuery;
 import org.keycloak.models.cache.infinispan.entities.RealmListQuery;
-import org.keycloak.models.cache.infinispan.entities.RoleListQuery;
 import org.keycloak.models.cache.infinispan.entities.RoleByNameQuery;
+import org.keycloak.models.cache.infinispan.entities.RoleListQuery;
+import org.keycloak.models.cache.infinispan.events.CacheKeyInvalidatedEvent;
 import org.keycloak.models.cache.infinispan.events.ClientAddedEvent;
 import org.keycloak.models.cache.infinispan.events.ClientRemovedEvent;
 import org.keycloak.models.cache.infinispan.events.ClientScopeAddedEvent;
@@ -72,7 +72,6 @@ import org.keycloak.models.cache.infinispan.events.GroupMovedEvent;
 import org.keycloak.models.cache.infinispan.events.GroupRemovedEvent;
 import org.keycloak.models.cache.infinispan.events.GroupUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
-import org.keycloak.models.cache.infinispan.events.CacheKeyInvalidatedEvent;
 import org.keycloak.models.cache.infinispan.events.RealmRemovedEvent;
 import org.keycloak.models.cache.infinispan.events.RealmUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.RoleAddedEvent;
@@ -83,6 +82,8 @@ import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.client.ClientStorageProviderModel;
+
+import org.jboss.logging.Logger;
 
 
 /**
@@ -1261,8 +1262,6 @@ public class RealmCacheSession implements CacheRealmProvider {
             }
             ClientStorageProviderModel model = new ClientStorageProviderModel(component);
 
-            // although we do set a timeout, Infinispan has no guarantees when the user will be evicted
-            // its also hard to test stuff
             if (model.shouldInvalidate(cached)) {
                 registerClientInvalidation(cached.getId(), cached.getClientId(), realm.getId());
                 return getClientDelegate().getClientById(realm, cached.getId());
@@ -1442,6 +1441,17 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public Stream<ClientScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol) {
+        return getClientScopeDelegate().getClientScopesByProtocol(realm, protocol);
+    }
+
+    @Override
+    public Stream<ClientScopeModel> getClientScopesByAttributes(RealmModel realm, Map<String, String> searchMap,
+                                                                boolean useOr) {
+        return getClientScopeDelegate().getClientScopesByAttributes(realm, searchMap, useOr);
+    }
+
+    @Override
     public void addClientScopes(RealmModel realm, ClientModel client, Set<ClientScopeModel> clientScopes, boolean defaultScope) {
         getClientDelegate().addClientScopes(realm, client, clientScopes, defaultScope);
         registerClientInvalidation(client.getId(), client.getId(), realm.getId());
@@ -1473,13 +1483,16 @@ public class RealmCacheSession implements CacheRealmProvider {
             return model;
         }
         Map<String, ClientScopeModel> assignedScopes = new HashMap<>();
+
+        List<String> acceptedClientProtocols = KeycloakModelUtils.getAcceptedClientScopeProtocols(client);
         for (String id : query.getClientScopes()) {
             ClientScopeModel clientScope = session.clientScopes().getClientScopeById(realm, id);
             if (clientScope == null) {
                 invalidations.add(cacheKey);
                 return getClientDelegate().getClientScopes(realm, client, defaultScopes);
             }
-            if (clientScope.getProtocol().equals((client.getProtocol() == null) ? "openid-connect" : client.getProtocol())) {
+
+            if (acceptedClientProtocols.contains(clientScope.getProtocol())) {
                 assignedScopes.put(clientScope.getName(), clientScope);
             }
         }

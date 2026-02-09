@@ -19,8 +19,6 @@ package org.keycloak.testsuite.federation.ldap;
 
 import java.util.Map;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
@@ -33,6 +31,9 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.LDAPRule;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

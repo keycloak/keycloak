@@ -191,7 +191,7 @@ export const Organizations = ({ user }: OrganizationProps) => {
                   return shouldJoin
                     ? adminClient.organizations.addMember({
                         orgId: org.id!,
-                        userId: id!,
+                        userId: `"${user.id!}"`,
                       })
                     : adminClient.organizations.inviteExistingUser(
                         { orgId: org.id! },

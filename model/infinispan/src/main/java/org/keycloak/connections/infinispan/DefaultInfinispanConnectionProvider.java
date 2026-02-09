@@ -18,6 +18,7 @@
 package org.keycloak.connections.infinispan;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -34,14 +35,15 @@ import org.infinispan.util.concurrent.BlockingManager;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultInfinispanConnectionProvider implements InfinispanConnectionProvider {
+public record DefaultInfinispanConnectionProvider(EmbeddedCacheManager cacheManager,
+                                                  TopologyInfo topologyInfo,
+                                                  NodeInfo nodeInfo) implements InfinispanConnectionProvider {
 
-    private final EmbeddedCacheManager cacheManager;
-    private final TopologyInfo topologyInfo;
 
-    public DefaultInfinispanConnectionProvider(EmbeddedCacheManager cacheManager, TopologyInfo topologyInfo) {
-        this.cacheManager = cacheManager;
-        this.topologyInfo = topologyInfo;
+    public DefaultInfinispanConnectionProvider {
+        Objects.requireNonNull(cacheManager);
+        Objects.requireNonNull(topologyInfo);
+        Objects.requireNonNull(nodeInfo);
     }
 
     private static PersistenceManager persistenceManager(Cache<?, ?> cache) {
@@ -65,6 +67,11 @@ public class DefaultInfinispanConnectionProvider implements InfinispanConnection
     @Override
     public TopologyInfo getTopologyInfo() {
         return topologyInfo;
+    }
+
+    @Override
+    public NodeInfo getNodeInfo() {
+        return nodeInfo;
     }
 
     @Override

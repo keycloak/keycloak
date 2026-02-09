@@ -22,9 +22,10 @@ import java.util.Collection;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.keycloak.marshalling.Marshalling;
+
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.keycloak.marshalling.Marshalling;
 
 /**
  * A {@link Function} that converts the {@link Collection} to a {@link Stream}.

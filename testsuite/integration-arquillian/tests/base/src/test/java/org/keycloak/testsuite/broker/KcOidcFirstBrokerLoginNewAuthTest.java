@@ -1,8 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.UserModel;
@@ -14,9 +11,14 @@ import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 /**
  * Tests first-broker-login flow with new authenticators.

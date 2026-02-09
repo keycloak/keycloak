@@ -19,7 +19,6 @@
 package org.keycloak.common.util;
 
 import java.security.NoSuchAlgorithmException;
-
 import java.util.Map;
 
 import org.junit.Assert;
@@ -34,6 +33,9 @@ public class StringPropertyReplacerTest {
     public void testSystemProperties() throws NoSuchAlgorithmException {
         System.setProperty("prop1", "val1");
         Assert.assertEquals("foo-val1", replaceProperties("foo-${prop1}"));
+        // non-matching scenarios
+        Assert.assertEquals("foo-${prop1", replaceProperties("foo-${prop1"));
+        Assert.assertEquals("foo-$prop1${", replaceProperties("foo-$prop1${"));
 
         Assert.assertEquals("foo-def", replaceProperties("foo-${prop2:def}"));
         System.setProperty("prop2", "val2");
@@ -69,10 +71,10 @@ public class StringPropertyReplacerTest {
     public void testEnvironmentVariables() throws NoSuchAlgorithmException {
         Map<String, String> env = System.getenv();
 
-        for (String key : env.keySet()) {
-            String value = env.get(key);
+        for (Map.Entry<String, String> entry : env.entrySet()) {
+            String value = entry.getValue();
             if ( !(value == null || "".equals(value)) ) {
-                Assert.assertEquals("foo-" + value, replaceProperties("foo-${env." + key + "}"));
+                Assert.assertEquals("foo-" + value, replaceProperties("foo-${env." + entry.getKey() + "}"));
                 break;
             }
         }

@@ -30,13 +30,6 @@ import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
 
-import org.bouncycastle.asn1.nist.NISTNamedCurves;
-import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.asymmetric.ECDomainParameters;
-import org.bouncycastle.jcajce.spec.ECDomainParameterSpec;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.fips.BCFIPSEcdhEsAlgorithmProvider;
@@ -45,6 +38,14 @@ import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.rule.CryptoInitRule;
+
+import org.bouncycastle.asn1.nist.NISTNamedCurves;
+import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.asymmetric.ECDomainParameters;
+import org.bouncycastle.jcajce.spec.ECDomainParameterSpec;
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 public class BCFIPSEcdhEsAlgorithmProviderTest {
     @ClassRule

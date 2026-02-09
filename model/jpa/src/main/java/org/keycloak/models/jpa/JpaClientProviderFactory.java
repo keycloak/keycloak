@@ -17,6 +17,15 @@
 
 package org.keycloak.models.jpa;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+
+import jakarta.persistence.EntityManager;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
@@ -29,13 +38,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 
-import jakarta.persistence.EntityManager;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
 
@@ -45,7 +47,9 @@ public class JpaClientProviderFactory implements ClientProviderFactory {
 
     private static final List<String> REQUIRED_SEARCHABLE_ATTRIBUTES = Arrays.asList(
         "saml_idp_initiated_sso_url_name",
-        SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER
+        SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER,
+        "jwt.credential.issuer",
+        "jwt.credential.sub"
     );
 
     @Override

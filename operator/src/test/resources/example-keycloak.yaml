@@ -19,3 +19,6 @@ spec:
     hostname: example.com
   proxy:
     headers: xforwarded # default nginx ingress sets x-forwarded
+  additionalOptions:
+    - name: metrics-enabled
+      value: "true"

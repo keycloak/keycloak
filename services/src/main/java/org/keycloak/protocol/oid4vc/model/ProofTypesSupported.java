@@ -16,12 +16,19 @@
  */
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-proof-types
@@ -30,39 +37,23 @@ import java.util.Objects;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProofTypesSupported {
-    @JsonProperty("jwt")
-    private ProofTypeJWT jwt;
 
-    @JsonProperty("ldp_vp")
-    private ProofTypeLdpVp ldpVp;
+    protected Map<String, SupportedProofTypeData> supportedProofTypes = new HashMap<>();
 
-    public ProofTypeJWT getJwt() {
-        return jwt;
+    public static ProofTypesSupported parse(KeycloakSession keycloakSession,
+                                            KeyAttestationsRequired keyAttestationsRequired,
+                                            List<String> globalSupportedSigningAlgorithms) {
+        ProofTypesSupported proofTypesSupported = new ProofTypesSupported();
+        keycloakSession.getAllProviders(ProofValidator.class).forEach(proofValidator -> {
+            String type = proofValidator.getProofType();
+            SupportedProofTypeData supportedProofTypeData = new SupportedProofTypeData(globalSupportedSigningAlgorithms,
+                    keyAttestationsRequired);
+            proofTypesSupported.getSupportedProofTypes().put(type, supportedProofTypeData);
+        });
+        return proofTypesSupported;
     }
 
-    public ProofTypesSupported setJwt(ProofTypeJWT jwt) {
-        this.jwt = jwt;
-        return this;
-    }
-
-    public ProofTypeLdpVp getLdpVp() {
-        return ldpVp;
-    }
-
-    public ProofTypesSupported setLdpVp(ProofTypeLdpVp ldpVp) {
-        this.ldpVp = ldpVp;
-        return this;
-    }
-
-    public String toJsonString(){
-        try {
-            return JsonSerialization.writeValueAsString(this);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static ProofTypesSupported fromJsonString(String jsonString){
+    public static ProofTypesSupported fromJsonString(String jsonString) {
         try {
             return JsonSerialization.readValue(jsonString, ProofTypesSupported.class);
         } catch (IOException e) {
@@ -70,16 +61,40 @@ public class ProofTypesSupported {
         }
     }
 
+    @JsonAnyGetter
+    public Map<String, SupportedProofTypeData> getSupportedProofTypes() {
+        return supportedProofTypes;
+    }
+
+    @JsonAnySetter
+    public ProofTypesSupported setSupportedProofTypes(String name, SupportedProofTypeData value) {
+        supportedProofTypes.put(name, value);
+        return this;
+    }
+
+    public String toJsonString() {
+        try {
+            return JsonSerialization.writeValueAsString(this);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ProofTypesSupported that = (ProofTypesSupported) o;
-        return Objects.equals(jwt, that.jwt) && Objects.equals(ldpVp, that.ldpVp);
+    public String toString() {
+        return toJsonString();
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (!(o instanceof ProofTypesSupported that)) {
+            return false;
+        }
+        return Objects.equals(supportedProofTypes, that.supportedProofTypes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jwt, ldpVp);
+        return Objects.hashCode(supportedProofTypes);
     }
 }

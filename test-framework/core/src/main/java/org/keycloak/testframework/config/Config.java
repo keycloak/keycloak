@@ -1,5 +1,15 @@
 package org.keycloak.testframework.config;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Optional;
+
+import org.keycloak.testframework.injection.ValueTypeAlias;
+
 import io.quarkus.runtime.configuration.CharsetConverter;
 import io.quarkus.runtime.configuration.InetSocketAddressConverter;
 import io.quarkus.runtime.configuration.MemorySizeConverter;
@@ -11,15 +21,6 @@ import io.smallrye.config.common.utils.ConfigSourceUtil;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
-import org.keycloak.testframework.injection.ValueTypeAlias;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Optional;
 
 public class Config {
 
@@ -30,8 +31,20 @@ public class Config {
         return config.getOptionalValue("kc.test." + valueTypeAlias.getAlias(valueType), String.class).orElse(null);
     }
 
+    public static String getIncludedSuppliers(Class<?> valueType) {
+        return config.getOptionalValue("kc.test." + valueTypeAlias.getAlias(valueType) + ".suppliers.included", String.class).orElse(null);
+    }
+
+    public static String getExcludedSuppliers(Class<?> valueType) {
+        return config.getOptionalValue("kc.test." + valueTypeAlias.getAlias(valueType) + ".suppliers.excluded", String.class).orElse(null);
+    }
+
+    public static String getSupplierConfig(Class<?> valueType) {
+        return config.getOptionalValue("kc.test." + valueTypeAlias.getAlias(valueType) + ".config", String.class).orElse(null);
+    }
+
     public static <T> T getValueTypeConfig(Class<?> valueType, String name, String defaultValue, Class<T> type) {
-        name = "kc.test." + valueTypeAlias.getAlias(valueType) + "." + name;
+        name = getValueTypeFQN(valueType, name);
         Optional<T> optionalValue = config.getOptionalValue(name, type);
         if (optionalValue.isPresent()) {
             return optionalValue.get();
@@ -41,10 +54,9 @@ public class Config {
             return null;
         }
     }
-    public static <T> T getValueTypeConfig(Class<?> valueType, String name, T defaultValue, Class<T> type) {
-        name = "kc.test." + valueTypeAlias.getAlias(valueType) + "." + name;
-        Optional<T> optionalValue = config.getOptionalValue(name, type);
-        return optionalValue.orElse(defaultValue);
+
+    public static String getValueTypeFQN(Class<?> valueType, String name) {
+        return "kc.test." + valueTypeAlias.getAlias(valueType) + "." + name;
     }
 
     public static <T> T get(String name, T defaultValue, Class<T> clazz) {
@@ -76,7 +88,8 @@ public class Config {
                 .addDefaultSources()
                 .addDefaultInterceptors()
                 .withConverters(new Converter[]{ new CharsetConverter(), new MemorySizeConverter(), new InetSocketAddressConverter() })
-                .withInterceptors(new LogConfigInterceptor());
+                .withInterceptors(new LogConfigInterceptor())
+                .withSources(new SuiteConfigSource());
 
         ConfigSource testEnvConfigSource = initTestEnvConfigSource();
         if (testEnvConfigSource != null) {
@@ -101,7 +114,7 @@ public class Config {
             Path envTestPath = currentPath.resolve(".env.test");
             if (Files.isRegularFile(envTestPath)) {
                 try {
-                    return new EnvConfigSource(ConfigSourceUtil.urlToMap(envTestPath.toUri().toURL()), 350);
+                    return new EnvConfigSource(ConfigSourceUtil.urlToMap(envTestPath.toUri().toURL()), 296);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

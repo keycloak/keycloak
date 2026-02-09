@@ -17,12 +17,11 @@
 
 package org.keycloak.adapters.saml.profile;
 
-import static org.keycloak.adapters.saml.SamlPrincipal.DEFAULT_ROLE_ATTRIBUTE_NAME;
-
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -31,7 +30,7 @@ import java.util.Set;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
-import org.jboss.logging.Logger;
+
 import org.keycloak.adapters.saml.AbstractInitiateLogin;
 import org.keycloak.adapters.saml.AdapterConstants;
 import org.keycloak.adapters.saml.OnSessionCreated;
@@ -46,7 +45,6 @@ import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.dom.saml.v2.SAML2Object;
@@ -84,10 +82,14 @@ import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.saml.validators.ConditionsValidator;
 import org.keycloak.saml.validators.DestinationValidator;
+
+import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import static org.keycloak.adapters.saml.SamlPrincipal.DEFAULT_ROLE_ATTRIBUTE_NAME;
 
 /**
  *
@@ -689,7 +691,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
 
         try {
             //byte[] decodedSignature = RedirectBindingUtil.urlBase64Decode(signature);
-            byte[] decodedSignature = Base64.decode(signature);
+            byte[] decodedSignature = Base64.getMimeDecoder().decode(signature);
             byte[] rawQueryBytes = rawQuery.getBytes(StandardCharsets.UTF_8);
 
             SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.getFromXmlMethod(decodedAlgorithm);

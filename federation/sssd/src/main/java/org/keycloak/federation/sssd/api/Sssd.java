@@ -21,12 +21,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.models.UserModel;
+
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.types.DBusListType;
 import org.freedesktop.dbus.types.Variant;
 import org.freedesktop.sssd.infopipe.InfoPipe;
 import org.jboss.logging.Logger;
-import org.keycloak.models.UserModel;
 
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>

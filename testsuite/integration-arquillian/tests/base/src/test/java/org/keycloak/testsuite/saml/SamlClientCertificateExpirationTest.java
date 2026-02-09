@@ -16,14 +16,17 @@
  */
 package org.keycloak.testsuite.saml;
 
+import jakarta.ws.rs.core.Response.Status;
+
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
-import jakarta.ws.rs.core.Response.Status;
+
 import org.junit.Test;
+
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_NAME;
 
 /**

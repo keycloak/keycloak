@@ -1,9 +1,8 @@
 package org.keycloak.it.cli.dist;
 
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DryRun;
@@ -13,13 +12,16 @@ import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
-import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
 @DistributionTest
 public class ShowConfigCommandDistTest {
@@ -106,7 +108,7 @@ public class ShowConfigCommandDistTest {
         distribution.setEnvVar("KC_LOG", "file");
         distribution.copyOrReplaceFile(Paths.get("src/test/resources/ShowConfigCommandTest/quarkus.properties"), Path.of("conf", "quarkus.properties"));
 
-        result = distribution.run(String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak-keystore.conf").toAbsolutePath().normalize()), ShowConfig.NAME, "all");
+        result = distribution.run(String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak-keystore.conf").toAbsolutePath().normalize()), ShowConfig.NAME, "all", "--db=dev-file");
 
         result.assertMessage("(CLI)");
         result.assertMessage("(ENV)");

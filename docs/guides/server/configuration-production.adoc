@@ -1,6 +1,7 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/features.adoc" as features>
 
 <@tmpl.guide
 title="Configuring {project_name} for production"
@@ -50,17 +51,12 @@ Any request that exceeds this limit would return with an immediate `503 Server n
 == Production grade database
 The database used by {project_name} is crucial for the overall performance, availability, reliability and integrity of {project_name}. For details on how to configure a supported database, see <@links.server id="db"/>.
 
-== Support for {project_name} in a cluster
+== Running {project_name} in a cluster
 To ensure that users can continue to log in when a {project_name} instance goes down, a typical production environment contains two or more {project_name} instances.
 
-{project_name} runs on top of JGroups and Infinispan, which provide a reliable, high-availability stack for a clustered scenario. When deployed to a cluster, the embedded Infinispan server communication should be secured. You secure this communication either by enabling authentication and encryption or by isolating the network used for cluster communication.
+{project_name} runs on top of JGroups and Infinispan, which provide a reliable, high-availability stack for a clustered scenario. In the default setup, communication between the nodes is encrypted using TLS.
 
 To find out more about using multiple nodes, the different caches and an appropriate stack for your environment, see <@links.server id="caching"/>.
-
-=== Secure network communication
-
-JGroups supports Java SSL sockets for TCP communication.
-Check <@links.server id="caching" anchor="securing-cache-communication"/> for more information on how to configure TLS and the alternatives available for UDP communication.
 
 === Configure Firewall ports
 
@@ -91,5 +87,26 @@ export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6A
 ----
 
 See <@links.server id="caching" anchor="network-bind-address"/> for more details.
+
+== Preview of enhanced HTTP performance
+<@features.techpreview feature="http-optimized-serializers" additionalCommunityText="We gather more feedback on this feature to promote it to supported. Please, share your feedback about any issue in https://github.com/keycloak/keycloak/discussions/43484[this discussion]."/>
+
+In production environments, the performance of the HTTP layer is critical.
+Every request passes through it, making it a key factor in overall system responsiveness, scalability, and user experience.
+
+This feature improves how {project_name} handles JSON data in HTTP requests and responses.
+The result is a more efficient runtime with measurable benefits:
+
+- ~5% increase in throughput
+- More stable response times
+- Reduced system resource usage
+
+These improvements help ensure smoother, more predictable performance at scale while also lowering the operational cost of running production systems.
+
+The only known tradeoff is that build time increases by ~6% as certain actions were moved to the build time instead of runtime.
+
+You can enable this feature as follows:
+
+<@kc.start parameters="--features=http-optimized-serializers"/>
 
 </@tmpl.guide>

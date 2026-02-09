@@ -20,7 +20,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.namespace.QName;
-import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.*;
+
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ECP_PROFILE;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.METADATA_NSURI;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLDSIG_NSURI;
 
 /**
  * SAML Constants
@@ -252,7 +257,7 @@ public enum JBossSAMLConstants {
                 String key = c.get();
                 if ((old = m.put(key, c)) != null) {
 //                    System.out.println("WARNING: " + old);
-                    if (old != null && c.getAsQName().equals(old.getAsQName())) {
+                    if (c.getAsQName().equals(old.getAsQName())) {
                         throw new IllegalStateException("Same name " + key + " used for two distinct constants: " + c + ", " + old);
                     }
                     m.put(key, null);

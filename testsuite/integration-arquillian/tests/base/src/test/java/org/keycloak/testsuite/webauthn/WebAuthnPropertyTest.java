@@ -17,28 +17,30 @@
 
 package org.keycloak.testsuite.webauthn;
 
-import org.junit.Test;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Objects;
+
 import org.keycloak.WebAuthnConstants;
+import org.keycloak.models.Constants;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
+
+import org.junit.Test;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Objects;
+import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT;
+import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY;
+import static org.keycloak.testsuite.webauthn.utils.PropertyRequirement.YES;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.WebAuthnConstants.OPTION_REQUIRED;
-import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT;
-import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY;
-import static org.keycloak.testsuite.webauthn.utils.PropertyRequirement.YES;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
@@ -53,14 +55,14 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
         try (Closeable c = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicyRpEntityName("localhost")
                 .setWebAuthnPolicyRequireResidentKey(YES.getValue())
-                .setWebAuthnPolicyUserVerificationRequirement(OPTION_REQUIRED)
+                .setWebAuthnPolicyUserVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
                 .update()) {
 
             WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
             assertThat(realmData, notNullValue());
             assertThat(realmData.getRpEntityName(), is("localhost"));
             assertThat(realmData.getRequireResidentKey(), is(YES.getValue()));
-            assertThat(realmData.getUserVerificationRequirement(), is(OPTION_REQUIRED));
+            assertThat(realmData.getUserVerificationRequirement(), is(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED));
 
             registerDefaultUser();
 
@@ -111,14 +113,14 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
         try (Closeable c = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicyRpEntityName("localhost")
                 .setWebAuthnPolicyRequireResidentKey(YES.getValue())
-                .setWebAuthnPolicyUserVerificationRequirement(OPTION_REQUIRED)
+                .setWebAuthnPolicyUserVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
                 .update()) {
 
             WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
             assertThat(realmData, notNullValue());
             assertThat(realmData.getRpEntityName(), is("localhost"));
             assertThat(realmData.getRequireResidentKey(), is(YES.getValue()));
-            assertThat(realmData.getUserVerificationRequirement(), is(OPTION_REQUIRED));
+            assertThat(realmData.getUserVerificationRequirement(), is(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED));
 
             registerDefaultUser();
 

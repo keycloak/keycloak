@@ -16,17 +16,22 @@
  */
 package org.keycloak.testsuite.forms;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail;
-import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.common.constants.ServiceAccountConstants;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -46,8 +51,8 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
@@ -60,35 +65,31 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
-import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.KerberosUtils;
 import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.SecondBrowser;
+import org.keycloak.testsuite.util.TestAppHelper;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.UserActionTokenBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
-import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.TestAppHelper;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.junit.*;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -97,7 +98,8 @@ import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.endsWith;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -154,9 +156,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     protected InfoPage infoPage;
 
     @Page
-    protected VerifyEmailPage verifyEmailPage;
-
-    @Page
     protected LoginPasswordResetPage resetPasswordPage;
 
     @Page
@@ -171,7 +170,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     private int expectedMessagesCount;
 
     @Test
-    public void resetPasswordLink() throws IOException, MessagingException {
+    public void resetPasswordLink() throws IOException {
         String username = "login-test";
         String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
 
@@ -299,12 +298,12 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         openResetPasswordUrlAndDoFlow(resetUri, "test-app", oauth.getRedirectUri(), false);
 
-        // Should be directly redirected to "application because of "redirect_uri" parameter
+        // Should be directly redirected to application because of "redirect_uri" parameter
         appPage.assertCurrent();
     }
 
     @Test
-    public void resetPasswordLinkErrorFlows() throws IOException {
+    public void resetPasswordLinkErrorFlows() {
         // Client not found
         driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=not_found");
         errorPage.assertCurrent();
@@ -341,7 +340,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordTwice() throws IOException, MessagingException {
+    public void resetPasswordTwice() throws IOException {
         String changePasswordUrl = resetPassword("login-test");
         events.clear();
 
@@ -349,7 +348,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordForceLogin() throws IOException, MessagingException {
+    public void resetPasswordForceLogin() throws IOException {
         // add the force login option in the reset-credential-email authenticator
         configureForceLogin(Boolean.TRUE.toString());
 
@@ -357,7 +356,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordForceLoginFederatedUser() throws IOException, MessagingException {
+    public void resetPasswordForceLoginFederatedUser() throws IOException {
         // create the example map storage user federation
         ComponentRepresentation memProvider = new ComponentRepresentation();
         memProvider.setName(UserStorageProvider.class.getName());
@@ -387,7 +386,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordTwiceInNewBrowser() throws IOException, MessagingException {
+    public void resetPasswordTwiceInNewBrowser() throws IOException {
         String changePasswordUrl = resetPassword("login-test");
         events.clear();
 
@@ -396,6 +395,33 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         driver.manage().deleteAllCookies();
 
         assertSecondPasswordResetFails(changePasswordUrl, oauth.getClientId());
+    }
+
+    @Test
+    public void resetPasswordTwiceInSecondBrowser() throws IOException {
+        String username = "login-test";
+
+        initiateResetPasswordFromResetPasswordPage(username);
+
+        // Navigate the first browser to the set password page
+        assertEquals(expectedMessagesCount, greenMail.getReceivedMessages().length);
+        MimeMessage message = greenMail.getReceivedMessages()[greenMail.getReceivedMessages().length - 1];
+        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+        driver.navigate().to(changePasswordUrl.trim());
+        updatePasswordPage.assertCurrent();
+        assertEquals("You need to change your password.", updatePasswordPage.getFeedbackMessage());
+
+        // Update the password update in a second browser.
+        driver2.navigate().to(changePasswordUrl.trim());
+        changePasswordOnUpdatePage(driver2);
+        assertThat(driver2.getCurrentUrl(), Matchers.containsString("client_id=test-app"));
+        assertThat(driver2.getPageSource(), Matchers.containsString("Your account has been updated."));
+        assertThat(driver2.getPageSource(), Matchers.containsString("Back to Application"));
+
+        // Updating the password in the first browser should now fail.
+        updatePasswordPage.changePassword(password, password);
+        errorPage.assertCurrent();
+        assertEquals("Action expired. Please continue with login now.", errorPage.getError());
     }
 
     public void assertSecondPasswordResetFails(String changePasswordUrl, String clientId) {
@@ -413,12 +439,12 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordWithSpacesInUsername() throws IOException, MessagingException {
+    public void resetPasswordWithSpacesInUsername() throws IOException {
         resetPassword(" login-test ");
     }
 
     @Test
-    public void resetPasswordCancelChangeUser() throws IOException, MessagingException {
+    public void resetPasswordCancelChangeUser() {
         initiateResetPasswordFromResetPasswordPage("test-user@localhost");
 
         events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).detail(Details.USERNAME, "test-user@localhost")
@@ -439,12 +465,12 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordByEmail() throws IOException, MessagingException {
+    public void resetPasswordByEmail() throws IOException {
         resetPassword("login@test.com");
     }
 
     @Test
-    public void resetPasswordBackButton() throws IOException, MessagingException {
+    public void resetPasswordBackButton() {
         loginPage.open();
         loginPage.login("login@test.com", "wrongpassword");
         loginPage.resetPassword();
@@ -467,15 +493,15 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         getCleanup().addAuthenticationConfigId(configId);
     }
 
-    private String resetPassword(String username) throws IOException, MessagingException {
+    private String resetPassword(String username) throws IOException {
         return resetPassword(username, "resetPassword", false);
     }
 
-    private String resetPassword(String username, String password) throws IOException, MessagingException {
+    private String resetPassword(String username, String password) throws IOException {
         return resetPassword(username, password, false);
     }
 
-    private String resetPassword(String username, String password, boolean relogin) throws IOException, MessagingException {
+    private String resetPassword(String username, String password, boolean relogin) throws IOException {
         initiateResetPasswordFromResetPasswordPage(username);
 
         events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
@@ -540,7 +566,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         return changePasswordUrl;
     }
 
-    private void resetPasswordInvalidPassword(String username, String password, String error) throws IOException, MessagingException {
+    private void resetPasswordInvalidPassword(String username, String password, String error) throws IOException {
 
         initiateResetPasswordFromResetPasswordPage(username);
 
@@ -580,7 +606,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordWrongEmail() throws IOException, MessagingException, InterruptedException {
+    public void resetPasswordWrongEmail() {
         initiateResetPasswordFromResetPasswordPage("invalid");
 
         assertEquals(0, greenMail.getReceivedMessages().length);
@@ -589,7 +615,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordMissingUsername() throws IOException, MessagingException, InterruptedException {
+    public void resetPasswordMissingUsername() {
         loginPage.open();
         loginPage.resetPassword();
 
@@ -608,7 +634,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordExpiredCode() throws IOException, MessagingException, InterruptedException {
+    public void resetPasswordExpiredCode() throws IOException {
         initiateResetPasswordFromResetPasswordPage("login-test");
 
         events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
@@ -637,7 +663,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordExpiredCodeShort() throws IOException, MessagingException, InterruptedException {
+    public void resetPasswordExpiredCodeShort() throws IOException {
         final AtomicInteger originalValue = new AtomicInteger();
 
         RealmRepresentation realmRep = testRealm().toRepresentation();
@@ -676,9 +702,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordExpiredCodeShortPerActionLifespan() throws IOException, MessagingException, InterruptedException {
+    public void resetPasswordExpiredCodeShortPerActionLifespan() throws IOException {
         RealmRepresentation realmRep = testRealm().toRepresentation();
-        Map<String, String> originalAttributes = Collections.unmodifiableMap(new HashMap<>(realmRep.getAttributes()));
+        Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
 
         realmRep.setAttributes(UserActionTokenBuilder.create().resetCredentialsLifespan(60).build());
         testRealm().update(realmRep);
@@ -714,9 +740,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordExpiredCodeShortPerActionMultipleTimeouts() throws IOException, MessagingException, InterruptedException {
+    public void resetPasswordExpiredCodeShortPerActionMultipleTimeouts() throws IOException {
         RealmRepresentation realmRep = testRealm().toRepresentation();
-        Map<String, String> originalAttributes = Collections.unmodifiableMap(new HashMap<>(realmRep.getAttributes()));
+        Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
 
         //Make sure that one attribute settings won't affect the other
         realmRep.setAttributes(UserActionTokenBuilder.create().resetCredentialsLifespan(60).verifyEmailLifespan(300).build());
@@ -755,7 +781,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     // KEYCLOAK-4016
     @Test
-    public void resetPasswordExpiredCodeAndAuthSession() throws IOException, MessagingException, InterruptedException {
+    public void resetPasswordExpiredCodeAndAuthSession() throws IOException {
         final AtomicInteger originalValue = new AtomicInteger();
 
         RealmRepresentation realmRep = testRealm().toRepresentation();
@@ -799,9 +825,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordExpiredCodeAndAuthSessionPerActionLifespan() throws IOException, MessagingException, InterruptedException {
+    public void resetPasswordExpiredCodeAndAuthSessionPerActionLifespan() throws IOException {
         RealmRepresentation realmRep = testRealm().toRepresentation();
-        Map<String, String> originalAttributes = Collections.unmodifiableMap(new HashMap<>(realmRep.getAttributes()));
+        Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
 
         realmRep.setAttributes(UserActionTokenBuilder.create().resetCredentialsLifespan(60).build());
         testRealm().update(realmRep);
@@ -842,9 +868,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordExpiredCodeAndAuthSessionPerActionMultipleTimeouts() throws IOException, MessagingException, InterruptedException {
+    public void resetPasswordExpiredCodeAndAuthSessionPerActionMultipleTimeouts() throws IOException {
         RealmRepresentation realmRep = testRealm().toRepresentation();
-        Map<String, String> originalAttributes = Collections.unmodifiableMap(new HashMap<>(realmRep.getAttributes()));
+        Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
 
         //Make sure that one attribute settings won't affect the other
         realmRep.setAttributes(UserActionTokenBuilder.create().resetCredentialsLifespan(60).verifyEmailLifespan(300).build());
@@ -887,7 +913,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     // KEYCLOAK-5061
     @Test
-    public void resetPasswordExpiredCodeForgotPasswordFlow() throws IOException, MessagingException, InterruptedException {
+    public void resetPasswordExpiredCodeForgotPasswordFlow() throws IOException {
         final AtomicInteger originalValue = new AtomicInteger();
 
         RealmRepresentation realmRep = testRealm().toRepresentation();
@@ -936,9 +962,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordExpiredCodeForgotPasswordFlowPerActionLifespan() throws IOException, MessagingException, InterruptedException {
+    public void resetPasswordExpiredCodeForgotPasswordFlowPerActionLifespan() throws IOException {
         RealmRepresentation realmRep = testRealm().toRepresentation();
-        Map<String, String> originalAttributes = Collections.unmodifiableMap(new HashMap<>(realmRep.getAttributes()));
+        Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
 
         realmRep.setAttributes(UserActionTokenBuilder.create().resetCredentialsLifespan(60).build());
         testRealm().update(realmRep);
@@ -984,9 +1010,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordExpiredCodeForgotPasswordFlowPerActionMultipleTimeouts() throws IOException, MessagingException, InterruptedException {
+    public void resetPasswordExpiredCodeForgotPasswordFlowPerActionMultipleTimeouts() throws IOException {
         RealmRepresentation realmRep = testRealm().toRepresentation();
-        Map<String, String> originalAttributes = Collections.unmodifiableMap(new HashMap<>(realmRep.getAttributes()));
+        Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
 
         //Make sure that one attribute settings won't affect the other
         realmRep.setAttributes(UserActionTokenBuilder.create().resetCredentialsLifespan(60).verifyEmailLifespan(300).build());
@@ -1033,7 +1059,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordDisabledUser() throws IOException, MessagingException, InterruptedException {
+    public void resetPasswordDisabledUser() {
         UserRepresentation user = findUser("login-test");
         try {
             user.setEnabled(false);
@@ -1051,7 +1077,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordNoEmail() throws IOException, MessagingException, InterruptedException {
+    public void resetPasswordNoEmail() {
         final String email;
 
         UserRepresentation user = findUser("login-test");
@@ -1073,7 +1099,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordWrongSmtp() throws IOException, MessagingException, InterruptedException {
+    public void resetPasswordWrongSmtp() {
         final String[] host = new String[1];
 
         Map<String, String> smtpConfig = new HashMap<>();
@@ -1117,7 +1143,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordWithLengthPasswordPolicy() throws IOException, MessagingException {
+    public void resetPasswordWithLengthPasswordPolicy() throws IOException {
         setPasswordPolicy("length");
 
         initiateResetPasswordFromResetPasswordPage("login-test");
@@ -1167,7 +1193,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordBeforeUserIsDisabled() throws IOException, MessagingException {
+    public void resetPasswordBeforeUserIsDisabled() throws IOException {
         initiateResetPasswordFromResetPasswordPage("login-test");
 
         assertEquals(1, greenMail.getReceivedMessages().length);
@@ -1186,7 +1212,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordWithPasswordHistoryPolicy() throws IOException, MessagingException {
+    public void resetPasswordWithPasswordHistoryPolicy() throws IOException {
         //Block passwords that are equal to previous passwords. Default value is 3.
         setPasswordPolicy("passwordHistory");
 
@@ -1217,12 +1243,12 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordLinkOpenedInNewBrowser() throws IOException, MessagingException {
+    public void resetPasswordLinkOpenedInNewBrowser() throws IOException {
         resetPasswordLinkOpenedInNewBrowser(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
     }
 
 
-    private void resetPasswordLinkOpenedInNewBrowser(String expectedSystemClientId) throws IOException, MessagingException {
+    private void resetPasswordLinkOpenedInNewBrowser(String expectedSystemClientId) throws IOException {
         String username = "login-test";
         String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
         driver.navigate().to(resetUri);
@@ -1271,7 +1297,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     // KEYCLOAK-5982
     @Test
-    public void resetPasswordLinkOpenedInNewBrowserAndAccountClientRenamed() throws IOException, MessagingException {
+    public void resetPasswordLinkOpenedInNewBrowserAndAccountClientRenamed() throws IOException {
         // Temporarily rename client "account" . Revert it back after the test
         try (Closeable accountClientUpdater = ClientAttributeUpdater.forClient(adminClient, "test", Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
                 .setClientId("account-changed")
@@ -1284,7 +1310,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordLinkNewBrowserSessionPreserveClient() throws IOException, MessagingException {
+    public void resetPasswordLinkNewBrowserSessionPreserveClient() throws IOException {
         loginPage.open();
         loginPage.resetPassword();
 
@@ -1315,7 +1341,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-15239
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // TODO: https://github.com/keycloak/keycloak/issues/20526
-    public void resetPasswordWithSpnegoEnabled() throws IOException, MessagingException {
+    public void resetPasswordWithSpnegoEnabled() throws IOException {
         KerberosUtils.assumeKerberosSupportExpected();
 
         // Just switch SPNEGO authenticator requirement to alternative. No real usage of SPNEGO needed for this test
@@ -1382,7 +1408,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordInfoMessageWithDuplicateEmailsAllowed() throws IOException {
+    public void resetPasswordInfoMessageWithDuplicateEmailsAllowed() {
         RealmRepresentation realmRep = testRealm().toRepresentation();
         Boolean originalLoginWithEmailAllowed = realmRep.isLoginWithEmailAllowed();
         Boolean originalDuplicateEmailsAllowed = realmRep.isDuplicateEmailsAllowed();
@@ -1434,7 +1460,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordWithLoginHint() throws IOException {
+    public void resetPasswordWithLoginHint() {
         // Redirect directly to KC "forgot password" endpoint instead of "authenticate" endpoint
         String loginUrl = oauth.loginForm().build();
         String forgotPasswordUrl = loginUrl.replace("/auth?", "/forgot-credentials?"); // Workaround, but works

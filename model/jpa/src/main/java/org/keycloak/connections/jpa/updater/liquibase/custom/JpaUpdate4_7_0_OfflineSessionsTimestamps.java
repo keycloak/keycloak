@@ -17,10 +17,11 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.custom;
 
+import org.keycloak.common.util.Time;
+
 import liquibase.exception.CustomChangeException;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Table;
-import org.keycloak.common.util.Time;
 
 /**
  * Update CREATED_ON and LAST_SESSION_REFRESH columns to current startup time

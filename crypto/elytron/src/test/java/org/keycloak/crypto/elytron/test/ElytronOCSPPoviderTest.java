@@ -16,8 +16,6 @@
  */
 package org.keycloak.crypto.elytron.test;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.security.InvalidAlgorithmParameterException;
@@ -30,15 +28,17 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.security.auth.x500.X500Principal;
 
-import org.junit.Test;
 import org.keycloak.crypto.elytron.ElytronOCSPProvider;
+
+import org.junit.Test;
 import org.wildfly.security.x500.GeneralName;
 import org.wildfly.security.x500.cert.AccessDescription;
 import org.wildfly.security.x500.cert.AuthorityInformationAccessExtension;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:david.anderson@redhat.com">David Anderson</a>

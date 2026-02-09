@@ -17,14 +17,14 @@
  */
 package org.keycloak.testsuite.oauth.rar;
 
-import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.rar.AuthorizationDetails;
-import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
-import org.keycloak.rar.AuthorizationRequestSource;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
-
 import java.util.List;
 import java.util.Objects;
+
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.rar.AuthorizationDetails;
+import org.keycloak.rar.AuthorizationRequestSource;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 /**
  * The local testsuite representation of a {@link org.keycloak.rar.AuthorizationRequestContext} server object

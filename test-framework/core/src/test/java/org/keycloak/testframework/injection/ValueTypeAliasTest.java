@@ -1,11 +1,12 @@
 package org.keycloak.testframework.injection;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.util.Map;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.testframework.server.KeycloakServer;
 
-import java.util.Map;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class ValueTypeAliasTest {
 

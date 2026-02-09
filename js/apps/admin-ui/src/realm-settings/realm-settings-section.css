@@ -115,6 +115,8 @@ div#offline-session-max-label > .pf-v5-c-form__group-label {
 .kc-offline-session-max-input,
 .kc-client-session-idle-input,
 .kc-client-session-max-input,
+.kc-client-offline-session-max-input,
+.kc-client-offline-session-idle-input,
 .kc-login-timeout-input,
 .kc-login-action-timeout-input,
 .kc-access-token-lifespan-input,

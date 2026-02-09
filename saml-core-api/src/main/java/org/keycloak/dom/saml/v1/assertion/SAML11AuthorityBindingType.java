@@ -16,8 +16,8 @@
  */
 package org.keycloak.dom.saml.v1.assertion;
 
-import javax.xml.namespace.QName;
 import java.net.URI;
+import javax.xml.namespace.QName;
 
 /**
  * <complexType name="AuthorityBindingType"> <attribute name="AuthorityKind" type="QName" use="required"/> <attribute

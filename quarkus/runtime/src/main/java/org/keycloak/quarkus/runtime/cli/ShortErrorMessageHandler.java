@@ -1,15 +1,10 @@
 package org.keycloak.quarkus.runtime.cli;
 
-import static java.lang.String.format;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
-
 import java.io.PrintWriter;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
-import java.util.stream.Stream;
 
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
-import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.configuration.KcUnmatchedArgumentException;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
@@ -22,6 +17,8 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.UnmatchedArgumentException;
+
+import static java.lang.String.format;
 
 public class ShortErrorMessageHandler implements IParameterExceptionHandler {
 
@@ -58,17 +55,8 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
                     errorMessage = "Unknown option: '" + cliKey + "'";
                 }
             } else {
-                AbstractCommand command = cmd.getCommand();
-                if (!command.getOptionCategories().contains(mapper.getCategory())) {
-                    errorMessage = format("Option: '%s' not valid for command %s", cliKey, cmd.getCommandName());
-                } else {
-                    if (Stream.of(args).anyMatch(OPTIMIZED_BUILD_OPTION_LONG::equals) && mapper.isBuildTime() && Start.NAME.equals(cmd.getCommandName())) {
-                        errorMessage = format("Build time option: '%s' not usable with pre-built image and --optimized", cliKey);
-                    } else {
-                        final var optionType = mapper.isRunTime() ? "Run time" : "Build time";
-                        errorMessage = format("%s option: '%s' not usable with %s", optionType, cliKey, cmd.getCommandName());
-                    }
-                }
+                final var optionType = mapper.isRunTime() ? "Run time" : "Build time";
+                errorMessage = format("%s option: '%s' not usable with %s", optionType, cliKey, cmd.getCommandName());
             }
         } else if (ex instanceof MissingParameterException mpe) {
             if (mpe.getMissing().size() == 1) {

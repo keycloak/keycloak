@@ -1,26 +1,25 @@
 package org.keycloak.testframework.server;
 
-import io.quarkus.maven.dependency.Dependency;
-import io.quarkus.maven.dependency.DependencyBuilder;
-import io.smallrye.config.SmallRyeConfig;
-import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
-
-import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.common.Profile;
+import org.keycloak.testframework.infinispan.CacheType;
+
+import io.quarkus.maven.dependency.Dependency;
+import io.quarkus.maven.dependency.DependencyBuilder;
+import io.smallrye.config.SmallRyeConfig;
+import org.eclipse.microprofile.config.spi.ConfigSource;
+
 public class KeycloakServerConfigBuilder {
+
+    private static final String SPI_OPTION = "spi-%s--%s--%s";
 
     private final String command;
     private final Map<String, String> options = new HashMap<>();
@@ -28,7 +27,8 @@ public class KeycloakServerConfigBuilder {
     private final Set<String> featuresDisabled = new HashSet<>();
     private final LogBuilder log = new LogBuilder();
     private final Set<Dependency> dependencies = new HashSet<>();
-    private final Set<Path> configFiles = new HashSet<>();
+    private CacheType cacheType = CacheType.LOCAL;
+    private boolean externalInfinispan = false;
 
     private KeycloakServerConfigBuilder(String command) {
         this.command = command;
@@ -48,8 +48,24 @@ public class KeycloakServerConfigBuilder {
                 .option("bootstrap-admin-password", password);
     }
 
-    public KeycloakServerConfigBuilder cache(String cache) {
-        return option("cache", cache);
+    public KeycloakServerConfigBuilder cache(CacheType cacheType) {
+        this.cacheType = cacheType;
+        return this;
+    }
+
+    public KeycloakServerConfigBuilder externalInfinispanEnabled(boolean enabled) {
+        if (enabled) {
+            this.externalInfinispan = true;
+            cache(CacheType.ISPN);
+        } else {
+            this.externalInfinispan = false;
+            cache(CacheType.LOCAL);
+        }
+        return this;
+    }
+
+    public boolean isExternalInfinispanEnabled() {
+        return this.externalInfinispan;
     }
 
     public LogBuilder log() {
@@ -76,20 +92,13 @@ public class KeycloakServerConfigBuilder {
         return this;
     }
 
-    public KeycloakServerConfigBuilder dependency(String groupId, String artifactId) {
-        dependencies.add(new DependencyBuilder().setGroupId(groupId).setArtifactId(artifactId).build());
+    public KeycloakServerConfigBuilder spiOption(String spi, String provider, String key, String value) {
+        options.put(String.format(SPI_OPTION, spi, provider, key), value);
         return this;
     }
 
-    public KeycloakServerConfigBuilder cacheConfigFile(String resourcePath) {
-        try {
-            Path p = Paths.get(Objects.requireNonNull(getClass().getResource(resourcePath)).toURI());
-            configFiles.add(p);
-            option("cache-config-file", p.getFileName().toString());
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-
+    public KeycloakServerConfigBuilder dependency(String groupId, String artifactId) {
+        dependencies.add(new DependencyBuilder().setGroupId(groupId).setArtifactId(artifactId).build());
         return this;
     }
 
@@ -185,6 +194,9 @@ public class KeycloakServerConfigBuilder {
     }
 
     List<String> toArgs() {
+        // Cache setup -> supported values: local or ispn
+        option("cache", cacheType.name().toLowerCase());
+
         log.build();
 
         List<String> args = new LinkedList<>();
@@ -206,16 +218,12 @@ public class KeycloakServerConfigBuilder {
         return dependencies;
     }
 
-    Set<Path> toConfigFiles() {
-        return configFiles;
-    }
-
     private Set<String> toFeatureStrings(Profile.Feature... features) {
         return Arrays.stream(features).map(f -> {
-            if (Profile.getFeatureVersions(f.getKey()).size() > 1) {
+            if (f.getVersion() > 1 || Profile.getFeatureVersions(f.getKey()).size() > 1) {
                 return f.getVersionedKey();
             }
-            return f.name().toLowerCase().replace('_', '-');
+            return f.getUnversionedKey();
         }).collect(Collectors.toSet());
     }
 

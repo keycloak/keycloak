@@ -18,6 +18,9 @@
 package org.keycloak.storage.ldap.mappers.membership;
 
 
+import java.util.List;
+import java.util.Set;
+
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -29,10 +32,6 @@ import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.utils.StreamsUtil;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Strategy for how to retrieve LDAP roles of user
@@ -94,26 +93,26 @@ public interface UserRolesRetrieveStrategy {
 
         @Override
         public List<LDAPObject> getLDAPRoleMappings(CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapUser, LDAPConfig ldapConfig) {
-            Set<String> memberOfValues = ldapUser.getAttributeAsSet(roleOrGroupMapper.getConfig().getMemberOfLdapAttribute());
-            if (memberOfValues == null || memberOfValues.isEmpty()) {
-                return Collections.emptyList();
-            }
-
             try (LDAPQuery ldapQuery = roleOrGroupMapper.createLDAPGroupQuery()) {
-
-                String rdnAttr = roleOrGroupMapper.getConfig().getLDAPGroupNameLdapAttribute();
+                CommonLDAPGroupMapperConfig config = roleOrGroupMapper.getConfig();
+                String rdnAttr = config.getLDAPGroupNameLdapAttribute();
                 LDAPQueryConditionsBuilder conditionBuilder = new LDAPQueryConditionsBuilder();
-
+                Set<String> memberOfValues = ldapUser.getAttributeAsSetOrDefault(config.getMemberOfLdapAttribute(), Set.of());
                 // load only those groups/roles the user is memberOf
                 // we do this by query to apply defined custom filters
-                ldapQuery.addWhereCondition(conditionBuilder.orCondition(
-                        memberOfValues.stream()
-                            .map(LDAPDn::fromString)
-                            .filter(roleDN -> roleDN.isDescendantOf(LDAPDn.fromString(roleOrGroupMapper.getConfig().getLDAPGroupsDn())))
-                            .map(roleDN -> conditionBuilder.equal(rdnAttr, roleDN.getFirstRdn().getAttrValue(rdnAttr)))
-                            .toArray(Condition[]::new)
-                        )
-                );
+                // and make sure the values of memberOf have the role/group base DN as its parent
+                Condition[] conditions = memberOfValues.stream()
+                        .map(LDAPDn::fromString)
+                        .filter(roleDN -> roleDN.isDescendantOf(LDAPDn.fromString(config.getLDAPGroupsDn())))
+                        .map(roleDN -> conditionBuilder.equal(rdnAttr, roleDN.getFirstRdn().getAttrValue(rdnAttr)))
+                        .toArray(Condition[]::new);
+
+                if (conditions.length == 0) {
+                    // no roles/groups to fetch based on the pre-filters applied to the memberOf values
+                    return List.of();
+                }
+
+                ldapQuery.addWhereCondition(conditionBuilder.orCondition(conditions));
 
                 return LDAPUtils.loadAllLDAPObjects(ldapQuery, ldapConfig);
             }

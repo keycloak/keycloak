@@ -20,8 +20,6 @@ package org.keycloak.protocol.oidc.grants;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
-
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
@@ -36,6 +34,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
 import org.keycloak.services.clientpolicy.context.TokenRefreshResponseContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
+
+import org.jboss.logging.Logger;
 
 /**
  * OAuth 2.0 Refresh Token Grant
@@ -59,7 +59,7 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
         String scopeParameter = getRequestedScopes();
 
         try {
-            session.clientPolicy().triggerOnEvent(new TokenRefreshContext(formParams));
+            session.clientPolicy().triggerOnEvent(new TokenRefreshContext(formParams, client));
             refreshToken = formParams.getFirst(OAuth2Constants.REFRESH_TOKEN);
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);

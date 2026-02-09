@@ -19,11 +19,10 @@ package org.keycloak.services.clientpolicy.executor;
 
 import java.util.Optional;
 
-import org.jboss.logging.Logger;
-import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
@@ -32,6 +31,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 
 public class SecureSigningAlgorithmForSignedJwtExecutor implements ClientPolicyExecutorProvider<SecureSigningAlgorithmForSignedJwtExecutor.Configuration> {
 

@@ -18,7 +18,6 @@
 package org.keycloak.protocol.oidc.grants;
 
 import org.keycloak.Config;
-
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;

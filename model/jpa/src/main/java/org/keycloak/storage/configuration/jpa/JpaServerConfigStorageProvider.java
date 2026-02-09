@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+
 import org.keycloak.storage.configuration.ServerConfigStorageProvider;
 import org.keycloak.storage.configuration.jpa.entity.ServerConfigEntity;
 

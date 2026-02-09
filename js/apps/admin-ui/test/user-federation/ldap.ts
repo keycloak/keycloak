@@ -1,6 +1,6 @@
-import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import { Page, expect } from "@playwright/test";
-import { selectItem } from "../utils/form";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation.js";
+import { type Page, expect } from "@playwright/test";
+import { selectItem } from "../utils/form.ts";
 
 const filteredConfig = ["vendor", "bindType", "useTruststoreSpi", "editMode"];
 export async function fillLdapForm(page: Page, ldap: ComponentRepresentation) {

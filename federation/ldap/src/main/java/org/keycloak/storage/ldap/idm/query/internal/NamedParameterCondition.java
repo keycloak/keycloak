@@ -18,6 +18,7 @@
 package org.keycloak.storage.ldap.idm.query.internal;
 
 import java.util.Date;
+
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPUtil;

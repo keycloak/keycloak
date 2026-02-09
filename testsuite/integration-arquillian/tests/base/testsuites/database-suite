@@ -4,7 +4,6 @@ AuthorizationTest
 ClientRegistrationTest
 EventStoreProviderTest
 ExportImportTest
-GeneratedRsaKeyProviderTest
 KcOidcBrokerTest
 LDAPUserLoginTest
 LoginTest
@@ -13,10 +12,8 @@ RefreshTokenTest
 RequiredActionUpdateProfileTest
 SSOTest
 SamlClientTest
-TransactionsTest
 UserProfileTest
 OidcAdvancedClaimToGroupMapperTest
 OidcAdvancedClaimToRoleMapperTest
-org.keycloak.testsuite.admin.**
 org.keycloak.testsuite.authz.**ManagementTest
 org.keycloak.testsuite.organization.admin.**

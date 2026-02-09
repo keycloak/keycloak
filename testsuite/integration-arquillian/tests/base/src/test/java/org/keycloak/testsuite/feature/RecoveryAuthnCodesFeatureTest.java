@@ -17,11 +17,12 @@
 
 package org.keycloak.testsuite.feature;
 
-import org.junit.Test;
 import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticatorFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+
+import org.junit.Test;
 
 public class RecoveryAuthnCodesFeatureTest extends AbstractFeatureStateTest {
 

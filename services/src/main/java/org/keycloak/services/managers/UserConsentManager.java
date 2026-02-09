@@ -18,6 +18,8 @@
 
 package org.keycloak.services.managers;
 
+import java.util.stream.Stream;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -25,7 +27,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.light.LightweightUserAdapter;
-import java.util.stream.Stream;
+
 import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 
 /**

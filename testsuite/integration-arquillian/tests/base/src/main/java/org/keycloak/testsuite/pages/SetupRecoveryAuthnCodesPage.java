@@ -1,15 +1,16 @@
 package org.keycloak.testsuite.pages;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
 import org.keycloak.testsuite.util.UIUtils;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
 
 public class SetupRecoveryAuthnCodesPage extends LogoutSessionsPage {
 

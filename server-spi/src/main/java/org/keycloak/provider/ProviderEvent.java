@@ -17,9 +17,15 @@
 
 package org.keycloak.provider;
 
+import org.keycloak.models.KeycloakSession;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface ProviderEvent {
+
+    default KeycloakSession getKeycloakSession() {
+        return null;
+    }
 }

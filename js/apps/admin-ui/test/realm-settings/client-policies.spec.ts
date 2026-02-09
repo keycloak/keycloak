@@ -1,22 +1,22 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { assertFieldError } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
+import adminClient from "../utils/AdminClient.ts";
+import { assertFieldError } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
 import {
   assertModalMessage,
   assertModalTitle,
   cancelModal,
   confirmModal,
-} from "../utils/modal";
-import { goToRealm, goToRealmSettings } from "../utils/sidebar";
+} from "../utils/modal.ts";
+import { goToRealm, goToRealmSettings } from "../utils/sidebar.ts";
 import {
   assertEmptyTable,
   assertRowExists,
   clickTableRowItem,
   searchItem,
-} from "../utils/table";
+} from "../utils/table.ts";
 import {
   addClientRolesCondition,
   addClientScopeCondition,
@@ -41,9 +41,9 @@ import {
   shouldCancelAddingCondition,
   shouldNotHaveConditionsConfigured,
   shouldReloadJSONPolicies,
-} from "./client-policies";
+} from "./client-policies.ts";
 
-test.describe("Realm settings client policies tab tests", () => {
+test.describe.serial("Realm settings client policies tab tests", () => {
   const realmName = `realm-settings-client-policies_${uuid()}`;
   const placeHolder = "Search client policy";
 
@@ -74,7 +74,7 @@ test.describe("Realm settings client policies tab tests", () => {
     await assertNotificationMessage(page, "New policy created");
   });
 
-  test.describe("Editing client policy", () => {
+  test.describe.serial("Editing client policy", () => {
     test.beforeAll(() =>
       adminClient.createClientPolicy("Test", "Test Description", realmName),
     );
@@ -175,7 +175,7 @@ test.describe("Realm settings client policies tab tests", () => {
     await shouldReloadJSONPolicies(page);
   });
 
-  test.describe("Delete client policy", () => {
+  test.describe.serial("Delete client policy", () => {
     const testPolicy = "DeletablePolicy";
     test.beforeEach(() =>
       adminClient.createClientPolicy(testPolicy, "Test Description", realmName),

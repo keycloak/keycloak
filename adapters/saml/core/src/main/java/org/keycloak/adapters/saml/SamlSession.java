@@ -17,11 +17,11 @@
 
 package org.keycloak.adapters.saml;
 
-import org.keycloak.adapters.spi.KeycloakAccount;
-
-import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.Serializable;
 import java.util.Set;
+import javax.xml.datatype.XMLGregorianCalendar;
+
+import org.keycloak.adapters.spi.KeycloakAccount;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

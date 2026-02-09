@@ -26,7 +26,7 @@ export const formatNumber = (input, format) => {
         rawValue = rawValue.substring(0, maxSize);
     }
 
-    // build the regex based based on the expected digits in each part
+    // build the regex based on the expected digits in each part
     const formatter = digitPattern.reduce((result, p) => result + `(\\d${p})`, "^");
 
     // if the current digits match the pattern we have each group of digits in an array

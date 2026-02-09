@@ -17,10 +17,10 @@
 
 package org.keycloak.operator;
 
+import java.util.Map;
+
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.smallrye.config.ConfigMapping;
-
-import java.util.Map;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>

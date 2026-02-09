@@ -22,11 +22,11 @@ package org.keycloak.userprofile;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static org.keycloak.userprofile.UserProfileConstants.ROLE_ADMIN;
-import static org.keycloak.userprofile.UserProfileConstants.ROLE_USER;
-
 import org.keycloak.models.UserModel;
 import org.keycloak.utils.StringUtil;
+
+import static org.keycloak.userprofile.UserProfileConstants.ROLE_ADMIN;
+import static org.keycloak.userprofile.UserProfileConstants.ROLE_USER;
 
 /**
  * <p>This interface represents the different contexts from where user profiles are managed. The core contexts are already
@@ -68,7 +68,7 @@ public enum UserProfileContext {
      * In this context, a user profile is managed by themselves when updating their email through an application initiated action.
      * In this context, only the {@link UserModel#EMAIL} attribute is supported.
      */
-    UPDATE_EMAIL(false, true, false, Set.of(UserModel.EMAIL)::contains);
+    UPDATE_EMAIL(false, true, true, Set.of(UserModel.EMAIL)::contains);
 
     private final boolean resetEmailVerified;
     private final Predicate<String> attributeSelector;

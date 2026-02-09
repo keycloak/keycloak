@@ -17,6 +17,10 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import java.io.IOException;
+import java.util.Map;
+import javax.xml.namespace.QName;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.POST;
@@ -27,7 +31,7 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import org.jboss.logging.Logger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
@@ -56,12 +60,10 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.DPoPUtil;
+
+import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
-import javax.xml.namespace.QName;
-import java.io.IOException;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -142,9 +144,7 @@ public class TokenEndpoint {
          * authorization_code and refresh_token grant types and extension grants such as the JWT
          * authorization grant [RFC7523])
          */
-        DPoPUtil.retrieveDPoPHeaderIfPresent(session, clientConfig, event, cors).ifPresent(dPoP -> {
-            session.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
-        });
+        DPoPUtil.handleDPoPHeader(session, event, cors, clientConfig);
 
         OAuth2GrantType.Context context = new OAuth2GrantType.Context(session, clientConfig, clientAuthAttributes,
                                                                       formParams, event, cors, tokenManager);
@@ -211,8 +211,8 @@ public class TokenEndpoint {
     }
 
     private void checkParameterDuplicated() {
-        for (String key : formParams.keySet()) {
-            if (formParams.get(key).size() != 1 && !grant.getSupportedMultivaluedRequestParameters().contains(key)) {
+        for (var entry : formParams.entrySet()) {
+            if (entry.getValue().size() != 1 && !grant.getSupportedMultivaluedRequestParameters().contains(entry.getKey())) {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "duplicated parameter",
                         Response.Status.BAD_REQUEST);
             }
