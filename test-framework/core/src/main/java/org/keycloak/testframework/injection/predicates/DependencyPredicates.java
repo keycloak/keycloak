@@ -11,4 +11,8 @@ public interface DependencyPredicates {
         return d -> d.valueType().equals(typeClass) && Objects.equals(d.ref(), ref);
     }
 
+    static Predicate<Dependency> assignableTo(Class<?> typeClass) {
+        return d -> typeClass.isAssignableFrom(d.valueType());
+    }
+
 }

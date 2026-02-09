@@ -235,20 +235,31 @@ public class Registry implements AutoCloseable {
 
     private void deployRequestedInstances() {
         requestedInstances.sort(RequestedInstanceComparator.INSTANCE);
-        while (!requestedInstances.isEmpty()) {
-            RequestedInstance requestedInstance = requestedInstances.remove(0);
 
-            if (getDeployedInstance(requestedInstance) == null) {
-                InstanceContext instance = new InstanceContext(requestedInstance.getInstanceId(), this, requestedInstance.getSupplier(), requestedInstance.getAnnotation(), requestedInstance.getValueType(), requestedInstance.getDeclaredDependencies());
-                instance.setValue(requestedInstance.getSupplier().getValue(instance));
+        while (!requestedInstances.isEmpty()) {
+            RequestedInstance nextToDeploy = requestedInstances.stream().filter(r -> {
+                List<Dependency> declaredDependencies = r.getDeclaredDependencies();
+                for (Dependency d : declaredDependencies) {
+                    if (deployedInstances.stream().noneMatch(InstanceContextPredicates.matches(d.valueType(), d.ref()))) {
+                        return false;
+                    }
+                }
+                return true;
+            }).findFirst().orElseThrow(() -> new RuntimeException("Failed to resolve next requested instance to deploy"));
+
+            requestedInstances.remove(nextToDeploy);
+
+            if (getDeployedInstance(nextToDeploy) == null) {
+                InstanceContext instance = new InstanceContext(nextToDeploy.getInstanceId(), this, nextToDeploy.getSupplier(), nextToDeploy.getAnnotation(), nextToDeploy.getValueType(), nextToDeploy.getDeclaredDependencies());
+                instance.setValue(nextToDeploy.getSupplier().getValue(instance));
                 deployedInstances.add(instance);
 
-                if (!requestedInstance.getDependents().isEmpty()) {
-                    Set<InstanceContext<?,?>> dependencies = requestedInstance.getDependents();
+                if (!nextToDeploy.getDependents().isEmpty()) {
+                    Set<InstanceContext<?,?>> dependencies = nextToDeploy.getDependents();
                     dependencies.forEach(instance::registerDependent);
                 }
 
-                logger.logCreatedInstance(requestedInstance, instance);
+                logger.logCreatedInstance(nextToDeploy, instance);
             }
         }
     }
