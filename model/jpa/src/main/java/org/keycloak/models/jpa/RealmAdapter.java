@@ -642,12 +642,12 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     @Override
     public CibaConfig getCibaPolicy() {
-        return new CibaConfig(this);
+        return CibaConfig.fromModel(this);
     }
 
     @Override
     public ParConfig getParPolicy() {
-        return new ParConfig(this);
+        return ParConfig.fromModel(this);
     }
 
     @Override
