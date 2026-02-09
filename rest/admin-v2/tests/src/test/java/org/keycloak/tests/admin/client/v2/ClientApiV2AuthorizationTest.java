@@ -1,6 +1,9 @@
 package org.keycloak.tests.admin.client.v2;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -12,7 +15,8 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
-import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.admin.AdminClientFactory;
+import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -31,6 +35,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -48,37 +53,30 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @KeycloakIntegrationTest(config = ClientApiV2AuthorizationTest.AdminV2WithAuthzConfig.class)
 public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
 
-    private static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080/admin/api/authztest/clients/v2";
-
     @InjectHttpClient
     CloseableHttpClient client;
 
     @InjectRealm(config = AuthorizationRealmConfig.class)
     ManagedRealm testRealm;
 
-    @InjectAdminClient(ref = "realmAdminClient", client = "test-client", user = "realm-admin",
-                      mode = InjectAdminClient.Mode.MANAGED_REALM)
-    Keycloak realmAdminClient;
+    @InjectAdminClientFactory
+    AdminClientFactory adminClientFactory;
 
-    @InjectAdminClient(ref = "viewClientsAdminClient", client = "test-client", user = "view-clients-admin",
-                      mode = InjectAdminClient.Mode.MANAGED_REALM)
-    Keycloak viewClientsAdminClient;
+    @Override
+    public String getRealmName() {
+        return "authztest";
+    }
 
-    @InjectAdminClient(ref = "manageClientsAdminClient", client = "test-client", user = "manage-clients-admin",
-                      mode = InjectAdminClient.Mode.MANAGED_REALM)
-    Keycloak manageClientsAdminClient;
+    private static final Map<String, Keycloak> adminClients = new HashMap<>();
 
-    @InjectAdminClient(ref = "queryClientsAdminClient", client = "test-client", user = "query-clients-admin",
-                      mode = InjectAdminClient.Mode.MANAGED_REALM)
-    Keycloak queryClientsAdminClient;
-
-    @InjectAdminClient(ref = "noAccessClient", client = "test-client", user = "no-access-user",
-                      mode = InjectAdminClient.Mode.MANAGED_REALM)
-    Keycloak noAccessAdminClient;
-
-    @InjectAdminClient(ref = "manageRealmAdminClient", client = "test-client", user = "manage-realm-admin",
-                      mode = InjectAdminClient.Mode.MANAGED_REALM)
-    Keycloak manageRealmAdminClient;
+    @BeforeEach
+    public void setupClients() {
+        if (adminClients.isEmpty()) {
+            for (String currentUser : CURRENT_USERS) {
+                adminClients.put(currentUser, createAdminClient(currentUser));
+            }
+        }
+    }
 
     /**
      * GET /clients
@@ -86,10 +84,10 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
      */
     @Test
     public void listClients() throws Exception {
-        HttpGet request = new HttpGet(HOSTNAME_LOCAL_ADMIN);
+        HttpGet request = new HttpGet(getClientsApiUrl());
 
         // realm-admin: should be able to list clients (has all permissions)
-        setAuthHeader(request, realmAdminClient);
+        setAuthHeader(request, adminClients.get("realm-admin"));
         try (var response = client.execute(request)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
             var clients = mapper.readValue(response.getEntity().getContent(), new TypeReference<List<BaseClientRepresentation>>() {
@@ -98,21 +96,21 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         }
 
         // view-clients: should be able to list clients (has requireList via canView)
-        setAuthHeader(request, viewClientsAdminClient);
+        setAuthHeader(request, adminClients.get("view-clients"));
         try (var response = client.execute(request)) {
             EntityUtils.consumeQuietly(response.getEntity());
             assertEquals(200, response.getStatusLine().getStatusCode());
         }
 
         // query-clients: should be able to list clients (has requireList via QUERY_CLIENTS role)
-        setAuthHeader(request, queryClientsAdminClient);
+        setAuthHeader(request, adminClients.get("query-clients"));
         try (var response = client.execute(request)) {
             EntityUtils.consumeQuietly(response.getEntity());
             assertEquals(200, response.getStatusLine().getStatusCode());
         }
 
         // no-access: should get 403 (lacks requireList)
-        setAuthHeader(request, noAccessAdminClient);
+        setAuthHeader(request, adminClients.get("no-access"));
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
         }
@@ -125,8 +123,8 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
     @Test
     public void createClient() throws Exception {
         // realm-admin: should be able to create clients (has requireManage)
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
-        setAuthHeader(request, realmAdminClient);
+        HttpPost request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request, adminClients.get("realm-admin"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-create-realm-admin"))));
         try (var response = client.execute(request)) {
@@ -135,8 +133,8 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         }
 
         // manage-clients: should be able to create clients (has requireManage)
-        request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
-        setAuthHeader(request, manageClientsAdminClient);
+        request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request, adminClients.get("manage-clients"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-create-manage"))));
         try (var response = client.execute(request)) {
@@ -145,8 +143,8 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         }
 
         // view-clients: should get 403 (lacks requireManage)
-        request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
-        setAuthHeader(request, viewClientsAdminClient);
+        request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request, adminClients.get("view-clients"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-create-view"))));
         try (var response = client.execute(request)) {
@@ -154,8 +152,8 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         }
 
         // query-clients: should get 403 (lacks requireManage)
-        request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
-        setAuthHeader(request, queryClientsAdminClient);
+        request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request, adminClients.get("query-clients"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-create-query"))));
         try (var response = client.execute(request)) {
@@ -163,8 +161,8 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         }
 
         // no-access: should get 403 (lacks requireManage)
-        request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
-        setAuthHeader(request, noAccessAdminClient);
+        request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request, adminClients.get("no-access"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-create-noaccess"))));
         try (var response = client.execute(request)) {
@@ -178,10 +176,10 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
      */
     @Test
     public void getClient() throws Exception {
-        HttpGet request = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/test-client");
+        HttpGet request = new HttpGet(getClientsApiUrl() + "/test-client");
 
         // view-clients: should be able to get individual client (has requireView)
-        setAuthHeader(request, viewClientsAdminClient);
+        setAuthHeader(request, adminClients.get("view-clients"));
         try (var response = client.execute(request)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
             OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent())
@@ -190,13 +188,13 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         }
 
         // query-clients: should get 403 (can list but not view individual clients)
-        setAuthHeader(request, queryClientsAdminClient);
+        setAuthHeader(request, adminClients.get("query-clients"));
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
         }
 
         // no-access: should get 403 (lacks requireView)
-        setAuthHeader(request, noAccessAdminClient);
+        setAuthHeader(request, adminClients.get("no-access"));
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
         }
@@ -208,10 +206,10 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
      */
     @Test
     public void getNonExistentClient() throws Exception {
-        HttpGet request = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/non-existent-client");
+        HttpGet request = new HttpGet(getClientsApiUrl() + "/non-existent-client");
 
         // view-clients: should get 404 (has canList, client doesn't exist)
-        setAuthHeader(request, viewClientsAdminClient);
+        setAuthHeader(request, adminClients.get("view-clients"));
         try (var response = client.execute(request)) {
             assertEquals(404, response.getStatusLine().getStatusCode());
         }
@@ -219,7 +217,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         // TODO - our V2 logic does not handle the anti-ID phishing yet
         // TODO - issue https://github.com/keycloak/keycloak/issues/46010
         // no-access: should get 403 (lacks canList, prevents ID phishing)
-        // setAuthHeader(request, noAccessAdminClient);
+        // setAuthHeader(request, clients.get("no-access"));
         // try (var response = client.execute(request)) {
         //     assertEquals(403, response.getStatusLine().getStatusCode());
         // }
@@ -232,9 +230,9 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
     @Test
     public void updateClient() throws Exception {
         // realm-admin: should be able to update clients (has requireConfigure)
-        createTestClient("test-update-admin", realmAdminClient);
-        HttpPut request = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-update-admin");
-        setAuthHeader(request, realmAdminClient);
+        createTestClient("test-update-admin");
+        HttpPut request = new HttpPut(getClientsApiUrl() + "/test-update-admin");
+        setAuthHeader(request, adminClients.get("realm-admin"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-update-admin", "Updated"))));
         try (var response = client.execute(request)) {
@@ -243,9 +241,9 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         }
 
         // manage-clients: should be able to update clients (has requireConfigure)
-        createTestClient("test-update-manage", realmAdminClient);
-        request = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-update-manage");
-        setAuthHeader(request, manageClientsAdminClient);
+        createTestClient("test-update-manage");
+        request = new HttpPut(getClientsApiUrl() + "/test-update-manage");
+        setAuthHeader(request, adminClients.get("manage-clients"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-update-manage", "Updated"))));
         try (var response = client.execute(request)) {
@@ -254,9 +252,9 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         }
 
         // view-clients: should get 403 (lacks requireConfigure)
-        createTestClient("test-update-view", realmAdminClient);
-        request = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-update-view");
-        setAuthHeader(request, viewClientsAdminClient);
+        createTestClient("test-update-view");
+        request = new HttpPut(getClientsApiUrl() + "/test-update-view");
+        setAuthHeader(request, adminClients.get("view-clients"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-update-view", "Updated"))));
         try (var response = client.execute(request)) {
@@ -271,9 +269,9 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
     @Test
     public void patchClient() throws Exception {
         // realm-admin: should be able to patch clients (has requireConfigure)
-        createTestClient("test-patch-admin", realmAdminClient);
-        HttpPatch request = new HttpPatch(HOSTNAME_LOCAL_ADMIN + "/test-patch-admin");
-        setAuthHeader(request, realmAdminClient);
+        createTestClient("test-patch-admin");
+        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/test-patch-admin");
+        setAuthHeader(request, adminClients.get("realm-admin"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, "application/merge-patch+json");
         OIDCClientRepresentation patch = new OIDCClientRepresentation();
         patch.setDescription("Patched");
@@ -284,9 +282,9 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         }
 
         // view-clients: should get 403 (lacks requireConfigure)
-        createTestClient("test-patch-view", realmAdminClient);
-        request = new HttpPatch(HOSTNAME_LOCAL_ADMIN + "/test-patch-view");
-        setAuthHeader(request, viewClientsAdminClient);
+        createTestClient("test-patch-view");
+        request = new HttpPatch(getClientsApiUrl() + "/test-patch-view");
+        setAuthHeader(request, adminClients.get("view-clients"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, "application/merge-patch+json");
         request.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
         try (var response = client.execute(request)) {
@@ -301,41 +299,41 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
     @Test
     public void deleteClient() throws Exception {
         // realm-admin: should be able to delete clients (has requireManage)
-        createTestClient("test-delete-admin", realmAdminClient);
-        HttpDelete request = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/test-delete-admin");
-        setAuthHeader(request, realmAdminClient);
+        createTestClient("test-delete-admin");
+        HttpDelete request = new HttpDelete(getClientsApiUrl() + "/test-delete-admin");
+        setAuthHeader(request, adminClients.get("realm-admin"));
         try (var response = client.execute(request)) {
             assertEquals(204, response.getStatusLine().getStatusCode());
         }
 
         // manage-clients: should be able to delete clients (has requireManage)
-        createTestClient("test-delete-manage", realmAdminClient);
-        request = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/test-delete-manage");
-        setAuthHeader(request, manageClientsAdminClient);
+        createTestClient("test-delete-manage");
+        request = new HttpDelete(getClientsApiUrl() + "/test-delete-manage");
+        setAuthHeader(request, adminClients.get("manage-clients"));
         try (var response = client.execute(request)) {
             assertEquals(204, response.getStatusLine().getStatusCode());
         }
 
         // view-clients: should get 403 (lacks requireManage)
-        createTestClient("test-delete-view", realmAdminClient);
-        request = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/test-delete-view");
-        setAuthHeader(request, viewClientsAdminClient);
+        createTestClient("test-delete-view");
+        request = new HttpDelete(getClientsApiUrl() + "/test-delete-view");
+        setAuthHeader(request, adminClients.get("view-clients"));
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
         }
 
         // query-clients: should get 403 (lacks requireManage)
-        createTestClient("test-delete-query", realmAdminClient);
-        request = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/test-delete-query");
-        setAuthHeader(request, queryClientsAdminClient);
+        createTestClient("test-delete-query");
+        request = new HttpDelete(getClientsApiUrl() + "/test-delete-query");
+        setAuthHeader(request, adminClients.get("query-clients"));
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
         }
 
         // no-access: should get 403 (lacks requireManage)
-        createTestClient("test-delete-noaccess", realmAdminClient);
-        request = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/test-delete-noaccess");
-        setAuthHeader(request, noAccessAdminClient);
+        createTestClient("test-delete-noaccess");
+        request = new HttpDelete(getClientsApiUrl() + "/test-delete-noaccess");
+        setAuthHeader(request, adminClients.get("no-access"));
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
         }
@@ -352,7 +350,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         HttpGet request = new HttpGet(ownRealmUrl);
 
         // should successfully access own realm (200 OK)
-        setAuthHeader(request, realmAdminClient);
+        setAuthHeader(request, adminClients.get("realm-admin"));
         try (var response = client.execute(request)) {
             EntityUtils.consumeQuietly(response.getEntity());
             assertEquals(200, response.getStatusLine().getStatusCode());
@@ -361,7 +359,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         // Test accessing non-existent realm - should return 404
         String nonExistentRealmUrl = "http://localhost:8080/admin/realms/non-existent-realm";
         request = new HttpGet(nonExistentRealmUrl);
-        setAuthHeader(request, realmAdminClient);
+        setAuthHeader(request, adminClients.get("realm-admin"));
         try (var response = client.execute(request)) {
             assertEquals(404, response.getStatusLine().getStatusCode());
         }
@@ -371,7 +369,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         // trying to access another realm's admin resource should be forbidden
         String differentRealmUrl = "http://localhost:8080/admin/realms/master";
         request = new HttpGet(differentRealmUrl);
-        setAuthHeader(request, realmAdminClient);
+        setAuthHeader(request, adminClients.get("realm-admin"));
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
         }
@@ -384,8 +382,8 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
     @Test
     public void createClientWithRoles() throws Exception {
         // manage-clients: should be able to create clients with roles
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
-        setAuthHeader(request, manageClientsAdminClient);
+        HttpPost request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request, adminClients.get("manage-clients"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         OIDCClientRepresentation rep = createClientRep("test-create-roles");
         rep.setRoles(Set.of("role1", "role2"));
@@ -398,8 +396,8 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         }
 
         // view-clients: should get 403 (lacks requireManage for clients)
-        request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
-        setAuthHeader(request, viewClientsAdminClient);
+        request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request, adminClients.get("view-clients"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         rep = createClientRep("test-create-roles-view");
         rep.setRoles(Set.of("role1"));
@@ -416,9 +414,9 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
     @Test
     public void updateClientRoles() throws Exception {
         // manage-clients: should be able to update client roles
-        createTestClient("test-update-roles-manage", realmAdminClient);
-        HttpPut request = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-update-roles-manage");
-        setAuthHeader(request, manageClientsAdminClient);
+        createTestClient("test-update-roles-manage");
+        HttpPut request = new HttpPut(getClientsApiUrl() + "/test-update-roles-manage");
+        setAuthHeader(request, adminClients.get("manage-clients"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         OIDCClientRepresentation rep = createClientRep("test-update-roles-manage");
         rep.setRoles(Set.of("new-role1", "new-role2"));
@@ -431,9 +429,9 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         }
 
         // view-clients: should get 403 (lacks requireConfigure)
-        createTestClient("test-update-roles-view", realmAdminClient);
-        request = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-update-roles-view");
-        setAuthHeader(request, viewClientsAdminClient);
+        createTestClient("test-update-roles-view");
+        request = new HttpPut(getClientsApiUrl() + "/test-update-roles-view");
+        setAuthHeader(request, adminClients.get("view-clients"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         rep = createClientRep("test-update-roles-view");
         rep.setRoles(Set.of("new-role"));
@@ -443,9 +441,9 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         }
 
         // manage-realm-admin: should get 403 (has MANAGE_REALM but lacks auth.roles().requireManage() for client-specific roles)
-        createTestClient("test-update-roles-realm", realmAdminClient);
-        request = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-update-roles-realm");
-        setAuthHeader(request, manageRealmAdminClient);
+        createTestClient("test-update-roles-realm");
+        request = new HttpPut(getClientsApiUrl() + "/test-update-roles-realm");
+        setAuthHeader(request, adminClients.get("manage-realm"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         rep = createClientRep("test-update-roles-realm");
         rep.setRoles(Set.of("forbidden-role"));
@@ -469,9 +467,9 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         return rep;
     }
 
-    private void createTestClient(String clientId, Keycloak adminClient) throws Exception {
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
-        setAuthHeader(request, adminClient);
+    private void createTestClient(String clientId) throws Exception {
+        HttpPost request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request, adminClients.get("realm-admin"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep(clientId))));
         try (var response = client.execute(request)) {
@@ -480,12 +478,24 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
         }
     }
 
+    private Keycloak createAdminClient(String username) {
+        return adminClientFactory.create()
+                .realm(getRealmName())
+                .clientId("test-client")
+                .clientSecret("test-secret")
+                .username(username)
+                .password("password")
+                .build();
+    }
+
     public static class AdminV2WithAuthzConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.CLIENT_ADMIN_API_V2, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         }
     }
+
+    private static final Set<String> CURRENT_USERS = new HashSet<>();
 
     public static class AuthorizationRealmConfig implements RealmConfig {
         @Override
@@ -502,46 +512,51 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test{
                     .emailVerified(true)
                     .password("password")
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
+            CURRENT_USERS.add("realm-admin");
 
             // Role: view-clients
-            realm.addUser("view-clients-admin")
+            realm.addUser("view-clients")
                     .name("View", "Clients")
                     .email("viewclients@localhost")
                     .emailVerified(true)
                     .password("password")
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_CLIENTS);
+            CURRENT_USERS.add("view-clients");
 
             // Role: manage-clients
-            realm.addUser("manage-clients-admin")
+            realm.addUser("manage-clients")
                     .name("Manage", "Clients")
                     .email("manageclients@localhost")
                     .emailVerified(true)
                     .password("password")
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_CLIENTS);
+            CURRENT_USERS.add("manage-clients");
 
             // Role: query-clients
-            realm.addUser("query-clients-admin")
+            realm.addUser("query-clients")
                     .name("Query", "Clients")
                     .email("queryclients@localhost")
                     .emailVerified(true)
                     .password("password")
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_CLIENTS);
+            CURRENT_USERS.add("query-clients");
 
             // NO role
-            realm.addUser("no-access-user")
+            realm.addUser("no-access")
                     .name("No", "Access")
                     .email("noaccess@localhost")
                     .emailVerified(true)
                     .password("password");
+            CURRENT_USERS.add("no-access");
 
             // Role: manage-realm
-            realm.addUser("manage-realm-admin")
+            realm.addUser("manage-realm")
                     .name("Manage", "Realm")
                     .email("managerealm@localhost")
                     .emailVerified(true)
                     .password("password")
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_REALM);
-
+            CURRENT_USERS.add("manage-realm");
             return realm;
         }
     }

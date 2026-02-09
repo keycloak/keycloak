@@ -19,7 +19,7 @@ public class ClientApiV2DisabledTest extends AbstractClientApiV2Test {
 
     @Test
     public void getClient() throws Exception {
-        HttpGet request = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/account");
+        HttpGet request = new HttpGet(getClientsApiUrl() + "/realms/master/clients/account");
         try (var response = client.execute(request)) {
             assertEquals(404, response.getStatusLine().getStatusCode());
         }

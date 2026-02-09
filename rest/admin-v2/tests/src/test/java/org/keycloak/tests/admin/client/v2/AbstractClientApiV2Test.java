@@ -9,8 +9,15 @@ import org.apache.http.HttpMessage;
 import org.junit.jupiter.api.BeforeAll;
 
 public abstract class AbstractClientApiV2Test {
-    protected static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080/admin/api/master/clients/v2";
     protected static ObjectMapper mapper;
+
+    public String getRealmName() {
+        return "master";
+    }
+
+    public String getClientsApiUrl() {
+        return "http://localhost:8080/admin/api/%s/clients/v2".formatted(getRealmName());
+    }
 
     @BeforeAll
     public static void setupMapper() {

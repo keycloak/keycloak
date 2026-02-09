@@ -52,7 +52,6 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpMessage;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpPatch;
@@ -62,7 +61,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -88,24 +86,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @author <a href="mailto:erik.dewit@gmail.com">Erik de Wit</a>
  */
 @KeycloakIntegrationTest(config = ClientPoliciesV2Test.AdminV2Config.class)
-public class ClientPoliciesV2Test {
-
-    public static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080/admin/api/master/clients/v2";
+public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
     private static final String PROFILE_NAME = "TestProfile";
     private static final String POLICY_NAME = "TestPolicy";
     
-    private static ObjectMapper mapper;
-
     @InjectHttpClient
     CloseableHttpClient client;
 
     @InjectAdminClient
     Keycloak adminClient;
-
-    @BeforeAll
-    public static void setupMapper() {
-        mapper = new ObjectMapper();
-    }
 
     @AfterEach
     public void cleanup() throws Exception {
@@ -130,7 +119,7 @@ public class ClientPoliciesV2Test {
         setupPolicyClientIdAndSecretNotAcceptable();
 
         // Try to create a client with client-secret authenticator (which should be rejected)
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -165,7 +154,7 @@ public class ClientPoliciesV2Test {
         setupPolicyWithAutoConfiguration();
 
         // Create a confidential client with an auth method - policy should allow it
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -202,7 +191,7 @@ public class ClientPoliciesV2Test {
     @Test
     public void publicClientWithoutAuth() throws Exception {
         // Create a client without specifying auth - should be created as public client
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -230,7 +219,7 @@ public class ClientPoliciesV2Test {
     @Test
     public void updateClientViaPutWithUnacceptableAuthType() throws Exception {
         // First create a client with acceptable auth type before policy is set
-        HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-put-update-client");
+        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/test-put-update-client");
         setAuthHeader(createRequest);
         createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -253,7 +242,7 @@ public class ClientPoliciesV2Test {
         setupPolicyClientIdAndSecretNotAcceptable();
 
         // Try to update the client to use an unacceptable auth type
-        HttpPut updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-put-update-client");
+        HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/test-put-update-client");
         setAuthHeader(updateRequest);
         updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -278,7 +267,7 @@ public class ClientPoliciesV2Test {
     @Test
     public void updateClientViaPutWithAcceptableAuthType() throws Exception {
         // First create a client BEFORE the policy is set
-        HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-put-update-client");
+        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/test-put-update-client");
         setAuthHeader(createRequest);
         createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -301,7 +290,7 @@ public class ClientPoliciesV2Test {
         setupPolicyClientIdAndSecretNotAcceptable();
 
         // Update the client to use another acceptable auth type
-        HttpPut updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-put-update-client");
+        HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/test-put-update-client");
         setAuthHeader(updateRequest);
         updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -323,7 +312,7 @@ public class ClientPoliciesV2Test {
     @Test
     public void updateClientViaPatchWithUnacceptableAuthType() throws Exception {
         // First create a client with acceptable auth type
-        HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-patch-update-client");
+        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/test-patch-update-client");
         setAuthHeader(createRequest);
         createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -346,7 +335,7 @@ public class ClientPoliciesV2Test {
         setupPolicyClientIdAndSecretNotAcceptable();
 
         // Try to patch the client to use an unacceptable auth type
-        HttpPatch patchRequest = new HttpPatch(HOSTNAME_LOCAL_ADMIN + "/test-patch-update-client");
+        HttpPatch patchRequest = new HttpPatch(getClientsApiUrl() + "/test-patch-update-client");
         setAuthHeader(patchRequest);
         patchRequest.setHeader(HttpHeaders.CONTENT_TYPE, AdminApi.CONTENT_TYPE_MERGE_PATCH);
 
@@ -373,7 +362,7 @@ public class ClientPoliciesV2Test {
     @Test
     public void policyAppliedOnUpdateWithoutAuthTypeChange() throws Exception {
         // Create a client BEFORE the policy is set
-        HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-put-update-client");
+        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/test-put-update-client");
         setAuthHeader(createRequest);
         createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -396,7 +385,7 @@ public class ClientPoliciesV2Test {
         setupPolicyClientIdAndSecretNotAcceptable();
 
         // Update client without changing auth type (just change description)
-        HttpPut updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-put-update-client");
+        HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/test-put-update-client");
         setAuthHeader(updateRequest);
         updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -518,7 +507,7 @@ public class ClientPoliciesV2Test {
 
     private void cleanupClient(String clientId) {
         try {
-            HttpDelete deleteRequest = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/" + clientId);
+            HttpDelete deleteRequest = new HttpDelete(getClientsApiUrl() + "/" + clientId);
             setAuthHeader(deleteRequest);
             try (var response = client.execute(deleteRequest)) {
                 EntityUtils.consumeQuietly(response.getEntity());
