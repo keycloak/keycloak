@@ -11,7 +11,9 @@ describe("Clients V2 API", () => {
   let currentClientId: string;
 
   before(async () => {
-    kcAdminClient = new KeycloakAdminClient();
+    kcAdminClient = new KeycloakAdminClient({
+      enableExperimentalApis: true,
+    });
     await kcAdminClient.auth(credentials);
 
     // Create a client for testing using v2 API

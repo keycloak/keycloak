@@ -11,8 +11,17 @@ components:
           type: string
         certificate:
           type: string
+    BaseRepresentation:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Resource identifier
+      additionalProperties: true
     BaseClientRepresentation:
       type: object
+      allOf:
+      - $ref: "#/components/schemas/BaseRepresentation"
       properties:
         clientId:
           type: string

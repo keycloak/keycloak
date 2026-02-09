@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 public class BaseRepresentation {
