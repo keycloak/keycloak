@@ -5,11 +5,11 @@ import java.util.function.Consumer;
 import org.jboss.logging.Logger;
 import org.testcontainers.containers.output.OutputFrame;
 
-public class JBossLogConsumer implements Consumer<OutputFrame> {
+public class JBossContainerLogConsumer implements Consumer<OutputFrame> {
 
     private final Logger logger;
 
-    public JBossLogConsumer(Logger logger) {
+    public JBossContainerLogConsumer(Logger logger) {
         this.logger = logger;
     }
 

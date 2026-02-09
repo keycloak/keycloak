@@ -5,7 +5,7 @@ import org.keycloak.testframework.annotations.InjectTestDatabase;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
-public class TiDBDatabaseSupplier extends AbstractDatabaseSupplier {
+public class TiDBDatabaseSupplier extends AbstractContainerDatabaseSupplier {
 
     @Override
     public String getAlias() {

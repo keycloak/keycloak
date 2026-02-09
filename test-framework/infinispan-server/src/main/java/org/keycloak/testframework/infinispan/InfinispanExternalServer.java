@@ -2,7 +2,7 @@ package org.keycloak.testframework.infinispan;
 
 import java.util.Map;
 
-import org.keycloak.testframework.logging.JBossLogConsumer;
+import org.keycloak.testframework.logging.JBossContainerLogConsumer;
 import org.keycloak.testframework.util.ContainerImages;
 
 import org.infinispan.testcontainers.InfinispanContainer;
@@ -23,7 +23,7 @@ public class InfinispanExternalServer extends InfinispanContainer implements Inf
         super(dockerImageName);
         withUser(USER);
         withPassword(PASSWORD);
-        withLogConsumer(new JBossLogConsumer(Logger.getLogger("managed.infinispan")));
+        withLogConsumer(new JBossContainerLogConsumer(Logger.getLogger("managed.infinispan")));
         addFixedExposedPort(11222, 11222);
     }
 
