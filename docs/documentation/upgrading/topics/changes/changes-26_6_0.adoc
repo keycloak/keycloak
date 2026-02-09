@@ -15,7 +15,7 @@ It was also not aligned with how other script-based features work in {project_na
 If you have existing JavaScript-based policies, make sure to enable the `scripts` feature when starting {project_name}.
 
 === Stricter Validation for Client URIs (secure-client-uris)
-The 'secure-client-uris' executor has been updated to enforce stricter validation on Client URIs. This aligns with FAPI 2.0 security requirements by mandating TLS (HTTPS) for client endpoints.
+The 'secure-client-uris' client policy executor has been updated to enforce stricter validation on Client URIs. This aligns with FAPI 2.0 security requirements by mandating TLS (HTTPS) for client endpoints.
 
 HTTPS Enforcement: The following URIs must now use the https scheme. Existing clients configured with http in these fields will fail validation during updates:
 'Post logout redirect URIs', 'Sector Identifier URI' (Pairwise Subject Identifier mapper configuration), 'Logo URL', 'Policy URL', and 'Terms of Service URL'.

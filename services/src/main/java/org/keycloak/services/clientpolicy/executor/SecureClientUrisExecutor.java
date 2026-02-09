@@ -140,20 +140,16 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Cl
             confirmSecureUris(resolvedPostLogoutUrls, "postLogoutUris");
         }
 
-        // sector_identifier_uri
-        String sectorIdentifierUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(SecureClientUrisExecutorFactory.SECTOR_IDENTIFIER_URI);
-        if (sectorIdentifierUri != null) confirmSecureUris(List.of(sectorIdentifierUri), "sectorIdentifierUri");
-
         // logoUri
-        String logoUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(SecureClientUrisExecutorFactory.LOGO_URI);
+        String logoUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.LOGO_URI);
         if (logoUri != null) confirmSecureUris(List.of(logoUri), "logoUri");
 
         // termsOfServiceUri
-        String termsOfServiceUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(SecureClientUrisExecutorFactory.TOS_URI);
+        String termsOfServiceUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.TOS_URI);
         if (termsOfServiceUri != null) confirmSecureUris(List.of(termsOfServiceUri), "tosUri");
 
         // policyUri
-        String policyUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(SecureClientUrisExecutorFactory.POLICY_URI);
+        String policyUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.POLICY_URI);
         if (policyUri != null) confirmSecureUris(List.of(policyUri), "policyUri");
     }
 

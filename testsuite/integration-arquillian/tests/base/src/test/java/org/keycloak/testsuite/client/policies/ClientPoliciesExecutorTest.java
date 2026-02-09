@@ -1344,19 +1344,6 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         try {
             updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
-                // OIDC: sector_identifier_uri
-                Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
-                attributes.put("sectorIdentifierUri", "http://example.com/sector");
-                clientRep.setAttributes(attributes);
-            });
-            fail();
-        } catch (ClientPolicyException e) {
-            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getError());
-            assertEquals("Invalid sectorIdentifierUri", e.getErrorDetail());
-        }
-
-        try {
-            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
                 // OIDC: logo_uri
                 Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
                 attributes.put("logoUri", "http://client.example.com/logo/");
@@ -1385,7 +1372,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
             updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
                 // OIDC: policy_uri
                 Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
-                attributes.put(SecureClientUrisExecutorFactory.POLICY_URI, "http://client.example.com/policy/");
+                attributes.put("policyUri", "http://client.example.com/policy/");
                 clientRep.setAttributes(attributes);
             });
             fail();

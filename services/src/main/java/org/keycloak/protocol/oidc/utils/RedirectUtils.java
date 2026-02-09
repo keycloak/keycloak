@@ -45,7 +45,6 @@ import org.jboss.logging.Logger;
 public class RedirectUtils {
 
     public static final Set<String> LOOPBACK_INTERFACES = new HashSet<>(Arrays.asList("localhost", "127.0.0.1", "[::1]"));
-    public static final String INCLUDE_REDIRECTS = "+";
 
     private static final Logger logger = Logger.getLogger(RedirectUtils.class);
 
@@ -222,8 +221,8 @@ public class RedirectUtils {
                                                        String rootUrl, List<String> redirectUris, boolean returnAsOrigins) {
 
         Set<String> refactoredUrls = (origUrls != null) ? new HashSet<>(origUrls) : new HashSet<>();
-        if (refactoredUrls.contains(INCLUDE_REDIRECTS)) {
-            refactoredUrls.remove(INCLUDE_REDIRECTS);
+        if (refactoredUrls.contains(Constants.INCLUDE_REDIRECTS)) {
+            refactoredUrls.remove(Constants.INCLUDE_REDIRECTS);
 
             Set<String> redirectsToProcess = (redirectUris != null) ? new HashSet<>(redirectUris) : Collections.emptySet();
             for (String redirectUri : resolveValidRedirects(session, rootUrl, redirectsToProcess)) {
