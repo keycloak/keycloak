@@ -53,6 +53,97 @@ If the org is linked with multiple identity providers, the organization authenti
 Once linked to an organization, the identity provider can be managed just like any other in a realm by accessing the *Identity Providers* section in the menu. However, the options herein described are only available when managing the identity provider in the scope of an organization. The only exception is the
  *Hide on login page* option that is present here for convenience.
 
+=== Mapping federated users to organization groups
+
+When an identity provider is linked to an organization, you can configure mappers to automatically assign users authenticating through the IdP to organization groups based on claims or attributes from the external IdP.
+
+==== Using the Hardcoded Group mapper
+
+The Hardcoded Group mapper automatically adds all users authenticating through the IdP to a specific group.
+
+.Procedure
+
+. Click *Identity Providers* in the menu.
+. Select your identity provider linked to your organization.
+. Click the *Mappers* tab.
+. Click *Add mapper*
+. Select *Hardcoded Group* mapper type.
+. Configure the mapper:
+
+Name::
+A descriptive name for this mapper.
+
+Sync Mode Override::
+How membership is managed (Import, Force, Inherit).
+
+Group::
+The group to assign users to. If the IdP is linked to an organization, you can either select realm groups or groups from that organization.
+
+. Click *Save*.
+
+IMPORTANT: Groups are filtered to the organization linked with this identity provider. If the IdP is unlinked from the organization, users will no longer be assigned to organization groups during authentication.
+
+==== Using the Advanced Group mapper
+
+The Advanced Group mapper assigns users to groups based on claim values from the external IdP.
+
+.Procedure
+
+. Click *Identity Providers* in the menu.
+. Select your identity provider linked to your organization.
+. Click the *Mappers* tab.
+. Click *Add mapper*
+. Select *Advanced Claim to Group*.
+. Configure the mapper:
+
+Name::
+A descriptive name for this mapper.
+
+Sync Mode Override::
+How membership is managed (Import, Force, Inherit).
+
+Claims::
+Key-value pairs to match claims from the external IdP. Add claim names and their expected values. Users matching these claim values will be assigned to the specified group.
+
+Regex Claim Values::
+When enabled, claim values are treated as regular expressions for pattern matching. When disabled, values must match exactly.
+
+Group::
+The target group. If the IdP is linked to an organization, you can select groups from that organization alongside with realm groups.
+
+. Click *Save*.
+
+==== Group selection behavior
+
+When configuring group mappers for an identity provider:
+
+* *IdP linked to organization:* Both realm groups and groups from that organization are selectable
+* *IdP not linked to organization:* Only realm groups are selectable
+* *IdP unlinked from organization:* Existing organization group mappings are preserved but no longer active.
+
+==== Runtime validation
+
+When a user authenticates through an identity provider:
+
+. The mapper checks if the IdP is still linked to an organization
+. If the IdP is unlinked, organization group mappings are skipped
+. Only realm group mappings continue to work
+. A warning is logged to help administrators identify outdated mapper configurations
+. Authentication continues successfully—no error is thrown to the user
+
+This ensures that unlinking an IdP from an organization doesn't break authentication, but organization-specific mappings become inactive.
+
+==== Migration considerations
+
+If you unlink an identity provider from an organization:
+
+* Review all mappers on that IdP
+* Update any mappers referencing organization groups
+* Consider changing those mappings to realm groups if needed
+* Alternatively, re-link the IdP to the organization to restore group mappings
+
+NOTE: Organization groups cannot be shared across organizations. If you move an IdP from one organization to another, update the group mappings accordingly.
+
 == Editing a linked identity provider
 
 You can edit any of the organization-related settings of a linked identity provider at any time.
