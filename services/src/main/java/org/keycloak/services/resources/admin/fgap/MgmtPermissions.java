@@ -45,6 +45,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -177,6 +178,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         }
         boolean result = identity.hasOneClientRole(clientId, adminRoles);
         if (!result && masterAdminRealm && !adminsRealm.equals(realm)
+                && AbstractOIDCProtocolMapper.getShouldUseLightweightToken(session)
                 && hasNewAdminRoles(realm, clientId, adminRoles)) {
             return true;
         }
