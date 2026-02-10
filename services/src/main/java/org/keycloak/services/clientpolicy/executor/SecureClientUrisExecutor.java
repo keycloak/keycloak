@@ -165,9 +165,11 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Cl
         }
 
         for (String uri : uris) {
-            logger.tracev("{0} = {1}", uriType, uri);
-            if (!uri.startsWith("https://")  || uri.contains("*")) {
-                throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid " + uriType);
+            if (!uri.isEmpty()) {
+                logger.tracev("{0} = {1}", uriType, uri);
+                if (!uri.startsWith("https://") || uri.contains("*")) {
+                    throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid " + uriType);
+                }
             }
         }
     }
