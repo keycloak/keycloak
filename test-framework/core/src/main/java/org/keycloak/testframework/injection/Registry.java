@@ -135,9 +135,9 @@ public class Registry implements AutoCloseable {
 
             if (currentTestInstance == null || testInstance.getClass() != currentTestInstance.getClass()) {
                 executeSetup(testInstance, TestSetup.class);
+                currentTestInstance = testInstance;
             }
 
-            currentTestInstance = testInstance;
         } catch (FatalTestClassException e) {
             requestedInstances.clear();
             fatalTestClassException = e;
@@ -282,7 +282,7 @@ public class Registry implements AutoCloseable {
         FatalTestClassException exception = fatalTestClassException;
         fatalTestClassException = null;
 
-        if (exception == null) {
+        if (exception == null && currentTestInstance != null) {
             executeSetup(currentTestInstance, TestCleanup.class);
         }
 
