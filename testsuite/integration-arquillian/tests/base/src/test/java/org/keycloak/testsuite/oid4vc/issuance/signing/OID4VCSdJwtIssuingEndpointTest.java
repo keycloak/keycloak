@@ -375,8 +375,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         // 1. Retrieving the credential-offer-uri
         final String credentialConfigurationId = clientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
         CredentialOfferURI credentialOfferURI = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .credentialConfigurationId(credentialConfigurationId)
+                .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
                 .username("john")
                 .bearerToken(token)
@@ -387,7 +386,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 2. Using the uri to get the actual credential offer
         CredentialsOffer credentialsOffer = oauth.oid4vc()
-                .credentialOfferRequest(credentialOfferURI.getNonce())
+                .credentialOfferRequest(credentialOfferURI)
                 .bearerToken(token)
                 .send()
                 .getCredentialsOffer();

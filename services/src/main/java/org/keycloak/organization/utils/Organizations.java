@@ -44,7 +44,6 @@ import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.services.ErrorResponse;
@@ -283,26 +282,6 @@ public class Organizations {
         return organizationProvider.getByMember(delegate)
                 .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
                         (!organizationProvider.isEnabled() && org.isManaged(delegate)));
-    }
-
-    /**
-     * Build a relative group path by stripping the internal organization group prefix.
-     * Organization groups have the structure: /internal-org-group/actual/path
-     * This method strips the first segment to return the relative path.
-     *
-     * @param group the group model
-     * @return the relative path without the internal organization group prefix
-     */
-    public static String buildRelativeGroupPath(GroupModel group) {
-        String fullPath = ModelToRepresentation.buildGroupPath(group);
-
-        int secondSlash = fullPath.indexOf('/', 1);
-        if (secondSlash == -1) {
-            // No second slash means this is the root group itself
-            return "/";
-        }
-
-        return fullPath.substring(secondSlash);
     }
 
     private static boolean matchesOrganizationDomain(OrganizationModel organization, UserModel user, String domain) {

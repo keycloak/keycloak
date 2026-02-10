@@ -197,8 +197,8 @@ public class RealmManager {
         String baseUrl = "/admin/" + Encode.encodePathAsIs(realm.getName()) + "/console/";
         adminConsole.setBaseUrl(baseUrl);
         adminConsole.addRedirectUri(baseUrl + "*");
-        adminConsole.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
-        adminConsole.setWebOrigins(Collections.singleton("+"));
+        adminConsole.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, Constants.INCLUDE_REDIRECTS);
+        adminConsole.setWebOrigins(Collections.singleton(Constants.INCLUDE_REDIRECTS));
 
         adminConsole.setEnabled(true);
         adminConsole.setAlwaysDisplayInConsole(false);

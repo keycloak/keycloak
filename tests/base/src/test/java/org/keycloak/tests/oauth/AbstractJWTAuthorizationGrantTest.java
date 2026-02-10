@@ -298,4 +298,15 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertSuccess("test-app", response);
     }
+
+    @Test
+    public void testDisabledIdentityProvider() {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.setEnabled(false);
+        });
+
+        String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Identity Provider is not enabled", response, events.poll());
+    }
 }

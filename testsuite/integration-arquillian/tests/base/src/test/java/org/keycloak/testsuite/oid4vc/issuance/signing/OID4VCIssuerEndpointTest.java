@@ -107,7 +107,6 @@ import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
-import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
@@ -613,46 +612,8 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return contextRoot + "/auth/realms/" + realm + "/.well-known/" + JWTVCIssuerWellKnownProviderFactory.PROVIDER_ID;
     }
 
-    protected String getCredentialOfferUriUrl(String configId) {
-        return getCredentialOfferUriUrl(configId, true, "john");
-    }
-
-    protected String getCredentialOfferUriUrl(String configId, boolean preAuthorized, String targetUser) {
-        return getCredentialOfferUriUrl(configId, preAuthorized, targetUser, null);
-    }
-
-    protected String getCredentialOfferUriUrl(String configId, Boolean preAuthorized, String appUsername, String appClientId) {
-        String res = getBasePath("test") + "credential-offer-uri?credential_configuration_id=" + configId;
-        if (preAuthorized != null)
-            res += "&pre_authorized=" + preAuthorized;
-        if (appClientId != null)
-            res += "&client_id=" + appClientId;
-        if (appUsername != null)
-            res += "&username=" + appUsername;
-        return res;
-    }
-
     protected String getCredentialOfferUrl(String nonce) {
         return getBasePath("test") + "credential-offer/" + nonce;
-    }
-
-    protected void requestCredential(String token,
-                                     String credentialEndpoint,
-                                     SupportedCredentialConfiguration offeredCredential,
-                                     CredentialResponseHandler responseHandler,
-                                     ClientScopeRepresentation expectedClientScope) throws IOException, VerificationException {
-        Oid4vcCredentialResponse credentialRequestResponse = oauth.oid4vc()
-                .credentialRequest()
-                .endpoint(credentialEndpoint)
-                .bearerToken(token)
-                .credentialConfigurationId(offeredCredential.getId())
-                .send();
-
-        assertEquals(HttpStatus.SC_OK, credentialRequestResponse.getStatusCode());
-        CredentialResponse credentialResponse = credentialRequestResponse.getCredentialResponse();
-
-        // Use response handler to customize checks based on formats.
-        responseHandler.handleCredentialResponse(credentialResponse, expectedClientScope);
     }
 
     protected void requestCredentialWithIdentifier(String token,

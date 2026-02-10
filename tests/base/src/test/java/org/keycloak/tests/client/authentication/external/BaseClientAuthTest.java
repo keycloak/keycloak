@@ -117,6 +117,17 @@ public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
         assertFailure(INTERNAL_CLIENT_ID, TOKEN_ISSUER, EXTERNAL_CLIENT_ID, jwt.getId(), events.poll());
     }
 
+    @Test
+    public void testDisabledIdentityProvider() {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.setEnabled(false);
+        });
+
+        JsonWebToken jwt = createDefaultToken();
+        assertFailure(doClientGrant(jwt));
+        assertFailure(null, TOKEN_ISSUER, EXTERNAL_CLIENT_ID, jwt.getId(), "client_not_found", events.poll());
+    }
+
     @Override
     protected OAuthIdentityProvider getIdentityProvider() {
         return identityProvider;

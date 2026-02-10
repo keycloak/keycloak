@@ -56,6 +56,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, null, null);
         assertThat(groups, hasSize(1));
         assertThat(groups.get(0).getName(), is("test-group"));
+        assertThat(groups.get(0).getPath(), is("/test-group"));
     }
 
     @Test
@@ -93,6 +94,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation();
         assertNotNull(retrieved);
         assertThat(retrieved.getName(), is("test-group"));
+        assertThat(retrieved.getPath(), is("/test-group"));
     }
 
     @Test
@@ -122,6 +124,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         // Verify the update
         GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation();
         assertThat(retrieved.getName(), is("updated-name"));
+        assertThat(retrieved.getPath(), is("/updated-name"));
         assertThat(retrieved.getDescription(), is("Updated description"));
     }
 
@@ -174,6 +177,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         List<GroupRepresentation> subGroups = orgResource.groups().group(parentId).getSubGroups(null, null, 0, 10);
         assertThat(subGroups, hasSize(1));
         assertThat(subGroups.get(0).getName(), is("child-group"));
+        assertThat(subGroups.get(0).getPath(), is("/parent-group/child-group"));
     }
 
     @Test

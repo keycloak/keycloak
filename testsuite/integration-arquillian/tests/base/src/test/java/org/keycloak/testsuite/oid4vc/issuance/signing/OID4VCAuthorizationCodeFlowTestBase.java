@@ -119,10 +119,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         Oid4vcTestContext ctx = new Oid4vcTestContext();
 
         // Get credential issuer metadata
-        CredentialIssuerMetadataResponse metadataResponse = oauth.oid4vc()
-                .issuerMetadataRequest()
-                .endpoint(getRealmMetadataPath(TEST_REALM_NAME))
-                .send();
+        CredentialIssuerMetadataResponse metadataResponse = oauth.oid4vc().doIssuerMetadataRequest();
         assertEquals(HttpStatus.SC_OK, metadataResponse.getStatusCode());
         ctx.credentialIssuer = metadataResponse.getMetadata();
 

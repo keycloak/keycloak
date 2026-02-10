@@ -31,8 +31,8 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.mappers.AbstractSAMLProtocolMapper;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
@@ -71,7 +71,7 @@ public class OrganizationGroupMembershipMapper extends AbstractSAMLProtocolMappe
         organizations.forEach(organization -> {
             // Get user's groups in this organization
             List<String> groupPaths = provider.getOrganizationGroupsByMember(organization, user)
-                .map(Organizations::buildRelativeGroupPath)
+                .map(ModelToRepresentation::buildGroupPath)
                 .toList();
 
             // Create attribute for this organization's groups
