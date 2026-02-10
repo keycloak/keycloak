@@ -100,7 +100,6 @@ import org.keycloak.quarkus.runtime.services.health.KeycloakClusterReadyHealthCh
 import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
 import org.keycloak.quarkus.runtime.storage.database.jpa.NamedJpaConnectionProviderFactory;
 import org.keycloak.quarkus.runtime.themes.FlatClasspathThemeResourceProviderFactory;
-import org.keycloak.quarkus.runtime.validation.HibernateValidatorFactoryCustomizer;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -131,7 +130,6 @@ import io.quarkus.bootstrap.logging.InitialConfigurator;
 import io.quarkus.datasource.deployment.spi.DevServicesDatasourceResultBuildItem;
 import io.quarkus.datasource.runtime.DataSourcesBuildTimeConfig;
 import io.quarkus.deployment.IsDevelopment;
-import io.quarkus.deployment.IsTest;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.Consume;
@@ -856,17 +854,6 @@ class KeycloakProcessor {
     private static void disableReadyHealthCheck(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
         ClassInfo disabledBean = index.getIndex().getClassByName(DotName.createSimple(KeycloakReadyHealthCheck.class.getName()));
         removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean.asClass(), false));
-    }
-
-    @BuildStep(onlyIfNot = IsTest.class) // needed for embedded Keycloak
-    @Consume(ProfileBuildItem.class)
-    void disableHibernateValidatorCustomizer(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_ADMIN_API_V2)) {
-            // disables the filter
-            ClassInfo disabledBean = index.getIndex()
-                    .getClassByName(DotName.createSimple(HibernateValidatorFactoryCustomizer.class.getName()));
-            removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean.asClass(), false));
-        }
     }
 
     @BuildStep
