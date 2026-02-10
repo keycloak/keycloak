@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.keycloak.common.Version;
 import org.keycloak.common.crypto.FipsMode;
@@ -35,6 +36,7 @@ import org.keycloak.platform.Platform;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.cli.Picocli;
+import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
 
@@ -55,6 +57,7 @@ import io.quarkus.maven.dependency.Dependency;
 import io.quarkus.maven.dependency.DependencyBuilder;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import picocli.CommandLine;
 
 import static java.util.Optional.ofNullable;
 
@@ -206,7 +209,9 @@ public class Keycloak {
             curated = builder.build().bootstrap();
             AugmentAction action = curated.createAugmentor();
             Environment.setHomeDir(homeDir);
-            initSys(args.toArray(String[]::new));
+            if (!initSys(args.toArray(String[]::new))) {
+                return this;
+            }
             System.setProperty(Environment.KC_TEST_REBUILD, "true");
             StartupAction startupAction = action.createInitialRuntimeApplication();
             System.getProperties().remove(Environment.KC_TEST_REBUILD);
@@ -215,7 +220,7 @@ public class Keycloak {
 
             return this;
         } catch (Exception cause) {
-            throw new RuntimeException("Fail to start the server", cause);
+            throw new RuntimeException("Failed to start the server", cause);
         }
     }
 
@@ -326,7 +331,8 @@ public class Keycloak {
      * Uses a dummy {@link Picocli} to process the args and set system
      * variables needed to run augmentation
      */
-    public static void initSys(String... args) {
+    public static boolean initSys(String... args) {
+        AtomicBoolean result = new AtomicBoolean();
         Picocli picocli = new Picocli() {
 
             @Override
@@ -340,11 +346,20 @@ public class Keycloak {
             }
 
             @Override
+            protected int execute(CommandLine cmd, String[] argArray) {
+                if (this.getParsedCommand().filter(ac -> ac instanceof AbstractAutoBuildCommand).isPresent()) {
+                    return super.execute(cmd, argArray);
+                }
+                return 0;
+            }
+
+            @Override
             public void exit(int exitCode) {
-                // do nothing
+                result.set(exitCode == AbstractAutoBuildCommand.REBUILT_EXIT_CODE);
             }
         };
         picocli.parseAndRun(List.of(args));
         System.setProperty(Environment.KC_CONFIG_BUILT, "true");
+        return result.get();
     }
 }
