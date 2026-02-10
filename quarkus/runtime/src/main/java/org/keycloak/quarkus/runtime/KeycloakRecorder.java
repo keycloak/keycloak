@@ -72,12 +72,14 @@ public class KeycloakRecorder {
     }
 
     public void createHttpAccessLogDirectory() {
-        Environment.getHomeDir().ifPresent(homeDir -> {
-            File logDir = new File(homeDir, "data" + File.separator + "log");
-            if (!logDir.exists()) {
-                logDir.mkdirs();
-            }
-        });
+        if (Configuration.isTrue(HttpAccessLogOptions.HTTP_ACCESS_LOG_FILE_ENABLED)) {
+            Environment.getHomeDir().ifPresent(homeDir -> {
+                File logDir = new File(homeDir, "data" + File.separator + "log");
+                if (!logDir.exists() && !logDir.mkdirs() && !logDir.exists()) {
+                    throw new RuntimeException("Failed to create HTTP Access log directory");
+                }
+            });
+        }
     }
 
     public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features) {

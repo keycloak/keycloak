@@ -254,7 +254,7 @@ class KeycloakProcessor {
         recorder.initConfig();
     }
 
-    @Record(ExecutionTime.RUNTIME_INIT)
+    @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     @Consume(ConfigBuildItem.class)
     void createHttpAccessLogDirectory(KeycloakRecorder recorder) {
