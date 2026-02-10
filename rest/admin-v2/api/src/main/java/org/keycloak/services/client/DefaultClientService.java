@@ -162,12 +162,11 @@ public class DefaultClientService implements ClientService {
         if (client instanceof OIDCClientRepresentation oidcClient) {
             handleServiceAccount(model, oidcClient);
         }
-        var updated = mapper.fromModel(model);
 
         // Fire v2 admin event (in parallel to v1 events fired by clientsResource/clientResource)
-        fireAdminEvent(created ? OperationType.CREATE : OperationType.UPDATE, updated);
+        fireAdminEvent(created ? OperationType.CREATE : OperationType.UPDATE, mapper.fromModel(model));
 
-        return new CreateOrUpdateResult(updated, created);
+return new CreateOrUpdateResult(updated, mapper.fromModel(model));
     }
 
     /**
