@@ -243,8 +243,7 @@ public class ServerInfoAdminResource {
                             ti.setLocales(locales.replaceAll(" ", "").split(","));
                         }
 
-                        String description = getThemeDescription(theme);
-                        ti.setDescription(description);
+                        ti.setDescription(getThemeDescription(theme));
 
                         themes.add(ti);
                     }
@@ -255,13 +254,8 @@ public class ServerInfoAdminResource {
         }
     }
 
-    private String getThemeDescription(Theme theme) {
-        try {
-            String description = theme.getProperties().getProperty("description");
-            return (description != null && !description.isEmpty()) ? description : null;
-        } catch (IOException e) {
-            return null;    // Return null if there is no description.
-        }
+    private String getThemeDescription(Theme theme) throws IOException {
+        return theme.getProperties().getProperty("description");
     }
 
     private LinkedList<String> filterThemes(Theme.Type type, LinkedList<String> themeNames) {
