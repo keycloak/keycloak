@@ -33,6 +33,7 @@ import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
+import org.keycloak.config.HttpAccessLogOptions;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.OpenApiOptions;
