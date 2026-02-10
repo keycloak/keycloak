@@ -18,6 +18,9 @@ package org.keycloak.models;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.utils.StringUtil;
@@ -53,6 +56,10 @@ public class CibaConfig extends AbstractConfig {
     public static final String CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT = "ciba.backchannel.client.notification.endpoint";
     public static final String CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG = "ciba.backchannel.auth.request.signing.alg";
 
+    /**
+     * @deprecated use {@link #fromCache(Supplier, Map)} or {@link #fromModel(RealmModel)} factory methods
+     */
+    @Deprecated(since = "26.6", forRemoval = true)
     public CibaConfig(RealmModel realm) {
         this.backchannelTokenDeliveryMode = realm.getAttribute(CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE);
         if (this.backchannelTokenDeliveryMode == null) {
@@ -69,6 +76,30 @@ public class CibaConfig extends AbstractConfig {
         }
 
         this.realmForWrite = () -> realm;
+    }
+
+    private CibaConfig(Supplier<RealmModel> realmForWrite, String authRequestedUserHint, String backChannelTokenDeliveryMode, int expiresIn, int poolingInterval) {
+        this.authRequestedUserHint = authRequestedUserHint;
+        this.backchannelTokenDeliveryMode = backChannelTokenDeliveryMode;
+        this.expiresIn = expiresIn;
+        this.poolingInterval = poolingInterval;
+        this.realmForWrite = realmForWrite;
+    }
+
+    public static CibaConfig fromModel(RealmModel realm) {
+        var backChannelTokenDeliveryMode = Objects.requireNonNullElse(realm.getAttribute(CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE), DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE);
+        var authRequestedUserHint =  Objects.requireNonNullElse(realm.getAttribute(CIBA_AUTH_REQUESTED_USER_HINT),  DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT);
+        var expiresIn = realm.getAttribute(CIBA_EXPIRES_IN, DEFAULT_CIBA_POLICY_EXPIRES_IN);
+        var poolingInterval = realm.getAttribute(CIBA_INTERVAL, DEFAULT_CIBA_POLICY_INTERVAL);
+        return new CibaConfig(() -> realm, authRequestedUserHint,  backChannelTokenDeliveryMode, expiresIn, poolingInterval);
+    }
+
+    public static CibaConfig fromCache(Supplier<RealmModel> realmForWrite, Map<String, String> realmAttributes) {
+        var backChannelTokenDeliveryMode = realmAttributes.getOrDefault(CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE,  DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE);
+        var authRequestedUserHint =  realmAttributes.getOrDefault(CIBA_AUTH_REQUESTED_USER_HINT,  DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT);
+        var expiresIn = getIntAttribute(realmAttributes, CIBA_EXPIRES_IN, DEFAULT_CIBA_POLICY_EXPIRES_IN);
+        var poolingInterval = getIntAttribute(realmAttributes, CIBA_INTERVAL, DEFAULT_CIBA_POLICY_INTERVAL);
+        return new CibaConfig(realmForWrite, authRequestedUserHint, backChannelTokenDeliveryMode, expiresIn,  poolingInterval);
     }
 
     public String getBackchannelTokenDeliveryMode(ClientModel client) {
