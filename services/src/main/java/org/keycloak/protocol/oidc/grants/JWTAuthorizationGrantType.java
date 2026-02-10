@@ -77,6 +77,10 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             }
             event.detail(Details.IDENTITY_PROVIDER, identityProviderModel.getAlias());
 
+            if (!identityProviderModel.isEnabled()) {
+                throw new RuntimeException("Identity Provider is not enabled");
+            }
+
             if(!OIDCAdvancedConfigWrapper.fromClientModel(context.getClient()).getJWTAuthorizationGrantAllowedIdentityProviders().contains(identityProviderModel.getAlias())) {
                 throw new RuntimeException("Identity Provider is not allowed for the client");
             }

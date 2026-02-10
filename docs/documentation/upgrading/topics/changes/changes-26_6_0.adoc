@@ -14,6 +14,18 @@ It was also not aligned with how other script-based features work in {project_na
 
 If you have existing JavaScript-based policies, make sure to enable the `scripts` feature when starting {project_name}.
 
+=== Stricter Validation for Client URIs (secure-client-uris)
+The 'secure-client-uris' client policy executor has been updated to enforce stricter validation on Client URIs. This aligns with FAPI 2.0 security requirements by mandating TLS (HTTPS) for client endpoints.
+
+HTTPS Enforcement: The following URIs must now use the https scheme. Existing clients configured with http in these fields will fail validation during updates:
+'Post logout redirect URIs', 'Logo URL', 'Policy URL', and 'Terms of Service URL'.
+
+Expanded Wildcard Support: The + wildcard character is now allowed in 'Valid post logout redirect URIs' and 'Web origins'.
+Configuring + defers validation to the client's standard 'Valid redirect URIs'. Since redirect URIs are already checked for HTTPS, using the wildcard maintains FAPI 2.0 compliance while reducing configuration duplication.
+
+Administrators must ensure that all configured URIs for the fields listed above use https. Clients attempting to update or register with http in these fields will fail validation when using the 'secure-client-uris' executor.
+
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

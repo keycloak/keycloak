@@ -48,6 +48,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
@@ -94,10 +95,7 @@ public class OrganizationGroupResource {
         @APIResponse(responseCode = "200", description = "OK")
     })
     public GroupRepresentation getGroup() {
-        GroupRepresentation rep = ModelToRepresentation.groupToBriefRepresentation(group);
-        // todo path
-        rep.setPath("");
-        return rep;
+        return ModelToRepresentation.groupToBriefRepresentation(group);
     }
 
     @DELETE
@@ -135,9 +133,12 @@ public class OrganizationGroupResource {
                 throw ErrorResponse.error("Invalid group id", Response.Status.BAD_REQUEST);
             }
 
-            // name, todo path
+            // name changed: fire path change event
             if (!Objects.equals(groupName, group.getName())) {
+                String previousPath = KeycloakModelUtils.buildGroupPath(group);
                 group.setName(groupName);
+                String newPath = KeycloakModelUtils.buildGroupPath(group);
+                GroupModel.GroupPathChangeEvent.fire(group, newPath, previousPath, session);
             }
 
             // description
@@ -181,12 +182,8 @@ public class OrganizationGroupResource {
             @Parameter(description = "The position of the first result to be returned (pagination offset).") @QueryParam("first") @DefaultValue("0") Integer first,
             @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max) {
 
-        return group.getSubGroupsStream(search, exact, first, max).map(groupModel -> {
-            GroupRepresentation rep = ModelToRepresentation.groupToBriefRepresentation(groupModel);
-            // todo path
-            rep.setPath("");
-            return rep;
-        });
+        return group.getSubGroupsStream(search, exact, first, max)
+                .map(ModelToRepresentation::groupToBriefRepresentation);
     }
 
     @POST
