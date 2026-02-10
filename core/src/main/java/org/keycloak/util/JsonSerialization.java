@@ -38,23 +38,23 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
  * @version $Revision: 1 $
  */
 public class JsonSerialization {
-    public static final ObjectMapper mapper = objectMapperWithDefaults();
-    public static final ObjectMapper prettyMapper = prettyObjectMapperWithDefaults();
+    public static final ObjectMapper mapper = createObjectMapperWithDefaults();
+    public static final ObjectMapper prettyMapper = createPrettyObjectMapperWithDefaults();
 
-    public static ObjectMapper objectMapperWithDefaults() {
+    public static ObjectMapper createObjectMapperWithDefaults() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new Jdk8Module());
         mapper.registerModule(new JavaTimeModule());
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        mapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
         return mapper;
     }
 
-    public static ObjectMapper prettyObjectMapperWithDefaults() {
+    public static ObjectMapper createPrettyObjectMapperWithDefaults() {
         ObjectMapper prettyMapper = new ObjectMapper();
         prettyMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         prettyMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        prettyMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        prettyMapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
         return prettyMapper;
     }
 

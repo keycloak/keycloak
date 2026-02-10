@@ -10,7 +10,7 @@ import org.apache.http.client.config.RequestConfig;
 
 public class SimpleHttp {
 
-    private static final ObjectMapper DEFAULT_OBJECT_MAPPER = JsonSerialization.objectMapperWithDefaults();
+    private static final ObjectMapper DEFAULT_OBJECT_MAPPER = JsonSerialization.createObjectMapperWithDefaults();
 
     private final HttpClient client;
     private long maxConsumedResponseSize;
