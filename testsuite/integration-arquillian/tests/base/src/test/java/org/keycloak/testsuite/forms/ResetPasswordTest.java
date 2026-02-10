@@ -453,7 +453,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("login@test.com", password);
 
-        EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
@@ -540,7 +540,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             // continue to app because it is the same browser and auth session exists
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+            EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, username.trim()).assertEvent();
             String sessionId = loginEvent.getSessionId();
 
             AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);

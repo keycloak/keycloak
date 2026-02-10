@@ -104,7 +104,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
 
-        String userId = events.expectRegister("setuptotp", "email@mail.com").assertEvent().getUserId();
+        String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
         getCleanup().addUserId(userId);
 
         doAIA();
@@ -420,7 +420,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         loginPage.clickRegister();
         registerPage.register("firstName2", "lastName2", "email2@mail.com", "setupTotp2", "password2", "password2");
 
-        String userId = events.expectRegister("setuptotp2", "email2@mail.com").assertEvent().getUserId();
+        String userId = events.expectRegister("setupTotp2", "email2@mail.com").assertEvent().getUserId();
         getCleanup().addUserId(userId);
 
         doAIA();
@@ -465,7 +465,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         // Login with one-time password
         loginTotpPage.login(totp.generateTOTP(totpCode));
-        events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
+        events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
 
         // Remove google authenticator
         Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(),"setupTotp2"));

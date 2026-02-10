@@ -446,7 +446,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
     }
 
     @Test
@@ -756,7 +756,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assert.assertNotNull(oauth.parseLoginResponse().getCode());
             EventRepresentation loginEvent = events.expectLogin().user(userId)
-                                                   .detail(Details.USERNAME, "login-test")
+                                                   .detail(Details.USERNAME, "login@test.com")
                                                    .detail(Details.REMEMBER_ME, "true")
                                                    .assertEvent();
             String sessionId = loginEvent.getSessionId();
