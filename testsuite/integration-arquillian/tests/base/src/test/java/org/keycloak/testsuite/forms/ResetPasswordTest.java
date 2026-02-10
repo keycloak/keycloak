@@ -506,7 +506,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
                 .user(userId)
-                .detail(Details.USERNAME, username.trim())
+                .detail(Details.USERNAME, "login-test")
                 .detail(Details.EMAIL, "login@test.com")
                 .session((String)null)
                 .assertEvent();
