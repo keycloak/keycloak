@@ -15,3 +15,4 @@ Tests simply declare what they want, including specific configuration, and the f
 * [Using test suites](SUITES.md) - How to use tests suites with custom configuration
 * [Best practices](BEST_PRACTICES.md) - Best practices and common pitfalls
 * [Writing extensions](EXTENSIONS.md) - Writing test framework extensions
+* [GitHub Actions](GITHUB.md) - Support for creating job summary on GitHub Actions
