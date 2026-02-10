@@ -26,8 +26,10 @@ public class GitHubActionReport {
     private final File gitHubStepSummary;
     private final String gitRoot = findGitRoot();
 
+    private final long slowTestClassTimeout;
     private final long slowTestTimeout;
 
+    private long testClassStartedAt;
     private long testStartedAt;
 
     private List<Failure> failures = new LinkedList<>();
@@ -36,7 +38,28 @@ public class GitHubActionReport {
     public GitHubActionReport() {
         this.gitHubStepSummary = GITHUB_STEP_SUMMARY != null ? new File(GITHUB_STEP_SUMMARY) : null;
         this.enabled = Config.get("kc.test.github.enabled", true, Boolean.class) && gitHubStepSummary != null;
-        this.slowTestTimeout = TimeUnit.SECONDS.toMillis(Config.get("kc.test.github.slow", 30L, Long.class));
+        this.slowTestClassTimeout = TimeUnit.SECONDS.toMillis(Config.get("kc.test.github.slow.class", 120L, Long.class));
+        this.slowTestTimeout = TimeUnit.SECONDS.toMillis(Config.get("kc.test.github.slow.method", 30L, Long.class));
+    }
+
+    public void onClassStart() {
+        if (enabled) {
+            testClassStartedAt = System.currentTimeMillis();
+        }
+    }
+
+    public void onClassSuccess(ExtensionContext context) {
+        if (enabled) {
+            if (slowTestClassTimeout >= -1) {
+                long executionTime = System.currentTimeMillis() - testClassStartedAt;
+                if (executionTime > slowTestClassTimeout) {
+                    Class<?> testClass = context.getRequiredTestClass();
+                    String file = findJavaClass(testClass);
+                    String link = getLink(file, -1);
+                    slowTests.add(new Slow(context.getRequiredTestClass().getName(), "", executionTime, link));
+                }
+            }
+        }
     }
 
     public void onClassError(ExtensionContext context) {
