@@ -30,6 +30,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.ServiceException;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.ClientsResource;
 import org.keycloak.services.resources.admin.RealmAdminResource;
@@ -59,7 +60,7 @@ public class DefaultClientService implements ClientService {
     // v1 resources
     private final RealmAdminResource realmResource;
     private final ClientsResource clientsResource;
-    private final AdminEventV2Builder adminEventBuilder;
+    private final AdminEventBuilder adminEventBuilder;
     private ClientResource clientResource;
 
     public DefaultClientService(@Nonnull KeycloakSession session,
@@ -164,7 +165,7 @@ public class DefaultClientService implements ClientService {
         var updated = mapper.fromModel(model);
 
         // Fire v2 admin event (in parallel to v1 events fired by clientsResource/clientResource)
-        fireAdminEvent(created ? OperationType.CREATE : OperationType.UPDATE, model.getId(), updated);
+        fireAdminEvent(created ? OperationType.CREATE : OperationType.UPDATE, updated);
 
         return new CreateOrUpdateResult(updated, created);
     }
@@ -173,13 +174,12 @@ public class DefaultClientService implements ClientService {
      * Fires a v2 admin event for client operations.
      *
      * @param operationType the type of operation (CREATE, UPDATE, DELETE)
-     * @param clientUuid the UUID of the client
      * @param representation the v2 representation of the client
      */
-    private void fireAdminEvent(OperationType operationType, String clientUuid, BaseClientRepresentation representation) {
+    private void fireAdminEvent(OperationType operationType, BaseClientRepresentation representation) {
         adminEventBuilder
                 .operation(operationType)
-                .resourcePath("clients", clientUuid)
+                .resourcePath(session.getContext().getUri())
                 .representation(representation)
                 .success();
     }

@@ -241,7 +241,7 @@ public class AdminEventBuilder {
         return this;
     }
 
-    private String getResourcePath(UriInfo uriInfo) {
+    protected String getResourcePath(UriInfo uriInfo) {
         String path = uriInfo.getPath();
 
         StringBuilder sb = new StringBuilder();
@@ -258,7 +258,7 @@ public class AdminEventBuilder {
             return this;
         }
 
-        stripSecrets(session, value);
+        stripSecretsFromRepresentation(value);
 
         try {
             adminEvent.setRepresentation(JsonSerialization.writeValueAsString(value));
@@ -266,6 +266,10 @@ public class AdminEventBuilder {
             throw new RuntimeException(e);
         }
         return this;
+    }
+
+    protected void stripSecretsFromRepresentation(Object value){
+        stripSecrets(session, value);
     }
 
     public AdminEventBuilder detail(String key, String value) {

@@ -23,9 +23,11 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
+import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -43,10 +45,12 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -60,9 +64,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @KeycloakIntegrationTest(config = AdminEventV2Test.AdminV2EventConfig.class)
 public class AdminEventV2Test {
-
     public static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080/admin/api/master/clients/v2";
     private static ObjectMapper mapper;
+    private static final String TEST_CLIENT_ID = "v2-rep-test-client";
 
     @InjectHttpClient
     CloseableHttpClient client;
@@ -92,136 +96,184 @@ public class AdminEventV2Test {
 
     @Test
     public void createClientFiresV2Event() throws Exception {
-        // Create a client via v2 API
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
-        setAuthHeader(request);
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        createTestClient();
+        try {
+            // Verify v2 events were fired
+            List<AdminEventRepresentation> events = masterRealm.admin().getAdminEvents();
 
-        OIDCClientRepresentation rep = new OIDCClientRepresentation();
-        rep.setEnabled(true);
-        rep.setClientId("v2-event-test-client");
-        rep.setDescription("Client to test v2 events");
+            // Should have at least 1 event
+            assertThat("Should have at least 1 event", events.size(), greaterThanOrEqualTo(1));
 
-        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+            // Find the v2 event (has apiVersion=v2 in details)
+            AdminEventRepresentation v2Event = events.stream()
+                    .filter(e -> e.getDetails() != null && "v2".equals(e.getDetails().get("apiVersion")))
+                    .findFirst()
+                    .orElse(null);
 
-        try (var response = client.execute(request)) {
-            assertEquals(201, response.getStatusLine().getStatusCode());
-        }
-
-        // Verify v2 events were fired
-        List<AdminEventRepresentation> events = masterRealm.admin().getAdminEvents();
-        
-        // Should have at least 1 event
-        assertThat("Should have at least 1 event", events.size(), greaterThanOrEqualTo(1));
-
-        // Find the v2 event (has apiVersion=v2 in details)
-        AdminEventRepresentation v2Event = events.stream()
-                .filter(e -> e.getDetails() != null && "v2".equals(e.getDetails().get("apiVersion")))
-                .findFirst()
-                .orElse(null);
-
-        assertThat("V2 event should be present with apiVersion=v2 detail", v2Event, notNullValue());
-        assertThat("V2 event should have CREATE operation", v2Event.getOperationType(), is(OperationType.CREATE.toString()));
-
-        // Cleanup
-        HttpDelete deleteRequest = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/v2-event-test-client");
-        setAuthHeader(deleteRequest);
-        try (var response = client.execute(deleteRequest)) {
-            assertEquals(204, response.getStatusLine().getStatusCode());
+            assertThat("V2 event should be present with apiVersion=v2 detail", v2Event, notNullValue());
+            assertThat("V2 event should have CREATE operation", v2Event.getOperationType(), is(OperationType.CREATE.toString()));
+            assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), is("clients/v2"));
+        } finally {
+            deleteTestClient();
         }
     }
 
     @Test
     public void updateClientFiresV2Event() throws Exception {
-        // First create a client
-        HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/v2-update-test");
-        setAuthHeader(createRequest);
-        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        createTestClient();
+        try {
+            masterRealm.admin().clearAdminEvents();
 
-        OIDCClientRepresentation rep = new OIDCClientRepresentation();
-        rep.setClientId("v2-update-test");
-        rep.setEnabled(true);
-        rep.setDescription("Original description");
+            HttpPut updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/" + TEST_CLIENT_ID);
+            setAuthHeader(updateRequest);
+            updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
-        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+            OIDCClientRepresentation rep = getTestClientRepresentation();
+            // update the client
+            rep.setDescription("Updated description");
 
-        try (var response = client.execute(createRequest)) {
+            updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+            try (var response = client.execute(updateRequest)) {
+                assertEquals(200, response.getStatusLine().getStatusCode());
+            }
+
+            // Verify v2 UPDATE event was fired
+            List<AdminEventRepresentation> events = masterRealm.admin().getAdminEvents();
+
+            // Find the v2 event (has apiVersion=v2 in details)
+            AdminEventRepresentation v2Event = events.stream()
+                    .filter(e -> e.getDetails() != null && "v2".equals(e.getDetails().get("apiVersion")))
+                    .findFirst()
+                    .orElse(null);
+
+            assertThat("V2 event should be present for update with apiVersion=v2 detail", v2Event, notNullValue());
+            assertThat("V2 event should have UPDATE operation", v2Event.getOperationType(), is(OperationType.UPDATE.toString()));
+            assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), is("clients/v2/%s".formatted(TEST_CLIENT_ID)));
+
+            var representation = v2Event.getRepresentation();
+            assertThat("V2 event should have representation", representation, notNullValue());
+            assertThat("V2 event should have updated client representation description", representation, containsString("\"description\":\"Updated description\""));
+            assertThat("V2 event should have masked secret in representation", representation, containsString("\"secret\":\"**********\""));
+        } finally {
+            deleteTestClient();
+        }
+    }
+
+    @Test
+    public void v2EventContainsV2Representation() throws Exception {
+        createTestClient();
+        try {
+            // Verify v2 event contains the v2 representation format
+            List<AdminEventRepresentation> events = masterRealm.admin().getAdminEvents();
+
+            // Find the v2 event
+            AdminEventRepresentation v2Event = events.stream()
+                    .filter(e -> e.getDetails() != null && "v2".equals(e.getDetails().get("apiVersion")))
+                    .findFirst()
+                    .orElse(null);
+
+            assertThat("V2 event should be present", v2Event, notNullValue());
+            assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), is("clients/v2"));
+            var representation = v2Event.getRepresentation();
+            assertThat("V2 event should have representation", representation, notNullValue());
+            assertThat("V2 event should have masked secret in representation", representation, containsString("\"secret\":\"**********\""));
+
+            // The v2 representation should contain the "protocol" field (part of v2 format)
+            assertTrue(v2Event.getRepresentation().contains("\"protocol\""),
+                    "V2 event representation should contain protocol field");
+            assertTrue(v2Event.getRepresentation().contains("\"clientId\""),
+                    "V2 event representation should contain clientId field");
+        } finally {
+            deleteTestClient();
+        }
+    }
+
+    @Test
+    public void stripSamlSigningCertificateFromRepresentation() throws Exception {
+        var SAML_CLIENT_ID = "saml-with-certificate";
+
+        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        SAMLClientRepresentation samlRep = new SAMLClientRepresentation();
+        samlRep.setEnabled(true);
+        samlRep.setClientId(SAML_CLIENT_ID);
+        samlRep.setSigningCertificate("""
+                -----BEGIN CERTIFICATE-----
+                MIIDqDCCApCgAwIBAgIUY0R7RzJQbQJx9z3Y+0l9v0E2XQkwDQYJKoZIhvcNAQEL
+                BQAwgYUxCzAJBgNVBAYTAkRFMRMwEQYDVQQIDApTb21lLVN0YXRlMRMwEQYDVQQH
+                DApTb21lLUNpdHkxFTATBgNVBAoMDEV4YW1wbGUgT3JnMR8wHQYDVQQLDBZJZGVu
+                dGl0eSAmIEFjY2VzczE-HELLO-HOW-ARE-YOU-AwwQZXhhbXBsZS5jb20wHhcNMj
+                MDAwWhcNMjYwMTAxMDAwMDAwWjCBhTELMAkGA1UEBhMCREUxEzARBgNVBAgMClNv
+                bWUtU3RhdGUxEzARBgNVBAcMClNvbWUtQ2l0eTEVMBMGA1UECgwMRXhhbXBsZSBP
+                cmcxHzAdBgNVBAsMFklkZW50aXR5ICYgQWNjZXNzMRkwFwYDVQQDDBBleGFtcGxl
+                LmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAL+...
+                -----END CERTIFICATE-----
+                """);
+        request.setEntity(new StringEntity(mapper.writeValueAsString(samlRep)));
+
+        try (var response = client.execute(request)) {
+            EntityUtils.consumeQuietly(response.getEntity());
             assertEquals(201, response.getStatusLine().getStatusCode());
         }
 
-        // Clear events from creation
-        masterRealm.admin().clearAdminEvents();
+        try {
+            List<AdminEventRepresentation> events = masterRealm.admin().getAdminEvents();
 
-        // Now update the client
-        rep.setDescription("Updated description");
-        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+            // Find the v2 event
+            AdminEventRepresentation v2Event = events.stream()
+                    .filter(e -> e.getDetails() != null && "v2".equals(e.getDetails().get("apiVersion")))
+                    .findFirst()
+                    .orElse(null);
 
-        try (var response = client.execute(createRequest)) {
-            assertEquals(200, response.getStatusLine().getStatusCode());
+            assertThat("V2 event should be present", v2Event, notNullValue());
+            assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), is("clients/v2"));
+            var representation = v2Event.getRepresentation();
+            assertThat("V2 event should have representation", representation, notNullValue());
+            assertThat("V2 event should have masked signing certificate in representation", representation, containsString("\"signingCertificate\":\"**********\""));
+        } finally {
+            deleteClient(SAML_CLIENT_ID);
         }
+    }
 
-        // Verify v2 UPDATE event was fired
-        List<AdminEventRepresentation> events = masterRealm.admin().getAdminEvents();
+    private void createTestClient() throws Exception {
+        // Create a client via v2 API (representation details already enabled in @BeforeEach)
+        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
-        // Find the v2 event (has apiVersion=v2 in details)
-        AdminEventRepresentation v2Event = events.stream()
-                .filter(e -> e.getDetails() != null && "v2".equals(e.getDetails().get("apiVersion")))
-                .findFirst()
-                .orElse(null);
+        request.setEntity(new StringEntity(mapper.writeValueAsString(getTestClientRepresentation())));
 
-        assertThat("V2 event should be present for update with apiVersion=v2 detail", v2Event, notNullValue());
-        assertThat("V2 event should have UPDATE operation", v2Event.getOperationType(), is(OperationType.UPDATE.toString()));
+        try (var response = client.execute(request)) {
+            EntityUtils.consumeQuietly(response.getEntity());
+            assertEquals(201, response.getStatusLine().getStatusCode());
+        }
+    }
 
-        // Cleanup
-        HttpDelete deleteRequest = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/v2-update-test");
+    private void deleteTestClient() throws Exception {
+        deleteClient(TEST_CLIENT_ID);
+    }
+
+    private void deleteClient(String clientId) throws Exception {
+        HttpDelete deleteRequest = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/" + clientId);
         setAuthHeader(deleteRequest);
         try (var response = client.execute(deleteRequest)) {
             assertEquals(204, response.getStatusLine().getStatusCode());
         }
     }
 
-    @Test
-    public void v2EventContainsV2Representation() throws Exception {
-        // Create a client via v2 API (representation details already enabled in @BeforeEach)
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
-        setAuthHeader(request);
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-
+    private OIDCClientRepresentation getTestClientRepresentation() {
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setEnabled(true);
-        rep.setClientId("v2-rep-test-client");
+        rep.setClientId(TEST_CLIENT_ID);
         rep.setDescription("Client to test v2 representation");
-
-        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-
-        try (var response = client.execute(request)) {
-            assertEquals(201, response.getStatusLine().getStatusCode());
-        }
-
-        // Verify v2 event contains the v2 representation format
-        List<AdminEventRepresentation> events = masterRealm.admin().getAdminEvents();
-
-        // Find the v2 event
-        AdminEventRepresentation v2Event = events.stream()
-                .filter(e -> e.getDetails() != null && "v2".equals(e.getDetails().get("apiVersion")))
-                .findFirst()
-                .orElse(null);
-
-        assertThat("V2 event should be present", v2Event, notNullValue());
-        assertThat("V2 event should have representation", v2Event.getRepresentation(), notNullValue());
-        
-        // The v2 representation should contain the "protocol" field (part of v2 format)
-        assertTrue(v2Event.getRepresentation().contains("\"protocol\""), 
-                "V2 event representation should contain protocol field");
-        assertTrue(v2Event.getRepresentation().contains("\"clientId\""), 
-                "V2 event representation should contain clientId field");
-
-        // Cleanup
-        HttpDelete deleteRequest = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/v2-rep-test-client");
-        setAuthHeader(deleteRequest);
-        try (var response = client.execute(deleteRequest)) {
-            assertEquals(204, response.getStatusLine().getStatusCode());
-        }
+        var auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod(ClientIdAndSecretAuthenticator.PROVIDER_ID);
+        auth.setSecret("ultra-secret");
+        rep.setAuth(auth);
+        return rep;
     }
 
     private void setAuthHeader(HttpMessage request) {
