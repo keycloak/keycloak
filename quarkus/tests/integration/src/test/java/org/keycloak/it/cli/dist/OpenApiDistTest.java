@@ -31,7 +31,9 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DistributionTest(keepAlive = true, requestPort = 9000, containerExposedPorts = {8080, 9000})
@@ -98,6 +100,9 @@ public class OpenApiDistTest {
             .header("Accept", "application/json")
                 .get(OPENAPI_ENDPOINT)
             .then();
+
+      // BaseRepresentation has no spec-visible properties and must not appear in the spec
+      response.body(not(containsString("BaseRepresentation")));
 
       // Verify discriminator is on the parent schema (BaseClientRepresentation) in components section
       response

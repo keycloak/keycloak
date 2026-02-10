@@ -2,9 +2,12 @@ package org.keycloak.quarkus.runtime.oas;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -54,6 +57,8 @@ public class OASModelFilter implements OASFilter {
         newPaths.forEach(paths::addPathItem);
         openAPI.setPaths(paths);
 
+        removeSchemaAndRefs(openAPI, "BaseRepresentation");
+
         Map<String, Set<Schema>> discriminatorPropertiesToBeAdded = new HashMap<>();
 
         // Follows https://swagger.io/docs/specification/v3_0/data-models/inheritance-and-polymorphism/
@@ -69,6 +74,43 @@ public class OASModelFilter implements OASFilter {
                 }
             });
         });
+    }
+
+    /**
+     * Removes a schema from components and cleans up allOf/oneOf/anyOf references to it
+     * from all remaining schemas.
+     */
+    private void removeSchemaAndRefs(OpenAPI openAPI, String schemaName) {
+        if (openAPI.getComponents() == null || openAPI.getComponents().getSchemas() == null) {
+            return;
+        }
+
+        Map<String, Schema> schemas = openAPI.getComponents().getSchemas();
+
+        if (schemas.containsKey(schemaName)) {
+            Map<String, Schema> remainingSchemas = new HashMap<>(schemas);
+            remainingSchemas.remove(schemaName);
+            openAPI.getComponents().setSchemas(remainingSchemas);
+            log.debugf("Removed schema '%s'", schemaName);
+        }
+
+        String ref = REF_PREFIX + schemaName;
+        for (Schema schema : openAPI.getComponents().getSchemas().values()) {
+            filterRef(schema::getAllOf, schema::setAllOf, ref);
+            filterRef(schema::getOneOf, schema::setOneOf, ref);
+            filterRef(schema::getAnyOf, schema::setAnyOf, ref);
+        }
+    }
+
+    private void filterRef(Supplier<List<Schema>> getter, Consumer<List<Schema>> setter, String refToRemove) {
+        List<Schema> schemas = getter.get();
+        if (schemas == null) {
+            return;
+        }
+        List<Schema> filtered = schemas.stream()
+                .filter(s -> !refToRemove.equals(s.getRef()))
+                .collect(Collectors.toList());
+        setter.accept(filtered.isEmpty() ? null : filtered);
     }
 
     /**
@@ -107,20 +149,25 @@ public class OASModelFilter implements OASFilter {
             AnnotationValue useValue = typeInfoAnnotation.value("use");
             if (useValue == null || (!JsonTypeInfo.Id.NAME.name().equals(useValue.asEnum())
                     && !JsonTypeInfo.Id.SIMPLE_NAME.name().equals(useValue.asEnum()))) {
-                continue;
+                throw new IllegalStateException(
+                        String.format("@JsonTypeInfo on '%s' must use Id.NAME or Id.SIMPLE_NAME, but found: %s",
+                                schemaName, useValue == null ? "null" : useValue.asEnum()));
             }
 
             AnnotationValue includeValue = typeInfoAnnotation.value("include");
             if (includeValue != null && !JsonTypeInfo.As.PROPERTY.name().equals(includeValue.asEnum())
                     && !JsonTypeInfo.As.EXISTING_PROPERTY.name().equals(includeValue.asEnum())) {
-                continue;
+                throw new IllegalStateException(
+                        String.format("@JsonTypeInfo on '%s' must use As.PROPERTY or As.EXISTING_PROPERTY, but found: %s",
+                                schemaName, includeValue.asEnum()));
             }
 
             String discriminatorPropertyName = Optional.of(typeInfoAnnotation.value("property"))
                     .map(AnnotationValue::asString)
                     .orElse("");
             if (discriminatorPropertyName.isEmpty()) {
-                continue;
+                throw new IllegalStateException(
+                        String.format("@JsonTypeInfo on '%s' must specify a non-empty 'property' value", schemaName));
             }
 
             Schema parentSchema = openAPI.getComponents().getSchemas().get(schemaName);
