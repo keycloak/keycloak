@@ -56,6 +56,7 @@ Once you create an organization, you can manage the additional settings that are
 
 * <<_managing_attributes_,Manage attributes>>
 * <<_managing_members_,Manage members>>
+* <<_managing_groups_,Manage groups>>
 * <<_managing_identity_provider_,Manage identity providers>>
 
 == Understanding organization domains

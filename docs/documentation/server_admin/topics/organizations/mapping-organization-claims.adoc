@@ -41,3 +41,5 @@ Otherwise, if a member of multiple organizations, the user will be prompted to s
 | `organization:<alias>` | Maps to a single organization with the given alias.
 | `organization:*` | Maps to all organizations the user is a member of.
 |===
+
+For details on including organization groups in tokens, see <<_managing_groups_,Managing groups>>.

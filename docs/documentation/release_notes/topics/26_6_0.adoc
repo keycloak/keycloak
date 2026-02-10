@@ -31,3 +31,9 @@ You can specify these headers via the general parent option `telemetry-header-<h
 Or you can use the `telemetry-logs-header-<header>` for OpenTelemetry Logs, or `telemetry-metrics-header-<header>` for OpenTelemetry Metrics.
 
 For more details, see the  link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+= Organization groups
+
+Organizations now support isolated group hierarchies, allowing each organization to manage its own teams and departments without naming conflicts across the realm. This update includes Identity Provider mappers to automatically assign federated users to organization groups based on external claims. Group membership is automatically included in OIDC tokens and SAML assertions when an organization context is requested.
+
+For more details, see the link:{adminguide_link}#managing-organization-groups_{context}[Managing organization groups] guide.
