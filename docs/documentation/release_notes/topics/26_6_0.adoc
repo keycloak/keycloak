@@ -57,6 +57,12 @@ Or you can use the `telemetry-logs-header-<header>` for OpenTelemetry Logs, or `
 
 For more details, see the  link:{telemetryguide_link}[{telemetryguide_name}] guide.
 
+= Organization groups
+
+Organizations now support isolated group hierarchies, allowing each organization to manage its own teams and departments without naming conflicts across the realm. This update includes Identity Provider mappers to automatically assign federated users to organization groups based on external claims. Group membership is automatically included in OIDC tokens and SAML assertions when an organization context is requested.
+
+For more details, see the link:{adminguide_link}#pass:a[_managing_groups_][Managing organization groups] guide.
+
 = Zero-downtime patch releases enabled by default
 
 Zero-downtime patch releases are now enabled by default. This allows you to perform rolling updates when upgrading to a newer patch version within the same `major.minor` release stream without service downtime.
