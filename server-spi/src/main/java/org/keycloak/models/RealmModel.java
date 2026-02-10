@@ -187,6 +187,8 @@ public interface RealmModel extends RoleContainerModel {
     void setMaxDeltaTimeSeconds(int val);
     int getFailureFactor();
     void setFailureFactor(int failureFactor);
+    int getMaxSecondaryAuthFailures();
+    void setMaxSecondaryAuthFailures(int maxSecondaryAuthFailures);
     //--- end brute force settings
 
 
