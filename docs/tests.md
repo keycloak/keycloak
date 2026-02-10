@@ -106,20 +106,61 @@ Once started copy/paste the totp secret and press enter. To use a new secret jus
 Mail server
 -----------
 
-To start a test mail server for testing email sending run:
+The Keycloak testsuite includes an embedded mail server for testing email-related features such as email verification,
+password reset, and other email notifications.
 
-    mvn exec:java -Pmail-server
-    
-or run org.keycloak.testsuite.MailServer from your favourite IDE!
+**Prerequisites:**
 
-To configure Keycloak to use the above server, enter the following values in the realm configuration in the tab **Email**:
+- Keycloak server should be running (see [Keycloak server](#keycloak-server) section above)
 
-| Field | Value             | 
+### Running the Mail Server
+
+To start the embedded test mail server for local development and testing:
+
+1. Navigate to the testsuite directory:
+
+```
+cd testsuite
+```
+
+2. Start the mail server:
+
+```
+mvn exec:java -Pmail-server
+```
+
+or run `org.keycloak.testsuite.MailServer` from your favourite IDE!
+
+The mail server will start on `localhost:3025` and display all received emails in the console.
+
+### Configuring Keycloak
+
+To configure Keycloak to use the test mail server, enter the following values in the realm configuration in the **Email
+** tab:
+
+| Field | Value             |
 |-------|-------------------|
 | From  | auto@keycloak.org |
 | Host  | localhost         |
 | Port  | 3025              |
 
+**Optional settings:**
+
+- Enable StartTLS: Yes (checked)
+- Enable Authentication: No (unchecked)
+- Enable SSL: No (unchecked)
+
+### Testing Email Features
+
+Once configured, you can test various email-related features:
+
+- **Email Verification**: Enable "Verify Email" in realm settings and register a new user
+- **Password Reset**: Use the "Forgot Password" link on the login page
+- **Update Email**: Change email address in account settings (if verification is enabled)
+- **Event Notifications**: Configure email event listeners to test custom notifications
+
+All emails sent by Keycloak will be captured by the test mail server and displayed in the console output with full
+content including subject, recipient, and message body.
 
 LDAP server
 -----------
