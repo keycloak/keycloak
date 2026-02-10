@@ -58,9 +58,18 @@ public class InfinispanOrganizationProviderFactory implements OrganizationProvid
             }
             if (e instanceof GroupModel.GroupRemovedEvent event) {
                 registerOrgGroupInvalidation(event);
+
+                KeycloakSession session = event.getKeycloakSession();
+                session.users().getGroupMembersStream(session.getContext().getRealm(), event.getGroup()).forEach(member -> registerOrgGroupMembershipInvalidation(event, member));
             }
             if (e instanceof GroupModel.GroupUpdatedEvent event) {
                 registerOrgGroupInvalidation(event);
+            }
+            if (e instanceof GroupModel.GroupMemberJoinEvent event) {
+                registerOrgGroupMembershipInvalidation(event, event.getUser());
+            }
+            if (e instanceof GroupModel.GroupMemberLeaveEvent event) {
+                registerOrgGroupMembershipInvalidation(event, event.getUser());
             }
         });
     }
@@ -86,8 +95,23 @@ public class InfinispanOrganizationProviderFactory implements OrganizationProvid
         KeycloakSession session = event.getKeycloakSession();
         InfinispanOrganizationProvider orgProvider = (InfinispanOrganizationProvider) session.getProvider(OrganizationProvider.class, getId());
         if (orgProvider != null) {
-            // Organization groups are not cached - only invalidate organization itself
             orgProvider.registerOrganizationInvalidation(group.getOrganization());
+        }
+    }
+
+    private void registerOrgGroupMembershipInvalidation(GroupModel.GroupEvent event, UserModel member) {
+        GroupModel group = event.getGroup();
+
+        // Only handle organization groups
+        if (!Organizations.isOrganizationGroup(group)) {
+            return;
+        }
+
+        KeycloakSession session = event.getKeycloakSession();
+        InfinispanOrganizationProvider orgProvider = (InfinispanOrganizationProvider) session.getProvider(OrganizationProvider.class, getId());
+        if (orgProvider != null) {
+            // invalidate only org groups membership, not org membership
+            orgProvider.registerOrgGroupsMembershipInvalidation(group.getOrganization(), member);
         }
     }
 
