@@ -764,11 +764,11 @@ public class AuthenticationProcessor {
         }
     }
 
-    public void logFailure() {
+    public void logFailure(String executionId) {
         if (realm.isBruteForceProtected()) {
             UserModel user = AuthenticationManager.lookupUserForBruteForceLog(session, realm, authenticationSession);
             if (user != null) {
-                getBruteForceProtector().failedLogin(realm, user, connection, session.getContext().getHttpRequest().getUri());
+                getBruteForceProtector().failedLogin(realm, user, connection, session.getContext().getHttpRequest().getUri(), AuthenticationManager.getAuthenticationCategory(session, executionId));
             }
         }
     }
@@ -1062,7 +1062,7 @@ public class AuthenticationProcessor {
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
         if (model == null) {
             logger.debug("Cannot find execution, reseting flow");
-            logFailure();
+            logFailure(null);
             resetFlow();
             return authenticate();
         }

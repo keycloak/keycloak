@@ -419,6 +419,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public int getMaxSecondaryAuthFailures() {
+        if (isUpdated()) return updated.getMaxSecondaryAuthFailures();
+        return cached.getMaxSecondaryAuthFailures();
+    }
+
+    @Override
+    public void setMaxSecondaryAuthFailures(int maxSecondaryAuthFailures) {
+        getDelegateForUpdate();
+        updated.setMaxSecondaryAuthFailures(maxSecondaryAuthFailures);
+    }
+
+    @Override
     public boolean isVerifyEmail() {
         if (isUpdated()) return updated.isVerifyEmail();
         return cached.isVerifyEmail();

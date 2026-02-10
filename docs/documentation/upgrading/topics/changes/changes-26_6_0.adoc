@@ -94,6 +94,12 @@ See the section https://www.keycloak.org/server/reverseproxy#graceful-http-shutd
 
 With `proxy-headers` set to `xforwarded`, the server can determine the proxy context path from the `X-Forwarded-Prefix` header.
 
+=== New brute force locking mechanism
+
+There is a new brute force locking mechanism applied to all brute force modes. It is called `Secondary Authentication Failures Lockout`. Brute force protector is counting secondary authentication failures only (for example OTP) and when maximum specified number is reached the account is permanently locked even in temporary locking modes. This prevents attacks on second factor authenticators such as OTP when attacker already guessed the password.
+
+This new brute force locking mechanism also changes original behavior of brute force protection. It is applied only to a subset of authentication mechanisms (passwords, OTP and recovery codes).
+
 === Client secret authentication method
 
 OIDC specification has multiple client authentication methods. Two of them `client_secret_basic` and `client_secret_post` are implemented in {project_name} by **Client Id and Secret**
