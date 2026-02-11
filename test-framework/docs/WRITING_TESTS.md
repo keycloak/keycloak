@@ -182,7 +182,7 @@ public void testUser() {
 There are a limit number of supported resources at the moment, and more will be added as needed, eventually 
 supporting the majority of resources within a realm.
 
-### `cleanup(...)` and `add(...)`
+### `cleanup().add(...)`
 
 Adding cleanup to the realm will allow cleaning up anything within the realm:
 
