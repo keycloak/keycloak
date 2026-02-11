@@ -281,32 +281,118 @@ Otherwise, the provider will discard the request.
 
 == Graceful HTTP shutdown
 
-When running {project_name} behind a reverse proxy or load balancer , it is important to allow in-flight requests to complete during server shutdown.
+When running {project_name} behind a reverse proxy or load balancer, graceful shutdown ensures that in-flight requests complete successfully during server termination, preventing connection errors for clients.
 
-{project_name} enables graceful HTTP shutdown by default using Quarkus runtime configuration.
+{project_name} enables graceful HTTP shutdown by default with configurable timeouts.
+
+=== Understanding shutdown phases
+
+The shutdown process consists of two phases:
+
+*Pre-shutdown delay*:: During this phase, {project_name} signals to load balancers and proxies that it is preparing to shut down.
+The server's readiness endpoint returns a "not ready" status, allowing the load balancer to stop routing new requests to this instance.
+Existing TLS and HTTP keepalive connections are allowed to drain naturally.
+The server continues to process existing requests.
+
+*Shutdown timeout*:: After the pre-shutdown delay, {project_name} stops accepting new requests and waits for in-flight HTTP requests to complete.
+If requests are still running after the timeout expires, the server shuts down regardless.
 
 === Default behavior
 
-By default {project_name} configures Quarkus with short pre-shutdown delay and a bounded shutdown timeout:
+By default, {project_name} is configured with a 1-second pre-shutdown delay and a 1-second shutdown timeout.
+These defaults work well for most standard deployments where:
 
-[source,properties]
+* The load balancer reconfigures quickly (within 1 second)
+* Most requests complete within 1 second
+* The reverse proxy uses edge termination or re-encryption (not TLS passthrough)
+
+=== Configuring shutdown timeouts
+
+Advanced users can adjust the shutdown timeouts using CLI options based on their deployment characteristics.
+
+[source,bash]
 ----
-quarkus.shutdown.delay-enabled=true
-quarkus.shutdown.delay=1s
-quarkus.shutdown.timeout=1s
+bin/kc.sh start --shutdown-delay=<duration> --shutdown-timeout=<duration>
 ----
 
-When shutdown is initiated:
+Available options:
 
-* A pre-shutdown is applied, allowing load balancers to detect that the server is terminating and stop routing new requests to it.
-* Existing HTTP requests continue to be processed.
-* The server waits up to the configured shutdown timeout for in-flight requests to complete before exiting.
+`--shutdown-delay`::
+Length of the pre-shutdown phase during which the server prepares for shutdown.
+This period allows for load balancer reconfiguration and draining of TLS/HTTP keepalive connections.
+Default: `1s`
 
-=== Overriding shutdown configuration
+`--shutdown-timeout`::
+The shutdown period waiting for currently running HTTP requests to finish.
+Default: `1s`
 
-Advanced users may override the default graceful shutdown behavior using standard Quarkus configuration mechanisms.
+Both values accept duration formats: `1s` (seconds), `500ms` (milliseconds), `2m` (minutes), etc.
 
-These values can be set in application.properties file.
+=== When to adjust shutdown timeouts
 
-NOTE: When Quarkus properties are defined directly in application.properties, environment variables may not override them.
-This is general Quarkus configuration behavior.
+Consider adjusting these values based on your deployment configuration:
+
+[%header,cols="2,1,1,3"]
+|===
+|Scenario |Delay |Timeout |Reason
+
+|Load balancer polls readiness probe
+|10s
+|1-10s
+|Allow 1-2 poll cycles (typically 5s intervals) for load balancer to detect shutdown
+
+|TLS passthrough configuration
+|1s
+|10-30s
+|Longer timeout allows keepalive connections to drain naturally and receive connection close signals
+
+|Long-running admin API requests
+|1s
+|10-30s
+|Admin operations may take longer than typical user requests
+
+|Test environments / quick restarts
+|0s
+|500ms
+|Minimize shutdown time when graceful draining is not needed
+
+|Deployment orchestration notifies proxy before pod termination
+|0s
+|1-10s
+|No pre-shutdown delay needed if proxy is already reconfigured
+
+|Combined: TLS passthrough + polled readiness
+|10s
+|30s
+|Delays add up: time for load balancer detection + connection draining
+
+|===
+
+==== Example configurations
+
+For production with TLS passthrough:
+
+[source,bash]
+----
+bin/kc.sh start --shutdown-delay=5s --shutdown-timeout=30s
+----
+
+For load balancers that poll readiness:
+
+[source,bash]
+----
+bin/kc.sh start --shutdown-delay=10s --shutdown-timeout=10s
+----
+
+For test environments:
+
+[source,bash]
+----
+bin/kc.sh start-dev --shutdown-delay=0s --shutdown-timeout=500ms
+----
+
+[NOTE]
+====
+The shutdown delay affects the minimum time required for a complete server restart.
+In Kubernetes environments, ensure your `terminationGracePeriodSeconds` is longer than the sum of `shutdown-delay` and `shutdown-timeout` to prevent forced termination.
+====

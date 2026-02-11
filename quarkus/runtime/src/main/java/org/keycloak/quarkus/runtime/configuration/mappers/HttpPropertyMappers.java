@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +20,7 @@ import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 
 import io.quarkus.runtime.LaunchMode;
+import io.quarkus.runtime.configuration.DurationConverter;
 import io.quarkus.runtime.util.ClassPathUtils;
 import io.quarkus.vertx.http.runtime.options.TlsUtils;
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -182,8 +184,19 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                         .to("quarkus.rest.jackson.optimization.enable-reflection-free-serializers")
                         .build(),
                 fromOption(HttpOptions.HTTP_ACCEPT_NON_NORMALIZED_PATHS)
+                        .build(),
+                fromOption(HttpOptions.SHUTDOWN_TIMEOUT)
+                        .to("quarkus.shutdown.timeout")
+                        .paramLabel("timeout")
+                        .validator(HttpPropertyMappers::validateDuration)
+                        .build(),
+                fromOption(HttpOptions.SHUTDOWN_DELAY)
+                        .to("quarkus.shutdown.delay")
+                        .paramLabel("delay")
+                        .validator(HttpPropertyMappers::validateDuration)
                         .build()
         );
+
     }
 
     @Override
@@ -241,5 +254,16 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
             return String.valueOf(Math.max(MIN_MAX_THREADS, 4 * Runtime.getRuntime().availableProcessors()));
         }
         return value;
+    }
+
+    private static void validateDuration(String value) {
+        try {
+            Duration duration = DurationConverter.parseDuration(value);
+            if (duration.compareTo(Duration.ofSeconds(1)) < 0) {
+                throw new PropertyException("Duration must be at least 1 second.");
+            }
+        } catch (IllegalArgumentException e) {
+            throw new PropertyException("Invalid duration format. Expected format examples: 1s, 30s, 1m, etc.");
+        }
     }
 }

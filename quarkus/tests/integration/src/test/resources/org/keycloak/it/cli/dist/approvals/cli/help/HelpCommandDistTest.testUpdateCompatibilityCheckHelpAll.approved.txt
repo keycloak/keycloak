@@ -361,6 +361,16 @@ HTTP(S):
                      The type of the trust store file. If not given, the type is automatically
                        detected based on the file extension. If 'fips-mode' is set to 'strict' and
                        no value is set, it defaults to 'BCFKS'.
+--shutdown-delay <delay>
+                     Length of the pre-shutdown phase during which the server prepares for
+                       shutdown. May be an ISO 8601 duration value, an integer number of seconds,
+                       or an integer followed by one of [ms, h, m, s, d]. This period allows for
+                       loadbalancer reconfiguration and draining of TLS/HTTP keepalive connections.
+                       Default: 1s.
+--shutdown-timeout <timeout>
+                     The shutdown period waiting for currently running HTTP requests to finish. May
+                       be an ISO 8601 duration value, an integer number of seconds, or an integer
+                       followed by one of [ms, h, m, s, d]. Default: 1s.
 
 HTTP Access log:
 
