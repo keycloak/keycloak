@@ -193,14 +193,7 @@ Opening up `https://localhost:9000/metrics` leads to a page containing operation
 === Known issues with Docker
 
 * If a `RUN dnf install` command seems to be taking an excessive amount of time, then likely your Docker systemd service has the file limit setting `LimitNOFILE` configured incorrectly.
-Either update the service configuration to use a better value, such as 1024000, or directly use `ulimit` in the RUN command:
-
-[source, dockerfile]
-----
-...
-RUN ulimit -n 1024000 && dnf install --installroot ...
-...
-----
+Either update the service configuration to use a better value, such as 1024000, or use `--ulimit` in the https://docs.docker.com/reference/cli/docker/buildx/build/#ulimit[docker build command], e.g. `--ulimit nofile=1024000`.
 
 * If you are including provider JARs and your container fails a `start --optimized` with a notification that a provider JAR has changed, this is due to Docker truncating
 or otherwise modifying file modification timestamps from what the `build` command recorded to what is seen at runtime.
