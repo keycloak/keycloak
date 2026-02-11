@@ -31,21 +31,15 @@ You can specify these headers via the general parent option `telemetry-header-<h
 Or you can use the `telemetry-logs-header-<header>` for OpenTelemetry Logs, or `telemetry-metrics-header-<header>` for OpenTelemetry Metrics.
 
 For more details, see the  link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
 = Zero-downtime patch releases enabled by default
 
-Zero-downtime patch releases are now enabled by default for {project_name}. This feature, previously in preview as `rolling-updates:v2`, allows you to perform rolling updates when upgrading to a newer patch version within the same `major.minor` release stream without service downtime.
+Zero-downtime patch releases are now enabled by default. This allows you to perform rolling updates when upgrading to a newer patch version within the same `major.minor` release stream without service downtime.
 
-The `rolling-updates:v2` feature flag is no longer required. For more details, see the https://www.keycloak.org/server/update-compatibility[Update Compatibility] guide.
+When using the {project_name} Operator, set the update strategy to `Auto` to benefit from this functionality.
 
-For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+For more details on the Operator configuration, see the https://www.keycloak.org/operator/rolling-updates[Avoiding downtime with rolling updates] guide.
 
-= Infinispan 16 upgrade
-
-{project_name} now uses {jdgserver_name} 16 for distributed caching. This upgrade brings improved performance, enhanced security, and better support for zero-downtime operations.
-
-If you are using an external {jdgserver_name} server, you must upgrade to version 16.x.
-
-For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
 = Java 25 support
 

@@ -15,12 +15,6 @@ The outcome shows whether a rolling update is possible or if a recreate update i
 In its current version, it shows that a rolling update is possible when the {project_name} version is the same for the old and the new version.
 Future versions of {project_name} might change that behavior to use additional information from the configuration, the image and the version to determine if a rolling update is possible.
 
-[NOTE]
-====
-Rolling updates for patch releases are now fully supported and enabled by default in {project_name}.
-Refer to <<rolling-updates-for-patch-releases>> section for more details.
-====
-
 This is fully scriptable, so your update procedure can use that information to perform a rolling or recreate strategy depending on the change performed.
 It is also GitOps friendly, as it allows storing the metadata of the previous configuration in a file. Use  this file in a CI/CD pipeline with the new configuration to determine if a rolling update is possible or if a recreate update is needed.
 
@@ -189,18 +183,10 @@ If a cluster cannot be formed, you should shut down {project_name} running the o
 [[rolling-updates-for-patch-releases]]
 == Rolling updates for patch releases
 
-Rolling updates for patch releases are now fully supported and enabled by default.
 When upgrading to a newer patch version in the same `+major.minor+` release stream, {project_name} can perform zero-downtime rolling updates.
 
 To check compatibility for patch version upgrades, use the standard check command:
 <@kc.updatecompatibility parameters="check --file=/path/to/file.json"/>
-
-[NOTE]
-====
-The feature flag `--features=rolling-updates:v2` is no longer required as the functionality is enabled by default and is an essential feature.
-====
-
-Note there is no change needed when generating metadata using `metadata` command.
 
 Recommended Configuration:
 

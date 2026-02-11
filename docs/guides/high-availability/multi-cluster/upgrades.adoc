@@ -15,7 +15,6 @@ exposed to user requests via the load balancer until both {project_name} deploym
 {jdgserver_name} clusters synchronized.
 
 Patch upgrades can be deployed with zero-downtime.
-Rolling updates for patch releases are now enabled by default and essential.
 It is technically possible for upgrades to be rolled out to both sites simultaneously, however we recommend that upgrades be rolled out to one
 site at a time in order to simplify monitoring and debugging. For example, all nodes in site A should be upgraded to the
 new {project_name} version before the upgrade is rolled out to nodes in site B.
