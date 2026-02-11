@@ -86,6 +86,7 @@
         <module>bom</module>
         <module>core</module>
         <module>junit5-config</module>
+        <module>test-containers</module>
         <module>db-edb</module>
         <module>db-mariadb</module>
         <module>db-mssql</module>
@@ -95,6 +96,7 @@
         <module>db-tidb</module>
         <module>email-server</module>
         <module>examples</module>
+        <module>infinispan-server</module>
         <module>oauth</module>
         <module>remote</module>
         <module>remote-providers</module>

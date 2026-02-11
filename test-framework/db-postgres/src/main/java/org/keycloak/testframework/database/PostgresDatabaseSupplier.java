@@ -1,6 +1,6 @@
 package org.keycloak.testframework.database;
 
-public class PostgresDatabaseSupplier extends AbstractDatabaseSupplier {
+public class PostgresDatabaseSupplier extends AbstractContainerDatabaseSupplier {
 
     @Override
     public String getAlias() {

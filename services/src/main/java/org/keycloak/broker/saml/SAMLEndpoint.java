@@ -115,6 +115,7 @@ import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.saml.validators.ConditionsValidator;
 import org.keycloak.saml.validators.DestinationValidator;
+import org.keycloak.saml.validators.SubjectConfirmationDataValidator;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -581,16 +582,10 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
-                // When artifact binding is used, the LoginResponse is embedded in the ArtifactResponse
-                // Therefore, the InResponseTo attribute of the LoginResponse cannot be validated
-                // Moreover, the LoginResponse is not signed
-                boolean isArtifactBinding = SamlProtocol.SAML_ARTIFACT_BINDING.equals(getBindingType());
-
                 // Validate InResponseTo attribute: must match the generated request ID
                 String expectedRequestId = authSession.getClientNote(SamlProtocol.SAML_REQUEST_ID_BROKER);
-                final boolean inResponseToValidationSuccess = validateInResponseToAttribute(responseType, expectedRequestId);
-                if (!isArtifactBinding && !inResponseToValidationSuccess)
-                {
+                if (!validateInResponseToAttribute(responseType, expectedRequestId)
+                        || !validateSubjectConfirmationData(responseType, expectedRequestId)) {
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SAML_RESPONSE);
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
@@ -1035,34 +1030,33 @@ public class SAMLEndpoint {
             return false;
         }
 
+        return true;
+    }
+
+    private boolean validateSubjectConfirmationData(ResponseType responseType, String expectedRequestId) {
         // If present, Assertion > Subject > Confirmation > SubjectConfirmationData > InResponseTo must also be validated
         if (responseType.getAssertions().isEmpty())
             return true;
 
-        SubjectType subjectElement = responseType.getAssertions().get(0).getAssertion().getSubject();
+        AssertionType assertion = responseType.getAssertions().get(0).getAssertion();
+        SubjectType subjectElement = assertion.getSubject();
         if (subjectElement != null) {
-            if (subjectElement.getConfirmation() != null && !subjectElement.getConfirmation().isEmpty())
-            {
-                SubjectConfirmationType subjectConfirmationElement = subjectElement.getConfirmation().get(0);
+            if (subjectElement.getConfirmation() != null && !subjectElement.getConfirmation().isEmpty()) {
+                SubjectConfirmationType subjectConfirmationElement = subjectElement.getConfirmation().stream()
+                        .filter(c -> JBossSAMLURIConstants.SUBJECT_CONFIRMATION_BEARER.get().equals(c.getMethod()))
+                        .findFirst().orElse(null);
 
                 if (subjectConfirmationElement != null) {
                     SubjectConfirmationDataType subjectConfirmationDataElement = subjectConfirmationElement.getSubjectConfirmationData();
+                    SubjectConfirmationDataValidator.Builder scdvb = new SubjectConfirmationDataValidator.Builder(assertion.getID(), subjectConfirmationDataElement, destinationValidator)
+                            .inResponseTo(expectedRequestId)
+                            .clockSkewInMillis(1000 * config.getAllowedClockSkew());
+                    if (responseType.getDestination() != null) {
+                        scdvb.allowedRecipient(responseType.getDestination());
+                    }
 
-                    if (subjectConfirmationDataElement != null) {
-                        if (subjectConfirmationDataElement.getInResponseTo() != null) {
-                            // 3) Assertion > Subject > Confirmation > SubjectConfirmationData > InResponseTo is empty
-                            String subjectConfirmationDataInResponseToValue = subjectConfirmationDataElement.getInResponseTo();
-                            if (subjectConfirmationDataInResponseToValue.isEmpty()) {
-                                logger.error("Response Validation Error: SubjectConfirmationData InResponseTo attribute was expected but it is empty in received response");
-                                return false;
-                            }
-
-                            // 4) Assertion > Subject > Confirmation > SubjectConfirmationData > InResponseTo does not match request ID
-                            if (!subjectConfirmationDataInResponseToValue.equals(expectedRequestId)) {
-                                logger.error("Response Validation Error: received SubjectConfirmationData InResponseTo attribute does not match the expected request ID");
-                                return false;
-                            }
-                        }
+                    if (!scdvb.build().isValid()) {
+                        return false;
                     }
                 }
             }

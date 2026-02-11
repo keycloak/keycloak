@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -43,6 +44,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
@@ -175,8 +177,11 @@ public class OrganizationGroupsResource {
             @APIResponse(responseCode = "404", description = "Not Found")
     })
     public GroupRepresentation getGroupByPath(@PathParam("path") String path) {
-        // todo path
-        throw new UnsupportedOperationException("Not implemented yet");
+        GroupModel found = KeycloakModelUtils.findGroupByPath(session, realm, organization, path);
+        if (found == null) {
+            throw new NotFoundException("Group path does not exist");
+        }
+        return ModelToRepresentation.groupToBriefRepresentation(found);
     }
 
     @Path("{group-id}")

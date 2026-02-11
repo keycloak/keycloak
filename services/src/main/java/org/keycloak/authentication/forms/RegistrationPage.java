@@ -59,7 +59,7 @@ public class RegistrationPage implements FormAuthenticator, FormAuthenticatorFac
     public Response render(FormContext context, LoginFormsProvider form) {
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
             try {
-                InviteOrgActionToken token = Organizations.parseInvitationToken(context.getHttpRequest());
+                InviteOrgActionToken token = Organizations.parseInvitationToken(context.getSession(), context.getHttpRequest());
 
                 if (token != null) {
                     KeycloakSession session = context.getSession();

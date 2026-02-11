@@ -17,8 +17,8 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
+import org.keycloak.VCFormat;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 
 
@@ -35,7 +35,7 @@ public class LDCredentialBuilder implements CredentialBuilder {
 
     @Override
     public String getSupportedFormat() {
-        return Format.LDP_VC;
+        return VCFormat.LDP_VC;
     }
 
     @Override

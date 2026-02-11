@@ -1,6 +1,6 @@
 package org.keycloak.testframework.database;
 
-public class MSSQLServerDatabaseSupplier extends AbstractDatabaseSupplier {
+public class MSSQLServerDatabaseSupplier extends AbstractContainerDatabaseSupplier {
 
     @Override
     public String getAlias() {

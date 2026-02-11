@@ -44,6 +44,7 @@ public class LogHandler implements AutoCloseable {
     public void beforeAll(ExtensionContext context) {
         logDivider(Logger.Level.INFO);
         logTestClassStatus(context, Status.RUNNING, Logger.Level.INFO);
+        gitHubActionReport.onClassStart();
     }
 
     public void beforeEachStarting(ExtensionContext context) {
@@ -60,6 +61,8 @@ public class LogHandler implements AutoCloseable {
         Status status = context.getExecutionException().isPresent() ? Status.FAILED : Status.SUCCESS;
         if (status == Status.FAILED) {
             gitHubActionReport.onClassError(context);
+        } else {
+            gitHubActionReport.onClassSuccess(context);
         }
         logTestClassStatus(context, status, Logger.Level.DEBUG);
     }

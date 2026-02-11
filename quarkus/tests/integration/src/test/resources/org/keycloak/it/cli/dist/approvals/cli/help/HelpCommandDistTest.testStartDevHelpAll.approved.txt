@@ -378,7 +378,7 @@ HTTP Access log:
 --http-access-log-file-name <name>
                      The HTTP access log file base name, which will create a log file name
                        concatenating base and suffix (e.g. 'keycloak-http-access.log'). The file is
-                       located in the '/data' directory of the distribution. Default:
+                       located in the '/data/log' directory of the distribution. Default:
                        keycloak-http-access. Available only when HTTP Access logging to file is
                        enabled.
 --http-access-log-file-rotate <true|false>

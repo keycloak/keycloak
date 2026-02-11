@@ -110,7 +110,9 @@ public class CLITestExtension extends QuarkusMainTestExtension {
                 result = dist.run(List.of(launch.value()));
             }
         } else {
-            Keycloak.initSys(launch == null ? new String[] {} : launch.value());
+            if (!Keycloak.initSys(launch == null ? new String[] {} : launch.value())) {
+                return;
+            }
             configureProfile(context);
             super.beforeEach(context);
         }

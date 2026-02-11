@@ -75,6 +75,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.KeycloakSessionTaskWithResult;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
@@ -893,23 +894,41 @@ public final class KeycloakModelUtils {
         return sb.toString();
     }
 
-    private static void buildGroupPath(StringBuilder sb, String groupName, GroupModel parent, boolean escapeSlashes) {
+    /**
+     * Unified recursive helper to build group paths for both realm and organization groups.
+     * For organization groups, stops recursion at the internal organization group (whose name equals the org UUID).
+     * For realm groups, organizationId is null so recursion continues to the root.
+     */
+    private static void buildGroupPath(StringBuilder sb, String groupName, GroupModel parent, boolean escapeSlashes, String organizationId) {
         if (parent != null) {
-            buildGroupPath(sb, parent.getName(), parent.getParent(), escapeSlashes);
+            // For org groups: stop recursion at internal org group (name equals org UUID)
+            // For realm groups: organizationId is null, so this check never triggers
+            if (organizationId == null || !organizationId.equals(parent.getName())) {
+                buildGroupPath(sb, parent.getName(), parent.getParent(), escapeSlashes, organizationId);
+            }
         }
-        sb.append(GROUP_PATH_SEPARATOR).append(escapeSlashes? escapeGroupNameForPath(groupName) : groupName);
+        sb.append(GROUP_PATH_SEPARATOR).append(escapeSlashes ? escapeGroupNameForPath(groupName) : groupName);
     }
 
     public static String buildGroupPath(GroupModel group) {
+        if (group == null) return null;
+
         StringBuilder sb = new StringBuilder();
-        buildGroupPath(sb, group.getName(), group.getParent(), group.escapeSlashesInGroupPath());
+        buildGroupPath(sb, group.getName(), group.getParent(), group.escapeSlashesInGroupPath(), getOrgId(group));
         return sb.toString();
     }
 
     public static String buildGroupPath(GroupModel group, GroupModel otherParentGroup) {
+        if (group == null) return null;
+
         StringBuilder sb = new StringBuilder();
-        buildGroupPath(sb, group.getName(), otherParentGroup, group.escapeSlashesInGroupPath());
+        buildGroupPath(sb, group.getName(), otherParentGroup, group.escapeSlashesInGroupPath(), getOrgId(group));
         return sb.toString();
+    }
+
+    private static String getOrgId(GroupModel group) {
+        OrganizationModel organization = group.getOrganization();
+        return organization != null ? organization.getId() : null;
     }
 
     public static String normalizeGroupPath(final String groupPath) {
@@ -927,6 +946,45 @@ public final class KeycloakModelUtils {
         }
 
         return normalized;
+    }
+
+    /**
+     * Finds an organization group by its user-friendly path (without the organization UUID prefix).
+     * <p />
+     * This method searches for a group within the specified organization using a path that does not include
+     * the internal organization group UUID. For example, to find a group at internal path
+     * {@code /8855824f-3b7b-4f49-ac80-8777d547c9fb/MyGroupName/lvl2}, you would pass {@code /MyGroupName/lvl2}
+     * as the path parameter.
+     * <p />
+     * The organization context is used to determine the internal organization group, and the search is performed
+     * relative to that group.
+     *
+     * @param session the Keycloak session
+     * @param realm the realm
+     * @param organization the organization context
+     * @param path the user-facing path (without organization UUID prefix)
+     * @return the {@code GroupModel} corresponding to the given path within the organization, or {@code null} if not found
+     */
+    public static GroupModel findGroupByPath(KeycloakSession session, RealmModel realm, OrganizationModel organization, String path) {
+        if (path == null || organization == null) {
+            return null;
+        }
+
+        // Find the internal organization group (top-level group with name = organization UUID)
+        GroupModel orgInternalGroup = session.groups().getGroupByName(realm, null, organization.getId());
+        if (orgInternalGroup == null) {
+            // Internal organization group not found
+            return null;
+        }
+
+        // Split the path
+        String[] split = splitPath(path, escapeSlashesInGroupPath(session));
+        if (split.length == 0) {
+            return null;
+        }
+
+        // Search for the group starting from the internal organization group as parent
+        return getGroupModel(session.groups(), realm, orgInternalGroup, split, 0);
     }
 
     public static Stream<RoleModel> getClientScopeMappingsStream(ClientModel client, ScopeContainerModel container) {

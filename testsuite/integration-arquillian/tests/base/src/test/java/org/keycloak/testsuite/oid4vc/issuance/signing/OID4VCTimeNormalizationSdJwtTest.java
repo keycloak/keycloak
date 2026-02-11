@@ -55,7 +55,7 @@ import static org.junit.Assert.assertNotNull;
  * @author <a href="mailto:Rodrick.Awambeng@adorsys.com">Rodrick Awambeng</a>
  *
  */
-public class OID4VCTimeNormalizationSdJwtTest extends OID4VCSdJwtIssuingEndpointTest {
+public class OID4VCTimeNormalizationSdJwtTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testSdJwtIatRoundedViaRealmNormalizedIssuanceDate() {

@@ -300,7 +300,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
             InviteOrgActionToken token;
 
             try {
-                token = Organizations.parseInvitationToken(context.getHttpRequest());
+                token = Organizations.parseInvitationToken(context.getSession(), context.getHttpRequest());
             } catch (VerificationException e) {
                 error.accept(List.of(new FormMessage("Unexpected error parsing the invitation token")));
                 return false;

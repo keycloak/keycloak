@@ -1,5 +1,6 @@
 package org.keycloak.tests.oauth;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.OAuth2Constants;
@@ -11,6 +12,7 @@ import org.keycloak.events.Details;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -297,5 +299,45 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertSuccess("test-app", response);
+    }
+
+    @Test
+    public void testDisabledIdentityProvider() {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.setEnabled(false);
+        });
+
+        String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Identity Provider is not enabled", response, events.poll());
+    }
+
+    @Test
+    public void testUserDisabled() {
+        UserRepresentation userRep = user.admin().toRepresentation();
+        userRep.setEnabled(false);
+        user.admin().update(userRep);
+
+        String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("User is not enabled", response, events.poll());
+
+        userRep.setEnabled(true);
+        user.admin().update(userRep);
+    }
+
+    @Test
+    public void testUserWithRequiredAction() {
+        UserRepresentation userRep = user.admin().toRepresentation();
+        userRep.setRequiredActions(Collections.singletonList("UPDATE_PASSWORD"));
+        user.admin().update(userRep);
+
+        String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Account is not fully set up", response, events.poll());
+
+        userRep = user.admin().toRepresentation();
+        userRep.setRequiredActions(Collections.emptyList());
+        user.admin().update(userRep);
     }
 }

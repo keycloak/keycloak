@@ -1,0 +1,12 @@
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== The SAML broker and adapter now check the SubjectConfirmationData element for the bearer type
+
+Now {project_name}, when acting as a SAML Service Provider (SP) in identity brokering or in the adapter, validates the `SubjectConfirmationData` for the type `urn:oasis:names:tc:SAML:2.0:cm:bearer` defined in the standard. The elements `NotBefore`, `NotOnOrAfter` and `Recipient`, when present in the assertion, are checked to be in the valid time range and to be the correct destination URI respectively. Previously, similar values were checked for other parts of the SAML response (for example the `Conditions` element or the `destination` attribute).
+
+To prepare for the upgrade, verify that the Identity Provider or adapter configurations allow for a sufficient clock skew for the time attributes.
+
+If you see any issue after the upgrade related to this element, please configure the external IdP to set the correct values for the subject confirmation element.

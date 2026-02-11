@@ -31,6 +31,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.VCFormat;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
@@ -51,7 +52,6 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
@@ -339,7 +339,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             Assert.fail("Should have thrown an exception");
         } catch (Exception e) {
             Assert.assertTrue(e instanceof BadRequestException);
-            Assert.assertEquals("No credential builder found for format jwt_vc", e.getMessage());
+            Assert.assertEquals("No credential builder found for format jwt_vc_json", e.getMessage());
         }
     }
 
@@ -452,8 +452,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
         CredentialOfferURI credentialOfferURI = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .credentialConfigurationId(credentialConfigurationId)
+                .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
                 .username("john")
                 .bearerToken(token)
@@ -464,7 +463,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 2. Using the uri to get the actual credential offer
         CredentialsOffer credentialsOffer = oauth.oid4vc()
-                .credentialOfferRequest(credentialOfferURI.getNonce())
+                .credentialOfferRequest(credentialOfferURI)
                 .bearerToken(token)
                 .send()
                 .getCredentialsOffer();
@@ -751,7 +750,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                             scopeName,
                             jwtVcConfig.getScope());
                     assertEquals("The jwt_vc-credential should be offered in the jwt_vc format.",
-                            Format.JWT_VC,
+                            VCFormat.JWT_VC,
                             jwtVcConfig.getFormat());
 
                     Claims jwtVcClaims = jwtVcConfig.getCredentialMetadata() != null ? jwtVcConfig.getCredentialMetadata().getClaims() : null;
@@ -1066,7 +1065,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 TEST_DID.toString(),
                 "optional-jwt-credential-config-id",
                 null, null,
-                Format.JWT_VC,
+                VCFormat.JWT_VC,
                 null, null);
         
         ClientRepresentation testClient = testRealm().clients().findByClientId(client.getClientId()).get(0);
@@ -1121,7 +1120,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 TEST_DID.toString(),
                 "test-oid4vci-config-id",
                 null, null,
-                Format.JWT_VC,
+                VCFormat.JWT_VC,
                 null, null);
         
         ClientRepresentation testClient = testRealm().clients().findByClientId(client.getClientId()).get(0);
@@ -1144,7 +1143,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 TEST_DID.toString(),
                 "test-oid4vci-realm-config-id",
                 null, null,
-                Format.JWT_VC,
+                VCFormat.JWT_VC,
                 null, null);
         
         try {
@@ -1167,7 +1166,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 TEST_DID.toString(),
                 "test-oid4vci-disabled-config-id",
                 null, null,
-                Format.JWT_VC,
+                VCFormat.JWT_VC,
                 null, null);
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
@@ -1208,8 +1207,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 1. Retrieving the credential-offer-uri
         CredentialOfferURI credentialOfferURI = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .credentialConfigurationId(credentialConfigurationId)
+                .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
                 .username("john")
                 .bearerToken(token)
@@ -1258,8 +1256,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 1. Create first credential offer
         CredentialOfferURI credentialOfferURI1 = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .credentialConfigurationId(credentialConfigurationId)
+                .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
                 .username("john")
                 .bearerToken(token)
@@ -1271,8 +1268,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 2. Create second credential offer (should have different nonce)
         CredentialOfferURI credentialOfferURI2 = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .credentialConfigurationId(credentialConfigurationId)
+                .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
                 .username("john")
                 .bearerToken(token)
@@ -1337,8 +1333,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 1. Fetch the Offer URI
         CredentialOfferURI credentialOfferURI = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .credentialConfigurationId(credentialConfigurationId)
+                .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
                 .username("john")
                 .bearerToken(token)

@@ -135,6 +135,8 @@ public final class Constants {
     // multiple values into single string
     public static final String CFG_DELIMITER = "##";
 
+    public static final String INCLUDE_REDIRECTS = "+";
+
     // Better performance to use this instead of String.split
     public static final Pattern CFG_DELIMITER_PATTERN = Pattern.compile("\\s*" + CFG_DELIMITER + "\\s*");
 

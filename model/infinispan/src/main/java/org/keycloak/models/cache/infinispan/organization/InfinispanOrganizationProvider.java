@@ -331,9 +331,29 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member) {
-        // Don't cache per-member group lists - delegate directly to DB
-        // Currently only used in export
-        return getDelegate().getOrganizationGroupsByMember(organization, member);
+        if (userCache == null) {
+            return getDelegate().getOrganizationGroupsByMember(organization, member);
+        }
+
+        String cacheKey = cacheKeyOrgGroupsByMember(organization, member);
+
+        if (isUserCacheKeyInvalid(cacheKey)) {
+            return getDelegate().getOrganizationGroupsByMember(organization, member);
+        }
+
+        CachedOrgGroupIds cached = userCache.getCache().get(cacheKey, CachedOrgGroupIds.class);
+
+        if (cached == null) {
+            Long loaded = userCache.getCache().getCurrentRevision(cacheKey);
+            Stream<GroupModel> groups = getDelegate().getOrganizationGroupsByMember(organization, member);
+            cached = new CachedOrgGroupIds(loaded, cacheKey, getRealm(), groups);
+            userCache.getCache().addRevisioned(cached, userCache.getStartupRevision());
+        }
+
+        RealmModel realm = getRealm();
+        return cached.getGroupIds().stream()
+                .map(realm::getGroupById)
+                .filter(java.util.Objects::nonNull);
     }
 
     @Override
@@ -447,14 +467,23 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         return realm.getId() + ".org." + organization.getId() + ".member." + user.getId() + ".membership";
     }
 
+    private String cacheKeyOrgGroupsByMember(OrganizationModel organization, UserModel member) {
+        return getRealm().getId() + ".org." + organization.getId() + ".member." + member.getId() + ".groups";
+    }
+
     void registerMemberInvalidation(OrganizationModel organization, UserModel member) {
         if (userCache != null) {
             userCache.registerInvalidation(cacheKeyByMember(member));
             userCache.registerInvalidation(cacheKeyMembership(getRealm(), organization, member));
+            registerOrgGroupsMembershipInvalidation(organization, member);
         }
         if (realmCache != null) {
             realmCache.registerInvalidation(cacheKeyOrgMemberCount(getRealm(), organization));
         }
+    }
+
+    void registerOrgGroupsMembershipInvalidation(OrganizationModel organization, UserModel member) {
+        userCache.registerInvalidation(cacheKeyOrgGroupsByMember(organization, member));
     }
 
     private boolean isRealmCacheKeyInvalid(String cacheKey) {

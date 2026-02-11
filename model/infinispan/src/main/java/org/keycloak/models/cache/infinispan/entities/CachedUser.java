@@ -55,7 +55,7 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
     private final LazyLoader<UserModel, Set<String>> groups;
     private final LazyLoader<UserModel, List<CredentialModel>> storedCredentials;
 
-    public CachedUser(Long revision, RealmModel realm, UserModel user, int notBefore) {
+    public CachedUser(long revision, RealmModel realm, UserModel user, int notBefore) {
         super(revision, user.getId());
         this.realm = realm.getId();
         this.createdTimestamp = user.getCreatedTimestamp();

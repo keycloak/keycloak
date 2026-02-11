@@ -17,7 +17,6 @@
 package org.keycloak.services.managers;
 
 import java.util.List;
-import java.util.regex.Pattern;
 
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -43,8 +42,6 @@ public class AppAuthManager extends AuthenticationManager {
 
     public static final String BEARER = "Bearer";
 
-    private static final Pattern WHITESPACES = Pattern.compile("\\s+");
-
     @Override
     public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm) {
         AuthResult authResult = super.authenticateIdentityCookie(session, realm);
@@ -66,26 +63,28 @@ public class AppAuthManager extends AuthenticationManager {
             return null;
         }
 
-        String[] split = WHITESPACES.split(authHeader.trim());
-        if (split.length != 2){
+        int indexOfSpace = authHeader.indexOf(' ');
+
+        if (indexOfSpace <= 0) {
             return null;
         }
 
-        String typeString = split[0];
+        String typeString = authHeader.substring(0, indexOfSpace);
+        String tokenString = authHeader.substring(indexOfSpace + 1);
 
+        boolean isBearerHeader = typeString.equalsIgnoreCase(BEARER);
         if (!Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
-            if (!typeString.equalsIgnoreCase(BEARER)) {
+            if (!isBearerHeader) {
                 return null;
             }
         } else {
             // "Bearer" is case-insensitive for historical reasons. "DPoP" is case-sensitive to follow the spec.
-            if (!typeString.equalsIgnoreCase(BEARER) && !typeString.equals(TokenUtil.TOKEN_TYPE_DPOP)){
+            if (!isBearerHeader && !typeString.equals(TokenUtil.TOKEN_TYPE_DPOP)) {
                 return null;
             }
         }
 
-        String tokenString = split[1];
-        if (ObjectUtil.isBlank(tokenString)) {
+        if (ObjectUtil.isBlank(tokenString) || tokenString.contains(" ")) {
             return null;
         }
 

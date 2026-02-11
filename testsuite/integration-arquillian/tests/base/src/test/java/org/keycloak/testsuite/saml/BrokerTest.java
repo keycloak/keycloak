@@ -481,6 +481,10 @@ public class BrokerTest extends AbstractSamlTest {
 
                 // simulate IdP response (artifact as query param)
                 samlClientBuilder.processSamlResponse(REDIRECT)
+                        .transformDocument(doc -> {
+                            samlBackchannelArtifactResolveReceiver.setInResponseTo(doc.getDocumentElement().getAttribute("ID"));
+                            return doc;
+                        })
                         .targetAttributeSamlArtifact()
                         .targetUri(getSamlBrokerUrl(REALM_NAME))
                         .build();

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.testframework.config.Config;
-import org.keycloak.testframework.logging.JBossLogConsumer;
+import org.keycloak.testframework.logging.JBossContainerLogConsumer;
 
 import org.jboss.logging.Logger;
 import org.testcontainers.containers.Container;
@@ -33,7 +33,7 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
 
         container = createContainer();
         container = container.withStartupTimeout(Duration.ofMinutes(10))
-                .withLogConsumer(new JBossLogConsumer(Logger.getLogger("managed.db." + getDatabaseVendor())))
+                .withLogConsumer(new JBossContainerLogConsumer(Logger.getLogger("managed.db." + getDatabaseVendor())))
                 .withReuse(reuse)
                 .withInitScript(config.getInitScript());
         withDatabaseAndUser(getDatabase(), getUsername(), getPassword());

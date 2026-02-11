@@ -184,7 +184,7 @@ public class Picocli {
             // to reuse the previous result either means we need to duplicate the logic in the execute method
             // or refactor the above logic so that it happens in the command logic
             // We could also reduce the memory footprint of the ParseResult, but that looks a little hackish
-            int exitCode = cmd.execute(argArray);
+            int exitCode = execute(cmd, argArray);
 
             exit(exitCode);
         } catch (ParameterException parEx) {
@@ -192,6 +192,10 @@ public class Picocli {
         } catch (ProfileException | PropertyException proEx) {
             usageException(proEx.getMessage(), proEx.getCause());
         }
+    }
+
+    protected int execute(CommandLine cmd, String[] argArray) {
+        return cmd.execute(argArray);
     }
 
     public Optional<AbstractCommand> getParsedCommand() {
