@@ -1,6 +1,8 @@
 package org.keycloak.models.workflow;
 
 
+import java.util.concurrent.TimeoutException;
+
 import org.keycloak.common.util.DurationConverter;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -72,7 +74,11 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
             String nextStepId = KeycloakModelUtils.runJobInTransactionWithResult(s.getKeycloakSessionFactory(), s.getContext(), session -> {
                 // we need a copy of the context with the new session to run the step provider
                 DefaultWorkflowExecutionContext stepContext = new DefaultWorkflowExecutionContext(session, context, step);
+                // check if the workflow execution was cancelled before running the step
+                checkExecutionCancelled(step);
                 getStepProvider(session, step).run(stepContext);
+                // now check again if the workflow execution was cancelled after running the step, as the step provider might have taken a long time to execute
+                checkExecutionCancelled(step);
                 WorkflowStep nextStep = stepContext.getNextStep();
                 return nextStep != null ? nextStep.getId() : null;
             }, "Workflow step execution task");
@@ -96,6 +102,17 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
             WorkflowProviderEvents.fireWorkflowStepFailedEvent(s, workflow, step, resourceId, executionId, errorMessage);
 
             throw e;
+        }
+    }
+
+    private void checkExecutionCancelled(WorkflowStep step) {
+        Throwable throwable = super.futureCancelled.get();
+        if (super.futureCancelled.get() != null) {
+            if (throwable instanceof TimeoutException || throwable.getCause() instanceof TimeoutException) {
+                throw new RuntimeException("Workflow executor timed out during execution of step " + step.getProviderId(), throwable);
+            } else {
+                throw new RuntimeException("Workflow executor was cancelled during execution of step " + step.getProviderId(), throwable);
+            }
         }
     }
 }
