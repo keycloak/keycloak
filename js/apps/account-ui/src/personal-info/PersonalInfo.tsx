@@ -78,7 +78,7 @@ export const PersonalInfo = () => {
           }
         });
       }
-      await context.keycloak.updateToken();
+      await context.keycloak.updateToken(5);
       addAlert(t("accountUpdatedMessage"));
     } catch (error) {
       addAlert(t("accountUpdatedError"), AlertVariant.danger);

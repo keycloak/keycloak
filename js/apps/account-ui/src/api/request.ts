@@ -2,7 +2,6 @@ import {
   KeycloakContext,
   type BaseEnvironment,
 } from "@keycloak/keycloak-ui-shared";
-import Keycloak from "keycloak-js";
 
 import { joinPath } from "../utils/joinPath";
 import { CONTENT_TYPE_HEADER, CONTENT_TYPE_JSON } from "./constants";
@@ -62,7 +61,7 @@ export const url = (environment: BaseEnvironment, path: string) =>
     ),
   );
 
-export const token = (keycloak: Keycloak) =>
+export const token = (keycloak: KeycloakContext<BaseEnvironment>["keycloak"]) =>
   async function getAccessToken() {
     try {
       await keycloak.updateToken(5);
