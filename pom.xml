@@ -46,8 +46,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.31.2</quarkus.version>
-        <quarkus.build.version>3.31.2</quarkus.build.version>
+        <quarkus.version>3.32.0.CR1</quarkus.version>
+        <quarkus.build.version>3.32.0.CR1</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -120,7 +120,7 @@
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
         <undertow.version>2.3.20.Final</undertow.version>
-        <wildfly-elytron.version>2.7.1.Final</wildfly-elytron.version>
+        <wildfly-elytron.version>2.8.2.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <woodstox.version>6.0.3</woodstox.version>
         <wildfly.common.quarkus.aligned.version>1.5.4.Final-format-001</wildfly.common.quarkus.aligned.version>
@@ -155,7 +155,7 @@
         <tidb.container>mirror.gcr.io/pingcap/tidb:${tidb.version}</tidb.container>
         <mysql.version>8.4</mysql.version>
         <mysql.container>mirror.gcr.io/mysql:${mysql.version}</mysql.container>
-        <mysql-jdbc.version>9.5.0</mysql-jdbc.version>
+        <mysql-jdbc.version>9.6.0</mysql-jdbc.version>
         <postgresql.version>18</postgresql.version>
         <postgresql.container>mirror.gcr.io/postgres:${postgresql.version}</postgresql.container>
         <aurora-postgresql.version>17.5</aurora-postgresql.version>

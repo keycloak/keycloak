@@ -83,7 +83,7 @@ public class HttpDistTest {
     @Test
     @Launch({"start-dev", "--https-certificates-reload-period=wrong"})
     public void testHttpCertificateReloadPeriod(CLIResult result) {
-        result.assertError("Text cannot be parsed to a Duration");
+        result.assertError("Invalid duration");
     }
 
     @Test
