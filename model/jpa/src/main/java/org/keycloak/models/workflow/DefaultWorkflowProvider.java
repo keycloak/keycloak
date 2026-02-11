@@ -250,19 +250,10 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
             stateProvider.remove(oldExecutionId);
 
             // activate the destination workflow for the resource, starting from the specified step
-            DefaultWorkflowExecutionContext context;
-            if (workflowFrom.getId().equals(workflowTo.getId())) {
-                // we reuse the executionId when migrating within the same workflow
-                context = new DefaultWorkflowExecutionContext(session, workflowTo, new AdhocWorkflowEvent(workflowTo.getSupportedType(), scheduledStep.resourceId()),
-                        scheduledStep.executionId());
-            } else {
-                context = new DefaultWorkflowExecutionContext(session, workflowTo, new AdhocWorkflowEvent(workflowTo.getSupportedType(),
-                        scheduledStep.resourceId()));
-            }
-            context.restart(stepPosition);
+            DefaultWorkflowExecutionContext context = getDefaultWorkflowExecutionContext(scheduledStep, workflowFrom, workflowTo);
+            restartWorkflow(context, stepPosition);
 
             String newExecutionId = context.getExecutionId();
-
             // Fire workflow resource migrated event
             WorkflowProviderEvents.fireWorkflowResourceMigratedEvent(session, workflowFrom, workflowTo, stepFrom, stepTo,
                     scheduledStep.resourceId(), oldExecutionId, newExecutionId);
@@ -273,6 +264,19 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                         stepTo.getProviderId(), oldExecutionId, newExecutionId);
             }
         }
+    }
+
+    private DefaultWorkflowExecutionContext getDefaultWorkflowExecutionContext(ScheduledStep scheduledStep, Workflow workflowFrom, Workflow workflowTo) {
+        DefaultWorkflowExecutionContext context;
+        if (workflowFrom.getId().equals(workflowTo.getId())) {
+            // we reuse the executionId when migrating within the same workflow
+            context = new DefaultWorkflowExecutionContext(session, workflowTo, new AdhocWorkflowEvent(workflowTo.getSupportedType(), scheduledStep.resourceId()),
+                    scheduledStep.executionId());
+        } else {
+            context = new DefaultWorkflowExecutionContext(session, workflowTo, new AdhocWorkflowEvent(workflowTo.getSupportedType(),
+                    scheduledStep.resourceId()));
+        }
+        return context;
     }
 
     @Override
@@ -407,9 +411,8 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                     String executionId = scheduledStep.executionId();
                     String resourceId = scheduledStep.resourceId();
                     if (provider.restart(context)) {
-                        DefaultWorkflowExecutionContext restartContext = new DefaultWorkflowExecutionContext(session, workflow, event, scheduledStep);
+                        restartWorkflow(new DefaultWorkflowExecutionContext(session, workflow, event, executionId), 0);
                         WorkflowProviderEvents.fireWorkflowRestartedEvent(session, workflow, resourceId, executionId);
-                        restartContext.restart(0);
                     } else if (provider.deactivate(context)) {
                         log.debugf("Workflow '%s' cancelled for resource %s (execution id: %s)", workflow.getName(), resourceId, executionId);
                         WorkflowProviderEvents.fireWorkflowDeactivatedEvent(session, workflow, resourceId, executionId, "event-based deactivation");
@@ -451,6 +454,10 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
 
     private void runWorkflow(DefaultWorkflowExecutionContext context) {
         executor.runTask(session, new RunWorkflowTask(context));
+    }
+
+    private void restartWorkflow(DefaultWorkflowExecutionContext context, int position) {
+        executor.runTask(session, new RestartWorkflowTask(context, position));
     }
 
     private WorkflowStepRepresentation toRepresentation(WorkflowStep step) {

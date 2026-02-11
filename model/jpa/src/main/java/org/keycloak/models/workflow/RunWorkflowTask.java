@@ -3,6 +3,7 @@ package org.keycloak.models.workflow;
 
 import org.keycloak.common.util.DurationConverter;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import org.jboss.logging.Logger;
 
@@ -41,14 +42,7 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
                         scheduledTime, nextStep.getAfter());
                 return;
             }
-
-            DefaultWorkflowExecutionContext stepContext = new DefaultWorkflowExecutionContext(session, this.context, nextStep);
-
-            nextStep = runWorkflowStep(stepContext);
-
-            if (stepContext.isCompleted()) {
-                return;
-            }
+            nextStep = runWorkflowStep(context, nextStep);
         }
 
         // not recurring, remove the state record
@@ -62,26 +56,31 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
 
     protected WorkflowStep runCurrentStep(DefaultWorkflowExecutionContext context) {
         if (context.getStep() != null) {
-            return runWorkflowStep(context);
+            return runWorkflowStep(context, context.getStep());
         }
         return context.getWorkflow().getSteps().findFirst().orElse(null);
     }
 
-    private WorkflowStep runWorkflowStep(DefaultWorkflowExecutionContext context) {
-        WorkflowStep step = context.getStep();
+    private WorkflowStep runWorkflowStep(DefaultWorkflowExecutionContext context, WorkflowStep step) {
         String executionId = context.getExecutionId();
         String resourceId = context.getResourceId();
         Workflow workflow = context.getWorkflow();
-        KeycloakSession session = context.getSession();
+        KeycloakSession s = context.getSession();
 
         log.debugf("Running step %s on resource %s (execution id: %s)", step.getProviderId(), resourceId, executionId);
         try {
-            getStepProvider(session, step).run(context);
+            String nextStepId = KeycloakModelUtils.runJobInTransactionWithResult(s.getKeycloakSessionFactory(), s.getContext(), session -> {
+                // we need a copy of the context with the new session to run the step provider
+                DefaultWorkflowExecutionContext stepContext = new DefaultWorkflowExecutionContext(session, context, step);
+                getStepProvider(session, step).run(stepContext);
+                WorkflowStep nextStep = stepContext.getNextStep();
+                return nextStep != null ? nextStep.getId() : null;
+            }, "Workflow step execution task");
             log.debugf("Step %s completed successfully (execution id: %s)", step.getProviderId(), executionId);
-
             // Fire workflow step executed event
-            WorkflowProviderEvents.fireWorkflowStepExecutedEvent(session, workflow, step, resourceId, executionId);
-        } catch (WorkflowExecutionException e) {
+            WorkflowProviderEvents.fireWorkflowStepExecutedEvent(s, workflow, step, resourceId, executionId);
+            return nextStepId != null ? context.getWorkflow().getStepById(nextStepId) : null;
+        } catch (Exception e) {
             StringBuilder sb = new StringBuilder();
             sb.append("Step %s failed (execution id: %s)");
             String errorMessage = e.getMessage();
@@ -94,11 +93,9 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
             }
 
             // Fire workflow step failed event
-            WorkflowProviderEvents.fireWorkflowStepFailedEvent(session, workflow, step, resourceId, executionId, errorMessage);
+            WorkflowProviderEvents.fireWorkflowStepFailedEvent(s, workflow, step, resourceId, executionId, errorMessage);
 
             throw e;
         }
-
-        return context.getNextStep();
     }
 }

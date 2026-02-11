@@ -67,6 +67,17 @@ public class Workflow {
         this.config = c;
     }
 
+    /**
+     * Create a new workflow instance based on the provided workflow but bound to a new session.
+     *
+     * @param workflow the workflow to copy
+     */
+    public Workflow(KeycloakSession session, Workflow workflow) {
+        this(session, workflow.getId(), workflow.getConfig());
+        this.notBefore = workflow.getNotBefore();
+    }
+
+
     public String getId() {
         return id;
     }
