@@ -11,8 +11,10 @@ import {
   Text,
   TextContent,
   TextInputProps,
+  ToggleGroup,
+  ToggleGroupItem,
 } from "@patternfly/react-core";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FormProvider,
   useForm,
@@ -74,10 +76,14 @@ const switchTheme = (theme: ThemeType) => {
 type ThemeColorsProps = {
   realm: RealmRepresentation;
   save: (realm: ThemeRealmRepresentation) => void;
-  theme: "light" | "dark";
+  theme?: "light" | "dark";
 };
 
-export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
+export const ThemeColors = ({
+  realm,
+  save,
+  theme: initialTheme,
+}: ThemeColorsProps) => {
   const { t } = useTranslation();
   const form = useForm();
   const { handleSubmit, watch } = form;
@@ -86,9 +92,17 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
   const [open, toggle, setOpen] = useToggle();
 
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  const getDarkModeFromRealm = () => {
+    const darkMode = realm.attributes?.darkMode;
+    if (darkMode === "false") return "light";
+    if (darkMode === "true") return "dark";
+    return mediaQuery.matches ? "dark" : "light";
+  };
+  const originalTheme = useMemo(() => getDarkModeFromRealm(), []);
+  const [theme, setTheme] = useState<ThemeType>(initialTheme || originalTheme);
   const mapping = useMemo(
     () => (theme === "light" ? lightTheme() : darkTheme()),
-    [],
+    [theme],
   );
 
   const reset = () => {
@@ -136,9 +150,9 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
     setupForm();
     switchTheme(theme);
     return () => {
-      switchTheme(mediaQuery.matches ? "dark" : "light");
+      switchTheme(originalTheme);
     };
-  }, [realm]);
+  }, [realm, theme]);
 
   return (
     <>
@@ -162,6 +176,22 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
           <FlexItem>
             <FormAccess isHorizontal role="manage-realm">
               <FormProvider {...form}>
+                {!initialTheme && (
+                  <FormGroup label={t("themeMode")}>
+                    <ToggleGroup aria-label={t("themeMode")}>
+                      <ToggleGroupItem
+                        text={t("lightMode")}
+                        isSelected={theme === "light"}
+                        onChange={() => setTheme("light")}
+                      />
+                      <ToggleGroupItem
+                        text={t("darkMode")}
+                        isSelected={theme === "dark"}
+                        onChange={() => setTheme("dark")}
+                      />
+                    </ToggleGroup>
+                  </FormGroup>
+                )}
                 <FormGroup label={t("favicon")}>
                   <ImageUpload name="favicon" />
                 </FormGroup>
