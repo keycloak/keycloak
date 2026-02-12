@@ -63,27 +63,6 @@ export const SsfReceiverSettings = () => {
         ]}
         controller={{ defaultValue: "ACCESS_TOKEN" }}
       />
-
-      <TextControl
-        name="config.streamAudience"
-        label={t("ssfStreamAudience")}
-        labelIcon={t("ssfStreamAudienceHelp")}
-      />
-
-      <TextControl
-        name="config.streamId"
-        label={t("ssfStreamId")}
-        labelIcon={t("ssfStreamIdHelp")}
-        rules={{
-          required: t("required"),
-        }}
-      />
-
-      <PasswordControl
-        name="config.pushAuthorizationHeader"
-        label={t("ssfPushAuthorizationHeader")}
-        labelIcon={t("ssfPushAuthorizationHeaderHelp")}
-      />
     </>
   );
 };
