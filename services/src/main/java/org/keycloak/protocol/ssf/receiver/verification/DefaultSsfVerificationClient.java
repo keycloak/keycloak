@@ -4,7 +4,6 @@ import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
-import org.keycloak.protocol.ssf.receiver.registration.SsfReceiverRegistrationProviderConfig;
 import org.keycloak.protocol.ssf.receiver.registration.SsfReceiverRegistrationProviderConfig.TransmitterTokenType;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
 
