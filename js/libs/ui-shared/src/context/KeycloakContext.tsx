@@ -1,5 +1,5 @@
 import { Spinner } from "@patternfly/react-core";
-import { TideCloak, BaseTideRequest } from "@tidecloak/js";
+import { TideCloak } from "@tidecloak/js";
 import {
   PropsWithChildren,
   createContext,
@@ -113,6 +113,8 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
     if (!config) return null;
 
     const originKey = `client-origin-auth-${window.location.origin}`;
+    console.log(originKey)
+    console.log(config)
     const clientOriginAuth = config[originKey];
 
     const kc = new TideCloak({
@@ -142,21 +144,11 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
         pkceMethod: "S256",
         responseMode: "query",
         scope: environment.scope,
+        setupRequestEnclave: false,
       });
 
     init()
-      .then(() => {
-        // After OAuth redirect, TideCloak restores the original URL hash via
-        // replaceState, but this doesn't trigger React Router to re-match.
-        // Force a hash navigation to make the router recognize the correct route.
-        const hash = window.location.hash;
-        if (hash && hash !== "#" && hash !== "#/") {
-          const currentHash = hash;
-          window.location.hash = "";
-          window.location.hash = currentHash;
-        }
-        setInit(true);
-      })
+      .then(() => setInit(true))
       .catch((err: any) => setError(err));
 
     calledOnce.current = true;
