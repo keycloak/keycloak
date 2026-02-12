@@ -51,6 +51,7 @@ public class DefaultSsfVerificationClient implements SsfVerificationClient {
         // TODO add support for refresh token type
         switch (transmitterTokenType) {
             case ACCESS_TOKEN -> httpRequest.auth(token);
+            default -> throw new SsfStreamVerificationException("Unsupported transmitter token type: " + transmitterTokenType);
         }
         return httpRequest.json(verificationRequest);
     }
