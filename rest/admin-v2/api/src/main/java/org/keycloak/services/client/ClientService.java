@@ -27,7 +27,15 @@ public interface ClientService extends Service {
 
     record CreateOrUpdateResult(BaseClientRepresentation representation, boolean created) {}
 
-    Optional<BaseClientRepresentation> getClient(RealmModel realm, String clientId, ClientProjectionOptions projectionOptions);
+    default Optional<BaseClientRepresentation> getClient(RealmModel realm, String clientId) throws ServiceException {
+        return getClient(realm, clientId, null);
+    }
+
+    Optional<BaseClientRepresentation> getClient(RealmModel realm, String clientId, ClientProjectionOptions projectionOptions) throws ServiceException;
+
+    default Stream<BaseClientRepresentation> getClients(RealmModel realm) {
+        return getClients(realm, null, null, null);
+    }
 
     Stream<BaseClientRepresentation> getClients(RealmModel realm, ClientProjectionOptions projectionOptions, ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions);
 
