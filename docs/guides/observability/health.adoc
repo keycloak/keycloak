@@ -41,6 +41,10 @@ These endpoints respond with HTTP status `200 OK` on success or `503 Service Una
     "status": "UP",
     "checks": [
         {
+            "name": "Graceful Shutdown",
+            "status": "UP"
+        },
+        {
             "name": "Keycloak cluster health check",
             "status": "UP"
         },
@@ -120,9 +124,13 @@ The table below shows the available checks.
 |Returns the status of the cluster (network partitions).
 |No
 
+|Graceful shutdown
+|Will start to return "DOWN" once the pre-shutdown phase started.
+|No
+
 |===
 
-For some checks, you'll need to also enable metrics as indicated by the `Requires Metrics` column. To enable metrics
+For some checks, you'll need to also enable metrics as indicated by the *Requires Metrics* column. To enable metrics
 use the `metrics-enabled` option as follows:
 
 <@kc.build parameters="--health-enabled=true --metrics-enabled=true"/>
