@@ -1,18 +1,23 @@
 import { TextControl } from "@keycloak/keycloak-ui-shared";
-import { Form } from "@patternfly/react-core";
+import { Form, ModalVariant } from "@patternfly/react-core";
 import { ConfirmDialogModal } from "../../components/confirm-dialog/ConfirmDialog";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useEffect } from "react";
 
 type FileNameDialogProps = {
-  onSave: (themeName: string, fileName: string) => void;
+  onSave: (
+    themeName: string,
+    fileName: string,
+    themeDescription: string,
+  ) => void;
   onClose: () => void;
 };
 
 type FormValues = {
   themeName: string;
   fileName: string;
+  themeDescription: string;
 };
 
 export const FileNameDialog = ({ onSave, onClose }: FileNameDialogProps) => {
@@ -21,6 +26,7 @@ export const FileNameDialog = ({ onSave, onClose }: FileNameDialogProps) => {
     defaultValues: {
       themeName: "quick-theme",
       fileName: "quick-theme.jar",
+      themeDescription: t("themeDescriptionDefault"),
     },
   });
   const { handleSubmit, setValue, control } = form;
@@ -33,13 +39,14 @@ export const FileNameDialog = ({ onSave, onClose }: FileNameDialogProps) => {
     setValue("fileName", `${themeName?.trim()}.jar`);
   }, [themeName, setValue]);
 
-  const save = ({ themeName, fileName }: FormValues) =>
-    onSave(themeName, fileName);
+  const save = ({ themeName, fileName, themeDescription }: FormValues) =>
+    onSave(themeName, fileName, themeDescription);
 
   return (
     <ConfirmDialogModal
       titleKey="fileNameDialogTitle"
       open
+      variant={ModalVariant.medium}
       toggleDialog={onClose}
       onConfirm={() => handleSubmit(save)()}
     >
@@ -47,6 +54,7 @@ export const FileNameDialog = ({ onSave, onClose }: FileNameDialogProps) => {
         <FormProvider {...form}>
           <TextControl name="themeName" label={t("themeName")} />
           <TextControl name="fileName" label={t("fileName")} />
+          <TextControl name="themeDescription" label={t("themeDescription")} />
         </FormProvider>
       </Form>
     </ConfirmDialogModal>

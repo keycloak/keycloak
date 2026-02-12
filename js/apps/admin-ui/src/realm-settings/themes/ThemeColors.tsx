@@ -152,6 +152,7 @@ export const ThemeColors = ({
     save({
       ...realm,
       themeName: values.themeName as string,
+      themeDescription: values.themeDescription as string,
       favicon: values.favicon as File,
       logo: values.logo as File,
       logoWidth: values.logoWidth as string,
@@ -180,9 +181,9 @@ export const ThemeColors = ({
     <>
       {open && (
         <FileNameDialog
-          onSave={async (themeName, fileName) => {
+          onSave={async (themeName, fileName, themeDescription) => {
             await handleSubmit((data) =>
-              convert({ ...data, themeName, fileName }),
+              convert({ ...data, themeName, fileName, themeDescription }),
             )();
             setOpen(false);
           }}

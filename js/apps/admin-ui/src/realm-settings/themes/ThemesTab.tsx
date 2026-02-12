@@ -22,6 +22,7 @@ type ThemesTabProps = {
 
 export type ThemeRealmRepresentation = RealmRepresentation & {
   themeName?: string;
+  themeDescription?: string;
   fileName?: string;
   favicon?: File;
   logo?: File;
@@ -40,9 +41,11 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
     const zip = new JSZip();
 
     const styles = JSON.parse(realm.attributes?.style ?? "{}");
-    const { favicon, logo, bgimage, fileName, themeName } = realm;
+    const { favicon, logo, bgimage, fileName, themeName, themeDescription } =
+      realm;
 
     const name = themeName || "quick-theme";
+    const description = themeDescription || t("themeDescriptionDefault");
     const logoName =
       "img/logo" + logo?.name?.substring(logo?.name?.lastIndexOf("."));
     const bgimageName =
@@ -64,6 +67,8 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
 parent=keycloak.v2
 import=common/${name}
 
+description=${description}
+
 ${logo ? "logo=" + logoName : ""}
 ${favicon ? "favIcon=/img/favicon.ico" : ""}
 styles=css/theme-styles.css
@@ -76,6 +81,8 @@ styles=css/theme-styles.css
 parent=keycloak.v3
 import=common/${name}
 
+description=${description}
+
 ${logo ? "logo=" + logoName : ""}
 ${favicon ? "favIcon=/img/favicon.ico" : ""}
 styles=css/theme-styles.css
@@ -87,6 +94,8 @@ styles=css/theme-styles.css
       `
 parent=keycloak.v2
 import=common/${name}
+
+description=${description}
 
 styles=css/styles.css css/theme-styles.css
 `,
