@@ -49,8 +49,9 @@ public class SsfReceiverRegistrationProviderFactory extends AbstractIdentityProv
         SsfReceiverRegistrationProviderConfig receiverProviderConfig = null;
         if (maybeSsfReceiverProvider != null && SsfReceiverRegistrationProviderFactory.PROVIDER_ID.equals(maybeSsfReceiverProvider.getProviderId())) {
             receiverProviderConfig = new SsfReceiverRegistrationProviderConfig(maybeSsfReceiverProvider);
+            return new DefaultSsfReceiver(session, receiverProviderConfig);
         }
-        return new DefaultSsfReceiver(session, receiverProviderConfig);
+        return null;
     }
 
     @Override

@@ -210,11 +210,10 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
         KeycloakContext keycloakContext = eventContext.getSession().getContext();
         RealmModel realm = keycloakContext.getRealm();
 
-        OpaqueSubjectId opaqueSubjectId = (OpaqueSubjectId) securityEventToken.getSubjectId();
-
-        // TODO handle stream status update, do we need to do anything here? currently streams are managed outside of Keycloak.
-
-        LOG.debugf("Handled stream updated event. realm=%s jti=%s streamId=%s newStatus=%s", realm.getName(), jti, opaqueSubjectId.getId(), streamUpdatedEvent.getStatus());
+        if (securityEventToken.getSubjectId() instanceof OpaqueSubjectId opaqueSubjectId) {
+            // TODO handle stream status update, do we need to do anything here? currently streams are managed outside of Keycloak.
+            LOG.debugf("Handled stream updated event. realm=%s jti=%s streamId=%s newStatus=%s", realm.getName(), jti, opaqueSubjectId.getId(), streamUpdatedEvent.getStatus());
+        }
 
         return true;
     }
@@ -261,10 +260,19 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
     }
 
     protected boolean isValidIssuer(SsfReceiver receiver, String expectedIssuer, String issuer) {
-        return expectedIssuer.equals(issuer);
+        return expectedIssuer != null && expectedIssuer.equals(issuer);
     }
 
     protected boolean isValidAudience(SsfReceiver receiver, Set<String> expectedAudience, String[] audience) {
-        return expectedAudience.containsAll(Set.of(audience));
+        if (audience == null || audience.length == 0) {
+            return false;
+        }
+        // Check that at least one token audience matches an expected audience value
+        for (String aud : audience) {
+            if (expectedAudience.contains(aud)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
