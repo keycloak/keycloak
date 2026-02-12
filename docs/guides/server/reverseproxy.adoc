@@ -6,7 +6,8 @@
 <@tmpl.guide
 title="Configuring a reverse proxy"
 summary="Configure {project_name} with a reverse proxy, API gateway, or load balancer."
-includedOptions="proxy-* hostname hostname-admin http-relative-path">
+
+includedOptions="proxy-* hostname hostname-admin http-relative-path shutdown-delay shutdown-timeout">
 
 Distributed environments frequently require the use of a reverse proxy. {project_name} offers several options to securely integrate with such environments.
 
@@ -254,8 +255,6 @@ The NGINX SSL/TLS module does not expose the client certificate chain. {project_
 If you are using this provider, see <@links.server id="keycloak-truststore"/> for how
 to configure a {project_name} Truststore.
 
-</@tmpl.guide>
-
 === Configuring the rfc9440 provider
 
 If you stick to the header names mentioned in RFC 9440, you do not need to configure any additional options after selecting the `rfc9440` provider.
@@ -374,21 +373,21 @@ For production with TLS passthrough:
 
 [source,bash]
 ----
-bin/kc.sh start --shutdown-delay=5s --shutdown-timeout=30s
+<@kc.start parameters="--shutdown-delay=5s --shutdown-timeout=30s"/>
 ----
 
 For load balancers that poll readiness:
 
 [source,bash]
 ----
-bin/kc.sh start --shutdown-delay=10s --shutdown-timeout=10s
+<@kc.start parameters="-shutdown-delay=10s --shutdown-timeout=10s"/>
 ----
 
 For test environments:
 
 [source,bash]
 ----
-bin/kc.sh start-dev --shutdown-delay=0s --shutdown-timeout=500ms
+<@kc.start parameters="-shutdown-delay=0s --shutdown-timeout=500ms"/>
 ----
 
 [NOTE]
@@ -396,3 +395,5 @@ bin/kc.sh start-dev --shutdown-delay=0s --shutdown-timeout=500ms
 The shutdown delay affects the minimum time required for a complete server restart.
 In Kubernetes environments, ensure your `terminationGracePeriodSeconds` is longer than the sum of `shutdown-delay` and `shutdown-timeout` to prevent forced termination.
 ====
+
+</@tmpl.guide>
