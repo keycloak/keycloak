@@ -28,6 +28,8 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 
+import java.security.MessageDigest;
+
 /**
  * SsfPushDeliveryResource implements the RFC 8935 Push-Based Security Event Token (SET) Delivery Using HTTP.
  * <p>
@@ -167,7 +169,11 @@ public class SsfPushDeliveryResource {
     }
 
     protected boolean isValidPushAuthorizationHeader(SsfReceiver receiver, String authHeader, String expectedAuthHeader) {
-        return expectedAuthHeader.equals(authHeader);
+        if (authHeader == null) {
+            return false;
+        }
+        // Use constant-time comparison to prevent timing attacks
+        return MessageDigest.isEqual(expectedAuthHeader.getBytes(), authHeader.getBytes());
     }
 
 }
