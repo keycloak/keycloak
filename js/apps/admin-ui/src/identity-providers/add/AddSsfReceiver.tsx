@@ -4,6 +4,7 @@ import {
   AlertVariant,
   Button,
   PageSection,
+  Title,
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -16,6 +17,7 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import { toIdentityProviders } from "../routes/IdentityProviders";
 import { SsfReceiverSettings } from "./SsfReceiverSettings";
+import { SsfReceiverStreamSettings } from "./SsfReceiverStreamSettings";
 
 type DiscoveryIdentityProvider = IdentityProviderRepresentation & {
   discoveryEndpoint?: string;
@@ -72,6 +74,10 @@ export default function AddSsfReceiver() {
             onSubmit={handleSubmit(onSubmit)}
           >
             <SsfReceiverSettings />
+            <Title headingLevel="h2" size="xl" className="kc-form-panel__title">
+              {t("ssfStreamSettings")}
+            </Title>
+            <SsfReceiverStreamSettings />
             <ActionGroup>
               <Button
                 isDisabled={!isDirty}
