@@ -1,6 +1,8 @@
 package org.keycloak.protocol.ssf.receiver.registration;
 
+import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
@@ -103,10 +105,13 @@ public class SsfReceiverRegistrationProviderConfig extends IdentityProviderModel
 
     public Set<String> streamAudience() {
         String streamAudience = getStreamAudience();
-        if (streamAudience == null) {
+        if (streamAudience == null || streamAudience.isBlank()) {
             return null;
         }
-        return Set.of(streamAudience.split(","));
+        return Arrays.stream(streamAudience.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     public DeliveryMethod getDeliveryMethod() {

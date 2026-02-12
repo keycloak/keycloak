@@ -114,6 +114,7 @@ public class DefaultSsfEventListener implements SsfEventListener {
         try {
             rawSecurityEvent = JsonSerialization.writeValueAsString(ssfEvent);
         } catch (IOException e) {
+            LOG.warn("Failed to serialize SecurityEventToken", e);
             rawSecurityEvent = "Failed to serialize SecurityEventToken";
         }
         return rawSecurityEvent;
@@ -124,6 +125,7 @@ public class DefaultSsfEventListener implements SsfEventListener {
         try {
             rawSubject = JsonSerialization.writeValueAsString(securityEventToken.getSubjectId());
         } catch (IOException e) {
+            LOG.warn("Failed to serialize SubjectId", e);
             rawSubject = "Failed to serialize SubjectId";
         }
         return rawSubject;
