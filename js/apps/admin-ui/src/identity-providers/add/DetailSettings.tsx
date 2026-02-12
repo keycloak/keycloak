@@ -71,6 +71,7 @@ import { ReqAuthnConstraints } from "./ReqAuthnConstraintsSettings";
 import { SamlGeneralSettings } from "./SamlGeneralSettings";
 import { SpiffeSettings } from "./SpiffeSettings";
 import { SsfReceiverSettings } from "./SsfReceiverSettings";
+import { SsfReceiverStreamSettings } from "./SsfReceiverStreamSettings";
 import { AdminEvents } from "../../events/AdminEvents";
 import { UserProfileClaimsSettings } from "./OAuth2UserProfileClaimsSettings";
 import { KubernetesSettings } from "./KubernetesSettings";
@@ -579,6 +580,20 @@ export default function DetailSettings() {
           onSubmit={handleSubmit(save)}
         >
           <SsfReceiverSettings />
+          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
+        </Form>
+      ),
+    },
+    {
+      title: t("ssfStreamSettings"),
+      isHidden: !isSsfReceiver,
+      panel: (
+        <Form
+          isHorizontal
+          className="pf-v5-u-py-lg"
+          onSubmit={handleSubmit(save)}
+        >
+          <SsfReceiverStreamSettings />
           <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
         </Form>
       ),

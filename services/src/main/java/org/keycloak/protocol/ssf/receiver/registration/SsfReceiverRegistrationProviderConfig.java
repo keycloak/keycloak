@@ -22,6 +22,8 @@ public class SsfReceiverRegistrationProviderConfig extends IdentityProviderModel
 
     public static final String TRANSMITTER_TOKEN_TYPE = "transmitterTokenType";
 
+    public static final String DELIVERY_METHOD = "deliveryMethod";
+
     public static final String PUSH_AUTHORIZATION_HEADER = "pushAuthorizationHeader";
 
     public SsfReceiverRegistrationProviderConfig() {
@@ -103,12 +105,32 @@ public class SsfReceiverRegistrationProviderConfig extends IdentityProviderModel
         return Set.of(streamAudience.split(","));
     }
 
+    public DeliveryMethod getDeliveryMethod() {
+        String value = getConfig().get(DELIVERY_METHOD);
+        if (value == null) {
+            return DeliveryMethod.PUSH;
+        }
+        return DeliveryMethod.valueOf(value);
+    }
+
+    public void setDeliveryMethod(DeliveryMethod deliveryMethod) {
+        getConfig().put(DELIVERY_METHOD, deliveryMethod.name());
+    }
+
     @Override
     public void validate(RealmModel realm) {
         super.validate(realm);
     }
 
     public static enum TransmitterTokenType {
-        ACCESS_TOKEN
+        ACCESS_TOKEN,
+        // TODO add support for refresh token
+        // REFRESH_TOKEN
+    }
+
+    public static enum DeliveryMethod {
+        PUSH,
+        // we might support polling in the future
+        // POLL,
     }
 }
