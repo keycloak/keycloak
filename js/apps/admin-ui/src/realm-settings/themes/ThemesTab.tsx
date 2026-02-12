@@ -4,6 +4,7 @@ import { Environment } from "../../environment";
 import { Tab, TabTitleText } from "@patternfly/react-core";
 import JSZip from "jszip";
 import { useTranslation } from "react-i18next";
+import { Environment } from "../../environment";
 import {
   RoutableTabs,
   useRoutableTab,
