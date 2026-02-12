@@ -50,7 +50,7 @@ public class DefaultSsfVerificationClient implements SsfVerificationClient {
 
         // TODO add support for refresh token type
         switch (transmitterTokenType) {
-            case ACCESS_TOKEN ->httpRequest.auth(token);
+            case ACCESS_TOKEN -> httpRequest.auth(token);
         }
         return httpRequest.json(verificationRequest);
     }
