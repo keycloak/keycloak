@@ -8,6 +8,8 @@ import {
   InputGroup,
   InputGroupItem,
   PageSection,
+  Tab,
+  Tabs,
   Text,
   TextContent,
   TextInputProps,
@@ -25,9 +27,12 @@ import { useTranslation } from "react-i18next";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
 import useToggle from "../../utils/useToggle";
+import { fileToDataUri } from "./fileUtils";
 import { FileNameDialog } from "./FileNameDialog";
 import { ImageUpload } from "./ImageUpload";
+import { LoginPreviewWindow } from "./LoginPreviewWindow";
 import { usePreviewLogo } from "./LogoContext";
+import { usePreviewBackground } from "./BackgroundContext";
 import { darkTheme, lightTheme } from "./PatternflyVars";
 import { PreviewWindow } from "./PreviewWindow";
 import { ThemeRealmRepresentation } from "./ThemesTab";
@@ -89,7 +94,9 @@ export const ThemeColors = ({
   const { handleSubmit, watch } = form;
   const style = watch();
   const contextLogo = usePreviewLogo();
+  const contextBackground = usePreviewBackground();
   const [open, toggle, setOpen] = useToggle();
+  const [previewTab, setPreviewTab] = useState(0);
 
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
   const getDarkModeFromRealm = () => {
@@ -121,11 +128,23 @@ export const ThemeColors = ({
     reset();
   };
 
-  const upload = (values: ThemeRealmRepresentation) => {
+  const upload = async (values: ThemeRealmRepresentation) => {
     form.setValue("bgimage", values.bgimage);
     form.setValue("favicon", values.favicon);
     form.setValue("logo", values.logo);
+    form.setValue("logoWidth", values.logoWidth);
+    form.setValue("logoHeight", values.logoHeight);
     form.reset(values);
+
+    // Update contexts with data URIs so preview reflects uploaded images
+    if (values.logo) {
+      const logoDataUri = await fileToDataUri(values.logo);
+      contextLogo?.setLogo(logoDataUri);
+    }
+    if (values.bgimage) {
+      const bgDataUri = await fileToDataUri(values.bgimage);
+      contextBackground?.setBackground(bgDataUri);
+    }
   };
 
   const convert = (values: Record<string, File | string>) => {
@@ -134,6 +153,8 @@ export const ThemeColors = ({
       ...realm,
       favicon: values.favicon as File,
       logo: values.logo as File,
+      logoWidth: values.logoWidth as string,
+      logoHeight: values.logoHeight as string,
       bgimage: values.bgimage as File,
       fileName: values.name as string,
       attributes: {
@@ -201,8 +222,23 @@ export const ThemeColors = ({
                     onChange={(logo) => contextLogo?.setLogo(logo)}
                   />
                 </FormGroup>
+                <TextControl
+                  name={"logoWidth"}
+                  label={t("logoWidth")}
+                  placeholder="300px"
+                  defaultValue="300px"
+                />
+                <TextControl
+                  name={"logoHeight"}
+                  label={t("logoHeight")}
+                  placeholder="63px"
+                  defaultValue="63px"
+                />
                 <FormGroup label={t("backgroundImage")}>
-                  <ImageUpload name="bgimage" />
+                  <ImageUpload
+                    name="bgimage"
+                    onChange={(bg) => contextBackground?.setBackground(bg)}
+                  />
                 </FormGroup>
                 {mapping.map((m) => (
                   <ColorControl
@@ -216,7 +252,24 @@ export const ThemeColors = ({
             </FormAccess>
           </FlexItem>
           <FlexItem grow={{ default: "grow" }} style={{ zIndex: 0 }}>
-            <PreviewWindow cssVars={style?.[theme] || {}} />
+            <Tabs
+              activeKey={previewTab}
+              isBox
+              onSelect={(_, index) => setPreviewTab(index as number)}
+            >
+              <Tab title={t("loginPagePreview")} eventKey={0}>
+                <LoginPreviewWindow
+                  cssVars={{
+                    ...(style?.[theme] || {}),
+                    logoWidth: style?.["logoWidth"],
+                    logoHeight: style?.["logoHeight"],
+                  }}
+                />
+              </Tab>
+              <Tab title={t("adminConsolePreview")} eventKey={1}>
+                <PreviewWindow cssVars={style?.[theme] || {}} />
+              </Tab>
+            </Tabs>
           </FlexItem>
         </Flex>
         <FixedButtonsGroup
