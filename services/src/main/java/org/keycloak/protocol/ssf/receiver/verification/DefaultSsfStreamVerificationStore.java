@@ -11,7 +11,7 @@ import org.keycloak.models.SingleUseObjectProvider;
  * Default {@link SsfStreamVerificationStore} implementation that uses the {@link SingleUseObjectProvider} to manage the
  * verification state of a stream associated with a SSF Receiver.
  */
-public class DefaultSsfStreamSsfStreamVerificationStore implements SsfStreamVerificationStore {
+public class DefaultSsfStreamVerificationStore implements SsfStreamVerificationStore {
 
     public static final int DEFAULT_VERIFICATION_STATE_LIFESPAN_SECONDS = 300;
 
@@ -19,11 +19,11 @@ public class DefaultSsfStreamSsfStreamVerificationStore implements SsfStreamVeri
 
     protected final KeycloakSession session;
 
-    public DefaultSsfStreamSsfStreamVerificationStore(KeycloakSession session) {
+    public DefaultSsfStreamVerificationStore(KeycloakSession session) {
         this(session, DEFAULT_VERIFICATION_STATE_LIFESPAN_SECONDS);
     }
 
-    public DefaultSsfStreamSsfStreamVerificationStore(KeycloakSession session, int verificationStateLifespanSeconds) {
+    public DefaultSsfStreamVerificationStore(KeycloakSession session, int verificationStateLifespanSeconds) {
         this.session = session;
         this.verificationStateLifespanSeconds = verificationStateLifespanSeconds;
     }
