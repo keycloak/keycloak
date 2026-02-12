@@ -188,12 +188,12 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                 fromOption(HttpOptions.SHUTDOWN_TIMEOUT)
                         .to("quarkus.shutdown.timeout")
                         .paramLabel("timeout")
-                        .validator(HttpPropertyMappers::validateDuration)
+                        .validator(HttpPropertyMappers::validateShutdownDuration)
                         .build(),
                 fromOption(HttpOptions.SHUTDOWN_DELAY)
                         .to("quarkus.shutdown.delay")
                         .paramLabel("delay")
-                        .validator(HttpPropertyMappers::validateDuration)
+                        .validator(HttpPropertyMappers::validateShutdownDuration)
                         .build()
         );
 
@@ -256,14 +256,11 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
         return value;
     }
 
-    private static void validateDuration(String value) {
+    private static void validateShutdownDuration(String value) {
         try {
             Duration duration = DurationConverter.parseDuration(value);
-            if (duration.isNegative() || duration.isZero()) {
-                throw new PropertyException("Invalid duration '" + value + "'. Duration must be positive.");
-            }
-            if (duration.compareTo(Duration.ofSeconds(1)) < 0) {
-                throw new PropertyException("Duration must be at least 1 second.");
+            if (duration.isNegative()) {
+                throw new PropertyException("Invalid duration '" + value + "'. Duration must be zero or positive.");
             }
         } catch (IllegalArgumentException e) {
             throw new PropertyException("Invalid duration format '" + value + "'. May be an ISO 8601 duration value, an integer number of seconds, or an integer followed by one of [ms, h, m, s, d].");
