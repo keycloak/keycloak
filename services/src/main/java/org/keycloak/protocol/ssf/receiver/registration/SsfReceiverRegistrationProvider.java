@@ -28,17 +28,6 @@ public class SsfReceiverRegistrationProvider implements IdentityProvider<SsfRece
         return new SsfReceiverRegistrationProviderConfig(model);
     }
 
-    public void requestVerification() {
-
-        // TODO make this callable from the Admin UI via the SSF "Identity Provider" component.
-
-        // store current verification state
-        RealmModel realm = session.getContext().getRealm();
-
-        SsfReceiver ssfReceiver = SsfReceiverRegistrationProviderFactory.getSsfReceiver(session, realm, model.getAlias());
-        ssfReceiver.requestVerification();
-    }
-
     @Override
     public void close() {
         // NOOP

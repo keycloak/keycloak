@@ -3,7 +3,9 @@ package org.keycloak.protocol.ssf.receiver;
 import java.util.UUID;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ssf.receiver.registration.SsfReceiverRegistrationProviderConfig;
 import org.keycloak.protocol.ssf.receiver.spi.SsfReceiverProvider;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterClient;
@@ -85,7 +87,7 @@ public class DefaultSsfReceiver implements SsfReceiver {
 
         SsfStreamVerificationStore storage = ssfReceiverProvider.verificationStore();
 
-        // store current verification state
+        // clear any pending verification state
         RealmModel realm = session.getContext().getRealm();
         SsfStreamVerificationState verificationState = storage.getVerificationState(realm, receiverProviderConfig.getAlias(), receiverProviderConfig.getStreamId());
         if (verificationState != null) {
@@ -97,8 +99,20 @@ public class DefaultSsfReceiver implements SsfReceiver {
         SsfTransmitterMetadata transmitterMetadata = ssfTransmitterClient.loadTransmitterMetadata(this);
         String state = UUID.randomUUID().toString();
 
-        // store current verification state
-        storage.setVerificationState(realm, receiverProviderConfig.getAlias(), receiverProviderConfig.getStreamId(), state);
+        String receiverAlias = receiverProviderConfig.getAlias();
+        String streamId = receiverProviderConfig.getStreamId();
+        String realmId = realm.getId();
+
+        // Store verification state in a separate transaction to ensure it is committed
+        // before the outbound HTTP call to the transmitter. The transmitter may send
+        // the verification event back immediately, and the push endpoint handling that
+        // event runs in a different transaction that must be able to read the state.
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, innerSession -> {
+            RealmModel innerRealm = innerSession.realms().getRealm(realmId);
+            SsfReceiverProvider innerReceiverProvider = innerSession.getProvider(SsfReceiverProvider.class);
+            innerReceiverProvider.verificationStore().setVerificationState(innerRealm, receiverAlias, streamId, state);
+        });
 
         ssfReceiverProvider.verificationClient().requestVerification(this, transmitterMetadata, state);
     }
