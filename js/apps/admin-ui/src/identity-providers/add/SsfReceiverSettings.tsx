@@ -33,6 +33,13 @@ export const SsfReceiverSettings = () => {
         }}
       />
 
+      <TextControl
+        name="config.transmitterMetadataUrl"
+        label={t("transmitterMetadataUrl")}
+        labelIcon={t("transmitterMetadataUrlHelp")}
+        rules={{}}
+      />
+
       <PasswordControl
         name="config.transmitterAccessToken"
         label={t("ssfTransmitterAccessToken")}

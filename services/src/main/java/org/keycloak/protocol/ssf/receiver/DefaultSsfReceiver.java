@@ -60,15 +60,13 @@ public class DefaultSsfReceiver implements SsfReceiver {
     @Override
     public String getTransmitterConfigUrl() {
 
-        // TODO do we need a providerConfig.getTransmitterConfigUrl() override?
-        String transmitterConfigUrl = null;
+        String transmitterConfigUrl = receiverProviderConfig.getTransmitterMetadataUrl();
         if (transmitterConfigUrl == null) {
             String configUrl = receiverProviderConfig.getIssuer();
             if (!configUrl.endsWith("/")) {
                 configUrl+="/";
             }
-            configUrl = configUrl + ".well-known/ssf-configuration";
-            transmitterConfigUrl = configUrl;
+            transmitterConfigUrl = configUrl + ".well-known/ssf-configuration";
         }
 
         return transmitterConfigUrl;
