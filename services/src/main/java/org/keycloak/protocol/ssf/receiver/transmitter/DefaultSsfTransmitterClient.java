@@ -57,8 +57,10 @@ public class DefaultSsfTransmitterClient implements SsfTransmitterClient {
             }
             SsfTransmitterMetadata metadata = response.asJson(SsfTransmitterMetadata.class);
             return metadata;
+        } catch (SsfException se) {
+            throw se;
         } catch (Exception e) {
-            throw new SsfException("Could fetch transmitter metadata", e);
+            throw new SsfException("Could not fetch transmitter metadata", e);
         }
     }
 
@@ -95,7 +97,7 @@ public class DefaultSsfTransmitterClient implements SsfTransmitterClient {
                 LOG.debugf("Loaded transmitter metadata from cache. realm=%s url=%s", realm.getName(), url);
                 return metadata;
             } catch (IOException e) {
-                throw new SsfException("Could load transmitter metadata from cache", e);
+                throw new SsfException("Could not load transmitter metadata from cache", e);
             }
         }
 

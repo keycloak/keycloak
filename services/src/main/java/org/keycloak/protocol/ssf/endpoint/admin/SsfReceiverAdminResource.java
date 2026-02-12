@@ -36,8 +36,9 @@ public class SsfReceiverAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF_STREAM_VERIFICATION)
     @Operation(summary = "Trigger SSF Stream Verification for the given receiver in this realm.")
     @APIResponses(value = {
-            @APIResponse(responseCode = "202", description = "Accepted"),
+            @APIResponse(responseCode = "204", description = "No Content"),
             @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "404", description = "Not Found"),
     })
     @Path("/{receiverAlias}/verify")
     public SsfVerificationResource verificationEndpoint(@PathParam("receiverAlias") String alias) {
