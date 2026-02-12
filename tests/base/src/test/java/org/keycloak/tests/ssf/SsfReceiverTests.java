@@ -142,7 +142,8 @@ public class SsfReceiverTests {
         config.put("description", "Description SSF Receiver");
         config.put("streamAudience", "https://keycloak-stream-audience");
         config.put("issuer", "http://127.0.0.1:8500");
-        config.put("transmitterAccessToken", "dummy-transmitter-token");
+        config.put("transmitterToken", "dummy-transmitter-token");
+        config.put("transmitterTokenType", "ACCESS_TOKEN");
         config.put("pushAuthorizationHeader", "expected-push-auth-header");
         ssfReceiverRegistration.setConfig(config);
         return ssfReceiverRegistration;

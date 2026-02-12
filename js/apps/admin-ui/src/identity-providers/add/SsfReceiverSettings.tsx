@@ -1,4 +1,8 @@
-import { PasswordControl, TextControl } from "@keycloak/keycloak-ui-shared";
+import {
+  PasswordControl,
+  SelectControl,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
 import { useTranslation } from "react-i18next";
 
 export const SsfReceiverSettings = () => {
@@ -19,9 +23,7 @@ export const SsfReceiverSettings = () => {
         name="config.description"
         label={t("description")}
         labelIcon={t("descriptionHelp")}
-        rules={{
-          required: t("required"),
-        }}
+        rules={{}}
       />
 
       <TextControl
@@ -41,12 +43,25 @@ export const SsfReceiverSettings = () => {
       />
 
       <PasswordControl
-        name="config.transmitterAccessToken"
-        label={t("ssfTransmitterAccessToken")}
-        labelIcon={t("ssfTransmitterAccessTokenHelp")}
+        name="config.transmitterToken"
+        label={t("ssfTransmitterToken")}
+        labelIcon={t("ssfTransmitterTokenHelp")}
         rules={{
           required: t("required"),
         }}
+      />
+
+      <SelectControl
+        name="config.transmitterTokenType"
+        label={t("ssfTransmitterTokenType")}
+        labelIcon={t("ssfTransmitterTokenTypeHelp")}
+        options={[
+          {
+            key: "ACCESS_TOKEN",
+            value: t("ssfTransmitterTokenType.accessToken"),
+          },
+        ]}
+        controller={{ defaultValue: "ACCESS_TOKEN" }}
       />
 
       <TextControl

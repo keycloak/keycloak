@@ -18,7 +18,9 @@ public class SsfReceiverRegistrationProviderConfig extends IdentityProviderModel
 
     public static final String STREAM_AUDIENCE = "streamAudience";
 
-    public static final String TRANSMITTER_ACCESS_TOKEN = "transmitterAccessToken";
+    public static final String TRANSMITTER_TOKEN = "transmitterToken";
+
+    public static final String TRANSMITTER_TOKEN_TYPE = "transmitterTokenType";
 
     public static final String PUSH_AUTHORIZATION_HEADER = "pushAuthorizationHeader";
 
@@ -45,12 +47,20 @@ public class SsfReceiverRegistrationProviderConfig extends IdentityProviderModel
         getConfig().put(DESCRIPTION, description);
     }
 
-    public String getTransmitterAccessToken() {
-        return getConfig().get(TRANSMITTER_ACCESS_TOKEN);
+    public String getTransmitterToken() {
+        return getConfig().get(TRANSMITTER_TOKEN);
     }
 
-    public void setTransmitterAccessToken(String transmitterAccessToken) {
-        getConfig().put(TRANSMITTER_ACCESS_TOKEN, transmitterAccessToken);
+    public void setTransmitterToken(String transmitterToken) {
+        getConfig().put(TRANSMITTER_TOKEN, transmitterToken);
+    }
+
+    public TransmitterTokenType getTransmitterTokenType() {
+        return TransmitterTokenType.valueOf(getConfig().get(TRANSMITTER_TOKEN_TYPE));
+    }
+
+    public void setTransmitterTokenType(TransmitterTokenType transmitterTokenType) {
+        getConfig().put(TRANSMITTER_TOKEN_TYPE, transmitterTokenType.name());
     }
 
     public String getPushAuthorizationHeader() {
@@ -96,5 +106,9 @@ public class SsfReceiverRegistrationProviderConfig extends IdentityProviderModel
     @Override
     public void validate(RealmModel realm) {
         super.validate(realm);
+    }
+
+    public static enum TransmitterTokenType {
+        ACCESS_TOKEN
     }
 }
