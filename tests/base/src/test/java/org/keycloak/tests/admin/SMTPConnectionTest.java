@@ -25,6 +25,7 @@ import java.util.Map;
 
 import jakarta.mail.Address;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
@@ -278,7 +279,52 @@ public class SMTPConnectionTest {
             realmRep.getSmtpServer().remove(EmailSenderProvider.CONFIG_ALLOW_UTF8);
             realmRes.update(realmRep);
         }
+    @Test
+    @Order(10)
+    public void testEmailContentType() throws Exception {
+        // Test MULTIPART (Default)
+        Response response = adminClient.realms().realm(managedRealm.getName()).testSMTPConnection(
+                smtpMap("127.0.0.1", "3025", "auto@keycloak.org", null, null, null, null, null, null, null, null, "multipart"));
+        assertStatus(response, 204);
+        assertMailContentType(MimeMultipart.class);
+
+        // Test TEXT_ONLY
+        response = adminClient.realms().realm(managedRealm.getName()).testSMTPConnection(
+                smtpMap("127.0.0.1", "3025", "auto@keycloak.org", null, null, null, null, null, null, null, null, "text_only"));
+        assertStatus(response, 204);
+        assertMailContentType(String.class);
+
+        // Test HTML_ONLY
+        response = adminClient.realms().realm(managedRealm.getName()).testSMTPConnection(
+                smtpMap("127.0.0.1", "3025", "auto@keycloak.org", null, null, null, null, null, null, null, null, "html_only"));
+        assertStatus(response, 204);
+        assertMailContentType(String.class);
     }
+    
+    private void assertMailContentType(Class<?> expectedContentClass) {
+        if (mailServer.getReceivedMessages().length == 1) {
+            try {
+                MimeMessage message = mailServer.getReceivedMessages()[0];
+                assertEquals("[KEYCLOAK] - SMTP test message", message.getSubject());
+                Object content = message.getContent();
+                
+                if (expectedContentClass == String.class) {
+                     Assertions.assertTrue(content instanceof String, "Content should be String but was " + content.getClass());
+                } else {
+                     Assertions.assertTrue(expectedContentClass.isInstance(content), "Content should be " + expectedContentClass.getSimpleName() + " but was " + content.getClass().getSimpleName());
+                }
+                
+                mailServer.runCleanup();
+            } catch (Exception e) {
+                e.printStackTrace();
+                fail("Error checking email content");
+            }
+        } else {
+            fail("E-mail was not received");
+        }
+    }
+
+
 
     private Map<String, String> settings(String host, String port, String from, String auth, String ssl, String starttls,
                                          String username, String password) throws Exception {
@@ -312,6 +358,11 @@ public class SMTPConnectionTest {
 
     private Map<String, String> smtpMap(String host, String port, String from, String auth, String ssl, String starttls,
                                         String username, String password, String replyTo, String envelopeFrom, String allowutf8) {
+        return smtpMap(host, port, from, auth, ssl, starttls, username, password, replyTo, envelopeFrom, allowutf8, null);
+    }
+
+    private Map<String, String> smtpMap(String host, String port, String from, String auth, String ssl, String starttls,
+                                        String username, String password, String replyTo, String envelopeFrom, String allowutf8, String contentType) {
         Map<String, String> config = new HashMap<>();
         config.put("host", host);
         config.put("port", port);
@@ -326,6 +377,9 @@ public class SMTPConnectionTest {
         config.put("envelopeFrom", envelopeFrom);
         if (allowutf8 != null) {
             config.put(EmailSenderProvider.CONFIG_ALLOW_UTF8, allowutf8);
+        }
+        if (contentType != null) {
+            config.put(EmailSenderProvider.CONFIG_EMAIL_CONTENT_TYPE, contentType);
         }
         return config;
     }

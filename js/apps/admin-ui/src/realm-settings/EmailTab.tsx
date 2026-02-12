@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
   FormPanel,
+  HelpItem,
   PasswordControl,
   SwitchControl,
   TextControl,
@@ -312,6 +313,56 @@ export const RealmSettingsEmailTab = ({
               labelOff={t("disabled")}
               stringify
             />
+            <FormGroup
+              label={t("emailContentType")}
+              fieldId="emailContentType"
+              labelIcon={
+                <HelpItem
+                  helpText={t("emailContentTypeHelp")}
+                  fieldLabelId="emailContentType"
+                />
+              }
+            >
+              <Controller
+                name="smtpServer.emailContentType"
+                control={control}
+                defaultValue="multipart"
+                render={({ field }) => (
+                  <>
+                    <Radio
+                      id="emailContentTypeMultipart"
+                      name="smtpServer.emailContentType"
+                      data-testid="smtpServer.emailContentType.multipart"
+                      label={t("emailContentTypeMultipart")}
+                      value="multipart"
+                      isChecked={field.value === "multipart" || !field.value}
+                      onChange={() => field.onChange("multipart")}
+                      className="pf-v5-u-mb-sm"
+                    />
+                    <Radio
+                      id="emailContentTypeTextOnly"
+                      name="smtpServer.emailContentType"
+                      data-testid="smtpServer.emailContentType.textOnly"
+                      label={t("emailContentTypeTextOnly")}
+                      value="text_only"
+                      isChecked={field.value === "text_only"}
+                      onChange={() => field.onChange("text_only")}
+                      className="pf-v5-u-mb-sm"
+                    />
+                    <Radio
+                      id="emailContentTypeHtmlOnly"
+                      name="smtpServer.emailContentType"
+                      data-testid="smtpServer.emailContentType.htmlOnly"
+                      label={t("emailContentTypeHtmlOnly")}
+                      value="html_only"
+                      isChecked={field.value === "html_only"}
+                      onChange={() => field.onChange("html_only")}
+                      className="pf-v5-u-mb-sm"
+                    />
+                  </>
+                )}
+              />
+            </FormGroup>
             <TextControl
               name="smtpServer.connectionTimeout"
               label={t("smtpConnectionTimeout")}

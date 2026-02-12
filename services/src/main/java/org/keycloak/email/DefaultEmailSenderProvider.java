@@ -84,7 +84,9 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
         Session session = Session.getInstance(buildEmailProperties(config, from));
 
-        Message message = buildMessage(session, convertedAddress, from, subject, config, buildMultipartBody(textBody, htmlBody));
+        EmailContentType contentType = getEmailContentType(config);
+        Message message = buildMessage(session, convertedAddress, from, subject, config,
+                buildEmailBody(textBody, htmlBody, contentType));
 
         try(Transport transport = session.getTransport("smtp")) {
 
@@ -164,7 +166,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
         return props;
     }
 
-    private Message buildMessage(Session session, String address, String from, String subject, Map<String, String> config, Multipart multipart) throws EmailException {
+    private Message buildMessage(Session session, String address, String from, String subject, Map<String, String> config, Object content) throws EmailException {
 
         String fromDisplayName = config.get("fromDisplayName");
         String replyTo = config.get("replyTo");
@@ -181,7 +183,15 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
             msg.setHeader("To", address);
             msg.setSubject(MimeUtility.encodeText(subject, StandardCharsets.UTF_8.name(), null));
-            msg.setContent(multipart);
+            
+            if (content instanceof Multipart) {
+                msg.setContent((Multipart) content);
+            } else if (content instanceof String) {
+                EmailContentType contentType = getEmailContentType(config);
+                String subtype = (contentType == EmailContentType.HTML_ONLY) ? "html" : "plain";
+                msg.setContent(content, "text/" + subtype + "; charset=UTF-8");
+            }
+            
             msg.saveChanges();
             msg.setSentDate(new Date());
 
@@ -192,6 +202,18 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             throw new EmailException("Invalid email address format", e);
         } catch (MessagingException e) {
             throw new EmailException("MessagingException occurred", e);
+        }
+    }
+
+    Object buildEmailBody(String textBody, String htmlBody, EmailContentType contentType) throws EmailException {
+        switch (contentType) {
+            case TEXT_ONLY:
+                return textBody != null ? textBody : "";
+            case HTML_ONLY:
+                return htmlBody != null ? htmlBody : "";
+            case MULTIPART:
+            default:
+                return buildMultipartBody(textBody, htmlBody);
         }
     }
 
@@ -236,6 +258,19 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
     private static boolean isAllowUTF8(Map<String, String> config) {
         return "true".equals(config.get(CONFIG_ALLOW_UTF8));
+    }
+
+    private static EmailContentType getEmailContentType(Map<String, String> config) {
+        String type = config.get(CONFIG_EMAIL_CONTENT_TYPE);
+        if (type == null) {
+            return EmailContentType.MULTIPART;
+        }
+        try {
+            return EmailContentType.valueOf(type.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            logger.warnv("Invalid email content type configuration: {0}. Defaulting to MULTIPART.", type);
+            return EmailContentType.MULTIPART;
+        }
     }
 
     private static boolean isDebugEnabled(Map<String, String> config) {
