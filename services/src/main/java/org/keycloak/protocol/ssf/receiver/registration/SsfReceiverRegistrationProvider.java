@@ -1,9 +1,6 @@
 package org.keycloak.protocol.ssf.receiver.registration;
 
 import org.keycloak.broker.provider.IdentityProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 
 import org.jboss.logging.Logger;
 
@@ -14,12 +11,9 @@ public class SsfReceiverRegistrationProvider implements IdentityProvider<SsfRece
 
     protected static final Logger LOG = Logger.getLogger(SsfReceiverRegistrationProvider.class);
 
-    private final KeycloakSession session;
-
     private final SsfReceiverRegistrationProviderConfig model;
 
-    public SsfReceiverRegistrationProvider(KeycloakSession session, SsfReceiverRegistrationProviderConfig model) {
-        this.session = session;
+    public SsfReceiverRegistrationProvider(SsfReceiverRegistrationProviderConfig model) {
         this.model = model;
     }
 
