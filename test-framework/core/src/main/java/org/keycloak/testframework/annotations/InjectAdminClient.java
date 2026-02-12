@@ -26,17 +26,19 @@ public @interface InjectAdminClient {
     /**
      * <code>BOOTSTRAP</code> attaches to the master realm and global test client, while <code>MANAGED_REALM</code>
      * attaches to a managed realm using the specified client or user. When using <code>MANAGED_REALM</code> either
-     * client or user has to be set
+     * client or user must be set in the {@link org.keycloak.testframework.realm.ManagedRealm} instance using the {@link org.keycloak.testframework.realm.RealmConfig} implementation
      */
     Mode mode() default Mode.BOOTSTRAP;
 
     /**
      * The client to authenticate as
+     * The client must be configured within the {@link org.keycloak.testframework.realm.ManagedRealm} instance, {@link org.keycloak.testframework.realm.ManagedClient} is not supported
      */
     String client() default "";
 
     /**
      * The user to authenticate as
+     * The user must be configured within the {@link org.keycloak.testframework.realm.ManagedRealm} instance, {@link org.keycloak.testframework.realm.ManagedUser} is not supported
      */
     String user() default "";
 
