@@ -58,7 +58,11 @@ public class SsfReceiverRegistrationProviderConfig extends IdentityProviderModel
     }
 
     public TransmitterTokenType getTransmitterTokenType() {
-        return TransmitterTokenType.valueOf(getConfig().get(TRANSMITTER_TOKEN_TYPE));
+        String value = getConfig().get(TRANSMITTER_TOKEN_TYPE);
+        if (value == null) {
+            return TransmitterTokenType.ACCESS_TOKEN;
+        }
+        return TransmitterTokenType.valueOf(value);
     }
 
     public void setTransmitterTokenType(TransmitterTokenType transmitterTokenType) {
