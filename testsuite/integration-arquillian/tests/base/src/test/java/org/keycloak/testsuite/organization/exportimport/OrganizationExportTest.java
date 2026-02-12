@@ -209,7 +209,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     }
 
     private void validateOrganizationGroups(OrganizationResource organization, Map<String, String> expectedGroupIds) {
-        List<GroupRepresentation> topLevelGroups = organization.groups().getAll(null, null, null, null);
+        List<GroupRepresentation> topLevelGroups = organization.groups().getAll(null, null, null, null, true);
         assertThat(topLevelGroups, hasSize(2));
 
         // Validate top-level group names

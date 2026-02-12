@@ -296,7 +296,7 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
         }
 
         // getAll() should return 2 groups (Engineering, Sales), not 3 (Backend is nested)
-        List<GroupRepresentation> topLevelGroups = orgResource.groups().getAll(null, null, null, null);
+        List<GroupRepresentation> topLevelGroups = orgResource.groups().getAll(null, null, null, null, true);
         assertThat(topLevelGroups, hasSize(2));
     }
 }

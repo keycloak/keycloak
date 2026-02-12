@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.organization.group;
 
+import java.util.HashMap;
 import java.util.List;
 
 import jakarta.ws.rs.core.Response;
@@ -36,6 +37,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -48,15 +51,24 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
 
         GroupRepresentation groupRep = new GroupRepresentation();
         groupRep.setName("test-group");
+        groupRep.singleAttribute("department", "Engineering");
 
         try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
         }
 
-        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, null, null);
+        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, null, null, false);
         assertThat(groups, hasSize(1));
         assertThat(groups.get(0).getName(), is("test-group"));
         assertThat(groups.get(0).getPath(), is("/test-group"));
+        assertThat(groups.get(0).getAttributes(), notNullValue());
+        assertThat(groups.get(0).getAttributes().get("department"), hasSize(1));
+        assertThat(groups.get(0).getAttributes().get("department").get(0), is("Engineering"));
+
+        // retrieve brief rep
+        groups = orgResource.groups().getAll(null, null, null, null, true);
+        assertThat(groups, hasSize(1));
+        assertThat(groups.get(0).getAttributes(), nullValue());
     }
 
     @Test
@@ -95,6 +107,55 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         assertNotNull(retrieved);
         assertThat(retrieved.getName(), is("test-group"));
         assertThat(retrieved.getPath(), is("/test-group"));
+    }
+
+    @Test
+    public void testOrgGroupAttributes() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        // Create group with attributes
+        GroupRepresentation groupRep = new GroupRepresentation();
+        groupRep.setName("test-group");
+        groupRep.setAttributes(new HashMap<>());
+        groupRep.getAttributes().put("department", List.of("Engineering"));
+        groupRep.getAttributes().put("location", List.of("NYC", "SF"));
+
+        String groupId;
+        try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            groupId = ApiUtil.getCreatedId(response);
+        }
+
+        // Retrieve and verify attributes are included
+        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation();
+        assertNotNull(retrieved.getAttributes());
+        assertThat(retrieved.getAttributes().get("department"), hasSize(1));
+        assertThat(retrieved.getAttributes().get("department").get(0), is("Engineering"));
+        assertThat(retrieved.getAttributes().get("location"), hasSize(2));
+    }
+
+    @Test
+    public void testOrgGroupRoleMappingsIgnored() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        // Create group with role mappings
+        GroupRepresentation groupRep = new GroupRepresentation();
+        groupRep.setName("test-group");
+        groupRep.setRealmRoles(List.of("admin", "user"));
+
+        String groupId;
+        try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            groupId = ApiUtil.getCreatedId(response);
+        }
+
+        // Retrieve and verify role mappings are null
+        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation();
+        assertThat(retrieved, notNullValue());
+        assertThat(retrieved.getRealmRoles(), nullValue());
+        assertThat(retrieved.getClientRoles(), nullValue());
     }
 
     @Test
@@ -146,7 +207,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         orgResource.groups().group(groupId).delete();
 
         // Verify it's deleted
-        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, 0, 10);
+        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, 0, 10, true);
         assertThat(groups, hasSize(0));
     }
 
@@ -464,7 +525,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         }
 
         // Search for groups containing "sales" with exact=false
-        List<GroupRepresentation> results = orgResource.groups().getAll("sales", false, null, null);
+        List<GroupRepresentation> results = orgResource.groups().getAll("sales", false, null, null, true);
 
         // Should only return groups with "sales" in the name: "sales" and "sales-team"
         assertThat(results, hasSize(2));

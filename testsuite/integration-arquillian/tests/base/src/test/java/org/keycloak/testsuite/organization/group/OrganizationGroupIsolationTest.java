@@ -104,12 +104,12 @@ public class OrganizationGroupIsolationTest extends AbstractOrganizationTest {
         }
 
         // Org A should only see its own groups
-        List<GroupRepresentation> orgAGroups = orgAResource.groups().getAll(null, null, 0, 10);
+        List<GroupRepresentation> orgAGroups = orgAResource.groups().getAll(null, null, 0, 10, true);
         assertThat(orgAGroups, hasSize(1));
         assertThat(orgAGroups.get(0).getName(), is("Engineering"));
 
         // Org B should only see its own groups
-        List<GroupRepresentation> orgBGroups = orgBResource.groups().getAll(null, null, 0, 10);
+        List<GroupRepresentation> orgBGroups = orgBResource.groups().getAll(null, null, 0, 10, true);
         assertThat(orgBGroups, hasSize(1));
         assertThat(orgBGroups.get(0).getName(), is("Sales"));
 
@@ -272,7 +272,7 @@ public class OrganizationGroupIsolationTest extends AbstractOrganizationTest {
         getCleanup().addCleanup(() -> testRealm().groups().group(realmGroupId).remove());
 
         // Search org groups for "Engineering"
-        List<GroupRepresentation> results = orgResource.groups().getAll("Engineering", null, null, null);
+        List<GroupRepresentation> results = orgResource.groups().getAll("Engineering", null, null, null, true);
 
         // Should only find org group, not realm group
         assertThat(results, hasSize(1));
