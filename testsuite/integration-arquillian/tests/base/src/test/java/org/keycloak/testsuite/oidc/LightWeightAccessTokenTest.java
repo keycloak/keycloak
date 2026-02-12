@@ -111,6 +111,7 @@ import static org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper.PAIRWIS
 import static org.keycloak.protocol.oidc.mappers.RoleNameMapper.NEW_ROLE_NAME;
 import static org.keycloak.protocol.oidc.mappers.RoleNameMapper.ROLE_CONFIG;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 
 public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     private static final Logger logger = Logger.getLogger(LightWeightAccessTokenTest.class);
@@ -937,7 +938,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
                 (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Use Lightweight Access Token Policy", Boolean.TRUE)
                         .addCondition(AnyClientConditionFactory.PROVIDER_ID,
-                                ClientPoliciesUtil.createAnyClientConditionConfig())
+                                createAnyClientConditionConfig())
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
