@@ -20,14 +20,13 @@ import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.registration.SsfReceiverRegistrationProviderFactory;
 import org.keycloak.protocol.ssf.receiver.spi.SsfReceiverProvider;
 import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-
-import org.keycloak.utils.KeycloakSessionUtil;
 
 /**
  * SsfPushDeliveryResource implements the RFC 8935 Push-Based Security Event Token (SET) Delivery Using HTTP.

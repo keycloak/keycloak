@@ -24,11 +24,10 @@ import org.keycloak.protocol.ssf.receiver.registration.SsfReceiverRegistrationPr
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationException;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationState;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStore;
-
-import org.jboss.logging.Logger;
-
 import org.keycloak.services.Urls;
 import org.keycloak.urls.UrlType;
+
+import org.jboss.logging.Logger;
 
 /**
  * Default implementation of a {@link SsfEventProcessor}.
