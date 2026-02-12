@@ -10,10 +10,14 @@ import org.keycloak.protocol.ssf.endpoint.SsfSetPushDeliveryFailureResponse;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.registration.SsfReceiverRegistrationProviderFactory;
 
+import org.jboss.logging.Logger;
+
 /**
  * SsfVerificationResource is used to verify the stream and event delivery setup for a SSF Receiver
  */
 public class SsfVerificationResource {
+
+    protected static final Logger LOG = Logger.getLogger(SsfVerificationResource.class);
 
     protected final KeycloakSession session;
 
@@ -45,7 +49,8 @@ public class SsfVerificationResource {
         try {
             receiver.requestVerification();
         } catch (Exception e) {
-            throw SsfSetPushDeliveryFailureResponse.newFailureResponse(Response.Status.INTERNAL_SERVER_ERROR, SsfSetPushDeliveryFailureResponse.ERROR_INTERNAL_ERROR, e.getMessage());
+            LOG.warn("Failed to trigger stream verification for receiver: " + receiverAlias, e);
+            throw SsfSetPushDeliveryFailureResponse.newFailureResponse(Response.Status.INTERNAL_SERVER_ERROR, SsfSetPushDeliveryFailureResponse.ERROR_INTERNAL_ERROR, "Stream verification failed");
         }
 
         return Response.noContent().type(MediaType.APPLICATION_JSON).build();
