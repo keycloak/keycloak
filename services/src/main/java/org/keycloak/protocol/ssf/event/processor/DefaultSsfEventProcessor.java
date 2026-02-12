@@ -63,12 +63,11 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
 
         LOG.debugf("Processing SSF events for security event token. realm=%s jti=%s streamId=%s eventCount=%s", keycloakContext.getRealm().getName(), securityEventToken.getId(), receiverProviderConfig.getStreamId(), events.size());
 
+        int successfullyProcessedEventCounter = 0;
         for (var entry : events.entrySet()) {
             String eventId = securityEventToken.getId();
             String securityEventType = entry.getKey();
             SsfEvent securityEventData = entry.getValue();
-
-            int successfullyProcessedEventCounter = 0;
             try {
                 SsfEvent ssfEvent = narrowEventPayloadToSecurityEvent(securityEventType, securityEventData, securityEventToken);
 
@@ -102,10 +101,10 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
                 eventContext.setProcessedSuccessfully(false);
                 throw spe;
             }
-
-            boolean allEventsProcessedSuccessfully = successfullyProcessedEventCounter == events.size();
-            eventContext.setProcessedSuccessfully(allEventsProcessedSuccessfully);
         }
+
+        boolean allEventsProcessedSuccessfully = successfullyProcessedEventCounter == events.size();
+        eventContext.setProcessedSuccessfully(allEventsProcessedSuccessfully);
     }
 
     /**
@@ -164,13 +163,14 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
         String givenState = verificationEvent.getState();
         String expectedState = verificationState == null ? null : verificationState.getState();
 
-        if (givenState.equals(expectedState)) {
-            LOG.debugf("Verification successful. jti=%s state=%s", jti, givenState);
+        if (expectedState != null && expectedState.equals(givenState)) {
+            // Only clear verification state on successful verification
             verificationStore.clearVerificationState(realm, receiverProviderConfig.getAlias(), receiverProviderConfig.getStreamId());
+            LOG.debugf("Verification successful. jti=%s state=%s", jti, givenState);
             return true;
         }
 
-        LOG.warnf("Verification failed. jti=%s state=%s", jti, givenState);
+        LOG.warnf("Verification failed. jti=%s givenState=%s expectedState=%s", jti, givenState, expectedState);
         return false;
     }
 

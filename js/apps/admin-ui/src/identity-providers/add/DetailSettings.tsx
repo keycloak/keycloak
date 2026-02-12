@@ -1,3 +1,4 @@
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 import IdentityProviderRepresentation, {
   IdentityProviderType,
@@ -49,6 +50,8 @@ import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { toUpperCase } from "../../util";
+import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
+import { joinPath } from "../../utils/joinPath";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { useParams } from "../../utils/useParams";
 import { toIdentityProviderAddMapper } from "../routes/AddMapper";
@@ -177,6 +180,28 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
     }
   };
 
+  const triggerSsfVerification = async (alias: string) => {
+    try {
+      await fetchWithError(
+        joinPath(
+          adminClient.baseUrl,
+          "admin/realms",
+          encodeURIComponent(adminClient.realmName),
+          "ssf/receivers",
+          encodeURIComponent(alias),
+          "verify",
+        ),
+        {
+          method: "POST",
+          headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
+        },
+      );
+      addAlert(t("ssfTriggerVerificationSuccess"), AlertVariant.success);
+    } catch (error) {
+      addError("ssfTriggerVerificationError", error);
+    }
+  };
+
   return (
     <>
       <DisableConfirm />
@@ -223,6 +248,16 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
                   </DropdownItem>,
                 ]
               : []),
+          ...(provider?.providerId?.includes("ssf-receiver")
+            ? [
+                <DropdownItem
+                  key="triggerVerification"
+                  onClick={() => triggerSsfVerification(provider.alias!)}
+                >
+                  {t("ssfTriggerVerification")}
+                </DropdownItem>,
+              ]
+            : []),
           <Divider key="separator" />,
           <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
             {t("delete")}
