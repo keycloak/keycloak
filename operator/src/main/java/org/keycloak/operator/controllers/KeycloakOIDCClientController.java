@@ -29,7 +29,9 @@ import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.fabric8.kubernetes.client.ResourceNotFoundException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.quarkus.arc.properties.IfBuildProperty;
 
+@IfBuildProperty(name = "test.operator.client-controllers", stringValue = "true")
 @ControllerConfiguration
 public class KeycloakOIDCClientController extends KeycloakClientBaseController<KeycloakOIDCClient, OIDCClientRepresentation, KeycloakOIDCClientRepresentation> {
 
