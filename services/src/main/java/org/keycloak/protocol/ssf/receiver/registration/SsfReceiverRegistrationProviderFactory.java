@@ -29,7 +29,7 @@ public class SsfReceiverRegistrationProviderFactory extends AbstractIdentityProv
 
     @Override
     public SsfReceiverRegistrationProvider create(KeycloakSession session, IdentityProviderModel model) {
-        return new SsfReceiverRegistrationProvider(session, adaptConfig(model));
+        return new SsfReceiverRegistrationProvider(adaptConfig(model));
     }
 
     @Override
