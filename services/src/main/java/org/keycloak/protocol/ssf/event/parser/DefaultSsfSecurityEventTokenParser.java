@@ -87,13 +87,13 @@ public class DefaultSsfSecurityEventTokenParser implements SsfSecurityEventToken
             byte[] tokenBytes = jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8);
             boolean valid = verify(signatureProvider, publicKey, tokenBytes, jws);
             if (!valid) {
-                return null;
+                throw new SecurityEventTokenParsingException("Invalid signature");
             }
 
             return jws.readJsonContent(SecurityEventToken.class);
         } catch (Exception e) {
             LOG.debug("Failed to decode token", e);
-            return null;
+            throw new SecurityEventTokenParsingException("Failed to decore token", e);
         }
     }
 
