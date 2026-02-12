@@ -125,7 +125,7 @@
         <woodstox.version>6.0.3</woodstox.version>
         <wildfly.common.quarkus.aligned.version>1.5.4.Final-format-001</wildfly.common.quarkus.aligned.version>
         <wildfly.common.wildfly.aligned.version>1.6.0.Final</wildfly.common.wildfly.aligned.version>
-        <xmlsec.version>3.0.4</xmlsec.version>
+        <xmlsec.version>3.0.6</xmlsec.version>
         <nashorn.version>15.4</nashorn.version>
         <ua-parser.version>1.6.1</ua-parser.version>
         <org.yaml.snakeyaml.version>2.0</org.yaml.snakeyaml.version>
