@@ -12,6 +12,8 @@ public class SsfReceiverRegistrationProviderConfig extends IdentityProviderModel
 
     public static final String DESCRIPTION = "description";
 
+    public static final String TRANSMITTER_METADATA_URL = "transmitterMetadataUrl";
+
     public static final String STREAM_ID = "streamId";
 
     public static final String STREAM_AUDIENCE = "streamAudience";
@@ -65,6 +67,14 @@ public class SsfReceiverRegistrationProviderConfig extends IdentityProviderModel
 
     public void setStreamId(String streamId) {
         getConfig().put(STREAM_ID, streamId);
+    }
+
+    public String getTransmitterMetadataUrl() {
+        return getConfig().get(TRANSMITTER_METADATA_URL);
+    }
+
+    public void setTransmitterMetadataUrl(String transmitterMetadataUrl) {
+        getConfig().put(TRANSMITTER_METADATA_URL, transmitterMetadataUrl);
     }
 
     public String getStreamAudience() {

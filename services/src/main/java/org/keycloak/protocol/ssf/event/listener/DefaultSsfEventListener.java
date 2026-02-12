@@ -17,10 +17,9 @@ import org.keycloak.protocol.ssf.event.subjects.SubjectId;
 import org.keycloak.protocol.ssf.event.subjects.SubjectUserLookup;
 import org.keycloak.protocol.ssf.event.types.SsfEvent;
 import org.keycloak.protocol.ssf.event.types.caep.SessionRevoked;
+import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
-
-import org.keycloak.util.JsonSerialization;
 
 /**
  * Default {@link SsfEventListener} implementation.
