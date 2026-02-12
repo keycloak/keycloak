@@ -13,7 +13,7 @@ import org.keycloak.protocol.ssf.event.processor.SsfEventProcessor;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.transmitter.DefaultSsfTransmitterClient;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterClient;
-import org.keycloak.protocol.ssf.receiver.verification.DefaultSsfStreamSsfStreamVerificationStore;
+import org.keycloak.protocol.ssf.receiver.verification.DefaultSsfStreamVerificationStore;
 import org.keycloak.protocol.ssf.receiver.verification.DefaultSsfVerificationClient;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStore;
 import org.keycloak.protocol.ssf.receiver.verification.SsfVerificationClient;
@@ -117,7 +117,7 @@ public class DefaultSsfReceiverProvider implements SsfReceiverProvider {
 
     protected SsfStreamVerificationStore getVerificationStore() {
         if (verificationStore == null) {
-            verificationStore = new DefaultSsfStreamSsfStreamVerificationStore(session);
+            verificationStore = new DefaultSsfStreamVerificationStore(session);
         }
         return verificationStore;
     }
