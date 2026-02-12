@@ -10,6 +10,8 @@ import org.keycloak.services.resource.RealmResourceProviderFactory;
 
 public class SsfRealmResourceProviderFactory implements RealmResourceProviderFactory, EnvironmentDependentProviderFactory {
 
+    // Shared instance is safe here because SsfRealmResourceProvider is stateless.
+    // Do not add mutable fields to SsfRealmResourceProvider without changing this to per-request creation.
     private static final SsfRealmResourceProvider INSTANCE = new SsfRealmResourceProvider();
 
     /**

@@ -6,6 +6,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ssf.SsfException;
 import org.keycloak.protocol.ssf.receiver.registration.SsfReceiverRegistrationProviderConfig;
 import org.keycloak.protocol.ssf.receiver.spi.SsfReceiverProvider;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterClient;
@@ -65,8 +66,11 @@ public class DefaultSsfReceiver implements SsfReceiver {
         String transmitterConfigUrl = receiverProviderConfig.getTransmitterMetadataUrl();
         if (transmitterConfigUrl == null) {
             String configUrl = receiverProviderConfig.getIssuer();
+            if (configUrl == null) {
+                throw new SsfException("Issuer is not configured for receiver: " + receiverProviderConfig.getAlias());
+            }
             if (!configUrl.endsWith("/")) {
-                configUrl+="/";
+                configUrl += "/";
             }
             transmitterConfigUrl = configUrl + ".well-known/ssf-configuration";
         }

@@ -219,7 +219,7 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
     }
 
     /**
-     * Deleagte generic SSF event handling to {@link SsfEventListener}.
+     * Delegate generic SSF event handling to {@link SsfEventListener}.
      *
      * @param
      * @param eventId

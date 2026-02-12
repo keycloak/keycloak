@@ -24,7 +24,7 @@ public class SsfRealmResourceProvider implements RealmResourceProvider {
      */
     @Path("/push")
     public SsfPushDeliveryResource pushEndpoint() {
-        // push endpoint authentication checked by PushEndpoit directly.
+        // push endpoint authentication checked by PushEndpoint directly.
         return Ssf.receiverProvider().pushDeliveryEndpoint();
     }
 

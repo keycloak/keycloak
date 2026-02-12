@@ -30,8 +30,6 @@ public class DefaultSsfReceiverProvider implements SsfReceiverProvider {
 
     protected SsfPushDeliveryResource pushDeliveryEndpoint;
 
-    protected SsfVerificationClient securityEventsVerifier;
-
     protected SsfStreamVerificationStore verificationStore;
 
     protected SsfTransmitterClient transmitterClient;
@@ -71,13 +69,6 @@ public class DefaultSsfReceiverProvider implements SsfReceiverProvider {
             eventListener = new DefaultSsfEventListener(session);
         }
         return eventListener;
-    }
-
-    protected SsfVerificationClient getSecurityEventsVerifier() {
-        if (securityEventsVerifier == null) {
-            securityEventsVerifier = new DefaultSsfVerificationClient(session);
-        }
-        return securityEventsVerifier;
     }
 
     protected SsfTransmitterClient getTransmitterClient() {

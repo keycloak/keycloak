@@ -1,5 +1,7 @@
 package org.keycloak.protocol.ssf.endpoint;
 
+import java.security.MessageDigest;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
@@ -27,8 +29,6 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-
-import java.security.MessageDigest;
 
 /**
  * SsfPushDeliveryResource implements the RFC 8935 Push-Based Security Event Token (SET) Delivery Using HTTP.
