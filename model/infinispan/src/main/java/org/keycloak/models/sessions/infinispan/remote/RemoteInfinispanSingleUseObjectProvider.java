@@ -63,6 +63,9 @@ public class RemoteInfinispanSingleUseObjectProvider implements SingleUseObjectP
     @Override
     public Map<String, String> remove(String key) {
         try {
+            // Using a get-before-remove allows us to return the value even in cases when a state transfer happens in Infinispan
+            // where it might not return the value in all cases.
+            // This workaround can be removed once https://github.com/infinispan/infinispan/issues/16703 is implemented.
             var data = transaction.getCache().getWithMetadata(key);
             if (data == null) {
                 return null;

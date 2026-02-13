@@ -77,6 +77,9 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
            throw new ModelException("Revoked tokens can't be removed");
         }
 
+        // Using a get-before-remove allows us to return the value even in cases when a state transfer happens in Infinispan
+        // where it might not return the value in all cases.
+        // This workaround can be removed once https://github.com/infinispan/infinispan/issues/16703 is implemented.
         var data = singleUseObjectCache.get(key);
         if (data == null) {
             return null;
