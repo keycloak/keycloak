@@ -151,7 +151,8 @@ public class OrganizationGroupsResource {
                                                  @QueryParam("q") String searchQuery,
                                                  @QueryParam("exact") @DefaultValue("false") Boolean exact,
                                                  @QueryParam("first") Integer first,
-                                                 @QueryParam("max") Integer max) {
+                                                 @QueryParam("max") Integer max,
+                                                 @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         Stream<GroupModel> groups;
         if (Objects.nonNull(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
@@ -161,7 +162,9 @@ public class OrganizationGroupsResource {
         } else {
             groups = organizationProvider.getTopLevelGroups(organization, first, max);
         }
-        return groups.map(ModelToRepresentation::groupToBriefRepresentation);
+        return groups.map(briefRepresentation ?
+                ModelToRepresentation::groupToBriefRepresentation :
+                group -> ModelToRepresentation.toRepresentation(group, true));
     }
 
     @GET

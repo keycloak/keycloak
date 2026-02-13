@@ -22,7 +22,7 @@ import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorFactory;
 import org.keycloak.util.AuthorizationDetailsParser;
 
-import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
+import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 /**
  * Factory for creating OID4VCI-specific authorization details processors.

@@ -112,12 +112,6 @@ They should avoid keeping the returned items in memory by for example binding th
 
 A similar change was done for the `UserSessionPersisterProvider`.
 
-== More changes for the `server-info` system information
-
-In version 26.4.0, the `server-info` endpoint changed to just return the system information for administrators in the admin realm. Nevertheless, the version property was detected to be needed by some products that interact with {project_name}. Now that property is included for administrators in the realm with permission `manage-realm`.
-
-The workaround of the `view-system` permission is more restricted too. It can only be assigned by administrators in the master realm using link:{adminguide_link}#_fine_grained_permissions[FGAP]. This permission will be deleted in a future version.
-
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

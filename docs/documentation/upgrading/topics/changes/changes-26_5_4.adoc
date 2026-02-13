@@ -10,3 +10,14 @@ Now {project_name}, when acting as a SAML Service Provider (SP) in identity brok
 To prepare for the upgrade, verify that the Identity Provider or adapter configurations allow for a sufficient clock skew for the time attributes.
 
 If you see any issue after the upgrade related to this element, please configure the external IdP to set the correct values for the subject confirmation element.
+
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== More changes for the `server-info` system information
+
+In version 26.4.0, the `server-info` endpoint changed to just return the system information for administrators in the admin realm. Nevertheless, the version property was detected to be needed by some products that interact with {project_name}. Now that property is included for administrators in the realm with permission `manage-realm`.
+
+The workaround of the `view-system` permission is more restricted too. It can only be assigned by administrators in the master realm using link:{adminguide_link}#_fine_grained_permissions[FGAP]. This permission will be deleted in a future version.

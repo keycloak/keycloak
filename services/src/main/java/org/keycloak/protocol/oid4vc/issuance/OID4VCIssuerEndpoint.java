@@ -101,6 +101,7 @@ import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
@@ -136,7 +137,7 @@ import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPost;
 import org.jboss.logging.Logger;
 
-import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
+import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST;
@@ -795,9 +796,9 @@ public class OID4VCIssuerEndpoint {
         }
 
         CredentialScopeModel requestedCredential;
-        OID4VCAuthorizationDetailResponse authDetails;
         CredentialOfferState offerState = null;
         CredentialOfferStorage offerStorage = null;
+        OID4VCAuthorizationDetail authDetails;
 
         // When the CredentialRequest contains a credential identifier the caller must have gone through the
         // CredentialOffer process or otherwise have set up a valid CredentialOfferState
@@ -831,7 +832,7 @@ public class OID4VCIssuerEndpoint {
 
         // Validate that authorization_details from the token matches the offer state
         // This ensures the correct access token is being used for the credential request
-        OID4VCAuthorizationDetailResponse tokenAuthDetails = getAuthorizationDetailFromToken(accessToken);
+        OID4VCAuthorizationDetail tokenAuthDetails = getAuthorizationDetailFromToken(accessToken);
         if (tokenAuthDetails != null && !tokenAuthDetails.equals(authDetails)) {
             var errorMessage = "Authorization details in access token do not match the credential offer state. " +
                     "The access token may not be the one issued for this credential offer.";
@@ -954,10 +955,10 @@ public class OID4VCIssuerEndpoint {
         return response;
     }
 
-    private OID4VCAuthorizationDetailResponse getAuthorizationDetailFromToken(AccessToken accessToken) {
+    private OID4VCAuthorizationDetail getAuthorizationDetailFromToken(AccessToken accessToken) {
         List<AuthorizationDetailsJSONRepresentation> tokenAuthDetails = accessToken.getAuthorizationDetails();
-        AuthorizationDetailsProcessor<OID4VCAuthorizationDetailResponse> oid4vcProcessor = session.getProvider(AuthorizationDetailsProcessor.class, OPENID_CREDENTIAL);
-        List<OID4VCAuthorizationDetailResponse> oid4vcResponses = oid4vcProcessor.getSupportedAuthorizationDetails(tokenAuthDetails);
+        AuthorizationDetailsProcessor<OID4VCAuthorizationDetail> oid4vcProcessor = session.getProvider(AuthorizationDetailsProcessor.class, OPENID_CREDENTIAL);
+        List<OID4VCAuthorizationDetail> oid4vcResponses = oid4vcProcessor.getSupportedAuthorizationDetails(tokenAuthDetails);
         return oid4vcResponses == null || oid4vcResponses.isEmpty() ? null : oid4vcResponses.get(0);
     }
 
@@ -1442,7 +1443,7 @@ public class OID4VCIssuerEndpoint {
      */
     private Object getCredential(AuthenticationManager.AuthResult authResult,
                                  SupportedCredentialConfiguration credentialConfig,
-                                 OID4VCAuthorizationDetailResponse authDetail,
+                                 OID4VCAuthorizationDetail authDetail,
                                  CredentialRequest credentialRequestVO,
                                  EventBuilder eventBuilder
     ) {
@@ -1536,7 +1537,7 @@ public class OID4VCIssuerEndpoint {
 
     // builds the unsigned credential by applying all protocol mappers.
     private VCIssuanceContext getVCToSign(List<OID4VCMapper> protocolMappers, SupportedCredentialConfiguration credentialConfig,
-                                          AuthenticationManager.AuthResult authResult, OID4VCAuthorizationDetailResponse authDetail, CredentialRequest credentialRequestVO,
+                                          AuthenticationManager.AuthResult authResult, OID4VCAuthorizationDetail authDetail, CredentialRequest credentialRequestVO,
                                           CredentialScopeModel credentialScopeModel, EventBuilder eventBuilder) {
 
         // Compute issuance date and apply correlation-mitigation according to realm configuration
@@ -1650,7 +1651,7 @@ public class OID4VCIssuerEndpoint {
      * @throws BadRequestException if mandatory requested claims are missing
      */
     private void validateRequestedClaimsArePresent(Map<String, Object> allClaims, SupportedCredentialConfiguration credentialConfig,
-                                                   UserModel user, OID4VCAuthorizationDetailResponse authzDetail, String scope, EventBuilder eventBuilder) {
+                                                   UserModel user, OID4VCAuthorizationDetail authzDetail, String scope, EventBuilder eventBuilder) {
         // Protocol mappers from configuration
         Map<List<Object>, ClaimsDescription> claimsConfig = credentialConfig.getCredentialMetadata().getClaims()
                 .stream()
@@ -1696,7 +1697,7 @@ public class OID4VCIssuerEndpoint {
     }
 
 
-    private List<ClaimsDescription> getClaimsFromAuthzDetails(String scope, UserModel user, OID4VCAuthorizationDetailResponse authzDetail) {
+    private List<ClaimsDescription> getClaimsFromAuthzDetails(String scope, UserModel user, OID4VCAuthorizationDetail authzDetail) {
         List<ClaimsDescription> storedClaims = authzDetail == null ? null : authzDetail.getClaims();
         if (storedClaims == null || storedClaims.isEmpty()) {
             String username = user.getUsername();

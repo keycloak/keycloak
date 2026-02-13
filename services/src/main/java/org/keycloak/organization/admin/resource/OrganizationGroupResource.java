@@ -95,7 +95,7 @@ public class OrganizationGroupResource {
         @APIResponse(responseCode = "200", description = "OK")
     })
     public GroupRepresentation getGroup() {
-        return ModelToRepresentation.groupToBriefRepresentation(group);
+        return ModelToRepresentation.toRepresentation(group, true);
     }
 
     @DELETE
