@@ -36,7 +36,7 @@ public class CachingEmbeddedMetadataProvider extends AbstractCompatibilityMetada
         return Stream.of(DefaultCacheEmbeddedConfigProviderFactory.CONFIG, DefaultCacheEmbeddedConfigProviderFactory.STACK);
     }
 
-    private static String majorMinorOf(String version) {
+    public static String majorMinorOf(String version) {
         if (version == null || version.isEmpty()) {
             return version;
         }
