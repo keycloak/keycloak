@@ -5,6 +5,7 @@ import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderFactory;
 
 /**
@@ -112,4 +113,37 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory implements
         configProperties.add(property);
     }
 
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name(CONFIG_CIMD_PROVIDER_NAME)
+                .type("string")
+                .helpText("Provider to use for the CIMD")
+                .defaultValue(ClientIdMetadataDocumentExecutorFactoryProviderConfig.DEFAULT_CONFIG_CIMD_PROVIDER_NAME)
+                .add()
+
+                .property()
+                .name(CONFIG_MIN_CACHE_TIME)
+                .type("int")
+                .helpText("Min cache time of client metadata in seconds for the CIMD.")
+                .defaultValue(ClientIdMetadataDocumentExecutorFactoryProviderConfig.DEFAULT_CONFIG_MIN_CACHE_TIME)
+                .add()
+
+                .property()
+                .name(CONFIG_MAX_CACHE_TIME)
+                .type("int")
+                .helpText("Max cache time of client metadata in seconds for the CIMD.")
+                .defaultValue(ClientIdMetadataDocumentExecutorFactoryProviderConfig.DEFAULT_CONFIG_MAX_CACHE_TIME)
+                .add()
+
+                .property()
+                .name(CONFIG_UPPER_LIMIT_METADATA_BYTES)
+                .type("int")
+                .helpText("Client metadata upper limit in byte for the CIMD.")
+                .defaultValue(ClientIdMetadataDocumentExecutorFactoryProviderConfig.DEFAULT_CONFIG_UPPER_LIMIT_METADATA_BYTES)
+                .add()
+
+                .build();
+    }
 }
