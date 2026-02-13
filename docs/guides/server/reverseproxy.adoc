@@ -278,6 +278,7 @@ The default values of the options are as follows:
 If your certificate chain is longer than the given default, you must define the option with an appropriate number.
 Otherwise, the provider will discard the request.
 
+[[graceful-http-shutdown]]
 == Graceful HTTP shutdown
 
 When running {project_name} behind a reverse proxy or load balancer, graceful shutdown ensures that in-flight requests complete successfully during server termination, preventing connection errors for clients.

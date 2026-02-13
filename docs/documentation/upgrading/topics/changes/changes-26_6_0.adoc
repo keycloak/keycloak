@@ -38,6 +38,13 @@ When running the server in dev mode on a platform other than Windows Subsystem F
 This ensures your dev instance won't be accessible from
 other machines. If you want the previous behavior of binding to all interfaces, then explicitly set `http-host` to `0.0.0.0`.
 
+=== Graceful shutdown of HTTP stack
+
+Starting with this version, {project_name} will apply a shutdown delay and a shutdown timeout of one second each to allow a graceful termination.
+
+Users should adjust those values depending on their proxy setup.
+See the section https://www.keycloak.org/server/reverseproxy#graceful-http-shutdown[Graceful HTTP shutdown] in the reverse proxy guide for more information.
+
 === `X-Forwarded-Prefix` Header is now supported
 
 With `proxy-headers` set to `xforwarded`, the server can determine the proxy context path from the `X-Forwarded-Prefix` header.

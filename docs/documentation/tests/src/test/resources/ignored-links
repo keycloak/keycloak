@@ -43,3 +43,4 @@ https://saml.xml.org*
 
 # To be removed once KC 26.6.0 is released
 https://www.keycloak.org/securing-apps/dpop
+https://www.keycloak.org/server/reverseproxy#graceful-http-shutdown
