@@ -351,9 +351,15 @@ public class ClientTest {
             }
             rep.setRedirectUris(null);
 
-            if (expectedRootUrlError != null) rep.setRootUrl(testUrl);
-            if (expectedBaseUrlError != null) rep.setBaseUrl(testUrl);
-            if (expectedRedirectUrisError != null) rep.setRedirectUris(List.of(testUrl));
+            if (expectedRootUrlError != null) {
+                rep.setRootUrl(testUrl);
+            }
+            if (expectedBaseUrlError != null) {
+                rep.setBaseUrl(testUrl);
+            }
+            if (expectedRedirectUrisError != null) {
+                rep.setRedirectUris(List.of(testUrl));
+            }
             createOrUpdateClientExpectingValidationErrors(rep, create, expectedRootUrlError, expectedBaseUrlError, expectedRedirectUrisError);
 
             rep.setRootUrl(null);
@@ -969,27 +975,54 @@ public class ClientTest {
 
         ClientRepresentation storedClient = managedRealm.admin().clients().get(client.getId()).toRepresentation();
         assertClient(client, storedClient);
+
+        // try adding a duplicate protocol mapper
+        protocolMappers.add(barMapper);
+        newClient.setProtocolMappers(protocolMappers);
+
+        createOrUpdateClientExpectingValidationErrors(newClient, false, "Cannot add protocol mapper 'bar'. Protocol mapper name must be unique per protocol");
     }
 
     public static void assertClient(ClientRepresentation client, ClientRepresentation storedClient) {
-        if (client.getClientId() != null) Assert.assertEquals(client.getClientId(), storedClient.getClientId());
-        if (client.getName() != null) Assert.assertEquals(client.getName(), storedClient.getName());
-        if (client.isEnabled() != null) Assert.assertEquals(client.isEnabled(), storedClient.isEnabled());
-        if (client.isAlwaysDisplayInConsole() != null)
+        if (client.getClientId() != null) {
+            Assert.assertEquals(client.getClientId(), storedClient.getClientId());
+        }
+        if (client.getName() != null) {
+            Assert.assertEquals(client.getName(), storedClient.getName());
+        }
+        if (client.isEnabled() != null) {
+            Assert.assertEquals(client.isEnabled(), storedClient.isEnabled());
+        }
+        if (client.isAlwaysDisplayInConsole() != null) {
             Assert.assertEquals(client.isAlwaysDisplayInConsole(), storedClient.isAlwaysDisplayInConsole());
-        if (client.isBearerOnly() != null) Assert.assertEquals(client.isBearerOnly(), storedClient.isBearerOnly());
-        if (client.isPublicClient() != null)
+        }
+        if (client.isBearerOnly() != null) {
+            Assert.assertEquals(client.isBearerOnly(), storedClient.isBearerOnly());
+        }
+        if (client.isPublicClient() != null) {
             Assert.assertEquals(client.isPublicClient(), storedClient.isPublicClient());
-        if (client.isFullScopeAllowed() != null)
+        }
+        if (client.isFullScopeAllowed() != null) {
             Assert.assertEquals(client.isFullScopeAllowed(), storedClient.isFullScopeAllowed());
-        if (client.getRootUrl() != null) Assert.assertEquals(client.getRootUrl(), storedClient.getRootUrl());
-        if (client.getAdminUrl() != null) Assert.assertEquals(client.getAdminUrl(), storedClient.getAdminUrl());
-        if (client.getBaseUrl() != null) Assert.assertEquals(client.getBaseUrl(), storedClient.getBaseUrl());
-        if (client.isSurrogateAuthRequired() != null)
+        }
+        if (client.getRootUrl() != null) {
+            Assert.assertEquals(client.getRootUrl(), storedClient.getRootUrl());
+        }
+        if (client.getAdminUrl() != null) {
+            Assert.assertEquals(client.getAdminUrl(), storedClient.getAdminUrl());
+        }
+        if (client.getBaseUrl() != null) {
+            Assert.assertEquals(client.getBaseUrl(), storedClient.getBaseUrl());
+        }
+        if (client.isSurrogateAuthRequired() != null) {
             Assert.assertEquals(client.isSurrogateAuthRequired(), storedClient.isSurrogateAuthRequired());
-        if (client.getClientAuthenticatorType() != null)
+        }
+        if (client.getClientAuthenticatorType() != null) {
             Assert.assertEquals(client.getClientAuthenticatorType(), storedClient.getClientAuthenticatorType());
-        if (client.getSecret() != null) Assert.assertEquals(client.getSecret(), storedClient.getSecret());
+        }
+        if (client.getSecret() != null) {
+            Assert.assertEquals(client.getSecret(), storedClient.getSecret());
+        }
 
         if (client.getNotBefore() != null) {
             Assertions.assertEquals(client.getNotBefore(), storedClient.getNotBefore());
