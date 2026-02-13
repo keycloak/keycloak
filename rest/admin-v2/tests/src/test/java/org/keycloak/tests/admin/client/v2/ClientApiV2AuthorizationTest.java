@@ -242,7 +242,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         setAuthHeader(request, adminClients.get("no-access"));
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(403));
-            assertThat(EntityUtils.toString(response.getEntity()), containsString("Insufficient permissions to access the client"));
+            assertThat(EntityUtils.toString(response.getEntity()), containsString("HTTP 403 Forbidden"));
         }
     }
 
@@ -336,6 +336,26 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         setAuthHeader(request, adminClients.get("manage-clients"));
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(200));
+        }
+
+        // does not exist
+        request = new HttpPatch(getClientsApiUrl() + "/does-not-exist");
+        request.setHeader(HttpHeaders.CONTENT_TYPE, "application/merge-patch+json");
+        patch = new OIDCClientRepresentation();
+        patch.setDescription("Patched-non-existing");
+        request.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
+
+        // no-access: not existing - should get 403 (lacks canList, prevents ID phishing)
+        setAuthHeader(request, adminClients.get("no-access"));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(403));
+            assertThat(EntityUtils.toString(response.getEntity()), containsString("HTTP 403 Forbidden"));
+        }
+
+        // view-clients: not existing - should get 404
+        setAuthHeader(request, adminClients.get("view-clients"));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(404));
         }
     }
 

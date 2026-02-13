@@ -65,7 +65,7 @@ public class DefaultClientApi implements ClientApi {
             return clientService.getClient(realm, clientId)
                     .orElseThrow(() -> new NotFoundException("Cannot find the specified client"));
         } catch (ServiceException e) {
-            throw new WebApplicationException(e.getMessage(), e.getSuggestedResponseStatus().orElse(Response.Status.NOT_FOUND));
+            throw e.toWebApplicationException(Response.Status.NOT_FOUND);
         }
     }
 
@@ -80,7 +80,7 @@ public class DefaultClientApi implements ClientApi {
             var result = clientService.createOrUpdate(realm, client, true);
             return Response.status(result.created() ? Response.Status.CREATED : Response.Status.OK).entity(result.representation()).build();
         } catch (ServiceException e) {
-            throw new WebApplicationException(e.getMessage(), e.getSuggestedResponseStatus().orElse(Response.Status.BAD_REQUEST));
+            throw e.toWebApplicationException();
         }
     }
 

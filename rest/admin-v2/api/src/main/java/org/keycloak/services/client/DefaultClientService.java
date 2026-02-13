@@ -67,7 +67,7 @@ public class DefaultClientService implements ClientService {
     protected void avoidClientIdPhishing() throws ServiceException {
         if (clientResource == null && !permissions.clients().canList()) {
             // we do this to make sure somebody can't phish client IDs
-            throw new ServiceException("Insufficient permissions to access the client", Response.Status.FORBIDDEN);
+            throw new ServiceException(Response.Status.FORBIDDEN);
         }
     }
 
