@@ -3,10 +3,11 @@ export interface DecodedToken {
 }
 
 export function decodeToken(token: string): DecodedToken {
-  const [, payload] = token.split(".");
+  const [, payload] = token?.split(".") || [];
 
   if (typeof payload !== "string") {
-    throw new Error("Unable to decode token, payload not found.");
+    console.info("Unable to decode token, payload not found.");
+    return {};
   }
 
   let decoded;

@@ -22,6 +22,20 @@ These properties are shared among the available OpenTelemetry components - logs,
 
 For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
 
+= Graceful shutdown of HTTP stack
+
+To allow for rolling updates for configuration changes or version updates, a graceful shutdown of {project_name} nodes prevents users seeing error responses when logging in or refreshing their tokens when nodes shut down.
+
+Starting with this version, {project_name} supports a graceful shutdown of the HTTP stack.
+This includes delaying a shutdown after receiving a termination signal, connection draining for HTTP/1.1 and HTTP/2 connections during that period, and a shutdown timeout to finish ongoing requests.
+
+The defaults are a shutdown delay and a shutdown timeout of one second each.
+This should be a good fit for setups where the reverse proxy is using TLS edge termination or re-encrypt, and the reverse proxy is notified about the Keycloak node shutting down at the same time as the Keycloak node.
+This is a common setup for example in Kubernetes environments.
+
+Users should adjust those values depending on their proxy setup.
+See the section https://www.keycloak.org/server/reverseproxy#graceful-http-shutdown[Graceful HTTP shutdown] in the reverse proxy guide for more information.
+
 = Custom request headers for OpenTelemetry
 
 It is now possible to set request headers for exporting telemetry via OpenTelemetry Protocol (OTLP).

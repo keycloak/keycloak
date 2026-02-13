@@ -200,7 +200,7 @@
         <central.publishing.plugin.version>0.7.0</central.publishing.plugin.version>
         <nexus3.staging.plugin.version>1.0.7</nexus3.staging.plugin.version>
         <frontend.plugin.version>1.15.0</frontend.plugin.version>
-        <docker.maven.plugin.version>0.40.3</docker.maven.plugin.version>
+        <docker.maven.plugin.version>0.48.1</docker.maven.plugin.version>
         <verifier.plugin.version>1.1</verifier.plugin.version>
         <shade.plugin.version>3.4.1</shade.plugin.version>
         <smallrye.openapi.generator.plugin.version>3.6.2</smallrye.openapi.generator.plugin.version>

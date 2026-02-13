@@ -45,8 +45,8 @@ public class FederatedClientAuthConflictsTest {
 
     @Test
     public void testDuplicatedIssuers() {
-        createIdp("idp1", "http://127.0.0.1:8500");
-        createIdp("idp2", "http://127.0.0.1:8500");
+        createIdp("idp1", "http://127.0.0.1:8500", false);
+        createIdp("idp2", "http://127.0.0.1:8500", false);
 
         createClient("myclient", "external1", "idp1");
 
@@ -67,7 +67,7 @@ public class FederatedClientAuthConflictsTest {
         Assertions.assertTrue(response.isSuccess());
         Assertions.assertEquals("myclient", events.poll().getClientId());
 
-        createIdp("idp2", "http://127.0.0.1:8500");
+        IdentityProviderRepresentation idp2 = createIdp("idp2", "http://127.0.0.1:8500", false);
 
         clientRep.getAttributes().put(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, "idp2");
         realm.admin().clients().get(clientRep.getId()).update(clientRep);
@@ -79,7 +79,11 @@ public class FederatedClientAuthConflictsTest {
 
         // Update old entry, so next read will invalidate it
         idp1.getConfig().put(IdentityProviderModel.ISSUER, "http://127.0.0.1:8501");
+        idp1.getConfig().put(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS, "false");
         realm.admin().identityProviders().get(idp1.getAlias()).update(idp1);
+
+        idp2.getConfig().put(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS, "true");
+        realm.admin().identityProviders().get(idp2.getAlias()).update(idp2);
 
         // Should succeed as entry is updated in the cache
         events.clear();
@@ -116,11 +120,15 @@ public class FederatedClientAuthConflictsTest {
     }
 
     private IdentityProviderRepresentation createIdp(String alias, String issuer) {
+        return createIdp(alias, issuer, true);
+    }
+
+    private IdentityProviderRepresentation createIdp(String alias, String issuer, boolean supportsClientAssertions) {
         IdentityProviderRepresentation rep = IdentityProviderBuilder.create()
                 .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                 .alias(alias)
                 .setAttribute(IdentityProviderModel.ISSUER, issuer)
-                .setAttribute(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS, "true")
+                .setAttribute(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS, String.valueOf(supportsClientAssertions))
                 .setAttribute(OIDCIdentityProviderConfig.USE_JWKS_URL, "true")
                 .setAttribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true")
                 .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")

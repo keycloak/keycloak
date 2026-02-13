@@ -6,7 +6,8 @@
 <@tmpl.guide
 title="Configuring a reverse proxy"
 summary="Configure {project_name} with a reverse proxy, API gateway, or load balancer."
-includedOptions="proxy-* hostname hostname-admin http-relative-path">
+
+includedOptions="proxy-* hostname hostname-admin http-relative-path shutdown-delay shutdown-timeout">
 
 Distributed environments frequently require the use of a reverse proxy. {project_name} offers several options to securely integrate with such environments.
 
@@ -53,7 +54,7 @@ By default {project_name} is exposed through the root context path (`/`). If the
 - Use a simple hostname for the `hostname` option, `xforwarded` for the `proxy-headers` option, and have the proxy set the `X-Forwarded-Prefix` header.
 - Use a full URL for the `hostname` option including the proxy context path, for example using `--hostname=https://my.keycloak.org/auth` if {project_name} is exposed through the reverse proxy on `/auth`.
 - Change the context path of {project_name} itself to match the context path for the reverse proxy using the `http-relative-path` option.
- 
+
 For more details on exposing {project_name} on different hostname or context path incl. Administration REST API and Console, see <@links.server id="hostname"/>.
 
 == Enable sticky sessions
@@ -254,8 +255,6 @@ The NGINX SSL/TLS module does not expose the client certificate chain. {project_
 If you are using this provider, see <@links.server id="keycloak-truststore"/> for how
 to configure a {project_name} Truststore.
 
-</@tmpl.guide>
-
 === Configuring the rfc9440 provider
 
 If you stick to the header names mentioned in RFC 9440, you do not need to configure any additional options after selecting the `rfc9440` provider.
@@ -278,3 +277,134 @@ The default values of the options are as follows:
 
 If your certificate chain is longer than the given default, you must define the option with an appropriate number.
 Otherwise, the provider will discard the request.
+
+[[graceful-http-shutdown]]
+== Graceful HTTP shutdown
+
+When running {project_name} behind a reverse proxy or load balancer, graceful shutdown ensures that in-flight requests complete successfully during server termination, preventing connection errors for clients.
+
+{project_name} enables graceful HTTP shutdown by default with configurable timeouts.
+
+=== Understanding shutdown phases
+
+The shutdown process consists of two phases:
+
+*Pre-shutdown delay*:: During this phase, {project_name} signals to load balancers and proxies that it is preparing to shut down.
+The server's readiness endpoint returns a "not ready" status, allowing the load balancer to stop routing new requests to this instance.
+Existing TLS and HTTP keepalive connections are allowed to drain naturally.
+The server continues to process existing requests.
+
+*Shutdown timeout*:: After the pre-shutdown delay, {project_name} stops accepting new requests and waits for in-flight HTTP requests to complete.
+If requests are still running after the timeout expires, the server shuts down regardless.
+
+=== Default behavior
+
+By default, {project_name} is configured with a 1-second pre-shutdown delay and a 1-second shutdown timeout.
+These defaults work well for most standard deployments where:
+
+* The load balancer reconfigures quickly (within 1 second)
+* Most requests complete within 1 second
+* The reverse proxy uses edge termination or re-encryption (not TLS passthrough)
+
+=== Configuring shutdown timeouts
+
+Advanced users can adjust the shutdown timeouts using CLI options based on their deployment characteristics.
+
+[source,bash]
+----
+bin/kc.sh start --shutdown-delay=<duration> --shutdown-timeout=<duration>
+----
+
+Available options:
+
+`--shutdown-delay`::
+Length of the pre-shutdown phase during which the server prepares for shutdown.
+This period allows for load balancer reconfiguration and draining of TLS/HTTP keepalive connections.
+Default: `1s`
+
+`--shutdown-timeout`::
+The shutdown period waiting for currently running HTTP requests to finish.
+Default: `1s`
+
+Both values accept duration formats: `1s` (seconds), `500ms` (milliseconds), `2m` (minutes), etc.
+
+=== When to adjust shutdown timeouts
+
+Consider adjusting these values based on your deployment configuration with the following example Scenarios:
+
+[%autowidth,cols="2,>1,>1,3a"]
+|===
+|Scenario |Delay |Timeout |Reason
+
+|Load balancer polls readiness probe
+|16s
+|
+|Assumptions:
+
+* 5s poll interval and a load balancer reconfiguring after two successive failed probes.
+* 1s for reconfiguring the proxy.
+* Proxy using TLS re-encrypt or edge termination.
+
+Calculation:
+
+* Allow three poll cycles for the load balancer to detect shutdown and the extra time for the load balancer to perform the reconfiguration:
++
+`shutdown delay = 3 * 5s + 1s`
+
+|TLS passthrough configuration
+|10‑30s
+|
+|Longer delay allows keepalive connections to drain naturally and receive connection close signals.
+
+|Long-running admin API requests
+|
+|10‑30s
+|Admin operations may take longer than typical user requests.
+
+|Test environments / quick restarts
+|0s
+|500ms
+|Minimize shutdown time when graceful draining is not needed.
+
+|Deployment orchestration reconfigures the proxy and drains connections before Pod termination
+|0s
+|
+|No pre-shutdown delay needed if proxy is already reconfigured
+
+|Combined: TLS passthrough plus polled readiness
+|26‑56s
+|
+|Delays add up: time for load balancer detection + connection draining
+
+|===
+
+==== Example configurations
+
+For production with TLS passthrough:
+
+[source,bash]
+----
+<@kc.start parameters="--shutdown-delay=30s --shutdown-timeout=1s"/>
+----
+
+For load balancers that poll readiness:
+
+[source,bash]
+----
+<@kc.start parameters="--shutdown-delay=16s --shutdown-timeout=1s"/>
+----
+
+For test environments:
+
+[source,bash]
+----
+<@kc.start parameters="--shutdown-delay=0s --shutdown-timeout=500ms"/>
+----
+
+[NOTE]
+====
+The shutdown delay affects the minimum time required for a complete server restart.
+In Kubernetes environments, ensure your `terminationGracePeriodSeconds` is longer than the sum of `shutdown-delay` and `shutdown-timeout` to prevent forced termination.
+====
+
+</@tmpl.guide>

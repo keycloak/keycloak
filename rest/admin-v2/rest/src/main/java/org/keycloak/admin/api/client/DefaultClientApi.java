@@ -3,6 +3,8 @@ package org.keycloak.admin.api.client;
 import java.io.IOException;
 import java.util.Objects;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
@@ -23,6 +25,7 @@ import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.DefaultClientService;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.RealmAdminResource;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.util.ObjectMapperResolver;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -31,33 +34,35 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 
 public class DefaultClientApi implements ClientApi {
-
-    private final KeycloakSession session;
-    private final RealmModel realm;
-    private final ClientService clientService;
-
-    private final ClientResource clientResource;
-    private final String clientId;
-    private final ObjectMapper objectMapper;
-
     private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
 
-    public DefaultClientApi(KeycloakSession session, RealmAdminResource realmAdminResource, ClientResource clientResource, String clientId) {
+    private final KeycloakSession session;
+    private final String clientId;
+    private final RealmModel realm;
+    private final ClientService clientService;
+    private final ObjectMapper objectMapper;
+
+    public DefaultClientApi(@Nonnull KeycloakSession session,
+                            @Nonnull String clientId,
+                            @Nonnull AdminPermissionEvaluator permissions,
+                            @Nonnull RealmAdminResource realmAdminResource,
+                            @Nullable ClientResource clientResource) {
         this.session = session;
-        this.clientResource = clientResource;
         this.clientId = clientId;
-
+        this.clientService = new DefaultClientService(session, permissions, realmAdminResource, clientResource);
         this.realm = Objects.requireNonNull(session.getContext().getRealm());
-        this.clientService = new DefaultClientService(session, realmAdminResource, clientResource);
-
         this.objectMapper = MAPPER;
     }
 
     @GET
     @Override
     public BaseClientRepresentation getClient() {
-        return clientService.getClient(realm, clientId, null)
-                .orElseThrow(() -> new NotFoundException("Cannot find the specified client"));
+        try {
+            return clientService.getClient(realm, clientId)
+                    .orElseThrow(() -> new NotFoundException("Cannot find the specified client"));
+        } catch (ServiceException e) {
+            throw e.toWebApplicationException(Response.Status.NOT_FOUND);
+        }
     }
 
     @PUT
@@ -71,7 +76,7 @@ public class DefaultClientApi implements ClientApi {
             var result = clientService.createOrUpdate(realm, client, true);
             return Response.status(result.created() ? Response.Status.CREATED : Response.Status.OK).entity(result.representation()).build();
         } catch (ServiceException e) {
-            throw new WebApplicationException(e.getMessage(), e.getSuggestedResponseStatus().orElse(Response.Status.BAD_REQUEST));
+            throw e.toWebApplicationException();
         }
     }
 
@@ -104,10 +109,11 @@ public class DefaultClientApi implements ClientApi {
     @DELETE
     @Override
     public void deleteClient() {
-        if (clientResource == null) {
-            throw new NotFoundException("Cannot find the specified client");
+        try {
+            clientService.deleteClient(realm, clientId);
+        } catch (ServiceException e) {
+            throw e.toWebApplicationException();
         }
-        clientResource.deleteClient();
     }
 
     static void validateUnknownFields(BaseClientRepresentation rep) {

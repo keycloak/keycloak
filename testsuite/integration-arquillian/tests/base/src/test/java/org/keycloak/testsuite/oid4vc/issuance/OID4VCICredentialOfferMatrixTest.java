@@ -50,7 +50,6 @@ import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.directory.api.util.Strings;
-import org.apache.http.HttpStatus;
 import org.junit.Test;
 
 import static org.keycloak.OAuth2Constants.SCOPE_OPENID;
@@ -92,8 +91,8 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     String appUsername = "alice";
 
-    String credScopeName = jwtTypeCredentialScopeName;
-    String credConfigId = jwtTypeCredentialConfigurationIdName;
+    String credScopeName = jwtTypeNaturalPersonScopeName;
+    String credConfigId = jwtTypeNaturalPersonScopeName;
 
     class TestContext {
         boolean preAuthorized;
@@ -271,7 +270,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
                 //  3. does not derive scopes from the client configuration
                 //  4. does not reflect anything from the credential offer
                 //
-                AccessTokenResponse accessToken = getPreAuthorizedAccessTokenResponse(ctx, credOffer);
+                AccessTokenResponse accessToken = getPreAuthorizedAccessTokenResponse(credOffer);
                 List<OID4VCAuthorizationDetail> authDetailsResponse = accessToken.getOid4vcAuthorizationDetails();
                 if (authDetailsResponse == null || authDetailsResponse.isEmpty()) {
                     throw new IllegalStateException("No authorization_details in token response");
@@ -406,19 +405,9 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         return credOffer;
     }
 
-    private AccessTokenResponse getPreAuthorizedAccessTokenResponse(TestContext ctx, CredentialsOffer credOffer) throws Exception {
+    private AccessTokenResponse getPreAuthorizedAccessTokenResponse(CredentialsOffer credOffer) throws Exception {
         PreAuthorizedCode preAuthorizedCode = credOffer.getGrants().getPreAuthorizedCode();
-        AccessTokenResponse accessTokenResponse = oauth.oid4vc()
-                .preAuthorizedCodeGrantRequest(preAuthorizedCode.getPreAuthorizedCode())
-                .endpoint(ctx.authorizationMetadata.getTokenEndpoint())
-                .send();
-        int statusCode = accessTokenResponse.getStatusCode();
-        if (HttpStatus.SC_OK != statusCode) {
-            throw new IllegalStateException(accessTokenResponse.getErrorDescription() != null
-                    ? accessTokenResponse.getErrorDescription()
-                    : "Request failed with status " + statusCode);
-        }
-        return accessTokenResponse;
+        return oauth.oid4vc().doPreAuthorizedCodeGrantRequest(preAuthorizedCode.getPreAuthorizedCode());
     }
 
     private CredentialResponse getCredentialByAuthDetail(String accessToken, OID4VCAuthorizationDetail authDetail) throws Exception {
@@ -472,6 +461,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     private void verifyCredentialResponse(TestContext ctx, CredentialResponse credResponse) throws Exception {
 
+        String issuer = ctx.issuerMetadata.getCredentialIssuer();
         String scope = ctx.credentialConfiguration.getScope();
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull("The first credential in the array should not be null", credentialObj);
@@ -479,11 +469,11 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         String expUsername = ctx.appUser != null ? ctx.appUser : appUsername;
 
         JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialObj.getCredential(), JsonWebToken.class).getToken();
-        assertEquals("did:web:test.org", jsonWebToken.getIssuer());
+        assertEquals(issuer, jsonWebToken.getIssuer());
         Object vc = jsonWebToken.getOtherClaims().get("vc");
         VerifiableCredential credential = JsonSerialization.mapper.convertValue(vc, VerifiableCredential.class);
         assertEquals(List.of(scope), credential.getType());
-        assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
+        assertEquals(URI.create(issuer), credential.getIssuer());
         assertEquals(expUsername + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
     }
 

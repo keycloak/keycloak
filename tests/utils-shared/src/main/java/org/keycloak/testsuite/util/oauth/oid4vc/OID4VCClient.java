@@ -34,7 +34,7 @@ public class OID4VCClient {
     }
 
     public Oid4vcCredentialRequest credentialRequest() {
-        return new Oid4vcCredentialRequest(client, new CredentialRequest());
+        return credentialRequest(new CredentialRequest());
     }
 
     public Oid4vcCredentialRequest credentialRequest(CredentialRequest credRequest) {
@@ -42,10 +42,10 @@ public class OID4VCClient {
     }
 
     public PreAuthorizedCodeGrantRequest preAuthorizedCodeGrantRequest(String preAuthorizedCode) {
-        return new PreAuthorizedCodeGrantRequest(preAuthorizedCode, client);
+        return new PreAuthorizedCodeGrantRequest(client, preAuthorizedCode);
     }
 
-    public AccessTokenResponse doPreAuthorizedCodeGrant(String preAuthorizedCode) {
+    public AccessTokenResponse doPreAuthorizedCodeGrantRequest(String preAuthorizedCode) {
         return preAuthorizedCodeGrantRequest(preAuthorizedCode).send();
     }
 

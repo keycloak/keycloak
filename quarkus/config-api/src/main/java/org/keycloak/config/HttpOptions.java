@@ -150,4 +150,16 @@ public class HttpOptions {
             .defaultValue(Boolean.FALSE)
             .build();
 
+    public static final Option<String> SHUTDOWN_TIMEOUT = new OptionBuilder<>("shutdown-timeout", String.class)
+            .category(OptionCategory.HTTP)
+            .description("The shutdown period waiting for currently running HTTP requests to finish. " + DURATION_DESCRIPTION)
+            .defaultValue("1s")
+            .build();
+
+    public static final Option<String> SHUTDOWN_DELAY = new OptionBuilder<>("shutdown-delay", String.class)
+            .category(OptionCategory.HTTP)
+            .description("Length of the pre-shutdown phase during which the server prepares for shutdown. " + DURATION_DESCRIPTION +
+                    " This period allows for loadbalancer reconfiguration and draining of TLS/HTTP keepalive connections.")
+            .defaultValue("1s")
+            .build();
 }
