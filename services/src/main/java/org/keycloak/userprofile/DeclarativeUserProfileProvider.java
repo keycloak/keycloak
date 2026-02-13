@@ -75,7 +75,6 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
      *
      * @param context to get current auth flow from
      * @param configuredScopes to be evaluated
-     * @return
      */
     private static boolean requestedScopePredicate(AttributeContext context, Set<String> configuredScopes) {
         // any attribute is enabled and available when managing through the User Admin API
@@ -147,7 +146,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
      * @return a function for creating new users.
      */
     private Function<Attributes, UserModel> createUserFactory() {
-        return new Function<Attributes, UserModel>() {
+        return new Function<>() {
             private UserModel user;
 
             @Override
@@ -396,7 +395,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     }
 
     private Map<String, UPGroup> asHashMap(List<UPGroup> groups) {
-        return groups.stream().collect(Collectors.toMap(g -> g.getName(), g -> g));
+        return groups.stream().collect(Collectors.toMap(UPGroup::getName, g -> g));
     }
 
     private AttributeGroupMetadata toAttributeGroupMeta(UPGroup group) {
@@ -497,12 +496,13 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
     private Function<UserProfileContext, UserProfileMetadata> createUserDefinedProfileDecorator(KeycloakSession session, UserProfileMetadata decoratedMetadata, ComponentModel component) {
         return (c) -> {
+            RealmModel realm = session.getContext().getRealm();
             UPConfig parsedConfig = getConfigFromComponentModel(component);
 
             //validate configuration to catch things like changed/removed validators etc, and warn early and clearly about this problem
             List<String> errors = UPConfigUtils.validate(session, parsedConfig);
             if (!errors.isEmpty()) {
-                throw new RuntimeException("UserProfile configuration for realm '" + session.getContext().getRealm().getName() + "' is invalid: " + errors.toString());
+                throw new RuntimeException("UserProfile configuration for realm '" + realm.getName() + "' is invalid: " + errors);
             }
 
             Iterator<AttributeMetadata> attributes = decoratedMetadata.getAttributes().iterator();
