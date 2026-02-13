@@ -19,6 +19,7 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPRule.LDAPPasswordPolicy;
@@ -52,6 +53,8 @@ public class LDAPPasswordPolicyTest extends AbstractLDAPTest {
                     "john_old@email.org", null, "1234");
             LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), user, "Password1");
         });
+
+        ldapRule.getLdapEmbeddedServer().setPwdReset("uid=mustchange,ou=People,dc=keycloak,dc=org", true);
     }
 
     @Test
@@ -68,6 +71,16 @@ public class LDAPPasswordPolicyTest extends AbstractLDAPTest {
         loginPage.open();
         loginPage.login("mustchange", "Password1");
         passwordUpdatePage.assertCurrent();
+
+        // Change password and verify that user can login with new password.
+        passwordUpdatePage.changePassword("changedpassword", "changedpassword");
+        appPage.assertCurrent();
+
+        UserRepresentation user = testRealm().users().search("mustchange").get(0);
+        testRealm().users().get(user.getId()).logout();
+        loginPage.open();
+        loginPage.login("mustchange", "changedpassword");
+        appPage.assertCurrent();
     }
 
 }

@@ -32,6 +32,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.directory.api.ldap.model.entry.DefaultEntry;
+import org.apache.directory.api.ldap.model.entry.DefaultModification;
+import org.apache.directory.api.ldap.model.entry.ModificationOperation;
 import org.apache.directory.api.ldap.model.exception.LdapEntryAlreadyExistsException;
 import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.apache.directory.api.ldap.model.exception.LdapInvalidDnException;
@@ -449,6 +451,19 @@ public class LDAPEmbeddedServer {
         policyContainer.setDefaultPolicyDn( defaultPolicyDn );
 
         authenticationInterceptor.setPwdPolicies( policyContainer );
+    }
+
+    public void setPwdReset(String userDn, boolean value) {
+        // pwdReset is a ppolicy operational attribute that can only be modified via the
+        // embedded server's internal admin session, not through the LDAP protocol.
+        try {
+            Dn dn = new Dn(directoryService.getSchemaManager(), userDn);
+            directoryService.getAdminSession().modify(dn,
+                    new DefaultModification(value ? ModificationOperation.ADD_ATTRIBUTE : ModificationOperation.REMOVE_ATTRIBUTE,
+                            "pwdReset", String.valueOf(value).toUpperCase()));
+        } catch (LdapException e) {
+            throw new RuntimeException("Failed to set pwdReset for " + userDn, e);
+        }
     }
 
 }
