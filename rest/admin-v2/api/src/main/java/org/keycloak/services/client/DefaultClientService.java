@@ -142,6 +142,15 @@ public class DefaultClientService implements ClientService {
         return null;
     }
 
+    @Override
+    public void deleteClient(RealmModel realm, String clientId) throws ServiceException {
+        avoidClientIdPhishing();
+        if (clientResource == null) {
+            throw new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND);
+        }
+        clientResource.deleteClient();
+    }
+
     /**
      * Declaratively manage client roles - ensures the client has exactly the roles specified in 'rolesFromRep'
      * <p>

@@ -400,6 +400,20 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(403));
         }
+
+        // no-access: not existing - should get 403 (lacks canList, prevents ID phishing)
+        request = new HttpDelete(getClientsApiUrl() + "/does-not-exist");
+        setAuthHeader(request, adminClients.get("no-access"));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(403));
+            assertThat(EntityUtils.toString(response.getEntity()), containsString("HTTP 403 Forbidden"));
+        }
+
+        // view-clients: not existing - should get 404
+        setAuthHeader(request, adminClients.get("view-clients"));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(404));
+        }
     }
 
     /**

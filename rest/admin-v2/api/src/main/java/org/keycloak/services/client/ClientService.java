@@ -41,6 +41,8 @@ public interface ClientService extends Service {
 
     Stream<BaseClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions);
 
+    void deleteClient(RealmModel realm, String clientId) throws ServiceException;
+
     CreateOrUpdateResult createOrUpdate(RealmModel realm, BaseClientRepresentation client, boolean allowUpdate) throws ServiceException;
 
 }

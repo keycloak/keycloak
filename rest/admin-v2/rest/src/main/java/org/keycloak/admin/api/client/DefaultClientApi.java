@@ -42,9 +42,6 @@ public class DefaultClientApi implements ClientApi {
     private final ClientService clientService;
     private final ObjectMapper objectMapper;
 
-    // v1 resources
-    private final ClientResource clientResource;
-
     public DefaultClientApi(@Nonnull KeycloakSession session,
                             @Nonnull String clientId,
                             @Nonnull AdminPermissionEvaluator permissions,
@@ -52,7 +49,6 @@ public class DefaultClientApi implements ClientApi {
                             @Nullable ClientResource clientResource) {
         this.session = session;
         this.clientId = clientId;
-        this.clientResource = clientResource;
         this.clientService = new DefaultClientService(session, permissions, realmAdminResource, clientResource);
         this.realm = Objects.requireNonNull(session.getContext().getRealm());
         this.objectMapper = MAPPER;
@@ -113,10 +109,11 @@ public class DefaultClientApi implements ClientApi {
     @DELETE
     @Override
     public void deleteClient() {
-        if (clientResource == null) {
-            throw new NotFoundException("Cannot find the specified client");
+        try {
+            clientService.deleteClient(realm, clientId);
+        } catch (ServiceException e) {
+            throw e.toWebApplicationException();
         }
-        clientResource.deleteClient();
     }
 
     static void validateUnknownFields(BaseClientRepresentation rep) {
