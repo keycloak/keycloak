@@ -24,36 +24,25 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
 
     @Override
     public void run(KeycloakSession session) {
+
         DefaultWorkflowExecutionContext context = new DefaultWorkflowExecutionContext(session, this.context);
-        WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-        Workflow workflow = context.getWorkflow();
-        String resourceId = context.getResourceId();
-        String executionId = context.getExecutionId();
         WorkflowStep nextStep = runCurrentStep(context);
 
         while (nextStep != null) {
-            if (DurationConverter.isPositiveDuration(nextStep.getAfter())) {
-                log.debugf("Scheduling step %s to run in %s for resource %s (execution id: %s)",
-                        nextStep.getProviderId(), nextStep.getAfter(), resourceId, executionId);
-                // If a step has a time defined, schedule it and stop processing the other steps of workflow
-                long scheduledTime = System.currentTimeMillis() + DurationConverter.parseDuration(nextStep.getAfter()).toMillis();
-                stateProvider.scheduleStep(workflow, nextStep, resourceId, executionId);
-
-                // Fire workflow step scheduled event
-                WorkflowProviderEvents.fireWorkflowStepScheduledEvent(session, workflow, nextStep, resourceId, executionId,
-                        scheduledTime, nextStep.getAfter());
+            WorkflowStateProvider.ScheduleResult result = scheduleStep(session, context, nextStep);
+            if (result == WorkflowStateProvider.ScheduleResult.CREATED && context.getEvent() != null) {
+                fireWorkflowActivated(session, context);
+            }
+            boolean isNextStepScheduled = DurationConverter.isPositiveDuration(nextStep.getAfter());
+            if (isNextStepScheduled) {
+                fireWorkflowStepScheduled(session, context, nextStep);
                 return;
             }
             nextStep = runWorkflowStep(context, nextStep);
         }
 
-        // not recurring, remove the state record
-        log.debugf("Workflow '%s' completed for resource %s (execution id: %s)", workflow.getName(), resourceId, executionId);
-
-        // Fire workflow completed event
-        WorkflowProviderEvents.fireWorkflowCompletedEvent(session, workflow, resourceId, executionId);
-
-        stateProvider.remove(executionId);
+        // no more steps to run, complete the workflow execution
+        completeWorkflowExecution(session, context);
     }
 
     protected WorkflowStep runCurrentStep(DefaultWorkflowExecutionContext context) {
@@ -63,7 +52,7 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
         return context.getWorkflow().getSteps().findFirst().orElse(null);
     }
 
-    private WorkflowStep runWorkflowStep(DefaultWorkflowExecutionContext context, WorkflowStep step) {
+    protected WorkflowStep runWorkflowStep(DefaultWorkflowExecutionContext context, WorkflowStep step) {
         String executionId = context.getExecutionId();
         String resourceId = context.getResourceId();
         Workflow workflow = context.getWorkflow();
@@ -103,6 +92,60 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
 
             throw e;
         }
+    }
+
+    private WorkflowStateProvider.ScheduleResult scheduleStep(KeycloakSession session, DefaultWorkflowExecutionContext context, WorkflowStep nextStep) {
+
+        Workflow workflow = context.getWorkflow();
+        String resourceId = context.getResourceId();
+        String executionId = context.getExecutionId();
+        boolean isImmediateStep = !DurationConverter.isPositiveDuration(nextStep.getAfter());
+
+        // we always persist the step state in the database, even if the step doesn't have a time defined, to make sure that the workflow execution
+        // can be resumed from this step in case of server failure
+        return KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), session.getContext(), s -> {
+            WorkflowStateProvider stateProvider = s.getProvider(WorkflowStateProvider.class);
+            // if the step is an immediate step, we set after to a short period to prevent it from being picked up by the workflow execution task
+            // while we run it
+            try {
+                if (isImmediateStep)
+                    nextStep.setAfter("1m");
+                return stateProvider.scheduleStep(workflow, nextStep, resourceId, executionId);
+            } finally {
+                if (isImmediateStep)
+                    nextStep.setAfter(null);
+            }
+        }, "Workflow step scheduling task");
+    }
+
+    private void fireWorkflowActivated(KeycloakSession session, DefaultWorkflowExecutionContext context) {
+        // Fire workflow activated event
+        log.debugf("Workflow '%s' activated for resource %s (execution id: %s)", context.getWorkflow().getName(),
+                context.getResourceId(), context.getExecutionId());
+        WorkflowProviderEvents.fireWorkflowActivatedEvent(session, context.getWorkflow(), context.getEvent().getResourceId(),
+                context.getExecutionId(), context.getEvent().getEventProviderId());
+    }
+
+    private void fireWorkflowStepScheduled(KeycloakSession session, DefaultWorkflowExecutionContext context, WorkflowStep nextStep) {
+        log.debugf("Scheduled step %s to run in %s for resource %s (execution id: %s)",
+                nextStep.getProviderId(), nextStep.getAfter(), context.getResourceId(), context.getExecutionId());
+        // If a step has a time defined, schedule it and stop processing the other steps of workflow
+        long scheduledTime = System.currentTimeMillis() + DurationConverter.parseDuration(nextStep.getAfter()).toMillis();
+        // Fire workflow step scheduled event
+        WorkflowProviderEvents.fireWorkflowStepScheduledEvent(session, context.getWorkflow(), nextStep, context.getResourceId(), context.getExecutionId(),
+                scheduledTime, nextStep.getAfter());
+    }
+
+    private void completeWorkflowExecution(KeycloakSession session, DefaultWorkflowExecutionContext context) {
+        // workflow execution completed - log message and fire event after removing the entre from the workflow state table
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), s -> {;
+            WorkflowStateProvider stateProvider = s.getProvider(WorkflowStateProvider.class);
+            stateProvider.remove(context.getExecutionId());
+        });
+        log.debugf("Workflow '%s' completed for resource %s (execution id: %s)", context.getWorkflow().getName(),
+                context.getResourceId(), context.getExecutionId());
+        // Fire workflow completed event
+        WorkflowProviderEvents.fireWorkflowCompletedEvent(session, context.getWorkflow(), context.getResourceId(), context.getExecutionId());
     }
 
     private void checkExecutionCancelled(WorkflowStep step) {

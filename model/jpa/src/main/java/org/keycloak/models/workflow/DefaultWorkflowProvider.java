@@ -179,7 +179,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                 return;
             }
             stateProvider.getDueScheduledSteps(workflow).forEach((scheduled) -> {
-                // check if the resource is still passes the workflow's resource conditions
+                // check if the resource still meets the workflow's resource conditions
                 DefaultWorkflowExecutionContext context = new DefaultWorkflowExecutionContext(session, workflow, scheduled);
                 EventBasedWorkflow provider = new EventBasedWorkflow(session, workflow.getSupportedType(), getWorkflowComponent(workflow.getId()));
                 if (!provider.validateResourceConditions(context)) {
@@ -250,7 +250,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
             stateProvider.remove(oldExecutionId);
 
             // activate the destination workflow for the resource, starting from the specified step
-            DefaultWorkflowExecutionContext context = getDefaultWorkflowExecutionContext(scheduledStep, workflowFrom, workflowTo);
+            DefaultWorkflowExecutionContext context = getWorkflowExecutionContext(scheduledStep, workflowFrom, workflowTo);
             restartWorkflow(context, stepPosition);
 
             String newExecutionId = context.getExecutionId();
@@ -266,7 +266,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
         }
     }
 
-    private DefaultWorkflowExecutionContext getDefaultWorkflowExecutionContext(ScheduledStep scheduledStep, Workflow workflowFrom, Workflow workflowTo) {
+    private DefaultWorkflowExecutionContext getWorkflowExecutionContext(ScheduledStep scheduledStep, Workflow workflowFrom, Workflow workflowTo) {
         DefaultWorkflowExecutionContext context;
         if (workflowFrom.getId().equals(workflowTo.getId())) {
             // we reuse the executionId when migrating within the same workflow
@@ -394,9 +394,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                         if (isAlreadyScheduledInSession(event, workflow)) {
                             return;
                         }
-                        // Fire workflow activated event
-                        WorkflowProviderEvents.fireWorkflowActivatedEvent(session, workflow, event.getResourceId(),
-                                context.getExecutionId(), event.getEventProviderId());
+
 
                         // If the workflow has a positive notBefore set, schedule the first step with it
                         if (DurationConverter.isPositiveDuration(workflow.getNotBefore())) {
