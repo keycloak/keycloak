@@ -22,14 +22,12 @@ import org.keycloak.organization.utils.Organizations;
 
 import org.junit.Test;
 
-import java.util.Set;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Unit tests for domain matching logic including wildcard subdomain support with excluded subdomains.
- * Patterns: *.domain for wildcards (with optional excludedSubdomains field), domain for exact matches.
+ * Unit tests for domain matching logic including wildcard subdomain support with exclusion patterns.
+ * Patterns: *.domain for wildcards, -.domain for exclusions, domain for exact matches.
  *
  * @author Keycloak Team
  */
@@ -159,30 +157,29 @@ public class OrganizationDomainMatchingTest {
 
     @Test
     public void testExclusionPattern() {
-        // Test wildcard with exclusions
-        OrganizationDomainModel wildcard = new OrganizationDomainModel("*.example.com", true, 
-                Set.of("admin.example.com"));
+        // Test exclusion pattern matching (-.domain)
+        OrganizationDomainModel exclusion = new OrganizationDomainModel("-.admin.example.com", true);
         
-        // Should match non-excluded subdomains
-        assertTrue(Organizations.domainMatches("users.example.com", wildcard));
-        assertTrue(Organizations.domainMatches("portal.example.com", wildcard));
-        assertTrue(Organizations.domainMatches("example.com", wildcard));
+        // Exclusion pattern should match the excluded domain
+        assertTrue(Organizations.domainMatches("admin.example.com", exclusion));
         
-        // Should not match excluded subdomain
-        assertFalse(Organizations.domainMatches("admin.example.com", wildcard));
+        // Test cascading exclusion - subdomains of excluded domain are also matched by exclusion
+        assertTrue(Organizations.domainMatches("api.admin.example.com", exclusion));
+        assertTrue(Organizations.domainMatches("deep.sub.admin.example.com", exclusion));
         
-        // Test cascading exclusion - subdomains of excluded domain are also excluded
-        assertFalse(Organizations.domainMatches("api.admin.example.com", wildcard));
-        assertFalse(Organizations.domainMatches("deep.sub.admin.example.com", wildcard));
+        // Should not match different domains
+        assertFalse(Organizations.domainMatches("users.example.com", exclusion));
+        assertFalse(Organizations.domainMatches("example.com", exclusion));
+        assertFalse(Organizations.domainMatches("admin.other.com", exclusion));
         
-        // Test with multiple exclusions
-        OrganizationDomainModel multipleExclusions = new OrganizationDomainModel("*.university.edu", true,
-                Set.of("alumni.university.edu", "test.university.edu"));
+        // Test multiple exclusion patterns
+        OrganizationDomainModel exclusion1 = new OrganizationDomainModel("-.alumni.university.edu", true);
+        OrganizationDomainModel exclusion2 = new OrganizationDomainModel("-.test.university.edu", true);
         
-        assertTrue(Organizations.domainMatches("students.university.edu", multipleExclusions));
-        assertFalse(Organizations.domainMatches("alumni.university.edu", multipleExclusions));
-        assertFalse(Organizations.domainMatches("test.university.edu", multipleExclusions));
-        assertFalse(Organizations.domainMatches("portal.alumni.university.edu", multipleExclusions)); // cascading
+        assertTrue(Organizations.domainMatches("alumni.university.edu", exclusion1));
+        assertFalse(Organizations.domainMatches("alumni.university.edu", exclusion2));
+        assertTrue(Organizations.domainMatches("test.university.edu", exclusion2));
+        assertTrue(Organizations.domainMatches("portal.alumni.university.edu", exclusion1)); // cascading
     }
 
     @Test

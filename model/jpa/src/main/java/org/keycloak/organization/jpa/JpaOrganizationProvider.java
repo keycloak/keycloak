@@ -271,8 +271,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
     
     private boolean matchesOrgDomain(OrganizationModel org, String emailDomain) {
-        // The exclusion checking is now handled within Organizations.domainMatches
-        // via the excludedSubdomains field on each domain
+        // Exclusion checking is handled by checking both inclusion and exclusion patterns
+        // from the organization's domain list (wildcards and -.prefix patterns)
         return org.getDomains().anyMatch(orgDomain -> Organizations.domainMatches(emailDomain, orgDomain));
     }
 

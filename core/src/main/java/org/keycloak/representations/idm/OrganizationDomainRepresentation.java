@@ -17,10 +17,15 @@
 
 package org.keycloak.representations.idm;
 
-import java.util.Set;
-
 /**
  * Representation implementation of an organization internet domain.
+ * 
+ * <p>Supports pattern-based domain matching:
+ * <ul>
+ *   <li><code>example.com</code> - exact match only</li>
+ *   <li><code>*.example.com</code> - matches example.com and all subdomains</li>
+ *   <li><code>-.admin.example.com</code> - exclusion pattern (add as separate domain)</li>
+ * </ul>
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
@@ -28,7 +33,6 @@ public class OrganizationDomainRepresentation {
 
     private String name;
     private boolean verified;
-    private Set<String> excludedSubdomains;
 
     public OrganizationDomainRepresentation() {
         // for reflection
@@ -52,14 +56,6 @@ public class OrganizationDomainRepresentation {
 
     public void setVerified(boolean verified) {
         this.verified = verified;
-    }
-
-    public Set<String> getExcludedSubdomains() {
-        return this.excludedSubdomains;
-    }
-
-    public void setExcludedSubdomains(Set<String> excludedSubdomains) {
-        this.excludedSubdomains = excludedSubdomains;
     }
 
     @Override

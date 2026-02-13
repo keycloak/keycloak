@@ -18,10 +18,16 @@
 package org.keycloak.models;
 
 import java.io.Serializable;
-import java.util.Set;
 
 /**
  * Model implementation of an organization internet domain.
+ * 
+ * <p>Supports pattern-based domain matching:
+ * <ul>
+ *   <li><code>example.com</code> - exact match only</li>
+ *   <li><code>*.example.com</code> - matches example.com and all subdomains</li>
+ *   <li><code>-.admin.example.com</code> - exclusion pattern (requires corresponding wildcard domain)</li>
+ * </ul>
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
@@ -35,20 +41,14 @@ public class OrganizationDomainModel implements Serializable {
 
     private final String name;
     private final boolean verified;
-    private final Set<String> excludedSubdomains;
 
     public OrganizationDomainModel(String name) {
         this(name, false);
     }
 
     public OrganizationDomainModel(String name, boolean verified) {
-        this(name, verified, null);
-    }
-
-    public OrganizationDomainModel(String name, boolean verified, Set<String> excludedSubdomains) {
         this.name = name == null ? null : name.trim().toLowerCase();
         this.verified = verified;
-        this.excludedSubdomains = excludedSubdomains == null ? Set.of() : Set.copyOf(excludedSubdomains);
     }
 
     public String getName() {
@@ -57,10 +57,6 @@ public class OrganizationDomainModel implements Serializable {
 
     public boolean isVerified() {
         return this.verified;
-    }
-
-    public Set<String> getExcludedSubdomains() {
-        return this.excludedSubdomains;
     }
 
     @Override
