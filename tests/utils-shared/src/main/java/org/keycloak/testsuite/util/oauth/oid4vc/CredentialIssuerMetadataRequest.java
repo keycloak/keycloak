@@ -9,7 +9,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class CredentialIssuerMetadataRequest extends AbstractHttpGetRequest<CredentialIssuerMetadataRequest, CredentialIssuerMetadataResponse> {
 
-    public CredentialIssuerMetadataRequest(AbstractOAuthClient<?> client) {
+    CredentialIssuerMetadataRequest(AbstractOAuthClient<?> client) {
         super(client);
     }
 

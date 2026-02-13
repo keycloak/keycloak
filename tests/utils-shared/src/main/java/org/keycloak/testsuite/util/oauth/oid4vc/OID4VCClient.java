@@ -34,7 +34,7 @@ public class OID4VCClient {
     }
 
     public Oid4vcCredentialRequest credentialRequest() {
-        return new Oid4vcCredentialRequest(client, new CredentialRequest());
+        return credentialRequest(new CredentialRequest());
     }
 
     public Oid4vcCredentialRequest credentialRequest(CredentialRequest credRequest) {

@@ -16,7 +16,7 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
     private String username;
     private String clientId;
 
-    public CredentialOfferUriRequest(AbstractOAuthClient<?> client, String credConfigId) {
+    CredentialOfferUriRequest(AbstractOAuthClient<?> client, String credConfigId) {
         super(client);
         this.credConfigId = credConfigId;
     }

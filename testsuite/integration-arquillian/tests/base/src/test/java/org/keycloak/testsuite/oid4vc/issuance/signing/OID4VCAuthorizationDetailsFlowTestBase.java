@@ -49,6 +49,7 @@ import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
+import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;

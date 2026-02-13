@@ -17,7 +17,7 @@ public class PreAuthorizedCodeGrantRequest extends AbstractHttpPostRequest<PreAu
 
     private final String preAuthorizedCode;
 
-    public PreAuthorizedCodeGrantRequest(AbstractOAuthClient<?> client, String preAuthorizedCode) {
+    PreAuthorizedCodeGrantRequest(AbstractOAuthClient<?> client, String preAuthorizedCode) {
         super(client);
         this.preAuthorizedCode = preAuthorizedCode;
     }
