@@ -1,10 +1,8 @@
 package org.keycloak.protocol.oauth2.cimd.clientpolicy.executor;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -57,7 +55,7 @@ import org.jboss.logging.Logger;
  * <p>The abstract class provides the following features:
  * <ul>
  *     <li>Client ID Verification: if {client_id} parameter satisfies the requirements of the specifications</li>
- *     <li>Client ID Validation: if {{client_id} parameter is valid according to the policy.</li>
+ *     <li>Client ID Validation: if {client_id} parameter is valid according to the policy.</li>
  *     <li>Fetching Client Metadata: fetch a client metadata by accessing {client_id} URL.</li>
  *     <li>Client Metadata Verification: if a client metadata satisfies the requirements of the specifications.</li>
  *     <li>Client Metadata Validation: if a client metadata is valid according to the policy.</li>
@@ -87,14 +85,14 @@ import org.jboss.logging.Logger;
  *
  * <p>Client Metadata Format:
  * According to the CIMD specification, the client metadata format is the same as for Dynamic Client Registration except for {@code client_id} property.
- * @see <a href="https://datatracker.ietf.org/doc/html/rfc7591>OAuth 2.0 Dynamic Client Registration Protocol [RFC 7591]]</a>
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc7591>OAuth 2.0 Dynamic Client Registration Protocol [RFC 7591]</a>
  * Therefore, {@link OIDCClientRepresentation} is used for the client metadata format.
  * The CIMD specification allows the use of additional properties (MAY requirement level), but the class does not treat them.
  *
  * <p>Client Metadata Augmentation in {@code OIDCClientRepresentation}:
  * To successfully convert a fetched client metadata to {@code ClientRepresentation}, intentionally augment it.
  * The actual example is a public client. The CIMD and MCP specification allows a public client.
- * {@code }DescriptionConverter.toInternal} recognize a client as a public client if token_endpoint_auth_method is "none"
+ * {@code DescriptionConverter.toInternal} recognize a client as a public client if token_endpoint_auth_method is "none"
  * If a client metadata lacks token_endpoint_auth_method, it is converted to "none", meaning it is treated as a public client.
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -125,10 +123,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
     public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
         // Client ID Verification
-        @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.ALLOW_PRIVATE_ADDRESS)
-        protected boolean allowPrivateAddress = false;
-        @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.ALLOW_LOOPBACK_ADDRESS)
-        protected boolean allowLoopbackAddress = false;
         @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.ALLOW_HTTP_SCHEME)
         protected boolean allowHttpScheme = false;
         @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.TRUSTED_DOMAINS)
@@ -141,22 +135,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         protected List<String> requiredProperties = null;
 
         public Configuration() {
-        }
-
-        public boolean isAllowPrivateAddress() {
-            return allowPrivateAddress;
-        }
-
-        public void setAllowPrivateAddress(boolean allowPrivateAddress) {
-            this.allowPrivateAddress = allowPrivateAddress;
-        }
-
-        public boolean isAllowLoopbackAddress() {
-            return allowLoopbackAddress;
-        }
-
-        public void setAllowLoopbackAddress(boolean allowLoopbackAddress) {
-            this.allowLoopbackAddress = allowLoopbackAddress;
         }
 
         public boolean isAllowHttpScheme() {
@@ -321,8 +299,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
     /**
      * CREATE: a client metadata is not created, so fetching it creating it is needed.
-     * UPDATE: a client metadata has been already created but it has expired, so re-fetching it and updating it is needed.
-     * NO_UPDATE: a client metadata has been already created and it does not expire, so fetching it is not needed.
+     * UPDATE: a client metadata has been already created, but it has expired, so re-fetching it and updating it is needed.
+     * NO_UPDATE: a client metadata has been already created, and it does not expire, so fetching it is not needed.
      */
     public enum FetchOperation {
         CREATE,
@@ -417,9 +395,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
     // Client ID / Client Metadata Verification Errors
     public static final String ERR_HOST_UNRESOLVED = "Invalid Client ID / Metadata: host unresolved.";
-    public static final String ERR_LOOPBACK_ADDRESS = "Invalid Client ID / Metadata: loopback address is not allowed.";
-    public static final String ERR_PRIVATE_ADDRESS = "Invalid Client ID / Metadata: private address is not allowed.";
-    //public static final String ERR_LINKLOCAL_ADDRESS = "Invalid Client ID / Metadata: link local address is not allowed.";
 
     // Client Metadata Validation Errors
     public static final String ERR_METADATA_URIS_SAMEDOMAIN = "Invalid Client Metadata: client_id parameter, redirect_uri parameter and at least one of redirect_uris properties in client metadata should be under the same domain.";
@@ -486,7 +461,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             throw invalidClientIdMetadata(ERR_CLIENTID_MALFORMED_URL);
         }
 
-        // Client identifier URLs MUST have an "https" scheme.
+        // Client identifier URLs MUST have a "https" scheme.
         if (!getConfiguration().isAllowHttpScheme() && !"https".equals(uri.getScheme())) {
             getLogger().warnv("Invalid URL Scheme: scheme = {0}", uri.getScheme());
             throw invalidClientIdMetadata(ERR_CLIENTID_INVALID_SCHEME);
@@ -740,7 +715,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         return UNSAFE_PATH_PATTERN.matcher(redirectUri.getRawPath()).find();
     }
 
-    // TODO?: consider relative URI to use RedirectUtils.resolveValidRedirects
     private void verifyUri(String uriString, ErrorHandler errorHandler) throws ClientPolicyException {
         // allow trusted domain
         List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
@@ -765,26 +739,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         if (trustedDomains.stream().noneMatch(i->checkTrustedDomain(uri.getHost(), i))) {
             getLogger().warnv("not trusted domain: host = {0}", uri.getHost());
             throw invalidClientIdMetadata(ERR_NOTALLOWED_DOMAIN);
-        }
-
-        // SSRF attack counter measures
-        InetAddress addr;
-        try {
-            addr = InetAddress.getByName(uri.getHost());
-        } catch (UnknownHostException e) {
-            errorHandler.onError(ERR_HOST_UNRESOLVED, "Unresolved URL: {0} property in metadata = {1}");
-            return;
-        }
-        if (!getConfiguration().isAllowLoopbackAddress() && addr.isLoopbackAddress()) {
-            errorHandler.onError(ERR_LOOPBACK_ADDRESS, "loopback address: {0} property in metadata = {1}");
-            return;
-        }
-        if (!getConfiguration().isAllowPrivateAddress() && addr.isSiteLocalAddress()) {
-            errorHandler.onError(ERR_PRIVATE_ADDRESS, "private address: {0} property in metadata = {1}");
-            return;
-        }
-        if (addr.isLinkLocalAddress()) {
-            errorHandler.onError(ERR_PRIVATE_ADDRESS, "link local address: {0} property in metadata = {1}");
         }
     }
 

@@ -14,8 +14,6 @@ import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderF
  * <ul>
  *     <li>Client ID Verification / Client Metadata Verification (URL related)</li>
  *     <ul>
- *         <li>Allow loopback address: allows IPv4/IPv6 loopback address (for development environment)</li>
- *         <li>Allow private address: allows private address (for development environment)</li>
  *         <li>Allow http scheme: allows http scheme of a URI (for development environment)<</li>
  *     </ul>
  *     <li>Client ID Validation</li>
@@ -34,8 +32,6 @@ import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderF
 public abstract class AbstractClientIdMetadataDocumentExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
     // Client ID Verification
-    public static final String ALLOW_LOOPBACK_ADDRESS = "cimd-allow-loopback-address";
-    public static final String ALLOW_PRIVATE_ADDRESS = "cimd-allow-private-address";
     public static final String ALLOW_HTTP_SCHEME = "cimd-allow-http-scheme";
 
     // Client ID Validation
@@ -74,24 +70,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory implements
     static protected void addCommonConfigProperties(List<ProviderConfigProperty> configProperties) {
         // Client ID Verification / Client Metadata Verification (URL related)
         ProviderConfigProperty property = new ProviderConfigProperty(
-                ALLOW_LOOPBACK_ADDRESS,
-                "Allow loopback address",
-                "If ON, then the executor allows loopback address as a valid Client ID URL and property of Client Metadata whose value is URL: client_uri, logo_uri, tos_uri, policy_uri, jwks_uri. " +
-                        "It can be ON only for development environment. It must be OFF in production environment. ",
-                ProviderConfigProperty.BOOLEAN_TYPE,
-                false);
-        configProperties.add(property);
-
-        property = new ProviderConfigProperty(
-                ALLOW_PRIVATE_ADDRESS,
-                "Allow private address",
-                "If ON, then the executor allows private address as a valid Client ID URL and property of Client Metadata whose value is URL: client_uri, logo_uri, tos_uri, policy_uri, jwks_uri. " +
-                        "It can be ON only for development environment. It must be OFF in production environment. ",
-                ProviderConfigProperty.BOOLEAN_TYPE,
-                false);
-        configProperties.add(property);
-
-        property = new ProviderConfigProperty(
                 ALLOW_HTTP_SCHEME,
                 "Allow http scheme",
                 "If ON, then the executor allows http scheme as a valid Client ID URL and property of Client Metadata whose value is URL: client_uri, logo_uri, tos_uri, policy_uri, jwks_uri. " +
