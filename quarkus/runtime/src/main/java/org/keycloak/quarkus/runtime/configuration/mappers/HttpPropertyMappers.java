@@ -11,6 +11,7 @@ import java.util.Optional;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.HttpOptions;
+import org.keycloak.config.OptionsUtil;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
@@ -259,11 +260,11 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
     private static void validateShutdownDuration(String value) {
         try {
             Duration duration = DurationConverter.parseDuration(value);
-            if (duration.isNegative()) {
-                throw new PropertyException("Invalid duration '" + value + "'. Duration must be zero or positive.");
+            if (duration == null || duration.isNegative()) {
+                throw new PropertyException("Invalid duration '%s'. Duration must be zero or positive.".formatted(value));
             }
         } catch (IllegalArgumentException e) {
-            throw new PropertyException("Invalid duration format '" + value + "'. May be an ISO 8601 duration value, an integer number of seconds, or an integer followed by one of [ms, h, m, s, d].");
+            throw new PropertyException("Invalid duration format '%s'. %s".formatted(value, OptionsUtil.DURATION_DESCRIPTION));
         }
     }
 }

@@ -108,4 +108,18 @@ public class HttpDistTest {
         result.assertExitCode(-1);
         result.assertMessage("ERROR: No trust store password provided");
     }
+
+    @Test
+    @Launch({"start-dev", "--shutdown-delay=1s", "--shutdown-timeout=0s"})
+    public void testShutdownParametersValidValues() {
+        // Test that valid shutdown parameters are accepted (including 0s)
+        when().get("/realms/master").then().statusCode(200);
+    }
+
+    @Test
+    public void testShutdownParametersNegativeValue(KeycloakDistribution dist) {
+        // Test that negative values are rejected
+        CLIResult result = dist.run("start-dev", "--shutdown-delay=-1s");
+        result.assertError("Invalid duration '-1s'. Duration must be zero or positive");
+    }
 }
