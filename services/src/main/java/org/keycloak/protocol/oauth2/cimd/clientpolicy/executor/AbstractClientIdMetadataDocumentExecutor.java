@@ -267,7 +267,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
         public int getCacheExpiryTimeInSec() {
             if (isNoCache() || isNoStore()) {
-                return Time.currentTime();
+                return minCacheTime > 0 ? Time.currentTime() + minCacheTime : Time.currentTime();
             }
             if (isSmaxAge()) { // s-maxage takes precedence over max-age
                 return Time.currentTime() + getSmaxAgeValue();
@@ -275,7 +275,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             if (isMaxAge()) {
                 return Time.currentTime() + getMaxAgeValue();
             }
-            return Time.currentTime();
+            return minCacheTime > 0 ? Time.currentTime() + minCacheTime : Time.currentTime();
         }
 
         private int deriveExpiryValue(final String key, List<String> sList) {

@@ -84,6 +84,8 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
     @Page
     protected LogoutConfirmPage logoutConfirmPage;
 
+    private static final int CIMD_EXECUTOR_MIN_CACHE_TIME_SEC = 300;
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
@@ -268,8 +270,8 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         logoutConfirmPage.assertCurrent();
         logoutConfirmPage.confirmLogout();
 
-        // move the time ahead so that the client metedate becomes ineffective.
-        setTimeOffset(300 + 3);
+        // move the time ahead so that the client metadata becomes ineffective.
+        setTimeOffset(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
 
         // do authorization code flow again, and registered client metadata is not effective
         code = loginUserAndGetCode(clientId, false);
@@ -482,8 +484,11 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         logoutConfirmPage.assertCurrent();
         logoutConfirmPage.confirmLogout();
 
+        // move the time ahead so that the client metadata becomes ineffective.
+        setTimeOffset(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
         // do authorization code flow again, and registered client metadata is not effective
-        Thread.sleep(1000 * 20);
+        //Thread.sleep(1000 * 20);
         code = loginUserAndGetCode(clientId, false);
         signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.PS256);
         tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, DefaultHttpClient::new);
@@ -504,6 +509,9 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         String cid = clientRepresentation.getId();
         deleteClientByAdmin(cid);
         assertThrows(jakarta.ws.rs.NotFoundException.class, ()->getClientByAdmin(cid));
+
+        // need to reset time offset for the offset does not affect other test's execution.
+        resetTimeOffset();
     }
 
     @Test
@@ -711,11 +719,11 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         // CIMD Executor's min cache time default value: 300 sec
         // CIMD Executor's max cache time default value: 259200 sec
 
-        // no Cache-Control header : not cached
-        testClientIdMetadataDocumentExecutorCacheControl(null, -1, oidcClientEndpointsResource, privateKey, publicKey);
+        // no Cache-Control header : cached in min cache time
+        testClientIdMetadataDocumentExecutorCacheControl(null, CIMD_EXECUTOR_MIN_CACHE_TIME_SEC, oidcClientEndpointsResource, privateKey, publicKey);
 
-        // empty Cache-Control header : not cached
-        testClientIdMetadataDocumentExecutorCacheControl("", -1, oidcClientEndpointsResource, privateKey, publicKey);
+        // empty Cache-Control header : cached in min cache time
+        testClientIdMetadataDocumentExecutorCacheControl("", CIMD_EXECUTOR_MIN_CACHE_TIME_SEC, oidcClientEndpointsResource, privateKey, publicKey);
 
         // max-age : max-age considered
         testClientIdMetadataDocumentExecutorCacheControl("max-age=320,    private", 320, oidcClientEndpointsResource, privateKey, publicKey);
@@ -726,18 +734,18 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         // max-age and s-maxage : s-maxage considered
         testClientIdMetadataDocumentExecutorCacheControl(" Max-Age=3600,public,S-MaxAge=312", 312, oidcClientEndpointsResource, privateKey, publicKey);
 
-        // max-age and no-cache : not cached
-        testClientIdMetadataDocumentExecutorCacheControl("max-age=320, NO-CACHE  ", -1, oidcClientEndpointsResource, privateKey, publicKey);
+        // max-age and no-cache : cached in min cache time
+        testClientIdMetadataDocumentExecutorCacheControl("max-age=320, NO-CACHE  ", CIMD_EXECUTOR_MIN_CACHE_TIME_SEC, oidcClientEndpointsResource, privateKey, publicKey);
 
-        // s-maxage and no-store : not cached
-        testClientIdMetadataDocumentExecutorCacheControl("S-MAXAGE=320,no-store", -1, oidcClientEndpointsResource, privateKey, publicKey);
+        // s-maxage and no-store : cached in min cache time
+        testClientIdMetadataDocumentExecutorCacheControl("S-MAXAGE=320,no-store", CIMD_EXECUTOR_MIN_CACHE_TIME_SEC, oidcClientEndpointsResource, privateKey, publicKey);
 
-        // unknown values only : not cached
+        // unknown values only : cached in min cache time
         // min-age=20, CACHE
-        testClientIdMetadataDocumentExecutorCacheControl("min-age=20,CACHE ", -1, oidcClientEndpointsResource, privateKey, publicKey);
+        testClientIdMetadataDocumentExecutorCacheControl("min-age=20,CACHE ", CIMD_EXECUTOR_MIN_CACHE_TIME_SEC, oidcClientEndpointsResource, privateKey, publicKey);
 
         // under the min cache time : 5 -> 300
-        testClientIdMetadataDocumentExecutorCacheControl("max-age=5", 300, oidcClientEndpointsResource, privateKey, publicKey);
+        testClientIdMetadataDocumentExecutorCacheControl("max-age=5", CIMD_EXECUTOR_MIN_CACHE_TIME_SEC, oidcClientEndpointsResource, privateKey, publicKey);
 
         // over the max cache time : 365000 -> 259200
         testClientIdMetadataDocumentExecutorCacheControl("s-maxage=365000", 259200, oidcClientEndpointsResource, privateKey, publicKey);
@@ -1178,7 +1186,6 @@ public class ClientIdMetadataDocumentTest extends AbstractClientPoliciesTest {
         });
         oidcClientEndpointsResource.registerClientIdMetadata(clientMetadata, null, null);
         assertLoginAndError(clientId, ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
-
     }
 
     private String loginUserAndGetCode(String clientId, boolean isGrantRequred) {
