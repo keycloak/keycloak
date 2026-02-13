@@ -19,7 +19,6 @@ A human-readable and unique string describing this resource.
 * *Type*
 +
 A string uniquely identifying the type of a set of one or more resources. The type is a _string_ used to group different resource instances.
-For example, the default type for the default resource that is automatically created is `urn:resource-server-name:resources:default`
 
 [[_resource_create_uri]]
 * *URIS*
