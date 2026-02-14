@@ -35,7 +35,6 @@ import org.keycloak.wellknown.WellKnownProviderFactory;
 
 import org.jboss.logging.Logger;
 
-
 @Provider
 @Path("/.well-known")
 public class ServerMetadataResource {
