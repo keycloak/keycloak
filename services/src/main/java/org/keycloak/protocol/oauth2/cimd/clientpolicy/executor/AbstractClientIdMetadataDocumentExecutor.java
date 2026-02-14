@@ -25,6 +25,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oauth2.cimd.provider.ClientIdMetadataDocumentProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -642,7 +643,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
         // An authorization server MUST validate redirect URIs presented in an authorization request
         // against those in the metadata document.
-        if (clientOIDC.getRedirectUris() == null || !clientOIDC.getRedirectUris().contains(redirectUri)) {
+        if (clientOIDC.getRedirectUris() == null || RedirectUtils.verifyRedirectUri(session, clientOIDC.getClientUri(), redirectUri, Set.copyOf(clientOIDC.getRedirectUris()), true) == null) {
             getLogger().warnv("redirect_uri parameter does not exactly match the one of redirect_uris property in client metadata: redirectUri = {0}", redirectUri);
             throw invalidClientIdMetadata(ERR_METADATA_REDIRECTURI);
         }
@@ -830,5 +831,4 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
     protected static ClientPolicyException invalidClientIdMetadata(String errorDetail) {
         return new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, errorDetail);
     }
-
 }
