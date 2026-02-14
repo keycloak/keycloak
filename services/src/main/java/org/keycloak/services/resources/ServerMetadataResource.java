@@ -48,8 +48,8 @@ public class ServerMetadataResource {
     @OPTIONS
     @Path("{provider}/realms/{realm}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getOAuth2AuthorizationServerWellKnownVersionPreflight(final @PathParam("provider") String alias,
-                                                                          final @PathParam("realm") String realm) {
+    public Response getWellKnownPreflight(final @PathParam("provider") String alias,
+                                          final @PathParam("realm") String realm) {
         if (!isValidProvider(alias)) throw new NotFoundException();
         return Cors.builder().allowedMethods("GET").preflight().auth().add(Response.ok());
     }
@@ -57,8 +57,8 @@ public class ServerMetadataResource {
     @GET
     @Path("{provider}/realms/{realm}")
     @Produces({MediaType.APPLICATION_JSON, org.keycloak.utils.MediaType.APPLICATION_JWT})
-    public Response getOAuth2AuthorizationServerWellKnown(final @PathParam("provider") String alias,
-                                                          final @PathParam("realm") String realm) {
+    public Response getWellKnown(final @PathParam("provider") String alias,
+                                 final @PathParam("realm") String realm) {
         if (!isValidProvider(alias)) throw new NotFoundException();
         return RealmsResource.getWellKnownResponse(session, realm, alias, logger);
     }
