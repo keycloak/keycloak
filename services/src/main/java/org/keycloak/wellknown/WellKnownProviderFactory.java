@@ -19,6 +19,7 @@ package org.keycloak.wellknown;
 
 import org.keycloak.provider.ProviderFactory;
 
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -47,11 +48,12 @@ public interface WellKnownProviderFactory extends ProviderFactory<WellKnownProvi
 
     /**
      * Controls if the {@link WellKnownProvider} is available via server metadata endpoint.
-     * If this method returns true, then the provider will be available under {@code /.well-known/<alias>}.
+     * If this method returns true, then the provider will be available under {@code /.well-known/{alias}/realms/{realm}},
+     * where {@code {alias}} is the well-known alias returned by {@link #getAlias()}.
      *
      * Default implementation returns false.
      *
-     * @return
+     * @return true if this provider may be exposed via ServerMetadataResource
      */
     default boolean isAvailableViaServerMetadata() {
         return false;
