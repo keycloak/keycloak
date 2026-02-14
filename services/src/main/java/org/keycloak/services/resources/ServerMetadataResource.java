@@ -30,7 +30,7 @@ import jakarta.ws.rs.ext.Provider;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.cors.Cors;
-import org.keycloak.wellknown.WellKnownProvider;
+import org.keycloak.services.util.WellKnownProviderUtil;
 import org.keycloak.wellknown.WellKnownProviderFactory;
 
 import org.jboss.logging.Logger;
@@ -48,28 +48,30 @@ public class ServerMetadataResource {
     @OPTIONS
     @Path("{provider}/realms/{realm}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getOAuth2AuthorizationServerWellKnownVersionPreflight(final @PathParam("provider") String providerName,
-                                                                          final @PathParam("realm") String name) {
-        if (!isValidProvider(providerName)) throw new NotFoundException();
+    public Response getOAuth2AuthorizationServerWellKnownVersionPreflight(final @PathParam("provider") String alias,
+                                                                          final @PathParam("realm") String realm) {
+        if (!isValidProvider(alias)) throw new NotFoundException();
         return Cors.builder().allowedMethods("GET").preflight().auth().add(Response.ok());
     }
 
     @GET
     @Path("{provider}/realms/{realm}")
     @Produces({MediaType.APPLICATION_JSON, org.keycloak.utils.MediaType.APPLICATION_JWT})
-    public Response getOAuth2AuthorizationServerWellKnown(final @PathParam("provider") String providerName,
-                                                          final @PathParam("realm") String name) {
-        if (!isValidProvider(providerName)) throw new NotFoundException();
-        return RealmsResource.getWellKnownResponse(session, name, providerName, logger);
+    public Response getOAuth2AuthorizationServerWellKnown(final @PathParam("provider") String alias,
+                                                          final @PathParam("realm") String realm) {
+        if (!isValidProvider(alias)) throw new NotFoundException();
+        return RealmsResource.getWellKnownResponse(session, realm, alias, logger);
     }
 
     public static UriBuilder wellKnownOAuthProviderUrl(UriBuilder builder) {
         return builder.path(ServerMetadataResource.class).path("{provider}/realms/{realm}");
     }
 
-    private boolean isValidProvider(String providerName) {
-        WellKnownProviderFactory providerFactory = (WellKnownProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(WellKnownProvider.class, providerName);
-        if (providerFactory == null) return false;
-        return providerFactory.isAvailableViaServerMetadata();
+    private boolean isValidProvider(String alias) {
+
+        WellKnownProviderFactory factory = WellKnownProviderUtil.resolveFromAlias(session.getKeycloakSessionFactory(), alias)
+                .orElse(null);
+        if (factory == null) return false;
+        return factory.isAvailableViaServerMetadata();
     }
 }
