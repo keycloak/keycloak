@@ -521,7 +521,13 @@ public class AuthenticationManagementResource {
             throw new BadRequestException("It is illegal to add sub-flow to a built in flow");
         }
         String alias = (String) data.get("alias");
+        if (alias == null || alias.isEmpty()) {
+            throw new BadRequestException("Alias is required");
+        }
         String type = (String) data.get("type");
+        if (type == null || type.isEmpty()) {
+            throw new BadRequestException("Type is required");
+        }
         String provider = (String) data.get("provider");
         int priority = data.containsKey("priority") ? (Integer) data.get("priority") : getNextPriority(parentFlow);
 
