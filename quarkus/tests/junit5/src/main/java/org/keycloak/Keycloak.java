@@ -32,13 +32,13 @@ import org.keycloak.config.HttpOptions;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.SecurityOptions;
-import org.keycloak.platform.Platform;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
+import org.keycloak.services.resources.KeycloakApplication;
 
 import io.quarkus.bootstrap.app.AugmentAction;
 import io.quarkus.bootstrap.app.CuratedApplication;
@@ -114,7 +114,7 @@ public class Keycloak {
 
         public Keycloak start(List<String> rawArgs) {
             if (homeDir == null) {
-                homeDir = Platform.getPlatform().getTmpDirectory().toPath();
+                homeDir = KeycloakApplication.createTmpDirectory().toPath();
             }
 
             List<String> args = new ArrayList<>(rawArgs);
