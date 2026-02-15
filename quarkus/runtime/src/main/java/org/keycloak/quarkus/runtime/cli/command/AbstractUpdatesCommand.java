@@ -25,8 +25,8 @@ import java.util.ServiceLoader;
 
 import org.keycloak.Config;
 import org.keycloak.compatibility.CompatibilityMetadataProvider;
-import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProviderFactory;
 
 import picocli.CommandLine;
 
@@ -75,14 +75,8 @@ public abstract class AbstractUpdatesCommand extends AbstractAutoBuildCommand {
 
     private static void loadConfiguration() {
         // Initialize config without directly referencing MicroProfileConfigProvider
-        // as that currently causing classloading issue during command creation
-        var configProvider = ServiceLoader.load(ConfigProviderFactory.class)
-                .stream()
-                .findFirst()
-                .map(ServiceLoader.Provider::get)
-                .flatMap(ConfigProviderFactory::create)
-                .orElseThrow(() -> new RuntimeException("Failed to load Keycloak Configuration"));
-        Config.init(configProvider);
+        // as that currently causing classloading issue during command creation - when a provider jar is deleted
+        Config.init(new MicroProfileConfigProviderFactory().create());
     }
 
     @Override

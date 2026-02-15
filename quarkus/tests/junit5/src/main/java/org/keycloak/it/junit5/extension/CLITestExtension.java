@@ -35,7 +35,7 @@ import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
+import org.keycloak.services.resources.KeycloakApplication;
 
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
@@ -335,7 +335,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             }
         } else {
             // This is for re-creating the H2 database instead of using the default in home
-            setProperty("kc.db-url-path", new QuarkusPlatform().getTmpDirectory().getAbsolutePath());
+            setProperty("kc.db-url-path", KeycloakApplication.createTmpDirectory().getAbsolutePath());
         }
     }
 

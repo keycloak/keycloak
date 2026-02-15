@@ -1,4 +1,4 @@
-package org.keycloak.testsuite;
+package org.keycloak.services.resteasy;
 
 import java.io.File;
 import java.io.FileInputStream;

@@ -16,17 +16,16 @@
  */
 package org.keycloak.services.resources;
 
-import java.util.NoSuchElementException;
-import java.util.ServiceLoader;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
 import jakarta.ws.rs.core.Application;
 
-import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.KeycloakSession;
@@ -36,8 +35,6 @@ import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
-import org.keycloak.platform.Platform;
-import org.keycloak.platform.PlatformProvider;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
@@ -50,25 +47,64 @@ import org.jboss.logging.Logger;
  */
 public abstract class KeycloakApplication extends Application {
 
-    private static final Logger logger = Logger.getLogger(KeycloakApplication.class);
+    private static final String KC_TMPDIR = "kc.io.tmpdir";
 
-    protected final PlatformProvider platform = Platform.getPlatform();
+    private static final Logger logger = Logger.getLogger(KeycloakApplication.class);
 
     private static KeycloakSessionFactory sessionFactory;
 
     public KeycloakApplication() {
         try {
-
-            logger.debugv("PlatformProvider: {0}", platform.getClass().getName());
+            File tmpDir = initTmpDirectory();
+            if (tmpDir.isDirectory()) {
+                logger.debugf("Using server tmp directory: %s", tmpDir.getAbsolutePath());
+            } else {
+                logger.warnf("Temporary directory %s does not exist and it was not possible to create it.", tmpDir.getAbsolutePath());
+            }
+            System.setProperty(KC_TMPDIR, tmpDir.getAbsolutePath());
+            logger.debugv("Application: {0}", this.getClass().getName());
             loadConfig();
-
-            platform.onStartup(this::startup);
-            platform.onShutdown(this::shutdown);
-
         } catch (Throwable t) {
-            platform.exit(t);
+            exit(t);
         }
     }
+
+    public static String getTmpDirectory() {
+        return System.getProperty(KC_TMPDIR, System.getProperty("java.io.tmpdir"));
+    }
+
+    protected File initTmpDirectory() {
+        String dataDir = getDataDir();
+
+        File tmpDir;
+        if (dataDir == null) {
+            // Should happen just in non-script launch scenarios
+            tmpDir = createTmpDirectory();
+        } else {
+            tmpDir = new File(dataDir, "tmp");
+            tmpDir.mkdirs();
+        }
+        return tmpDir;
+    }
+
+    public static File createTmpDirectory() {
+        try {
+            File tmpDir = Path.of(System.getProperty("java.io.tmpdir"), "server-tmp").toFile();
+            if (tmpDir.exists()) {
+                org.apache.commons.io.FileUtils.deleteDirectory(tmpDir);
+            }
+            if (tmpDir.mkdirs()) {
+                tmpDir.deleteOnExit();
+            }
+            return tmpDir;
+        } catch (IOException ioex) {
+            throw new RuntimeException("It was not possible to create temporary directory keycloak-quarkus-tmp", ioex);
+        }
+    }
+
+    protected abstract void exit(Throwable t);
+
+    protected abstract String getDataDir();
 
     protected void startup() {
         Profile.getInstance().logUnsupportedFeatures();
@@ -164,19 +200,7 @@ public abstract class KeycloakApplication extends Application {
 
     protected abstract void createTemporaryAdmin(KeycloakSession session);
 
-    protected void loadConfig() {
-
-        ServiceLoader<ConfigProviderFactory> loader = ServiceLoader.load(ConfigProviderFactory.class, KeycloakApplication.class.getClassLoader());
-
-        try {
-            ConfigProviderFactory factory = loader.iterator().next();
-            logger.debugv("ConfigProvider: {0}", factory.getClass().getName());
-            Config.init(factory.create().orElseThrow(() -> new RuntimeException("Failed to load Keycloak configuration")));
-        } catch (NoSuchElementException e) {
-            throw new RuntimeException("No valid ConfigProvider found");
-        }
-
-    }
+    protected abstract void loadConfig();
 
     protected abstract KeycloakSessionFactory createSessionFactory();
 
