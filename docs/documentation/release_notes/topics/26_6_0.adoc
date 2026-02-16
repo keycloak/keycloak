@@ -46,6 +46,15 @@ Or you can use the `telemetry-logs-header-<header>` for OpenTelemetry Logs, or `
 
 For more details, see the  link:{telemetryguide_link}[{telemetryguide_name}] guide.
 
+= Zero-downtime patch releases enabled by default
+
+Zero-downtime patch releases are now enabled by default. This allows you to perform rolling updates when upgrading to a newer patch version within the same `major.minor` release stream without service downtime.
+
+When using the {project_name} Operator, set the update strategy to `Auto` to benefit from this functionality.
+
+For more details on the Operator configuration, see the https://www.keycloak.org/operator/rolling-updates[Avoiding downtime with rolling updates] guide.
+
+
 = Java 25 support
 
 {project_name} now supports running with JRE 25.

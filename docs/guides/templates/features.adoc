@@ -4,7 +4,7 @@
 | Feature | Description
 
 <#list features as feature>
-| [.features-name]#${feature.versionedKey}# | [.features-description]#${feature.description}#
+| [.features-name]#`${feature.versionedKey}`# | [.features-description]#${feature.description}#
 </#list>
 |===
 </#macro>

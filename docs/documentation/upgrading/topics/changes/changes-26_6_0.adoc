@@ -66,6 +66,22 @@ it is required to authenticate the client really with the client secret sent as 
 
 It is still possible to make the OIDC client allow both methods and clients migrated from previous versions are set by default to allow authentication with both methods.
 
+=== Zero-downtime patch releases enabled by default
+
+Zero-downtime patch releases are now enabled by default. This feature, previously in preview as `rolling-updates:v2`, allows you to perform rolling updates when upgrading to a newer patch version within the same `major.minor` release stream without service downtime.
+
+The `rolling-updates:v2` feature flag is no longer required.
+
+When using the {project_name} Operator, set the update strategy to `Auto` to benefit from this functionality.
+
+For more details on the Operator configuration, see the https://www.keycloak.org/operator/rolling-updates[Avoiding downtime with rolling updates] guide.
+
+=== Infinispan 16 upgrade
+
+{project_name} now uses Infinispan 16.0 for embedded distributed caching. This upgrade brings improved performance, enhanced security, and better support for zero-downtime upgrade in patch releases.
+
+If you are using an external {jdgserver_name} server for example in a multi-cluster setup, you should upgrade to version 16.0 as this is the version {project_name} was tested with.
+
 === Usage of virtual threads for embedded caches
 
 Previously virtual threads were used when at least two CPU cores were available.

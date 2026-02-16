@@ -55,6 +55,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.infinispan.compatibility.CachingEmbeddedMetadataProvider.majorMinorOf;
 import static org.keycloak.it.cli.dist.Util.createTempFile;
 import static org.keycloak.quarkus.runtime.configuration.compatibility.DatabaseCompatibilityMetadataProvider.UNSUPPORTED_CHANGE_SET_HASH_KEY;
 
@@ -66,12 +67,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DistributionTest
 @RawDistOnly(reason = "Requires creating JSON file to be available between containers")
 public class UpdateCommandDistTest {
-
-    @Test
-    @Launch({UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, "--features-disabled=rolling-updates"})
-    public void testFeatureNotEnabled(CLIResult cliResult) {
-        cliResult.assertError("Unable to use this command. None of the versions of the feature 'rolling-updates' is enabled.");
-    }
 
     @Test
     @Launch({UpdateCompatibility.NAME})
@@ -100,8 +95,10 @@ public class UpdateCommandDistTest {
 
         var info = JsonSerialization.mapper.readValue(jsonFile, UpdateCompatibilityCheck.METADATA_TYPE_REF);
         assertEquals(Version.VERSION, info.get(KeycloakCompatibilityMetadataProvider.ID).get("version"));
-        assertEquals(org.infinispan.commons.util.Version.getVersion(), info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME).get("version"));
-        assertEquals(org.jgroups.Version.printVersion(), info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME).get("jgroupsVersion"));
+
+        // Since rolling-updates:v2 is now default, versions are in Major.Minor format
+        assertEquals(majorMinorOf(org.infinispan.commons.util.Version.getVersion()), info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME).get("version"));
+        assertEquals(majorMinorOf(org.jgroups.Version.printVersion()), info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME).get("jgroupsVersion"));
 
         var cacheMeta = info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME);
         assertTrue(cacheMeta.get(DefaultCacheEmbeddedConfigProviderFactory.CONFIG).endsWith("conf/cache-ispn.xml"));
@@ -132,23 +129,27 @@ public class UpdateCommandDistTest {
         result.assertExitCode(CompatibilityResult.ExitCode.RECREATE.value());
         result.assertError("[%s] Rolling Update is not available. '%s.version' is incompatible: 0.0.0.Final -> %s.".formatted(KeycloakCompatibilityMetadataProvider.ID, KeycloakCompatibilityMetadataProvider.ID, Version.VERSION));
 
+        // Get Major.Minor versions for assertions
+        String ispnVersion = majorMinorOf(org.infinispan.commons.util.Version.getVersion());
+        String jgroupsVersion = majorMinorOf(org.jgroups.Version.printVersion());
+
         // incompatible infinispan version
         info = defaultMeta(distribution);
         info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME).put("version", "0.0.0.Final");
         JsonSerialization.mapper.writeValue(jsonFile, info);
 
-        // incompatible jgroups version
         result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
         result.assertExitCode(CompatibilityResult.ExitCode.RECREATE.value());
-        result.assertError("[%s] Rolling Update is not available. '%s.version' is incompatible: 0.0.0.Final -> %s.".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME, CacheEmbeddedConfigProviderSpi.SPI_NAME, org.infinispan.commons.util.Version.getVersion())); // incompatible infinispan version
+        result.assertError("[%s] Rolling Update is not available. '%s.version' is incompatible: 0.0.0.Final -> %s.".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME, CacheEmbeddedConfigProviderSpi.SPI_NAME, ispnVersion));
 
+        // incompatible jgroups version
         info = defaultMeta(distribution);
         info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME).put("jgroupsVersion", "0.0.0.Final");
         JsonSerialization.mapper.writeValue(jsonFile, info);
 
         result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
         result.assertExitCode(CompatibilityResult.ExitCode.RECREATE.value());
-        result.assertError("[%s] Rolling Update is not available. '%s.jgroupsVersion' is incompatible: 0.0.0.Final -> %s.".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME, CacheEmbeddedConfigProviderSpi.SPI_NAME, org.jgroups.Version.printVersion()));
+        result.assertError("[%s] Rolling Update is not available. '%s.jgroupsVersion' is incompatible: 0.0.0.Final -> %s.".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME, CacheEmbeddedConfigProviderSpi.SPI_NAME, jgroupsVersion));
     }
 
     private String resolveConfigFile(KeycloakDistribution distribution, String... paths) {
@@ -197,8 +198,7 @@ public class UpdateCommandDistTest {
     @Test
     public void testRollingUpdatePatchCompatibility(KeycloakDistribution distribution) throws IOException {
         var jsonFile = createTempFile("patch-compatible", ".json");
-        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath(),
-                "--features", "rolling-updates:v2"
+        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath()
         );
         result.assertMessage("Metadata:");
         assertEquals(0, result.exitCode());
@@ -209,8 +209,7 @@ public class UpdateCommandDistTest {
         result = distribution.run(
                 UpdateCompatibility.NAME,
                 UpdateCompatibilityCheck.NAME,
-                UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath(),
-                "--features", "rolling-updates:v2"
+                UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath()
         );
         result.assertExitCode(CompatibilityResult.ExitCode.ROLLING.value());
         result.assertMessage("[OK] Rolling Update is available.");
@@ -353,11 +352,11 @@ public class UpdateCommandDistTest {
         ));
         return m;
     }
-
+    
     private Map<String, String> embeddedCachingMeta(KeycloakDistribution distribution) {
         Map<String, String> m = new HashMap<>();
-        m.put("version", org.infinispan.commons.util.Version.getVersion());
-        m.put("jgroupsVersion", org.jgroups.Version.printVersion());
+        m.put("version", majorMinorOf(org.infinispan.commons.util.Version.getVersion()));
+        m.put("jgroupsVersion", majorMinorOf(org.jgroups.Version.printVersion()));
         m.put("configFile", resolveConfigFile(distribution, "conf", "cache-ispn.xml"));
         return m;
     }
