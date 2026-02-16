@@ -1,5 +1,6 @@
 package org.keycloak.services.client;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -23,19 +24,26 @@ import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.PatchType;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.ClientsResource;
 import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.util.ObjectMapperResolver;
 import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.http.HttpEntity;
 import org.apache.http.util.EntityUtils;
 
 // TODO
 public class DefaultClientService implements ClientService {
+    private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
+
     private final KeycloakSession session;
     private final JakartaValidatorProvider validator;
     private final AdminPermissionEvaluator permissions;
@@ -91,6 +99,8 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public CreateOrUpdateResult createOrUpdate(RealmModel realm, BaseClientRepresentation client, boolean allowUpdate) throws ServiceException {
+        validateUnknownFields(client);
+
         boolean created = false;
         ClientModel model;
         ClientModelMapper mapper = session.getProvider(ClientModelMapper.class, client.getProtocol());
@@ -134,6 +144,30 @@ public class DefaultClientService implements ClientService {
         var updated = mapper.fromModel(model);
 
         return new CreateOrUpdateResult(updated, created);
+    }
+
+    @Override
+    public BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, String patch) throws ServiceException {
+        BaseClientRepresentation original, updated;
+
+        original = getClient(realm, clientId).orElseThrow(() -> new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND));
+
+        switch (patchType) {
+            case JSON_MERGE -> {
+                try {
+                    var jsonNode = MAPPER.readTree(patch);
+                    final ObjectReader objectReader = MAPPER.readerForUpdating(original);
+                    updated = objectReader.readValue(jsonNode);
+                } catch (JsonProcessingException e) {
+                    throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
+                } catch (IOException e) {
+                    throw new ServiceException("Unknown Error Occurred", Response.Status.INTERNAL_SERVER_ERROR);
+                }
+            }
+            default -> throw new ServiceException("Invalid patch type", Response.Status.UNSUPPORTED_MEDIA_TYPE);
+        }
+
+        return createOrUpdate(realm, updated, true).representation();
     }
 
     @Override
@@ -243,4 +277,9 @@ public class DefaultClientService implements ClientService {
         }
     }
 
+    protected void validateUnknownFields(BaseClientRepresentation rep) {
+        if (!rep.getAdditionalFields().isEmpty()) {
+            throw new ServiceException("Payload contains unknown fields: " + rep.getAdditionalFields().keySet(), Response.Status.BAD_REQUEST);
+        }
+    }
 }

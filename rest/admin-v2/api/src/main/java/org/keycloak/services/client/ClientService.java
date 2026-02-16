@@ -5,8 +5,10 @@ import java.util.stream.Stream;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
+import org.keycloak.services.PatchType;
 import org.keycloak.services.Service;
 import org.keycloak.services.ServiceException;
+
 
 public interface ClientService extends Service {
 
@@ -45,4 +47,5 @@ public interface ClientService extends Service {
 
     CreateOrUpdateResult createOrUpdate(RealmModel realm, BaseClientRepresentation client, boolean allowUpdate) throws ServiceException;
 
+    BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, String patch) throws ServiceException;
 }
