@@ -4,12 +4,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.HttpOptions;
+import org.keycloak.config.OptionsUtil;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
@@ -18,6 +20,8 @@ import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 
+import io.quarkus.runtime.LaunchMode;
+import io.quarkus.runtime.configuration.DurationConverter;
 import io.quarkus.runtime.util.ClassPathUtils;
 import io.quarkus.vertx.http.runtime.options.TlsUtils;
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -56,6 +60,28 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
         });
     }
 
+    // taken from VertxConfigBuilder
+    private static boolean isWSL() {
+        var sysEnv = System.getenv();
+        return sysEnv.containsKey("IS_WSL") || sysEnv.containsKey("WSL_DISTRO_NAME");
+    }
+
+    String getHttpHost(String value) {
+        if (value != null) {
+            return value;
+        }
+        // account for modes that always need to be all interfaces
+        if (Boolean.parseBoolean(System.getenv("KC_RUN_IN_CONTAINER")) || LaunchMode.current().isRemoteDev()
+                || isWSL()) {
+            return "0.0.0.0";
+        }
+        // using start-dev from the cli, is not the same as LaunchMode dev or test, so we need a specific override
+        if (Environment.isDevMode()) {
+            return "localhost";
+        }
+        return null;
+    }
+
     @Override
     public List<PropertyMapper<?>> getPropertyMappers() {
         setCustomExceptionTransformer();
@@ -66,6 +92,7 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                         .build(),
                 fromOption(HttpOptions.HTTP_HOST)
                         .to("quarkus.http.host")
+                        .transformer((v, c) -> getHttpHost(v))
                         .paramLabel("host")
                         .build(),
                 fromOption(HttpOptions.HTTP_RELATIVE_PATH)
@@ -158,8 +185,19 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                         .to("quarkus.rest.jackson.optimization.enable-reflection-free-serializers")
                         .build(),
                 fromOption(HttpOptions.HTTP_ACCEPT_NON_NORMALIZED_PATHS)
+                        .build(),
+                fromOption(HttpOptions.SHUTDOWN_TIMEOUT)
+                        .to("quarkus.shutdown.timeout")
+                        .paramLabel("timeout")
+                        .validator(HttpPropertyMappers::validateShutdownDuration)
+                        .build(),
+                fromOption(HttpOptions.SHUTDOWN_DELAY)
+                        .to("quarkus.shutdown.delay")
+                        .paramLabel("delay")
+                        .validator(HttpPropertyMappers::validateShutdownDuration)
                         .build()
         );
+
     }
 
     @Override
@@ -192,7 +230,7 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
     }
 
     private static boolean isHttpEnabled(String value) {
-        if (Environment.isDevMode() || Environment.isNonServerMode()) {
+        if (Environment.isDevMode() || org.keycloak.common.util.Environment.isNonServerMode()) {
             return true;
         }
         return Boolean.parseBoolean(value);
@@ -217,5 +255,16 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
             return String.valueOf(Math.max(MIN_MAX_THREADS, 4 * Runtime.getRuntime().availableProcessors()));
         }
         return value;
+    }
+
+    private static void validateShutdownDuration(String value) {
+        try {
+            Duration duration = DurationConverter.parseDuration(value);
+            if (duration == null || duration.isNegative()) {
+                throw new PropertyException("Invalid duration '%s'. Duration must be zero or positive.".formatted(value));
+            }
+        } catch (IllegalArgumentException e) {
+            throw new PropertyException("Invalid duration format '%s'. %s".formatted(value, OptionsUtil.DURATION_DESCRIPTION));
+        }
     }
 }

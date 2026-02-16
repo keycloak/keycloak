@@ -25,10 +25,13 @@ import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
+import io.restassured.response.ValidatableResponse;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DistributionTest(keepAlive = true, requestPort = 9000, containerExposedPorts = {8080, 9000})
@@ -87,4 +90,31 @@ public class OpenApiDistTest {
     cliResult = dist.run("start-dev", "--openapi-enabled=true", "--features=client-admin-api:v2");
     cliResult.assertError("Disabled option: '--openapi-enabled'. Available only when OpenAPI feature is enabled");
   }
+
+    @Test
+    @Launch({"start-dev", "--openapi-enabled=true", FEATURES_OPTION})
+    void testOpenApiFilter(KeycloakDistribution distribution) {
+      ValidatableResponse response = given()
+            .header("Accept", "application/json")
+                .get(OPENAPI_ENDPOINT)
+            .then();
+
+      assertOpenAPISpecPolymorphicPaths(response, "paths.'/admin/api/{realmName}/clients/{version}/{id}'.put.requestBody.content.'application/json'.schema"); // request
+      assertOpenAPISpecPolymorphicPaths(response, "paths.'/admin/api/{realmName}/clients/{version}/{id}'.get.responses.'200'.content.'application/json'.schema"); // response
+      assertOpenAPISpecPolymorphicPaths(response, "paths.'/admin/api/{realmName}/clients/{version}'.get.responses.'200'.content.'application/json'.schema.items"); // arrays
+
+      response
+          .body("components.schemas.OIDCClientRepresentation.properties.protocol.type", equalTo("string")) // the generated discriminator field
+          .body("paths.'/admin/api/{realmName}/clients/{version}'.get.responses.'200'.content.'application/json'.schema.type", equalTo("array"));
+    }
+
+    private void assertOpenAPISpecPolymorphicPaths(ValidatableResponse response, String schemaPath) {
+        response
+            .body(schemaPath + ".discriminator.mapping.openid-connect", equalTo("#/components/schemas/OIDCClientRepresentation"))
+            .body(schemaPath + ".discriminator.mapping.saml", equalTo("#/components/schemas/SAMLClientRepresentation"))
+            .body(schemaPath + ".discriminator.propertyName", equalTo("protocol"))
+            .body(schemaPath + ".oneOf.size()", equalTo(2))
+            .body(schemaPath + ".oneOf[0].'$ref'", equalTo("#/components/schemas/OIDCClientRepresentation"))
+            .body(schemaPath + ".oneOf[1].'$ref'", equalTo("#/components/schemas/SAMLClientRepresentation"));
+    }
 }

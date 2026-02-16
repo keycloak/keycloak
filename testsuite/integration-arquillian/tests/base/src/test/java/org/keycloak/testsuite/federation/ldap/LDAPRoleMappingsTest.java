@@ -36,7 +36,6 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleMapperConfig;
-import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -342,9 +341,7 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
             LDAPObject john = LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "johnrolemapper", "John", "RoleMapper", "johnrolemapper@email.org", null, "1234");
             LDAPTestUtils.updateLDAPPassword(ldapProvider, john, "Password1");
             LDAPTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ctx.getLdapModel(), LDAPGroupMapperMode.LDAP_ONLY);
-            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
-            SynchronizationResult syncResult = usersSyncManager.syncChangedUsers(session.getKeycloakSessionFactory(),
-                    appRealm.getId(), new UserStorageProviderModel(ctx.getLdapModel()));
+            SynchronizationResult syncResult = UserStoragePrivateUtil.runPeriodicSync(session.getKeycloakSessionFactory(), new UserStorageProviderModel(ctx.getLdapModel()));
             syncResult.getAdded();
         });
 
@@ -398,9 +395,7 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
                 roleMapper.addRoleMappingInLDAP("realmRole2", johnLdap);
             }
 
-            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
-            SynchronizationResult syncResult = usersSyncManager.syncChangedUsers(session.getKeycloakSessionFactory(),
-                    appRealm.getId(), new UserStorageProviderModel(ctx.getLdapModel()));
+            UserStoragePrivateUtil.runPeriodicSync(session.getKeycloakSessionFactory(), new UserStorageProviderModel(ctx.getLdapModel()));
         });
 
         testingClient.server().run(session -> {

@@ -17,14 +17,42 @@
 
 package org.keycloak.models.workflow;
 
+import java.util.List;
+import java.util.Set;
+
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentFactory;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderConfigProperty;
 
 public interface WorkflowStepProviderFactory<P extends WorkflowStepProvider> extends ComponentFactory<P, WorkflowStepProvider>, EnvironmentDependentProviderFactory {
 
-    ResourceType getType();
+    /**
+     * Supported types, usually one type but could be more (RestartStep for example)
+     */
+    Set<ResourceType> getSupportedResourceTypes();
+
+    @Override
+    default void init(Config.Scope config) {
+        // no-op default
+    }
+
+    @Override
+    default void postInit(KeycloakSessionFactory factory) {
+        // no-op default
+    }
+
+    @Override
+    default void close() {
+        // no-op default
+    }
+
+    @Override
+    default List<ProviderConfigProperty> getConfigProperties() {
+        return List.of();
+    }
 
     @Override
     default boolean isSupported(Config.Scope config) {

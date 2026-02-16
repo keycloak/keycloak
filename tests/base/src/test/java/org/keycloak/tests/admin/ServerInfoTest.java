@@ -65,10 +65,10 @@ public class ServerInfoTest {
 
         assertNotNull(info.getThemes());
         assertNotNull(info.getThemes().get("account"));
-        Assert.assertNames(info.getThemes().get("account"), "base", "keycloak.v3");
-        Assert.assertNames(info.getThemes().get("admin"), "base", "keycloak.v2");
-        Assert.assertNames(info.getThemes().get("email"), "base", "keycloak");
-        Assert.assertNames(info.getThemes().get("login"), "base", "keycloak", "keycloak.v2");
+        Assert.assertNames(info.getThemes().get("account"), "keycloak.v3");
+        Assert.assertNames(info.getThemes().get("admin"), "keycloak.v2");
+        Assert.assertNames(info.getThemes().get("email"), "keycloak");
+        Assert.assertNames(info.getThemes().get("login"), "keycloak", "keycloak.v2");
         Assert.assertNames(info.getThemes().get("welcome"), "keycloak");
 
         assertNotNull(info.getEnums());

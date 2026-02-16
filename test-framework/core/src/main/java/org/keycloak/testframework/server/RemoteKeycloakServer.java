@@ -2,7 +2,6 @@ package org.keycloak.testframework.server;
 
 import java.net.ConnectException;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -17,13 +16,13 @@ import static java.lang.System.out;
 
 public class RemoteKeycloakServer implements KeycloakServer {
 
-    private boolean enableTls = false;
+    private boolean tlsEnabled = false;
 
     private String kcwCommand;
 
     @Override
-    public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
-        enableTls = keycloakServerConfigBuilder.tlsEnabled();
+    public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder, boolean tlsEnabled) {
+        this.tlsEnabled = tlsEnabled;
         kcwCommand = Config.getValueTypeConfig(KeycloakServer.class, "kcw", null, String.class);
         if (!verifyRunningKeycloak()) {
             if (kcwCommand != null) {
@@ -41,7 +40,7 @@ public class RemoteKeycloakServer implements KeycloakServer {
 
     @Override
     public String getBaseUrl() {
-        if (isTlsEnabled()) {
+        if (tlsEnabled) {
             return "https://localhost:8443";
         } else {
             return "http://localhost:8080";
@@ -50,16 +49,11 @@ public class RemoteKeycloakServer implements KeycloakServer {
 
     @Override
     public String getManagementBaseUrl() {
-        if (isTlsEnabled()) {
+        if (tlsEnabled) {
             return "https://localhost:9000";
         } else {
             return "http://localhost:9000";
         }
-    }
-
-    @Override
-    public boolean isTlsEnabled() {
-        return enableTls;
     }
 
     private void printStartupInstructionsManual(KeycloakServerConfigBuilder config) {
@@ -76,15 +70,6 @@ public class RemoteKeycloakServer implements KeycloakServer {
             }
             out.println();
         }
-
-        Set<Path> configFiles = config.toConfigFiles();
-        if (!configFiles.isEmpty()) {
-            out.println("Config files:");
-            for (Path c : configFiles) {
-                out.print("* " + c.toAbsolutePath());
-            }
-            out.println();
-        }
     }
 
     private void printStartupInstructionsKcw(KeycloakServerConfigBuilder config) {
@@ -95,12 +80,6 @@ public class RemoteKeycloakServer implements KeycloakServer {
         if (!dependencies.isEmpty()) {
             String dependencyPaths = dependencies.stream().map(d -> Maven.resolveArtifact(d.getGroupId(), d.getArtifactId()).toString()).collect(Collectors.joining(","));
             out.println("KCW_PROVIDERS=" + dependencyPaths + " \\");
-        }
-
-        Set<Path> configFiles = config.toConfigFiles();
-        if (!configFiles.isEmpty()) {
-            String configPaths =  configFiles.stream().map(p -> p.toAbsolutePath().toString()).collect(Collectors.joining(","));
-            out.println("KCW_CONFIGS=" + configPaths + " \\");
         }
 
         out.println("kcw " + kcwCommand + " " + String.join(" \\\n", config.toArgs()));

@@ -29,7 +29,7 @@ public class InfinispanXMLBackwardCompatibilityTest {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.cacheConfigFile(CONFIG_FILE);
+            return config.option("cache-config-file", getClass().getResource(CONFIG_FILE).getFile());
         }
     }
 }

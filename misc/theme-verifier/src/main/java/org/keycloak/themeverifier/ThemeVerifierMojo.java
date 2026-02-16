@@ -39,7 +39,7 @@ public class ThemeVerifierMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject mavenProject;
 
-    @Parameter(defaultValue = "false", readonly = true)
+    @Parameter(defaultValue = "false")
     private boolean validateMessageFormatQuotes;
 
     @Override

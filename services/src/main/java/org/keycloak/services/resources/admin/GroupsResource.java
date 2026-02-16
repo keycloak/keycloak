@@ -145,7 +145,7 @@ public class GroupsResource {
             throw new NotFoundException("Could not find group by id");
         }
 
-        if (!Organizations.canManageOrganizationGroup(session, group)) {
+        if (Organizations.isOrganizationGroup(group)) {
             throw ErrorResponse.error("Cannot manage organization related group via non Organization API.", Status.BAD_REQUEST);
         }
 
@@ -211,6 +211,9 @@ public class GroupsResource {
                 child = realm.getGroupById(rep.getId());
                 if (child == null) {
                     throw new NotFoundException("Could not find child by id");
+                }
+                if (Organizations.isOrganizationGroup(child)) {
+                    throw ErrorResponse.error("Cannot manage organization related group via non Organization API.", Status.BAD_REQUEST);
                 }
                 if (child.getParentId() != null) {
                     realm.moveGroup(child, null);

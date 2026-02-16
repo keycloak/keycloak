@@ -63,7 +63,7 @@ public class DocumentUtil {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
-    private static DocumentBuilderFactory documentBuilderFactory;
+    private static volatile DocumentBuilderFactory documentBuilderFactory;
 
     public static final String feature_external_general_entities = "http://xml.org/sax/features/external-general-entities";
     public static final String feature_external_parameter_entities = "http://xml.org/sax/features/external-parameter-entities";
@@ -395,31 +395,37 @@ public class DocumentUtil {
      * @return
      */
     private static DocumentBuilderFactory getDocumentBuilderFactory() {
-        boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
-                .equalsIgnoreCase("true");
-        ClassLoader prevTCCL = SecurityActions.getTCCL();
         if (documentBuilderFactory == null) {
-            try {
-                if (tccl_jaxp) {
-                    SecurityActions.setTCCL(DocumentUtil.class.getClassLoader());
-                }
-                documentBuilderFactory = DocumentBuilderFactory.newInstance();
-                documentBuilderFactory.setNamespaceAware(true);
-                documentBuilderFactory.setXIncludeAware(false);
-                String feature = "";
-                try {
-                    feature = feature_disallow_doctype_decl;
-                    documentBuilderFactory.setFeature(feature, true);
-                    feature = feature_external_general_entities;
-                    documentBuilderFactory.setFeature(feature, false);
-                    feature = feature_external_parameter_entities;
-                    documentBuilderFactory.setFeature(feature, false);
-                } catch (ParserConfigurationException e) {
-                    throw logger.parserFeatureNotSupported(feature);
-                }
-            } finally {
-                if (tccl_jaxp) {
-                    SecurityActions.setTCCL(prevTCCL);
+            synchronized(DocumentUtil.class) {
+                if (documentBuilderFactory == null) {
+                    ClassLoader prevTCCL = SecurityActions.getTCCL();
+                    boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
+                            .equalsIgnoreCase("true");
+                    try {
+                        if (tccl_jaxp) {
+                            SecurityActions.setTCCL(DocumentUtil.class.getClassLoader());
+                        }
+                        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+                        documentBuilderFactory.setNamespaceAware(true);
+                        documentBuilderFactory.setXIncludeAware(false);
+                        String feature = "";
+                        try {
+                            feature = feature_disallow_doctype_decl;
+                            documentBuilderFactory.setFeature(feature, true);
+                            feature = feature_external_general_entities;
+                            documentBuilderFactory.setFeature(feature, false);
+                            feature = feature_external_parameter_entities;
+                            documentBuilderFactory.setFeature(feature, false);
+                        } catch (ParserConfigurationException e) {
+                            throw logger.parserFeatureNotSupported(feature);
+                        }
+                        // only place the fully initialized factory in the instance
+                        DocumentUtil.documentBuilderFactory = documentBuilderFactory;
+                    } finally {
+                        if (tccl_jaxp) {
+                            SecurityActions.setTCCL(prevTCCL);
+                        }
+                    }
                 }
             }
         }

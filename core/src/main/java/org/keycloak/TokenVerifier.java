@@ -248,7 +248,7 @@ public class TokenVerifier<T extends JsonWebToken> {
      * <ul>
      * <li>Realm URL (JWT issuer field: {@code iss}) has to be defined and match realm set via {@link #realmUrl(java.lang.String)} method</li>
      * <li>Subject (JWT subject field: {@code sub}) has to be defined</li>
-     * <li>Token type (JWT type field: {@code typ}) has to be {@code Bearer}. The type can be set via {@link #tokenType(java.lang.String)} method</li>
+     * <li>Token type (JWT type field: {@code typ}) has to be {@code Bearer}. The type can be set via {@link #tokenType(List)} method</li>
      * <li>Token has to be active, ie. both not expired and not used before its validity (JWT issuer fields: {@code exp} and {@code nbf})</li>
      * </ul>
      * @return This token verifier.

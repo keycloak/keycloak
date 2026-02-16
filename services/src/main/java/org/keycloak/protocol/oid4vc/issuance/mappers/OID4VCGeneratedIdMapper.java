@@ -77,13 +77,13 @@ public class OID4VCGeneratedIdMapper extends OID4VCMapper {
         return ListUtils.union(getAttributePrefix(), List.of(property));
     }
 
-    public void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                       UserSessionModel userSessionModel) {
+    public void setClaim(VerifiableCredential verifiableCredential,
+                         UserSessionModel userSessionModel) {
         // nothing to do for the mapper.
     }
 
     @Override
-    public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
+    public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
         // Assign a generated ID
         List<String> attributePath = getMetadataAttributePath();
         String propertyName = attributePath.get(attributePath.size() - 1);

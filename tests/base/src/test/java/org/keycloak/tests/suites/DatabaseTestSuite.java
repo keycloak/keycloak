@@ -1,6 +1,7 @@
 package org.keycloak.tests.suites;
 
 import org.keycloak.tests.keys.GeneratedRsaKeyProviderTest;
+import org.keycloak.tests.transactions.TransactionsTest;
 
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.SelectPackages;
@@ -12,7 +13,8 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.db"
 })
 @SelectClasses({
-        GeneratedRsaKeyProviderTest.class
+        GeneratedRsaKeyProviderTest.class,
+        TransactionsTest.class
 })
 public class DatabaseTestSuite {
 }

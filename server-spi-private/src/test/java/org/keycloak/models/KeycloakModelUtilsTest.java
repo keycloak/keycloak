@@ -128,6 +128,44 @@ public class KeycloakModelUtilsTest {
         assertEquals("/parent~/slash/child/slash", KeycloakModelUtils.buildGroupPath(group));
     }
 
+    @Test
+    public void testBuildOrganizationGroupPath() {
+        GroupAdapterTest.escapeSlashes = true;
+        OrganizationModelTest org = new OrganizationModelTest("8855824f-3b7b-4f49-ac80-8777d547c9fb");
+
+        // Internal org group (should not appear in path)
+        GroupModel internalGroup = new GroupAdapterTest("8855824f-3b7b-4f49-ac80-8777d547c9fb", null, null);
+
+        // Top-level org group
+        GroupModel topLevelGroup = new GroupAdapterTest("MyGroupName", internalGroup, org);
+        assertEquals("/MyGroupName", KeycloakModelUtils.buildGroupPath(topLevelGroup));
+
+        // Nested org group
+        GroupModel nestedGroup = new GroupAdapterTest("lvl2", topLevelGroup, org);
+        assertEquals("/MyGroupName/lvl2", KeycloakModelUtils.buildGroupPath(nestedGroup));
+
+        // Org group with slashes in name
+        GroupModel groupWithSlash = new GroupAdapterTest("group/slash", topLevelGroup, org);
+        assertEquals("/MyGroupName/group~/slash", KeycloakModelUtils.buildGroupPath(groupWithSlash));
+
+        // Non-org group should behave like standard buildGroupPath
+        GroupModel realmGroup = new GroupAdapterTest("child", new GroupAdapterTest("parent", null), null);
+        assertEquals("/parent/child", KeycloakModelUtils.buildGroupPath(realmGroup));
+
+        // Null group
+        assertNull(KeycloakModelUtils.buildGroupPath(null));
+
+        GroupAdapterTest.escapeSlashes = false;
+        topLevelGroup = new GroupAdapterTest("MyGroupName", internalGroup, org);
+        assertEquals("/MyGroupName", KeycloakModelUtils.buildGroupPath(topLevelGroup));
+
+        nestedGroup = new GroupAdapterTest("lvl2", topLevelGroup, org);
+        assertEquals("/MyGroupName/lvl2", KeycloakModelUtils.buildGroupPath(nestedGroup));
+
+        groupWithSlash = new GroupAdapterTest("group/slash", topLevelGroup, org);
+        assertEquals("/MyGroupName/group/slash", KeycloakModelUtils.buildGroupPath(groupWithSlash));
+    }
+
     private static void assertParsedRoleQualifier(String[] clientIdAndRoleName, String expectedClientId,
             String expectedRoleName) {
 
@@ -146,10 +184,16 @@ public class KeycloakModelUtilsTest {
         private String name;
         private String description;
         private GroupModel parent;
+        private final OrganizationModel organization;
 
         public GroupAdapterTest(String name, GroupModel parent) {
+            this(name, parent, null);
+        }
+
+        public GroupAdapterTest(String name, GroupModel parent, OrganizationModel organization) {
             this.name = name;
             this.parent = parent;
+            this.organization = organization;
         }
 
         @Override
@@ -214,6 +258,11 @@ public class KeycloakModelUtilsTest {
         }
 
         @Override
+        public OrganizationModel getOrganization() {
+            return organization;
+        }
+
+        @Override
         public Stream<GroupModel> getSubGroupsStream() {
             return Stream.empty();
         }
@@ -262,6 +311,98 @@ public class KeycloakModelUtilsTest {
         @Override
         public boolean escapeSlashesInGroupPath() {
             return escapeSlashes;
+        }
+    }
+
+    private static class OrganizationModelTest implements OrganizationModel {
+
+        private final String id;
+
+        public OrganizationModelTest(String id) {
+            this.id = id;
+        }
+
+        @Override
+        public String getId() {
+            return id;
+        }
+
+        @Override
+        public String getName() {
+            return null;
+        }
+
+        @Override
+        public void setName(String name) {
+        }
+
+        @Override
+        public String getAlias() {
+            return null;
+        }
+
+        @Override
+        public void setAlias(String alias) {
+        }
+
+        @Override
+        public String getDescription() {
+            return null;
+        }
+
+        @Override
+        public void setDescription(String description) {
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return false;
+        }
+
+        @Override
+        public void setEnabled(boolean enabled) {
+        }
+
+        @Override
+        public String getRedirectUrl() {
+            return null;
+        }
+
+        @Override
+        public void setRedirectUrl(String redirectUrl) {
+        }
+
+        @Override
+        public Map<String, List<String>> getAttributes() {
+            return null;
+        }
+
+        @Override
+        public void setAttributes(Map<String, List<String>> attributes) {
+        }
+
+        @Override
+        public Stream<OrganizationDomainModel> getDomains() {
+            return Stream.empty();
+        }
+
+        @Override
+        public void setDomains(java.util.Set<OrganizationDomainModel> domains) {
+        }
+
+        @Override
+        public boolean isMember(UserModel user) {
+            return false;
+        }
+
+        @Override
+        public boolean isManaged(UserModel user) {
+            return false;
+        }
+
+        @Override
+        public Stream<IdentityProviderModel> getIdentityProviders() {
+            return Stream.empty();
         }
     }
 }

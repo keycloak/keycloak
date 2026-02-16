@@ -16,6 +16,9 @@
  */
 package org.keycloak.models;
 
+import java.util.Map;
+import java.util.function.Supplier;
+
 public class ParConfig extends AbstractConfig {
 
     // realm attribute names
@@ -29,10 +32,29 @@ public class ParConfig extends AbstractConfig {
     // client attribute names
     public static final String REQUIRE_PUSHED_AUTHORIZATION_REQUESTS = "require.pushed.authorization.requests";
 
+    /**
+     * @deprecated use {@link #fromCache(Supplier, Map)} or {@link #fromModel(RealmModel)} factory methods
+     */
+    @Deprecated(since = "26.6", forRemoval = true)
     public ParConfig(RealmModel realm) {
         this.requestUriLifespan = realm.getAttribute(PAR_REQUEST_URI_LIFESPAN, DEFAULT_PAR_REQUEST_URI_LIFESPAN);
 
         this.realmForWrite = () -> realm;
+    }
+
+    private ParConfig(Supplier<RealmModel> realmForWrite, int requestUriLifespan) {
+        this.requestUriLifespan = requestUriLifespan;
+        this.realmForWrite = realmForWrite;
+    }
+
+    public static ParConfig fromModel(RealmModel realm) {
+        var requestUriLifespan = realm.getAttribute(PAR_REQUEST_URI_LIFESPAN, DEFAULT_PAR_REQUEST_URI_LIFESPAN);
+        return new ParConfig(() -> realm, requestUriLifespan);
+    }
+
+    public static ParConfig fromCache(Supplier<RealmModel> realmForWrite, Map<String, String> realmAttributes) {
+        var requestUriLifespan = getIntAttribute(realmAttributes, PAR_REQUEST_URI_LIFESPAN, DEFAULT_PAR_REQUEST_URI_LIFESPAN);
+        return new ParConfig(realmForWrite, requestUriLifespan);
     }
 
     public int getRequestUriLifespan() {

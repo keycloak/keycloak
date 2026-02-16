@@ -27,6 +27,7 @@ import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -534,6 +535,44 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
                     assertThat(hr, statusCodeIsHC(Response.Status.BAD_REQUEST));
                     assertThat(hr, bodyHC(Matchers.containsString("Unexpected error when authenticating with identity provider")));
                 });
+    }
+
+    @Test
+    public void testSubjectConfirmationDataValidation() throws Exception {
+        try {
+            updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
+            RealmRepresentation realm = adminClient.realm(bc.providerRealmName()).toRepresentation();
+            assertThat(realm, Matchers.notNullValue());
+            realm.setAccessTokenLifespan(5);
+            adminClient.realm(bc.providerRealmName()).update(realm);
+
+            AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, getConsumerRoot() + "/sales-post/saml", null);
+
+            Document doc = SAML2Request.convert(loginRep);
+
+            SamlClientBuilder builder = new SamlClientBuilder()
+                    .authnRequest(getConsumerSamlEndpoint(bc.consumerRealmName()), doc, Binding.POST).build() // Request to consumer IdP
+                    .login().idp(bc.getIDPAlias()).build()
+                    .processSamlResponse(Binding.POST).build() // AuthnRequest to producer IdP
+                    .login().user(bc.getUserLogin(), bc.getUserPassword()).build();
+
+            // delay the response from the producer IdP 10s to make the SubjectConfirmationData expired
+            builder = builder.addStepBuilder(new ModifySamlResponseStepBuilder(Binding.POST, builder) {
+                @Override
+                protected HttpUriRequest createRequest(URI locationUri, String attributeName, String samlDoc, List<NameValuePair> parameters) throws Exception {
+                    setTimeOffset(10);
+                    return super.createRequest(locationUri, attributeName, samlDoc, parameters);
+                }
+            }).build();
+
+            // assert the response is invalid requester, expired by SubjectConfirmationData
+            builder.execute(hr -> {
+                assertThat(hr, statusCodeIsHC(Response.Status.BAD_REQUEST));
+                assertThat(hr, bodyHC(Matchers.containsString("Invalid requester")));
+            });
+        } finally {
+            setTimeOffset(0);
+        }
     }
 
     private Document tamperInResponseTo(Document orig) {

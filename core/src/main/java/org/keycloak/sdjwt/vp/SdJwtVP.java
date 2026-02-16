@@ -131,12 +131,12 @@ public class SdJwtVP {
             disclosuresString = sdJwtString.substring(disclosureStart + 1, disclosureEnd);
         }
 
-        IssuerSignedJWT issuerSignedJWT = IssuerSignedJWT.fromJws(issuerSignedJWTString);
+        IssuerSignedJWT issuerSignedJWT = new IssuerSignedJWT(issuerSignedJWTString);
 
-        ObjectNode issuerPayload = (ObjectNode) issuerSignedJWT.getPayload();
+        ObjectNode issuerPayload = issuerSignedJWT.getPayload();
         String hashAlgorithm = Optional.ofNullable(issuerPayload.get(CLAIM_NAME_SD_HASH_ALGORITHM))
-                .map(JsonNode::asText)
-                .orElse(JavaAlgorithm.SHA256.toLowerCase());
+                                       .map(JsonNode::asText)
+                                       .orElse(JavaAlgorithm.SHA256.toLowerCase());
 
         Map<String, ArrayNode> claims = new HashMap<>();
         Map<String, String> disclosures = new HashMap<>();
@@ -163,16 +163,15 @@ public class SdJwtVP {
 
         Map<String, String> recursiveDigests = new HashMap<>();
         List<String> ghostDigests = new ArrayList<>();
-        allDigests.stream()
-                .forEach(disclosureDigest -> {
-                    JsonNode node = findNode(issuerPayload, disclosureDigest);
-                    node = processDisclosureDigest(node, disclosureDigest, claims, recursiveDigests, ghostDigests);
-                });
+        allDigests.forEach(disclosureDigest -> {
+            JsonNode node = findNode(issuerPayload, disclosureDigest);
+            processDisclosureDigest(node, disclosureDigest, claims, recursiveDigests, ghostDigests);
+        });
 
         Optional<KeyBindingJWT> keyBindingJWT = Optional.empty();
         if (sdJwtString.length() > disclosureEnd + 1) {
             String keyBindingJWTString = sdJwtString.substring(disclosureEnd + 1);
-            keyBindingJWT = Optional.of(KeyBindingJWT.of(keyBindingJWTString));
+            keyBindingJWT = Optional.of(new KeyBindingJWT(keyBindingJWTString));
         }
 
         // Drop the key binding String if any. As it is held by the keyBindingJwtObject
@@ -210,18 +209,32 @@ public class SdJwtVP {
         return issuerSignedJWT.getCnfClaim().orElse(null);
     }
 
-    public String present(List<String> disclosureDigests, JsonNode keyBindingClaims,
-            SignatureSignerContext holdSignatureSignerContext, String jwsType) {
+    /**
+     * Create new Sd-JWT presentation from this Sd-JWT
+     *
+     * @param disclosureDigests Disclosure digests (hashes) of the claims to disclose.
+     * @param discloseAllClaims When the parameter is true, then disclosureDigests parameter is ignored and everything is presented. When false, then only claims specified
+     *                         by disclosureDigests are presented
+     * @param keyBindingClaims Key binding claims. When omitted, created presentation may not contain key-binding
+     * @param holdSignatureSignerContext Useful for signing the key-binding JWT
+     * @return String with new Sd-JWT presentation with added key-binding and selected disclosed claims
+     */
+    public String present(List<String> disclosureDigests,
+                          boolean discloseAllClaims,
+                          ObjectNode keyBindingClaims,
+                          SignatureSignerContext holdSignatureSignerContext) {
         StringBuilder sb = new StringBuilder();
-        if (disclosureDigests == null || disclosureDigests.isEmpty()) {
+        if (discloseAllClaims) {
             // disclose everything
             sb.append(sdJwtVpString);
         } else {
-            sb.append(issuerSignedJWT.toJws());
+            sb.append(issuerSignedJWT.getJws());
             sb.append(SDJWT_DELIMITER);
-            for (String disclosureDigest : disclosureDigests) {
-                sb.append(disclosures.get(disclosureDigest));
-                sb.append(SDJWT_DELIMITER);
+            if (disclosureDigests != null) {
+                for (String disclosureDigest : disclosureDigests) {
+                    sb.append(disclosures.get(disclosureDigest));
+                    sb.append(SDJWT_DELIMITER);
+                }
             }
         }
         String unboundPresentation = sb.toString();
@@ -229,10 +242,49 @@ public class SdJwtVP {
             return unboundPresentation;
         }
         String sd_hash = SdJwtUtils.hashAndBase64EncodeNoPad(unboundPresentation.getBytes(), getHashAlgorithm());
-        keyBindingClaims = ((ObjectNode) keyBindingClaims).put(SD_HASH, sd_hash);
-        KeyBindingJWT keyBindingJWT = KeyBindingJWT.from(keyBindingClaims, holdSignatureSignerContext, jwsType);
-        sb.append(keyBindingJWT.toJws());
+        keyBindingClaims.put(SD_HASH, sd_hash);
+        KeyBindingJWT keyBindingJWT = KeyBindingJWT.builder()
+                .withPayload(keyBindingClaims)
+                .withSignerContext(holdSignatureSignerContext)
+                .build();
+        sb.append(keyBindingJWT.getJws());
         return sb.toString();
+    }
+
+
+    /**
+     * Create new Sd-JWT presentation from this Sd-JWT. It works same like {@link #present(List, boolean, ObjectNode, SignatureSignerContext)} but it allows
+     * to specify the names of the claims to present (EG. given_name, family_name) instead of specifying disclosureDigests
+     *
+     * @param claimsToDisclose Names of the claims to disclose (EG. given_name, family_name)
+     * @param discloseAllClaims Used in case that claimsToDisclose is empty or null. In case this is true, all the claims from this SdJWT will be disclosed.
+     *                          If it is false, then only claims specified by claimsToDisclose parameter would be disclosed
+     * @param keyBindingClaims Key binding claims. When omitted, created presentation may not contain key-binding
+     * @param holdSignatureSignerContext Useful for signing the key-binding JWT
+     * @return String with new Sd-JWT presentation with added key-binding and selected disclosed claims
+     */
+    public String presentWithSpecifiedClaims(List<String> claimsToDisclose,
+                                             boolean discloseAllClaims,
+                                             ObjectNode keyBindingClaims,
+                                             SignatureSignerContext holdSignatureSignerContext) {
+        if (discloseAllClaims) {
+            return present(null, true, keyBindingClaims, holdSignatureSignerContext);
+        } else {
+            List<String> digests = getClaims().entrySet().stream()
+                    .filter(entry -> {
+                        ArrayNode node = entry.getValue();
+                        if (node.size() >= 2) {
+                            String claimName = node.get(1).asText();
+                            return (claimsToDisclose.contains(claimName));
+                        }
+                        return false;
+                    })
+                    .map(Map.Entry::getKey)
+                    .sorted()
+                    .collect(Collectors.toList());
+
+            return present(digests, false, keyBindingClaims, holdSignatureSignerContext);
+        }
     }
 
     /**
@@ -247,11 +299,11 @@ public class SdJwtVP {
      *                                        to check Key Binding.
      * @throws VerificationException if verification failed
      */
-    public void verify(
-            List<SignatureVerifierContext> issuerVerifyingKeys,
-            IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
-            KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts
-    ) throws VerificationException {
+    public void verify(List<SignatureVerifierContext> issuerVerifyingKeys,
+                       IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
+                       KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts)
+            throws VerificationException
+    {
         sdJwtVerificationContext.verifyPresentation(
                 issuerVerifyingKeys,
                 issuerSignedJwtVerificationOpts,

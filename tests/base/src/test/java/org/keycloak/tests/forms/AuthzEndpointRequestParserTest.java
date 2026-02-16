@@ -13,13 +13,13 @@ import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.AccountHelper;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.openqa.selenium.WebDriver;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class AuthzEndpointRequestParserTest {
 
     @InjectWebDriver
-    WebDriver driver;
+    ManagedWebDriver driver;
 
     @InjectRealm
     ManagedRealm realm;
@@ -95,7 +95,7 @@ public class AuthzEndpointRequestParserTest {
         loginPage.fillLogin("test-user", "password");
         loginPage.submit();
 
-        assertTrue(driver.getPageSource().contains("Happy days"));
+        assertTrue(driver.page().getPageSource().contains("Happy days"));
         // String currentUrl = driver.getCurrentUrl();
         String state = oauth.parseLoginResponse().getState();
         Assertions.assertEquals(stateExpected, state);

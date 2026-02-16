@@ -114,7 +114,7 @@ public class Config {
             Path envTestPath = currentPath.resolve(".env.test");
             if (Files.isRegularFile(envTestPath)) {
                 try {
-                    return new EnvConfigSource(ConfigSourceUtil.urlToMap(envTestPath.toUri().toURL()), 350);
+                    return new EnvConfigSource(ConfigSourceUtil.urlToMap(envTestPath.toUri().toURL()), 296);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

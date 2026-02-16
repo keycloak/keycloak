@@ -164,7 +164,8 @@ public interface OAuth2Constants {
     String CNF = "cnf";
 
     // RAR - https://datatracker.ietf.org/doc/html/rfc9396
-    String AUTHORIZATION_DETAILS_PARAM = "authorization_details";
+    // Used as url parameter in AuthorizationRequest and as claim in TokenResponse
+    String AUTHORIZATION_DETAILS = "authorization_details";
 
     // DPoP - https://datatracker.ietf.org/doc/html/rfc9449
     String DPOP_HTTP_HEADER = "DPoP";

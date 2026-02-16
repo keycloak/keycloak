@@ -16,7 +16,6 @@
  */
 package org.keycloak.representations.idm;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +60,7 @@ public class IdentityProviderRepresentation {
     protected String postBrokerLoginFlowAlias;
     protected String organizationId;
     protected Map<String, String> config = new HashMap<>();
-    protected List<String> types = new ArrayList<>();
+    protected List<String> types; // Null by default for the compatibility with older versions of Keycloak server (26.4 and older)
 
     public String getInternalId() {
         return this.internalId;

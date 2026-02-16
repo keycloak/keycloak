@@ -15,6 +15,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -63,6 +64,7 @@ import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -404,6 +406,54 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertNumFederatedIdentities(userId, 1);
     }
 
+    @Test
+    public void testUpdateEmailReviewProfileLinkingAccount() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        RealmResource realmApi = adminClient.realm(bc.consumerRealmName());
+        IdentityProviderResource idpApi = realmApi.identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation idp = idpApi.toRepresentation();
+        idp.getConfig().put(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.FORCE.name());
+        idpApi.update(idp);
+        String userId = createUser(bc.getUserLogin());
+        UserResource providerUser = realmApi.users().get(userId);
+        UserRepresentation userResource = providerUser.toRepresentation();
+
+        userResource.setEmail(USER_EMAIL);
+        userResource.setFirstName("FirstName");
+        userResource.setLastName("LastName");
+
+        providerUser.update(userResource);
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        log.debug("Clicking social " + bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "sign in to", true);
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        log.debug("Logging in");
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+        waitForPage(driver, "account already exists", false);
+        idpConfirmLinkPage.assertCurrent();
+
+        // Click browser 'back' on review profile page
+        idpConfirmLinkPage.clickReviewProfile();
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.updateAccountInformation("changed@kc.org", "f", "l");
+
+        idpConfirmLinkPage.assertCurrent();
+        idpConfirmLinkPage.clickLinkAccount();
+
+        // Use correct password now
+        loginPage.login(bc.getUserLogin(), "password");
+        appPage.assertCurrent();
+        assertNumFederatedIdentities(userId, 1);
+        userResource = providerUser.toRepresentation();
+        assertEquals("changed@kc.org", userResource.getEmail());
+        assertFalse(userResource.isEmailVerified());
+    }
 
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testLinkAccountByReauthentication_forgetPassword

@@ -10,6 +10,7 @@ In minor or patch releases, {project_name} will only introduce breaking changes 
 == Notable changes
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
 
 === <TODO>
 

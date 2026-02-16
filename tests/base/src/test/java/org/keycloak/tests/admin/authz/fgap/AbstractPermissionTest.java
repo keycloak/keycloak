@@ -31,8 +31,11 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
@@ -43,10 +46,13 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.util.ApiUtil;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public abstract class AbstractPermissionTest {
 
@@ -56,7 +62,7 @@ public abstract class AbstractPermissionTest {
     @InjectClient(attachTo = Constants.ADMIN_PERMISSIONS_CLIENT_ID)
     ManagedClient client;
 
-    protected static PermissionsResource getPermissionsResource(ManagedClient client) {
+    protected PermissionsResource getPermissionsResource(ManagedClient client) {
         return client.admin().authorization().permissions();
     }
 
@@ -64,17 +70,22 @@ public abstract class AbstractPermissionTest {
         return client.admin().authorization().policies();
     }
 
-    protected static ScopePermissionsResource getScopePermissionsResource(ManagedClient client) {
+    protected ScopePermissionsResource getScopePermissionsResource(ManagedClient client) {
         return getPermissionsResource(client).scope();
     }
 
-    protected static void createPermission(ManagedClient client, ScopePermissionRepresentation permission) {
+    protected void createPermission(ManagedClient client, ScopePermissionRepresentation permission) {
         createPermission(client, permission, Response.Status.CREATED);
     }
 
-    protected static void createPermission(ManagedClient client, ScopePermissionRepresentation permission, Response.Status expected) {
+    protected void createPermission(ManagedClient client, ScopePermissionRepresentation permission, Response.Status expected) {
         try (Response response = getScopePermissionsResource(client).create(permission)) {
             assertEquals(expected.getStatusCode(), response.getStatus());
+            if (Response.Status.CREATED.equals(expected)) {
+                ScopePermissionRepresentation created = getScopePermissionsResource(client).findByName(permission.getName());
+                assertNotNull(created);
+                permission.setId(created.getId());
+            }
         }
     }
 
@@ -115,11 +126,11 @@ public abstract class AbstractPermissionTest {
         }
     }
 
-    protected static UserPolicyRepresentation createUserPolicy(ManagedRealm realm, ManagedClient client, String name, String... userIds) {
+    protected UserPolicyRepresentation createUserPolicy(ManagedRealm realm, ManagedClient client, String name, String... userIds) {
         return createUserPolicy(Logic.POSITIVE, realm, client, name, userIds);
     }
 
-    protected static UserPolicyRepresentation createUserPolicy(Logic logic, ManagedRealm realm, ManagedClient client, String name, String... userIds) {
+    protected UserPolicyRepresentation createUserPolicy(Logic logic, ManagedRealm realm, ManagedClient client, String name, String... userIds) {
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName(name);
         for (String userId : userIds) {
@@ -138,10 +149,10 @@ public abstract class AbstractPermissionTest {
         return policy;
     }
 
-    protected static GroupPolicyRepresentation createGroupPolicy(ManagedRealm realm, ManagedClient client, String name, String groupId, Logic logic) {
+    protected GroupPolicyRepresentation createGroupPolicy(ManagedRealm realm, ManagedClient client, String name, Logic logic, String... groupIds) {
         GroupPolicyRepresentation policy = new GroupPolicyRepresentation();
         policy.setName(name);
-        policy.addGroup(groupId);
+        policy.addGroup(groupIds);
         policy.setLogic(logic);
         try (Response response = client.admin().authorization().policies().group().create(policy)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
@@ -153,7 +164,7 @@ public abstract class AbstractPermissionTest {
         return policy;
     }
 
-    protected static RolePolicyRepresentation createRolePolicy(ManagedRealm realm, ManagedClient client, String name, String roleId, Logic logic) {
+    protected RolePolicyRepresentation createRolePolicy(ManagedRealm realm, ManagedClient client, String name, String roleId, Logic logic) {
         RolePolicyRepresentation policy = new RolePolicyRepresentation();
         policy.setName(name);
         policy.addRole(roleId);
@@ -168,7 +179,7 @@ public abstract class AbstractPermissionTest {
         return policy;
     }
 
-    protected static ClientPolicyRepresentation createClientPolicy(ManagedRealm realm, ManagedClient client, String name, String... clientIds) {
+    protected ClientPolicyRepresentation createClientPolicy(ManagedRealm realm, ManagedClient client, String name, String... clientIds) {
         ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
         policy.setName(name);
         for (String clientId : clientIds) {
@@ -187,7 +198,18 @@ public abstract class AbstractPermissionTest {
         return policy;
     }
 
-    protected static ScopePermissionRepresentation createAllPermission(ManagedClient client, String resourceType, AbstractPolicyRepresentation policy, Set<String> scopes) {
+    protected AggregatePolicyRepresentation createAggregatedPolicy(ManagedClient client, String name, Logic logic, DecisionStrategy decisionStrategy, String... policies) {
+        AggregatePolicyRepresentation aggregatedPolicy = new AggregatePolicyRepresentation();
+        aggregatedPolicy.setName(name);
+        aggregatedPolicy.setLogic(logic);
+        aggregatedPolicy.setDecisionStrategy(decisionStrategy);
+        aggregatedPolicy.setPolicies(Set.of(policies));
+        try (Response response = client.admin().authorization().policies().aggregate().create(aggregatedPolicy)) {
+            return response.readEntity(AggregatePolicyRepresentation.class);
+        }
+    }
+
+    protected ScopePermissionRepresentation createAllPermission(ManagedClient client, String resourceType, AbstractPolicyRepresentation policy, Set<String> scopes) {
         ScopePermissionRepresentation permission = PermissionBuilder.create()
                 .resourceType(resourceType)
                 .scopes(scopes)
@@ -217,6 +239,31 @@ public abstract class AbstractPermissionTest {
     }
 
     protected ScopePermissionRepresentation createGroupPermission(GroupRepresentation group, Set<String> scopes, AbstractPolicyRepresentation... policies) {
-        return createPermission(client, group.getId(), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, scopes, policies);
+        return createGroupPermission(Set.of(group), scopes, policies);
+    }
+    protected ScopePermissionRepresentation createGroupPermission(Set<GroupRepresentation> groups, Set<String> scopes, AbstractPolicyRepresentation... policies) {
+        return createPermission(client, groups.stream().map(GroupRepresentation::getId).collect(Collectors.toSet()), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, scopes, policies);
+    }
+
+    protected UserRepresentation createUser(String username) {
+        UserRepresentation user = UserConfigBuilder.create()
+                .username(username)
+                .build();
+
+        try (Response response = realm.admin().users().create(user)) {
+            user.setId(ApiUtil.getCreatedId(response));
+            return user;
+        }
+    }
+
+    protected GroupRepresentation createGroup(String name) {
+        GroupRepresentation group = new GroupRepresentation();
+
+        group.setName(name);
+
+        try (Response response = realm.admin().groups().add(group)) {
+            group.setId(ApiUtil.getCreatedId(response));
+            return group;
+        }
     }
 }

@@ -1,0 +1,196 @@
+{
+    "realm": "ldap-group-import-bug",
+    "enabled": true,
+    "accessTokenLifespan": 300,
+    "accessCodeLifespan": 10,
+    "accessCodeLifespanUserAction": 600,
+    "sslRequired": "external",
+    "requiredCredentials": [
+        "password"
+    ],
+    "users": [
+        {
+            "username": "kyale",
+            "enabled": true,
+            "email": "kyale@foo.bar",
+            "credentials": [
+                {
+                    "type": "Password",
+                    "value": "password"
+                }
+            ],
+            "realmRoles": [
+                "user"
+            ]
+        }
+    ],
+    "oauthClients": [
+        {
+            "name": "third-party",
+            "enabled": true,
+            "secret": "password"
+        }
+    ],
+    "roles": {
+        "realm": [
+            {
+                "name": "user",
+                "description": "Have User privileges"
+            },
+            {
+                "name": "admin",
+                "description": "Have Administrator privileges"
+            }
+        ]
+    },
+    "groups": [
+        {
+            "name": "hardcoded",
+            "path": "/hardcoded",
+            "subGroups": [],
+            "attributes": {},
+            "realmRoles": [],
+            "clientRoles": {}
+        }
+    ],
+    "scopeMappings": [
+        {
+            "client": "third-party",
+            "roles": [
+                "user"
+            ]
+        }
+    ],
+    "applications": [
+        {
+            "name": "customer-portal",
+            "enabled": true,
+            "adminUrl": "http://localhost:8080/customer-portal/j_admin_request",
+            "secret": "password"
+        },
+        {
+            "name": "product-portal",
+            "enabled": true,
+            "adminUrl": "http://localhost:8080/product-portal/j_admin_request",
+            "secret": "password"
+        }
+    ],
+    "components": {
+        "org.keycloak.storage.UserStorageProvider": [
+            {
+                "id": "34192d41-8e0d-4a2f-916e-7061de988801",
+                "name": "LDAP Login",
+                "providerId": "ldap",
+                "subComponents": {
+                    "org.keycloak.storage.ldap.mappers.LDAPStorageMapper": [
+                        {
+                            "name": "hard-coded-group",
+                            "providerId": "hardcoded-ldap-group-mapper",
+                            "subComponents": {},
+                            "config": {
+                                "group": [
+                                    "hardcoded"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "config": {
+                    "fullSyncPeriod": [
+                        "-1"
+                    ],
+                    "pagination": [
+                        "false"
+                    ],
+                    "startTls": [
+                        "false"
+                    ],
+                    "connectionPooling": [
+                        "true"
+                    ],
+                    "usersDn": [
+                        "OU=users,DC=apmoller,DC=local"
+                    ],
+                    "cachePolicy": [
+                        "DEFAULT"
+                    ],
+                    "useKerberosForPasswordAuthentication": [
+                        "false"
+                    ],
+                    "importEnabled": [
+                        "false"
+                    ],
+                    "enabled": [
+                        "true"
+                    ],
+                    "bindDn": [
+                        "CN=admin,DC=apmoller,DC=local"
+                    ],
+                    "changedSyncPeriod": [
+                        "-1"
+                    ],
+                    "bindCredential": [
+                        "**********"
+                    ],
+                    "usernameLDAPAttribute": [
+                        "uid"
+                    ],
+                    "vendor": [
+                        "other"
+                    ],
+                    "uuidLDAPAttribute": [
+                        "entryUUID"
+                    ],
+                    "allowKerberosAuthentication": [
+                        "false"
+                    ],
+                    "connectionUrl": [
+                        "ldap://mock-ldap.apmt-dpos.svc.cluster.local:389"
+                    ],
+                    "syncRegistrations": [
+                        "false"
+                    ],
+                    "authType": [
+                        "simple"
+                    ],
+                    "krbPrincipalAttribute": [
+                        "userPrincipalName"
+                    ],
+                    "customUserSearchFilter": [
+                        "(objectClass=*)"
+                    ],
+                    "searchScope": [
+                        "2"
+                    ],
+                    "useTruststoreSpi": [
+                        "always"
+                    ],
+                    "usePasswordModifyExtendedOp": [
+                        "false"
+                    ],
+                    "trustEmail": [
+                        "false"
+                    ],
+                    "userObjectClasses": [
+                        "inetOrgPerson"
+                    ],
+                    "rdnLDAPAttribute": [
+                        "uid"
+                    ],
+                    "referral": [
+                        "ignore"
+                    ],
+                    "readTimeout": [
+                        "5000"
+                    ],
+                    "editMode": [
+                        "READ_ONLY"
+                    ],
+                    "validatePasswordPolicy": [
+                        "false"
+                    ]
+                }
+            }
+        ]
+    }
+}

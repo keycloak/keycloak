@@ -27,6 +27,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
@@ -155,8 +156,7 @@ public class InitialAccessTokenResourceTest {
         runOnServer.run(session -> {
             RealmModel realm = session.realms().getRealm(realmUuid);
 
-            session.sessions().removeExpired(realm);
-            session.authenticationSessions().removeExpired(realm);
+            session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
             session.realms().removeExpiredClientInitialAccess();
         });
     }

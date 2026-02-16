@@ -36,6 +36,7 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.authz.AbstractAuthzTest;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -55,6 +56,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.keycloak.common.Profile.Feature.SCRIPTS;
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 
 import static org.junit.Assert.assertEquals;
@@ -63,6 +65,7 @@ import static org.junit.Assert.assertFalse;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(value = SCRIPTS, skipRestart = true)
 public class DeployedScriptPolicyTest extends AbstractAuthzTest {
 
     private static final String SCRIPT_DEPLOYMENT_NAME = "scripts.jar";

@@ -270,6 +270,10 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-opentelemetry-deployment</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-micrometer-opentelemetry-deployment</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>io.quarkus</groupId>

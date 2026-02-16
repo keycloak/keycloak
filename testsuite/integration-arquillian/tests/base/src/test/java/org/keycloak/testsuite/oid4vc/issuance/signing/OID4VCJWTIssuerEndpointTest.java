@@ -17,9 +17,7 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -32,12 +30,17 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
+import org.keycloak.VCFormat;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.ClaimDisplay;
 import org.keycloak.protocol.oid4vc.model.Claims;
@@ -48,9 +51,8 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.JwtProof;
-import org.keycloak.protocol.oid4vc.model.OfferUriType;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
 import org.keycloak.protocol.oid4vc.model.Proofs;
@@ -59,24 +61,21 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.sdjwt.vp.SdJwtVP;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.util.JsonSerialization;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
 import org.junit.Test;
 
 import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
+import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -90,19 +89,20 @@ import static org.junit.Assert.fail;
  * Test from org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest
  */
 public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
+
     // ----- getCredentialOfferUri
 
     @Test
     public void testGetCredentialOfferUriUnsupportedCredential() {
         String token = getBearerToken(oauth);
         testingClient.server(TEST_REALM_NAME).run((session -> {
-            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
             authenticator.setTokenString(token);
 
             OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
             CorsErrorResponseException exception = Assert.assertThrows(CorsErrorResponseException.class, () ->
-                    oid4VCIssuerEndpoint.getCredentialOfferURI("inexistent-id", OfferUriType.URI, 0, 0)
+                    oid4VCIssuerEndpoint.getCredentialOfferURI("inexistent-id")
             );
             assertEquals("Should return BAD_REQUEST", Response.Status.BAD_REQUEST.getStatusCode(),
                     exception.getResponse().getStatus());
@@ -112,12 +112,12 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testGetCredentialOfferUriUnauthorized() {
         testingClient.server(TEST_REALM_NAME).run((session -> {
-            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
             authenticator.setTokenString(null);
             OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
             CorsErrorResponseException exception = Assert.assertThrows(CorsErrorResponseException.class, () ->
-                    oid4VCIssuerEndpoint.getCredentialOfferURI("test-credential", OfferUriType.URI, 0, 0)
+                    oid4VCIssuerEndpoint.getCredentialOfferURI("test-credential", true, "john")
             );
             assertEquals("Should return BAD_REQUEST", Response.Status.BAD_REQUEST.getStatusCode(),
                     exception.getResponse().getStatus());
@@ -127,12 +127,12 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testGetCredentialOfferUriInvalidToken() {
         testingClient.server(TEST_REALM_NAME).run((session -> {
-            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
             authenticator.setTokenString("invalid-token");
             OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
             CorsErrorResponseException exception = Assert.assertThrows(CorsErrorResponseException.class, () ->
-                    oid4VCIssuerEndpoint.getCredentialOfferURI("test-credential", OfferUriType.URI, 0, 0)
+                    oid4VCIssuerEndpoint.getCredentialOfferURI("test-credential", true, "john")
             );
             assertEquals("Should return BAD_REQUEST", Response.Status.BAD_REQUEST.getStatusCode(),
                     exception.getResponse().getStatus());
@@ -148,15 +148,11 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         testingClient.server(TEST_REALM_NAME).run((session) -> {
             try {
-                AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(
-                        session);
+                BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
                 authenticator.setTokenString(token);
                 OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
-                Response response = oid4VCIssuerEndpoint.getCredentialOfferURI(credentialConfigurationId,
-                        OfferUriType.URI,
-                        0,
-                        0);
+                Response response = oid4VCIssuerEndpoint.getCredentialOfferURI(credentialConfigurationId);
 
                 assertEquals("An offer uri should have been returned.", HttpStatus.SC_OK, response.getStatus());
                 CredentialOfferURI credentialOfferURI = JsonSerialization.mapper.convertValue(response.getEntity(),
@@ -177,7 +173,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             testingClient
                     .server(TEST_REALM_NAME)
                     .run((session) -> {
-                        AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+                        BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
                         authenticator.setTokenString(null);
                         OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
                         Response response = issuerEndpoint.getCredentialOffer("nonce");
@@ -193,7 +189,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             testingClient
                     .server(TEST_REALM_NAME)
                     .run((session -> {
-                        AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+                        BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
                         authenticator.setTokenString(token);
                         OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
                         issuerEndpoint.getCredentialOffer(null);
@@ -208,7 +204,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             testingClient
                     .server(TEST_REALM_NAME)
                     .run((session -> {
-                        AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+                        BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
                         authenticator.setTokenString(token);
                         OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
                         issuerEndpoint.getCredentialOffer("unpreparedNonce");
@@ -223,11 +219,11 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             testingClient
                     .server(TEST_REALM_NAME)
                     .run((session -> {
-                        AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+                        BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
                         authenticator.setTokenString(token);
-                        String sessionCode = prepareSessionCode(session, authenticator, "invalidNote");
+                        String nonce = prepareSessionCode(session, authenticator, "invalidNote").key();
                         OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                        issuerEndpoint.getCredentialOffer(sessionCode);
+                        issuerEndpoint.getCredentialOffer(nonce);
                     }));
         });
     }
@@ -238,25 +234,28 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         testingClient
                 .server(TEST_REALM_NAME)
                 .run((session) -> {
-                    AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+                    BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
                     authenticator.setTokenString(token);
-                    CredentialsOffer credentialsOffer = new CredentialsOffer()
+                    CredentialsOffer credOffer = new CredentialsOffer()
                             .setCredentialIssuer("the-issuer")
                             .setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(new PreAuthorizedCode().setPreAuthorizedCode("the-code")))
                             .setCredentialConfigurationIds(List.of("credential-configuration-id"));
 
-                    String sessionCode = prepareSessionCode(session, authenticator, JsonSerialization.writeValueAsString(credentialsOffer));
+                    CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+                    CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, Time.currentTime() + 60);
+                    offerStorage.putOfferState(session, offerState);
+
                     // The cache transactions need to be committed explicitly in the test. Without that, the OAuth2Code will only be committed to
                     // the cache after .run((session)-> ...)
                     session.getTransactionManager().commit();
                     OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                    Response credentialOfferResponse = issuerEndpoint.getCredentialOffer(sessionCode);
+                    Response credentialOfferResponse = issuerEndpoint.getCredentialOffer(offerState.getNonce());
                     assertEquals("The offer should have been returned.", HttpStatus.SC_OK, credentialOfferResponse.getStatus());
                     Object credentialOfferEntity = credentialOfferResponse.getEntity();
                     assertNotNull("An actual offer should be in the response.", credentialOfferEntity);
 
                     CredentialsOffer retrievedCredentialsOffer = JsonSerialization.mapper.convertValue(credentialOfferEntity, CredentialsOffer.class);
-                    assertEquals("The offer should be the one prepared with for the session.", credentialsOffer, retrievedCredentialsOffer);
+                    assertEquals("The offer should be the one prepared with for the session.", credOffer, retrievedCredentialsOffer);
                 });
     }
 
@@ -265,7 +264,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testRequestCredentialUnauthorized() {
         testingClient.server(TEST_REALM_NAME).run(session -> {
-            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
             authenticator.setTokenString(null);
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
             CredentialRequest credentialRequest = new CredentialRequest()
@@ -285,7 +284,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testRequestCredentialInvalidToken() {
         testingClient.server(TEST_REALM_NAME).run(session -> {
-            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
             authenticator.setTokenString("token");
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
             CredentialRequest credentialRequest = new CredentialRequest()
@@ -306,20 +305,31 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
         final String scopeName = jwtTypeCredentialClientScope.getName();
-        String token = getBearerToken(oauth, client, scopeName);
+
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credentialConfigurationId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
         try {
             withCausePropagation(() -> {
                 testingClient.server(TEST_REALM_NAME).run((session -> {
-                    AppAuthManager.BearerTokenAuthenticator authenticator =
-                            new AppAuthManager.BearerTokenAuthenticator(session);
+                    BearerTokenAuthenticator authenticator =
+                            new BearerTokenAuthenticator(session);
                     authenticator.setTokenString(token);
 
                     // Prepare the issue endpoint with no credential builders.
                     OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
 
                     CredentialRequest credentialRequest =
-                            new CredentialRequest().setCredentialConfigurationId(credentialConfigurationId);
+                            new CredentialRequest().setCredentialIdentifier(credentialIdentifier);
 
                     String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
                     issuerEndpoint.requestCredential(requestPayload);
@@ -328,7 +338,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             Assert.fail("Should have thrown an exception");
         } catch (Exception e) {
             Assert.assertTrue(e instanceof BadRequestException);
-            Assert.assertEquals("No credential builder found for format jwt_vc", e.getMessage());
+            Assert.assertEquals("No credential builder found for format jwt_vc_json", e.getMessage());
         }
     }
 
@@ -337,7 +347,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         String token = getBearerToken(oauth);
         withCausePropagation(() -> {
             testingClient.server(TEST_REALM_NAME).run(session -> {
-                AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+                BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
                 authenticator.setTokenString(token);
                 OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
                 CredentialRequest credentialRequest = new CredentialRequest()
@@ -352,14 +362,29 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testRequestCredential() {
-        final String scopeName = jwtTypeCredentialClientScope.getName();
-        String token = getBearerToken(oauth, client, scopeName);
+        String scopeName = jwtTypeCredentialClientScope.getName();
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+        assertNotNull("credential_identifier should be present", credentialIdentifier);
+
         testingClient.server(TEST_REALM_NAME).run(session -> {
-            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
             authenticator.setTokenString(token);
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
             CredentialRequest credentialRequest = new CredentialRequest()
-                    .setCredentialIdentifier(scopeName);
+                    .setCredentialIdentifier(credentialIdentifier);
 
             String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
 
@@ -392,27 +417,22 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     @Test
-    public void testRequestCredentialWithConfigurationIdNotSet() {
+    public void testRequestCredentialWithNeitherIdSet() {
         final String scopeName = minimalJwtTypeCredentialClientScope.getName();
         String token = getBearerToken(oauth, client, scopeName);
         testingClient.server(TEST_REALM_NAME).run(session -> {
-            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
             authenticator.setTokenString(token);
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-            CredentialRequest credentialRequest = new CredentialRequest()
-                    .setCredentialIdentifier(scopeName);
-
-            String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
-
-            Response credentialResponse = issuerEndpoint.requestCredential(requestPayload);
-            assertEquals("The credential request should be answered successfully.",
-                    HttpStatus.SC_OK, credentialResponse.getStatus());
-            assertNotNull("A credential should be responded.", credentialResponse.getEntity());
-            CredentialResponse credentialResponseVO = JsonSerialization.mapper
-                    .convertValue(credentialResponse.getEntity(), CredentialResponse.class);
-            String credentialString = (String) credentialResponseVO.getCredentials().get(0).getCredential();
-            SdJwtVP sdJwtVP = SdJwtVP.of(credentialString);
-            assertNotNull("A valid credential string should have been responded", sdJwtVP);
+            CredentialRequest credentialRequest = new CredentialRequest();
+            try {
+                String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+                issuerEndpoint.requestCredential(requestPayload);
+                Assert.fail("Expected BadRequestException due to missing credential identifier or configuration id");
+            } catch (BadRequestException e) {
+                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST, error.getError());
+            }
         });
     }
 
@@ -430,64 +450,70 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         // 1. Retrieving the credential-offer-uri
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
-        HttpGet getCredentialOfferURI = new HttpGet(getBasePath(TEST_REALM_NAME)
-                + "credential-offer-uri?credential_configuration_id="
-                + credentialConfigurationId);
-        getCredentialOfferURI.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        CloseableHttpResponse credentialOfferURIResponse = httpClient.execute(getCredentialOfferURI);
+        CredentialOfferURI credentialOfferURI = oauth.oid4vc()
+                .credentialOfferUriRequest(credentialConfigurationId)
+                .preAuthorized(true)
+                .username("john")
+                .bearerToken(token)
+                .send()
+                .getCredentialOfferURI();
 
-        assertEquals("A valid offer uri should be returned",
-                HttpStatus.SC_OK,
-                credentialOfferURIResponse.getStatusLine().getStatusCode());
-        String s = IOUtils.toString(credentialOfferURIResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialOfferURI credentialOfferURI = JsonSerialization.readValue(s, CredentialOfferURI.class);
+        assertNotNull("A valid offer uri should be returned", credentialOfferURI);
 
         // 2. Using the uri to get the actual credential offer
-        HttpGet getCredentialOffer = new HttpGet(credentialOfferURI.getIssuer() + "/" + credentialOfferURI.getNonce());
-        CloseableHttpResponse credentialOfferResponse = httpClient.execute(getCredentialOffer);
+        CredentialsOffer credentialsOffer = oauth.oid4vc()
+                .credentialOfferRequest(credentialOfferURI)
+                .bearerToken(token)
+                .send()
+                .getCredentialsOffer();
 
-        assertEquals("A valid offer should be returned", HttpStatus.SC_OK, credentialOfferResponse.getStatusLine().getStatusCode());
-        s = IOUtils.toString(credentialOfferResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialsOffer credentialsOffer = JsonSerialization.readValue(s, CredentialsOffer.class);
+        assertNotNull("A valid offer should be returned", credentialsOffer);
 
         // 3. Get the issuer metadata
-        HttpGet getIssuerMetadata = new HttpGet(credentialsOffer.getCredentialIssuer() + "/.well-known/openid-credential-issuer");
-        CloseableHttpResponse issuerMetadataResponse = httpClient.execute(getIssuerMetadata);
-        assertEquals(HttpStatus.SC_OK, issuerMetadataResponse.getStatusLine().getStatusCode());
-        s = IOUtils.toString(issuerMetadataResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        CredentialIssuer credentialIssuer = JsonSerialization.readValue(s, CredentialIssuer.class);
+        CredentialIssuer credentialIssuer = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .endpoint(credentialsOffer.getIssuerMetadataUrl())
+                .send()
+                .getMetadata();
 
+        assertNotNull("Issuer metadata should be returned", credentialIssuer);
         assertEquals("We only expect one authorization server.", 1, credentialIssuer.getAuthorizationServers().size());
 
         // 4. Get the openid-configuration
-        HttpGet getOpenidConfiguration = new HttpGet(credentialIssuer.getAuthorizationServers().get(0) + "/.well-known/openid-configuration");
-        CloseableHttpResponse openidConfigResponse = httpClient.execute(getOpenidConfiguration);
-        assertEquals(HttpStatus.SC_OK, openidConfigResponse.getStatusLine().getStatusCode());
-        s = IOUtils.toString(openidConfigResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        OIDCConfigurationRepresentation openidConfig = JsonSerialization.readValue(s, OIDCConfigurationRepresentation.class);
+        OIDCConfigurationRepresentation openidConfig = oauth
+                .wellknownRequest()
+                .url(credentialIssuer.getAuthorizationServers().get(0))
+                .send()
+                .getOidcConfiguration();
 
         assertNotNull("A token endpoint should be included.", openidConfig.getTokenEndpoint());
         assertTrue("The pre-authorized code should be supported.", openidConfig.getGrantTypesSupported().contains(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
 
         // 5. Get an access token for the pre-authorized code
-        HttpPost postPreAuthorizedCode = new HttpPost(openidConfig.getTokenEndpoint());
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        postPreAuthorizedCode.setEntity(formEntity);
-        AccessTokenResponse accessTokenResponse = new AccessTokenResponse(httpClient.execute(postPreAuthorizedCode));
+        AccessTokenResponse accessTokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .endpoint(openidConfig.getTokenEndpoint())
+                .send();
+
         assertEquals(HttpStatus.SC_OK, accessTokenResponse.getStatusCode());
         String theToken = accessTokenResponse.getAccessToken();
+        assertNotNull("Access token should be present", theToken);
 
-        // 6. Get the credential
+        // Extract credential_identifier from authorization_details in token response
+        List<OID4VCAuthorizationDetail> authDetailsResponse = accessTokenResponse.getOid4vcAuthorizationDetails();
+        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+        assertNotNull("Credential identifier should be present", credentialIdentifier);
+
+        // 6. Get the credential using credential_identifier (required when authorization_details are present)
         credentialsOffer.getCredentialConfigurationIds().stream()
                 .map(offeredCredentialId -> credentialIssuer.getCredentialsSupported().get(offeredCredentialId))
                 .forEach(supportedCredential -> {
                     try {
-                        requestCredential(theToken,
+                        requestCredentialWithIdentifier(theToken,
                                 credentialIssuer.getCredentialEndpoint(),
-                                supportedCredential,
+                                credentialIdentifier,
                                 new CredentialResponseHandler(),
                                 jwtTypeCredentialClientScope);
                     } catch (IOException e) {
@@ -499,46 +525,46 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     @Test
-    public void testCredentialIssuanceWithAuthZCodeWithScopeMatched() {
-        BiFunction<String, String, String> getAccessToken = (testClientId, testScope) -> {
-            return getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
-        };
+    public void testCredentialIssuanceWithAuthZCodeWithScopeMatched() throws Exception {
+        String scopeName = jwtTypeCredentialClientScope.getName();
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
 
-        Consumer<Map<String, Object>> sendCredentialRequest = m -> {
-            String accessToken = (String) m.get("accessToken");
-            WebTarget credentialTarget = (WebTarget) m.get("credentialTarget");
-            CredentialRequest credentialRequest = (CredentialRequest) m.get("credentialRequest");
-            assertEquals("Credential configuration id should match",
-                    jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID),
-                    credentialRequest.getCredentialConfigurationId());
+        testCredentialIssuanceWithAuthZCodeFlow(jwtTypeCredentialClientScope,
+                (testClientId, testScope) -> {
+                    String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+                    return getBearerToken(oauth, authCode, authDetail).getAccessToken();
+                },
+                m -> {
+                    String accessToken = (String) m.get("accessToken");
+                    WebTarget credentialTarget = (WebTarget) m.get("credentialTarget");
+                    CredentialRequest credentialRequest = (CredentialRequest) m.get("credentialRequest");
 
-            try (Response response = credentialTarget.request()
-                    .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken)
-                    .post(Entity.json(credentialRequest))) {
-                if (response.getStatus() != 200) {
-                    String errorBody = response.readEntity(String.class);
-                    System.out.println("Error Response: " + errorBody);
-                }
-                assertEquals(200, response.getStatus());
-                CredentialResponse credentialResponse = JsonSerialization.readValue(response.readEntity(String.class),
-                        CredentialResponse.class);
+                    try (Response response = credentialTarget.request()
+                            .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken)
+                            .post(Entity.json(credentialRequest))) {
+                        assertEquals(200, response.getStatus());
+                        CredentialResponse credentialResponse = JsonSerialization.readValue(response.readEntity(String.class),
+                                CredentialResponse.class);
 
-                JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponse.getCredentials().get(0).getCredential(),
-                        JsonWebToken.class).getToken();
-                assertEquals(TEST_DID.toString(), jsonWebToken.getIssuer());
+                        JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponse.getCredentials().get(0).getCredential(),
+                                JsonWebToken.class).getToken();
+                        assertEquals(TEST_DID.toString(), jsonWebToken.getIssuer());
 
-                VerifiableCredential credential = JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims()
-                                .get("vc"),
-                        VerifiableCredential.class);
-                assertEquals(List.of(jwtTypeCredentialClientScope.getName()), credential.getType());
-                assertEquals(TEST_DID, credential.getIssuer());
-                assertEquals("john@email.cz", credential.getCredentialSubject().getClaims().get("email"));
-            } catch (VerificationException | IOException e) {
-                throw new RuntimeException(e);
-            }
-        };
-
-        testCredentialIssuanceWithAuthZCodeFlow(jwtTypeCredentialClientScope, getAccessToken, sendCredentialRequest);
+                        VerifiableCredential credential = JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims()
+                                        .get("vc"),
+                                VerifiableCredential.class);
+                        assertEquals(List.of(jwtTypeCredentialClientScope.getName()), credential.getType());
+                        assertEquals(TEST_DID, credential.getIssuer());
+                        assertEquals("john@email.cz", credential.getCredentialSubject().getClaims().get("email"));
+                    } catch (VerificationException | IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
     @Test
@@ -592,45 +618,12 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 assertEquals(400, response.getStatus());
                 String errorJson = response.readEntity(String.class);
                 assertNotNull("Error response should not be null", errorJson);
-                assertTrue("Error response should mention UNKNOWN_CREDENTIAL_CONFIGURATION or scope",
-                        errorJson.contains("UNKNOWN_CREDENTIAL_CONFIGURATION") || errorJson.contains("scope"));
+                assertTrue("Error response should mention INVALID_CREDENTIAL_REQUEST or scope",
+                        errorJson.contains("INVALID_CREDENTIAL_REQUEST") || errorJson.contains("scope"));
             }
         };
 
         testCredentialIssuanceWithAuthZCodeFlow(sdJwtTypeCredentialClientScope, getAccessToken, sendCredentialRequest);
-    }
-
-    @Test
-    public void testRequestCredentialWithNotificationId() {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
-        final String scopeName = jwtTypeCredentialClientScope.getName();
-
-        testingClient.server(TEST_REALM_NAME).run((session) -> {
-            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
-            authenticator.setTokenString(token);
-            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-            CredentialRequest credentialRequest = new CredentialRequest()
-                    .setCredentialIdentifier(scopeName);
-
-            String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
-
-            // First credential request
-            Response response1 = issuerEndpoint.requestCredential(requestPayload);
-            assertEquals("The credential request should be successful.", HttpStatus.SC_OK, response1.getStatus());
-            CredentialResponse credentialResponse1 = JsonSerialization.mapper.convertValue(
-                    response1.getEntity(), CredentialResponse.class);
-            assertNotNull("Credential response should not be null", credentialResponse1);
-            assertNotNull("Credential should be present", credentialResponse1.getCredentials());
-            assertNotNull("Notification ID should be present", credentialResponse1.getNotificationId());
-            assertFalse("Notification ID should not be empty", credentialResponse1.getNotificationId().isEmpty());
-            // Second credential request
-            Response response2 = issuerEndpoint.requestCredential(requestPayload);
-            assertEquals("The second credential request should be successful.", HttpStatus.SC_OK, response2.getStatus());
-            CredentialResponse credentialResponse2 = JsonSerialization.mapper.convertValue(
-                    response2.getEntity(), CredentialResponse.class);
-            assertNotEquals("Notification IDs should be unique",
-                    credentialResponse1.getNotificationId(), credentialResponse2.getNotificationId());
-        });
     }
 
     /**
@@ -639,12 +632,25 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testRequestMultipleCredentialsWithProofs() {
         final String scopeName = jwtTypeCredentialClientScope.getName();
-        String token = getBearerToken(oauth, client, scopeName);
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+
         String cNonce = getCNonce();
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
             try {
-                AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+                BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
                 authenticator.setTokenString(token);
                 String issuer = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
 
@@ -654,7 +660,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
 
                 CredentialRequest request = new CredentialRequest()
-                        .setCredentialIdentifier(scopeName)
+                        .setCredentialIdentifier(credentialIdentifier)
                         .setProofs(proofs);
 
                 OID4VCIssuerEndpoint endpoint = prepareIssuerEndpoint(session, authenticator);
@@ -699,10 +705,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                             "john@email.cz", vc.getCredentialSubject().getClaims().get("email"));
                     assertFalse("Only supported mappers should be evaluated",
                             vc.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
-
                 }
-
-                assertNotNull("Notification ID should be present", credentialResponse.getNotificationId());
             } catch (Exception e) {
                 throw new RuntimeException("Test failed due to: " + e.getMessage(), e);
             }
@@ -746,26 +749,27 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                             scopeName,
                             jwtVcConfig.getScope());
                     assertEquals("The jwt_vc-credential should be offered in the jwt_vc format.",
-                            Format.JWT_VC,
+                            VCFormat.JWT_VC,
                             jwtVcConfig.getFormat());
 
                     Claims jwtVcClaims = jwtVcConfig.getCredentialMetadata() != null ? jwtVcConfig.getCredentialMetadata().getClaims() : null;
                     assertNotNull("The jwt_vc-credential can optionally provide a claims claim.",
                             jwtVcClaims);
 
-                    assertEquals(5, jwtVcClaims.size());
+                    assertEquals(8, jwtVcClaims.size());
                     {
                         Claim claim = jwtVcClaims.get(0);
-                        assertEquals("The jwt_vc-credential claim credentialSubject.given_name is present.",
-                                CREDENTIAL_SUBJECT,
-                                claim.getPath().get(0));
-                        assertEquals("The jwt_vc-credential claim credentialSubject.given_name is present.",
-                                "given_name",
-                                claim.getPath().get(1));
-                        assertFalse("The jwt_vc-credential claim credentialSubject.given_name is not mandatory.",
-                                claim.isMandatory());
-                        assertNotNull("The jwt_vc-credential claim credentialSubject.given_name has display configured",
-                                claim.getDisplay());
+                        assertEquals("Has credentialSubject.id", CREDENTIAL_SUBJECT, claim.getPath().get(0));
+                        assertEquals("credentialSubject.id mapped correctly","id", claim.getPath().get(1));
+                        assertFalse("credentialSubject.id is not mandatory", claim.isMandatory());
+                        assertNull("credentialSubject.id has no display", claim.getDisplay());
+                    }
+                    {
+                        Claim claim = jwtVcClaims.get(1);
+                        assertEquals("Has credentialSubject.given_name", CREDENTIAL_SUBJECT, claim.getPath().get(0));
+                        assertEquals("credentialSubject.given_name mapped correctly","given_name", claim.getPath().get(1));
+                        assertFalse("credentialSubject.given_name is not mandatory", claim.isMandatory());
+                        assertNotNull("credentialSubject.given_name has display", claim.getDisplay());
                         assertEquals(15, claim.getDisplay().size());
                         for (ClaimDisplay givenNameDisplay : claim.getDisplay()) {
                             assertNotNull(givenNameDisplay.getName());
@@ -773,17 +777,11 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         }
                     }
                     {
-                        Claim claim = jwtVcClaims.get(1);
-                        assertEquals("The jwt_vc-credential claim credentialSubject.family_name is present.",
-                                CREDENTIAL_SUBJECT,
-                                claim.getPath().get(0));
-                        assertEquals("The jwt_vc-credential claim credentialSubject.family_name is present.",
-                                "family_name",
-                                claim.getPath().get(1));
-                        assertFalse("The jwt_vc-credential claim credentialSubject.family_name is not mandatory.",
-                                claim.isMandatory());
-                        assertNotNull("The jwt_vc-credential claim credentialSubject.family_name has display configured",
-                                claim.getDisplay());
+                        Claim claim = jwtVcClaims.get(2);
+                        assertEquals("Has credentialSubject.family_name", CREDENTIAL_SUBJECT, claim.getPath().get(0));
+                        assertEquals("credentialSubject.family_name mapped correctly","family_name", claim.getPath().get(1));
+                        assertFalse("credentialSubject.family_name is not mandatory", claim.isMandatory());
+                        assertNotNull("credentialSubject.family_name has display", claim.getDisplay());
                         assertEquals(15, claim.getDisplay().size());
                         for (ClaimDisplay familyNameDisplay : claim.getDisplay()) {
                             assertNotNull(familyNameDisplay.getName());
@@ -791,35 +789,11 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         }
                     }
                     {
-                        Claim claim = jwtVcClaims.get(2);
-                        assertEquals("The jwt_vc-credential claim credentialSubject.birthdate is present.",
-                                CREDENTIAL_SUBJECT,
-                                claim.getPath().get(0));
-                        assertEquals("The jwt_vc-credential claim credentialSubject.birthdate is present.",
-                                "birthdate",
-                                claim.getPath().get(1));
-                        assertFalse("The jwt_vc-credential claim credentialSubject.birthdate is not mandatory.",
-                                claim.isMandatory());
-                        assertNotNull("The jwt_vc-credential claim credentialSubject.birthdate has display configured",
-                                claim.getDisplay());
-                        assertEquals(15, claim.getDisplay().size());
-                        for (ClaimDisplay birthDateDisplay : claim.getDisplay()) {
-                            assertNotNull(birthDateDisplay.getName());
-                            assertNotNull(birthDateDisplay.getLocale());
-                        }
-                    }
-                    {
                         Claim claim = jwtVcClaims.get(3);
-                        assertEquals("The jwt_vc-credential claim credentialSubject.email is present.",
-                                CREDENTIAL_SUBJECT,
-                                claim.getPath().get(0));
-                        assertEquals("The jwt_vc-credential claim credentialSubject.email is present.",
-                                "email",
-                                claim.getPath().get(1));
-                        assertFalse("The jwt_vc-credential claim credentialSubject.email is not mandatory.",
-                                claim.isMandatory());
-                        assertNotNull("The jwt_vc-credential claim credentialSubject.email has display configured",
-                                claim.getDisplay());
+                        assertEquals("Has credentialSubject.birthdate", CREDENTIAL_SUBJECT, claim.getPath().get(0));
+                        assertEquals("credentialSubject.birthdate mapped correctly","birthdate", claim.getPath().get(1));
+                        assertFalse("credentialSubject.birthdate is not mandatory", claim.isMandatory());
+                        assertNotNull("credentialSubject.birthdate has display", claim.getDisplay());
                         assertEquals(15, claim.getDisplay().size());
                         for (ClaimDisplay birthDateDisplay : claim.getDisplay()) {
                             assertNotNull(birthDateDisplay.getName());
@@ -828,21 +802,59 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     }
                     {
                         Claim claim = jwtVcClaims.get(4);
-                        assertEquals("The jwt_vc-credential claim credentialSubject.scope-name is present.",
-                                CREDENTIAL_SUBJECT,
-                                claim.getPath().get(0));
-                        assertEquals("The jwt_vc-credential claim credentialSubject.scope-name is present.",
-                                "scope-name",
-                                claim.getPath().get(1));
-                        assertFalse("The jwt_vc-credential claim credentialSubject.scope-name is not mandatory.",
-                                claim.isMandatory());
-                        assertNull("The jwt_vc-credential claim credentialSubject.scope-name has no display configured",
-                                claim.getDisplay());
+                        assertEquals("Has credentialSubject.email", CREDENTIAL_SUBJECT, claim.getPath().get(0));
+                        assertEquals("credentialSubject.email mapped correctly","email", claim.getPath().get(1));
+                        assertFalse("credentialSubject.email is not mandatory", claim.isMandatory());
+                        assertNotNull("credentialSubject.email has display", claim.getDisplay());
+                        assertEquals(15, claim.getDisplay().size());
+                        for (ClaimDisplay birthDateDisplay : claim.getDisplay()) {
+                            assertNotNull(birthDateDisplay.getName());
+                            assertNotNull(birthDateDisplay.getLocale());
+                        }
+                    }
+                    {
+                        Claim claim = jwtVcClaims.get(5);
+                        assertEquals("Has credentialSubject.address_locality", CREDENTIAL_SUBJECT, claim.getPath().get(0));
+                        assertEquals(
+                                "credentialSubject.address.locality mapped correctly (parent claim in path)",
+                                "address",
+                                claim.getPath().get(1)
+                        );
+                        assertEquals(
+                                "credentialSubject.address.locality mapped correctly (nested claim in path)",
+                                "locality",
+                                claim.getPath().get(2)
+                        );
+                        assertFalse("credentialSubject.address.locality is not mandatory", claim.isMandatory());
+                        assertNull("credentialSubject.address.locality has no display", claim.getDisplay());
+                    }
+                    {
+                        Claim claim = jwtVcClaims.get(6);
+                        assertEquals("Has credentialSubject.address.street_address", CREDENTIAL_SUBJECT, claim.getPath().get(0));
+                        assertEquals(
+                                "credentialSubject.address.street_address mapped correctly (parent claim in path)",
+                                "address",
+                                claim.getPath().get(1)
+                        );
+                        assertEquals(
+                                "credentialSubject.address.street_address mapped correctly (nested claim in path)",
+                                "street_address",
+                                claim.getPath().get(2)
+                        );
+                        assertFalse("credentialSubject.address.street_address is not mandatory", claim.isMandatory());
+                        assertNull("credentialSubject.address.street_address has no display", claim.getDisplay());
+                    }
+                    {
+                        Claim claim = jwtVcClaims.get(7);
+                        assertEquals("Has credentialSubject.scope-name", CREDENTIAL_SUBJECT, claim.getPath().get(0));
+                        assertEquals("credentialSubject.scope-name mapped correctly","scope-name", claim.getPath().get(1));
+                        assertFalse("credentialSubject.scope-name is not mandatory", claim.isMandatory());
+                        assertNull("credentialSubject.scope-name has no display", claim.getDisplay());
                     }
 
-                    assertEquals("The jwt_vc-credential should offer vct",
-                            verifiableCredentialType,
-                            jwtVcConfig.getVct());
+                    assertNotNull("The jwt_vc-credential should offer credential_definition",
+                            jwtVcConfig.getCredentialDefinition());
+                    assertNull("JWT_VC credentials should not have vct", jwtVcConfig.getVct());
 
                     // We are offering key binding only for identity credential
                     assertTrue("The jwt_vc-credential should contain a cryptographic binding method supported named jwk",
@@ -874,7 +886,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
-            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
             authenticator.setTokenString(token);
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
@@ -901,12 +913,12 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
-            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
             authenticator.setTokenString(token);
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
             // Create a credential request with a non-existent configuration ID
-            // This will test the unknown_credential_configuration error
+            // This will test the invalid_credential_request error when no authorization_details present
             CredentialRequest credentialRequest = new CredentialRequest()
                     .setCredentialConfigurationId("unknown-configuration-id");
 
@@ -917,7 +929,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 Assert.fail("Expected BadRequestException due to unknown credential configuration");
             } catch (BadRequestException e) {
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                assertEquals(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, error.getError());
+                assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST, error.getError());
             }
         });
     }
@@ -928,17 +940,32 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
      */
     @Test
     public void testRequestCredentialWhenNoCredentialBuilderForFormat() {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        String scopeName = jwtTypeCredentialClientScope.getName();
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
+        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+        assertNotNull("credential_identifier should be present", credentialIdentifier);
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
-            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
             authenticator.setTokenString(token);
             // Prepare endpoint with no credential builders to simulate missing builder for the configured format
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
 
-            // Use the known configuration id for the JWT VC test scope
+            // Use the credential identifier from the token
             CredentialRequest credentialRequest = new CredentialRequest()
-                    .setCredentialConfigurationId(jwtTypeCredentialConfigurationIdName);
+                    .setCredentialIdentifier(credentialIdentifier);
 
             String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
 
@@ -958,18 +985,30 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
      */
     @Test
     public void testProofToProofsConversion() throws Exception {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        final String scopeName = jwtTypeCredentialClientScope.getName();
         final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.CONFIGURATION_ID);
 
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credentialConfigurationId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+
         testingClient.server(TEST_REALM_NAME).run(session -> {
-            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
             authenticator.setTokenString(token);
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
             // Test 1: Create a request with single proof field - should be converted to proofs array
             CredentialRequest requestWithProof = new CredentialRequest()
-                    .setCredentialConfigurationId(credentialConfigurationId);
+                    .setCredentialIdentifier(credentialIdentifier);
 
             // Create a single proof object
             JwtProof singleProof = new JwtProof()
@@ -991,7 +1030,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
             // Test 2: Create a request with both proof and proofs fields - should fail validation
             CredentialRequest requestWithBoth = new CredentialRequest()
-                    .setCredentialConfigurationId(credentialConfigurationId);
+                    .setCredentialIdentifier(credentialIdentifier);
 
             requestWithBoth.setProof(singleProof);
 
@@ -1013,5 +1052,327 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         error.getErrorDescription());
             }
         });
+    }
+
+    /**
+     * Test that credential requests work when the client scope is assigned as Optional.
+     */
+    @Test
+    public void testCredentialRequestWithOptionalClientScope() {
+        ClientScopeRepresentation optionalScope = registerOptionalClientScope(
+                "optional-jwt-credential",
+                TEST_DID.toString(),
+                "optional-jwt-credential-config-id",
+                null, null,
+                VCFormat.JWT_VC,
+                null, null);
+        
+        ClientRepresentation testClient = testRealm().clients().findByClientId(client.getClientId()).get(0);
+        testRealm().clients().get(testClient.getId()).addOptionalClientScope(optionalScope.getId());
+
+        // Extract serializable data before lambda
+        final String scopeName = optionalScope.getName();
+        final String configId = optionalScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(configId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+            CredentialRequest credentialRequest = new CredentialRequest()
+                    .setCredentialIdentifier(credentialIdentifier);
+
+            String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+            Response credentialResponse = issuerEndpoint.requestCredential(requestPayload);
+
+            assertEquals("The credential request should succeed for Optional client scope",
+                    HttpStatus.SC_OK, credentialResponse.getStatus());
+            assertNotNull("A credential should be returned", credentialResponse.getEntity());
+
+            CredentialResponse credentialResponseVO = JsonSerialization.mapper
+                    .convertValue(credentialResponse.getEntity(), CredentialResponse.class);
+
+            assertNotNull("Credentials array should not be null", credentialResponseVO.getCredentials());
+            assertFalse("Credentials array should not be empty", credentialResponseVO.getCredentials().isEmpty());
+        });
+    }
+
+    /**
+     * Test that OID4VCI client scopes cannot be assigned as Default to a client.
+     */
+    @Test
+    public void testCannotAssignOid4vciScopeAsDefaultToClient() {
+        ClientScopeRepresentation oid4vciScope = registerOptionalClientScope(
+                "test-oid4vci-scope",
+                TEST_DID.toString(),
+                "test-oid4vci-config-id",
+                null, null,
+                VCFormat.JWT_VC,
+                null, null);
+        
+        ClientRepresentation testClient = testRealm().clients().findByClientId(client.getClientId()).get(0);
+        ClientResource clientResource = testRealm().clients().get(testClient.getId());
+        
+        try {
+            clientResource.addDefaultClientScope(oid4vciScope.getId());
+            Assert.fail("Expected BadRequestException when trying to assign OID4VCI scope as Default");
+        } catch (BadRequestException e) {
+            OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+            assertEquals("OID4VCI client scopes cannot be assigned as Default scopes. Only Optional scope assignment is supported.",
+                    error.getErrorDescription());
+        }
+    }
+
+    @Test
+    public void testCannotAssignOid4vciScopeAsDefaultToRealm() {
+        ClientScopeRepresentation oid4vciScope = registerOptionalClientScope(
+                "test-oid4vci-realm-scope",
+                TEST_DID.toString(),
+                "test-oid4vci-realm-config-id",
+                null, null,
+                VCFormat.JWT_VC,
+                null, null);
+        
+        try {
+            testRealm().addDefaultDefaultClientScope(oid4vciScope.getId());
+            Assert.fail("Expected BadRequestException when trying to assign OID4VCI scope as realm Default");
+        } catch (BadRequestException e) {
+            OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+            assertEquals("OID4VCI client scopes cannot be assigned as Default scopes. Only Optional scope assignment is supported.",
+                    error.getErrorDescription());
+        }
+    }
+
+    /**
+     * Test that OID4VCI client scopes cannot be assigned even as Optional when OID4VCI is disabled at realm level.
+     */
+    @Test
+    public void testCannotAssignOid4vciScopeWhenRealmDisabled() {
+        ClientScopeRepresentation oid4vciScope = registerOptionalClientScope(
+                "test-oid4vci-disabled-scope",
+                TEST_DID.toString(),
+                "test-oid4vci-disabled-config-id",
+                null, null,
+                VCFormat.JWT_VC,
+                null, null);
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            realm.setVerifiableCredentialsEnabled(false);
+        });
+
+        try {
+            ClientRepresentation testClient = testRealm().clients().findByClientId(client.getClientId()).get(0);
+            ClientResource clientResource = testRealm().clients().get(testClient.getId());
+
+            try {
+                clientResource.addOptionalClientScope(oid4vciScope.getId());
+                Assert.fail("Expected BadRequestException when OID4VCI is disabled at realm level");
+            } catch (BadRequestException e) {
+                OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+                assertEquals("OID4VCI client scopes cannot be assigned when Verifiable Credentials is disabled for the realm",
+                        error.getErrorDescription());
+            }
+        } finally {
+            testingClient.server(TEST_REALM_NAME).run(session -> {
+                RealmModel realm = session.getContext().getRealm();
+                realm.setVerifiableCredentialsEnabled(true);
+            });
+        }
+    }
+
+    /**
+     * Test that credential offer by reference can only be accessed once (replay protection).
+     * This ensures that the credential offer URL with a nonce can only be triggered once,
+     * preventing multiple retrievals of the same pre-authorized code.
+     */
+    @Test
+    public void testCredentialOfferReplayProtection() {
+        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
+                .get(CredentialScopeModel.CONFIGURATION_ID);
+
+        // 1. Retrieving the credential-offer-uri
+        CredentialOfferURI credentialOfferURI = oauth.oid4vc()
+                .credentialOfferUriRequest(credentialConfigurationId)
+                .preAuthorized(true)
+                .username("john")
+                .bearerToken(token)
+                .send()
+                .getCredentialOfferURI();
+        assertNotNull("Credential offer URI should not be null", credentialOfferURI);
+
+        String nonce = credentialOfferURI.getNonce();
+        assertNotNull("Nonce should not be null", nonce);
+
+        // 2. First access to the credential offer URL - should succeed
+        CredentialsOffer credentialsOffer = oauth.oid4vc()
+                .credentialOfferRequest(nonce)
+                .bearerToken(token)
+                .send()
+                .getCredentialsOffer();
+        assertNotNull("Credential offer should not be null", credentialsOffer);
+        assertNotNull("Pre-authorized grant should be present", credentialsOffer.getGrants());
+        String preAuthorizedCode = credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode();
+        assertNotNull("Pre-authorized code value should not be null", preAuthorizedCode);
+
+        // 3. Second access to the same credential offer URL - should fail with replay protection error
+        CredentialOfferResponse response = oauth.oid4vc()
+                .credentialOfferRequest(nonce)
+                .bearerToken(token)
+                .send();
+
+        assertEquals("Second access to credential offer should fail with 400 Bad Request",
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals("Error type should be INVALID_CREDENTIAL_OFFER_REQUEST",
+                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.name(),
+                response.getError());
+        assertTrue("Error description should mention that offer is not found or already consumed",
+                response.getErrorDescription().contains("not found") || response.getErrorDescription().contains("already consumed"));
+    }
+
+    /**
+     * Test that different nonces work independently (each offer has its own state).
+     * This verifies that replay protection is per-nonce and doesn't affect other offers.
+     */
+    @Test
+    public void testCredentialOfferDifferentNoncesIndependent() {
+        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
+                .get(CredentialScopeModel.CONFIGURATION_ID);
+
+        // 1. Create first credential offer
+        CredentialOfferURI credentialOfferURI1 = oauth.oid4vc()
+                .credentialOfferUriRequest(credentialConfigurationId)
+                .preAuthorized(true)
+                .username("john")
+                .bearerToken(token)
+                .send()
+                .getCredentialOfferURI();
+        assertNotNull("First credential offer URI should not be null", credentialOfferURI1);
+        String nonce1 = credentialOfferURI1.getNonce();
+        assertNotNull("First nonce should not be null", nonce1);
+
+        // 2. Create second credential offer (should have different nonce)
+        CredentialOfferURI credentialOfferURI2 = oauth.oid4vc()
+                .credentialOfferUriRequest(credentialConfigurationId)
+                .preAuthorized(true)
+                .username("john")
+                .bearerToken(token)
+                .send()
+                .getCredentialOfferURI();
+        assertNotNull("Second credential offer URI should not be null", credentialOfferURI2);
+        String nonce2 = credentialOfferURI2.getNonce();
+        assertNotNull("Second nonce should not be null", nonce2);
+        assertNotEquals("Nonces should be different for different offers", nonce1, nonce2);
+
+        // 3. Access first offer - should succeed
+        CredentialsOffer credentialsOffer1 = oauth.oid4vc()
+                .credentialOfferRequest(nonce1)
+                .bearerToken(token)
+                .send()
+                .getCredentialsOffer();
+        assertNotNull("First credential offer should not be null", credentialsOffer1);
+
+        // 4. Access second offer - should also succeed (different nonce, independent state)
+        CredentialsOffer credentialsOffer2 = oauth.oid4vc()
+                .credentialOfferRequest(nonce2)
+                .bearerToken(token)
+                .send()
+                .getCredentialsOffer();
+        assertNotNull("Second credential offer should not be null", credentialsOffer2);
+
+        // 5. Verify that accessing first offer again fails (replay protection per-nonce)
+        CredentialOfferResponse response1 = oauth.oid4vc()
+                .credentialOfferRequest(nonce1)
+                .bearerToken(token)
+                .send();
+
+        assertEquals("First offer should fail on second access (replay protection)",
+                Response.Status.BAD_REQUEST.getStatusCode(), response1.getStatusCode());
+        assertEquals("Error type should be INVALID_CREDENTIAL_OFFER_REQUEST",
+                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.name(),
+                response1.getError());
+
+        // 6. Verify that accessing second offer again also fails (replay protection per-nonce)
+        CredentialOfferResponse response2 = oauth.oid4vc()
+                .credentialOfferRequest(nonce2)
+                .bearerToken(token)
+                .send();
+
+        assertEquals("Second offer should fail on second access (replay protection)",
+                Response.Status.BAD_REQUEST.getStatusCode(), response2.getStatusCode());
+        assertEquals("Error type should be INVALID_CREDENTIAL_OFFER_REQUEST",
+                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.name(),
+                response2.getError());
+    }
+
+    /**
+     * Test that removing the nonce entry (for replay protection) does not invalidate
+     * the Pre-Authorized Code. This verifies that the replay protection mechanism doesn't
+     * interfere with the normal token request flow using the pre-authorized code.
+     */
+    @Test
+    public void testPreAuthorizedCodeValidAfterOfferConsumed() {
+        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
+                .get(CredentialScopeModel.CONFIGURATION_ID);
+
+        // 1. Fetch the Offer URI
+        CredentialOfferURI credentialOfferURI = oauth.oid4vc()
+                .credentialOfferUriRequest(credentialConfigurationId)
+                .preAuthorized(true)
+                .username("john")
+                .bearerToken(token)
+                .send()
+                .getCredentialOfferURI();
+        assertNotNull("Credential offer URI should not be null", credentialOfferURI);
+        String nonce = credentialOfferURI.getNonce();
+        assertNotNull("Nonce should not be null", nonce);
+
+        // 2. Fetch the Offer JSON (this removes the nonce entry for replay protection)
+        CredentialsOffer credentialsOffer = oauth.oid4vc()
+                .credentialOfferRequest(nonce)
+                .bearerToken(token)
+                .send()
+                .getCredentialsOffer();
+        assertNotNull("Credential offer should not be null", credentialsOffer);
+        assertNotNull("Pre-authorized grant should be present", credentialsOffer.getGrants());
+        String preAuthorizedCode = credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode();
+        assertNotNull("Pre-authorized code value should not be null", preAuthorizedCode);
+
+        // 3. Immediately perform the Token Request (Pre-Authorized Code Grant) using the valid code
+        CredentialIssuer credentialIssuer = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .endpoint(credentialsOffer.getIssuerMetadataUrl())
+                .send()
+                .getMetadata();
+        OIDCConfigurationRepresentation openidConfig = oauth
+                .wellknownRequest()
+                .url(credentialIssuer.getAuthorizationServers().get(0))
+                .send()
+                .getOidcConfiguration();
+        assertNotNull("Token endpoint should be present", openidConfig.getTokenEndpoint());
+
+        AccessTokenResponse accessTokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(preAuthorizedCode)
+                .send();
+        assertEquals("Token request should succeed even after nonce is removed for replay protection",
+                HttpStatus.SC_OK,
+                accessTokenResponse.getStatusCode());
+        assertNotNull("Access token should be present", accessTokenResponse.getAccessToken());
+        assertFalse("Access token should not be empty", accessTokenResponse.getAccessToken().isEmpty());
     }
 }

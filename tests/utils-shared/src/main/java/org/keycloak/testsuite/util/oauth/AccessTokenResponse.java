@@ -1,10 +1,15 @@
 package org.keycloak.testsuite.util.oauth;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 
@@ -19,6 +24,8 @@ public class AccessTokenResponse extends AbstractHttpResponse {
     private String refreshToken;
     private String scope;
     private String sessionState;
+    private List<AuthorizationDetailsJSONRepresentation> authorizationDetails;
+    private Map<String, Object> responseJson;
 
     private Map<String, Object> otherClaims;
 
@@ -27,8 +34,8 @@ public class AccessTokenResponse extends AbstractHttpResponse {
     }
 
     protected void parseContent() throws IOException {
-        @SuppressWarnings("unchecked")
         Map<String, Object> responseJson = asJson(Map.class);
+        this.responseJson = responseJson;
 
         otherClaims = new HashMap<>();
 
@@ -60,6 +67,11 @@ public class AccessTokenResponse extends AbstractHttpResponse {
                     break;
                 case OAuth2Constants.REFRESH_TOKEN:
                     refreshToken = (String) entry.getValue();
+                    break;
+                case OAuth2Constants.AUTHORIZATION_DETAILS:
+                    var valJson = JsonSerialization.valueAsString(entry.getValue());
+                    var arr = JsonSerialization.valueFromString(valJson, AuthorizationDetailsJSONRepresentation[].class);
+                    authorizationDetails = Arrays.asList(arr);
                     break;
                 default:
                     otherClaims.put(entry.getKey(), entry.getValue());
@@ -108,4 +120,26 @@ public class AccessTokenResponse extends AbstractHttpResponse {
         return otherClaims;
     }
 
+    public List<AuthorizationDetailsJSONRepresentation> getAuthorizationDetails() {
+        return authorizationDetails;
+    }
+
+    /**
+     * Get authorization details as OID4VC-specific response objects.
+     * This is useful when you need to access OID4VC-specific fields like credential_identifiers.
+     *
+     * @return a list of authorization details, or an empty list if none are present.
+     */
+    public List<OID4VCAuthorizationDetail> getOid4vcAuthorizationDetails() {
+        return getAuthorizationDetails(OID4VCAuthorizationDetail.class);
+    }
+
+    private <ADR extends AuthorizationDetailsJSONRepresentation> List<ADR> getAuthorizationDetails(Class<ADR> clazz) {
+        if (authorizationDetails == null) {
+            return null;
+        }
+        return authorizationDetails.stream()
+                .map(authzResponse -> authzResponse.asSubtype(clazz))
+                .toList();
+    }
 }

@@ -10,6 +10,7 @@ import { continueNext, createClient, save } from "./utils.ts";
 import {
   assertKeyForCodeExchangeInput,
   selectKeyForCodeExchangeInput,
+  toggleLogoutConfirmation,
 } from "./details.ts";
 
 test.describe.serial("Clients details test", () => {
@@ -69,6 +70,7 @@ test.describe.serial("Clients details test", () => {
   test("Should be able to update a client", async ({ page }) => {
     await clickTableRowItem(page, clientId);
     await selectKeyForCodeExchangeInput(page, "S256");
+    await toggleLogoutConfirmation(page);
     await save(page);
     await assertNotificationMessage(page, "Client successfully updated");
     await assertKeyForCodeExchangeInput(page, "S256");

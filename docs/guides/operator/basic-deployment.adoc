@@ -125,6 +125,11 @@ kubectl create secret tls example-tls-secret --cert certificate.pem --key key.pe
 
 To deploy {project_name}, you create a Custom Resource (CR) based on the Keycloak Custom Resource Definition (CRD).
 
+[NOTE]
+====
+If you are on OpenShift, you cannot use wildcard certificates on passthrough Routes with HTTP/2 enabled. The following Keycloak CR on OpenShift if you are using a wildcard certificate with the default IngressClass, creates such a Route. In this situation, modify the yaml based on "Accessing the {project_name} deployment" later in this topic to use TLS Termination or an OpenShift re-encrypt Route.
+====
+
 Consider storing the Database credentials in a separate Secret. Enter the following commands:
 [source,bash]
 ----

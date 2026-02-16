@@ -17,7 +17,11 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import org.keycloak.common.util.KeycloakUriBuilder;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 
 /**
  * Holds all information required to build a uri to a credentials offer.
@@ -45,5 +49,10 @@ public class CredentialOfferURI {
     public CredentialOfferURI setNonce(String nonce) {
         this.nonce = nonce;
         return this;
+    }
+
+    @JsonIgnore
+    public String getCredentialOfferUri() {
+        return KeycloakUriBuilder.fromUri(issuer).path(nonce).build().toString();
     }
 }

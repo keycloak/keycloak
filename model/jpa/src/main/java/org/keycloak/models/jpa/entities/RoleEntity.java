@@ -17,21 +17,15 @@
 
 package org.keycloak.models.jpa.entities;
 
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
@@ -66,6 +60,7 @@ import org.hibernate.annotations.Nationalized;
         @NamedQuery(name="searchForRealmRoles", query="select role from RoleEntity role where role.clientRole = false and role.realmId = :realm and ( lower(role.name) like :search or lower(role.description) like :search ) order by role.name"),
         @NamedQuery(name="getRoleIdsFromIdList", query="select role.id from RoleEntity role where role.realmId = :realm and role.id in :ids order by role.name ASC"),
         @NamedQuery(name="getRoleIdsByNameContainingFromIdList", query="select role.id from RoleEntity role where role.realmId = :realm and lower(role.name) like lower(concat('%',:search,'%')) and role.id in :ids order by role.name ASC"),
+        @NamedQuery(name="getChildRoles", query="select r from RoleEntity r join CompositeRoleEntity c on r.id = c.childRole.id where c.parentRole.id = :parentRoleId"),
 })
 
 public class RoleEntity {
@@ -94,13 +89,6 @@ public class RoleEntity {
     // Hack to ensure that either name+client or name+realm are unique. Needed due to MS-SQL as it don't allow multiple NULL values in the column, which is part of constraint
     @Column(name="CLIENT_REALM_CONSTRAINT", length = 36)
     private String clientRealmConstraint;
-
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {})
-    @JoinTable(name = "COMPOSITE_ROLE", joinColumns = @JoinColumn(name = "COMPOSITE"), inverseJoinColumns = @JoinColumn(name = "CHILD_ROLE"))
-    private Set<RoleEntity> compositeRoles;
-
-    @ManyToMany(mappedBy = "compositeRoles", fetch = FetchType.LAZY, cascade = {})
-    private Set<RoleEntity> parentRoles;
 
     // Explicitly not using OrphanRemoval as we're handling the removal manually through HQL but at the same time we still
     // want to remove elements from the entity's collection in a manual way. Without this, Hibernate would do a duplicit
@@ -152,28 +140,6 @@ public class RoleEntity {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Set<RoleEntity> getCompositeRoles() {
-        if (compositeRoles == null) {
-            compositeRoles = new HashSet<>();
-        }
-        return compositeRoles;
-    }
-
-    public Set<RoleEntity> getParentRoles() {
-        if (parentRoles == null) {
-            parentRoles = new HashSet<>();
-        }
-        return parentRoles;
-    }
-
-    public void setParentRoles(Set<RoleEntity> parentRoles) {
-        this.parentRoles = parentRoles;
-    }
-
-    public void setCompositeRoles(Set<RoleEntity> compositeRoles) {
-        this.compositeRoles = compositeRoles;
     }
 
     public boolean isClientRole() {

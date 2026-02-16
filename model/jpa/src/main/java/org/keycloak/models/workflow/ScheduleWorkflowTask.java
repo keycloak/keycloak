@@ -9,12 +9,11 @@ import org.jboss.logging.Logger;
 final class ScheduleWorkflowTask extends WorkflowTransactionalTask {
 
     private static final Logger log = Logger.getLogger(ScheduleWorkflowTask.class);
-
-    private final DefaultWorkflowExecutionContext workflowContext;
+    private final DefaultWorkflowExecutionContext context;
 
     ScheduleWorkflowTask(DefaultWorkflowExecutionContext context) {
         super(context.getSession());
-        this.workflowContext = context;
+        this.context = context;
     }
 
     @Override
@@ -27,12 +26,12 @@ final class ScheduleWorkflowTask extends WorkflowTransactionalTask {
             return;
         }
 
-
+        DefaultWorkflowExecutionContext workflowContext = new DefaultWorkflowExecutionContext(session, this.context);
         Workflow workflow = workflowContext.getWorkflow();
         WorkflowEvent event = workflowContext.getEvent();
         WorkflowStep firstStep = workflow.getSteps().findFirst().orElseThrow(() -> new WorkflowInvalidStateException("No steps found for workflow " + workflow.getName()));
         log.debugf("Scheduling first step '%s' of workflow '%s' for resource %s based on on event %s with notBefore %d",
-                firstStep.getProviderId(), workflow.getName(), event.getResourceId(), event.getOperation(), workflow.getNotBefore());
+                firstStep.getProviderId(), workflow.getName(), event.getResourceId(), event.getEventProviderId(), workflow.getNotBefore());
         String originalAfter = firstStep.getAfter();
         try {
             firstStep.setAfter(workflow.getNotBefore());
@@ -46,8 +45,8 @@ final class ScheduleWorkflowTask extends WorkflowTransactionalTask {
 
     @Override
     public String toString() {
-        WorkflowEvent event = workflowContext.getEvent();
-        return "eventType=" + event.getOperation() +
+        WorkflowEvent event = context.getEvent();
+        return "eventType=" + event.getEventProviderId() +
                 ",resourceType=" + event.getResourceType() +
                 ",resourceId=" + event.getResourceId();
     }

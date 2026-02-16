@@ -33,6 +33,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
@@ -44,11 +45,13 @@ import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -56,12 +59,25 @@ import org.junit.Test;
  */
 public class NonceEndpointTest extends OID4VCIssuerEndpointTest {
 
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
+
     @Test
     public void testGetCNonce() throws Exception {
+        // Clear events before nonce request
+        events.clear();
+
         URI baseUri = RealmsResource.realmBaseUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT)).build(
                 AbstractTestRealmKeycloakTest.TEST_REALM_NAME,
                 OID4VCLoginProtocolFactory.PROTOCOL_ID);
         String cNonce = getCNonce();
+
+        // Verify CREDENTIAL_NONCE_REQUEST event was fired (unauthenticated endpoint)
+        events.expect(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST)
+                .client((String) null)
+                .user((String) null)
+                .session((String) null)
+                .assertEvent();
 
         URI oid4vcUri;
         UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
@@ -100,6 +116,9 @@ public class NonceEndpointTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testDPoPNonceHeaderPresent() throws Exception {
+        // Clear events before nonce request
+        events.clear();
+
         UriBuilder uriBuilder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
         URI oid4vcBaseUri = RealmsResource.protocolUrl(uriBuilder).build(AbstractTestRealmKeycloakTest.TEST_REALM_NAME,
                 OID4VCLoginProtocolFactory.PROTOCOL_ID);
@@ -111,6 +130,12 @@ public class NonceEndpointTest extends OID4VCIssuerEndpointTest {
             Invocation.Builder requestBuilder = target.request(MediaType.APPLICATION_JSON_TYPE);
 
             try (Response response = requestBuilder.post(null)) {
+                // Verify CREDENTIAL_NONCE_REQUEST event was fired (unauthenticated endpoint)
+                events.expect(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST)
+                        .client((String) null)
+                        .user((String) null)
+                        .session((String) null)
+                        .assertEvent();
                 // Verify successful response
                 Assert.assertEquals("Nonce endpoint should return 200 OK",
                         Response.Status.OK.getStatusCode(), response.getStatus());

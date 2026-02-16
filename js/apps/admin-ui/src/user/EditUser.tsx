@@ -49,6 +49,7 @@ import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserSessions } from "./UserSessions";
 import { UserEvents } from "../events/UserEvents";
+import { UserWorkflows } from "./UserWorkflows";
 import {
   UIUserRepresentation,
   UserFormFields,
@@ -59,6 +60,7 @@ import {
 import { UserParams, UserTab, toUser } from "./routes/User";
 import { toUsers } from "./routes/Users";
 import { isLightweightUser } from "./utils";
+import { extractUserProfileErrorMessages } from "./utils/user-profile";
 
 import "./user-section.css";
 import { AdminEvents } from "../events/AdminEvents";
@@ -118,6 +120,7 @@ export default function EditUser() {
   );
   const sessionsTab = useRoutableTab(toTab("sessions"));
   const eventsTab = useRoutableTab(toTab("events"));
+  const workflowsTab = useRoutableTab(toTab("workflows"));
 
   useFetch(
     async () =>
@@ -193,14 +196,19 @@ export default function EditUser() {
             (field, params) => {
               if (field.startsWith("attributes.")) {
                 const attributeName = field.substring("attributes.".length);
+                let isUnmanagedAttribute = false;
                 (data.unmanagedAttributes as KeyValueType[]).forEach(
                   (attr, index) => {
                     if (attr.key === attributeName) {
                       unmanagedAttributeErrors[index] = params;
                       someUnmanagedAttributeError = true;
+                      isUnmanagedAttribute = true;
                     }
                   },
                 );
+                if (!isUnmanagedAttribute) {
+                  form.setError(field, params);
+                }
               } else {
                 form.setError(field, params);
               }
@@ -219,7 +227,8 @@ export default function EditUser() {
             param,
           ) => t(key as string, param as any)) as TFunction);
         }
-        addError("userNotSaved", "");
+        const errorMessage = extractUserProfileErrorMessages(error, t);
+        addError("userNotSaved", errorMessage);
       } else {
         addError("userCreateError", error);
       }
@@ -450,9 +459,18 @@ export default function EditUser() {
                       eventKey="adminEvents"
                       title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
                     >
-                      <AdminEvents resourcePath={`users/${user.id}`} />
+                      <AdminEvents resourcePath={`users/${user.id}*`} />
                     </Tab>
                   </Tabs>
+                </Tab>
+              )}
+              {isFeatureEnabled(Feature.Workflows) && (
+                <Tab
+                  data-testid="workflows-tab"
+                  title={<TabTitleText>{t("workflows")}</TabTitleText>}
+                  {...workflowsTab}
+                >
+                  <UserWorkflows user={user.id} />
                 </Tab>
               )}
             </RoutableTabs>

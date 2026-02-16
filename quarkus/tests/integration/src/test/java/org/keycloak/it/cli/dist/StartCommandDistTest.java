@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -114,7 +113,7 @@ public class StartCommandDistTest {
     @Test
     @Launch({ "--profile=dev", "start",  "--db=dev-file" })
     void failUsingDevProfile(CLIResult cliResult) {
-        assertTrue(cliResult.getErrorOutput().contains("You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."),
+        assertTrue(cliResult.getErrorOutput().contains("You can not 'start' the server in development mode. Please re-build the server first, using '" + KeycloakDistribution.SCRIPT_CMD + " build' for the default production mode."),
                 () -> "The Output:\n" + cliResult.getErrorOutput() + "doesn't contains the expected string.");
     }
 
@@ -128,7 +127,7 @@ public class StartCommandDistTest {
     @Test
     @Launch({ "--profile=dev", "start", "--http-enabled=true", "--hostname-strict=false" })
     void failIfAutoBuildUsingDevProfile(CLIResult cliResult) {
-        assertThat(cliResult.getErrorOutput(), containsString("You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."));
+        assertThat(cliResult.getErrorOutput(), containsString("You can not 'start' the server in development mode. Please re-build the server first, using '" + KeycloakDistribution.SCRIPT_CMD + " build' for the default production mode."));
         assertEquals(4, cliResult.getErrorStream().size());
     }
 
@@ -165,8 +164,7 @@ public class StartCommandDistTest {
         cliResult.assertMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
         cliResult.assertMessage("Server configuration updated and persisted. Run the following command to review the configuration:");
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " show-config");
-        cliResult.assertMessage("Next time you run the server, just run:");
-        cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start --http-enabled=true --hostname-strict=false " + OPTIMIZED_BUILD_OPTION_LONG);
+        cliResult.assertMessage("Next time you run the server, just add --optimized to the command to ensure this build is used.");
         assertFalse(cliResult.getOutput().contains("--metrics-enabled"));
         assertTrue(cliResult.getErrorOutput().isBlank(), cliResult.getErrorOutput());
     }

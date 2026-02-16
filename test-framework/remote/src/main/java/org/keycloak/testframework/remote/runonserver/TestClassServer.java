@@ -48,7 +48,7 @@ public class TestClassServer {
             Headers respHeaders = httpExchange.getResponseHeaders();
             respHeaders.set("Content-Type", "application/x-java-applet;charset=utf-8");
 
-            if (!isPermittedPackage(resource) || !resource.endsWith(".class")) {
+            if (!isPermittedPackage(resource) || !(resource.endsWith(".class") || resource.endsWith(".json"))) {
                 httpExchange.sendResponseHeaders(403, 0);
             } else {
                 try (InputStream resourceStream = TestClassServer.class.getResourceAsStream(resource)) {

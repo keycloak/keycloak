@@ -170,7 +170,7 @@ To specify your own cache configuration file, enter this command:
 
 <@kc.start parameters="--cache-config-file=my-cache-file.xml"/>
 
-The configuration file is relative to the `conf/` directory.
+The configuration file can be an absolute path or path relative to the `conf/` directory.
 
 === Modifying cache configuration defaults
 

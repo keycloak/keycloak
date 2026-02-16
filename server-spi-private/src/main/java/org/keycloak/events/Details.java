@@ -39,7 +39,9 @@ public interface Details {
     String AUTH_TYPE = "auth_type";
     String AUTH_METHOD = "auth_method";
     String IDENTITY_PROVIDER = "identity_provider";
+    String IDENTITY_PROVIDER_ISSUER = "identity_provider_issuer";
     String IDENTITY_PROVIDER_USERNAME = "identity_provider_identity";
+    String IDENTITY_PROVIDER_USER_ID = "identity_provider_user_id";
     String IDENTITY_PROVIDER_BROKER_SESSION_ID = "identity_provider_broker_session_id";
     String REGISTER_METHOD = "register_method";
     String USERNAME = "username";
@@ -115,5 +117,13 @@ public interface Details {
     String CLIENT_POLICY_ERROR = "client_policy_error";
     String CLIENT_POLICY_ERROR_DETAIL = "client_policy_error_detail";
 
-    String EXPIRED_DETAIL = "expired";
+    String USER_SESSION_EXPIRED_REASON = "user_session_expired";
+    String INVALID_USER_SESSION_REMEMBER_ME_REASON = "invalid_user_session_remember_me";
+
+    // OID4VCI (OpenID for Verifiable Credential Issuance) related details
+    String VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED = "verifiable_credential_pre_authorized";
+    String VERIFIABLE_CREDENTIAL_TARGET_CLIENT_ID = "verifiable_credential_target_client_id";
+    String VERIFIABLE_CREDENTIAL_TARGET_USER_ID = "verifiable_credential_target_user_id";
+    String VERIFIABLE_CREDENTIAL_FORMAT = "verifiable_credential_format";
+    String VERIFIABLE_CREDENTIALS_ISSUED = "verifiable_credentials_issued";
 }

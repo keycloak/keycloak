@@ -23,13 +23,18 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.events.Details;
+import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.apache.http.NameValuePair;
@@ -46,6 +51,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * Test for "client_secret_post" client authentication (clientID + clientSecret sent in the POST body instead of in "Authorization: Basic" header)
@@ -88,6 +94,64 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
         assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
         assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
+    }
+
+    @Test
+    public void testBasicAuthenticationNotAllowedWhenPostRequested() {
+        // Update client to request client_secret_post client authentication method
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), oauth.getClientId());
+        ClientRepresentation clientRep = client.toRepresentation();
+        OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRep).setClientSecretAuthenticationAllowedMethod(OIDCLoginProtocol.CLIENT_SECRET_POST);
+        client.update(clientRep);
+
+        try {
+            // client_secret_basic should not work
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse errorResponse = oauth.doAccessTokenRequest(code);
+            assertNull(errorResponse.getAccessToken());
+            assertEquals("Invalid method used to get client secret. Client requires method 'client_secret_post' to obtain client secret from the request", errorResponse.getErrorDescription());
+
+            // Try with client_secret_post. Should work
+            oauth.openLoginForm();
+            code = oauth.parseLoginResponse().getCode();
+
+            AccessTokenResponse response = doAccessTokenRequestPostAuth(code, "password");
+            assertEquals(200, response.getStatusCode());
+        } finally {
+            // Revert
+            OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRep).setClientSecretAuthenticationAllowedMethod(null);
+            client.update(clientRep);
+        }
+    }
+
+    @Test
+    public void testPostAuthenticationNotAllowedWhenBasicRequested() {
+        // Update client to request client_secret_basic client authentication method
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), oauth.getClientId());
+        ClientRepresentation clientRep = client.toRepresentation();
+        OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRep).setClientSecretAuthenticationAllowedMethod(OIDCLoginProtocol.CLIENT_SECRET_BASIC);
+        client.update(clientRep);
+
+        try {
+            // client_secret_post should not work
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse errorResponse = doAccessTokenRequestPostAuth(code, "password");
+            assertNull(errorResponse.getAccessToken());
+            assertEquals("Invalid method used to get client secret. Client requires method 'client_secret_basic' to obtain client secret from the request", errorResponse.getErrorDescription());
+
+            // Try with client_secret_basic. Should work
+            oauth.openLoginForm();
+            code = oauth.parseLoginResponse().getCode();
+
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+            assertEquals(200, response.getStatusCode());
+        } finally {
+            // Revert
+            OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRep).setClientSecretAuthenticationAllowedMethod(null);
+            client.update(clientRep);
+        }
     }
 
 

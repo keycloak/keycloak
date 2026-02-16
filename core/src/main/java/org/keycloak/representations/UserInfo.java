@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.keycloak.json.StringOrArrayDeserializer;
 import org.keycloak.json.StringOrArraySerializer;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -95,9 +96,6 @@ public class UserInfo {
 
     @JsonProperty("phone_number_verified")
     protected Boolean phoneNumberVerified;
-
-    @JsonProperty("address")
-    protected AddressClaimSet address;
 
     @JsonProperty("updated_at")
     protected Long updatedAt;
@@ -277,12 +275,30 @@ public class UserInfo {
         this.phoneNumberVerified = phoneNumberVerified;
     }
 
-    public AddressClaimSet getAddress() {
-        return address;
+    @JsonIgnore
+    public Map<String, Object> getAddressClaimsMap() {
+        Object value = getOtherClaims().get(IDToken.ADDRESS);
+        return value instanceof Map ? (Map<String, Object>) value : null;
     }
 
+    @JsonIgnore
+    public AddressClaimSet getAddress() {
+        Object value = getOtherClaims().get(IDToken.ADDRESS);
+        if (value == null) {
+            return null;
+        }
+
+        return JsonSerialization.mapper.convertValue(value, AddressClaimSet.class);
+    }
+
+    @JsonIgnore
     public void setAddress(AddressClaimSet address) {
-        this.address = address;
+        getOtherClaims().put(IDToken.ADDRESS, JsonSerialization.mapper.convertValue(address, Map.class));
+    }
+
+    @JsonIgnore
+    public void setAddress(Map<String, Object> address) {
+        getOtherClaims().put(IDToken.ADDRESS, address);
     }
 
     public Long getUpdatedAt() {

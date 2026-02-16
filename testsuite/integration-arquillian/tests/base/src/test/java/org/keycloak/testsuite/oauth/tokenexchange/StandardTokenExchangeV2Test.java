@@ -47,6 +47,7 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -59,6 +60,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.GrantTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.DownscopeAssertionGrantEnforcerExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.JWTClaimEnforcerExecutor;
+import org.keycloak.services.clientpolicy.executor.JWTClaimEnforcerExecutorFactory;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
@@ -1107,6 +1110,58 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
         assertEquals("Scopes [default-scope1] not present in the initial access token [optional-scope2, profile, email]",
                 response.getErrorDescription());
+    }
+
+    @Test
+    public void testJWTClaimClientPolicies() throws Exception {
+        testJWTClaimClientPolicies("username", "testuser", "testuser", true, null);
+        testJWTClaimClientPolicies("username", "puppa", "testuser", false, "Value for claim 'username' not allowed");
+        testJWTClaimClientPolicies("username", "admin", "^(admin|service|test-[0-9]+)$", true, null);
+        testJWTClaimClientPolicies("username", "test-12345", "^(admin|service|test-[0-9]+)$", true, null);
+        testJWTClaimClientPolicies("username", "unknown-username", "^(admin|service|test-[0-9]+)$", false, "Value for claim 'username' not allowed");
+        testJWTClaimClientPolicies("username", "testuser", null, true, "Value for claim 'username' not allowed");
+        testJWTClaimClientPolicies("username", null, null, false, "Required claim 'username' is missing from the token");
+    }
+
+    public void testJWTClaimClientPolicies(String claimName, String claimValue, String executorRegex, boolean success, String errorMessage) throws Exception {
+        ClientAttributeUpdater.forClient(adminClient, TEST, "subject-client")
+                .protocolMappers()
+                .add(ModelToRepresentation.toRepresentation(HardcodedClaim.create(claimName, claimName, claimValue, "String", true, true, true)))
+                .update();
+
+        JWTClaimEnforcerExecutor.Configuration claimsConfig = new JWTClaimEnforcerExecutor.Configuration();
+        claimsConfig.setClaimName(claimName);
+        claimsConfig.setAllowedValue(executorRegex);
+
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile((new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Profile")
+                .addExecutor(JWTClaimEnforcerExecutorFactory.PROVIDER_ID, claimsConfig)
+                .toRepresentation()).toString();
+        updateProfiles(json);
+
+        // register policy with condition on token exchange grant
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Client Scope Policy", Boolean.TRUE)
+                        .addCondition(GrantTypeConditionFactory.PROVIDER_ID,
+                                createGrantTypeConditionConfig(List.of(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()).toString();
+        updatePolicies(json);
+
+        String accessToken  = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+
+        if (success) {
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        }
+        else {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+            assertEquals(errorMessage, response.getErrorDescription());
+        }
+
+        ClientAttributeUpdater.forClient(adminClient, TEST, "subject-client").protocolMappers().removeByName(claimName).update();
+        revertToBuiltinProfiles();
+        revertToBuiltinPolicies();
     }
 
     @Test

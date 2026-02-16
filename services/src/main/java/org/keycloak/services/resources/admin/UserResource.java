@@ -62,7 +62,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.credential.CredentialProvider;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
@@ -91,6 +90,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.SystemClientUtil;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -706,9 +706,13 @@ public class UserResource {
     public Response deleteUser() {
         auth.users().requireManage(user);
 
+        UserRepresentation userRepresentation = new UserRepresentation();
+        userRepresentation.setId(user.getId());
+        userRepresentation.setUsername(user.getUsername());
+
         boolean removed = new UserManager(session).removeUser(realm, user);
         if (removed) {
-            adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+            adminEvent.operation(OperationType.DELETE).representation(userRepresentation).resourcePath(session.getContext().getUri()).success();
             return Response.noContent().build();
         } else {
             throw ErrorResponse.error("User couldn't be deleted", Status.BAD_REQUEST);
@@ -820,15 +824,11 @@ public class UserResource {
     }
 
     private CredentialModel decorateCredentialForPresentation(CredentialModel credential) {
-        CredentialProvider credentialProvider = AuthenticatorUtil.getCredentialProviders(session)
+        return AuthenticatorUtil.getCredentialProviders(session)
                 .filter(p -> p.supportsCredentialType(credential.getType()))
-                .findFirst().orElse(null);
-        if (credentialProvider == null) {
-            logger.warnf("Credential Provider not found for credential of type '%s'", credential.getType());
-            return credential;
-        }
-
-        return credentialProvider.getCredentialForPresentationFromModel(credential);
+                .findFirst()
+                .map(p -> p.getCredentialForPresentationFromModel(credential))
+                .orElse(credential);
     }
 
     /**
@@ -1176,6 +1176,9 @@ public class UserResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
+        if (Organizations.isOrganizationGroup(group)) {
+            throw ErrorResponse.error("Cannot access organization related group via non Organization API.", Status.BAD_REQUEST);
+        }
         auth.groups().requireManageMembership(group);
 
         try {
@@ -1214,6 +1217,9 @@ public class UserResource {
         GroupModel group = session.groups().getGroupById(realm, groupId);
         if (group == null) {
             throw new NotFoundException("Group not found");
+        }
+        if (Organizations.isOrganizationGroup(group)) {
+            throw ErrorResponse.error("Cannot access organization related group via non Organization API.", Status.BAD_REQUEST);
         }
         auth.groups().requireManageMembership(group);
 

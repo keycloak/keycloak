@@ -1,6 +1,10 @@
 package org.keycloak.testframework.clustering;
 
+import java.util.List;
+
 import org.keycloak.testframework.annotations.InjectLoadBalancer;
+import org.keycloak.testframework.injection.DependenciesBuilder;
+import org.keycloak.testframework.injection.Dependency;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
@@ -41,5 +45,10 @@ public class LoadBalancerSupplier implements Supplier<LoadBalancer, InjectLoadBa
     @Override
     public KeycloakServerConfigBuilder intercept(KeycloakServerConfigBuilder serverConfig, InstanceContext<LoadBalancer, InjectLoadBalancer> instanceContext) {
         return serverConfig.option("hostname", LoadBalancer.HOSTNAME);
+    }
+
+    @Override
+    public List<Dependency> getDependencies(RequestedInstance<LoadBalancer, InjectLoadBalancer> instanceContext) {
+        return DependenciesBuilder.create(KeycloakServer.class).build();
     }
 }

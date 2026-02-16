@@ -23,3 +23,4 @@ multi-cluster/operate-site-offline
 multi-cluster/operate-site-online
 multi-cluster/operate-synchronize
 multi-cluster/health-checks
+multi-cluster/upgrades

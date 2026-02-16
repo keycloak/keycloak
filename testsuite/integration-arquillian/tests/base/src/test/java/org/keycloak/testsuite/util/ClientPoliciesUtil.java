@@ -21,12 +21,9 @@ import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.SecureRandom;
 import java.security.interfaces.ECPublicKey;
-import java.security.spec.ECGenParameterSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -468,12 +465,7 @@ public final class ClientPoliciesUtil {
     }
 
     public static KeyPair generateEcdsaKey(String ecDomainParamName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
-        SecureRandom randomGen = new SecureRandom();
-        ECGenParameterSpec ecSpec = new ECGenParameterSpec(ecDomainParamName);
-        keyGen.initialize(ecSpec, randomGen);
-        KeyPair keyPair = keyGen.generateKeyPair();
-        return keyPair;
+        return org.keycloak.common.util.KeyUtils.generateEcKeyPair(ecDomainParamName);
     }
 
     public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, String algorithm, JWSHeader jwsHeader, PrivateKey privateKey, String accessToken) throws IOException {

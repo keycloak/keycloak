@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
@@ -37,6 +38,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -63,8 +65,25 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
+        context.attempted();
+
         try {
+            ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
+            JsonWebToken jwt = clientAssertionState.getToken();
+
+            if (jwt != null) {
+                // Ignore for client assertions signed by third-parties
+                if (!Objects.equals(jwt.getIssuer(), jwt.getSubject())) {
+                    return;
+                }
+
+                if (clientAssertionState.getClient() == null) {
+                    clientAssertionState.setClient(context.getRealm().getClientByClientId(jwt.getSubject()));
+                }
+            }
+
             JWTClientValidator validator = new JWTClientValidator(context, this::verifySignature, getId());
+
             if (!validator.validate()) return;
 
             context.success();
@@ -153,7 +172,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     }
 
     @Override
-    public Map<String, Object> getAdapterConfiguration(ClientModel client) {
+    public Map<String, Object> getAdapterConfiguration(KeycloakSession session, ClientModel client) {
         Map<String, Object> props = new HashMap<>();
         props.put("client-keystore-file", "REPLACE WITH THE LOCATION OF YOUR KEYSTORE FILE");
         props.put("client-keystore-type", "jks");

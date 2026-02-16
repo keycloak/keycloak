@@ -140,6 +140,8 @@ public class Messages {
 
     public static final String ACCOUNT_UPDATED = "accountUpdatedMessage";
 
+    public static final String ACCOUNT_UPDATED_TITLE = "accountUpdatedTitle";
+
     public static final String ACCOUNT_PASSWORD_UPDATED = "accountPasswordUpdatedMessage";
 
     public static final String NO_ACCESS = "noAccessMessage";
@@ -176,6 +178,8 @@ public class Messages {
     public static final String NO_RELAY_STATE_IN_RESPONSE = "noRelayStateInResponseMessage";
 
     public static final String IDENTITY_PROVIDER_ALREADY_LINKED = "identityProviderAlreadyLinkedMessage";
+
+    public static final String IDENTITY_PROVIDER_ALREADY_LINKED_TO_CURRENT_USER = "identityProviderAlreadyLinkedToCurrentUserMessage";
 
     public static final String INSUFFICIENT_PERMISSION = "insufficientPermissionMessage";
 
@@ -347,4 +351,10 @@ public class Messages {
     public static final String CONFIRM_ORGANIZATION_MEMBERSHIP = "organization.confirm-membership";
     public static final String CONFIRM_ORGANIZATION_MEMBERSHIP_TITLE = "organization.confirm-membership.title";
     public static final String REGISTER_ORGANIZATION_MEMBER = "organization.member.register.title";
+
+   // Client sessions
+    public static final String CLIENT_IDLE_REMEMBERME = "clientIdleExceedsRealmRememberMeIdle";
+    public static final String CLIENT_IDLE = "clientSessionIdleTimeoutExceedsRealm";
+    public static final String CLIENT_MAXLIFE_SPAN = "clientSessionMaxLifespanExceedsRealm";
+    public static final String CLIENT_MAXLIFESPAN_REMEMBERME = "clientSessionMaxLifespanExceedsRealmRememberMeMaxSpan";
 }

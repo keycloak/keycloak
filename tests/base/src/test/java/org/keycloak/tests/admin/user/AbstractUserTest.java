@@ -22,6 +22,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -41,6 +42,7 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.tests.utils.runonserver.RunHelpers;
@@ -50,7 +52,6 @@ import org.keycloak.util.JsonSerialization;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.openqa.selenium.WebDriver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -66,7 +67,7 @@ public class AbstractUserTest {
     AdminEvents adminEvents;
 
     @InjectWebDriver
-    WebDriver driver;
+    ManagedWebDriver driver;
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
@@ -210,7 +211,10 @@ public class AbstractUserTest {
         try (Response response = managedRealm.admin().users().delete(id)) {
             assertEquals(204, response.getStatus());
         }
-        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.userResourcePath(id), ResourceType.USER);
+        AdminEventRepresentation event = adminEvents.poll();
+        AdminEventAssertion.assertEvent(event, OperationType.DELETE, AdminEventPaths.userResourcePath(id), ResourceType.USER);
+        Assertions.assertNotNull(event.getRepresentation());
+        Assertions.assertTrue(event.getRepresentation().contains(id));
     }
 
     protected void addFederatedIdentity(String keycloakUserId, String identityProviderAlias1,

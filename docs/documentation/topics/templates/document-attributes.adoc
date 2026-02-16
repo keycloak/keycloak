@@ -58,13 +58,14 @@
 :apidocs_link: https://www.keycloak.org/docs/{project_version}/api_documentation/
 :adminguide_email_name: Configuring email for a realm
 :adminguide_email_link: {adminguide_link}#_email
+:server_guide_base_link: https://www.keycloak.org/server
 :allproviderconfigguide_name: All provider configuration Guide
-:allproviderconfigguide_link: https://www.keycloak.org/server/all-provider-config
+:allproviderconfigguide_link: {server_guide_base_link}/all-provider-config
 :bootstrapadminrecovery_name: Admin Bootstrap and Recovery
-:bootstrapadminrecovery_link: https://www.keycloak.org/server/bootstrap-admin-recovery
-:client_certificate_lookup_link: https://www.keycloak.org/server/reverseproxy#_enabling_client_certificate_lookup
+:bootstrapadminrecovery_link: {server_guide_base_link}/bootstrap-admin-recovery
+:client_certificate_lookup_link: {server_guide_base_link}/reverseproxy#_enabling_client_certificate_lookup
 :databaseguide_name: Configuring the database
-:databaseguide_link: https://www.keycloak.org/server/db
+:databaseguide_link: {server_guide_base_link}/db
 :developerguide_name: Server Developer Guide
 :developerguide_name_short: Server Developer
 :developerguide_link: {project_doc_base_url}/server_development/
@@ -89,6 +90,8 @@
 :operatorguide_link: https://www.keycloak.org/guides#operator
 :tracingguide_name: Root cause analysis with tracing
 :tracingguide_link: https://www.keycloak.org/observability/tracing
+:telemetryguide_name: Centralize your observability stack with OpenTelemetry
+:telemetryguide_link: https://www.keycloak.org/observability/telemetry
 :upgradingguide_name: Upgrading Guide
 :upgradingguide_name_short: Upgrading
 :upgradingguide_link: {project_doc_base_url}/upgrading/
@@ -146,4 +149,5 @@
 :securing_apps_javascript_adapter_link: {securing_apps_base_link}/javascript-adapter
 :securing_apps_javascript_adapter_name: {project_name} Javascript adapter
 :securing_apps_token_exchange_link: {securing_apps_base_link}/token-exchange
+:securing_apps_dpop_link: {securing_apps_base_link}/dpop
 :securing_apps_token_exchange_name: Token exchange Documentation

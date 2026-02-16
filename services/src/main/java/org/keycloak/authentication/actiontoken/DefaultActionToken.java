@@ -157,17 +157,22 @@ public class DefaultActionToken extends DefaultActionTokenKey implements SingleU
      */
     public String serialize(KeycloakSession session, RealmModel realm, UriInfo uri) {
         String issuerUri = getIssuer(realm, uri);
+        String id = getId();
+
+        if (id == null) {
+            id = UUID.randomUUID().toString();
+        }
 
         this
           .issuedNow()
-          .id(UUID.randomUUID().toString())
+          .id(id)
           .issuer(issuerUri)
           .audience(issuerUri);
 
         return session.tokens().encode(this);
     }
 
-    private static String getIssuer(RealmModel realm, UriInfo uri) {
+    private String getIssuer(RealmModel realm, UriInfo uri) {
         return Urls.realmIssuer(uri.getBaseUri(), realm.getName());
     }
 

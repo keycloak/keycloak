@@ -279,6 +279,8 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
+        waitForPage(driver, "sign in to", true);
+        errorPage.assertCurrent();
         assertEquals("Account is disabled, contact your administrator.", errorPage.getError());
     }
 
@@ -536,12 +538,12 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
             RealmRepresentation realm = adminClient.realm(bc.providerRealmName()).toRepresentation();
             assertNotNull(realm);
-            realm.setAccessTokenLifespan(1);
+            realm.setAccessTokenLifespan(5);
             adminClient.realm(bc.providerRealmName()).update(realm);
             IdentityProviderRepresentation idp = adminClient.realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias()).toRepresentation();
             idp.getConfig().put("backchannelSupported", "false");
             adminClient.realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias()).update(idp);
-            Time.setOffset(2);
+            Time.setOffset(10);
 
             oauth.clientId("broker-app");
             loginPage.open(bc.consumerRealmName());

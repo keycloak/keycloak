@@ -26,6 +26,7 @@ package org.keycloak.protocol.oid4vc.model;
  */
 public enum ErrorType {
 
+    INVALID_CREDENTIAL_OFFER_REQUEST("invalid_credential_offer_request"),
     INVALID_CREDENTIAL_REQUEST("invalid_credential_request"),
     INVALID_TOKEN("invalid_token"),
     UNKNOWN_CREDENTIAL_CONFIGURATION("unknown_credential_configuration"),

@@ -54,7 +54,7 @@ public class Profile {
 
         ACCOUNT_V3("Account Console version 3", Type.DEFAULT, 3, Feature.ACCOUNT_API),
 
-        ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW, 1),
+        ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.DEPRECATED, 1),
 
         ADMIN_FINE_GRAINED_AUTHZ_V2("Fine-Grained Admin Permissions version 2", Type.DEFAULT, 2, Feature.AUTHORIZATION),
 
@@ -76,11 +76,11 @@ public class Profile {
 
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
 
-        TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1),
+        TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1, true, null, null),
         TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
         TOKEN_EXCHANGE_EXTERNAL_INTERNAL_V2("External to Internal Token Exchange version 2", Type.EXPERIMENTAL, 2),
 
-        JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.EXPERIMENTAL),
+        JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.PREVIEW),
 
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
@@ -129,7 +129,9 @@ public class Profile {
 
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
-        OPENTELEMETRY("OpenTelemetry Tracing", Type.DEFAULT),
+        OPENTELEMETRY("OpenTelemetry support", Type.DEFAULT),
+        OPENTELEMETRY_LOGS("OpenTelemetry Logs support", Type.PREVIEW, OPENTELEMETRY),
+        OPENTELEMETRY_METRICS("Micrometer to OpenTelemetry bridge support for metrics", Type.EXPERIMENTAL, OPENTELEMETRY),
 
         DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),
 
@@ -144,12 +146,12 @@ public class Profile {
 
         LOGOUT_ALL_SESSIONS_V1("Logout all sessions logs out only regular sessions", Type.DEPRECATED, 1),
 
-        ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
-        ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.PREVIEW, 2),
+        ROLLING_UPDATES_V1("Rolling Updates", Type.DEPRECATED, 1),
+        ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.DEFAULT, 2),
 
-        WORKFLOWS("Workflows", Type.EXPERIMENTAL),
+        WORKFLOWS("Workflows", Type.PREVIEW),
 
-        LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.PREVIEW),
+        LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.DEFAULT),
 
         DB_TIDB("TiDB database type", Type.EXPERIMENTAL),
 
@@ -170,32 +172,34 @@ public class Profile {
         private final BooleanSupplier isAvailable;
         private final FeatureUpdatePolicy updatePolicy;
         private final Set<Feature> dependencies;
+        private final boolean deprecated;
         private final int version;
 
         Feature(String label, Type type, Feature... dependencies) {
-            this(label, type, 1, null, null, dependencies);
+            this(label, type, 1, type == Type.DEPRECATED, null, null, dependencies);
         }
 
         Feature(String label, Type type, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
-            this(label, type, 1, null, updatePolicy, dependencies);
+            this(label, type, 1, type == Type.DEPRECATED, null, updatePolicy, dependencies);
         }
 
         Feature(String label, Type type, int version, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
-            this(label, type, version, null, updatePolicy, dependencies);
+            this(label, type, version, type == Type.DEPRECATED, null, updatePolicy, dependencies);
         }
 
         Feature(String label, Type type, int version, Feature... dependencies) {
-            this(label, type, version, null, null, dependencies);
+            this(label, type, version, type == Type.DEPRECATED, null, null, dependencies);
         }
 
         Feature(String label, Type type, int version, BooleanSupplier isAvailable, Feature... dependencies) {
-            this(label, type, version, isAvailable, null, dependencies);
+            this(label, type, version, type == Type.DEPRECATED, isAvailable, null, dependencies);
         }
 
-        Feature(String label, Type type, int version, BooleanSupplier isAvailable, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
+        Feature(String label, Type type, int version, boolean deprecated, BooleanSupplier isAvailable, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
             this.label = label;
             this.type = type;
             this.version = version;
+            this.deprecated = type == Type.DEPRECATED || deprecated;
             this.isAvailable = isAvailable;
             this.updatePolicy = updatePolicy == null ? FeatureUpdatePolicy.ROLLING : updatePolicy;
             this.key = name().toLowerCase().replaceAll("_", "-");
@@ -250,6 +254,10 @@ public class Profile {
             return version;
         }
 
+        public boolean isDeprecated() {
+            return deprecated;
+        }
+
         public boolean isAvailable() {
             return isAvailable == null || isAvailable.getAsBoolean();
         }
@@ -260,11 +268,36 @@ public class Profile {
 
         public enum Type {
             // in priority order
+
+            /**
+             * Fully supported and enabled by default.
+             */
             DEFAULT("Default"),
+
+            /**
+             * Fully supported and disabled by default.
+             */
             DISABLED_BY_DEFAULT("Disabled by default"),
+
+            /**
+             * Fully supported and will be removed in a future major release.
+             */
             DEPRECATED("Deprecated"),
+
+            /**
+             * Not supported for production yet and not enabled by default.
+             * Usually with documentation and feature complete. Soon to be graduated to supported.
+             */
             PREVIEW("Preview"),
-            PREVIEW_DISABLED_BY_DEFAULT("Preview disabled by default"), // Preview features, which are not automatically enabled even with enabled preview profile (Needs to be enabled explicitly)
+
+            /**
+             * Preview features, which are not automatically enabled even with enabled preview profile (Needs to be enabled explicitly).
+             * This is no longer used and not explained in the current docs.
+             *
+             * @deprecated forRemoval, since 26.5
+             */
+            PREVIEW_DISABLED_BY_DEFAULT("Preview disabled by default"),
+
             EXPERIMENTAL("Experimental");
 
             private final String label;
@@ -279,7 +312,8 @@ public class Profile {
         }
     }
 
-    private static final Set<String> ESSENTIAL_FEATURES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(Feature.HOSTNAME_V2.getUnversionedKey())));
+    private static final Set<String> ESSENTIAL_FEATURES = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(Feature.HOSTNAME_V2.getUnversionedKey(), Feature.ROLLING_UPDATES_V2.getUnversionedKey())));
 
     private static final Logger logger = Logger.getLogger(Profile.class);
 
@@ -486,7 +520,7 @@ public class Profile {
     }
 
     public Set<Feature> getDeprecatedFeatures() {
-        return getFeatures(Feature.Type.DEPRECATED);
+        return features.keySet().stream().filter(Feature::isDeprecated).collect(Collectors.toSet());
     }
 
     public Set<Feature> getFeatures(Feature.Type type) {
@@ -522,12 +556,8 @@ public class Profile {
     }
 
     private void logUnsupportedFeatures(Feature.Type type, Set<Feature> checkedFeatures, Logger.Level level) {
-        Set<Feature.Type> checkedFeatureTypes = checkedFeatures.stream()
-                .map(Feature::getType)
-                .collect(Collectors.toSet());
-
         String enabledFeaturesOfType = features.entrySet().stream()
-                .filter(e -> e.getValue() && checkedFeatureTypes.contains(e.getKey().getType()))
+                .filter(e -> e.getValue() && checkedFeatures.contains(e.getKey()))
                 .map(e -> e.getKey().getVersionedKey()).sorted().collect(Collectors.joining(", "));
 
         if (!enabledFeaturesOfType.isEmpty()) {

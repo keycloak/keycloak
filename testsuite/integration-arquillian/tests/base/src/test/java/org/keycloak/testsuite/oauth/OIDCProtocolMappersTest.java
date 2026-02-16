@@ -72,8 +72,11 @@ import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.core.JsonParser;
 import org.hamcrest.CoreMatchers;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -132,6 +135,15 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         UserProfileUtil.enableUnmanagedAttributes(upResource);
     }
 
+    @After
+    public void cleanTestUserAttributes() {
+        UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+        UserRepresentation user = userResource.toRepresentation();
+        // rollback user-changes
+        user.setAttributes(new HashMap<>());
+        userResource.update(user);
+    }
+
 
     private void deleteMappers(ProtocolMappersResource protocolMappers) {
         ProtocolMapperRepresentation mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "Realm roles mapper");
@@ -187,8 +199,180 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    
-    public void testTokenMapping() throws Exception {
+    public void testAddressMappingWithAdditionalMapper() {
+        //throws an exception if the json contains a duplicate claim
+        JsonSerialization.mapper.enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
+        // prepare test
+        {
+            UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+            UserRepresentation user = userResource.toRepresentation();
+
+            user.singleAttribute("street", "5 Yawkey Way");
+            user.singleAttribute("locality", "Boston");
+            user.singleAttribute("region", "MA");
+            user.singleAttribute("postal_code", "02115");
+            user.singleAttribute("country", "USA");
+            user.singleAttribute("formatted", "6 Foo Street");
+            user.singleAttribute("address_type", "STRUCTURED");
+
+            userResource.update(user);
+
+            ProtocolMapperRepresentation addressMapper = createAddressMapper(true, true, true, true);
+            ProtocolMapperRepresentation addressTypeMapper = createClaimMapper("additional-address-field",
+                    "address_type",
+                    "address.type",
+                    "String",
+                    true,
+                    true,
+                    true,
+                    false);
+
+
+            ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
+            app.getProtocolMappers().createMapper(addressMapper).close();
+            app.getProtocolMappers().createMapper(addressTypeMapper).close();
+        }
+
+        {
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
+            assertNotNull(idToken.getAddress());
+            AddressClaimSet idTokenAddress = idToken.getAddress();
+            assertEquals("Tom Brady", idToken.getName());
+            assertEquals("5 Yawkey Way", idTokenAddress.getStreetAddress());
+            assertEquals("Boston", idTokenAddress.getLocality());
+            assertEquals("MA", idTokenAddress.getRegion());
+            assertEquals("02115", idTokenAddress.getPostalCode());
+            assertEquals("USA", idTokenAddress.getCountry());
+            assertEquals("STRUCTURED", idTokenAddress.getOtherClaims().get("type"));
+        }
+
+        // undo mappers
+        {
+            ClientResource app = findClientByClientId(adminClient.realm("test"), "test-app");
+            ClientRepresentation clientRepresentation = app.toRepresentation();
+            for (ProtocolMapperRepresentation model : clientRepresentation.getProtocolMappers()) {
+                if (model.getName().equals("address") || model.getName().equals("additional-address-field")) {
+                    app.getProtocolMappers().delete(model.getId());
+                }
+            }
+        }
+
+        events.clear();
+        JsonSerialization.mapper.disable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
+    }
+
+    @Test
+    public void testAddressMappingWithAdditionalMapperReversedOrder() {
+        // prepare test
+        {
+            UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+            UserRepresentation user = userResource.toRepresentation();
+
+            user.singleAttribute("street", "5 Yawkey Way");
+            user.singleAttribute("locality", "Boston");
+            user.singleAttribute("region", "MA");
+            user.singleAttribute("postal_code", "02115");
+            user.singleAttribute("country", "USA");
+            user.singleAttribute("formatted", "6 Foo Street");
+            user.singleAttribute("address_type", "STRUCTURED");
+
+            userResource.update(user);
+
+            ProtocolMapperRepresentation addressTypeMapper = createClaimMapper("additional-address-field",
+                    "address_type",
+                    "address.type",
+                    "String",
+                    true,
+                    true,
+                    true,
+                    false);
+            ProtocolMapperRepresentation addressMapper = createAddressMapper(true, true, true, true);
+
+
+            ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
+            app.getProtocolMappers().createMapper(addressMapper).close();
+            app.getProtocolMappers().createMapper(addressTypeMapper).close();
+        }
+
+        {
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
+            assertNotNull(idToken.getAddress());
+            AddressClaimSet idTokenAddress = idToken.getAddress();
+            assertEquals("Tom Brady", idToken.getName());
+            assertEquals("5 Yawkey Way", idTokenAddress.getStreetAddress());
+            assertEquals("Boston", idTokenAddress.getLocality());
+            assertEquals("MA", idTokenAddress.getRegion());
+            assertEquals("02115", idTokenAddress.getPostalCode());
+            assertEquals("USA", idTokenAddress.getCountry());
+            assertEquals("STRUCTURED", idTokenAddress.getOtherClaims().get("type"));
+        }
+
+        // undo mappers
+        {
+            ClientResource app = findClientByClientId(adminClient.realm("test"), "test-app");
+            ClientRepresentation clientRepresentation = app.toRepresentation();
+            for (ProtocolMapperRepresentation model : clientRepresentation.getProtocolMappers()) {
+                if (model.getName().equals("address") || model.getName().equals("additional-address-field")) {
+                    app.getProtocolMappers().delete(model.getId());
+                }
+            }
+        }
+
+        events.clear();
+    }
+
+    @Test
+    public void testAddressMappingWithoutPresentAddress() {
+        // prepare test
+        {
+            UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+            // user has no address
+            UserRepresentation user = userResource.toRepresentation();
+
+            userResource.update(user);
+
+            ProtocolMapperRepresentation addressTypeMapper = createClaimMapper("additional-address-field",
+                    "address_type",
+                    "address.type",
+                    "String",
+                    true,
+                    true,
+                    true,
+                    false);
+            ProtocolMapperRepresentation addressMapper = createAddressMapper(true, true, true, true);
+
+            ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
+            app.getProtocolMappers().createMapper(addressMapper).close();
+            app.getProtocolMappers().createMapper(addressTypeMapper).close();
+        }
+
+        {
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
+            assertNull(idToken.getAddress());
+        }
+
+        // undo mappers
+        {
+            ClientResource app = findClientByClientId(adminClient.realm("test"), "test-app");
+            ClientRepresentation clientRepresentation = app.toRepresentation();
+            for (ProtocolMapperRepresentation model : clientRepresentation.getProtocolMappers()) {
+                if (model.getName().equals("address") || model.getName().equals("additional-address-field")) {
+                    app.getProtocolMappers().delete(model.getId());
+                }
+            }
+        }
+
+        events.clear();
+    }
+
+    @Test
+    public void testTokenMapping() {
         {
             UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
             UserRepresentation user = userResource.toRepresentation();
@@ -247,13 +431,14 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getAddress());
-            assertEquals(idToken.getName(), "Tom Brady");
-            assertEquals(idToken.getAddress().getStreetAddress(), "5 Yawkey Way");
-            assertEquals(idToken.getAddress().getLocality(), "Boston");
-            assertEquals(idToken.getAddress().getRegion(), "MA");
-            assertEquals(idToken.getAddress().getPostalCode(), "02115");
-            assertNull(idToken.getAddress().getCountry()); // Null because we changed userAttribute name to "country_some", but user contains "country"
-            assertEquals(idToken.getAddress().getFormattedAddress(), "6 Foo Street");
+            AddressClaimSet idTokenAddress = idToken.getAddress();
+            assertEquals("Tom Brady", idToken.getName());
+            assertEquals("5 Yawkey Way", idTokenAddress.getStreetAddress());
+            assertEquals("Boston", idTokenAddress.getLocality());
+            assertEquals("MA", idTokenAddress.getRegion());
+            assertEquals("02115", idTokenAddress.getPostalCode());
+            assertNull(idTokenAddress.getCountry()); // Null because we changed userAttribute name to "country_some", but user contains "country"
+            assertEquals("6 Foo Street", idTokenAddress.getFormattedAddress());
             assertNotNull(idToken.getOtherClaims().get("home_phone"));
             assertThat((List<String>) idToken.getOtherClaims().get("home_phone"), hasItems("617-777-6666"));
             assertNotNull(idToken.getOtherClaims().get("home.phone"));
@@ -284,13 +469,15 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
             assertEquals(accessToken.getName(), "Tom Brady");
+
             assertNotNull(accessToken.getAddress());
-            assertEquals(accessToken.getAddress().getStreetAddress(), "5 Yawkey Way");
-            assertEquals(accessToken.getAddress().getLocality(), "Boston");
-            assertEquals(accessToken.getAddress().getRegion(), "MA");
-            assertEquals(accessToken.getAddress().getPostalCode(), "02115");
-            assertNull(idToken.getAddress().getCountry()); // Null because we changed userAttribute name to "country_some", but user contains "country"
-            assertEquals(idToken.getAddress().getFormattedAddress(), "6 Foo Street");
+            AddressClaimSet accessTokenAddress = accessToken.getAddress();
+            assertEquals("5 Yawkey Way", accessTokenAddress.getStreetAddress());
+            assertEquals("Boston", accessTokenAddress.getLocality());
+            assertEquals("MA", accessTokenAddress.getRegion());
+            assertEquals("02115", accessTokenAddress.getPostalCode());
+            assertNull(accessTokenAddress.getCountry()); // Null because we changed userAttribute name to "country_some", but user contains "country"
+            assertEquals("6 Foo Street", accessTokenAddress.getFormattedAddress());
             assertNotNull(accessToken.getOtherClaims().get("home_phone"));
             assertThat((List<String>) accessToken.getOtherClaims().get("home_phone"), hasItems("617-777-6666"));
             assertEquals("coded", accessToken.getOtherClaims().get("hard"));
@@ -343,7 +530,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
                         || model.getName().equals("hard-app")
                         || model.getName().equals("test-script-mapper")
                         || model.getName().equals("json-attribute-mapper")
-                        ) {
+                ) {
                     app.getProtocolMappers().delete(model.getId());
                 }
             }
@@ -369,7 +556,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    
+
     public void testTokenPropertiesMapping() throws Exception {
         UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
         UserRepresentation user = userResource.toRepresentation();
@@ -529,7 +716,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    
+
     public void testNullOrEmptyTokenMapping() throws Exception {
         {
             UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
@@ -564,7 +751,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             for (ProtocolMapperRepresentation model : clientRepresentation.getProtocolMappers()) {
                 if (model.getName().equals("empty")
                         || model.getName().equals("null")
-                        ) {
+                ) {
                     app.getProtocolMappers().delete(model.getId());
                 }
             }
@@ -587,7 +774,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
 
     @Test
-    
+
     public void testUserRoleToAttributeMappers() throws Exception {
         // Add mapper for realm roles
         ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, true);
@@ -620,7 +807,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
     // Test to update protocolMappers to not have roles on the default position (realm_access and resource_access properties)
     @Test
-    
+
     public void testUserRolesMovedFromAccessTokenProperties() throws Exception {
         RealmResource realm = adminClient.realm("test");
         ClientScopeResource rolesScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE);
@@ -842,7 +1029,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
 
     @Test
-    
+
     public void testUserGroupRoleToAttributeMappers() throws Exception {
         // Add mapper for realm roles
         String clientId = "test-app";
@@ -862,17 +1049,17 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
         List<String> testAppMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(realmRoleMappings,
-          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
-          "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
-          "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.sample-realm-role"          // from realm role realm-composite-role
+                "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+                "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
+                "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.sample-realm-role"          // from realm role realm-composite-role
         );
         assertRolesString(testAppMappings,
-          "ta.customer-user",                  // from direct assignment to /roleRichGroup/level2group
-          "ta.customer-admin-composite-role",  // from direct assignment to /roleRichGroup/level2group
-          "ta.customer-admin",                 // from client role customer-admin-composite-role - client role for test-app
-          "ta.sample-client-role"              // from realm role realm-composite-role - client role for test-app
+                "ta.customer-user",                  // from direct assignment to /roleRichGroup/level2group
+                "ta.customer-admin-composite-role",  // from direct assignment to /roleRichGroup/level2group
+                "ta.customer-admin",                 // from client role customer-admin-composite-role - client role for test-app
+                "ta.sample-client-role"              // from realm role realm-composite-role - client role for test-app
         );
 
         // Revert
@@ -907,11 +1094,11 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
         List<String> testAppAuthzMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(realmRoleMappings,
-          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
-          "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
-          "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.sample-realm-role"          // from realm role realm-composite-role
+                "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+                "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
+                "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.sample-realm-role"          // from realm role realm-composite-role
         );
         assertNull(testAppAuthzMappings);  // There is no client role defined for test-app-authz
 
@@ -940,12 +1127,12 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
         List<String> testAppScopeMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(realmRoleMappings,
-          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
-          "pref.user",                       // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.customer-user-premium"
+                "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+                "pref.user",                       // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.customer-user-premium"
         );
         assertRolesString(testAppScopeMappings,
-          "test-app-allowed-by-scope",       // from direct assignment to roleRichUser, present as scope allows it
+                "test-app-allowed-by-scope",       // from direct assignment to roleRichUser, present as scope allows it
                 "test-app-disallowed-by-scope"
         );
 
@@ -974,15 +1161,15 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
         List<String> testAppScopeMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(realmRoleMappings,
-          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
-          "pref.user",  // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.customer-user-premium"
+                "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+                "pref.user",  // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.customer-user-premium"
         );
         assertRolesString(testAppScopeMappings,
-          "test-app-allowed-by-scope",      // from direct assignment to roleRichUser, present as scope allows it
-          "test-app-disallowed-by-scope",   // from direct assignment to /roleRichGroup/level2group, present as scope allows it
-          "customer-admin-composite-role",  // from the other application
-          "customer-admin"
+                "test-app-allowed-by-scope",      // from direct assignment to roleRichUser, present as scope allows it
+                "test-app-disallowed-by-scope",   // from direct assignment to /roleRichGroup/level2group, present as scope allows it
+                "customer-admin-composite-role",  // from the other application
+                "customer-admin"
         );
 
         // Revert

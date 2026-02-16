@@ -166,7 +166,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
         byte[] credentialId = null;
         try {
-            credentialId = Base64.getDecoder().decode(credData.getCredentialId());
+            credentialId = Base64.getMimeDecoder().decode(credData.getCredentialId());
         } catch (IllegalArgumentException ex) {
             // NOP
         }

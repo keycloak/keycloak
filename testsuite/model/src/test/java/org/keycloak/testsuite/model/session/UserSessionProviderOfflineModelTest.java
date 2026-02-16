@@ -49,6 +49,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.services.managers.UserSessionManager;
@@ -153,7 +154,9 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
                 // Persist 3 created userSessions and clientSessions as offline
                 testApp[0] = realm.getClientByClientId("test-app");
-                session.sessions().getUserSessionsStream(realm, testApp[0]).collect(Collectors.toList())
+                session.sessions().readOnlyStreamUserSessions(realm, testApp[0], -1, -1)
+                        .map(userSessionModel -> session.sessions().getUserSession(realm, userSessionModel.getId()))
+                        .toList()
                         .forEach(userSession -> offlineSessions.put(userSession.getId(), createOfflineSessionIncludeClientSessions(session, userSession)));
 
                 // Assert all previously saved offline sessions found
@@ -284,7 +287,9 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 sessionManager = new UserSessionManager(session);
                 persister = session.getProvider(UserSessionPersisterProvider.class);
 
-                session.sessions().getUserSessionsStream(realm, realm.getClientByClientId("test-app")).collect(Collectors.toList())
+                session.sessions().readOnlyStreamUserSessions(realm, realm.getClientByClientId("test-app"), -1, -1)
+                        .map(userSessionModel -> session.sessions().getUserSession(realm, userSessionModel.getId()))
+                        .toList()
                         .forEach(userSession -> createOfflineSessionIncludeClientSessions(session, userSession));
             });
 
@@ -421,7 +426,9 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
         // create offline user and client sessions
         withRealm(realmId, (session, realm) -> {
-            session.sessions().getUserSessionsStream(realm, realm.getClientByClientId("test-app")).collect(Collectors.toList())
+            session.sessions().readOnlyStreamUserSessions(realm, realm.getClientByClientId("test-app"), -1, -1)
+                    .map(userSessionModel -> session.sessions().getUserSession(realm, userSessionModel.getId()))
+                    .toList()
                     .forEach(userSession -> createOfflineSessionIncludeClientSessions(session, userSession));
             return null;
         });
@@ -465,7 +472,8 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
         // create offline user and client sessions
         List<String> offlineUserSessionIds = withRealm(realmId, (session, realm) -> session.sessions()
-                .getUserSessionsStream(realm, realm.getClientByClientId("test-app"))
+                .readOnlyStreamUserSessions(realm, realm.getClientByClientId("test-app"), -1, -1)
+                .map(userSessionModel -> session.sessions().getUserSession(realm, userSessionModel.getId()))
                 .map(userSession -> {
                             UserSessionModel offlineUserSession = Optional.ofNullable(
                                     session.sessions().getOfflineUserSession(realm, userSession.getId())
@@ -520,8 +528,8 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
             InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
 
             // skip remote cache load as we are only interested in embedded caches
-            AdvancedCache offlineUSCache = provider.getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD);
-            AdvancedCache offlineCSCache = provider.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD);
+            AdvancedCache<?, ?> offlineUSCache = provider.getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD);
+            AdvancedCache<?, ?> offlineCSCache = provider.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD);
 
             Assert.assertEquals(0, offlineUSCache.size());
             Assert.assertEquals(0, offlineCSCache.size());
@@ -544,6 +552,18 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
             Assert.assertEquals(2, session.sessions().getOfflineUserSessionsStream(realm, session.users().getUserByUsername(realm, "user1")).count());
 
             return null;
+        });
+    }
+
+    @Test
+    public void testExpirationTaskExists() {
+        // embedded + volatile sessions store offline sessions in the database, the task must be running in this case too.
+        Assume.assumeTrue(InfinispanUtils.isEmbeddedInfinispan());
+        Assume.assumeFalse(MultiSiteUtils.isPersistentSessionsEnabled());
+        inComittedTransaction(session -> {
+            var providerFactory = session.getKeycloakSessionFactory().getProviderFactory(UserSessionProvider.class);
+            Assert.assertTrue(providerFactory instanceof InfinispanUserSessionProviderFactory);
+            Assert.assertNotNull(((InfinispanUserSessionProviderFactory) providerFactory).getExpirationTask());
         });
     }
 

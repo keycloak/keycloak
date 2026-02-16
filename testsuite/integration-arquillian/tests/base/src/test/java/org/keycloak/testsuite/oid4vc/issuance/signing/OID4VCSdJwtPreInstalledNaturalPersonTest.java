@@ -19,9 +19,9 @@ package org.keycloak.testsuite.oid4vc.issuance.signing;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.keycloak.VCFormat;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.model.Claim;
-import org.keycloak.protocol.oid4vc.model.Format;
 
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
@@ -63,7 +63,7 @@ public class OID4VCSdJwtPreInstalledNaturalPersonTest extends OID4VCIssuerEndpoi
                     var credentialBuildConfig = jwtVcConfig.getCredentialBuildConfig();
                     assertEquals(scopeName, jwtVcConfig.getScope());
                     assertEquals(expectedIssuer, credentialBuildConfig.getCredentialIssuer());
-                    assertEquals(Format.SD_JWT_VC, jwtVcConfig.getFormat());
+                    assertEquals(VCFormat.SD_JWT_VC, jwtVcConfig.getFormat());
 
                     var credentialMetadata = jwtVcConfig.getCredentialMetadata();
                     var jwtVcClaims = credentialMetadata.getClaims().stream()

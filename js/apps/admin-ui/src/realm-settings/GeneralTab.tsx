@@ -303,7 +303,7 @@ function RealmSettingsGeneralTabForm({
                   <FormattedLink
                     href={`${addTrailingSlash(
                       serverBaseUrl,
-                    )}realms/${realmName}/.well-known/openid-credential-issuer`}
+                    )}.well-known/openid-credential-issuer/realms/${realmName}`}
                     title={t("oid4vcIssuerMetadata")}
                   />
                 </StackItem>

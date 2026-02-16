@@ -346,7 +346,7 @@ spec:
     type: Route
   configMapName: "cluster-config"
   image: 
-  version: 15.0.19
+  version: 16.0.5
   configListener:
     enabled: false
   container:
@@ -396,6 +396,8 @@ spec:
           url: openshift://api.site-a # <13>
           secretName: xsite-token-secret # <14>
           
+  upgrades:
+    type: InPlaceRolling
     # end::infinispan-crossdc[]
 ---
 # Source: ispn-helm/templates/infinispan-alerts.yaml

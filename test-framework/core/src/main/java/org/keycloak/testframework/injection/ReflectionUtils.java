@@ -1,6 +1,8 @@
 package org.keycloak.testframework.injection;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -18,6 +20,20 @@ public class ReflectionUtils {
         }
 
         return fields;
+    }
+
+    public static List<Method> listMethods(Class<?> clazz, Class<? extends Annotation> annotationClass) {
+        List<Method> methods = new LinkedList<>();
+
+        Arrays.stream(clazz.getDeclaredMethods()).filter(m -> m.getAnnotation(annotationClass) != null).forEach(methods::add);
+
+        Class<?> superclass = clazz.getSuperclass();
+        while (superclass != null && !superclass.equals(Object.class)) {
+            Arrays.stream(superclass.getDeclaredMethods()).filter(m -> m.getAnnotation(annotationClass) != null).forEach(methods::add);
+            superclass = superclass.getSuperclass();
+        }
+
+        return methods;
     }
 
     public static void setField(Field field, Object object, Object value) {

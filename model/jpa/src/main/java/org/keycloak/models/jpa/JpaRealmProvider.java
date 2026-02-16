@@ -205,11 +205,13 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         session.clientScopes().removeClientScopes(adapter);
         session.roles().removeRoles(adapter);
 
+        // Remove groups before organizations to avoid FK constraint violations
+        session.groups().preRemove(adapter);
+
         em.createNamedQuery("deleteOrganizationDomainsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("deleteOrganizationsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
-        session.groups().preRemove(adapter);
 
         session.identityProviders().removeAll();
         session.identityProviders().removeAllMappers();
@@ -455,17 +457,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             throw new ModelException("Role not found or trying to remove role from incorrect realm");
         }
 
-        // Can't use a native query to delete the composite roles mappings because it causes TransientObjectException.
-        // At the same time, can't use the persist cascade type on the compositeRoles field because in that case
-        // we could not still use a native query as a different problem would arise - it may happen that a parent role that
-        // has this role as a composite is present in the persistence context. In that case it, the role would be re-created
-        // again after deletion through persist cascade type.
-        // So in any case, native query is not an option. This is not optimal as it executes additional queries but
-        // the alternative of clearing the persistence context is not either as we don't know if something currently present
-        // in the context is not needed later.
-
-        roleEntity.getCompositeRoles().forEach(childRole -> childRole.getParentRoles().remove(roleEntity));
-        roleEntity.getParentRoles().forEach(parentRole -> parentRole.getCompositeRoles().remove(roleEntity));
+        em.createNamedQuery("deleteRoleFromComposites").setParameter("role", roleEntity)
+                .executeUpdate();
 
         em.createNamedQuery("deleteClientScopeRoleMappingByRole").setParameter("role", roleEntity).executeUpdate();
 
@@ -780,7 +773,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             .map(realm::getGroupById)
             // In concurrent tests, the group might be deleted in another thread, therefore, skip those null values.
             .filter(Objects::nonNull)
-            .sorted(GroupModel.COMPARE_BY_NAME)
         );
     }
 
@@ -907,7 +899,17 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         resource = toClientModel(realm, entity);
 
-        session.getKeycloakSessionFactory().publish((ClientModel.ClientCreationEvent) () -> resource);
+        session.getKeycloakSessionFactory().publish(new ClientModel.ClientCreationEvent() {
+            @Override
+            public ClientModel getCreatedClient() {
+                return resource;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
         return resource;
     }
 
@@ -1407,7 +1409,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         return closing(paginateQuery(em.createQuery(queryBuilder), first, max).getResultStream()
                 .map(id -> session.groups().getGroupById(realm, id))
                 .filter(Objects::nonNull)
-                .sorted(GroupModel.COMPARE_BY_NAME)
                 .distinct());
     }
 

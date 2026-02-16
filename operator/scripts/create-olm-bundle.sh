@@ -72,6 +72,10 @@ yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].env
 # Remove ServiceMonitors GVK from nativeAPIS to allow CSV installation when CRDs not present
 yq ea -i 'del(.spec.nativeAPIs[] | select(.kind == "ServiceMonitor"))' "$CSV_PATH"
 
+# Remove Client CRDs to prevent their usage by default
+yq ea -i 'del(.spec.customresourcedefinitions.owned[] | select(.kind == "KeycloakOIDCClient" or .kind == "KeycloakSAMLClient"))' "$CSV_PATH"
+rm ../olm/$VERSION/manifests/keycloak*clients.k8s.keycloak.org-v1.crd.yml
+
 { set +x; } 2>/dev/null
 echo ""
 echo "Created OLM bundle ok!"

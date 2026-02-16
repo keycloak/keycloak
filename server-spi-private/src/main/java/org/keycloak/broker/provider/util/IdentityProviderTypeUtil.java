@@ -49,7 +49,7 @@ public class IdentityProviderTypeUtil {
         KeycloakSessionFactory sf = session.getKeycloakSessionFactory();
 
         Stream<ProviderFactory> factories = sf.getProviderFactoriesStream(IdentityProvider.class);
-        if (types.contains(IdentityProviderType.ANY) || types.contains(IdentityProviderType.USER_AUTHENTICATION)) {
+        if (types.contains(IdentityProviderType.ANY) || types.contains(IdentityProviderType.USER_AUTHENTICATION) || types.contains(IdentityProviderType.JWT_AUTHORIZATION_GRANT)) {
             factories = Stream.concat(factories, sf.getProviderFactoriesStream(SocialIdentityProvider.class));
         }
 

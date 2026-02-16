@@ -457,7 +457,7 @@ public interface TestingResource {
      * @param events The events to be included
      */
     @POST
-    @Path("/email-event-litener-provide/add-events")
+    @Path("/email-event-listener-provide/add-events")
     @Consumes(MediaType.APPLICATION_JSON)
     public void addEventsToEmailEventListenerProvider(List<EventType> events);
 
@@ -466,7 +466,7 @@ public interface TestingResource {
      * @param events The events to be removed
      */
     @POST
-    @Path("/email-event-litener-provide/remove-events")
+    @Path("/email-event-listener-provide/remove-events")
     @Consumes(MediaType.APPLICATION_JSON)
     public void removeEventsToEmailEventListenerProvider(List<EventType> events);
 

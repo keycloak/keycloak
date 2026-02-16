@@ -16,10 +16,6 @@
  */
 package org.keycloak.keys;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.SecureRandom;
-import java.security.spec.ECGenParameterSpec;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -47,18 +43,6 @@ public abstract class AbstractEcKeyProviderFactory<T extends KeyProvider> implem
                 .checkBoolean(Attributes.ENABLED_PROPERTY, false)
                 .checkBoolean(Attributes.ACTIVE_PROPERTY, false)
                 .checkBoolean(Attributes.EC_GENERATE_CERTIFICATE_PROPERTY, false);
-    }
-
-    public static KeyPair generateEcKeyPair(String keySpecName) {
-        try {
-            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
-            SecureRandom randomGen = new SecureRandom();
-            ECGenParameterSpec ecSpec = new ECGenParameterSpec(keySpecName);
-            keyGen.initialize(ecSpec, randomGen);
-            return keyGen.generateKeyPair();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public static String convertECDomainParmNistRepToSecRep(String ecInNistRep) {

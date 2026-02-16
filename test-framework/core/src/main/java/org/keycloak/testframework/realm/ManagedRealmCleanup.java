@@ -15,10 +15,6 @@ public class ManagedRealmCleanup {
         return this;
     }
 
-    public ManagedRealmCleanup deleteUsers() {
-        return add(r -> r.users().list().forEach(u -> r.users().delete(u.getId()).close()));
-    }
-
     void resetToOriginalRepresentation(RealmRepresentation rep) {
         if (cleanupTasks.stream().noneMatch(c -> c instanceof ResetRealm)) {
             RealmRepresentation clone = RepresentationUtils.clone(rep);

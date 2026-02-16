@@ -20,6 +20,8 @@ package org.keycloak.quarkus.deployment;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -239,15 +241,22 @@ class KeycloakProcessor {
         return new FeatureBuildItem("keycloak");
     }
 
+    /**
+     * Initialize configuration in runtime during the runtime initialization.
+     */
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     @Produce(ConfigBuildItem.class)
     void initConfig(KeycloakRecorder recorder) {
-        // other buildsteps directly use the Config
-        // so directly init it
         Config.init(new MicroProfileConfigProvider());
-        // also init in byte code for the actual server start
         recorder.initConfig();
+    }
+
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    @Consume(ConfigBuildItem.class)
+    void createHttpAccessLogDirectory(KeycloakRecorder recorder) {
+        recorder.createHttpAccessLogDirectory();
     }
 
     @Record(ExecutionTime.STATIC_INIT)
@@ -407,6 +416,7 @@ class KeycloakProcessor {
     }
 
     @BuildStep
+    @Consume(ProfileBuildItem.class)
     @Produce(ValidatePersistenceUnitsBuildItem.class)
     void checkPersistenceUnits(List<PersistenceXmlDescriptorBuildItem> descriptors) {
         if (Database.Vendor.TIDB.isOfKind(Configuration.getConfigValue(DB).getValue())) {
@@ -823,6 +833,7 @@ class KeycloakProcessor {
     }
 
     @BuildStep
+    @Consume(ProfileBuildItem.class)
     void disableHealthCheckBean(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
         if (isHealthDisabled()) {
             disableReadyHealthCheck(removeBeans, index);
@@ -871,6 +882,7 @@ class KeycloakProcessor {
     }
 
     @BuildStep
+    @Consume(ProfileBuildItem.class)
     void configureResteasy(CombinedIndexBuildItem index,
             BuildProducer<BuildTimeConditionBuildItem> buildTimeConditionBuildItemBuildProducer,
             BuildProducer<MethodScannerBuildItem> scanner,
@@ -1017,7 +1029,7 @@ class KeycloakProcessor {
                         }
                     }
                 }
-            } catch (IOException e) {
+            } catch (IOException | URISyntaxException e) {
                 throw new RuntimeException("Failed to discover script providers", e);
             }
         }
@@ -1041,9 +1053,13 @@ class KeycloakProcessor {
                 // descriptor is at META-INF/
                 Path basePath = Path.of(url.getPath()).getParent().getParent();
 
+                String path = basePath.resolve(fileName).toString();
+                if (!path.startsWith(url.getProtocol())) {
+                    path = url.getProtocol() + ":" + path;
+                }
                 try {
-                    return basePath.resolve(fileName).toUri().toURL().openStream();
-                } catch (IOException e) {
+                    return new URI(path).toURL().openStream();
+                } catch (IOException | URISyntaxException e) {
                     throw new RuntimeException("Failed to read script file from: " + fileName);
                 }
             });
@@ -1053,8 +1069,8 @@ class KeycloakProcessor {
         return descriptors;
     }
 
-    private List<ScriptProviderDescriptor> getScriptProviderDescriptorsFromJarFile(URL url) throws IOException {
-        String file = url.getFile();
+    private List<ScriptProviderDescriptor> getScriptProviderDescriptorsFromJarFile(URL url) throws IOException, URISyntaxException {
+        String file = url.toURI().getSchemeSpecificPart();
 
         if (!file.contains(JAR_FILE_SEPARATOR)) {
             return List.of();
@@ -1064,6 +1080,10 @@ class KeycloakProcessor {
 
         try (JarFile jarFile = new JarFile(file.substring("file:".length(), file.indexOf(JAR_FILE_SEPARATOR)))) {
             JarEntry descriptorEntry = jarFile.getJarEntry(KEYCLOAK_SCRIPTS_JSON_PATH);
+
+            if (descriptorEntry == null) {
+                return descriptors;
+            }
 
             try (InputStream is = jarFile.getInputStream(descriptorEntry)) {
                 ScriptProviderDescriptor descriptor = JsonSerialization.readValue(is, ScriptProviderDescriptor.class);

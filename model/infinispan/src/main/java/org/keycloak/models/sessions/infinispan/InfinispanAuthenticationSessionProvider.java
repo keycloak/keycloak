@@ -96,16 +96,6 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     }
 
     @Override
-    public void removeAllExpired() {
-        // Rely on expiration of cache entries provided by infinispan. Nothing needed here
-    }
-
-    @Override
-    public void removeExpired(RealmModel realm) {
-        // Rely on expiration of cache entries provided by infinispan. Nothing needed here
-    }
-
-    @Override
     public void onRealmRemoved(RealmModel realm) {
         // Send message to all DCs. The remoteCache will notify client listeners on all DCs for remove authentication sessions
         clusterEventsSenderTx.addEvent(

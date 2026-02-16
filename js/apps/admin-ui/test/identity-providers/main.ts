@@ -55,6 +55,38 @@ export async function createSPIFFEProvider(
   await clickAddButton(page);
 }
 
+export async function createJwtAuthorizationGrantProvider(
+  page: Page,
+  providerName: string,
+  issuer: string,
+  jwksUrl: string,
+) {
+  await clickProviderCard(page, providerName);
+  await expect(page.getByTestId("config.useJwksUrl")).toBeChecked();
+  await page.getByTestId("config.issuer").fill(issuer);
+  await page.getByTestId("config.jwksUrl").fill(jwksUrl);
+  await clickAddButton(page);
+}
+
+export async function createJwtAuthorizationGrantProviderKey(
+  page: Page,
+  providerName: string,
+  issuer: string,
+  keyId: string,
+  key: string,
+) {
+  await clickProviderCard(page, providerName);
+  await page.getByTestId("config.issuer").fill(issuer);
+  await expect(page.getByTestId("config.useJwksUrl")).toBeChecked();
+  await page.getByTestId("config.useJwksUrl").click({ force: true });
+  await expect(
+    page.getByTestId("config.publicKeySignatureVerifierKeyId"),
+  ).toBeVisible();
+  await page.getByTestId("config.publicKeySignatureVerifierKeyId").fill(keyId);
+  await page.getByTestId("config.publicKeySignatureVerifier").fill(key);
+  await clickAddButton(page);
+}
+
 export async function createKubernetesProvider(
   page: Page,
   providerName: string,
@@ -87,7 +119,7 @@ export async function assertInvalidUrlNotification(
   urlType: UrlType,
 ) {
   await expect(page.getByTestId("last-alert")).toHaveText(
-    `Could not update the provider The url [${urlType}${urlType.startsWith("single") ? "U" : "_u"}rl] is malformed`,
+    `Could not update the provider. The url [${urlType}${urlType.startsWith("single") ? "U" : "_u"}rl] is malformed`,
   );
 }
 

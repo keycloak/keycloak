@@ -52,11 +52,6 @@ public final class Start extends AbstractAutoBuildCommand {
     }
 
     @Override
-    public boolean includeRuntime() {
-        return true;
-    }
-
-    @Override
     public String getName() {
         return NAME;
     }
@@ -65,4 +60,10 @@ public final class Start extends AbstractAutoBuildCommand {
     public boolean isServing() {
         return true;
     }
+
+    @Override
+    protected OptimizedMixin getOptimizedMixin() {
+        return optimizedMixin;
+    }
+
 }

@@ -19,9 +19,9 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import picocli.CommandLine.Command;
 
-@Command(name = "tools",
+@Command(name = Tools.NAME,
         description = "Utilities for use and interaction with the server.",
-        subcommands = {Completion.class})
+        subcommands = {Completion.class, WindowsService.class})
 public class Tools {
 
     public static final String NAME = "tools";

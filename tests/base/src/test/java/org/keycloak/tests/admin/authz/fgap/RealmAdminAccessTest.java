@@ -20,8 +20,10 @@ package org.keycloak.tests.admin.authz.fgap;
 import java.util.List;
 
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -32,6 +34,11 @@ import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.admin.authz.fgap.RealmAdminAccessTest.ServerConfig;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -43,7 +50,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = ServerConfig.class)
 public class RealmAdminAccessTest extends AbstractPermissionTest {
 
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
@@ -110,9 +117,67 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
                     fail("Should not have access to other realm");
                 } catch (ForbiddenException ignore) {
                 }
+
+                assertWorkflowAccess(client);
             } finally {
                 client.realm(myrealm.getRealm()).remove();
             }
+        }
+    }
+
+    private void assertWorkflowAccess(Keycloak serverAdminClient) {
+        // server admin can access workflows
+        serverAdminClient.realm(realm.getName()).workflows().list();
+
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        ClientRepresentation realmManagement = realm.admin().clients().findByClientId("realm-management").get(0);
+        RoleRepresentation realmAdminRole = realm.admin().clients().get(realmManagement.getId()).roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+
+        // can access workflows with realm-admin role
+        realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmManagement.getId()).add(List.of(realmAdminRole));
+        realmAdminClient.realm(realm.getName()).workflows().list();
+
+        // cannot access workflows without realm-admin role
+        realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmManagement.getId()).remove(List.of(realmAdminRole));
+
+        try {
+            realmAdminClient.realm(realm.getName()).workflows().list();
+            fail("Should not have access to workflows");
+        } catch (ForbiddenException ignore) {
+        }
+
+        UserRepresentation masterUserRealmAdmin = UserConfigBuilder.create()
+                .username("mymasteradmin")
+                .password("password")
+                .firstName("f")
+                .lastName("l")
+                .email("mymasteradmin@keycloak.org")
+                .build();
+        try (Response response = serverAdminClient.realm("master").users().create(masterUserRealmAdmin)) {
+            masterUserRealmAdmin.setId(ApiUtil.getCreatedId(response));
+        }
+
+        ClientRepresentation myRealmMasterClient = serverAdminClient.realm("master").clients().findByClientId(realm.getName() + "-realm").get(0);
+        RoleRepresentation masterRealmAdminRole = serverAdminClient.realm("master").clients().get(myRealmMasterClient.getId())
+                .roles().get(AdminRoles.MANAGE_REALM).toRepresentation();
+        serverAdminClient.realm("master").users().get(masterUserRealmAdmin.getId())
+                .roles().clientLevel(myRealmMasterClient.getId()).add(List.of(masterRealmAdminRole));
+        try (Keycloak masterRealmAdminClient = adminClientFactory.create().realm("master")
+                .username("mymasteradmin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()) {
+
+            // can not access workflows with manage-realm role in master realm
+            try {
+                masterRealmAdminClient.realm(realm.getName()).workflows().list();
+                fail("Should not have access to manage workflows if user is master realm admin with manage-realm role in a realm");
+            } catch (ForbiddenException ignore) {}
+        }
+    }
+
+    public static class ServerConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Feature.WORKFLOWS);
         }
     }
 }

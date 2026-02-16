@@ -32,6 +32,7 @@ public interface Theme {
 
     String ACCOUNT_RESOURCE_PROVIDER_KEY = "accountResourceProvider";
     String CONTENT_HASH_PATTERN = "contentHashPattern";
+    String ABSTRACT_PROPERTY = "abstract";
 
     enum Type { LOGIN, ACCOUNT, ADMIN, EMAIL, WELCOME, COMMON };
 
@@ -85,6 +86,17 @@ public interface Theme {
     Properties getProperties() throws IOException;
 
     /**
+     * Check if a resource exists in the theme.
+     * @param path path of the resource
+     * @return true if the resource exists
+     */
+    default boolean hasResource(String path) throws IOException {
+        try (InputStream is = getResourceAsStream(path)) {
+            return is != null;
+        }
+    }
+
+    /**
      * Check if the given path contains a content hash.
      * If a resource is requested from this path, and it has a content hash, this guarantees that if the file
      * exists in two versions of the theme, it will contain the same contents.
@@ -100,6 +112,16 @@ public interface Theme {
         } else {
             return false;
         }
+    }
+
+    /**
+     * Method to know if the theme is just an abstract theme (only to be extended by
+     * other themes). By default it just checks the <em>abstract</em> property.
+     * @return true if abstract, false if not
+     * @throws IOException Some error reading the properties
+     */
+    default boolean isAbstract() throws IOException {
+        return Boolean.parseBoolean(getProperties().getProperty(ABSTRACT_PROPERTY));
     }
 
 }

@@ -18,15 +18,18 @@
 package org.keycloak.it.junit5.extension;
 
 import java.time.Duration;
+import java.util.logging.Logger;
 
 import org.keycloak.it.utils.KeycloakDistribution;
 
+import org.jboss.logmanager.Level;
+import org.jboss.logmanager.LogManager;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.MSSQLServerContainer;
-import org.testcontainers.containers.MariaDBContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.mariadb.MariaDBContainer;
+import org.testcontainers.mssqlserver.MSSQLServerContainer;
+import org.testcontainers.mysql.MySQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.tidb.TiDBContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -57,19 +60,19 @@ public class DatabaseContainer {
     }
 
     private String getJdbcUrl() {
-        return ((JdbcDatabaseContainer)container).getJdbcUrl();
+        return ((JdbcDatabaseContainer<?>)container).getJdbcUrl();
     }
 
     String getUsername() {
         if (container instanceof MSSQLServerContainer) {
-            return ((JdbcDatabaseContainer) container).getUsername();
+            return ((JdbcDatabaseContainer<?>) container).getUsername();
         }
         return "keycloak";
     }
 
     String getPassword() {
         if (container instanceof MSSQLServerContainer) {
-            return ((JdbcDatabaseContainer) container).getPassword();
+            return ((JdbcDatabaseContainer<?>) container).getPassword();
         }
         return DEFAULT_PASSWORD;
     }
@@ -79,7 +82,7 @@ public class DatabaseContainer {
         container = null;
     }
 
-    private JdbcDatabaseContainer configureJdbcContainer(JdbcDatabaseContainer jdbcDatabaseContainer) {
+    private JdbcDatabaseContainer<?> configureJdbcContainer(JdbcDatabaseContainer<?> jdbcDatabaseContainer) {
         if (jdbcDatabaseContainer instanceof MSSQLServerContainer) {
             return jdbcDatabaseContainer;
         }
@@ -101,16 +104,29 @@ public class DatabaseContainer {
         switch (alias) {
             case "postgres":
                 DockerImageName POSTGRES = DockerImageName.parse(POSTGRES_IMAGE).asCompatibleSubstituteFor("postgres");
-                return configureJdbcContainer(new PostgreSQLContainer<>(POSTGRES));
+                return configureJdbcContainer(new PostgreSQLContainer(POSTGRES));
             case "mariadb":
                 DockerImageName MARIADB = DockerImageName.parse(MARIADB_IMAGE).asCompatibleSubstituteFor("mariadb");
-                return configureJdbcContainer(new MariaDBContainer<>(MARIADB));
+                return configureJdbcContainer(new MariaDBContainer(MARIADB));
             case "mysql":
                 DockerImageName MYSQL = DockerImageName.parse(MYSQL_IMAGE).asCompatibleSubstituteFor("mysql");
-                return configureJdbcContainer(new MySQLContainer<>(MYSQL));
+                return configureJdbcContainer(new MySQLContainer(MYSQL));
             case "mssql":
                 DockerImageName MSSQL = DockerImageName.parse(MSSQL_IMAGE).asCompatibleSubstituteFor("sqlserver");
-                return configureJdbcContainer(new MSSQLServerContainer<>(MSSQL));
+                return configureJdbcContainer(new MSSQLServerContainer(MSSQL) {
+                    @Override
+                    public void start() {
+                        // avoid WARNING [com.microsoft.sqlserver.jdbc.internals.SQLServerConnection] (main) ConnectionID:32 ClientConnectionId: Prelogin error ...
+                        Logger mssqlLogger = LogManager.getLogManager().getLogger("com.microsoft.sqlserver.jdbc.internals.SQLServerConnection");
+                        java.util.logging.Level level = mssqlLogger.getLevel();
+                        try {
+                            mssqlLogger.setLevel(Level.ERROR);
+                            super.start();
+                        } finally {
+                            mssqlLogger.setLevel(level);
+                        }
+                    }
+                });
             case "tidb":
                 DockerImageName TIDB = DockerImageName.parse(TIDB_IMAGE).asCompatibleSubstituteFor("pingcap/tidb");
                 return configureJdbcContainer(new TiDBContainer(TIDB));

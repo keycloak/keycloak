@@ -19,6 +19,7 @@ package org.keycloak.protocol.oid4vc.issuance.mappers;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,16 +30,17 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import org.apache.commons.collections4.ListUtils;
 
 import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
+import static org.keycloak.VCFormat.SD_JWT_VC;
 
 /**
  * Base class for OID4VC Mappers, to provide common configuration and functionality for all of them
@@ -50,6 +52,31 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     public static final String CLAIM_NAME = "claim.name";
     public static final String USER_ATTRIBUTE_KEY = "userAttribute";
     private static final List<ProviderConfigProperty> OID4VC_CONFIG_PROPERTIES = new ArrayList<>();
+
+    static {
+        ProviderConfigProperty property;
+
+        // Add vc.mandatory property - indicates whether this claim is mandatory in the credential
+        property = new ProviderConfigProperty();
+        property.setName(Oid4vcProtocolMapperModel.MANDATORY);
+        property.setLabel("Mandatory Claim");
+        property.setHelpText("Indicates whether this claim must be present in the issued credential. " +
+                "This information is included in the credential metadata for wallet applications.");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue(false);
+        OID4VC_CONFIG_PROPERTIES.add(property);
+
+        // Add vc.display property - display information for wallet UIs
+        property = new ProviderConfigProperty();
+        property.setName(Oid4vcProtocolMapperModel.DISPLAY);
+        property.setLabel("Claim Display Information");
+        property.setHelpText("Display metadata for wallet applications to show user-friendly claim names. " +
+                "Provide display entries with name and locale for internationalization support.");
+        property.setType(ProviderConfigProperty.CLAIM_DISPLAY_TYPE);
+        property.setDefaultValue(null);
+        OID4VC_CONFIG_PROPERTIES.add(property);
+    }
+
     protected ProtocolMapperModel mapperModel;
     protected String format;
 
@@ -91,10 +118,11 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     }
 
     protected List<String> getAttributePrefix() {
-        return switch (Optional.ofNullable(format).orElse("")) {
-            case Format.JWT_VC, Format.LDP_VC -> List.of(CREDENTIAL_SUBJECT);
-            default -> Collections.emptyList();
-        };
+        if (SD_JWT_VC.equals(format)) {
+            return Collections.emptyList();
+        } else {
+            return List.of(CREDENTIAL_SUBJECT);
+        }
     }
 
     @Override
@@ -123,13 +151,43 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     /**
      * Set the claims to credential, like f.e. the context
      */
-    public abstract void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                                UserSessionModel userSessionModel);
+    public abstract void setClaim(VerifiableCredential verifiableCredential,
+                                  UserSessionModel userSessionModel);
 
     /**
      * Set the claims to the credential subject.
      */
-    public abstract void setClaimsForSubject(Map<String, Object> claims,
-                                             UserSessionModel userSessionModel);
+    public abstract void setClaim(Map<String, Object> claims,
+                                  UserSessionModel userSessionModel);
+
+    /**
+     * Creates new map "claimsWithPrefix" with the resolved claims including path prefix
+     *
+     * @param claimsOrig Map with the original claims, which were returned by {@link #setClaim(Map, UserSessionModel)} . This method usually just reads from this map
+     * @param claimsWithPrefix Map with the claims including path prefix. This method might write to this map
+     */
+    public void setClaimWithMetadataPrefix(Map<String, Object> claimsOrig, Map<String, Object> claimsWithPrefix) {
+        List<String> attributePath = getMetadataAttributePath();
+        String propertyName = attributePath.get(attributePath.size() - 1);
+        if (claimsOrig.get(propertyName) != null) {
+            Object claimValue = claimsOrig.get(propertyName);
+            Map<String, Object> current = claimsWithPrefix;
+
+            for (int i = 0; i < attributePath.size() ; i++) {
+                String currentSnippetName = attributePath.get(i);
+                if (i < attributePath.size() - 1) {
+                    Map<String, Object> obj = (Map<String, Object>) current.get(currentSnippetName);
+                    if (obj == null) {
+                         obj = new HashMap<>();
+                         current.put(currentSnippetName, obj);
+                    }
+                    current = obj;
+                } else {
+                    // Last element
+                    current.put(currentSnippetName, claimValue);
+                }
+            }
+        }
+    }
 
 }

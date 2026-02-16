@@ -17,6 +17,21 @@
 
 package org.keycloak.operator.testsuite.integration;
 
+import java.time.Duration;
+import java.util.Optional;
+import java.util.function.Function;
+
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
+import org.keycloak.operator.testsuite.utils.CRAssert;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
+
+import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -29,29 +44,15 @@ import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
-
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition;
-import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
-import org.keycloak.operator.testsuite.utils.CRAssert;
-import org.keycloak.operator.testsuite.utils.K8sUtils;
-
-import java.time.Duration;
-import java.util.Optional;
-import java.util.function.Function;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+
+import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResource.KC_TELEMETRY_SERVICE_NAME;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResource.KC_TRACING_SERVICE_NAME;
 
 @DisabledIfApiServerTest
 @QuarkusTest
@@ -94,7 +95,7 @@ public class ClusteringTest extends BaseOperatorTest {
         checkInstanceCount(1, Ingress.class, kc, kc1);
         checkInstanceCount(2, Service.class, kc, kc1);
 
-        // Tracing assertions
+        // Telemetry assertions
         var pods = k8sclient
                 .pods()
                 .inNamespace(namespace)
@@ -104,22 +105,22 @@ public class ClusteringTest extends BaseOperatorTest {
 
         assertThat(pods.size()).isEqualTo(2);
 
-        Function<Pod, String> getTracingServiceName = (pod) -> pod.getSpec().getContainers().get(0).getEnv().stream()
-                .filter(f -> f.getName().equals(KC_TRACING_SERVICE_NAME)).findAny().map(EnvVar::getValue).orElse(null);
+        Function<Pod, String> getTelemetryServiceName = (pod) -> pod.getSpec().getContainers().get(0).getEnv().stream()
+                .filter(f -> f.getName().equals(KC_TELEMETRY_SERVICE_NAME)).findAny().map(EnvVar::getValue).orElse(null);
 
         var kc1Pod = pods.stream().filter(f -> f.getMetadata().getName().startsWith("another-example-")).findAny().orElse(null);
         assertThat(kc1Pod).isNotNull();
 
-        var tracingServiceName1 = getTracingServiceName.apply(kc1Pod);
-        assertThat(tracingServiceName1).isNotNull();
-        assertThat(tracingServiceName1).isEqualTo("another-example");
+        var telemetryServiceName1 = getTelemetryServiceName.apply(kc1Pod);
+        assertThat(telemetryServiceName1).isNotNull();
+        assertThat(telemetryServiceName1).isEqualTo("another-example");
 
         var kcPod = pods.stream().filter(f -> !f.equals(kc1Pod)).findAny().orElse(null);
         assertThat(kcPod).isNotNull();
 
-        var tracingServiceName2 = getTracingServiceName.apply(kcPod);
-        assertThat(tracingServiceName2).isNotNull();
-        assertThat(tracingServiceName2).isEqualTo("example-kc");
+        var telemetryServiceName2 = getTelemetryServiceName.apply(kcPod);
+        assertThat(telemetryServiceName2).isNotNull();
+        assertThat(telemetryServiceName2).isEqualTo("example-kc");
 
         // ensure they don't see each other's pods
         assertThat(k8sclient.resource(kc).scale().getStatus().getReplicas()).isEqualTo(1);

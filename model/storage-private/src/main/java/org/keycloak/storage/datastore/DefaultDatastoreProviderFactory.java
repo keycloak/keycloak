@@ -39,8 +39,7 @@ import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.DatastoreProviderFactory;
 import org.keycloak.storage.StoreMigrateRepresentationEvent;
-import org.keycloak.storage.StoreSyncEvent;
-import org.keycloak.storage.managers.UserStorageSyncManager;
+import org.keycloak.storage.UserStorageEventListener;
 import org.keycloak.timer.ScheduledTask;
 import org.keycloak.timer.TimerProvider;
 
@@ -74,7 +73,12 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         factory.register(this);
-        onClose = () -> factory.unregister(this);
+        UserStorageEventListener userStorageEventListener = new UserStorageEventListener(factory);
+        factory.register(userStorageEventListener);
+        onClose = () -> {
+            factory.unregister(this);
+            factory.unregister(userStorageEventListener);
+        };
     }
 
     @Override
@@ -119,9 +123,6 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
     public void onEvent(ProviderEvent event) {
         if (event instanceof PostMigrationEvent) {
             setupScheduledTasks(((PostMigrationEvent) event).getFactory());
-        } else if (event instanceof StoreSyncEvent) {
-            StoreSyncEvent ev = (StoreSyncEvent) event;
-            UserStorageSyncManager.notifyToRefreshPeriodicSyncAll(ev.getSession(), ev.getRealm(), ev.getRemoved());
         } else if (event instanceof StoreMigrateRepresentationEvent) {
             StoreMigrateRepresentationEvent ev = (StoreMigrateRepresentationEvent) event;
             MigrationModelManager.migrateImport(ev.getSession(), ev.getRealm(), ev.getRep(), ev.isSkipUserDependent());
@@ -141,8 +142,6 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
         for (ScheduledTask task : getScheduledTasks()) {
             scheduleTask(timer, sessionFactory, task, interval);
         }
-
-        UserStorageSyncManager.bootstrapPeriodic(sessionFactory, timer);
     }
 
     protected static List<ScheduledTask> getScheduledTasks() {

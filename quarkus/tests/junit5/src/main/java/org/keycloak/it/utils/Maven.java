@@ -45,7 +45,13 @@ import org.eclipse.aether.resolution.DependencyResolutionException;
 
 public final class Maven {
 
+    private static BootstrapMavenContext context;
+
     public static Path resolveArtifact(String groupId, String artifactId) {
+        return getArtifact(groupId, artifactId).getFile().toPath();
+    }
+
+    public static Artifact getArtifact(String groupId, String artifactId) {
         try {
             BootstrapMavenContext ctx = bootstrapCurrentMavenContext();
             LocalProject project = ctx.getCurrentProject();
@@ -58,6 +64,11 @@ public final class Maven {
                             .setRepositories(remoteRepositories));
             List<Dependency> dependencies = new ArrayList<>(projectDescriptor.getDependencies());
             dependencies.addAll(projectDescriptor.getManagedDependencies());
+
+            if (groupId.equals(project.getGroupId()) &&  artifactId.equals(project.getArtifactId())) {
+                return projectDescriptor.getArtifact();
+            }
+
             Artifact artifact = resolveArtifact(groupId, artifactId, dependencies);
 
             if (artifact == null) {
@@ -72,7 +83,7 @@ public final class Maven {
                             ctx.getRepositorySystemSession(),
                             new ArtifactRequest().setArtifact(artifact)
                                     .setRepositories(remoteRepositories))
-                    .getArtifact().getFile().toPath();
+                    .getArtifact();
         } catch (Exception cause) {
             throw new RuntimeException("Failed to resolve artifact: " + groupId + ":" + artifactId, cause);
         }
@@ -144,11 +155,14 @@ public final class Maven {
         throw new RuntimeException("Failed to find keycloak-parent module.");
     }
 
-    private static BootstrapMavenContext bootstrapCurrentMavenContext() throws BootstrapMavenException, URISyntaxException {
-        Path classPathDir = Paths.get(Thread.currentThread().getContextClassLoader().getResource(".").toURI());
-        Path projectDir = BuildToolHelper.getProjectDir(classPathDir);
-        return new BootstrapMavenContext(
-                BootstrapMavenContext.config().setPreferPomsFromWorkspace(true).setWorkspaceModuleParentHierarchy(true)
-                        .setCurrentProject(projectDir.toString()));
+    public static BootstrapMavenContext bootstrapCurrentMavenContext() throws BootstrapMavenException, URISyntaxException {
+        if (context == null) {
+            Path classPathDir = Paths.get(Thread.currentThread().getContextClassLoader().getResource(".").toURI());
+            Path projectDir = BuildToolHelper.getProjectDir(classPathDir);
+            context = new BootstrapMavenContext(
+                    BootstrapMavenContext.config().setPreferPomsFromWorkspace(true).setWorkspaceModuleParentHierarchy(true)
+                            .setCurrentProject(projectDir.toString()));
+        }
+        return context;
     }
 }

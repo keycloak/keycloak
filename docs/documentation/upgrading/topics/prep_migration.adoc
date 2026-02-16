@@ -2,10 +2,13 @@
 
 == Preparing for an upgrade
 
+Starting with {project_name} 26.6.0 rolling updates of patch releases are supported.
+See the https://www.keycloak.org/server/update-compatibility[Rolling Updates Guide] to determine if a rolling update is possible.
+
 Perform the following steps before you upgrade the server.
 
 .Procedure
-. Shut down {project_name}.
+. Shut down {project_name} if no rolling update is supported, for example if you perform a minor or major upgrade.
 . Back up the old installation, such as configuration, themes, and so on.
 . If XA transactions are enabled, handle any open transactions and delete the `data/transaction-logs/` transaction directory.
 . Back up the database using the instructions in the documentation for your relational database.

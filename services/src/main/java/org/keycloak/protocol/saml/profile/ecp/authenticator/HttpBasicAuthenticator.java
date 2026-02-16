@@ -111,7 +111,7 @@ public class HttpBasicAuthenticator implements Authenticator {
         }
 
         try {
-            String val = new String(Base64.getDecoder().decode(credentials));
+            String val = new String(Base64.getMimeDecoder().decode(credentials));
             int seperatorIndex = val.indexOf(":");
             if(seperatorIndex == -1) return new String[]{val};
             String user = val.substring(0, seperatorIndex);

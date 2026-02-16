@@ -64,7 +64,7 @@ public class OID4VCTargetRoleMapperTest extends OID4VCTest {
 						AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
 						authenticator.setTokenString(token);
 						UserSessionModel userSessionModel = authenticator.authenticate().session();
-						roleMapper.setClaimsForSubject(claimsMap, userSessionModel);
+						roleMapper.setClaim(claimsMap, userSessionModel);
 						assertTrue("The roles should be included as a claim.", claimsMap.containsKey("roles"));
 						if (claimsMap.get("roles") instanceof HashSet roles) {
 							List<Role> rolesList = roles.stream().map(ro -> new ObjectMapper().convertValue(ro, Role.class)).toList();
@@ -82,6 +82,7 @@ public class OID4VCTargetRoleMapperTest extends OID4VCTest {
 
 	@Override
 	public void configureTestRealm(RealmRepresentation testRealm) {
+		testRealm.setVerifiableCredentialsEnabled(true);
 
 		ClientRepresentation newClient = new ClientRepresentation();
 		newClient.setClientId("newClient");
@@ -115,15 +116,12 @@ public class OID4VCTargetRoleMapperTest extends OID4VCTest {
 						return mergedRoles;
 					}
 			);
-		} else {
-			testRealm.getRoles()
-					.setClient(Map.of(existingClient.getClientId(),
-							List.of(getRoleRepresentation("testRole", existingClient.getClientId()))));
 		}
 
 		List<UserRepresentation> realmUsers = Optional.ofNullable(testRealm.getUsers()).map(ArrayList::new)
 				.orElse(new ArrayList<>());
-		realmUsers.add(getUserRepresentation(Map.of(existingClient.getClientId(), List.of("testRole"), "newClient", List.of("newRole"))));
+		realmUsers.add(getUserRepresentation("John Doe", Map.of(), List.of(),
+                Map.of(clientId, List.of("testRole"), "newClient", List.of("newRole"))));
 		testRealm.setUsers(realmUsers);
 	}
 }

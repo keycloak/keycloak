@@ -167,6 +167,17 @@ export const LogoutPanel = ({
           </FormGroup>
         </>
       )}
+      {protocol === "openid-connect" && (
+        <DefaultSwitchControl
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.logout.confirmation.enabled",
+          )}
+          defaultValue="false"
+          label={t("logoutConfirmation")}
+          labelIcon={t("logoutConfirmationHelp")}
+          stringify
+        />
+      )}
       <FixedButtonsGroup
         name="settings"
         save={save}

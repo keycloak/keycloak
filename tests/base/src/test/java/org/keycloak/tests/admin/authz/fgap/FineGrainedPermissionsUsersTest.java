@@ -21,7 +21,7 @@ import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW_MEMBERS;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -189,7 +189,7 @@ public class FineGrainedPermissionsUsersTest extends AbstractPermissionTest {
 
         if (grp1ViewPermissions) {
             UserPolicyRepresentation userPolicy = createUserPolicy(realm, client, "allow-test-user", testUserId);
-            createGroupPermission(groups.get(0), Set.of(VIEW), userPolicy);
+            createGroupPermission(groups.get(0), Set.of(VIEW_MEMBERS), userPolicy);
         }
 
         Keycloak testUserClient = KeycloakBuilder.builder()
@@ -260,14 +260,5 @@ public class FineGrainedPermissionsUsersTest extends AbstractPermissionTest {
         groups.add(grp2);
 
         return groups;
-    }
-
-    private GroupRepresentation createGroup(String name) {
-        GroupRepresentation grp = new GroupRepresentation();
-        grp.setName(name);
-        String groupId = ApiUtil.getCreatedId(realm.admin().groups().add(grp));
-        grp.setId(groupId);
-        realm.cleanup().add(r -> r.groups().group(groupId).remove());
-        return grp;
     }
 }

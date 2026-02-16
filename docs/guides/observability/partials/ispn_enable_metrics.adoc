@@ -2,7 +2,6 @@
 
 {jdgserver_name} exposes metrics in the endpoint `/metrics`.
 By default, they are enabled.
-We recommend enabling the attribute `name-as-tags` as it makes the metrics name independent on the cache name.
 
 To configure metrics in the {jdgserver_name} server, just enabled as shown in the XML below.
 
@@ -11,7 +10,7 @@ To configure metrics in the {jdgserver_name} server, just enabled as shown in th
 ----
 <infinispan>
     <cache-container statistics="true">
-        <metrics gauges="true" histograms="false" name-as-tags="true" />
+        <metrics gauges="true" histograms="false" />
     </cache-container>
 </infinispan>
 ----

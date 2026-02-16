@@ -111,6 +111,18 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-v2-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-v2-rest</artifactId>
+        </dependency>
 
         <!-- Test -->
         <dependency>
@@ -130,17 +142,17 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-junit5</artifactId>
+            <artifactId>quarkus-junit</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-junit5-mockito</artifactId>
+            <artifactId>quarkus-junit-mockito</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-junit5-component</artifactId>
+            <artifactId>quarkus-junit-component</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -178,6 +190,7 @@
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
                 <version>${quarkus.build.version}</version>
+                <extensions>true</extensions>
             </plugin>
             </plugins>
         </pluginManagement>
@@ -186,6 +199,7 @@
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
                 <version>${quarkus.build.version}</version>
+                <extensions>true</extensions>
                 <executions>
                     <execution>
                     <goals>
@@ -255,6 +269,17 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <compilerArgs>
+                        <arg>-proc:full</arg> <!-- adding sundrio to annotationProcessorPaths doesn't play well with Fabric8 -->
+                    </compilerArgs>
+                </configuration>
             </plugin>
 
             <plugin>

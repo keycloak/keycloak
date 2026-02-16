@@ -148,7 +148,7 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
         return provider.createQuery()
                 .type(EventType.USER_SESSION_DELETED)
                 .getResultStream()
-                .filter(event -> Details.EXPIRED_DETAIL.equals(event.getDetails().get(Details.REASON)))
+                .filter(event -> Details.USER_SESSION_EXPIRED_REASON.equals(event.getDetails().get(Details.REASON)))
                 .count();
     }
 
@@ -157,7 +157,7 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
         return provider.createQuery()
                 .type(EventType.USER_SESSION_DELETED)
                 .getResultStream()
-                .filter(event -> Details.EXPIRED_DETAIL.equals(event.getDetails().get(Details.REASON)))
+                .filter(event -> Details.USER_SESSION_EXPIRED_REASON.equals(event.getDetails().get(Details.REASON)))
                 .collect(Collectors.toUnmodifiableMap(Event::getSessionId, Event::getUserId));
     }
 

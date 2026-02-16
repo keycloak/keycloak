@@ -1,12 +1,18 @@
 package org.keycloak.testframework.realm;
 
+import java.util.List;
+
 import org.keycloak.admin.client.resource.ComponentResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.injection.ManagedTestResource;
+import org.keycloak.testframework.util.ApiUtil;
+
+import org.junit.jupiter.api.Assertions;
 
 public class ManagedRealm extends ManagedTestResource {
 
@@ -60,7 +66,25 @@ public class ManagedRealm extends ManagedTestResource {
         admin().update(configBuilder.build());
     }
 
-    public void updateIdentityProviderWithCleanup(String alias, IdentityProviderUpdate update) {
+    public void addUser(UserConfigBuilder user) {
+        UserRepresentation rep = user.build();
+        String id = ApiUtil.getCreatedId(realmResource.users().create(rep));
+        cleanup().add(r -> r.users().get(id).remove());
+    }
+
+    public void updateUser(String username, UserConfigBuilder.UserUpdate update) {
+        List<UserRepresentation> result = realmResource.users().search(username);
+        Assertions.assertEquals(1, result.size());
+
+        UserRepresentation original = result.get(0);
+        UserRepresentation updated = RepresentationUtils.clone(original);
+        update.update(updated);
+        realmResource.users().get(original.getId()).update(updated);
+
+        cleanup().add(r -> r.users().get(original.getId()).update(original));
+    }
+
+    public void updateIdentityProvider(String alias, IdentityProviderUpdate update) {
         IdentityProviderResource resource = realmResource.identityProviders().get(alias);
 
         IdentityProviderRepresentation original = resource.toRepresentation();
@@ -71,7 +95,7 @@ public class ManagedRealm extends ManagedTestResource {
         cleanup().add(r -> r.identityProviders().get(alias).update(original));
     }
 
-    public void updateComponentWithCleanup(String id, ComponentUpdate update) {
+    public void updateComponent(String id, ComponentUpdate update) {
         ComponentResource componentResource = realmResource.components().component(id);
 
         ComponentRepresentation original = componentResource.toRepresentation();

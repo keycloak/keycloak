@@ -17,6 +17,37 @@
 
 package org.keycloak.operator.testsuite.unit;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import jakarta.inject.Inject;
+
+import org.keycloak.operator.Config;
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.ContextUtils;
+import org.keycloak.operator.Utils;
+import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
+import org.keycloak.operator.controllers.KeycloakDistConfigurator;
+import org.keycloak.operator.controllers.KeycloakRealmImportJobDependentResource;
+import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
+import org.keycloak.operator.controllers.WatchedResources;
+import org.keycloak.operator.controllers.WatchedResources.Watched;
+import org.keycloak.operator.crds.v2alpha1.CRDUtils;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportBuilder;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportSpecBuilder;
+import org.keycloak.representations.idm.RealmRepresentation;
+
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -44,50 +75,22 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.Config;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.ContextUtils;
-import org.keycloak.operator.Utils;
-import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
-import org.keycloak.operator.controllers.KeycloakDistConfigurator;
-import org.keycloak.operator.controllers.KeycloakRealmImportJobDependentResource;
-import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
-import org.keycloak.operator.controllers.WatchedResources;
-import org.keycloak.operator.controllers.WatchedResources.Watched;
-import org.keycloak.operator.crds.v2alpha1.CRDUtils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportBuilder;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportSpecBuilder;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.mockito.Mockito;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import static org.keycloak.operator.ContextUtils.DIST_CONFIGURATOR_KEY;
+import static org.keycloak.operator.ContextUtils.NEW_DEPLOYMENT_KEY;
+import static org.keycloak.operator.ContextUtils.OLD_DEPLOYMENT_KEY;
+import static org.keycloak.operator.ContextUtils.OPERATOR_CONFIG_KEY;
+import static org.keycloak.operator.ContextUtils.WATCHED_RESOURCES_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.operator.ContextUtils.DIST_CONFIGURATOR_KEY;
-import static org.keycloak.operator.ContextUtils.NEW_DEPLOYMENT_KEY;
-import static org.keycloak.operator.ContextUtils.OLD_DEPLOYMENT_KEY;
-import static org.keycloak.operator.ContextUtils.OPERATOR_CONFIG_KEY;
-import static org.keycloak.operator.ContextUtils.WATCHED_RESOURCES_KEY;
 
 @QuarkusTest
 public class PodTemplateTest {
@@ -479,8 +482,9 @@ public class PodTemplateTest {
 
         var envVars = container.getEnv();
         assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS));
-        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRACING_SERVICE_NAME));
-        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRACING_RESOURCE_ATTRIBUTES));
+        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TELEMETRY_SERVICE_NAME));
+        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TELEMETRY_RESOURCE_ATTRIBUTES));
+        assertThat(envVars.stream()).noneMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRACING_RESOURCE_ATTRIBUTES));
         assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.POD_IP));
 
         var readiness = container.getReadinessProbe().getHttpGet();
@@ -562,7 +566,13 @@ public class PodTemplateTest {
         var additionalOptions = List.of(
                 new ValueOrSecret("log-level-org.package.some_class", "debug"),
                 new ValueOrSecret("tracing-header-Authorization", "Bearer aldskfjqweoiruzxcv"),
-                new ValueOrSecret("tracing-header-My-BEST_$header", "api-asdflkqjwer-key")
+                new ValueOrSecret("tracing-header-My-BEST_$header", "api-asdflkqjwer-key"),
+                new ValueOrSecret("telemetry-header-Authorization", "Bearer aldskfjqweoiruzxcv-telemetry"),
+                new ValueOrSecret("telemetry-header-My-BEST_$header", "api-asdflkqjwer-key-telemetry"),
+                new ValueOrSecret("telemetry-logs-header-Authorization", "Bearer aldskfjqweoiruzxcv-logs"),
+                new ValueOrSecret("telemetry-logs-header-My-BEST_$header", "api-asdflkqjwer-key-logs"),
+                new ValueOrSecret("telemetry-metrics-header-Authorization", "Bearer aldskfjqweoiruzxcv-metrics"),
+                new ValueOrSecret("telemetry-metrics-header-My-BEST_$header", "api-asdflkqjwer-key-metrics")
         );
 
         // Act
@@ -579,11 +589,33 @@ public class PodTemplateTest {
                 "KCKEY_TRACING_HEADER_MY_BEST__HEADER", "tracing-header-My-BEST_$header",
                 "KC_TRACING_HEADER_MY_BEST__HEADER", "api-asdflkqjwer-key"
         );
+        var assertEnvVarKeysTelemetry = Map.of(
+                "KCKEY_TELEMETRY_HEADER_MY_BEST__HEADER", "telemetry-header-My-BEST_$header",
+                "KC_TELEMETRY_HEADER_MY_BEST__HEADER", "api-asdflkqjwer-key-telemetry",
+                "KCKEY_TELEMETRY_HEADER_AUTHORIZATION", "telemetry-header-Authorization",
+                "KC_TELEMETRY_HEADER_AUTHORIZATION", "Bearer aldskfjqweoiruzxcv-telemetry"
+        );
+        var assertEnvVarKeysTelemetryLogs = Map.of(
+                "KCKEY_TELEMETRY_LOGS_HEADER_MY_BEST__HEADER", "telemetry-logs-header-My-BEST_$header",
+                "KC_TELEMETRY_LOGS_HEADER_MY_BEST__HEADER", "api-asdflkqjwer-key-logs",
+                "KCKEY_TELEMETRY_LOGS_HEADER_AUTHORIZATION", "telemetry-logs-header-Authorization",
+                "KC_TELEMETRY_LOGS_HEADER_AUTHORIZATION", "Bearer aldskfjqweoiruzxcv-logs"
+        );
+        var assertEnvVarKeysTelemetryMetrics = Map.of(
+                "KCKEY_TELEMETRY_METRICS_HEADER_MY_BEST__HEADER", "telemetry-metrics-header-My-BEST_$header",
+                "KC_TELEMETRY_METRICS_HEADER_MY_BEST__HEADER", "api-asdflkqjwer-key-metrics",
+                "KCKEY_TELEMETRY_METRICS_HEADER_AUTHORIZATION", "telemetry-metrics-header-Authorization",
+                "KC_TELEMETRY_METRICS_HEADER_AUTHORIZATION", "Bearer aldskfjqweoiruzxcv-metrics"
+        );
 
         var envVars = podTemplate.getSpec().getContainers().get(0).getEnv().stream()
                 .filter(e -> e.getValue() != null)
                 .collect(Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+
         assertThat(envVars).containsAllEntriesOf(assertEnvVarKeys);
+        assertThat(envVars).containsAllEntriesOf(assertEnvVarKeysTelemetry);
+        assertThat(envVars).containsAllEntriesOf(assertEnvVarKeysTelemetryLogs);
+        assertThat(envVars).containsAllEntriesOf(assertEnvVarKeysTelemetryMetrics);
     }
 
     @Test

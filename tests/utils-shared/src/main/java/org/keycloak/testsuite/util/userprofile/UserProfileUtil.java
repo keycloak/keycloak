@@ -59,8 +59,16 @@ public class UserProfileUtil {
     }
 
     public static UPConfig enableUnmanagedAttributes(UserProfileResource upResource) {
+        return setUnmanagedAttributesPolicy(upResource, UPConfig.UnmanagedAttributePolicy.ENABLED);
+    }
+
+    public static UPConfig disableUnmanagedAttributes(UserProfileResource upResource) {
+        return setUnmanagedAttributesPolicy(upResource, null);
+    }
+
+    public static UPConfig setUnmanagedAttributesPolicy(UserProfileResource upResource, UPConfig.UnmanagedAttributePolicy policy) {
         UPConfig cfg = upResource.getConfiguration();
-        cfg.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ENABLED);
+        cfg.setUnmanagedAttributePolicy(policy);
         upResource.update(cfg);
         return cfg;
     }

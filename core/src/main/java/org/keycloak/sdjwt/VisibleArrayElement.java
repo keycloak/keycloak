@@ -16,10 +16,12 @@
  */
 package org.keycloak.sdjwt;
 
+import java.util.Objects;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class VisibleArrayElement implements SdJwtArrayElement {
@@ -37,5 +39,20 @@ public class VisibleArrayElement implements SdJwtArrayElement {
     @Override
     public String getDisclosureString() {
         return null;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (!(o instanceof VisibleArrayElement)) {
+            return false;
+        }
+
+        VisibleArrayElement that = (VisibleArrayElement) o;
+        return Objects.equals(arrayElement, that.arrayElement);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(arrayElement);
     }
 }

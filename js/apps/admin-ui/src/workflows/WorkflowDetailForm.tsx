@@ -171,6 +171,7 @@ export default function WorkflowDetailForm() {
                 data-testid="save"
                 allowInvalid
                 allowNonDirty
+                isDisabled={mode === "create" && !form.formState.isDirty}
               >
                 {mode === "update" ? t("save") : t("create")}
               </FormSubmitButton>

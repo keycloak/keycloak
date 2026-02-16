@@ -1,8 +1,6 @@
 package org.keycloak.testframework.ui.webdriver;
 
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.firefox.FirefoxOptions;
 
 public class FirefoxHeadlessWebDriverSupplier extends AbstractWebDriverSupplier {
 
@@ -13,9 +11,6 @@ public class FirefoxHeadlessWebDriverSupplier extends AbstractWebDriverSupplier 
 
     @Override
     public WebDriver getWebDriver() {
-        FirefoxOptions options = new FirefoxOptions();
-        setCommonCapabilities(options);
-        options.addArguments("-headless");
-        return new FirefoxDriver(options);
+        return DriverUtils.createFirefoxDriver(true);
     }
 }

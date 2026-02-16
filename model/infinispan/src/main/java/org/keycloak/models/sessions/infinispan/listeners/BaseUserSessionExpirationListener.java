@@ -62,7 +62,7 @@ abstract class BaseUserSessionExpirationListener {
                     .session(userSessionId)
                     .user(userId)
                     .event(EventType.USER_SESSION_DELETED)
-                    .detail(Details.REASON, Details.EXPIRED_DETAIL)
+                    .detail(Details.REASON, Details.USER_SESSION_EXPIRED_REASON)
                     .success();
         });
     }

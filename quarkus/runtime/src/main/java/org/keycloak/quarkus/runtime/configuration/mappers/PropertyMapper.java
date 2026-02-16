@@ -292,7 +292,7 @@ public class PropertyMapper<T> {
         // fall back to the transformer when no mapper is explicitly specified in .mapFrom()
         var theMapper = parentValue && parentMapper != null ? this.parentMapper : this.mapper;
         // since our mapping logic assumes fully resolved values, we cannot reliably map if Expressions are disabled
-        if (Expressions.isEnabled() && theMapper != null && (!name.equals(getFrom()) || parentValue)) {
+        if (Expressions.isEnabled() && theMapper != null && (name.equals(getTo()) || parentValue)) {
             mappedValue = theMapper.map(getNamedProperty().orElse(null), value, context);
             mapped = true;
         }
@@ -542,15 +542,14 @@ public class PropertyMapper<T> {
          * <p>
          * f.e. check whether existing feature is referenced
          * <pre>
-         * kc.feature-enabled-<feature>:v1
+         * kc.feature-<feature>:v1
          * → (key, value) -> is key a feature? if not, fail
          *
          * @param validator validator with parameters (wildcardKey, value)
          */
         public Builder<T> wildcardKeysValidator(BiConsumer<String, String> validator) {
             addValidator((mapper, configValue) -> {
-                var wildcardMapper = (WildcardPropertyMapper<?>) mapper;
-                var key = wildcardMapper.extractWildcardValue(configValue.getName()).orElseThrow(() -> new PropertyException("Cannot determine wildcard key."));
+                var key = mapper.getNamedProperty().orElseThrow(() -> new PropertyException("Cannot determine wildcard key."));
                 validator.accept(key, configValue.getValue());
             });
             return this;

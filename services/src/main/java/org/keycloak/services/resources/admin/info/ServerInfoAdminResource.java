@@ -84,6 +84,7 @@ import org.keycloak.representations.info.ThemeInfoRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.theme.Theme;
 
@@ -121,12 +122,17 @@ public class ServerInfoAdminResource {
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         RealmModel userRealm = session.getContext().getRealm();
-        if (RealmManager.isAdministrationRealm(userRealm)
-                || AdminPermissions.evaluator(session, userRealm, auth).hasOneAdminRole(AdminRoles.VIEW_SYSTEM)) {
+        AdminPermissionEvaluator adminEvaluator = AdminPermissions.evaluator(session, userRealm, auth);
+        if (RealmManager.isAdministrationRealm(userRealm) || adminEvaluator.hasOneAdminRole(AdminRoles.VIEW_SYSTEM)) {
             // system information is only for admins in the administration realm or fallback view-system role
             info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp(), Version.VERSION));
             info.setCpuInfo(CpuInfoRepresentation.create());
             info.setMemoryInfo(MemoryInfoRepresentation.create());
+        } else if (adminEvaluator.realm().canManageRealm()) {
+            // If the user can manage his own realm just add the version information
+            SystemInfoRepresentation systemInfo = new SystemInfoRepresentation();
+            systemInfo.setVersion(Version.VERSION);
+            info.setSystemInfo(systemInfo);
         }
         info.setProfileInfo(createProfileInfo());
         info.setFeatures(createFeatureRepresentations());
@@ -233,7 +239,8 @@ public class ServerInfoAdminResource {
                 try {
                     Theme theme = session.theme().getTheme(name, type);
                     // Different name means the theme itself was not found and fallback to default theme was needed
-                    if (theme != null && name.equals(theme.getName())) {
+                    // Do not include abstract themes that can only be extended (like base)
+                    if (theme != null && name.equals(theme.getName()) && !theme.isAbstract()) {
                         ThemeInfoRepresentation ti = new ThemeInfoRepresentation();
                         ti.setName(name);
 
@@ -242,6 +249,8 @@ public class ServerInfoAdminResource {
                             ti.setLocales(locales.replaceAll(" ", "").split(","));
                         }
 
+                        ti.setDescription(getThemeDescription(theme));
+
                         themes.add(ti);
                     }
                 } catch (IOException e) {
@@ -249,6 +258,10 @@ public class ServerInfoAdminResource {
                 }
             }
         }
+    }
+
+    private String getThemeDescription(Theme theme) throws IOException {
+        return theme.getProperties().getProperty("description");
     }
 
     private LinkedList<String> filterThemes(Theme.Type type, LinkedList<String> themeNames) {
@@ -438,6 +451,7 @@ public class ServerInfoAdminResource {
         featureRep.setLabel(feature.getLabel());
         featureRep.setType(FeatureType.valueOf(feature.getType().name()));
         featureRep.setEnabled(isEnabled);
+        featureRep.setDeprecated(feature.isDeprecated());
         featureRep.setDependencies(feature.getDependencies() != null ?
                 feature.getDependencies().stream().map(Enum::name).collect(Collectors.toSet()) : Collections.emptySet());
         return featureRep;

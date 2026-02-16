@@ -1,15 +1,12 @@
 package org.keycloak.broker.kubernetes;
 
-import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+
+import org.keycloak.broker.oidc.IssuerValidation;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.util.Strings;
 
-import static org.keycloak.common.util.UriUtils.checkUrl;
 
-public class KubernetesIdentityProviderConfig extends IdentityProviderModel {
-
-    public static final String ISSUER = OIDCIdentityProviderConfig.ISSUER;
+public class KubernetesIdentityProviderConfig extends IdentityProviderModel implements IssuerValidation {
 
     public KubernetesIdentityProviderConfig() {
     }
@@ -43,11 +40,6 @@ public class KubernetesIdentityProviderConfig extends IdentityProviderModel {
     @Override
     public void validate(RealmModel realm) {
         super.validate(realm);
-
-        String issuer = getIssuer();
-        if (Strings.isEmpty(issuer)) {
-            throw new IllegalArgumentException(ISSUER + " is required");
-        }
-        checkUrl(realm.getSslRequired(), issuer, ISSUER);
+        validateIssuer(realm);
     }
 }

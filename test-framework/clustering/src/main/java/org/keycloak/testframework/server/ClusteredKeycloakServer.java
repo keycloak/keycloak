@@ -25,9 +25,8 @@ import java.util.concurrent.TimeoutException;
 import org.keycloak.it.utils.DockerKeycloakDistribution;
 import org.keycloak.testframework.clustering.LoadBalancer;
 import org.keycloak.testframework.infinispan.CacheType;
-import org.keycloak.testframework.logging.JBossLogConsumer;
+import org.keycloak.testframework.logging.JBossContainerLogConsumer;
 
-import org.infinispan.server.test.core.CountdownLatchLoggingConsumer;
 import org.jboss.logging.Logger;
 import org.testcontainers.images.RemoteDockerImage;
 import org.testcontainers.utility.DockerImageName;
@@ -54,7 +53,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
     }
 
     @Override
-    public void start(KeycloakServerConfigBuilder configBuilder) {
+    public void start(KeycloakServerConfigBuilder configBuilder, boolean tlsEnabled) {
         int numServers = containers.length;
         CountdownLatchLoggingConsumer clusterLatch = new CountdownLatchLoggingConsumer(numServers, String.format(CLUSTER_VIEW_REGEX, numServers));
         String[] imagePeServer = null;
@@ -124,17 +123,13 @@ public class ClusteredKeycloakServer implements KeycloakServer {
     }
 
     private static void configureLogConsumers(DockerKeycloakDistribution container, int index, CountdownLatchLoggingConsumer clusterLatch) {
-        var logger = new JBossLogConsumer(Logger.getLogger("managed.keycloak." + index));
+        var logger = new JBossContainerLogConsumer(Logger.getLogger("managed.keycloak." + index));
         container.setCustomLogConsumer(logger.andThen(clusterLatch));
     }
 
     private void copyProvidersAndConfigs(DockerKeycloakDistribution container, KeycloakServerConfigBuilder configBuilder) {
         for (var dependency : configBuilder.toDependencies()) {
             container.copyProvider(dependency.getGroupId(), dependency.getArtifactId());
-        }
-
-        for(var config : configBuilder.toConfigFiles()) {
-            container.copyConfigFile(config);
         }
     }
 
@@ -153,11 +148,6 @@ public class ClusteredKeycloakServer implements KeycloakServer {
     @Override
     public String getManagementBaseUrl() {
         return getManagementBaseUrl(0);
-    }
-
-    @Override
-    public boolean isTlsEnabled() {
-        return false;
     }
 
     public int getBasePort(int index) {

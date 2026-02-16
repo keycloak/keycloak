@@ -304,7 +304,7 @@
                                     <includes>
                                         <include>wildfly-config.xml</include>
                                         <include>password-blacklists/**</include>
-                                        <include>log4j.properties</include>
+                                        <include>logging.properties</include>
                                         <include>vault/**</include>
                                         <include>firefox-cookies-prefs.js</include>
                                     </includes>
@@ -733,7 +733,6 @@
                 <surefire.memory.Xmx>2048m</surefire.memory.Xmx>
                 <surefire.memory.metaspace>512m</surefire.memory.metaspace>
                 <surefire.memory.metaspace.max>1024m</surefire.memory.metaspace.max>
-                <junit-vintage-engine.version>5.9.3</junit-vintage-engine.version>
             </properties>
             <dependencies>
                 <dependency>
@@ -751,13 +750,11 @@
                 <dependency>
                     <groupId>org.junit.vintage</groupId>
                     <artifactId>junit-vintage-engine</artifactId>
-                    <version>${junit-vintage-engine.version}</version>
                     <scope>test</scope>
                 </dependency>
                 <dependency>
                     <groupId>net.bytebuddy</groupId>
                     <artifactId>byte-buddy</artifactId>
-                    <version>${byte-buddy.version}</version>
                 </dependency>
             </dependencies>
         </profile>

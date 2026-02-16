@@ -36,6 +36,10 @@ public class UserStorageProviderModel extends CacheableStorageProviderModel {
     public static final String LAST_SYNC = "lastSync";
     public static final String REMOVE_INVALID_USERS_ENABLED = "removeInvalidUsersEnabled";
 
+    public enum SyncMode {
+        FULL, CHANGED;
+    }
+
     public UserStorageProviderModel() {
         setProviderType(UserStorageProvider.class.getName());
     }
@@ -46,7 +50,6 @@ public class UserStorageProviderModel extends CacheableStorageProviderModel {
 
     private transient Integer fullSyncPeriod;
     private transient Integer changedSyncPeriod;
-    private transient Integer lastSync;
     private transient Boolean importEnabled;
     private transient Boolean removeInvalidUsersEnabled;
 
@@ -98,20 +101,24 @@ public class UserStorageProviderModel extends CacheableStorageProviderModel {
     }
 
     public int getLastSync() {
-        if (lastSync == null) {
-            String val = getConfig().getFirst(LAST_SYNC);
-            if (val == null) {
-                lastSync = 0;
-            } else {
-                lastSync = Integer.valueOf(val);
-            }
+        return Math.max(getLastSync(SyncMode.FULL), getLastSync(SyncMode.CHANGED));
+    }
+
+    public int getLastSync(SyncMode syncMode) {
+        String val = getConfig().getFirst(LAST_SYNC + "_" + syncMode.name());
+        if (val == null) {
+            return 0;
         }
-        return lastSync;
+        return Integer.parseInt(val);
+    }
+
+    public void setLastSync(int lastSync, SyncMode syncMode) {
+        getConfig().putSingle(LAST_SYNC + "_" + syncMode.name(), Integer.toString(lastSync));
     }
 
     public void setLastSync(int lastSync) {
-        this.lastSync = lastSync;
-        getConfig().putSingle(LAST_SYNC, Integer.toString(lastSync));
+        setLastSync(lastSync, SyncMode.FULL);
+        setLastSync(lastSync, SyncMode.CHANGED);
     }
 
     public boolean isRemoveInvalidUsersEnabled() {

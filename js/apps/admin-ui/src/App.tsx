@@ -50,12 +50,17 @@ export const App = () => {
   const [adminClient, setAdminClient] = useState<KeycloakAdminClient>();
 
   useEffect(() => {
+    const fragment = "#/";
+    if (window.location.href.endsWith(fragment)) {
+      const newPath = window.location.pathname.replace(fragment, "");
+      window.history.replaceState(null, "", newPath);
+    }
     const init = async () => {
       const client = await initAdminClient(keycloak, environment);
       setAdminClient(client);
     };
     init().catch(console.error);
-  }, []);
+  }, [environment, keycloak]);
 
   if (!adminClient) return <KeycloakSpinner />;
   return (

@@ -18,13 +18,27 @@
 package org.keycloak.services.util;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.MultivaluedMap;
+
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.common.util.StreamUtil;
+import org.keycloak.http.FormPartValue;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -32,12 +46,20 @@ import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.Strings;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class CertificateInfoHelper {
 
+    public static final String CERTIFICATE_PEM = "Certificate PEM";
+    public static final String PUBLIC_KEY_PEM = "Public Key PEM";
+    public static final String JSON_WEB_KEY_SET = "JSON Web Key Set";
+
+    private static final Logger logger = Logger.getLogger(CertificateInfoHelper.class);
 
     public static final String PRIVATE_KEY = "private.key";
     public static final String X509CERTIFICATE = "certificate";
@@ -83,9 +105,11 @@ public class CertificateInfoHelper {
                 throw new IllegalStateException("Certificate not found for use sig");
             }
 
+            // set the public key as before and also the full jwks
             PublicKey publicKey = JWKParser.create(publicKeyJwk).toPublicKey();
             String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
             CertificateRepresentation info = new CertificateRepresentation();
+            info.setJwks(jwks);
             info.setPublicKey(publicKeyPem);
             info.setKid(publicKeyJwk.getKeyId());
             return info;
@@ -170,6 +194,88 @@ public class CertificateInfoHelper {
         setOrRemoveAttr(client, publicKeyAttribute, rep.getPublicKey());
         setOrRemoveAttr(client, certificateAttribute, rep.getCertificate());
         setOrRemoveAttr(client, kidAttribute, rep.getKid());
+    }
+
+    public static CertificateRepresentation getCertificateFromRequest(KeycloakSession session) throws IOException {
+        CertificateRepresentation info = new CertificateRepresentation();
+        MultivaluedMap<String, FormPartValue> uploadForm = session.getContext().getHttpRequest().getMultiPartFormParameters();
+        FormPartValue keystoreFormatPart = uploadForm.getFirst("keystoreFormat");
+        if (keystoreFormatPart == null) {
+            throw new BadRequestException("keystoreFormat cannot be null");
+        }
+        String keystoreFormat = keystoreFormatPart.asString();
+        FormPartValue inputParts = uploadForm.getFirst("file");
+
+        boolean fileEmpty = false;
+        try {
+            fileEmpty = inputParts == null || Strings.isEmpty(inputParts.asString());
+        } catch (Exception e) {
+            // ignore
+        }
+
+        if (fileEmpty) {
+            throw new BadRequestException("file cannot be empty");
+        }
+
+        if (keystoreFormat.equals(CERTIFICATE_PEM)) {
+            String pem = StreamUtil.readString(inputParts.asInputStream(), StandardCharsets.UTF_8);
+            pem = PemUtils.removeBeginEnd(pem);
+
+            // Validate format
+            KeycloakModelUtils.getCertificate(pem);
+            info.setCertificate(pem);
+            return info;
+        } else if (keystoreFormat.equals(PUBLIC_KEY_PEM)) {
+            String pem = StreamUtil.readString(inputParts.asInputStream(), StandardCharsets.UTF_8);
+
+            // Validate format
+            KeycloakModelUtils.getPublicKey(pem);
+            info.setPublicKey(pem);
+            return info;
+        } else if (keystoreFormat.equals(JSON_WEB_KEY_SET)) {
+            String jwks = StreamUtil.readString(inputParts.asInputStream(), StandardCharsets.UTF_8);
+
+            info = CertificateInfoHelper.jwksStringToSigCertificateRepresentation(jwks);
+            return info;
+        }
+
+        String keyAlias = uploadForm.getFirst("keyAlias").asString();
+        FormPartValue keyPasswordPart = uploadForm.getFirst("keyPassword");
+        char[] keyPassword = keyPasswordPart != null ? keyPasswordPart.asString().toCharArray() : null;
+
+        FormPartValue storePasswordPart = uploadForm.getFirst("storePassword");
+        char[] storePassword = storePasswordPart != null ? storePasswordPart.asString().toCharArray() : null;
+        PrivateKey privateKey = null;
+        X509Certificate certificate = null;
+        try {
+            KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(KeystoreUtil.KeystoreFormat.valueOf(keystoreFormat));
+            keyStore.load(inputParts.asInputStream(), storePassword);
+            try {
+                privateKey = (PrivateKey) keyStore.getKey(keyAlias, keyPassword);
+            } catch (Exception e) {
+                // ignore
+            }
+            certificate = (X509Certificate) keyStore.getCertificate(keyAlias);
+        } catch (Exception e) {
+            logger.error("Error loading keystore", e);
+            if (e.getCause() instanceof UnrecoverableKeyException keyException) {
+                throw new BadRequestException(keyException.getMessage());
+            } else {
+                throw new BadRequestException("error loading keystore");
+            }
+        }
+
+        if (privateKey != null) {
+            String privateKeyPem = KeycloakModelUtils.getPemFromKey(privateKey);
+            info.setPrivateKey(privateKeyPem);
+        }
+
+        if (certificate != null) {
+            String certPem = KeycloakModelUtils.getPemFromCertificate(certificate);
+            info.setCertificate(certPem);
+        }
+
+        return info;
     }
 
     private static void setOrRemoveAttr(ClientRepresentation client, String attrName, String attrValue) {

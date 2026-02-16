@@ -357,7 +357,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
     public void testDPoPProofByConfidentialClient_EdDSA() throws Exception {
         // Generating keys
         String curveName = AbstractEddsaKeyProviderFactory.DEFAULT_EDDSA_ELLIPTIC_CURVE;
-        KeyPair keyPair = AbstractEddsaKeyProviderFactory.generateEddsaKeyPair(curveName);
+        KeyPair keyPair = KeyUtils.generateEddsaKeyPair(curveName);
 
         // JWK
         JWKBuilder b = JWKBuilder.create()

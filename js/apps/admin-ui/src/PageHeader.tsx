@@ -102,7 +102,7 @@ export const Header = () => {
   const isMasterRealm = realm === "master";
   const isManager = hasAccess("manage-realm");
 
-  const logo = customLogo || environment.logo || "/logo.svg";
+  const logo = environment.logo || "/logo.svg";
   const url = useHref(toDashboard({ realm }));
   const logoUrl = environment.logoUrl ? environment.logoUrl : url;
 
@@ -113,9 +113,7 @@ export const Header = () => {
       features={{ hasManageAccount: false }}
       brand={{
         href: logoUrl,
-        src: logo.startsWith("/")
-          ? joinPath(environment.resourceUrl, logo)
-          : logo,
+        src: customLogo || joinPath(environment.resourceUrl, logo),
         alt: t("logo"),
         className: "keycloak__pageheader_brand",
       }}

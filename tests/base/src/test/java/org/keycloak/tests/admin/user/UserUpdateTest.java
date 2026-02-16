@@ -77,7 +77,7 @@ public class UserUpdateTest extends AbstractUserTest {
         loginPage.fillLogin("user_hashed_creds", "admin");
         loginPage.submit();
 
-        assertTrue(driver.getPageSource().contains("Happy days"));
+        assertTrue(driver.page().getPageSource().contains("Happy days"));
 
         AccountHelper.logout(managedRealm.admin(), "user_hashed_creds");
     }

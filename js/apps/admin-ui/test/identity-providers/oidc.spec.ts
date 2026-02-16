@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { switchOn } from "../utils/form.ts";
@@ -67,6 +67,12 @@ test.describe.serial("OIDC identity provider test", () => {
     await assertPkceMethodExists(page);
 
     await clickSaveButton(page);
+    await expect(page.getByText("Required field")).toBeVisible();
+
+    await switchOn(page, "#config\\.useJwksUrl");
+    await assertJwksUrlExists(page, true);
+    await clickSaveButton(page);
+
     await assertNotificationMessage(page, "Provider successfully updated");
   });
 });

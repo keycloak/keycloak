@@ -21,7 +21,7 @@ Cache:
                        mode, a 'ispn' cache is used to create a cluster between multiple server
                        nodes. By default in development mode, a 'local' cache disables clustering
                        and is intended for development and testing purposes. Possible values are:
-                       ispn, local. Default: ispn.
+                       ispn, local.
 --cache-config-file <file>
                      Defines the file from which cache configuration should be loaded from. The
                        configuration file is relative to the 'conf/' directory.
@@ -268,14 +268,18 @@ HTTP(S):
 
 --http-accept-non-normalized-paths <true|false>
                      DEPRECATED. If the server should accept paths that are not normalized
-                       according to RFC3986 or that contain a double slash ('//'). While accepting
-                       those requests might be relevant for legacy applications, it is recommended
-                       to disable it to allow for more concise URL filtering. Default: false.
+                       according to RFC3986 or that contain a double slash ('//') or semicolon
+                       (';'). While accepting those requests might be relevant for legacy
+                       applications, it is recommended to disable it to allow for more concise URL
+                       filtering. Default: false.
 --http-enabled <true|false>
                      Enables the HTTP listener. Enabled by default in development mode. Typically
                        not enabled in production unless the server is fronted by a TLS termination
                        proxy. Default: false.
---http-host <host>   The HTTP Host. Default: 0.0.0.0.
+--http-host <host>   The HTTP Host. In prod mode or when running on Windows Subsystem For Linux the
+                       default is to bind to all network addresses (0.0.0.0), which means the
+                       server may be accessible from other machines on your network. Otherwise
+                       defaults to localhost.
 --http-max-queued-requests <requests>
                      Maximum number of queued HTTP requests. Use this to shed load in an overload
                        situation. Excess requests will return a "503 Server not Available" response.
@@ -325,6 +329,16 @@ HTTP(S):
                      The type of the trust store file. If not given, the type is automatically
                        detected based on the file extension. If 'fips-mode' is set to 'strict' and
                        no value is set, it defaults to 'BCFKS'.
+--shutdown-delay <delay>
+                     Length of the pre-shutdown phase during which the server prepares for
+                       shutdown. May be an ISO 8601 duration value, an integer number of seconds,
+                       or an integer followed by one of [ms, h, m, s, d]. This period allows for
+                       loadbalancer reconfiguration and draining of TLS/HTTP keepalive connections.
+                       Default: 1s.
+--shutdown-timeout <timeout>
+                     The shutdown period waiting for currently running HTTP requests to finish. May
+                       be an ISO 8601 duration value, an integer number of seconds, or an integer
+                       followed by one of [ms, h, m, s, d]. Default: 1s.
 
 HTTP Access log:
 
@@ -466,6 +480,10 @@ Logging:
                      The log level of a category. Takes precedence over the 'log-level' option.
                        Possible values are (case insensitive): off, fatal, error, warn, info,
                        debug, trace, all.
+--log-mdc-enabled <true|false>
+                     Indicates whether to add information about the realm and other information to
+                       the mapped diagnostic context. All elements will be prefixed with 'kc.'
+                       Default: false. Available only when log-mdc preview feature is enabled.
 
 Tracing:
 

@@ -1,6 +1,10 @@
 package org.keycloak.testframework.oauth;
 
+import java.util.List;
+
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testframework.injection.DependenciesBuilder;
+import org.keycloak.testframework.injection.Dependency;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
@@ -10,13 +14,22 @@ import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.openqa.selenium.WebDriver;
 
 public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthClient> {
+
+    @Override
+    public List<Dependency> getDependencies(RequestedInstance<OAuthClient, InjectOAuthClient> instanceContext) {
+        return DependenciesBuilder.create(KeycloakUrls.class)
+                .add(HttpClient.class)
+                .add(ManagedWebDriver.class)
+                .add(TestApp.class)
+                .add(ManagedRealm.class, instanceContext.getAnnotation().realmRef()).build();
+    }
 
     @Override
     public OAuthClient getValue(InstanceContext<OAuthClient, InjectOAuthClient> instanceContext) {
@@ -24,7 +37,7 @@ public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthCli
 
         KeycloakUrls keycloakUrls = instanceContext.getDependency(KeycloakUrls.class);
         CloseableHttpClient httpClient = (CloseableHttpClient) instanceContext.getDependency(HttpClient.class);
-        WebDriver webDriver = instanceContext.getDependency(WebDriver.class);
+        ManagedWebDriver webDriver = instanceContext.getDependency(ManagedWebDriver.class);
         TestApp testApp = instanceContext.getDependency(TestApp.class);
 
         ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class, annotation.realmRef());

@@ -900,6 +900,7 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         updateCibaSettings(rep, realm);
         updateParSettings(rep, realm);
+        validateClientAndRealmTimeouts(realm);
         session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
 
         if (rep.getSmtpServer() != null) {
@@ -1242,7 +1243,6 @@ public class DefaultExportImportManager implements ExportImportManager {
         model.setFullSyncPeriod(fedModel.getFullSyncPeriod());
         model.setPriority(fedModel.getPriority());
         model.setChangedSyncPeriod(fedModel.getChangedSyncPeriod());
-        model.setLastSync(fedModel.getLastSync());
         if (fedModel.getConfig() != null) {
             for (Map.Entry<String, String> entry : fedModel.getConfig().entrySet()) {
                 model.getConfig().putSingle(entry.getKey(), entry.getValue());
@@ -1723,6 +1723,10 @@ public class DefaultExportImportManager implements ExportImportManager {
                     provider.addIdentityProvider(orgModel, idp);
                 }
 
+                for (GroupRepresentation groupRep : Optional.ofNullable(orgRep.getGroups()).orElse(Collections.emptyList())) {
+                    importOrganizationGroup(provider, orgModel, groupRep, null);
+                }
+
                 for (MemberRepresentation member : Optional.ofNullable(orgRep.getMembers()).orElse(Collections.emptyList())) {
                     UserModel m = session.users().getUserByUsername(newRealm, member.getUsername());
                     if (MembershipType.MANAGED.equals(member.getMembershipType())) {
@@ -1730,7 +1734,57 @@ public class DefaultExportImportManager implements ExportImportManager {
                     } else {
                         provider.addMember(orgModel, m);
                     }
+                    // Import organization group memberships
+                    importOrganizationGroupMemberships(member, m, newRealm);
                 }
+            }
+        }
+    }
+
+    private void validateClientAndRealmTimeouts(RealmModel realm) {
+        if (realm.isRememberMe()) {
+            if (realm.getClientSessionIdleTimeout() > Math.max(realm.getSsoSessionIdleTimeout(), realm.getSsoSessionIdleTimeoutRememberMe())) {
+                throw new ModelException("Client session idle timeout cannot exceed realm SSO session idle timeout and RememberMe idle timeout.");
+            }
+
+            if (realm.getClientSessionMaxLifespan() > Math.max(realm.getSsoSessionMaxLifespan(), realm.getSsoSessionMaxLifespanRememberMe())) {
+                throw new ModelException("Client session max lifespan cannot exceed realm SSO session max lifespan and RememberMe Max span.");
+            }
+        } else {
+            if (realm.getClientSessionIdleTimeout() > realm.getSsoSessionIdleTimeout()) {
+                throw new ModelException("Client Session Idle Timeout cannot be greater than Realm SSO Idle Timeout.");
+            }
+
+            if (realm.getClientSessionMaxLifespan() > realm.getSsoSessionMaxLifespan()) {
+                throw new ModelException("Client session max lifespan cannot exceed realm SSO session max lifespan.");
+            }
+        }
+    }
+
+    private void importOrganizationGroup(OrganizationProvider provider, OrganizationModel organization, GroupRepresentation groupRep, GroupModel parent) {
+        GroupModel group = provider.createGroup(organization, groupRep.getId(), groupRep.getName(), parent);
+
+        if (groupRep.getAttributes() != null) {
+            for (Map.Entry<String, List<String>> attr : groupRep.getAttributes().entrySet()) {
+                group.setAttribute(attr.getKey(), attr.getValue());
+            }
+        }
+
+        if (groupRep.getSubGroups() != null) {
+            for (GroupRepresentation subGroup : groupRep.getSubGroups()) {
+                importOrganizationGroup(provider, organization, subGroup, group);
+            }
+        }
+    }
+
+    private void importOrganizationGroupMemberships(MemberRepresentation memberRep, UserModel user, RealmModel realm) {
+        if (memberRep.getGroups() != null) {
+            for (String groupId : memberRep.getGroups()) {
+                GroupModel group = session.groups().getGroupById(realm, groupId);
+                if (group == null) {
+                    throw new ModelException("Unable to find organization group specified by id: " + groupId);
+                }
+                user.joinGroup(group);
             }
         }
     }

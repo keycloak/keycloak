@@ -20,7 +20,6 @@ package org.keycloak.quarkus.runtime.configuration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,11 +30,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.quarkus.runtime.cli.command.Main;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import io.smallrye.config.PropertiesConfigSource;
 
+import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SHORT_PREFIX;
 
 /**
@@ -53,12 +52,14 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     private static final String CLI_ARGS = "kc.config.args";
     public static final String NAME = "CliConfigSource";
     private static final Pattern ARG_KEY_VALUE_SPLIT = Pattern.compile("=");
-    private static Set<String> duplicatedArgNames;
 
     protected ConfigArgsConfigSource() {
         super(parseArguments(), NAME, 600);
     }
 
+    /**
+     * Should only be called with sanitized args --property=value
+     */
     public static void setCliArgs(String... args) {
         System.setProperty(CLI_ARGS,
                 Stream.of(args).map(arg -> arg.replaceAll(",", ",,")).collect(Collectors.joining(", ")));
@@ -106,26 +107,12 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
     private static Map<String, String> parseArguments() {
         final Map<String, String> properties = new HashMap<>();
-        final Set<String> allPropertiesNames = new HashSet<>();
-        duplicatedArgNames = new HashSet<>();
 
         parseConfigArgs(getAllCliArgs(), (key, value) -> {
-            if (!allPropertiesNames.add(key)) {
-                duplicatedArgNames.add(key);
-            }
             PropertyMappers.getKcKeyFromCliKey(key).ifPresent(s -> properties.put(s, value));
         }, ignored -> {});
 
         return properties;
-    }
-
-    public static Set<String> getDuplicatedArgNames() {
-        return Collections.unmodifiableSet(duplicatedArgNames);
-    }
-
-    public static void clearDuplicatedArgNames() {
-        // after handling these duplicates, clear the memory
-        duplicatedArgNames = Collections.emptySet();
     }
 
     public static void parseConfigArgs(List<String> args, BiConsumer<String, String> valueArgConsumer, Consumer<String> unaryConsumer) {
@@ -147,12 +134,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                     unaryConsumer.accept(arg);
                     continue;
                 }
-                PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(key);
-                // the weaknesses here:
-                // - runs before propertymapper sanitizing
-                // - needs to know all of the short name options that accept a value
-                // - Even though We've explicitly disabled PosixClusteredShortOptionsAllowed, it may not know all of the picocli parsing rules.
-                if (mapper != null || SHORT_OPTIONS_ACCEPTING_VALUE.contains(key) || arg.startsWith(SPI_OPTION_PREFIX)) {
+                if (arg.startsWith(ARG_PREFIX)) {
                     i++; // consume next as a value to the key
                     value = args.get(i);
                 } else {

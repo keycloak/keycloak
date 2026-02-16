@@ -40,6 +40,12 @@ class VerifyMessagePropertiesTest {
     }
 
     @Test
+    void verifyDiscouragedWordDetected() throws MojoExecutionException {
+        List<String> verify = getFile("discouragedWord_en.properties").verify();
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Discouraged word")));
+    }
+
+    @Test
     void verifyNoHtmlAllowed() throws MojoExecutionException {
         List<String> verify = getFile("noHtml_de.properties").verify();
         MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Illegal HTML")));
@@ -108,6 +114,12 @@ class VerifyMessagePropertiesTest {
     void verifyNoDoubleQuoteForUIMessages() throws MojoExecutionException {
         List<String> verify = getFile("doubleSingleQuotes_en.properties").withValidateMessageFormatQuotes(false).verify();
         MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Double single quotes are not allowed")));
+    }
+
+    @Test
+    void verifyNoHtmlEntities() throws MojoExecutionException {
+        List<String> verify = getFile("htmlEntities_en.properties").withValidateMessageFormatQuotes(false).verify();
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("HTML entities should not be used")));
     }
 
     @Test

@@ -50,7 +50,9 @@ public class VerifyMessageProperties {
             String contents = Files.readString(file.toPath());
             verifyNoDuplicateKeys(contents);
             verifySafeHtml();
+            verifyNoHtmlEntities();
             verifyProblematicBlanks();
+            verifyNoDiscouragedWords();
             if (validateMessageFormatQuotes) {
                 verifyMessageFormatQuotes();
                 verifyMessageFormatPlaceholders();
@@ -63,6 +65,42 @@ public class VerifyMessageProperties {
             throw new MojoExecutionException("Can not read file " + file, e);
         }
         return messages;
+    }
+
+    private final static Pattern HTML_ENTITIES = Pattern.compile("&[a-zA-Z]+;");
+
+    private void verifyNoHtmlEntities() {
+        PropertyResourceBundle bundle = getPropertyResourceBundle();
+
+        bundle.getKeys().asIterator().forEachRemaining(key -> {
+            String value = bundle.getString(key);
+
+            if (HTML_ENTITIES.matcher(value).find()) {
+                messages.add("HTML entities should not be used, as UTF-8 can be used instead '" + key + "' for file " + file + ": " + value);
+            }
+
+        });
+    }
+
+    private final static Pattern DISCOURAGED_WORDS = Pattern.compile("(whitelist|blacklist)", Pattern.CASE_INSENSITIVE);
+
+    private void verifyNoDiscouragedWords() {
+        PropertyResourceBundle bundle = getPropertyResourceBundle();
+
+        if (!file.getName().endsWith("_en.properties")) {
+            // Discouraged words only apply to English files.
+            return;
+        }
+
+        bundle.getKeys().asIterator().forEachRemaining(key -> {
+            String value = bundle.getString(key);
+
+            Matcher matcher = DISCOURAGED_WORDS.matcher(value);
+            if (matcher.find()) {
+                messages.add("Discouraged word found in '" + key + "' for file " + file + ": '" + matcher.group(0) + "' in '" + value + "'");
+            }
+
+        });
     }
 
     private final static Pattern DOUBLE_SINGLE_QUOTES = Pattern.compile("''");

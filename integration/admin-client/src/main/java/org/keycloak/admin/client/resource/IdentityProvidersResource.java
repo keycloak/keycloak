@@ -45,6 +45,20 @@ public interface IdentityProvidersResource {
     @Produces(MediaType.APPLICATION_JSON)
     List<IdentityProviderRepresentation> findAll();
 
+    /**
+     * Get the paginated list of identity providers, filtered according to the specified parameters.
+     *
+     * @param type Type of identity provider. See the class org.keycloak.models.IdentityProviderType for the available values. When parameter is omitted, there is no filtering by type.
+     *             This parameter is available since Keycloak 26.5.0
+     * @param capability Capability of identity provider. Used just if type is omitted. See the class org.keycloak.models.IdentityProviderCapability for the available values. When parameter is omitted, there is no filtering by capability.
+     *                   This parameter is available since Keycloak 26.5.0
+     * @param search Filter to search specific providers by name. Search can be prefixed (name*), contains (*name*) or exact (\"name\"). Default prefixed.
+     * @param briefRepresentation Boolean which defines whether brief representations are returned (default: false).
+     *                            If true, only basic data like ID, alias, providerId and enabled status will be returned in the result
+     * @param firstResult Pagination offset
+     * @param maxResults Maximum results size (defaults to 100)
+     * @return The list of providers.
+     */
     @GET
     @Path("instances")
     @Produces(MediaType.APPLICATION_JSON)

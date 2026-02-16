@@ -83,6 +83,8 @@ public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProv
             case UPDATE:
             case UPDATED:
             case REGISTERED:
+            case TOKEN_EXCHANGE_REQUEST:
+            case JWT_AUTHORIZATION_GRANT:
                 if (isClientAccessTypeMatched()) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             case REGISTER:

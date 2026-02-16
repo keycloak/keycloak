@@ -19,7 +19,7 @@ import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 /**
  * @since Keycloak server 26.4.0. All the child endpoints are also available since that version<p>
  *
- * This endpoint including all the child endpoints require feature {@link org.keycloak.common.Profile.Feature#WORKFLOWS} to be enabled. Note that feature is experimental in 26.4.0 and there might be
+ * This endpoint including all the child endpoints require feature {@link org.keycloak.common.Profile.Feature#WORKFLOWS} to be enabled. Note that feature is preview in 26.5.0 and there might be
  * backwards incompatible changes in the future versions of admin-client and Keycloak server<p>
  */
 public interface WorkflowsResource {
@@ -41,6 +41,15 @@ public interface WorkflowsResource {
             @QueryParam("max") Integer maxResults
     );
 
+    @Path("scheduled/{resource-id}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<WorkflowRepresentation> getScheduledWorkflows(@PathParam("resource-id") String resourceId);
+
     @Path("{id}")
     WorkflowResource workflow(@PathParam("id") String id);
+
+    @POST
+    @Path("migrate")
+    Response migrate(@QueryParam("from") String stepFrom, @QueryParam("to") String stepTo);
 }

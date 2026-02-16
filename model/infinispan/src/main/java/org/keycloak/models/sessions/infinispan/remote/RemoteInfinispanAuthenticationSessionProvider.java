@@ -81,16 +81,6 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
     }
 
     @Override
-    public void removeAllExpired() {
-        // Rely on expiration of cache entries provided by infinispan. Nothing needed here.
-    }
-
-    @Override
-    public void removeExpired(RealmModel realm) {
-        // Rely on expiration of cache entries provided by infinispan. Nothing needed here.
-    }
-
-    @Override
     public void onRealmRemoved(RealmModel realm) {
         transaction.removeByRealmId(realm.getId());
     }

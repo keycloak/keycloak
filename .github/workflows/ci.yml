@@ -12,6 +12,8 @@ env:
   MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
   SUREFIRE_RERUN_FAILING_COUNT: 2
   SUREFIRE_RETRY: "-Dsurefire.rerunFailingTestsCount=2"
+  KC_TEST_GITHUB_SLOW_METHOD: "10"
+  KC_TEST_GITHUB_SLOW_CLASS: "60"
 
 concurrency:
   # Only cancel jobs for PR updates
@@ -27,6 +29,13 @@ permissions:
 
 jobs:
 
+  # Generate version compatibility matrix in a separate job to avoid multiline secret masking issues.
+  version-compatibility:
+    name: Version Compatibility Matrix
+    uses: ./.github/workflows/version-compatibility-matrix.yml
+    permissions:
+      contents: read
+
   conditional:
     name: Check conditional workflows and jobs
     runs-on: ubuntu-latest
@@ -38,7 +47,6 @@ jobs:
       ci-webauthn: ${{ steps.conditional.outputs.ci-webauthn }}
       ci-aurora: ${{ steps.auroradb-tests.outputs.run-aurora-tests }}
       ci-azure: ${{ steps.azure-tests.outputs.run-azure-tests }}
-      ci-compatibility-matrix: ${{ steps.version-compatibility.outputs.matrix }}
       ci-additional-dbs: ${{ steps.additional-dbs-tests.outputs.run-additional-dbs-tests }}
       ci-admin-v2: ${{ steps.conditional.outputs.admin-v2 }}
     permissions:
@@ -79,20 +87,6 @@ jobs:
           fi
           echo "run-additional-dbs-tests=$RUN_ADDITIONAL_DBS_TESTS" >> $GITHUB_OUTPUT
 
-      - name: Version Compatibility Matrix
-        id: version-compatibility
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            BRANCH="${{ github.base_ref }}"
-          else
-            BRANCH="${{ github.ref_name }}"
-          fi
-          MATRIX_JSON=$(./.github/scripts/version-compatibility.sh "${BRANCH}")
-          echo "${MATRIX_JSON}"
-          echo "matrix=${MATRIX_JSON}" >> $GITHUB_OUTPUT
-
   build:
     name: Build
     if: needs.conditional.outputs.ci == 'true'
@@ -105,7 +99,7 @@ jobs:
         uses: ./.github/actions/build-keycloak
 
       - name: Spotless
-        run: ./mvnw spotless:check
+        run: ./mvnw -Pdocs,distribution,operator spotless:check
 
       - name: Check for unstaged proto.lock files
         if: github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'release/')
@@ -168,6 +162,8 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
+        with:
+          jdk-version: '21'
 
       - name: Build adapter distributions
         run: ./mvnw install -DskipTests -f distribution/pom.xml
@@ -199,6 +195,8 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
+        with:
+          jdk-version: '21'
 
       - name: Build adapter distributions
         run: ./mvnw install -DskipTests -f distribution/pom.xml
@@ -277,6 +275,11 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
+      - id: prunsrv-setup
+        name: Setup Apache Commons Daemon (Procrun) for Windows service tests
+        if: runner.os == 'Windows'
+        uses: ./.github/actions/prunsrv-setup
+
       # Smoke tests should cover scenarios that could be broken by changes in other modules that quarkus
       # test classes and even individual tests are included in the following suites by junit tags
       # kc.quarkus.tests.groups acts as the tag filter
@@ -303,7 +306,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         dist: [temurin]
-        version: [17, 25]
+        version: [17, 21]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -475,9 +478,9 @@ jobs:
           echo "aurora-cluster-password=${PASS}" >> $GITHUB_OUTPUT
           echo "region=${AWS_REGION}" >> $GITHUB_OUTPUT
           curl --fail-with-body https://truststore.pki.rds.amazonaws.com/${AWS_REGION}/${AWS_REGION}-bundle.pem -o aws.pem
-          PROPS+=' -Dkeycloak.connectionsJpa.jdbcParameters=\"?ssl=true&sslmode=verify-ca&sslrootcert=/opt/keycloak/aws.pem\"'
           
-          echo "maven_properties=${PROPS}" >> $GITHUB_OUTPUT
+          JDBC_PARAMS='?ssl=true&sslmode=verify-ca&sslrootcert=/opt/keycloak/aws.pem'
+          echo "jdbc_params=${JDBC_PARAMS}" >> $GITHUB_OUTPUT
 
       - id: aurora-create
         name: Create Aurora DB
@@ -515,8 +518,8 @@ jobs:
         run: |
           EC2_CLUSTER_NAME=${{ steps.ec2-create.outputs.ec2_cluster }}
           AWS_REGION=${{ steps.aurora-init.outputs.region }}
-          PROPS='${{ steps.aurora-init.outputs.maven_properties }}'
-          
+          PROPS="-Dkeycloak.connectionsJpa.jdbcParameters=\"${{ steps.aurora-init.outputs.jdbc_params }}\""
+
           PROPS+=" -Dauth.server.db.host=${{ steps.aurora-create.outputs.endpoint }} -Dkeycloak.connectionsJpa.password=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
           PROPS+=" -Djdbc.mvn.groupId=software.amazon.jdbc -Djdbc.mvn.artifactId=aws-advanced-jdbc-wrapper -Djdbc.mvn.version=2.3.1 -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ env.old-version }}/providers"
 
@@ -538,7 +541,7 @@ jobs:
 
       - name: EC2 Maven Logs
         if: failure()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: auroraDB-migration-tests-mvn-logs
           path: .github/scripts/ansible/files
@@ -548,7 +551,7 @@ jobs:
         run: |
           EC2_CLUSTER_NAME=${{ steps.ec2-create.outputs.ec2_cluster }}
           AWS_REGION=${{ steps.aurora-init.outputs.region }}
-          PROPS='${{ steps.aurora-init.outputs.maven_properties }}'          
+          PROPS="-Dkeycloak.connectionsJpa.jdbcParameters=\"${{ steps.aurora-init.outputs.jdbc_params }}\""
           PROPS+=" -Dauth.server.db.host=${{ steps.aurora-create.outputs.endpoint }} -Dkeycloak.connectionsJpa.password=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
           
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
@@ -571,9 +574,53 @@ jobs:
 
       - name: EC2 Maven Logs
         if: failure()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: aurora-integration-tests-mvn-logs
+          path: .github/scripts/ansible/files
+
+      - name: Clear Aurora DB schema
+        id: aurora-clear-db-schema
+        run: |
+         EC2_CLUSTER_NAME=${{ steps.ec2-create.outputs.ec2_cluster }}
+         AWS_REGION=${{ steps.aurora-init.outputs.region }}
+         
+         cd .github/scripts/ansible
+         ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "-Pexecute-sql -f tests/base/pom.xml sql:execute@clear-schema-psql -Dautocommit=true -Ddriver=software.amazon.jdbc.Driver -Durl=\"jdbc:aws-wrapper:postgresql://${{ steps.aurora-create.outputs.endpoint }}/keycloak${{ steps.aurora-init.outputs.jdbc_params }}\" -Dusername=keycloak -Dpassword=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
+
+      - name: Run Aurora new database tests on EC2
+        id: aurora-new-integration-tests
+        run: |
+          EC2_CLUSTER_NAME=${{ steps.ec2-create.outputs.ec2_cluster }}
+          AWS_REGION=${{ steps.aurora-init.outputs.region }}
+
+          PROPS="-Dkc.test.database=remote -Dkc.test.database.vendor=postgres"
+          PROPS+=" -Dkc.test.database.user=keycloak"
+          PROPS+=" -Dkc.test.database.password=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
+          PROPS+=" -Dkc.test.database.url=\"jdbc:aws-wrapper:postgresql://${{ steps.aurora-create.outputs.endpoint }}/keycloak${{ steps.aurora-init.outputs.jdbc_params }}\""
+          PROPS+=" -Dkc.test.database.driver=software.amazon.jdbc.Driver"
+          PROPS+=" -Dkc.test.database.driver.artifact=software.amazon.jdbc:aws-advanced-jdbc-wrapper"
+
+          cd .github/scripts/ansible
+          ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "$PROPS package -f tests/pom.xml -Dtest=DatabaseTestSuite"
+
+          # Copy returned surefire-report directories to workspace root to ensure they're discovered
+          results=(files/keycloak/results/*)
+          rsync -a $results/* ../../../
+          rm -rf $results
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: AuroraDB IT
+
+      - name: EC2 Maven Logs
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: aurora-new-integration-tests-mvn-logs
           path: .github/scripts/ansible/files
 
       - name: Delete EC2 Instance
@@ -726,6 +773,7 @@ jobs:
           # Copy returned surefire-report directories to workspace root to ensure they're discovered
           results=(files/keycloak/results/*)
           rsync -a $results/* ../../../
+          rm -rf $results
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -733,6 +781,63 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: AzureDB IT
+
+      - name: Azure VM Maven Logs
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: azure-integration-tests-mvn-logs
+          path: .github/scripts/ansible/files
+
+      - name: Clear Azure DB schema
+        id: azure-clear-db-schema
+        run: |
+         AZ_VM_CLUSTER_NAME=${{ steps.vm-create.outputs.az_vm_cluster }}
+         AZURE_REGION=${{ steps.azure-init.outputs.region }}
+         
+         cd .github/scripts/ansible
+         ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} "-Pexecute-sql -f tests/base/pom.xml sql:execute@clear-schema-mssql -Dautocommit=true -Ddriver=com.microsoft.sqlserver.jdbc.SQLServerDriver -Durl=\"jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false\" -Dusername=${{ steps.azure-create.outputs.username }} -Dpassword=${{ env.AZURE_DB_PASSWORD }}"
+
+      - name: Run Azure new database tests on VM
+        id: azure-new-integration-tests
+        run: |
+          AZ_VM_CLUSTER_NAME=${{ steps.vm-create.outputs.az_vm_cluster }}
+          AZURE_REGION=${{ steps.azure-init.outputs.region }}
+
+          PROPS="-Dkc.test.database=remote -Dkc.test.database.vendor=mssql"
+          PROPS+=" -Dkc.test.database.user=${{ steps.azure-create.outputs.username }}"
+          PROPS+=" -Dkc.test.database.password=${{ env.AZURE_DB_PASSWORD }}"
+          PROPS+=" -Dkc.test.database.url=\"jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false;sendStringParametersAsUnicode=false\""
+          PROPS+=" -Dkc.test.database.driver=com.microsoft.sqlserver.jdbc.SQLServerDriver"
+          PROPS+=" -Dkc.test.database.driver.artifact=com.microsoft.sqlserver:mssql-jdbc"
+          PROPS+=" -Dkc.test.server.start.timeout=360"
+
+          cd .github/scripts/ansible
+          set +e
+          ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} "$PROPS package -f tests/pom.xml -Dtest=DatabaseTestSuite"
+          MVN_EXIT=$?
+          set -e
+
+          # Copy returned surefire-report directories to workspace root to ensure they're discovered
+          results=(files/keycloak/results/*)
+          rsync -a $results/* ../../../
+          rm -rf $results
+          
+          exit $MVN_EXIT
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: AzureDB IT
+
+      - name: Azure VM Maven Logs
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: azure-new-integration-tests-mvn-logs
+          path: .github/scripts/ansible/files
 
       - name: Delete all Azure resources (resource group)
         if: always()
@@ -747,7 +852,7 @@ jobs:
     timeout-minutes: 75
     strategy:
       matrix:
-        db: [postgres, mysql, oracle, mssql, mariadb, tidb]
+        db: [postgres, mysql, oracle, mssql, mariadb]
       fail-fast: false
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -914,7 +1019,7 @@ jobs:
 
       - name: Run new Forms IT
         run: |
-          ./mvnw package -f tests/pom.xml -Dkc.test.browser=${{ matrix.browser }} -Dtest=FormsTestSuite
+          ./mvnw package -f tests/pom.xml -Dkc.test.browser=${{ matrix.browser }}-headless -Dtest=FormsTestSuite
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -929,12 +1034,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     timeout-minutes: 45
-    strategy:
-      matrix:
-        browser:
-          - chrome
-          - firefox
-      fail-fast: false
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
@@ -943,13 +1042,16 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - uses: ./.github/actions/install-chrome
-        if: matrix.browser == 'chrome'
 
       - name: Run WebAuthn IT
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh webauthn`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=chrome "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+
+      - name: Run new WebAuthn IT
+        run: |
+          ./mvnw test -f tests/webauthn/pom.xml
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -1005,6 +1107,8 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
+        with:
+          jdk-version: 21 # Keycloak 24 is not compatible with Java 25+
 
       - name: Run Migration Tests
         run: |
@@ -1038,8 +1142,11 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
-      - name: Run tests
+      - name: Run tests with defaults
         run: ./mvnw package -f test-framework/pom.xml
+
+      - name: Run tests with embedded server
+        run: KC_TEST_SERVER=embedded ./mvnw package -f test-framework/examples/pom.xml -Dtest=CustomConfigTest,RunOnServerTest,TlsEnabledTest
 
   base-new-integration-tests:
     name: Base IT (new)
@@ -1085,15 +1192,15 @@ jobs:
 
   mixed-cluster-compatibility-tests:
     name: Cluster Compatibility Tests
-    if: needs.conditional.outputs.ci-compatibility-matrix != 'skip'
+    if: needs.version-compatibility.outputs.matrix != 'skip'
     runs-on: ubuntu-latest
     needs:
       - build
-      - conditional
+      - version-compatibility
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(needs.conditional.outputs.ci-compatibility-matrix) }}
+        include: ${{ fromJSON(needs.version-compatibility.outputs.matrix) }}
     timeout-minutes: 10
 
     steps:

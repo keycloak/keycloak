@@ -17,12 +17,17 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import java.beans.Transient;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import org.keycloak.common.util.KeycloakUriBuilder;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import static org.keycloak.OID4VCConstants.WELL_KNOWN_OPENID_CREDENTIAL_ISSUER;
 
 /**
  * Represents a CredentialsOffer according to the OID4VCI Spec
@@ -50,6 +55,23 @@ public class CredentialsOffer {
     public CredentialsOffer setCredentialIssuer(String credentialIssuer) {
         this.credentialIssuer = credentialIssuer;
         return this;
+    }
+
+    @Transient
+    public String getIssuerMetadataUrl() {
+        var metadataUrl = KeycloakUriBuilder
+                .fromUri(credentialIssuer)
+                .path("/.well-known/" + WELL_KNOWN_OPENID_CREDENTIAL_ISSUER);
+        var idx = credentialIssuer.indexOf("/realms");
+        if (idx > 0) {
+            var baseUrl = credentialIssuer.substring(0, idx);
+            var realmPath = credentialIssuer.substring(idx);
+            metadataUrl = KeycloakUriBuilder
+                    .fromUri(baseUrl)
+                    .path("/.well-known/" + WELL_KNOWN_OPENID_CREDENTIAL_ISSUER)
+                    .path(realmPath);
+        }
+        return metadataUrl.buildAsString();
     }
 
     public List<String> getCredentialConfigurationIds() {

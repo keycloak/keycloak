@@ -3,7 +3,7 @@ import type { Path } from "react-router-dom";
 import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
-export type ThemesTabType = "settings" | "lightColors" | "darkColors";
+export type ThemesTabType = "settings" | "quickTheme";
 
 export type ThemesParams = {
   realm: string;

@@ -190,6 +190,7 @@ export { IdentityProviders as OrganizationIdentityProviders } from "./organizati
 export { InviteMemberModal } from "./organizations/InviteMemberModal";
 export { LinkIdentityProviderModal } from "./organizations/LinkIdentityProviderModal";
 export { Members as OrganizationMembers } from "./organizations/Members";
+export { Invitations as OrganizationInvitations } from "./organizations/Invitations";
 export { OrganizationForm } from "./organizations/OrganizationForm";
 export * as OrganizationSection from "./organizations/OrganizationsSection";
 export * as Page from "./page/Page";
@@ -310,7 +311,7 @@ export { Header } from "./PageHeader";
 export { PageNav } from "./PageNav";
 export { PageNotFoundSection } from "./PageNotFoundSection";
 export { App as AdminUi } from "./App";
-export type { Environment as AccountEnvironment } from "./environment";
+export type { Environment as AdminEnvironment } from "./environment";
 export { KeycloakProvider, useEnvironment } from "@keycloak/keycloak-ui-shared";
 export { AdminClientContext, initAdminClient } from "./admin-client";
 export { AppContexts } from "./App";

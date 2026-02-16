@@ -196,7 +196,6 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @BeforeStartDistribution(ForceRebuild.class)
     @DisabledOnOs(value = { OS.WINDOWS }, disabledReason = "Windows uses a different path separator.")
     @Launch({ "start", "--verbose", "--http-enabled=true", "--hostname-strict=false",
             "--https-certificate-file=/tmp/kc/bin/../conf/server.crt.pem",
@@ -208,7 +207,6 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @BeforeStartDistribution(ForceRebuild.class)
     @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "Windows uses a different path separator.")
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false",
             "--https-certificate-file=C:\\tmp\\kc\\bin\\..\\conf/server.crt.pem",
@@ -255,12 +253,4 @@ public class QuarkusPropertiesDistTest {
         }
     }
 
-    public static class ForceRebuild implements Consumer<KeycloakDistribution> {
-
-        @Override
-        public void accept(KeycloakDistribution distribution) {
-            CLIResult buildResult = distribution.run("build");
-            buildResult.assertBuild();
-        }
-    }
 }

@@ -283,6 +283,10 @@ public class RoleContainerResource extends RoleResource {
             throw ErrorResponse.error(roleName + " is default role of the realm and cannot be removed.",
                     Response.Status.BAD_REQUEST);
         }
+        RoleRepresentation roleRepresentation = new RoleRepresentation();
+        roleRepresentation.setId(role.getId());
+        roleRepresentation.setName(role.getName());
+
         deleteRole(role);
 
         if (role.isClientRole()) {
@@ -291,7 +295,7 @@ public class RoleContainerResource extends RoleResource {
             adminEvent.resource(ResourceType.REALM_ROLE);
         }
 
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.DELETE).representation(roleRepresentation).resourcePath(uriInfo).success();
 
     }
 
@@ -420,7 +424,7 @@ public class RoleContainerResource extends RoleResource {
      * @param clientUuid
      * @return
      */
-    @Path("{role-name}/composites/clients/{client-uuid}")
+    @Path("{role-name}/composites/clients/{targetClientUuid}")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
@@ -432,7 +436,7 @@ public class RoleContainerResource extends RoleResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Stream<RoleRepresentation> getClientRoleComposites(final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName,
-                                                                final @PathParam("client-uuid") String clientUuid) {
+                                                                final @PathParam("targetClientUuid") String clientUuid) {
         auth.roles().requireView(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {

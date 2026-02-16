@@ -65,7 +65,8 @@ public interface AuthenticationSessionProvider extends Provider {
      * @deprecated manual removal of expired entities should not be used anymore. It is responsibility of the store
      *             implementation to handle expirable entities
      */
-    void removeAllExpired();
+    @Deprecated(since = "19.0", forRemoval = true)
+    default void removeAllExpired() {}
 
     /**
      * Removes all expired root authentication sessions for the given realm.
@@ -75,7 +76,8 @@ public interface AuthenticationSessionProvider extends Provider {
      * @deprecated manual removal of expired entities should not be used anymore. It is responsibility of the store
      *             implementation to handle expirable entities
      */
-    void removeExpired(RealmModel realm);
+    @Deprecated(since = "19.0", forRemoval = true)
+    default void removeExpired(RealmModel realm) {}
 
     /**
      * Removes all associated root authentication sessions to the given realm which was removed.
@@ -87,7 +89,9 @@ public interface AuthenticationSessionProvider extends Provider {
      * Removes all associated root authentication sessions to the given realm and client which was removed.
      * @param realm {@code RealmModel} Can't be {@code null}.
      * @param client {@code ClientModel} Can't be {@code null}.
+     * @deprecated to remove, all implementations are empty.
      */
+    @Deprecated(since = "26.5", forRemoval = true)
     void onClientRemoved(RealmModel realm, ClientModel client);
 
     /**

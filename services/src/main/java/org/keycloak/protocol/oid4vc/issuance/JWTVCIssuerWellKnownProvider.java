@@ -18,14 +18,18 @@ package org.keycloak.protocol.oid4vc.issuance;
 
 import jakarta.ws.rs.core.UriInfo;
 
+import org.keycloak.http.HttpResponse;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oid4vc.model.JWTVCIssuerMetadata;
 import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.services.Urls;
+import org.keycloak.services.resources.ServerMetadataResource;
 import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
+
+import org.jboss.logging.Logger;
 
 /**
  * {@link WellKnownProvider} implementation for JWT VC Issuer metadata at endpoint /.well-known/jwt-vc-issuer
@@ -35,6 +39,7 @@ import org.keycloak.wellknown.WellKnownProvider;
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class JWTVCIssuerWellKnownProvider implements WellKnownProvider {
+    private static final Logger LOGGER = Logger.getLogger(JWTVCIssuerWellKnownProvider.class);
     private final KeycloakSession session;
 
     public JWTVCIssuerWellKnownProvider(KeycloakSession session) {
@@ -51,6 +56,8 @@ public class JWTVCIssuerWellKnownProvider implements WellKnownProvider {
         UriInfo frontendUriInfo = session.getContext().getUri(UrlType.FRONTEND);
         RealmModel realm = session.getContext().getRealm();
 
+        addDeprecationHeadersIfOldRoute();
+
         JWTVCIssuerMetadata config = new JWTVCIssuerMetadata();
         config.setIssuer(Urls.realmIssuer(frontendUriInfo.getBaseUri(), realm.getName()));
 
@@ -58,5 +65,40 @@ public class JWTVCIssuerWellKnownProvider implements WellKnownProvider {
         config.setJwks(jwks);
 
         return config;
+    }
+
+    /**
+     * Attach deprecation headers/log for the legacy realm-scoped route:
+     * old: /realms/{realm}/.well-known/jwt-vc-issuer
+     * new: /.well-known/jwt-vc-issuer/realms/{realm}
+     */
+    private void addDeprecationHeadersIfOldRoute() {
+        String requestPath = session.getContext().getUri().getRequestUri().getPath();
+        if (requestPath == null) {
+            return;
+        }
+
+        int idxRealms = requestPath.indexOf("/realms/");
+        int idxWellKnown = requestPath.indexOf("/.well-known/");
+        boolean isOldRoute = idxRealms >= 0 && idxWellKnown > idxRealms;
+        if (!isOldRoute) {
+            return;
+        }
+
+        var realm = session.getContext().getRealm();
+        if (realm == null) {
+            return;
+        }
+
+        var base = session.getContext().getUri().getBaseUriBuilder();
+        var successor = ServerMetadataResource.wellKnownOAuthProviderUrl(base)
+                .build(JWTVCIssuerWellKnownProviderFactory.PROVIDER_ID, realm.getName());
+
+        HttpResponse httpResponse = session.getContext().getHttpResponse();
+        httpResponse.setHeader("Warning", "299 - \"Deprecated endpoint; use " + successor + "\"");
+        httpResponse.setHeader("Deprecation", "true");
+        httpResponse.setHeader("Link", "<" + successor + ">; rel=\"successor-version\"");
+
+        LOGGER.warnf("Deprecated realm-scoped well-known endpoint accessed for JWT VC issuer in realm '%s'. Use %s instead.", realm.getName(), successor);
     }
 }

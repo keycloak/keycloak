@@ -18,10 +18,13 @@
 package org.keycloak.it.cli.dist;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
@@ -35,6 +38,7 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.jgroups.certificates.DefaultJGroupsCertificateProviderFactory;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibility;
 import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilityCheck;
 import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilityMetadata;
@@ -46,24 +50,23 @@ import org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProvi
 import org.keycloak.spi.infinispan.impl.remote.DefaultCacheRemoteConfigProviderFactory;
 import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.infinispan.compatibility.CachingEmbeddedMetadataProvider.majorMinorOf;
 import static org.keycloak.it.cli.dist.Util.createTempFile;
+import static org.keycloak.quarkus.runtime.configuration.compatibility.DatabaseCompatibilityMetadataProvider.UNSUPPORTED_CHANGE_SET_HASH_KEY;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+
 @DistributionTest
 @RawDistOnly(reason = "Requires creating JSON file to be available between containers")
 public class UpdateCommandDistTest {
-
-    @Test
-    @Launch({UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, "--features-disabled=rolling-updates"})
-    public void testFeatureNotEnabled(CLIResult cliResult) {
-        cliResult.assertError("Unable to use this command. None of the versions of the feature 'rolling-updates' is enabled.");
-    }
 
     @Test
     @Launch({UpdateCompatibility.NAME})
@@ -92,8 +95,10 @@ public class UpdateCommandDistTest {
 
         var info = JsonSerialization.mapper.readValue(jsonFile, UpdateCompatibilityCheck.METADATA_TYPE_REF);
         assertEquals(Version.VERSION, info.get(KeycloakCompatibilityMetadataProvider.ID).get("version"));
-        assertEquals(org.infinispan.commons.util.Version.getVersion(), info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME).get("version"));
-        assertEquals(org.jgroups.Version.printVersion(), info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME).get("jgroupsVersion"));
+
+        // Since rolling-updates:v2 is now default, versions are in Major.Minor format
+        assertEquals(majorMinorOf(org.infinispan.commons.util.Version.getVersion()), info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME).get("version"));
+        assertEquals(majorMinorOf(org.jgroups.Version.printVersion()), info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME).get("jgroupsVersion"));
 
         var cacheMeta = info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME);
         assertTrue(cacheMeta.get(DefaultCacheEmbeddedConfigProviderFactory.CONFIG).endsWith("conf/cache-ispn.xml"));
@@ -124,23 +129,27 @@ public class UpdateCommandDistTest {
         result.assertExitCode(CompatibilityResult.ExitCode.RECREATE.value());
         result.assertError("[%s] Rolling Update is not available. '%s.version' is incompatible: 0.0.0.Final -> %s.".formatted(KeycloakCompatibilityMetadataProvider.ID, KeycloakCompatibilityMetadataProvider.ID, Version.VERSION));
 
+        // Get Major.Minor versions for assertions
+        String ispnVersion = majorMinorOf(org.infinispan.commons.util.Version.getVersion());
+        String jgroupsVersion = majorMinorOf(org.jgroups.Version.printVersion());
+
         // incompatible infinispan version
         info = defaultMeta(distribution);
         info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME).put("version", "0.0.0.Final");
         JsonSerialization.mapper.writeValue(jsonFile, info);
 
-        // incompatible jgroups version
         result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
         result.assertExitCode(CompatibilityResult.ExitCode.RECREATE.value());
-        result.assertError("[%s] Rolling Update is not available. '%s.version' is incompatible: 0.0.0.Final -> %s.".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME, CacheEmbeddedConfigProviderSpi.SPI_NAME, org.infinispan.commons.util.Version.getVersion())); // incompatible infinispan version
+        result.assertError("[%s] Rolling Update is not available. '%s.version' is incompatible: 0.0.0.Final -> %s.".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME, CacheEmbeddedConfigProviderSpi.SPI_NAME, ispnVersion));
 
+        // incompatible jgroups version
         info = defaultMeta(distribution);
         info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME).put("jgroupsVersion", "0.0.0.Final");
         JsonSerialization.mapper.writeValue(jsonFile, info);
 
         result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
         result.assertExitCode(CompatibilityResult.ExitCode.RECREATE.value());
-        result.assertError("[%s] Rolling Update is not available. '%s.jgroupsVersion' is incompatible: 0.0.0.Final -> %s.".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME, CacheEmbeddedConfigProviderSpi.SPI_NAME, org.jgroups.Version.printVersion()));
+        result.assertError("[%s] Rolling Update is not available. '%s.jgroupsVersion' is incompatible: 0.0.0.Final -> %s.".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME, CacheEmbeddedConfigProviderSpi.SPI_NAME, jgroupsVersion));
     }
 
     private String resolveConfigFile(KeycloakDistribution distribution, String... paths) {
@@ -184,6 +193,26 @@ public class UpdateCommandDistTest {
         result.assertError("[%1$s] Rolling Update is not available. '%1$s.configFile' is incompatible: null".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME));
         result.assertError("[%1$s] Rolling Update is not available. '%1$s.jgroupsVersion' is incompatible: null".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME));
         result.assertError("[%1$s] Rolling Update is not available. '%1$s.version' is incompatible: null".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME));
+    }
+
+    @Test
+    public void testRollingUpdatePatchCompatibility(KeycloakDistribution distribution) throws IOException {
+        var jsonFile = createTempFile("patch-compatible", ".json");
+        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath()
+        );
+        result.assertMessage("Metadata:");
+        assertEquals(0, result.exitCode());
+        var info = JsonSerialization.mapper.readValue(jsonFile, UpdateCompatibilityCheck.METADATA_TYPE_REF);
+        var cacheMeta = info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME);
+        assertTrue(cacheMeta.get("version").matches("^\\d+\\.\\d+$"), "Infinispan version should be Major.Minor");
+        assertTrue(cacheMeta.get("jgroupsVersion").matches("^\\d+\\.\\d+$"), "JGroups version should be Major.Minor");
+        result = distribution.run(
+                UpdateCompatibility.NAME,
+                UpdateCompatibilityCheck.NAME,
+                UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath()
+        );
+        result.assertExitCode(CompatibilityResult.ExitCode.ROLLING.value());
+        result.assertMessage("[OK] Rolling Update is available.");
     }
 
     @Test
@@ -245,9 +274,7 @@ public class UpdateCommandDistTest {
 
         var info = JsonSerialization.mapper.readValue(jsonFile, UpdateCompatibilityCheck.METADATA_TYPE_REF);
         var expectedMeta = defaultMeta(distribution);
-        expectedMeta.put(DatabaseCompatibilityMetadataProvider.ID, Map.of(
-              DatabaseOptions.DB.getKey(), "postgres"
-        ));
+        expectedMeta.get(DatabaseCompatibilityMetadataProvider.ID).put(DatabaseOptions.DB.getKey(), "postgres");
         info.remove(FeatureCompatibilityMetadataProvider.ID);
         assertEquals(expectedMeta, info);
 
@@ -265,8 +292,8 @@ public class UpdateCommandDistTest {
         // Assert that expected db-url-* options are written to the metadata when --db-url is not present
         var info = JsonSerialization.mapper.readValue(jsonFile, UpdateCompatibilityCheck.METADATA_TYPE_REF);
         var expectedMeta = defaultMeta(distribution);
-        expectedMeta.put(DatabaseCompatibilityMetadataProvider.ID, Map.of(
-              DatabaseOptions.DB.getKey(), DatabaseOptions.DB.getDefaultValue().get(),
+        var dbMeta = expectedMeta.get(DatabaseCompatibilityMetadataProvider.ID);
+        dbMeta.putAll(Map.of(
               DatabaseOptions.DB_URL_DATABASE.getKey(), "keycloak",
               DatabaseOptions.DB_URL_HOST.getKey(), "localhost",
               DatabaseOptions.DB_URL_PORT.getKey(), "9999"
@@ -284,9 +311,14 @@ public class UpdateCommandDistTest {
         assertEquals(0, result.exitCode());
 
         info = JsonSerialization.mapper.readValue(jsonFile, UpdateCompatibilityCheck.METADATA_TYPE_REF);
-        expectedMeta.put(DatabaseCompatibilityMetadataProvider.ID, Map.of(
-              DatabaseOptions.DB.getKey(), DatabaseOptions.DB.getDefaultValue().get()
-        ));
+        Map<String, String> expectedDbMeta = new HashMap<>();
+        expectedDbMeta.put(DatabaseOptions.DB.getKey(), DatabaseOptions.DB.getDefaultValue().get());
+        String expectedHash = dbMeta.get(UNSUPPORTED_CHANGE_SET_HASH_KEY);
+        if (expectedHash != null) {
+            expectedDbMeta.put(UNSUPPORTED_CHANGE_SET_HASH_KEY, expectedHash);
+        }
+        expectedMeta.put(DatabaseCompatibilityMetadataProvider.ID, expectedDbMeta);
+
         info.remove(FeatureCompatibilityMetadataProvider.ID);
         assertEquals(expectedMeta, info);
 
@@ -295,26 +327,36 @@ public class UpdateCommandDistTest {
         result.assertExitCode(CompatibilityResult.ExitCode.ROLLING.value());
     }
 
-    private Map<String, Map<String, String>> defaultMeta(KeycloakDistribution distribution) {
+    private Map<String, Map<String, String>> defaultMeta(KeycloakDistribution distribution) throws IOException {
         Map<String, String> keycloak = new HashMap<>(1);
         keycloak.put("version", Version.VERSION);
 
+        Map<String, String> dbMeta = new HashMap<>();
+        dbMeta.put(DatabaseOptions.DB.getKey(), DatabaseOptions.DB.getDefaultValue().get());
+        try (InputStream inputStream = UpdateCommandDistTest.class.getResourceAsStream("/META-INF/rolling-upgrades-unsupported-changes.json")) {
+            if (inputStream != null) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                Set<DatabaseCompatibilityMetadataProvider.ChangeSet> changeSets = objectMapper.readValue(inputStream, new TypeReference<>() {});
+                String changeSetJson = objectMapper.writeValueAsString(changeSets);
+                String hash = HashUtils.sha256UrlEncodedHash(changeSetJson, StandardCharsets.UTF_8);
+                dbMeta.put(UNSUPPORTED_CHANGE_SET_HASH_KEY, hash);
+            }
+        }
+
         Map<String, Map<String, String>> m = new HashMap<>();
         m.put(KeycloakCompatibilityMetadataProvider.ID, keycloak);
-        m.put(DatabaseCompatibilityMetadataProvider.ID, Map.of(
-              DatabaseOptions.DB.getKey(), DatabaseOptions.DB.getDefaultValue().get()
-        ));
+        m.put(DatabaseCompatibilityMetadataProvider.ID, dbMeta);
         m.put(CacheEmbeddedConfigProviderSpi.SPI_NAME, embeddedCachingMeta(distribution));
         m.put(JGroupsCertificateProviderSpi.SPI_NAME, Map.of(
               "enabled", "true"
         ));
         return m;
     }
-
+    
     private Map<String, String> embeddedCachingMeta(KeycloakDistribution distribution) {
         Map<String, String> m = new HashMap<>();
-        m.put("version", org.infinispan.commons.util.Version.getVersion());
-        m.put("jgroupsVersion", org.jgroups.Version.printVersion());
+        m.put("version", majorMinorOf(org.infinispan.commons.util.Version.getVersion()));
+        m.put("jgroupsVersion", majorMinorOf(org.jgroups.Version.printVersion()));
         m.put("configFile", resolveConfigFile(distribution, "conf", "cache-ispn.xml"));
         return m;
     }

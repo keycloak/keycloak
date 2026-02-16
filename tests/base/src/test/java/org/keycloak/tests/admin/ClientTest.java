@@ -54,6 +54,7 @@ import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -350,9 +351,15 @@ public class ClientTest {
             }
             rep.setRedirectUris(null);
 
-            if (expectedRootUrlError != null) rep.setRootUrl(testUrl);
-            if (expectedBaseUrlError != null) rep.setBaseUrl(testUrl);
-            if (expectedRedirectUrisError != null) rep.setRedirectUris(List.of(testUrl));
+            if (expectedRootUrlError != null) {
+                rep.setRootUrl(testUrl);
+            }
+            if (expectedBaseUrlError != null) {
+                rep.setBaseUrl(testUrl);
+            }
+            if (expectedRedirectUrisError != null) {
+                rep.setRedirectUris(List.of(testUrl));
+            }
             createOrUpdateClientExpectingValidationErrors(rep, create, expectedRootUrlError, expectedBaseUrlError, expectedRedirectUrisError);
 
             rep.setRootUrl(null);
@@ -968,27 +975,54 @@ public class ClientTest {
 
         ClientRepresentation storedClient = managedRealm.admin().clients().get(client.getId()).toRepresentation();
         assertClient(client, storedClient);
+
+        // try adding a duplicate protocol mapper
+        protocolMappers.add(barMapper);
+        newClient.setProtocolMappers(protocolMappers);
+
+        createOrUpdateClientExpectingValidationErrors(newClient, false, "Cannot add protocol mapper 'bar'. Protocol mapper name must be unique per protocol");
     }
 
     public static void assertClient(ClientRepresentation client, ClientRepresentation storedClient) {
-        if (client.getClientId() != null) Assert.assertEquals(client.getClientId(), storedClient.getClientId());
-        if (client.getName() != null) Assert.assertEquals(client.getName(), storedClient.getName());
-        if (client.isEnabled() != null) Assert.assertEquals(client.isEnabled(), storedClient.isEnabled());
-        if (client.isAlwaysDisplayInConsole() != null)
+        if (client.getClientId() != null) {
+            Assert.assertEquals(client.getClientId(), storedClient.getClientId());
+        }
+        if (client.getName() != null) {
+            Assert.assertEquals(client.getName(), storedClient.getName());
+        }
+        if (client.isEnabled() != null) {
+            Assert.assertEquals(client.isEnabled(), storedClient.isEnabled());
+        }
+        if (client.isAlwaysDisplayInConsole() != null) {
             Assert.assertEquals(client.isAlwaysDisplayInConsole(), storedClient.isAlwaysDisplayInConsole());
-        if (client.isBearerOnly() != null) Assert.assertEquals(client.isBearerOnly(), storedClient.isBearerOnly());
-        if (client.isPublicClient() != null)
+        }
+        if (client.isBearerOnly() != null) {
+            Assert.assertEquals(client.isBearerOnly(), storedClient.isBearerOnly());
+        }
+        if (client.isPublicClient() != null) {
             Assert.assertEquals(client.isPublicClient(), storedClient.isPublicClient());
-        if (client.isFullScopeAllowed() != null)
+        }
+        if (client.isFullScopeAllowed() != null) {
             Assert.assertEquals(client.isFullScopeAllowed(), storedClient.isFullScopeAllowed());
-        if (client.getRootUrl() != null) Assert.assertEquals(client.getRootUrl(), storedClient.getRootUrl());
-        if (client.getAdminUrl() != null) Assert.assertEquals(client.getAdminUrl(), storedClient.getAdminUrl());
-        if (client.getBaseUrl() != null) Assert.assertEquals(client.getBaseUrl(), storedClient.getBaseUrl());
-        if (client.isSurrogateAuthRequired() != null)
+        }
+        if (client.getRootUrl() != null) {
+            Assert.assertEquals(client.getRootUrl(), storedClient.getRootUrl());
+        }
+        if (client.getAdminUrl() != null) {
+            Assert.assertEquals(client.getAdminUrl(), storedClient.getAdminUrl());
+        }
+        if (client.getBaseUrl() != null) {
+            Assert.assertEquals(client.getBaseUrl(), storedClient.getBaseUrl());
+        }
+        if (client.isSurrogateAuthRequired() != null) {
             Assert.assertEquals(client.isSurrogateAuthRequired(), storedClient.isSurrogateAuthRequired());
-        if (client.getClientAuthenticatorType() != null)
+        }
+        if (client.getClientAuthenticatorType() != null) {
             Assert.assertEquals(client.getClientAuthenticatorType(), storedClient.getClientAuthenticatorType());
-        if (client.getSecret() != null) Assert.assertEquals(client.getSecret(), storedClient.getSecret());
+        }
+        if (client.getSecret() != null) {
+            Assert.assertEquals(client.getSecret(), storedClient.getSecret());
+        }
 
         if (client.getNotBefore() != null) {
             Assertions.assertEquals(client.getNotBefore(), storedClient.getNotBefore());
@@ -1050,5 +1084,72 @@ public class ClientTest {
                     .password("password");
             return realm;
         }
+    }
+
+    @Test
+    public void testClientSessionTimeoutValidation() {
+        ClientRepresentation clientRepresentation = createClient();
+        clientRepresentation.setAttributes(new HashMap<>());
+        ClientResource clientResource = managedRealm.admin().clients().get(clientRepresentation.getId());
+        ClientRepresentation rep = clientResource.toRepresentation();
+        if (rep.getAttributes() == null) {
+            rep.setAttributes(new HashMap<>());
+        }
+
+        RealmRepresentation oldRepresentation = managedRealm.admin().toRepresentation();
+        managedRealm.cleanup().add(rr -> {
+            rr.update(oldRepresentation);
+        });
+
+        // Remember-Me Disabled
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
+        realm.setRememberMe(false);
+        realm.setSsoSessionIdleTimeout(300);
+        realm.setSsoSessionMaxLifespan(600);
+        managedRealm.admin().update(realm);
+
+        // Happy path
+        rep = clientResource.toRepresentation();
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT, "200");
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, "500");
+        managedRealm.admin().clients().get(rep.getId()).update(rep);
+
+        // Failing due to idle time
+        rep = clientResource.toRepresentation();
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT, "400");
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, "500");
+        createOrUpdateClientExpectingValidationErrors(rep, false,
+                "Client session idle timeout cannot exceed realm SSO session idle timeout.");
+
+        // Fix idle, break max lifespan
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT, "200");
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, "700");
+        createOrUpdateClientExpectingValidationErrors(rep, false,
+                "Client session max lifespan cannot exceed realm SSO session max lifespan.");
+
+        // Remember-Me Enabled
+        realm = managedRealm.admin().toRepresentation();
+        realm.setRememberMe(true);
+        realm.setSsoSessionIdleTimeoutRememberMe(500);
+        realm.setSsoSessionMaxLifespanRememberMe(900);
+        managedRealm.admin().update(realm);
+
+        // Happy path
+        rep = clientResource.toRepresentation();
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT, "400");
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, "800");
+        managedRealm.admin().clients().get(rep.getId()).update(rep);
+
+        // Failing due to idle time
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT, "550");
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, "800");
+        createOrUpdateClientExpectingValidationErrors(rep, false,
+                "Client session idle timeout cannot exceed realm SSO session idle timeout and RememberMe idle timeout.");
+
+        // Failing due to lifetime
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT, "300");
+        rep.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, "950");
+        createOrUpdateClientExpectingValidationErrors(rep, false,
+                "Client session max lifespan cannot exceed realm SSO session max lifespan and RememberMe Max span.");
     }
 }

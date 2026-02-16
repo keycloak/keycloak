@@ -483,8 +483,14 @@ public class LDAPIdentityStore implements IdentityStore {
                         Object val = enumm.next();
 
                         if (val instanceof byte[]) { // byte[]
-                            String attrVal = Base64.getEncoder().encodeToString((byte[]) val);
-                            attrValues.add(attrVal);
+                            if (ldapAttributeName.equalsIgnoreCase(getConfig().getUuidLDAPAttributeName())) {
+                                // UUID was fetched as a binary attribute, we decode it here - this is the path that's used for objectGUID in Active Directory
+                                String attrVal = this.operationManager.decodeEntryUUID(val);
+                                attrValues.add(attrVal);
+                            } else {
+                                String attrVal = Base64.getEncoder().encodeToString((byte[]) val);
+                                attrValues.add(attrVal);
+                            }
                         } else { // String
                             String attrVal = val.toString().trim();
                             attrValues.add(attrVal);
@@ -597,7 +603,7 @@ public class LDAPIdentityStore implements IdentityStore {
             }
 
             try {
-                byte[] bytes = Base64.getDecoder().decode(value);
+                byte[] bytes = Base64.getMimeDecoder().decode(value);
                 attr.add(bytes);
             } catch (IllegalArgumentException iae) {
                 logger.warnf("Wasn't able to Base64 decode the attribute value. Ignoring attribute update. Attribute: %s, Attribute value: %s", attrName, attrValue);

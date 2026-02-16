@@ -1,0 +1,179 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
+<#import "/templates/features.adoc" as features>
+
+<@tmpl.guide
+title="Centralize your observability stack with OpenTelemetry"
+summary="Learn about OpenTelemetry integration for centralized observability and telemetry data.">
+
+https://opentelemetry.io/docs/what-is-opentelemetry/[OpenTelemetry] (OTel) is an open-source observability framework designed to provide consistent and reliable ways to collect telemetry data across distributed systems.
+It is a project under the https://www.cncf.io/projects/opentelemetry/[Cloud Native Computing Foundation (CNCF)] as an incubating project.
+Its goal is to provide a unified standard and toolset for instrumenting, generating, and exporting telemetry data from modern applications, making it easier to monitor, debug, and understand complex services.
+
+The goal of {project_name} is to support OpenTelemetry Logs, Metrics, and Traces to create a centralized observability stack without any additional deployment overhead.
+
+== General options
+{project_name} provides support for global settings of telemetry data export.
+It means that you can configure connection parameters to a single https://opentelemetry.io/docs/collector/[OpenTelemetry collector] that will be used for all supported components.
+
+In order to have OpenTelemetry enabled, at least one component needs to be turned on, for example <<traces, Traces>>.
+
+NOTE: The OpenTelemetry feature is _enabled_ by default. Disable the feature in order to disable OpenTelemetry components.
+
+=== Endpoint
+You can configure the OpenTelemetry collector's global endpoint that is shared across all components by using the `telemetry-endpoint` option.
+The default value is `+http://localhost:4317+`.
+
+You can change the endpoint via CLI as follows:
+
+<@kc.start parameters="--telemetry-endpoint=http://my-otel-endpoint:4317"/>
+
+=== Service name
+You can configure the global OpenTelemetry service name used for identifying the exporter of the telemetry data.
+The default service name is `keycloak`, specified via the `telemetry-service-name` property, which takes precedence over `service.name` defined in the `telemetry-resource-attributes` property.
+
+You can change the service name via CLI as follows:
+
+<@kc.start parameters="--telemetry-service-name=my-keycloak-iam"/>
+
+=== Protocol
+You can configure the global OpenTelemetry transport protocol used as a communication channel between {project_name} and the OpenTelemetry collector.
+The default value is `grpc`.
+
+{project_name} supports these communication protocols:
+
+<@opts.expectedValues option="telemetry-protocol"/>
+
+You can change the protocol via CLI as follows:
+
+<@kc.start parameters="--telemetry-protocol=http/protobuf"/>
+
+=== Request headers
+You can configure custom request headers that will be sent when exporting telemetry data to the OpenTelemetry collector.
+This is useful for providing authentication tokens or other custom headers required by your telemetry backend.
+
+Use the `telemetry-header-<header>` option to set headers for all telemetry components (logs, metrics, and traces).
+
+Replace `<header>` with your custom header name in the option name.
+
+<@kc.start parameters="--telemetry-header-Authorization='Bearer my-token' --telemetry-header-X-Custom-Header=custom-value"/>
+
+NOTE: Component-specific headers take precedence over general headers for their respective components.
+
+== Configuration via Keycloak CR (Operator)
+The Keycloak CR has first-class citizen configuration options for telemetry. These may be configured under the spec.telemtry stanza as follows:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  telemetry:
+    endpoint: http://my-telemetry:4317          # default 'http://localhost:4317'
+    serviceName: my-best-keycloak-telemetry     # default 'keycloak'
+    protocol: http/protobuf                     # default 'grpc'
+    resourceAttributes:
+      service.namespace: keycloak-namespace-telemetry
+----
+
+These fields should reflect a 1:1 association with `telemetry-*` server options.
+
+== Traces
+
+See the https://www.keycloak.org/observability/tracing[Root cause analysis with tracing guide].
+
+You can override the global OpenTelemetry settings via the Tracing options if you want to export traces to a different OpenTelemetry collector.
+
+== Logs
+
+<@features.techpreview feature="opentelemetry-logs"/>
+
+NOTE: The OpenTelemetry feature (`opentelemetry`) needs to be turned on (by default).
+
+It is possible to export {project_name}'s logs to the OpenTelemetry collector and be managed by various logging backends that support OpenTelemetry.
+
+=== Enable Logs
+You can enable OpenTelemetry Logs via CLI as follows:
+
+<@kc.start parameters="--features=opentelemetry-logs --telemetry-logs-enabled=true"/>
+
+For more information on how to set up logging, see the https://www.keycloak.org/server/logging[Configuring Logging guide].
+
+=== Log level
+By default, all log levels are exported by {project_name}.
+You can optionally configure the most verbose log level to be exported via the `telemetry-logs-level` option.
+
+For example, if you want only to export `WARN` and `ERROR` logs, you can change the log level via the CLI as follows:
+
+<@kc.start parameters="--telemetry-logs-level=WARN"/>
+
+=== Request headers
+As stated for the general configuration of headers, you can configure custom request headers that will be used when exporting logs.
+
+<@kc.start parameters="--telemetry-logs-header-Authorization='Bearer logs-token'"/>
+
+== Metrics
+
+WARNING: The OpenTelemetry Metrics feature is currently experimental, and it is not recommended for use in production.
+
+NOTE: In order for the Metrics feature to function, the OpenTelemetry feature `opentelemetry` cannot be disabled.
+
+For integrating OpenTelemetry Metrics, {project_name} uses the https://quarkus.io/guides/telemetry-micrometer-to-opentelemetry[Micrometer-to-OpenTelemetry bridge],
+which provides the functionality to export metrics created by Micrometer to the OpenTelemetry Collector.
+This means that all metrics created via Micrometer or OpenTelemetry metrics will be exported to the OpenTelemetry.
+
+There are some https://quarkus.io/guides/telemetry-micrometer-to-opentelemetry#metric-differences-between-micrometer-and-opentelemetry[API, and Semantic convention differences] for Micrometer vs OTel Metrics, so you should check if all required metrics are exported.
+
+=== Enable Metrics
+You can enable the OpenTelemetry Metrics via CLI as follows:
+
+<@kc.start parameters="--features=opentelemetry-metrics --telemetry-metrics-enabled=true --metrics-enabled=true"/>
+
+NOTE: Metrics (`metrics-enabled`) needs to be enabled as well
+
+For more information on how to set up metrics, see the configuration options below or visit the https://www.keycloak.org/observability/configuration-metrics[Gaining insights with metrics guide].
+
+=== Request headers
+As stated for the general configuration of headers, you can configure custom request headers that will be used when exporting metrics.
+
+<@kc.start parameters="--telemetry-metrics-header-Authorization='Bearer metrics-token'"/>
+
+<@profile.ifCommunity>
+
+== Development setup
+
+For development purposes, you can use the https://github.com/grafana/docker-otel-lgtm[Grafana OTel-LGTM service], containing OpenTelemetry Collector and backends for logs (Loki), metrics (Prometheus), and traces (Tempo).
+
+.Service architecture
+image::observability/grafana-otel-lgtm.png[]
+
+You can start the service by using Docker/Podman as follows:
+
+[source,shell]
+----
+docker run -p 3000:3000 -p 4317:4317 -p 4318:4318 --rm -ti grafana/otel-lgtm
+----
+
+Then, you can navigate to Grafana UI by accessing `+localhost:3000+` and then you can explore all the data sent to OpenTelemetry Collector.
+
+</@profile.ifCommunity>
+
+<@opts.printRelevantOptions includedOptions="telemetry-*" excludedOptions="telemetry-logs-* telemetry-metrics-*">
+
+=== Traces
+<@opts.includeOptions includedOptions="tracing-enabled tracing-endpoint tracing-protocol tracing-service-name tracing-resource-attributes"/>
+
+=== Logs
+<@opts.includeOptions includedOptions="telemetry-logs-*"/>
+
+=== Metrics
+<@opts.includeOptions includedOptions="metrics-enabled telemetry-metrics-*"/>
+
+</@opts.printRelevantOptions>
+
+</@tmpl.guide>

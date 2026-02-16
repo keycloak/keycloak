@@ -117,6 +117,23 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
                     .assertEvent();
 
             logout();
+            events.clear();
+
+            // login forcing the organization
+            oauth.scope("organization:email");
+            oauth.openLoginForm();
+            WaitUtils.waitForPageToLoad();
+
+            appPage.assertCurrent();
+
+            events.expectLogin()
+                    .user(user.getId())
+                    .detail(Details.USERNAME, user.getUsername())
+                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
+                    .assertEvent();
+
+            logout();
         }
     }
 
@@ -194,7 +211,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
 
             // now the passkeys username password page should be presented with username selected. Passkeys still enabled
             loginPage.assertCurrent();
-            MatcherAssert.assertThat(loginPage.getAttemptedUsername(), Matchers.is("userwebauthn"));
+            MatcherAssert.assertThat(loginPage.getAttemptedUsername(), Matchers.is("UserWebAuthn"));
             MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
             loginPage.login("invalid-password");
             loginPage.assertCurrent();
@@ -205,13 +222,13 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
                     .assertEvent();
 
             // correct login now
-            MatcherAssert.assertThat(loginPage.getAttemptedUsername(), Matchers.is("userwebauthn"));
+            MatcherAssert.assertThat(loginPage.getAttemptedUsername(), Matchers.is("UserWebAuthn"));
             MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
             loginPage.login(getPassword(USERNAME));
             appPage.assertCurrent();
             events.expectLogin()
                     .user(user.getId())
-                    .detail(Details.USERNAME, "userwebauthn")
+                    .detail(Details.USERNAME, "UserWebAuthn")
                     .detail(Details.CREDENTIAL_TYPE, Matchers.nullValue())
                     .assertEvent();
         }

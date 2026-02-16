@@ -148,9 +148,7 @@ public class ClusterConfigKeepAliveDistTest {
                 .prettyPrint();
 
         ConfigurationBuilderHolder configHolder = new ParserRegistry().parse(configJson, MediaType.APPLICATION_JSON);
-        // Workaround for ISPN-16595
-        String cacheName = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, cache);
-        return configHolder.getNamedConfigurationBuilders().get(cacheName).build();
+        return configHolder.getNamedConfigurationBuilders().get(cache).build();
     }
 
     private record CacheOwners(String name, int owners) {

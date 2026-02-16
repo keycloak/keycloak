@@ -90,5 +90,6 @@
     <include file="META-INF/jpa-changelog-26.3.0.xml"/>
     <include file="META-INF/jpa-changelog-26.4.0.xml"/>
     <include file="META-INF/jpa-changelog-26.5.0.xml"/>
+    <include file="META-INF/jpa-changelog-26.6.0.xml"/>
 
 </databaseChangeLog>

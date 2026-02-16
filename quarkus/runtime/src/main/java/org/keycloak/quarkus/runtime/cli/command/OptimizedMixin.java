@@ -28,6 +28,6 @@ public final class OptimizedMixin {
             description = "Use this option to achieve an optimal startup time if you have previously built a server image using the 'build' command.",
             paramLabel = NO_PARAM_LABEL,
             order = 1)
-    Boolean optimized;
+    boolean optimized;
 
 }

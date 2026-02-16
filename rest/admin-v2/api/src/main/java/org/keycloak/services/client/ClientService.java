@@ -4,11 +4,9 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.admin.v2.ClientRepresentation;
+import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.Service;
 import org.keycloak.services.ServiceException;
-import org.keycloak.services.resources.admin.ClientResource;
-import org.keycloak.services.resources.admin.ClientsResource;
 
 public interface ClientService extends Service {
 
@@ -27,14 +25,24 @@ public interface ClientService extends Service {
         // NOTE: this is not always the most desirable way to do pagination
     }
 
-    record CreateOrUpdateResult(ClientRepresentation representation, boolean created) {}
+    record CreateOrUpdateResult(BaseClientRepresentation representation, boolean created) {}
 
-    Optional<ClientRepresentation> getClient(ClientResource clientResource, RealmModel realm, String clientId, ClientProjectionOptions projectionOptions);
+    default Optional<BaseClientRepresentation> getClient(RealmModel realm, String clientId) throws ServiceException {
+        return getClient(realm, clientId, null);
+    }
 
-    Stream<ClientRepresentation> getClients(ClientsResource clientsResource, RealmModel realm, ClientProjectionOptions projectionOptions, ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions);
+    Optional<BaseClientRepresentation> getClient(RealmModel realm, String clientId, ClientProjectionOptions projectionOptions) throws ServiceException;
 
-    Stream<ClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions);
+    default Stream<BaseClientRepresentation> getClients(RealmModel realm) {
+        return getClients(realm, null, null, null);
+    }
 
-    CreateOrUpdateResult createOrUpdate(ClientsResource clientsResource, ClientResource clientResource, RealmModel realm, ClientRepresentation client, boolean allowUpdate) throws ServiceException;
+    Stream<BaseClientRepresentation> getClients(RealmModel realm, ClientProjectionOptions projectionOptions, ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions);
+
+    Stream<BaseClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions);
+
+    void deleteClient(RealmModel realm, String clientId) throws ServiceException;
+
+    CreateOrUpdateResult createOrUpdate(RealmModel realm, BaseClientRepresentation client, boolean allowUpdate) throws ServiceException;
 
 }

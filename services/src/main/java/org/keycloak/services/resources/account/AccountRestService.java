@@ -210,7 +210,7 @@ public class AccountRestService {
     public SessionResource sessions() {
         checkAccountApiEnabled();
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
-        return new SessionResource(session, auth);
+        return new SessionResource(session, auth, event);
     }
 
     @Path("/credentials")

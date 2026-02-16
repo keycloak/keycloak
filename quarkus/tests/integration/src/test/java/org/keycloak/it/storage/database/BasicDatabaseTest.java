@@ -85,7 +85,7 @@ public abstract class BasicDatabaseTest {
         cliResult.assertMessage("Import finished successfully");
     }
 
-    public void assertManualDbInitialization(CLIResult cliResult, RawDistRootPath rawDistRootPath) {
+    public String assertManualDbInitialization(CLIResult cliResult, RawDistRootPath rawDistRootPath) {
         cliResult.assertMessage("Database not initialized, please initialize database with");
 
         var output = readKeycloakDbUpdateScript(rawDistRootPath);
@@ -94,6 +94,8 @@ public abstract class BasicDatabaseTest {
         assertThat(output, containsString("Keycloak database creation script - apply this script to empty DB"));
         assertThat(output, containsString("Change Log: META-INF/jpa-changelog-master.xml"));
         assertThat(output, containsString("Changeset META-INF/jpa-changelog-26.2.6.xml"));
+
+        return output;
     }
 
     protected static String readKeycloakDbUpdateScript(RawDistRootPath path) {

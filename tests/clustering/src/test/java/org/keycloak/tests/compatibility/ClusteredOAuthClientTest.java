@@ -10,6 +10,7 @@ import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
@@ -18,7 +19,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 @KeycloakIntegrationTest
@@ -34,13 +34,13 @@ public class ClusteredOAuthClientTest {
     OAuthClient oauth;
 
     @InjectWebDriver
-    WebDriver driver;
+    ManagedWebDriver driver;
 
     @AfterEach
     public void cleanup() {
         loadBalancer.node(0);
-        driver.navigate().to("about:blank");
-        if (driver instanceof HtmlUnitDriver htmlUnitDriver) {
+        driver.open("about:blank");
+        if (driver.driver() instanceof HtmlUnitDriver htmlUnitDriver) {
             WebClient webClient = htmlUnitDriver.getWebClient();
             webClient.getCache().clear();
             webClient.getCookieManager().clearCookies();

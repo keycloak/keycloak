@@ -2,7 +2,7 @@ package org.keycloak.testframework.server;
 
 public interface KeycloakServer {
 
-    void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder);
+    void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder, boolean tlsEnabled);
 
     void stop();
 
@@ -10,5 +10,4 @@ public interface KeycloakServer {
 
     String getManagementBaseUrl();
 
-    boolean isTlsEnabled();
 }

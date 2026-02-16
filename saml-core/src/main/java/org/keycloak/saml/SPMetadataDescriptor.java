@@ -27,7 +27,6 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
@@ -36,6 +35,7 @@ import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.dom.xmlsec.w3.xmlenc.EncryptionMethodType;
+import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
 
 import org.w3c.dom.Document;
@@ -130,8 +130,7 @@ public class SPMetadataDescriptor {
     public static Element buildKeyInfoElement(String keyName, String pemEncodedCertificate)
         throws javax.xml.parsers.ParserConfigurationException
     {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        DocumentBuilder db = dbf.newDocumentBuilder();
+        DocumentBuilder db = DocumentUtil.getDocumentBuilder();
         Document doc = db.newDocument();
 
         Element keyInfo = doc.createElementNS(XMLDSIG_NSURI.get(), "ds:KeyInfo");
