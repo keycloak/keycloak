@@ -7,6 +7,9 @@ import java.lang.annotation.Target;
 
 import org.keycloak.testframework.injection.LifeCycle;
 
+/**
+ * Injects a {@link TimeOffSet} to change the timeoffset on the Keycloak server
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface InjectTimeOffSet {

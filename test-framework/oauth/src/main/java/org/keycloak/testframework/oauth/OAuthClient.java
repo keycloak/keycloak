@@ -11,6 +11,9 @@ import org.keycloak.testsuite.util.oauth.OAuthClientConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.openqa.selenium.support.PageFactory;
 
+/**
+ * OAuth client to send OAuth request and handle callbacks
+ */
 public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     private final ManagedWebDriver managedWebDriver;

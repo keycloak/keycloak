@@ -22,6 +22,9 @@ import org.keycloak.crypto.def.DefaultCryptoProvider;
 import org.apache.http.conn.ssl.TrustAllStrategy;
 import org.apache.http.ssl.SSLContextBuilder;
 
+/**
+ * Utilities for Keycloak server and clients to obtain keystore and truststores with the managed certificates
+ */
 public class ManagedCertificates {
 
     private final static Path KEYSTORES_DIR = Path.of(System.getProperty("java.io.tmpdir"));
@@ -72,34 +75,67 @@ public class ManagedCertificates {
         clientSslContext = tlsEnabled ? createClientSSLContext() : null;
     }
 
+    /**
+     * The path of the generated Keycloak server keystore containing the private certificate for the Keycloak server
+     *
+     * @return path to keystore
+     */
     public String getServerKeyStorePath() {
         return tlsEnabled ? serverKeystorePath.toString() : null;
     }
 
+    /**
+     * The password used for the keystore
+     *
+     * @return keystore password
+     */
     public String getServerKeyStorePassword() {
         return tlsEnabled ? STORE_PASSWORD : null;
     }
 
+    /**
+     * The path of the generated Keycloak server truststore containing public certificates for clients
+     * @return
+     */
     public String getServerTrustStorePath() {
         return mTlsEnabled ? serverTruststorePath.toString() : null;
     }
 
+    /**
+     * The password used for the truststore
+     *
+     * @return truststore password
+     */
     public String getServerTrustStorePassword() {
         return mTlsEnabled ? STORE_PASSWORD : null;
     }
 
+    /**
+     * Return the SSL context configured with the client truststore
+     *
+     * @return
+     */
     public SSLContext getClientSSLContext() {
         return clientSslContext;
     }
 
+    /**
+     * Returns <code>true</code> if TLS is enabled
+     *
+     * @return <code>true</code> if TLS is enabled
+     */
     public boolean isTlsEnabled()  {
         return tlsEnabled;
     }
 
+    /**
+     * Returns <code>true</code> if mTLS is enabled
+     *
+     * @return <code>true</code> if mTLS is enabled
+     */
     public boolean isMTlsEnabled()  {
         return mTlsEnabled;
     }
-
 
     private SSLContext createClientSSLContext() {
         try {
