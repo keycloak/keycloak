@@ -21,10 +21,10 @@ public class GitHubActionReport {
     private static final String GITHUB_SERVER_URL = System.getenv("GITHUB_SERVER_URL");
     private static final String GITHUB_REPOSITORY = System.getenv("GITHUB_REPOSITORY");
     private static final String GITHUB_SHA = System.getenv("GITHUB_SHA");
+    private static final String GIT_ROOT = findGitRoot();
 
     private final boolean enabled;
     private final File gitHubStepSummary;
-    private final String gitRoot = findGitRoot();
 
     private final long slowTestClassTimeout;
     private final long slowTestTimeout;
@@ -56,7 +56,7 @@ public class GitHubActionReport {
                     Class<?> testClass = context.getRequiredTestClass();
                     String file = findJavaClass(testClass);
                     String link = getLink(file, -1);
-                    slowTests.add(new Slow(context.getRequiredTestClass().getName(), "", executionTime, link));
+                    slowTests.add(new Slow(context.getRequiredTestClass().getName(), null, executionTime, link));
                 }
             }
         }
@@ -105,7 +105,7 @@ public class GitHubActionReport {
                     printWriter.println("| ---------- | ----------- | ---- | ------- |");
 
                     failures.stream().sorted(Comparator.comparing(Failure::className)).forEach(f ->
-                            printWriter.println("| " + createLink(f.className(), f.link()) + " | " + f.methodName + " | " + f.line() + " | `" + f.message() + "` |")
+                            printWriter.println("| " + createLink(f.className(), f.link()) + " | " + (f.methodName() != null ? f.methodName() : "") + " | " + (f.line() >= 0 ? f.line() : "") + " | `" + f.message() + "` |")
                     );
                 }
 
@@ -115,7 +115,7 @@ public class GitHubActionReport {
                     printWriter.println("| ---------- | ----------- | -------------- |");
 
                     slowTests.stream().sorted(Comparator.comparing(Slow::executionTime).reversed()).forEach(s ->
-                            printWriter.println("| " + createLink(s.className(), s.link()) + " | " + s.methodName() + " | " + (s.executionTime() / 1000) + " |")
+                            printWriter.println("| " + createLink(s.className(), s.link()) + " | " + (s.methodName() != null ? s.methodName() : "") + " | " + (s.executionTime() / 1000) + " |")
                     );
                 }
 
@@ -139,16 +139,23 @@ public class GitHubActionReport {
 
             String link = getLink(file, line);
 
-            failures.add(new Failure(testClass.getName(), testMethod != null ? testMethod.getName() : "", message, link, line));
+            failures.add(new Failure(testClass.getName(), testMethod != null ? testMethod.getName() : null, message, link, line));
         }
     }
 
     private String findJavaClass(Class<?> testClass) {
+        if (GIT_ROOT == null) {
+            return null;
+        }
+
         String classFile = testClass.getResource("/" + testClass.getName().replace('.', '/') + ".class").getFile();
-        return classFile.replace(gitRoot + "/", "").replace("target/test-classes", "src/test/java").replace(".class", ".java");
+        return classFile.replace(GIT_ROOT + "/", "").replace("target/test-classes", "src/test/java").replace(".class", ".java");
     }
 
     private String getLink(String file, int line) {
+        if (file == null) {
+            return null;
+        }
         String link = GITHUB_SERVER_URL + "/" + GITHUB_REPOSITORY + "/blob/" + GITHUB_SHA + "/" + file;
         if (line >= 0) {
             link += "#L" + line;
@@ -156,15 +163,15 @@ public class GitHubActionReport {
         return link;
     }
 
-    private String findGitRoot() {
+    private static String findGitRoot() {
         File file = new File(System.getProperty("user.dir"));
-        while (file.isDirectory()) {
+        while (file != null && file.isDirectory()) {
             if (new File(file, ".git").isDirectory()) {
                 return file.getAbsolutePath();
             }
             file = file.getParentFile();
         }
-        throw new RuntimeException("Failed to find .git directory");
+        return null;
     }
 
     private int findLine(Class<?> testClass, Method testMethod, Throwable throwable) {
@@ -176,8 +183,11 @@ public class GitHubActionReport {
         return -1;
     }
 
-    private String createLink(String text, String line) {
-        return "[" + text + "]" + "(" + line + ")";
+    private String createLink(String text, String link) {
+        if (link == null) {
+            return text;
+        }
+        return "[" + text + "]" + "(" + link + ")";
     }
 
     private record Slow(String className, String methodName, long executionTime, String link) {}
