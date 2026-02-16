@@ -352,22 +352,11 @@ public class UpdateCommandDistTest {
         ));
         return m;
     }
-
+    
     private Map<String, String> embeddedCachingMeta(KeycloakDistribution distribution) {
-        // Ensure Profile is configured to pick up feature settings
-        Profile.configure();
-
         Map<String, String> m = new HashMap<>();
-        String ispnVersion = org.infinispan.commons.util.Version.getVersion();
-        String jgroupsVersion = org.jgroups.Version.printVersion();
-
-        if (Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V2)) {
-            ispnVersion = majorMinorOf(ispnVersion);
-            jgroupsVersion = majorMinorOf(jgroupsVersion);
-        }
-
-        m.put("version", ispnVersion);
-        m.put("jgroupsVersion", jgroupsVersion);
+        m.put("version", majorMinorOf(org.infinispan.commons.util.Version.getVersion()));
+        m.put("jgroupsVersion", majorMinorOf(org.jgroups.Version.printVersion()));
         m.put("configFile", resolveConfigFile(distribution, "conf", "cache-ispn.xml"));
         return m;
     }
