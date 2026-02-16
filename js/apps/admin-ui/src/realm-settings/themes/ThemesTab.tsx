@@ -14,6 +14,7 @@ import { ThemesTabType, toThemesTab } from "../routes/ThemesTab";
 import { LogoContext } from "./LogoContext";
 import { ThemeColors } from "./ThemeColors";
 import { ThemeSettingsTab } from "./ThemeSettings";
+import { BackgroundContext } from "./BackgroundContext";
 
 type ThemesTabProps = {
   realm: RealmRepresentation;
@@ -185,9 +186,11 @@ styles=css/styles.css css/theme-styles.css
         data-testid="quickTheme-tab"
         {...quickThemeTab}
       >
-        <LogoContext>
-          <ThemeColors realm={realm} save={saveTheme} />
-        </LogoContext>
+        <BackgroundContext>
+          <LogoContext>
+            <ThemeColors realm={realm} save={saveTheme} />
+          </LogoContext>
+        </BackgroundContext>
       </Tab>
     </RoutableTabs>
   );
