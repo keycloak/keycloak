@@ -1,11 +1,14 @@
 package org.keycloak.admin.api;
 
+import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 
+import org.keycloak.Config;
 import org.keycloak.admin.api.client.ClientsApi;
 import org.keycloak.admin.api.client.DefaultClientsApi;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
