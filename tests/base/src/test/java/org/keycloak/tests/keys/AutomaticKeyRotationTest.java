@@ -65,11 +65,13 @@ public class AutomaticKeyRotationTest {
     public void cleanupOldTestProviders() {
         // Remove any leftover test providers from previous test runs
         // This prevents interference from old providers with auto-rotation enabled
+        // Also clean up rotated providers (named "rsa-generated-<timestamp>" by rotateKey())
         realm.admin().components().query(realm.getId(), KeyProvider.class.getName())
                 .stream()
                 .filter(c -> c.getName() != null && 
                         (c.getName().startsWith("test-auto-rotation-") || 
-                         c.getName().startsWith("test-no-rotation-")))
+                         c.getName().startsWith("test-no-rotation-") ||
+                         c.getName().matches("rsa-generated-\\d+")))
                 .forEach(c -> {
                     try {
                         realm.admin().components().component(c.getId()).remove();
@@ -247,9 +249,10 @@ public class AutomaticKeyRotationTest {
         ComponentRepresentation keyProvider = createKeyProviderWithAutoRotation();
         String keyProviderId = keyProvider.getId();
 
-        // Set as passive and set last rotation time to 31 days ago (past the expiration period of 30 days)
+        // Set as passive and set last rotation time to 40 days ago — well beyond the session-derived
+        // minimum retention (~33 days for the default offline session idle timeout of 30 days + safety margin)
         // Note: These are internal attributes, so we need to set them directly on the server
-        long thirtyOneDaysAgo = Time.currentTimeMillis() - (31L * 24 * 60 * 60 * 1000);
+        long fortyDaysAgo = Time.currentTimeMillis() - (40L * 24 * 60 * 60 * 1000);
         String realmName = realm.getName();
         String finalKeyProviderId = keyProviderId;
         
@@ -258,7 +261,7 @@ public class AutomaticKeyRotationTest {
             org.keycloak.component.ComponentModel provider = realmModel.getComponent(finalKeyProviderId);
             org.keycloak.common.util.MultivaluedHashMap<String, String> config = new org.keycloak.common.util.MultivaluedHashMap<>(provider.getConfig());
             config.putSingle(Attributes.ACTIVE_KEY, "false");
-            config.putSingle(Attributes.LAST_ROTATION_TIME_KEY, String.valueOf(thirtyOneDaysAgo));
+            config.putSingle(Attributes.LAST_ROTATION_TIME_KEY, String.valueOf(fortyDaysAgo));
             provider.setConfig(config);
             realmModel.updateComponent(provider);
         });
@@ -402,9 +405,12 @@ public class AutomaticKeyRotationTest {
             task.run(session);
 
             // Verify the provider was deleted
-            ComponentModel afterTask = realm.getComponent(providerId);
-            if (afterTask != null) {
-                throw new AssertionError("Provider should have been deleted but still exists: " + afterTask.getName());
+            // Use getComponentsStream instead of getComponent to avoid JPA L1 cache
+            // returning a stale entity (removeComponent relies on orphan-removal at flush time)
+            boolean stillExists = realm.getComponentsStream(realm.getId(), KeyProvider.class.getName())
+                    .anyMatch(c -> c.getId().equals(providerId));
+            if (stillExists) {
+                throw new AssertionError("Provider should have been deleted but still exists: " + providerId);
             }
         });
     }
@@ -498,6 +504,119 @@ public class AutomaticKeyRotationTest {
             // Clean up
             realm.removeComponent(stillExists);
         });
+    }
+
+    /**
+     * Test that passive key retention respects realm session timeout settings.
+     * A passive key should NOT be expired if the configured expiration is shorter than
+     * the maximum session lifespan in the realm (e.g. offlineSessionIdleTimeout = 30 days).
+     *
+     * Set passiveKeyExpiration=1 second, make the key passive 5 seconds ago, run the task.
+     * The task should enforce a floor derived from realm session timeouts and keep the key enabled.
+     */
+    @Test
+    public void testPassiveKeyRetentionRespectsSessionTimeouts() {
+        String realmName = realm.getName();
+
+        // Create a key provider with auto-rotation enabled
+        ComponentRepresentation keyProvider = createKeyProviderWithAutoRotation();
+        String keyProviderId = keyProvider.getId();
+
+        // Set the provider as passive with last rotation time 5 seconds ago
+        // Configured passiveKeyExpiration = 1s, but realm session timeouts (e.g. offlineSessionIdleTimeout = 30 days)
+        // should enforce a much longer minimum retention, preventing premature expiration
+        long fiveSecondsAgo = Time.currentTimeMillis() - 5000;
+        String finalKeyProviderId = keyProviderId;
+
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+
+            // Set the provider to passive with a very short configured expiration
+            ComponentModel provider = realmModel.getComponent(finalKeyProviderId);
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>(provider.getConfig());
+            config.putSingle(Attributes.ACTIVE_KEY, "false");
+            config.putSingle(Attributes.LAST_ROTATION_TIME_KEY, String.valueOf(fiveSecondsAgo));
+            config.putSingle(Attributes.PASSIVE_KEY_EXPIRATION_KEY, "1"); // 1 second — deliberately too short
+            provider.setConfig(config);
+            realmModel.updateComponent(provider);
+        });
+
+        // Run the rotation task — the session-aware minimum should prevent expiration
+        runOnServer.run(session -> {
+            new AutomaticKeyRotationTask().run(session);
+        });
+
+        // Verify the key is still enabled — session-aware minimum should prevent premature expiration
+        ComponentRepresentation provider = realm.admin().components().component(keyProviderId).toRepresentation();
+        String enabledStr = provider.getConfig().getFirst(Attributes.ENABLED_KEY);
+        boolean isStillEnabled = enabledStr == null || !"false".equalsIgnoreCase(enabledStr);
+        assertTrue(isStillEnabled,
+                "Passive key should NOT be expired because session-derived minimum retention exceeds the configured 1s expiration");
+
+        // Cleanup
+        realm.admin().components().component(keyProviderId).remove();
+    }
+
+    /**
+     * Test that the rotation task correctly derives the passive key retention floor from
+     * realm session timeout settings.
+     *
+     * Use the Admin API to read the realm's offlineSessionIdleTimeout (default 30 days = 2592000s),
+     * then verify that a passive key with a configured expiration equal to that value minus 1 second
+     * is NOT expired (because the derived floor should be at least offlineSessionIdleTimeout + safety margin).
+     */
+    @Test
+    public void testPassiveRetentionDerivedFromSessionTimeouts() {
+        String realmName = realm.getName();
+
+        // Read the realm's offline session idle timeout via the admin API
+        int offlineIdleTimeout = realm.admin().toRepresentation().getOfflineSessionIdleTimeout();
+        System.out.println("[DEBUG] offlineSessionIdleTimeout = " + offlineIdleTimeout + " seconds");
+        assertTrue(offlineIdleTimeout > 0, "offlineSessionIdleTimeout should be > 0");
+
+        // Create a provider and mark it passive with expiration = offlineIdleTimeout - 1
+        // (this is shorter than the floor which includes a safety margin)
+        ComponentRepresentation keyProvider = createKeyProviderWithAutoRotation();
+        String keyProviderId = keyProvider.getId();
+
+        // Set last rotation time far enough ago to exceed the configured expiration, but NOT the derived floor
+        // The derived floor = max(all session timeouts) + safety margin >= offlineIdleTimeout + 1 hour
+        // So set lastRotation to (offlineIdleTimeout) seconds ago — this exceeds (offlineIdleTimeout - 1)
+        // but should NOT exceed the derived floor
+        long lastRotationTime = Time.currentTimeMillis() - ((long) offlineIdleTimeout * 1000L);
+        String shortExpiration = String.valueOf(offlineIdleTimeout - 1);
+        String finalKeyProviderId = keyProviderId;
+
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel provider = realmModel.getComponent(finalKeyProviderId);
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>(provider.getConfig());
+            config.putSingle(Attributes.ACTIVE_KEY, "false");
+            config.putSingle(Attributes.LAST_ROTATION_TIME_KEY, String.valueOf(lastRotationTime));
+            config.putSingle(Attributes.PASSIVE_KEY_EXPIRATION_KEY, shortExpiration);
+            provider.setConfig(config);
+            realmModel.updateComponent(provider);
+        });
+
+        // Run the rotation task
+        runOnServer.run(session -> {
+            new AutomaticKeyRotationTask().run(session);
+        });
+
+        // The key should still be enabled because the derived floor (offlineIdleTimeout + safety margin)
+        // is larger than both the configured expiration and the time since rotation
+        ComponentRepresentation providerAfter = realm.admin().components().component(keyProviderId).toRepresentation();
+        String enabledStr = providerAfter.getConfig().getFirst(Attributes.ENABLED_KEY);
+        boolean isStillEnabled = enabledStr == null || !"false".equalsIgnoreCase(enabledStr);
+        assertTrue(isStillEnabled,
+                "Passive key should NOT be expired: the session-derived floor (offlineSessionIdleTimeout + safety margin) " +
+                "should be > configured expiration (" + shortExpiration + "s) and > time since rotation (" + offlineIdleTimeout + "s)");
+
+        System.out.println("[DEBUG] Test passed: key still enabled after " + offlineIdleTimeout +
+                "s with configured expiration " + shortExpiration + "s — session-derived floor enforced");
+
+        // Cleanup
+        realm.admin().components().component(keyProviderId).remove();
     }
 
     private ComponentRepresentation createKeyProviderWithAutoRotation() {

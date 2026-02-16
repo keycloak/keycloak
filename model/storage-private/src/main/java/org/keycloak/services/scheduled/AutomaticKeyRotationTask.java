@@ -32,9 +32,6 @@ import io.micrometer.core.instrument.Tag;
 import org.keycloak.Config;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
-import io.micrometer.core.instrument.Tag;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.AdminEvent;
@@ -52,7 +49,6 @@ import org.jboss.logging.Logger;
  * Scheduled task for automatic key rotation.
  * This task checks all key providers across all realms and rotates keys that are due for rotation.
  * 
- * @author <a href="mailto:volck@redhat.com">Volck</a>
  */
 public class AutomaticKeyRotationTask implements ScheduledTask {
 
@@ -253,6 +249,57 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
     }
 
     /**
+     * Computes the minimum safe passive key retention period based on realm session timeout settings.
+     * Keys must remain available (passive) at least as long as the longest-lived session type
+     * to ensure tokens signed with that key can still be verified.
+     *
+     * @param realm The realm to compute the minimum retention for
+     * @return Minimum retention period in seconds
+     */
+    static long computeMinimumPassiveKeyRetention(RealmModel realm) {
+        long maxLifespanSeconds = 0;
+
+        // SSO session lifespans (in seconds)
+        maxLifespanSeconds = Math.max(maxLifespanSeconds, realm.getSsoSessionMaxLifespan());
+        maxLifespanSeconds = Math.max(maxLifespanSeconds, realm.getSsoSessionIdleTimeout());
+
+        // "Remember me" variants (0 means "use regular SSO value", so skip if 0)
+        if (realm.getSsoSessionMaxLifespanRememberMe() > 0) {
+            maxLifespanSeconds = Math.max(maxLifespanSeconds, realm.getSsoSessionMaxLifespanRememberMe());
+        }
+        if (realm.getSsoSessionIdleTimeoutRememberMe() > 0) {
+            maxLifespanSeconds = Math.max(maxLifespanSeconds, realm.getSsoSessionIdleTimeoutRememberMe());
+        }
+
+        // Offline session idle timeout — typically the largest (default 30 days)
+        maxLifespanSeconds = Math.max(maxLifespanSeconds, realm.getOfflineSessionIdleTimeout());
+
+        // Offline session max lifespan (only applies when enabled)
+        if (realm.isOfflineSessionMaxLifespanEnabled()) {
+            maxLifespanSeconds = Math.max(maxLifespanSeconds, realm.getOfflineSessionMaxLifespan());
+        }
+
+        // Client-level overrides (0 means "inherit realm value", so skip if 0)
+        if (realm.getClientOfflineSessionIdleTimeout() > 0) {
+            maxLifespanSeconds = Math.max(maxLifespanSeconds, realm.getClientOfflineSessionIdleTimeout());
+        }
+        if (realm.getClientOfflineSessionMaxLifespan() > 0) {
+            maxLifespanSeconds = Math.max(maxLifespanSeconds, realm.getClientOfflineSessionMaxLifespan());
+        }
+        if (realm.getClientSessionIdleTimeout() > 0) {
+            maxLifespanSeconds = Math.max(maxLifespanSeconds, realm.getClientSessionIdleTimeout());
+        }
+        if (realm.getClientSessionMaxLifespan() > 0) {
+            maxLifespanSeconds = Math.max(maxLifespanSeconds, realm.getClientSessionMaxLifespan());
+        }
+
+        // Safety margin: 10% of the max lifespan, at least 1 hour
+        long safetyMarginSeconds = Math.max(3600L, maxLifespanSeconds / 10);
+
+        return maxLifespanSeconds + safetyMarginSeconds;
+    }
+
+    /**
      * Rotates the key by creating a new key provider with higher priority and 
      * setting the current active key to passive.
      */
@@ -310,11 +357,18 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
         // Now update it with rotation-specific config after it's been created and validated
         MultivaluedHashMap<String, String> rotationConfig = new MultivaluedHashMap<>(added.getConfig());
         rotationConfig.putSingle(AUTO_ROTATION_ENABLED_KEY, "true");
-            rotationConfig.putSingle(ROTATION_PERIOD_KEY, currentProvider.get(ROTATION_PERIOD_KEY));
-            rotationConfig.putSingle(PASSIVE_KEY_EXPIRATION_KEY, currentProvider.get(PASSIVE_KEY_EXPIRATION_KEY));
+        rotationConfig.putSingle(ROTATION_PERIOD_KEY, currentProvider.get(ROTATION_PERIOD_KEY));
+        rotationConfig.putSingle(PASSIVE_KEY_EXPIRATION_KEY, currentProvider.get(PASSIVE_KEY_EXPIRATION_KEY));
         rotationConfig.putSingle(LAST_ROTATION_TIME_KEY, String.valueOf(Time.currentTimeMillis()));
         rotationConfig.putSingle(ACTIVE_KEY, "true");
         rotationConfig.putSingle(ENABLED_KEY, "true");
+        // Propagate deletion settings to the new provider
+        if (currentProvider.get(AUTO_DELETE_DISABLED_KEYS_KEY) != null) {
+            rotationConfig.putSingle(AUTO_DELETE_DISABLED_KEYS_KEY, currentProvider.get(AUTO_DELETE_DISABLED_KEYS_KEY));
+        }
+        if (currentProvider.get(DELETION_GRACE_PERIOD_KEY) != null) {
+            rotationConfig.putSingle(DELETION_GRACE_PERIOD_KEY, currentProvider.get(DELETION_GRACE_PERIOD_KEY));
+        }
         added.setConfig(rotationConfig);
         realm.updateComponent(added);
 
@@ -342,8 +396,26 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
             return 0;
         }
 
+        // Derive the minimum safe retention from realm session timeouts
+        long minimumRetentionSeconds = computeMinimumPassiveKeyRetention(realm);
+
         String expirationPeriodStr = provider.get(PASSIVE_KEY_EXPIRATION_KEY);
-        long passiveExpirationSeconds = expirationPeriodStr != null ? Long.parseLong(expirationPeriodStr) : 2592000L; // Default: 30 days in seconds
+        long configuredExpirationSeconds = expirationPeriodStr != null ? Long.parseLong(expirationPeriodStr) : 0;
+        long passiveExpirationSeconds;
+
+        if (configuredExpirationSeconds > 0) {
+            if (configuredExpirationSeconds < minimumRetentionSeconds) {
+                logger.warnf("Configured passive key expiration (%d s) for provider '%s' in realm '%s' " +
+                        "is shorter than the minimum derived from session timeouts (%d s). " +
+                        "Using session-derived minimum to prevent token verification failures.",
+                        configuredExpirationSeconds, provider.getName(), realm.getName(), minimumRetentionSeconds);
+            }
+            passiveExpirationSeconds = Math.max(configuredExpirationSeconds, minimumRetentionSeconds);
+        } else {
+            // No explicit configuration — derive entirely from realm session settings
+            passiveExpirationSeconds = minimumRetentionSeconds;
+        }
+
         long passiveExpirationMillis = java.util.concurrent.TimeUnit.SECONDS.toMillis(passiveExpirationSeconds);
 
         String lastRotationTimeStr = provider.get(LAST_ROTATION_TIME_KEY);
@@ -353,7 +425,6 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
 
         long lastRotationTime = Long.parseLong(lastRotationTimeStr);
         long currentTime = Time.currentTimeMillis();
-        long timeSinceRotation = currentTime - lastRotationTime;
         
         if ((currentTime - lastRotationTime) >= passiveExpirationMillis) {
             // Disable the key
