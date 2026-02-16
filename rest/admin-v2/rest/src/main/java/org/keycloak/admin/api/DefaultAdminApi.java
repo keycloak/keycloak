@@ -21,7 +21,6 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 
 public class DefaultAdminApi implements AdminApi {
     private final KeycloakSession session;
-    private final AdminPermissionEvaluator permissions;
     private final AdminAuth auth;
 
     // v1 resources
@@ -36,7 +35,7 @@ public class DefaultAdminApi implements AdminApi {
         if (!auth.getRealm().getName().equals(Config.getAdminRealm()) || !auth.hasRealmRole(AdminRoles.ADMIN)) {
             throw new NotAuthorizedException("Wrong permissions");
         }
-        this.realmsAdminResource = new RealmsAdminResource(session, auth, new TokenManager());
+        RealmsAdminResource realmsAdminResource = new RealmsAdminResource(session, auth, new TokenManager());
         this.realmAdminResource = realmsAdminResource.getRealmAdmin(realmName);
         
         // Create permission evaluator for the target realm
@@ -48,7 +47,7 @@ public class DefaultAdminApi implements AdminApi {
     @Override
     public ClientsApi clients(@PathParam("version") String version) {
         return switch (version) {
-            case "v2" -> new DefaultClientsApi(session, realmAdminResource, permissionEvaluator, auth);
+            case "v2" -> new DefaultClientsApi(session, permissionEvaluator, realmAdminResource, auth);
             default -> throw new NotFoundException();
         };
     }
