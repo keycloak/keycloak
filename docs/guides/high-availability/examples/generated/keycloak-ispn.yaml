@@ -178,7 +178,7 @@ spec:
     podTemplate:
       metadata:
         annotations:
-          checksum/config: fb7f978be22beed7f21f50fcaaa4d99f0938297281d6d76563012ae1b1a2e8d9-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+          checksum/config: ceeb1a7329e56349aaea6731b39461bf2619960f81f62af61a2e4117b6229c36-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
       spec:
         containers:
           - env:
