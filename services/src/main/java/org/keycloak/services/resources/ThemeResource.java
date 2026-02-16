@@ -91,10 +91,6 @@ public class ThemeResource {
     public Response getResource(@PathParam("version") String version, @PathParam("themeType") String themeType, @PathParam("themeName") String themeName, @PathParam("path") String path, @HeaderParam(HttpHeaders.IF_NONE_MATCH) String etag, @Context UriInfo uriInfo) {
         final Optional<Theme.Type> type = getThemeType(themeType);
 
-        if (!version.equals(Version.RESOURCES_VERSION)) {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-
         if (type.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
