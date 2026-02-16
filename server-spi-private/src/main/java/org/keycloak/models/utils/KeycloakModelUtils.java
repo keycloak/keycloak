@@ -49,6 +49,7 @@ import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
+import org.keycloak.cache.AlternativeLookupProvider;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
@@ -109,7 +110,7 @@ public final class KeycloakModelUtils {
 
     public static final String GROUP_PATH_SEPARATOR = "/";
     public static final String GROUP_PATH_ESCAPE = "~";
-    private static final char CLIENT_ROLE_SEPARATOR = '.';
+    public static final char CLIENT_ROLE_SEPARATOR = '.';
 
     public static final int MAX_CLIENT_LOOKUPS_DURING_ROLE_RESOLVE = 25;
 
@@ -695,7 +696,7 @@ public final class KeycloakModelUtils {
 
     public static Collection<String> resolveAttribute(UserModel user, String name, boolean aggregateAttrs) {
         List<String> values = user.getAttributeStream(name).collect(Collectors.toList());
-        Set<String> aggrValues = new HashSet<String>();
+        Set<String> aggrValues = new HashSet<>();
         if (!values.isEmpty()) {
             if (!aggregateAttrs) {
                 return values;
@@ -717,70 +718,13 @@ public final class KeycloakModelUtils {
     }
 
 
-    private static GroupModel findSubGroup(String[] segments, int index, GroupModel parent) {
-        return parent.getSubGroupsStream().map(group -> {
-            String groupName = group.getName();
-            String[] pathSegments = formatPathSegments(segments, index, groupName);
-
-            if (groupName.equals(pathSegments[index])) {
-                if (pathSegments.length == index + 1) {
-                    return group;
-                } else {
-                    if (index + 1 < pathSegments.length) {
-                        GroupModel found = findSubGroup(pathSegments, index + 1, group);
-                        if (found != null) return found;
-                    }
-                }
-            }
-            return null;
-        }).filter(Objects::nonNull).findFirst().orElse(null);
-    }
-
-    /**
-     * Given the {@code pathParts} of a group with the given {@code groupName}, format the {@code segments} in order to ignore
-     * group names containing a {@code /} character.
-     *
-     * @param segments  the path segments
-     * @param index     the index pointing to the position to start looking for the group name
-     * @param groupName the groupName
-     * @return a new array of strings with the correct segments in case the group has a name containing slashes
-     */
-    private static String[] formatPathSegments(String[] segments, int index, String groupName) {
-        String[] nameSegments = groupName.split(GROUP_PATH_SEPARATOR);
-
-        if (nameSegments.length > 1 && segments.length >= nameSegments.length) {
-            for (int i = 0; i < nameSegments.length; i++) {
-                if (!nameSegments[i].equals(segments[index + i])) {
-                    return segments;
-                }
-            }
-
-            int numMergedIndexes = nameSegments.length - 1;
-            String[] newPath = new String[segments.length - numMergedIndexes];
-
-            for (int i = 0; i < newPath.length; i++) {
-                if (i == index) {
-                    newPath[i] = groupName;
-                } else if (i > index) {
-                    newPath[i] = segments[i + numMergedIndexes];
-                } else {
-                    newPath[i] = segments[i];
-                }
-            }
-
-            return newPath;
-        }
-
-        return segments;
-    }
-
     /**
      * Helper to get from the session if group path slashes should be escaped or not.
      * @param session The session
      * @return true or false
      */
     public static boolean escapeSlashesInGroupPath(KeycloakSession session) {
-        GroupProviderFactory fact = (GroupProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(GroupProvider.class);
+        GroupProviderFactory<?> fact = (GroupProviderFactory<?>) session.getKeycloakSessionFactory().getProviderFactory(GroupProvider.class);
         return fact.escapeSlashesInGroupPath();
     }
 
@@ -993,8 +937,24 @@ public final class KeycloakModelUtils {
                         Objects.equals(client.getId(), role.getContainer().getId()));
     }
 
-    // Used in various role mappers
+    /**
+     * @deprecated for removal. Use {@link #getRoleFromString(KeycloakSession, RealmModel, String)} instead.
+     */
+    @Deprecated(forRemoval = true, since = "26.6")
     public static RoleModel getRoleFromString(RealmModel realm, String roleName) {
+        return getRoleFromString(KeycloakSessionUtil.getKeycloakSession(), realm, roleName);
+    }
+
+    public static RoleModel getRoleFromString(KeycloakSession session, RealmModel realm, String roleName) {
+        if (session == null) {
+            return getRoleFromStringNoCaching(realm, roleName);
+        }
+        return session.getProvider(AlternativeLookupProvider.class)
+                .lookupRoleFromString(realm, roleName);
+    }
+
+    // Used in various role mappers
+    private static RoleModel getRoleFromStringNoCaching(RealmModel realm, String roleName) {
         if (roleName == null) {
             return null;
         }
@@ -1028,11 +988,9 @@ public final class KeycloakModelUtils {
         if (scopeIndex > -1) {
             String appName = role.substring(0, scopeIndex);
             role = role.substring(scopeIndex + 1);
-            String[] rtn = {appName, role};
-            return rtn;
+            return new String[]{appName, role};
         } else {
-            String[] rtn = {null, role};
-            return rtn;
+            return new String[]{null, role};
 
         }
     }
@@ -1222,7 +1180,7 @@ public final class KeycloakModelUtils {
             return displayName;
         }
 
-        SocialIdentityProviderFactory providerFactory = (SocialIdentityProviderFactory) session.getKeycloakSessionFactory()
+        SocialIdentityProviderFactory<?> providerFactory = (SocialIdentityProviderFactory<?>) session.getKeycloakSessionFactory()
                 .getProviderFactory(SocialIdentityProvider.class, provider.getProviderId());
         if (providerFactory != null) {
             return providerFactory.getName();
@@ -1258,7 +1216,7 @@ public final class KeycloakModelUtils {
      * @throws RuntimeException if a group does not exist
      */
     public static void setDefaultGroups(KeycloakSession session, RealmModel realm, Stream<String> groups) {
-        realm.getDefaultGroupsStream().collect(Collectors.toList()).forEach(realm::removeDefaultGroup);
+        realm.getDefaultGroupsStream().toList().forEach(realm::removeDefaultGroup);
         groups.forEach(path -> {
             GroupModel found = KeycloakModelUtils.findGroupByPath(session, realm, path);
             if (found == null) throw new RuntimeException("default group in realm rep doesn't exist: " + path);

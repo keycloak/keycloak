@@ -17,9 +17,15 @@
 
 package org.keycloak.tests.model;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.keycloak.cache.AlternativeLookupProvider;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RealmModelDelegate;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -53,6 +59,28 @@ public class AlternativeLookupProviderTest {
             session.identityProviders().remove("kubernetes1");
             session.identityProviders().remove("kubernetes2");
         }
+    }
+
+    @TestOnServer
+    public void testLimitCountOfClientLookupsDuringGetRoleFromString(KeycloakSession session) {
+        AtomicInteger counter = new AtomicInteger(0);
+
+        RealmModel realm = new RealmModelDelegate(null) {
+            @Override
+            public ClientModel getClientByClientId(String clientId) {
+                counter.incrementAndGet();
+                return null;
+            }
+        };
+
+        String badRoleName = ".";
+        for (int i = 0 ; i < 16 ; i++) {
+            badRoleName = badRoleName + badRoleName;
+        }
+        Assertions.assertEquals(65536, badRoleName.length());
+
+        Assertions.assertNull(KeycloakModelUtils.getRoleFromString(session, realm, badRoleName));
+        Assertions.assertEquals(KeycloakModelUtils.MAX_CLIENT_LOOKUPS_DURING_ROLE_RESOLVE, counter.get());
     }
 
 

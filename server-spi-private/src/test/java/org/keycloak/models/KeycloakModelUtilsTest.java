@@ -92,7 +92,7 @@ public class KeycloakModelUtilsTest {
         }
         Assert.assertEquals(65536, badRoleName.length());
 
-        Assert.assertNull(KeycloakModelUtils.getRoleFromString(realm, badRoleName));
+        Assert.assertNull(KeycloakModelUtils.getRoleFromString(null, realm, badRoleName));
         Assert.assertEquals(KeycloakModelUtils.MAX_CLIENT_LOOKUPS_DURING_ROLE_RESOLVE, counter.get());
     }
 

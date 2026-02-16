@@ -8,8 +8,8 @@ import org.keycloak.models.KeycloakSessionFactory;
 
 public class DefaultAlternativeLookupProviderFactory implements AlternativeLookupProviderFactory {
 
-    private LocalCacheConfiguration<String, String> cacheConfig;
-    private LocalCache<String, String> lookupCache;
+    private LocalCacheConfiguration<String, CachedValue> cacheConfig;
+    private LocalCache<String, CachedValue> lookupCache;
 
     @Override
     public String getId() {
@@ -26,7 +26,7 @@ public class DefaultAlternativeLookupProviderFactory implements AlternativeLooku
         Integer maximumSize = config.getInt("maximumSize", 1000);
         Integer expireAfter = config.getInt("expireAfter", 60);
 
-        cacheConfig = LocalCacheConfiguration.<String, String>builder()
+        cacheConfig = LocalCacheConfiguration.<String, CachedValue>builder()
               .name("lookup")
               .expiration(Duration.ofMinutes(expireAfter))
               .maxSize(maximumSize)
