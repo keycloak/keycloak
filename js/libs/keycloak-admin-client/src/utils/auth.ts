@@ -42,8 +42,8 @@ export interface TokenResponseRaw {
 export interface TokenResponse {
   accessToken: string;
   expiresIn: string;
-  refreshExpiresIn: number;
-  refreshToken: string;
+  refreshExpiresIn?: number;
+  refreshToken?: string;
   tokenType: string;
   notBeforePolicy: number;
   sessionState: string;

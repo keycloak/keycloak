@@ -133,9 +133,11 @@ export class KeycloakAdminClient {
     this.#accessTokenDecoded = decodeToken(token);
   }
 
-  public setRefreshToken(token: string) {
+  public setRefreshToken(token?: string) {
     this.refreshToken = token;
-    this.#refreshTokenDecoded = decodeToken(token);
+    if (token) {
+      this.#refreshTokenDecoded = decodeToken(token);
+    }
   }
 
   public async getAccessToken() {
