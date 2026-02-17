@@ -41,9 +41,8 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
     @Override
     public CLIResult run(List<String> rawArgs) {
         List<String> args = new ArrayList<>(rawArgs);
-
         args.addAll(List.of(config.defaultOptions()));
-
+        setEnvVar("KC_SHUTDOWN_DELAY", "0s");
         return delegate.run(new ServerOptions(storageConfig, databaseConfig, args));
     }
 

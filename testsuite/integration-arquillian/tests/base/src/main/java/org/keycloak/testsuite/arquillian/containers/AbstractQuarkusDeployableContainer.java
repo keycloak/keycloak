@@ -172,10 +172,12 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         commands.add("--http-relative-path=/auth");
         commands.add("--health-enabled=true"); // expose something to management interface to turn it on
 
+
         if (suiteContext.get().isAuthServerMigrationEnabled()) {
             commands.add("--hostname-strict=false");
         } else { // Do not set management port for older versions of Keycloak for migration tests - available since Keycloak 25
             commands.add("--http-management-port=" + configuration.getManagementPort());
+            commands.add("--shutdown-delay=0");
         }
 
         if (suiteContext.get().getMigrationContext().isRunningMigrationTest()) {
