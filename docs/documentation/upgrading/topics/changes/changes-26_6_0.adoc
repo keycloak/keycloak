@@ -82,6 +82,8 @@ For more details on the Operator configuration, see the https://www.keycloak.org
 
 If you are using an external {jdgserver_name} server for example in a multi-cluster setup, you should upgrade to version 16.0 as this is the version {project_name} was tested with.
 
+When upgrading the external {jdgserver_name}, enable the legacy metrics to ensure that alerts and dashboard still receive the same metrics as before. See https://www.keycloak.org/observability/metrics-for-troubleshooting-external-infinispan-multi-cluster[External Infinispan metrics] and where to add `legacy: true` to the ConfigMap.
+
 === Usage of virtual threads for embedded caches
 
 Previously virtual threads were used when at least two CPU cores were available.
