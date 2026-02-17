@@ -66,7 +66,11 @@ public final class DerUtils {
     }
 
     public static PublicKey decodePublicKey(byte[] der) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
-        return decodePublicKey(der, "RSA");
+        try {
+            return decodePublicKey(der, "RSA");
+        } catch (InvalidKeySpecException e) {
+            return decodePublicKey(der, "EC");
+        }
     }
 
     public static PublicKey decodePublicKey(byte[] der, String type) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
