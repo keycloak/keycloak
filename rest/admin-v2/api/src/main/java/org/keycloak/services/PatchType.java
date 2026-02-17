@@ -5,20 +5,16 @@ import java.util.Optional;
 import jakarta.ws.rs.core.MediaType;
 
 public enum PatchType {
-    JSON_MERGE(MediaType.valueOf(MediaName.JSON_MERGE));
+    JSON_MERGE(PatchTypeNames.JSON_MERGE);
 
     private final MediaType mediaType;
 
-    PatchType(MediaType mediaType) {
-        this.mediaType = mediaType;
+    PatchType(String mediaType) {
+        this.mediaType = MediaType.valueOf(mediaType);
     }
 
     public MediaType getMediaType() {
         return mediaType;
-    }
-
-    public static class MediaName {
-        public static final String JSON_MERGE = "application/merge-patch+json";
     }
 
     public static Optional<PatchType> getByMediaType(String mediaType) {

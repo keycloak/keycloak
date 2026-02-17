@@ -11,7 +11,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
+import org.keycloak.services.PatchTypeNames;
 
+import com.fasterxml.jackson.databind.JsonNode;
 
 public interface ClientApi {
 
@@ -28,9 +30,9 @@ public interface ClientApi {
     Response createOrUpdateClient(@Valid BaseClientRepresentation client);
 
     @PATCH
-    @Consumes(MediaType.TEXT_PLAIN)
+    @Consumes(PatchTypeNames.JSON_MERGE)
     @Produces(MediaType.APPLICATION_JSON)
-    BaseClientRepresentation patchClient(String patch);
+    BaseClientRepresentation patchClient(JsonNode patch);
 
     // TODO marked as producing json, but does not return anything
     @DELETE

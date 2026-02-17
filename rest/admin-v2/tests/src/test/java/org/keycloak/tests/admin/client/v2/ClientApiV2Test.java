@@ -28,7 +28,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
-import org.keycloak.services.PatchType;
+import org.keycloak.services.PatchTypeNames;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
@@ -103,7 +103,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     public void jsonMergePatchClient() throws Exception {
         HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
         setAuthHeader(request);
-        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchType.MediaName.JSON_MERGE);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
 
         OIDCClientRepresentation patch = new OIDCClientRepresentation();
         patch.setDescription("I'm also a description");
@@ -122,7 +122,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     public void jsonMergePatchClientInvalid() throws Exception {
         HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
         setAuthHeader(request);
-        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchType.MediaName.JSON_MERGE);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
 
         request.setEntity(new StringEntity("patch client invalid"));
         try (var response = client.execute(request)) {

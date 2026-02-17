@@ -40,7 +40,7 @@ import org.keycloak.representations.idm.ClientPolicyExecutorRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
-import org.keycloak.services.PatchType;
+import org.keycloak.services.PatchTypeNames;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
@@ -350,7 +350,7 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         // Try to patch the client to use an unacceptable auth type
         HttpPatch patchRequest = new HttpPatch(getClientsApiUrl() + "/test-patch-update-client");
         setAuthHeader(patchRequest);
-        patchRequest.setHeader(HttpHeaders.CONTENT_TYPE, PatchType.MediaName.JSON_MERGE);
+        patchRequest.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
 
         OIDCClientRepresentation patch = new OIDCClientRepresentation();
         var patchAuth = new OIDCClientRepresentation.Auth();

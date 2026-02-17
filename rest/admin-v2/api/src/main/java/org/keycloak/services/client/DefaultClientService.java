@@ -35,6 +35,7 @@ import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.http.HttpEntity;
@@ -147,7 +148,7 @@ public class DefaultClientService implements ClientService {
     }
 
     @Override
-    public BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, String patch) throws ServiceException {
+    public BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, JsonNode patch) throws ServiceException {
         BaseClientRepresentation original, updated;
 
         original = getClient(realm, clientId).orElseThrow(() -> new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND));
@@ -155,9 +156,8 @@ public class DefaultClientService implements ClientService {
         switch (patchType) {
             case JSON_MERGE -> {
                 try {
-                    var jsonNode = MAPPER.readTree(patch);
                     final ObjectReader objectReader = MAPPER.readerForUpdating(original);
-                    updated = objectReader.readValue(jsonNode);
+                    updated = objectReader.readValue(patch);
                 } catch (JsonProcessingException e) {
                     throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
                 } catch (IOException e) {

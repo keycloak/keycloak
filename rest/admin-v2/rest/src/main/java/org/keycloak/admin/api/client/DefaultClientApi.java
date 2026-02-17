@@ -24,6 +24,8 @@ import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 
 public class DefaultClientApi implements ClientApi {
     private final KeycloakSession session;
@@ -65,7 +67,7 @@ public class DefaultClientApi implements ClientApi {
 
     @PATCH
     @Override
-    public BaseClientRepresentation patchClient(String patch) {
+    public BaseClientRepresentation patchClient(JsonNode patch) {
         String contentType = session.getContext().getHttpRequest().getHttpHeaders().getHeaderString(HttpHeaders.CONTENT_TYPE);
         PatchType patchType = PatchType.getByMediaType(contentType)
                 .orElseThrow(() -> new WebApplicationException("Unsupported media type", Response.Status.UNSUPPORTED_MEDIA_TYPE));
