@@ -1,5 +1,8 @@
 :project_name: Keycloak
 :project_images: keycloak-images
+
+:jdk_version_recommended: 25
+
 :project_doc_base_url: https://www.keycloak.org/docs/latest
 :project_doc_base_url_latest: https://www.keycloak.org/docs/{version}
 :project_dirref: KEYCLOAK_HOME

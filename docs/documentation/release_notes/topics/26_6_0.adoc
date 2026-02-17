@@ -57,4 +57,4 @@ For more details on the Operator configuration, see the https://www.keycloak.org
 
 = Java 25 support
 
-{project_name} now supports running with JRE 25.
+{project_name} now supports running with JRE 25. OpenJDK 25 is also now used in the official container images.

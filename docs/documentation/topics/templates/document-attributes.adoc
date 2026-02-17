@@ -7,6 +7,8 @@
 :project_versionNpm: 999.0.0-SNAPSHOT
 :project_versionDoc: DEV
 
+:jdk_version_recommended: 25
+
 :archivebasename: keycloak
 :archivedownloadurl: https://github.com/keycloak/keycloak/releases/download/{project_version}/keycloak-{project_version}.zip
 
