@@ -462,7 +462,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     private void verifyCredentialResponse(TestContext ctx, CredentialResponse credResponse) throws Exception {
 
         String issuer = ctx.issuerMetadata.getCredentialIssuer();
-        String scope = ctx.credentialConfiguration.getScope();
+        List<String> expectedTypes = ctx.credentialConfiguration.getCredentialDefinition().getType();
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull("The first credential in the array should not be null", credentialObj);
 
@@ -472,7 +472,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         assertEquals(issuer, jsonWebToken.getIssuer());
         Object vc = jsonWebToken.getOtherClaims().get("vc");
         VerifiableCredential credential = JsonSerialization.mapper.convertValue(vc, VerifiableCredential.class);
-        assertEquals(List.of(scope), credential.getType());
+        assertEquals(expectedTypes, credential.getType());
         assertEquals(URI.create(issuer), credential.getIssuer());
         assertEquals(expUsername + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
     }
