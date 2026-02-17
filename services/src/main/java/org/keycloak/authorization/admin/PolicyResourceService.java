@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -63,6 +64,9 @@ public class PolicyResourceService {
     private final AdminEventBuilder adminEvent;
 
     public PolicyResourceService(Policy policy, ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        if (policy == null || !policy.getResourceServer().equals(resourceServer)) {
+            throw new NotFoundException();
+        }
         this.policy = policy;
         this.resourceServer = resourceServer;
         this.authorization = authorization;
