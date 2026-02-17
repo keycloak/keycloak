@@ -533,6 +533,9 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             } else if (managedScopes.containsKey(id)) {
                 return managedScopes.get(id);
             }
+            if (resourceServer != null && !resourceServer.getId().equals(cached.getResourceServerId())) {
+                return null;
+            }
             ScopeAdapter adapter = new ScopeAdapter(cached, StoreFactoryCacheSession.this);
             managedScopes.put(id, adapter);
             return adapter;
@@ -625,6 +628,9 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 return getResourceStoreDelegate().findById(resourceServer, id);
             } else if (managedResources.containsKey(id)) {
                 return managedResources.get(id);
+            }
+            if (resourceServer != null && ! resourceServer.getId().equals(cached.getResourceServerId())) {
+                return null;
             }
             ResourceAdapter adapter = new ResourceAdapter(cached, StoreFactoryCacheSession.this);
             managedResources.put(id, adapter);
@@ -897,6 +903,9 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             } else if (managedPolicies.containsKey(id)) {
                 return managedPolicies.get(id);
             }
+            if (resourceServer != null && !cached.getResourceServerId().equals(resourceServer.getId())) {
+                return null;
+            }
             PolicyAdapter adapter = new PolicyAdapter(cached, StoreFactoryCacheSession.this);
             managedPolicies.put(id, adapter);
             return adapter;
@@ -1153,6 +1162,9 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 return getPermissionTicketStoreDelegate().findById(resourceServer, id);
             } else if (managedPermissionTickets.containsKey(id)) {
                 return managedPermissionTickets.get(id);
+            }
+            if (resourceServer != null && !cached.getResourceServerId().equals(resourceServer.getId())) {
+                return null;
             }
             PermissionTicketAdapter adapter = new PermissionTicketAdapter(cached, StoreFactoryCacheSession.this);
             managedPermissionTickets.put(id, adapter);
