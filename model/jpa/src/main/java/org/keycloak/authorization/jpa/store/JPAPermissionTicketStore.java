@@ -166,7 +166,10 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
         }
 
         PermissionTicketEntity entity = entityManager.find(PermissionTicketEntity.class, id);
-        if (entity == null) return null;
+
+        if (entity == null || !resourceServer.getId().equals(entity.getResourceServer().getId())) {
+            return null;
+        }
 
         return new PermissionTicketAdapter(entity, entityManager, provider.getStoreFactory());
     }

@@ -140,13 +140,8 @@ public class PermissionTicketService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_ticket", Response.Status.BAD_REQUEST);
         }
 
-        PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
-        PermissionTicket ticket = ticketStore.findById(resourceServer, representation.getId());
+        PermissionTicket ticket = getPermissionTicket(representation.getId());
 
-        if (ticket == null) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_ticket", Response.Status.BAD_REQUEST);
-        }
-        
         if (!ticket.getOwner().equals(this.identity.getId()) && !this.identity.isResourceServer())
             throw new ErrorResponseException("not_authorised", "permissions for [" + representation.getResource() + "] can be updated only by the owner or by the resource server", Response.Status.FORBIDDEN);
 
@@ -164,19 +159,27 @@ public class PermissionTicketService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_ticket", Response.Status.BAD_REQUEST);
         }
 
-        PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
-        PermissionTicket ticket = ticketStore.findById(resourceServer, id);
+        PermissionTicket ticket = getPermissionTicket(id);
 
-        if (ticket == null) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_ticket", Response.Status.BAD_REQUEST);
-        }
-        
         if (!ticket.getOwner().equals(this.identity.getId()) && !this.identity.isResourceServer() && !ticket.getRequester().equals(this.identity.getId()))
             throw new ErrorResponseException("not_authorised", "permissions for [" + ticket.getResource() + "] can be deleted only by the owner, the requester, or the resource server", Response.Status.FORBIDDEN);
+
+        PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
 
         ticketStore.delete(id);
 
         return Response.noContent().build();
+    }
+
+    private PermissionTicket getPermissionTicket(String id) {
+        PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
+        PermissionTicket ticket = ticketStore.findById(resourceServer, id);
+
+        if (ticket == null || !ticket.getResourceServer().equals(resourceServer)) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_ticket", Response.Status.BAD_REQUEST);
+        }
+
+        return ticket;
     }
 
     @GET
