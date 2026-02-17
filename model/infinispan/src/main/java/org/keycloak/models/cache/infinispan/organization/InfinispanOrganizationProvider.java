@@ -282,6 +282,12 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
+    public Stream<OrganizationModel> getByMember(UserModel member, String search, Integer first, Integer max) {
+        // delegate to JPA for paginated/search queries - cache only stores org IDs, not names
+        return getDelegate().getByMember(member, search, first, max);
+    }
+
+    @Override
     public boolean isManagedMember(OrganizationModel organization, UserModel user) {
         if (userCache == null) {
             return getDelegate().isManagedMember(organization, user);

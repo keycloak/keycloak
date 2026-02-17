@@ -4,7 +4,6 @@ import {
   ListEmptyState,
   OrganizationTable,
   useAlerts,
-  useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
@@ -33,11 +32,6 @@ import { SearchInputComponent } from "../components/dynamic/SearchInputComponent
 type OrganizationProps = {
   user: UserRepresentation;
 };
-
-type MembershipTypeRepresentation = OrganizationRepresentation &
-  UserRepresentation & {
-    membershipType?: string;
-  };
 
 export const Organizations = ({ user }: OrganizationProps) => {
   const { adminClient } = useAdminClient();
@@ -83,54 +77,51 @@ export const Organizations = ({ user }: OrganizationProps) => {
     refresh();
   };
 
-  useFetch(
-    async () => {
-      const userOrganizations =
-        await adminClient.organizations.memberOrganizations({ userId: id! });
+  const loader = async (first?: number, max?: number) => {
+    try {
+      const orgs = await adminClient.organizations.memberOrganizations({
+        userId: id!,
+        first,
+        max,
+        search: searchTriggerText || undefined,
+      });
 
-      const userOrganizationsWithMembershipTypes = await Promise.all(
-        userOrganizations.map(async (org) => {
-          const orgId = org.id;
-          const memberships: MembershipTypeRepresentation[] =
-            await adminClient.organizations.listMembers({
-              orgId: orgId!,
+      // Fetch membershipType only for the paginated page of orgs
+      const enrichedOrgs = await Promise.all(
+        orgs.map(async (org) => {
+          try {
+            const member = await adminClient.organizations.getMember({
+              orgId: org.id!,
+              userId: id!,
             });
-
-          const userMemberships = memberships.filter(
-            (membership) => membership.username === user.username,
-          );
-
-          const membershipType = userMemberships.map((membership) => {
-            const formattedMembershipType = capitalizeFirstLetterFormatter()(
-              membership.membershipType,
-            );
-            return formattedMembershipType;
-          });
-
-          return { ...org, membershipType };
+            return {
+              ...org,
+              membershipType: capitalizeFirstLetterFormatter()(
+                member.membershipType,
+              ),
+            };
+          } catch {
+            return org;
+          }
         }),
       );
 
-      let filteredOrgs = userOrganizationsWithMembershipTypes;
+      let result = enrichedOrgs;
       if (filteredMembershipTypes.length > 0) {
-        filteredOrgs = filteredOrgs.filter((org) =>
-          org.membershipType?.some((type) =>
-            filteredMembershipTypes.includes(type as string),
-          ),
+        result = result.filter(
+          (org) =>
+            org.membershipType &&
+            filteredMembershipTypes.includes(org.membershipType as string),
         );
       }
 
-      if (searchTriggerText) {
-        filteredOrgs = filteredOrgs.filter((org) =>
-          org.name?.toLowerCase().includes(searchTriggerText.toLowerCase()),
-        );
-      }
-
-      return filteredOrgs;
-    },
-    setUserOrgs,
-    [key, filteredMembershipTypes, searchTriggerText],
-  );
+      setUserOrgs(result);
+      return result;
+    } catch (error) {
+      addError("organizationsFetchError", error);
+      return [];
+    }
+  };
 
   const handleChange = (value: string) => {
     setSearchText(value);
@@ -219,6 +210,7 @@ export const Organizations = ({ user }: OrganizationProps) => {
       )}
       <DeleteConfirm />
       <OrganizationTable
+        key={key}
         link={({ organization, children }) => (
           <Link
             key={organization.id}
@@ -231,7 +223,8 @@ export const Organizations = ({ user }: OrganizationProps) => {
             {children}
           </Link>
         )}
-        loader={userOrgs}
+        loader={loader}
+        isPaginated
         isSearching={
           searchTriggerText.length > 0 || filteredMembershipTypes.length > 0
         }

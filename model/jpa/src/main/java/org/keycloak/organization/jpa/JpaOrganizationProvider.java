@@ -36,6 +36,7 @@ import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.GroupModel;
@@ -481,6 +482,44 @@ public class JpaOrganizationProvider implements OrganizationProvider {
                 .map((id) -> groups.getGroupById(getRealm(), id))
                 .map((g) -> organizations.getById(g.getName()))
                 .filter(Objects::nonNull);
+    }
+
+    @Override
+    public Stream<OrganizationModel> getByMember(UserModel member, String search, Integer first, Integer max) {
+        throwExceptionIfObjectIsNull(member, "User");
+
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<OrganizationEntity> queryBuilder = builder.createQuery(OrganizationEntity.class);
+        Root<OrganizationEntity> org = queryBuilder.from(OrganizationEntity.class);
+
+        // subquery: find group IDs the user belongs to
+        Subquery<String> memberGroupIds = queryBuilder.subquery(String.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        if (StorageId.isLocalStorage(member.getId())) {
+            Root<UserGroupMembershipEntity> membership = memberGroupIds.from(UserGroupMembershipEntity.class);
+            memberGroupIds.select(membership.get("groupId"));
+            memberGroupIds.where(builder.equal(membership.get("user").get("id"), member.getId()));
+        } else {
+            Root<org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity> membership =
+                    memberGroupIds.from(org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity.class);
+            memberGroupIds.select(membership.get("groupId"));
+            memberGroupIds.where(builder.equal(membership.get("userId"), member.getId()));
+        }
+
+        predicates.add(org.get("groupId").in(memberGroupIds));
+        predicates.add(builder.equal(org.get("realmId"), getRealm().getId()));
+
+        if (StringUtil.isNotBlank(search)) {
+            predicates.add(builder.like(builder.lower(org.get("name")), "%" + search.toLowerCase() + "%"));
+        }
+
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+        queryBuilder.orderBy(builder.asc(org.get("name")));
+
+        return closing(paginateQuery(em.createQuery(queryBuilder), first, max).getResultStream()
+                .map(entity -> new OrganizationAdapter(session, getRealm(), entity, this)));
     }
 
     @Override

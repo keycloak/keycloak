@@ -1,5 +1,6 @@
 import type { KeycloakAdminClient } from "../client.js";
 import IdentityProviderRepresentation from "../defs/identityProviderRepresentation.js";
+import type MemberRepresentation from "../defs/memberRepresentation.js";
 import type OrganizationRepresentation from "../defs/organizationRepresentation.js";
 import type OrganizationInvitationRepresentation from "../defs/organizationInvitationRepresentation.js";
 import UserRepresentation from "../defs/userRepresentation.js";
@@ -19,6 +20,10 @@ export interface OrganizationQuery extends PaginatedQuery {
 interface MemberQuery extends PaginatedQuery {
   orgId: string; //Id of the organization to get the members of
   membershipType?: string;
+}
+
+interface MemberOrganizationQuery extends PaginatedQuery {
+  userId: string; // Id of the user to get the organizations of
 }
 
 interface InvitationQuery extends PaginatedQuery {
@@ -110,12 +115,21 @@ export class Organizations extends Resource<{ realm?: string }> {
   });
 
   public memberOrganizations = this.makeRequest<
-    { userId: string },
+    MemberOrganizationQuery,
     OrganizationRepresentation[]
   >({
     method: "GET",
     path: "/members/{userId}/organizations",
     urlParamKeys: ["userId"],
+  });
+
+  public getMember = this.makeRequest<
+    { orgId: string; userId: string },
+    MemberRepresentation
+  >({
+    method: "GET",
+    path: "/{orgId}/members/{userId}",
+    urlParamKeys: ["orgId", "userId"],
   });
 
   public invite = this.makeUpdateRequest<{ orgId: string }, FormData>({

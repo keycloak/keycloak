@@ -214,6 +214,37 @@ public interface OrganizationProvider extends Provider {
     Stream<OrganizationModel> getByMember(UserModel member);
 
     /**
+     * Returns the {@link OrganizationModel} that the {@code member} belongs to, filtered and paginated.
+     *
+     * @param member the member of an organization
+     * @param search a {@code String} to search for in organization names. If null or empty, no name filtering is applied.
+     * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return the organizations the {@code member} belongs to or an empty stream if the user doesn't belong to any.
+     */
+    default Stream<OrganizationModel> getByMember(UserModel member, String search, Integer first, Integer max) {
+        Stream<OrganizationModel> result = getByMember(member);
+
+        if (search != null && !search.isEmpty()) {
+            String searchLower = search.toLowerCase();
+            result = result.filter(org -> {
+                String name = org.getName();
+                return name != null && name.toLowerCase().contains(searchLower);
+            });
+        }
+
+        if (first != null && first > 0) {
+            result = result.skip(first);
+        }
+
+        if (max != null && max > 0) {
+            result = result.limit(max);
+        }
+
+        return result;
+    }
+
+    /**
      * Creates a new group within the given {@link OrganizationModel}.
      * The internal ID of the group will be created automatically.
      * The created group will be of type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION}.

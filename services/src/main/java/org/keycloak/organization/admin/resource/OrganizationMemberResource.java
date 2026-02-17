@@ -243,6 +243,9 @@ public class OrganizationMemberResource {
     })
     public Stream<OrganizationRepresentation> getOrganizations(
             @PathParam("member-id") String memberId,
+            @Parameter(description = "A String representing an organization name to search for.") @QueryParam("search") String search,
+            @Parameter(description = "The position of the first result to be processed (pagination offset)") @QueryParam("first") @DefaultValue("0") Integer first,
+            @Parameter(description = "The maximum number of results to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
             @Parameter(description = "if false, return the full representation. Otherwise, only the basic fields are returned.")
             @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         if (StringUtil.isBlank(memberId)) {
@@ -251,7 +254,7 @@ public class OrganizationMemberResource {
 
         UserModel member = getUser(memberId);
 
-        return provider.getByMember(member)
+        return provider.getByMember(member, search, first, max)
                 .map(model -> ModelToRepresentation.toRepresentation(model, briefRepresentation));
     }
 
