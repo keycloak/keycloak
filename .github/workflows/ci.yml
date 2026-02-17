@@ -515,6 +515,7 @@ jobs:
         id: aurora-migration-tests
         env:
           old-version: 24.0.4
+          JAVA_VERSION: 21 # Keycloak 24 is not compatible with Java 25+
         run: |
           EC2_CLUSTER_NAME=${{ steps.ec2-create.outputs.ec2_cluster }}
           AWS_REGION=${{ steps.aurora-init.outputs.region }}
@@ -723,10 +724,11 @@ jobs:
         id: azure-migration-build
         env:
           old-version: 24.0.4
+          JAVA_VERSION: 21 # Keycloak 24 is not compatible with Java 25+
         run: |
           AZ_VM_CLUSTER_NAME=${{ steps.vm-create.outputs.az_vm_cluster }}
           AZURE_REGION=${{ steps.azure-init.outputs.region }}
-          
+
           cd .github/scripts/ansible
           ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} 'clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/migration -Pauth-server-migration -Dmigrated.auth.server.version=${{ env.old-version }} -Dmaven.build.cache.enabled=true -Pdb-mssql-azure -Dkeycloak.connectionsJpa.user=${{ steps.azure-create.outputs.username }} -Dkeycloak.connectionsJpa.password="${{ env.AZURE_DB_PASSWORD }}" -Dkeycloak.connectionsJpa.database=${{ steps.azure-create.outputs.db }} -Dkeycloak.connectionsJpa.url="jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false;sendStringParametersAsUnicode=false" -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ env.old-version }}/providers'
 
@@ -734,6 +736,7 @@ jobs:
         id: azure-migration-tests
         env:
           old-version: 24.0.4
+          JAVA_VERSION: 21 # Keycloak 24 is not compatible with Java 25+
         run: |
           AZ_VM_CLUSTER_NAME=${{ steps.vm-create.outputs.az_vm_cluster }}
           AZURE_REGION=${{ steps.azure-init.outputs.region }}
@@ -749,10 +752,11 @@ jobs:
         id: azure-integration-build
         env:
           old-version: 24.0.4
+          JAVA_VERSION: 21 # Keycloak 24 is not compatible with Java 25+
         run: |
           AZ_VM_CLUSTER_NAME=${{ steps.vm-create.outputs.az_vm_cluster }}
           AZURE_REGION=${{ steps.azure-init.outputs.region }}
-          
+
           cd .github/scripts/ansible
           ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} 'clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/migration -Pauth-server-migration -Dmigrated.auth.server.version=${{ env.old-version }} -Dmaven.build.cache.enabled=true -Pdb-mssql-azure -Dkeycloak.connectionsJpa.user=${{ steps.azure-create.outputs.username }} -Dkeycloak.connectionsJpa.password="${{ env.AZURE_DB_PASSWORD }}" -Dkeycloak.connectionsJpa.database=${{ steps.azure-create.outputs.db }} -Dkeycloak.connectionsJpa.url="jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false;sendStringParametersAsUnicode=false" -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ env.old-version }}/providers'
 

@@ -10,25 +10,27 @@
     update_cache: yes
 
 
-- name: Install Java {{ java_version }} packages on Ubuntu/Debian
+- name: Install Java {{ item }} packages on Ubuntu/Debian
   when:
     - install_java
     - ansible_os_family == 'Debian'
   package:
     name:
-      - "openjdk-{{ java_version }}-jdk"
-      - "openjdk-{{ java_version }}-jre"
+      - "openjdk-{{ item }}-jdk"
+      - "openjdk-{{ item }}-jre"
     state: present
+  loop: "{{ [java_version] | flatten }}"
 
-- name: Install Java {{ java_version }} packages on RedHat/Amazon
+- name: Install Java {{ item }} packages on RedHat/Amazon
   when:
     - install_java
     - ansible_os_family != 'Debian'
   package:
     name:
-      - "java-{{ java_version }}-openjdk"
-      - "java-{{ java_version }}-openjdk-devel"
+      - "java-{{ item }}-openjdk"
+      - "java-{{ item }}-openjdk-devel"
     state: present
+  loop: "{{ [java_version] | flatten }}"
 
 - name: Install dependencies on the remote hosts
   package: name={{item}} state=present

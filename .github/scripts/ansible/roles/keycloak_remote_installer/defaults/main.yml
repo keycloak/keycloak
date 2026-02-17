@@ -3,4 +3,6 @@ kc_home: /opt/keycloak
 m2_home: ~/.m2
 update_system_packages: no
 install_java: yes
-java_version: 25
+java_version:
+  - 25
+  - 21  # TODO: Remove once Keycloak 24 is no longer used for migration tests
