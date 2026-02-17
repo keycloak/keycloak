@@ -159,10 +159,12 @@ public class SamlService extends AuthorizationEndpointBase {
     public static final String ARTIFACT_RESOLUTION_SERVICE_PATH = "resolve";
 
     private final DestinationValidator destinationValidator;
+    private final long maxInflatingSize;
 
-    public SamlService(KeycloakSession session, EventBuilder event, DestinationValidator destinationValidator) {
+    public SamlService(KeycloakSession session, EventBuilder event, long maxInflatingSize, DestinationValidator destinationValidator) {
         super(session, event);
         this.destinationValidator = destinationValidator;
+        this.maxInflatingSize = maxInflatingSize;
     }
 
     public abstract class BindingProtocol {
@@ -204,7 +206,7 @@ public class SamlService extends AuthorizationEndpointBase {
             event.event(EventType.LOGOUT);
             SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
 
-            if (! (holder.getSamlObject() instanceof StatusResponseType)) {
+            if (holder == null || !(holder.getSamlObject() instanceof StatusResponseType)) {
                 event.detail(Details.REASON, Errors.INVALID_SAML_RESPONSE);
                 event.error(Errors.INVALID_SAML_RESPONSE);
                 return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
@@ -848,12 +850,12 @@ public class SamlService extends AuthorizationEndpointBase {
 
         @Override
         protected SAMLDocumentHolder extractRequestDocument(String samlRequest) {
-            return SAMLRequestParser.parseRequestRedirectBinding(samlRequest);
+            return SAMLRequestParser.parseRequestRedirectBinding(samlRequest, maxInflatingSize);
         }
 
         @Override
         protected SAMLDocumentHolder extractResponseDocument(String response) {
-            return SAMLRequestParser.parseResponseRedirectBinding(response);
+            return SAMLRequestParser.parseResponseRedirectBinding(response, maxInflatingSize);
         }
 
         @Override
@@ -1120,7 +1122,7 @@ public class SamlService extends AuthorizationEndpointBase {
     @NoCache
     @Consumes({"application/soap+xml",MediaType.TEXT_XML})
     public Response soapBinding(InputStream inputStream) {
-        SamlEcpProfileService bindingService = new SamlEcpProfileService(session, event, destinationValidator);
+        SamlEcpProfileService bindingService = new SamlEcpProfileService(session, event, maxInflatingSize, destinationValidator);
 
         return bindingService.authenticate(inputStream);
     }
