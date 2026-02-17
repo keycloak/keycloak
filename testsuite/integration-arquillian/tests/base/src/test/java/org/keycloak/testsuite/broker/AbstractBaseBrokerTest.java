@@ -308,15 +308,20 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         return contextRoot + "/auth/realms/" + realmName + "/account";
     }
 
+    protected String getLoginUrl(String contextRoot, String realmName, String clientId) {
+        return getLoginUrl(contextRoot, realmName, clientId, "openid");
+    }
+
     /**
      * Get the login page for an existing client in provided realm
      *
      * @param contextRoot server base url without /auth
      * @param realmName Name of the realm
      * @param clientId ClientId of a client. Client has to exists in the realm.
+     * @param scope The scope parameter for the request
      * @return Login URL
      */
-    protected String getLoginUrl(String contextRoot, String realmName, String clientId) {
+    protected String getLoginUrl(String contextRoot, String realmName, String clientId, String scope) {
         List<ClientRepresentation> clients = adminClient.realm(realmName).clients().findByClientId(clientId);
 
         assertThat(clients, Matchers.is(Matchers.not(Matchers.empty())));
@@ -327,7 +332,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         }
 
         return contextRoot + "/auth/realms/" + realmName + "/protocol/openid-connect/auth?client_id=" +
-                clientId + "&redirect_uri=" + redirectURI + "&response_type=code&scope=openid";
+                clientId + "&redirect_uri=" + redirectURI + "&response_type=code&scope=" + scope;
     }
 
     protected void logoutFromRealm(String contextRoot, String realm) {

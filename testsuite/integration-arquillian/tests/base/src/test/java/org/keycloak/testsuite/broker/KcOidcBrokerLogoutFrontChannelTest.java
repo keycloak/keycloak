@@ -9,6 +9,8 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -73,6 +75,42 @@ public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogo
         oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
         loginPage.open(REALM_PROV_NAME);
 
+        waitForPage(driver, "sign in to provider", true);
+    }
+
+    @Test
+    public void logoutIdPWithOfflineSession() {
+        // login with offline_access in the application using IdP
+        driver.navigate().to(getLoginUrl(getConsumerRoot(), bc.consumerRealmName(), "broker-app", "openid offline_access"));
+        logInWithBroker(bc);
+        updateAccountInformation();
+
+        // Exchange code from "broker-app" client of "consumer" realm for the tokens
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
+                .client("broker-app", "broker-app-secret")
+                .redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
+                .doAccessTokenRequest(code);
+        assertEquals(200, response.getStatusCode());
+        MatcherAssert.assertThat(response.getScope(), Matchers.containsString("offline_access"));
+
+        String idTokenString = response.getIdToken();
+
+        executeLogoutFromRealm(
+                getConsumerRoot(),
+                bc.consumerRealmName(),
+                "something-else",
+                idTokenString,
+                null,
+                null
+        );
+        infoPage.assertCurrent();
+        assertEquals("You are logged out", infoPage.getInfo());
+
+        // user should be logged out successfully from the IDP
+        oauth.clientId(bc.getIDPClientIdInProviderRealm());
+        oauth.redirectUri(BrokerTestTools.getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + bc.getIDPAlias() + "/endpoint/*");
+        loginPage.open(REALM_PROV_NAME);
         waitForPage(driver, "sign in to provider", true);
     }
 }

@@ -385,6 +385,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             }
             UserSessionModel userSession = session.sessions().getUserSession(realm, state);
             if (userSession == null) {
+                userSession = session.sessions().getOfflineUserSession(realm, state);
+            }
+            if (userSession == null) {
                 logger.error("no valid user session");
                 EventBuilder event = new EventBuilder(realm, session, clientConnection);
                 event.event(EventType.LOGOUT);
