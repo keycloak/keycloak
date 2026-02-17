@@ -1081,7 +1081,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                         if (Boolean.parseBoolean(attributes.getOrDefault(UserModel.EXACT, Boolean.TRUE.toString()))) {
                             attributePredicates.add(builder.and(
                                 builder.equal(attributesJoin.get("name"), key),
-                                builder.equal(builder.lower(attributesJoin.get("value")), value.toLowerCase())));
+                                builder.equal(attributesJoin.get("value"), value)));
                         } else {
                             attributePredicates.add(builder.and(
                                 builder.equal(attributesJoin.get("name"), key),
